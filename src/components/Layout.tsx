@@ -25,6 +25,10 @@ export default function Layout({ page, setPage, children }: Props) {
     setShowKey(false)
   }
 
+  if (page === 'landing') {
+    return <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg)', color: 'var(--color-fg)' }}>{children}</div>
+  }
+
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--color-bg)', color: 'var(--color-fg)' }}>
       <header

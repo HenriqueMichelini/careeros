@@ -3,9 +3,10 @@ import { useStore } from '../lib/store'
 import { reviewRepository } from '../lib/ai'
 import { ExperienceEntry, ProjectEntry, ProfessionalRepository } from '../lib/types'
 
-type Section = 'goals' | 'skills' | 'competencies' | 'experience' | 'tools' | 'projects' | 'compensation' | 'other'
+type Section = 'profile' | 'goals' | 'skills' | 'competencies' | 'experience' | 'tools' | 'projects' | 'compensation' | 'other'
 
 const SECTIONS: { id: Section; label: string; desc: string }[] = [
+  { id: 'profile', label: 'PROFILE', desc: 'Edit your professional details by section' },
   { id: 'goals', label: 'Career Goals', desc: 'Ambitions, target roles, long-term vision' },
   { id: 'skills', label: 'Skills', desc: 'Technical and professional skills' },
   { id: 'competencies', label: 'Competencies', desc: 'Core strengths and soft skills' },
@@ -279,9 +280,8 @@ function ProjectForm({
 
 export default function RepositoryPage() {
   const { state, dispatch } = useStore()
-  const [activeSection, setActiveSection] = useState<Section>('goals')
+  const [activeSection, setActiveSection] = useState<Section>('profile')
   const [reviewError, setReviewError] = useState('')
-  const [profileDraft, setProfileDraft] = useState('')
   const repo = state.repository
 
   const updateRepo = useCallback(
@@ -370,10 +370,11 @@ export default function RepositoryPage() {
             <button
               key={id}
               onClick={() => setActiveSection(id)}
-              className="w-full text-left px-3 py-2.5 text-sm transition-colors block"
+              className={`w-full text-left px-3 py-2.5 text-sm transition-colors block ${id === 'profile' ? 'font-semibold tracking-[0.12em] mb-2 border' : ''}`}
               style={{
-                backgroundColor: activeSection === id ? 'var(--color-fg)' : 'transparent',
-                color: activeSection === id ? 'var(--color-bg)' : 'var(--color-muted-fg)',
+                backgroundColor: activeSection === id ? (id === 'profile' ? 'var(--color-accent)' : 'var(--color-fg)') : id === 'profile' ? 'var(--color-muted)' : 'transparent',
+                color: activeSection === id && id !== 'profile' ? 'var(--color-bg)' : 'var(--color-fg)',
+                borderColor: id === 'profile' ? 'var(--color-accent)' : 'transparent',
               }}
             >
               {label}
@@ -428,25 +429,6 @@ export default function RepositoryPage() {
       {/* Main content */}
       <div>
         <div className="mb-8">
-          <p
-            className="text-xs uppercase tracking-[0.18em] mb-2"
-            style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-muted-fg)' }}
-          >
-            AI-Assisted Profile Setup
-          </p>
-          <Label>Paste Your Professional Information</Label>
-          <Field
-            rows={5}
-            value={profileDraft}
-            onChange={setProfileDraft}
-            placeholder="Paste your résumé or professional background here."
-          />
-          <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--color-muted-fg)' }}>
-            AI-assisted filling is coming soon. Text entered here is not saved; use the sections below to update your profile.
-          </p>
-        </div>
-
-        <div className="mb-8">
           <h1
             className="text-5xl font-bold uppercase tracking-tight leading-none mb-2"
             style={{ fontFamily: 'var(--font-display)' }}
@@ -459,6 +441,17 @@ export default function RepositoryPage() {
         </div>
 
         {/* Section content */}
+        {activeSection === 'profile' && (
+          <section
+            className="p-5 border"
+            style={{ backgroundColor: 'var(--color-muted)', borderColor: 'var(--color-accent)' }}
+          >
+            <p className="text-xs mt-2" style={{ color: 'var(--color-muted-fg)' }}>
+              Add and update your information in the sections: Career Goals, Skills, Competencies, Experience, Tools &amp; Tech, Projects, Compensation, and Other.
+            </p>
+          </section>
+        )}
+
         {activeSection === 'goals' && (
           <div>
             <Label>Career Goals & Ambitions</Label>
