@@ -42,4 +42,16 @@ export interface GeneratedMaterials {
   applicationAnswers: string
 }
 
+export interface ProfileGap {
+  kind: 'skill' | 'experience'
+  requirement: string
+  details: string
+}
+
+export interface ConfirmedQualification {
+  kind: ProfileGap["kind"]
+  requirement: string
+  userContext: string
+}
+
 export type Page = 'landing' | 'home' | 'repository' | 'cv' | 'results'

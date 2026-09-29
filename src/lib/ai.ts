@@ -1,4 +1,9 @@
-import { ProfessionalRepository, GeneratedMaterials } from './types'
+import {
+  ProfessionalRepository,
+  GeneratedMaterials,
+  ProfileGap,
+  ConfirmedQualification,
+} from './types'
 
 const API_URL = 'https://api.anthropic.com/v1/messages'
 
@@ -119,8 +124,18 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with this ex
 export async function generateMaterials(
   repo: ProfessionalRepository,
   jobPosting: string,
-  apiKey: string
+  apiKey: string,
+  confirmedQualifications: ConfirmedQualification[] = []
 ): Promise<GeneratedMaterials> {
+  const confirmedContext = confirmedQualifications.length
+    ? `\n\nUSER-CONFIRMED QUALIFICATIONS FOR THIS APPLICATION ONLY:\n${confirmedQualifications
+        .map(
+          ({ kind, requirement, userContext }) =>
+            `- ${kind}: ${requirement}${userContext ? `\n  Candidate context: ${userContext}` : ''}`
+        )
+        .join('\n')}\n\nThe candidate explicitly confirmed each qualification above. Use it as relevant, but never invent examples, employers, dates, proficiency levels, duration, or outcomes. If no context is provided, mention only the qualification itself and do not imply a specific achievement or work history. Do not add these details to the candidate's saved profile.`
+    : ''
+
   const prompt = `You are an expert career coach and professional writer. Generate highly personalized job application materials.
 
 JOB OPPORTUNITY:
@@ -130,6 +145,7 @@ ${jobPosting}
 
 CANDIDATE'S PROFESSIONAL PROFILE:
 ${formatRepo(repo)}
+${confirmedContext}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -157,4 +173,51 @@ Respond ONLY with a valid JSON object (no markdown code blocks) with exactly the
   const match = text.match(/\{[\s\S]*\}/)
   if (!match) throw new Error('AI returned unexpected format')
   return JSON.parse(match[0])
+}
+
+export async function findProfileGaps(
+  repo: ProfessionalRepository,
+  jobPosting: string,
+  apiKey: string
+): Promise<ProfileGap[]> {
+  const prompt = `You are checking whether a candidate's professional profile may omit qualifications they already have.
+
+JOB POSTING:
+${jobPosting}
+
+CANDIDATE PROFILE:
+${formatRepo(repo)}
+
+Find at most 5 specific skills or types of experience explicitly required or preferred by the posting that are not stated or clearly supported in the profile. This is only a memory prompt for the candidate; do not decide whether they truly have the qualification.
+
+Rules:
+- Return only concrete qualifications from the posting, not generic traits or duties.
+- Do not list qualifications already supported by equivalent wording in the profile.
+- Do not infer a gap just because an exact keyword is absent.
+- Prefer the most important and recognizable items.
+- If the input is only a URL, too vague, or there are no plausible omitted qualifications, return an empty list.
+- Keep requirement concise and details to one short sentence grounded in the posting.
+
+Respond ONLY with valid JSON in this shape. Set kind to either "skill" or "experience":
+{"gaps":[{"kind":"skill","requirement":"short qualification name","details":"what the posting asks for"}]}`
+
+  const text = await callClaude(apiKey, prompt, 1200)
+
+  const match = text.match(/\{[\s\S]*\}/)
+  if (!match) throw new Error('AI returned unexpected format')
+
+  const parsed = JSON.parse(match[0]) as { gaps?: unknown }
+  if (!Array.isArray(parsed.gaps)) throw new Error('AI returned unexpected format')
+
+  return parsed.gaps
+    .filter(
+      (gap): gap is ProfileGap =>
+        typeof gap === 'object' &&
+        gap !== null &&
+        ((gap as ProfileGap).kind === 'skill' ||
+          (gap as ProfileGap).kind === 'experience') &&
+        typeof (gap as ProfileGap).requirement === 'string' &&
+        typeof (gap as ProfileGap).details === 'string'
+    )
+    .slice(0, 5)
 }

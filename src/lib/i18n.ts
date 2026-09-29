@@ -45,6 +45,9 @@ const messages = {
     "home.posting": "Posting",
     "home.pasteJobDetails": "Paste job details on the left",
     "home.generating": "Generating...",
+    "home.checkingRequirements": "Checking requirements...",
+    "home.checkingRequirementsNote":
+      "Looking for job requirements your profile may not mention yet.",
     "home.generateMaterials": "Generate Materials",
     "home.generatingNote":
       "Analyzing opportunity and tailoring your application — this may take 20–40 seconds.",
@@ -55,6 +58,22 @@ const messages = {
     "home.viewPreviousResults": "View Previous Results →",
     "home.generationFailed":
       "Generation failed. Check your API key and try again.",
+    "home.gapPromptEyebrow": "Quick profile check",
+    "home.gapPromptTitle": "Did we miss something?",
+    "home.gapPromptDescription":
+      "I couldn't find these job requirements in your profile. Sometimes we forget to mention things we know. Do any of these sound familiar?",
+    "home.gapTypeSkill": "Skill",
+    "home.gapTypeExperience": "Experience",
+    "home.gapConfirmSkill": "I have this skill",
+    "home.gapConfirmExperience": "I have this experience",
+    "home.gapExampleLabel": "Where have you used it? (optional)",
+    "home.gapExamplePlaceholder":
+      "Add a quick example or context to help tailor your application.",
+    "home.gapPromptPrivacyNote":
+      "Only the items you confirm will be used for this application. Your saved profile won't change.",
+    "home.backToPosting": "Back to posting",
+    "home.generateWithoutThese": "Generate without these",
+    "home.generateWithConfirmed": "Generate with {{count}} selected",
     "landing.howItWorks": "How it works",
     "landing.whatYouGet": "What you get",
     "landing.careerOsHome": "CareerOS home",
@@ -320,6 +339,9 @@ const messages = {
     "home.posting": "Vaga",
     "home.pasteJobDetails": "Cole os detalhes da vaga à esquerda",
     "home.generating": "Gerando...",
+    "home.checkingRequirements": "Conferindo requisitos...",
+    "home.checkingRequirementsNote":
+      "Procurando requisitos da vaga que talvez ainda não estejam no seu perfil.",
     "home.generateMaterials": "Gerar materiais",
     "home.generatingNote":
       "Analisando a oportunidade e personalizando sua candidatura — isso pode levar de 20 a 40 segundos.",
@@ -330,6 +352,22 @@ const messages = {
     "home.viewPreviousResults": "Ver resultados anteriores →",
     "home.generationFailed":
       "Falha ao gerar. Verifique sua chave API e tente novamente.",
+    "home.gapPromptEyebrow": "Revisão rápida do perfil",
+    "home.gapPromptTitle": "Faltou alguma coisa?",
+    "home.gapPromptDescription":
+      "Não encontrei estes requisitos da vaga no seu perfil. Às vezes esquecemos de mencionar algo que sabemos. Algum deles parece familiar?",
+    "home.gapTypeSkill": "Habilidade",
+    "home.gapTypeExperience": "Experiência",
+    "home.gapConfirmSkill": "Tenho esta habilidade",
+    "home.gapConfirmExperience": "Tenho esta experiência",
+    "home.gapExampleLabel": "Onde você usou isso? (opcional)",
+    "home.gapExamplePlaceholder":
+      "Dê um exemplo rápido ou contexto para personalizar sua candidatura.",
+    "home.gapPromptPrivacyNote":
+      "Somente os itens confirmados serão usados nesta candidatura. Seu perfil salvo não será alterado.",
+    "home.backToPosting": "Voltar à vaga",
+    "home.generateWithoutThese": "Gerar sem incluir estes itens",
+    "home.generateWithConfirmed": "Gerar com {{count}} selecionado(s)",
     "landing.howItWorks": "Como funciona",
     "landing.whatYouGet": "O que você recebe",
     "landing.careerOsHome": "Página inicial do CareerOS",
