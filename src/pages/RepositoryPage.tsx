@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react"
 import { useI18n, useStore } from "../lib/store"
 import { reviewRepository } from "../lib/ai"
+import { ProfileReviewError } from "../lib/ai"
 import {
   ExperienceEntry,
   ProjectEntry,
@@ -425,7 +426,17 @@ export default function RepositoryPage() {
       dispatch({ type: "SET_REPO", payload: updatedRepo })
       dispatch({ type: "SET_REVIEW_SUMMARY", payload: summary })
     } catch (e: any) {
-      setReviewError(e.message || t("repo.reviewFailed"))
+      const errorKey = e instanceof ProfileReviewError
+        ? ({
+            input: "repo.reviewErrorInput",
+            key: "repo.reviewErrorKey",
+            rate_limit: "repo.reviewErrorRateLimit",
+            outage: "repo.reviewErrorOutage",
+            timeout: "repo.reviewErrorTimeout",
+            invalid_output: "repo.reviewErrorInvalidOutput",
+          } as const)[e.code as "input" | "key" | "rate_limit" | "outage" | "timeout" | "invalid_output"]
+        : undefined
+      setReviewError(errorKey ? t(errorKey) : t("repo.reviewFailed"))
     } finally {
       dispatch({ type: "SET_REVIEWING", payload: false })
     }

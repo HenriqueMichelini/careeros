@@ -24,8 +24,8 @@ const messages = {
     "common.current": "Current",
     "api.keyConfigured": "API KEY ✓",
     "api.setKey": "! SET API KEY",
-    "api.anthropicKey": "Anthropic API Key",
-    "api.placeholder": "sk-ant-api03-...",
+    "api.openaiKey": "OpenAI API Key",
+    "api.placeholder": "sk-proj-...",
     "home.step": "Step 01 — Opportunity Input",
     "home.titleFind": "Find Your",
     "home.titleNext": "Next Role",
@@ -58,6 +58,8 @@ const messages = {
     "home.viewPreviousResults": "View Previous Results →",
     "home.generationFailed":
       "Generation failed. Check your API key and try again.",
+    "home.openaiMigrationPending":
+      "This OpenAI key is available for Profile Review. Application generation will be available after its OpenAI migration.",
     "home.gapPromptEyebrow": "Quick profile check",
     "home.gapPromptTitle": "Did we miss something?",
     "home.gapPromptDescription":
@@ -153,6 +155,12 @@ const messages = {
     "repo.reviewWithAi": "Review with AI",
     "repo.setApiKeyFirst": "Set your API key first.",
     "repo.reviewFailed": "Review failed. Try again.",
+    "repo.reviewErrorInput": "The profile is too large or contains invalid data. Review it and try again.",
+    "repo.reviewErrorKey": "The OpenAI API key is missing or invalid. Update your key and try again.",
+    "repo.reviewErrorRateLimit": "OpenAI is receiving too many requests. Wait a moment and try again.",
+    "repo.reviewErrorOutage": "The review service is temporarily unavailable. Try again shortly.",
+    "repo.reviewErrorTimeout": "The review took too long and was stopped. Try again with a smaller profile.",
+    "repo.reviewErrorInvalidOutput": "The review returned an incomplete result. Your saved profile was not changed.",
     "repo.last": "Last",
     "repo.profileIntro":
       "Add and update your information in the sections: Career Goals, Skills, Competencies, Experience, Tools & Tech, Projects, Compensation, and Other.",
@@ -318,8 +326,8 @@ const messages = {
     "common.current": "Atual",
     "api.keyConfigured": "CHAVE API ✓",
     "api.setKey": "! CONFIGURAR CHAVE API",
-    "api.anthropicKey": "Chave de API da Anthropic",
-    "api.placeholder": "sk-ant-api03-...",
+    "api.openaiKey": "Chave de API da OpenAI",
+    "api.placeholder": "sk-proj-...",
     "home.step": "Etapa 01 — Dados da oportunidade",
     "home.titleFind": "Encontre sua",
     "home.titleNext": "Próxima vaga",
@@ -352,6 +360,8 @@ const messages = {
     "home.viewPreviousResults": "Ver resultados anteriores →",
     "home.generationFailed":
       "Falha ao gerar. Verifique sua chave API e tente novamente.",
+    "home.openaiMigrationPending":
+      "Esta chave da OpenAI está disponível para Revisão do Perfil. A geração de candidaturas estará disponível após sua migração para OpenAI.",
     "home.gapPromptEyebrow": "Revisão rápida do perfil",
     "home.gapPromptTitle": "Faltou alguma coisa?",
     "home.gapPromptDescription":
@@ -451,6 +461,12 @@ const messages = {
     "repo.reviewWithAi": "Revisar com IA",
     "repo.setApiKeyFirst": "Configure sua chave API primeiro.",
     "repo.reviewFailed": "Falha na revisão. Tente novamente.",
+    "repo.reviewErrorInput": "O perfil é muito grande ou contém dados inválidos. Revise as informações e tente novamente.",
+    "repo.reviewErrorKey": "A chave da API da OpenAI está ausente ou é inválida. Atualize a chave e tente novamente.",
+    "repo.reviewErrorRateLimit": "A OpenAI está recebendo muitas solicitações. Aguarde um momento e tente novamente.",
+    "repo.reviewErrorOutage": "O serviço de revisão está temporariamente indisponível. Tente novamente em instantes.",
+    "repo.reviewErrorTimeout": "A revisão demorou demais e foi interrompida. Tente novamente com um perfil menor.",
+    "repo.reviewErrorInvalidOutput": "A revisão retornou um resultado incompleto. Seu perfil salvo não foi alterado.",
     "repo.last": "Última revisão",
     "repo.profileIntro":
       "Adicione e atualize suas informações nas seções: Objetivos de carreira, Habilidades, Competências, Experiência, Ferramentas e tecnologia, Projetos, Remuneração e Outros.",

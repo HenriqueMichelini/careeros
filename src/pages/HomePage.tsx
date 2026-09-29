@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useI18n, useStore } from "../lib/store"
-import { findProfileGaps, generateMaterials } from "../lib/ai"
+import { AnthropicWorkflowUnavailableError, findProfileGaps, generateMaterials } from "../lib/ai"
 import { ConfirmedQualification, Page, ProfileGap } from "../lib/types"
 
 interface Props {
@@ -106,7 +106,9 @@ export default function HomePage({ setPage }: Props) {
       dispatch({ type: "SET_MATERIALS", payload: materials })
       setPage("results")
     } catch (e: any) {
-      alert(e.message || t("home.generationFailed"))
+      alert(e instanceof AnthropicWorkflowUnavailableError
+        ? t("home.openaiMigrationPending")
+        : e.message || t("home.generationFailed"))
     } finally {
       setIsCheckingRequirements(false)
       dispatch({ type: "SET_GENERATING", payload: false })
@@ -143,7 +145,9 @@ export default function HomePage({ setPage }: Props) {
       setShowGapPrompt(false)
       setPage("results")
     } catch (e: any) {
-      alert(e.message || t("home.generationFailed"))
+      alert(e instanceof AnthropicWorkflowUnavailableError
+        ? t("home.openaiMigrationPending")
+        : e.message || t("home.generationFailed"))
     } finally {
       dispatch({ type: "SET_GENERATING", payload: false })
     }

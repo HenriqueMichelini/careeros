@@ -7,6 +7,20 @@ import {
 
 const API_URL = 'https://api.anthropic.com/v1/messages'
 
+export class ProfileReviewError extends Error {
+  constructor(public readonly code: string) {
+    super(code)
+    this.name = 'ProfileReviewError'
+  }
+}
+
+export class AnthropicWorkflowUnavailableError extends Error {
+  constructor() {
+    super('This OpenAI API key is available for Profile Review. Application generation will be available after its OpenAI migration.')
+    this.name = 'AnthropicWorkflowUnavailableError'
+  }
+}
+
 const employmentStatusLabels: Record<string, string> = {
   'employed-full-time': 'Employed — Full-time',
   'employed-part-time': 'Employed — Part-time',
@@ -65,6 +79,8 @@ function formatRepo(repo: ProfessionalRepository): string {
 }
 
 async function callClaude(apiKey: string, content: string, maxTokens = 4096): Promise<string> {
+  if (!apiKey.startsWith('sk-ant-')) throw new AnthropicWorkflowUnavailableError()
+
   const response = await fetch(API_URL, {
     method: 'POST',
     headers: {
@@ -94,31 +110,54 @@ export async function reviewRepository(
   changedSection: string,
   apiKey: string
 ): Promise<{ updatedRepo: ProfessionalRepository; summary: string }> {
-  const prompt = `You are an expert career coach and professional writing specialist reviewing a career repository.
+  const response = await fetch('/api/profile/review', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-OpenAI-Api-Key': apiKey,
+    },
+    body: JSON.stringify({ repository: repo, changedSection }),
+    signal: AbortSignal.timeout(30_000),
+  }).catch((error: unknown) => {
+    if (error instanceof DOMException && error.name === 'TimeoutError') {
+      throw new ProfileReviewError('timeout')
+    }
+    throw new ProfileReviewError('outage')
+  })
 
-The user just updated the "${changedSection}" section.
+  const payload = await response.json().catch(() => null) as
+    | { error?: unknown; updatedRepository?: unknown; summary?: unknown }
+    | null
+  if (!response.ok) {
+    const known = new Set(['input', 'key', 'rate_limit', 'outage', 'timeout', 'invalid_output'])
+    const code = typeof payload?.error === 'string' && known.has(payload.error)
+      ? payload.error
+      : 'outage'
+    throw new ProfileReviewError(code)
+  }
+  if (!payload || typeof payload.summary !== 'string' || !payload.summary.trim() ||
+      !isCompleteReviewRepository(payload.updatedRepository, repo)) {
+    throw new ProfileReviewError('invalid_output')
+  }
+  return { updatedRepo: payload.updatedRepository, summary: payload.summary }
+}
 
-CURRENT REPOSITORY:
-${formatRepo(repo)}
-
-FULL REPOSITORY JSON (for structural reference):
-${JSON.stringify(repo)}
-
-INSTRUCTIONS:
-1. Fix grammatical errors, typos, and awkward phrasing in the changed section
-2. Improve clarity, conciseness, and professional tone throughout
-3. Ensure consistency across all sections — if the change affects other sections' coherence, update them too
-4. Never invent facts — only refine what's already written
-5. Preserve all factual content: company names, dates, technologies, project names, numbers
-
-Respond ONLY with a valid JSON object (no markdown, no code blocks) with this exact shape:
-{"updatedRepo":${JSON.stringify(repo)},"summary":"1-2 sentence description of changes made"}`
-
-  const text = await callClaude(apiKey, prompt, 6000)
-
-  const match = text.match(/\{[\s\S]*\}/)
-  if (!match) throw new Error('AI returned unexpected format')
-  return JSON.parse(match[0])
+function isCompleteReviewRepository(value: unknown, original: ProfessionalRepository): value is ProfessionalRepository {
+  if (!value || typeof value !== 'object') return false
+  const result = value as Record<string, unknown>
+  const textFields = ['careerGoals', 'skills', 'competencies', 'tools', 'employmentStatus', 'currentSalary', 'desiredSalary', 'additionalInfo']
+  if (textFields.some((key) => typeof result[key] !== 'string')) return false
+  if (!Array.isArray(result.experience) || !Array.isArray(result.projects)) return false
+  if (result.experience.length !== original.experience.length || result.projects.length !== original.projects.length) return false
+  const sameEntries = (items: unknown[], expected: { id: string }[], fields: string[]) =>
+    items.every((item, index) => {
+      if (!item || typeof item !== 'object') return false
+      const record = item as Record<string, unknown>
+      return record.id === expected[index].id && fields.every((field) => typeof record[field] === 'string') &&
+        (fields.includes('current') ? typeof record.current === 'boolean' : true)
+    })
+  return sameEntries(result.experience, original.experience, ['company', 'title', 'startDate', 'endDate', 'location', 'description', 'responsibilities', 'achievements', 'current']) &&
+    sameEntries(result.projects, original.projects, ['name', 'description', 'technologies', 'url', 'highlights'])
 }
 
 export async function generateMaterials(

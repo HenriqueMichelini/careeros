@@ -125,7 +125,7 @@ export default function Layout({ page, setPage, children }: Props) {
                   color: "var(--color-muted-fg)",
                 }}
               >
-                {t("api.anthropicKey")}
+                {t("api.openaiKey")}
               </span>
               <input
                 type="password"
