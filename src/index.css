@@ -1,0 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;1,14..32,400&family=DM+Mono:wght@400;500&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --color-bg: #F7F6F4;
+  --color-fg: #111110;
+  --color-card: #FFFFFF;
+  --color-muted: #F0EFEC;
+  --color-muted-fg: #6B6A67;
+  --color-accent: #C8102E;
+  --color-accent-fg: #FFFFFF;
+  --color-border: #E2E0DB;
+  --color-ring: #C8102E;
+
+  --font-display: 'Barlow Condensed', sans-serif;
+  --font-sans: 'Inter', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-bg);
+  color: var(--color-fg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+}
