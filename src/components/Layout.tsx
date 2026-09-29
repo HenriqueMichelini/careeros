@@ -11,6 +11,7 @@ interface Props {
 const NAV_ITEMS: { id: Page; label: string }[] = [
   { id: 'home', label: 'Apply' },
   { id: 'repository', label: 'Profile' },
+  { id: 'cv', label: 'CV' },
   { id: 'results', label: 'Results' },
 ]
 

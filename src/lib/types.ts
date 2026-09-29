@@ -42,4 +42,4 @@ export interface GeneratedMaterials {
   applicationAnswers: string
 }
 
-export type Page = 'home' | 'repository' | 'results'
+export type Page = 'home' | 'repository' | 'cv' | 'results'
