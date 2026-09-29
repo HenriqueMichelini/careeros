@@ -281,6 +281,7 @@ export default function RepositoryPage() {
   const { state, dispatch } = useStore()
   const [activeSection, setActiveSection] = useState<Section>('goals')
   const [reviewError, setReviewError] = useState('')
+  const [profileDraft, setProfileDraft] = useState('')
   const repo = state.repository
 
   const updateRepo = useCallback(
@@ -426,6 +427,25 @@ export default function RepositoryPage() {
 
       {/* Main content */}
       <div>
+        <div className="mb-8">
+          <p
+            className="text-xs uppercase tracking-[0.18em] mb-2"
+            style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-muted-fg)' }}
+          >
+            AI-Assisted Profile Setup
+          </p>
+          <Label>Paste Your Professional Information</Label>
+          <Field
+            rows={5}
+            value={profileDraft}
+            onChange={setProfileDraft}
+            placeholder="Paste your résumé or professional background here."
+          />
+          <p className="text-xs mt-2 leading-relaxed" style={{ color: 'var(--color-muted-fg)' }}>
+            AI-assisted filling is coming soon. Text entered here is not saved; use the sections below to update your profile.
+          </p>
+        </div>
+
         <div className="mb-8">
           <h1
             className="text-5xl font-bold uppercase tracking-tight leading-none mb-2"
