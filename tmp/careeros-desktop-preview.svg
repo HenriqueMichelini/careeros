@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="900" viewBox="0 0 1280 900">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#000000" flood-opacity="0.16"/></filter>
+    <style>
+      .display { font-family: 'Arial Narrow', 'Roboto Condensed', Arial, sans-serif; font-weight: 800; }
+      .mono { font-family: 'Courier New', monospace; }
+      .body { font-family: Arial, sans-serif; }
+    </style>
+  </defs>
+  <rect width="1280" height="900" fill="#f7f6f4"/>
+  <rect x="0" y="0" width="1280" height="56" fill="#f7f6f4"/>
+  <line x1="0" y1="55.5" x2="1280" y2="55.5" stroke="#e2e0db"/>
+  <rect x="88" y="18" width="20" height="20" fill="#c8102e"/>
+  <text x="116" y="33" class="display" font-size="15" letter-spacing="2.2" fill="#111110">CAREEROS</text>
+  <rect x="365" y="14" width="78" height="28" fill="#111110"/>
+  <text x="404" y="32" class="mono" font-size="11" text-anchor="middle" letter-spacing="1.6" fill="#f7f6f4">APPLY</text>
+  <text x="464" y="32" class="mono" font-size="11" letter-spacing="1.6" fill="#6b6a67">PROFILE</text>
+  <text x="565" y="32" class="mono" font-size="11" letter-spacing="1.6" fill="#6b6a67">CV</text>
+  <text x="619" y="32" class="mono" font-size="11" letter-spacing="1.6" fill="#6b6a67">RESULTS</text>
+  <rect x="876" y="12" width="112" height="32" fill="none" stroke="#e2e0db"/>
+  <text x="892" y="32" class="mono" font-size="12" fill="#6b6a67">English</text>
+  <path d="M974 24l5 5 5-5" fill="none" stroke="#6b6a67" stroke-width="1.5"/>
+  <rect x="1000" y="12" width="192" height="32" fill="none" stroke="#c8102e"/>
+  <text x="1096" y="32" class="mono" font-size="11" text-anchor="middle" letter-spacing="1" fill="#c8102e">! SET API KEY</text>
+
+  <text x="88" y="123" class="mono" font-size="11" letter-spacing="3.2" fill="#6b6a67">STEP 01 — OPPORTUNITY INPUT</text>
+  <text x="88" y="203" class="display" font-size="64" letter-spacing="-1.2" fill="#111110">FIND YOUR</text>
+  <text x="88" y="267" class="display" font-size="64" letter-spacing="-1.2" fill="#c8102e">NEXT ROLE</text>
+  <text x="88" y="312" class="body" font-size="14" fill="#6b6a67">Paste a job posting URL, full job description, or any text about the</text>
+  <text x="88" y="334" class="body" font-size="14" fill="#6b6a67">opportunity. The AI will analyze it and generate tailored application</text>
+  <text x="88" y="356" class="body" font-size="14" fill="#6b6a67">materials from your profile.</text>
+  <text x="88" y="406" class="mono" font-size="11" letter-spacing="2" fill="#6b6a67">JOB POSTING OR DESCRIPTION</text>
+  <rect x="88" y="422" width="756" height="390" fill="#ffffff" stroke="#e2e0db"/>
+  <text x="104" y="454" class="mono" font-size="12" fill="#aaa8a3">Paste the full job description, URL, or any text about the role you're</text>
+  <text x="104" y="476" class="mono" font-size="12" fill="#aaa8a3">applying to. Include requirements, responsibilities, company info — the</text>
+  <text x="104" y="498" class="mono" font-size="12" fill="#aaa8a3">more detail, the better the tailoring.</text>
+  <text x="892" y="430" class="mono" font-size="11" letter-spacing="2" fill="#6b6a67">CHECKLIST</text>
+  <circle cx="895" cy="461" r="3" fill="#e2e0db"/>
+  <text x="910" y="464" class="mono" font-size="10" letter-spacing="1.2" fill="#6b6a67">API KEY</text>
+  <text x="910" y="482" class="mono" font-size="11" fill="#6b6a67">Click "! SET API KEY" above</text>
+  <line x1="892" y1="499" x2="1192" y2="499" stroke="#e2e0db"/>
+  <circle cx="895" cy="526" r="3" fill="#e2e0db"/>
+  <text x="910" y="529" class="mono" font-size="10" letter-spacing="1.2" fill="#6b6a67">PROFILE</text>
+  <text x="910" y="547" class="mono" font-size="11" fill="#6b6a67">Go to Profile and add your info</text>
+  <line x1="892" y1="564" x2="1192" y2="564" stroke="#e2e0db"/>
+  <circle cx="895" cy="591" r="3" fill="#e2e0db"/>
+  <text x="910" y="594" class="mono" font-size="10" letter-spacing="1.2" fill="#6b6a67">POSTING</text>
+  <text x="910" y="612" class="mono" font-size="11" fill="#6b6a67">Paste job details on the left</text>
+  <line x1="892" y1="629" x2="1192" y2="629" stroke="#e2e0db"/>
+  <rect x="892" y="653" width="300" height="52" fill="#f0efec"/>
+  <text x="1042" y="684" class="display" font-size="13" text-anchor="middle" letter-spacing="2" fill="#6b6a67">GENERATE MATERIALS</text>
+  <text x="892" y="748" class="mono" font-size="11" letter-spacing="2" fill="#6b6a67">OUTPUT</text>
+  <text x="892" y="779" class="mono" font-size="10" fill="#c8102e">01</text>
+  <text x="916" y="779" class="body" font-size="13" fill="#111110">Tailored Résumé</text>
+  <text x="892" y="806" class="mono" font-size="10" fill="#c8102e">02</text>
+  <text x="916" y="806" class="body" font-size="13" fill="#111110">Cover Letter</text>
+
+  <rect x="0" y="56" width="1280" height="844" fill="#111110" opacity="0.54"/>
+  <rect x="304" y="104" width="672" height="692" fill="#ffffff" stroke="#e2e0db" filter="url(#shadow)"/>
+  <text x="336" y="146" class="mono" font-size="11" letter-spacing="2" fill="#c8102e">QUICK PROFILE CHECK</text>
+  <text x="336" y="193" class="display" font-size="42" letter-spacing="-0.4" fill="#111110">DID WE MISS SOMETHING?</text>
+  <text x="336" y="229" class="body" font-size="14" fill="#6b6a67">I couldn't find these job requirements in your profile. Sometimes we</text>
+  <text x="336" y="250" class="body" font-size="14" fill="#6b6a67">forget to mention things we know. Do any of these sound familiar?</text>
+
+  <rect x="336" y="270" width="608" height="202" fill="#f7f6f4" stroke="#111110"/>
+  <rect x="352" y="288" width="16" height="16" fill="#c8102e"/>
+  <path d="M355 296l4 4 7-8" fill="none" stroke="#ffffff" stroke-width="2"/>
+  <text x="380" y="301" class="body" font-size="14" font-weight="600" fill="#111110">Advanced SQL</text>
+  <rect x="478" y="284" width="53" height="23" fill="#f0efec"/>
+  <text x="504" y="299" class="mono" font-size="9" text-anchor="middle" letter-spacing="1" fill="#6b6a67">SKILL</text>
+  <text x="380" y="326" class="body" font-size="12" fill="#6b6a67">The role asks for advanced SQL to analyze large datasets and optimize</text>
+  <text x="380" y="344" class="body" font-size="12" fill="#6b6a67">queries.</text>
+  <text x="380" y="369" class="body" font-size="12" fill="#111110">I have this skill</text>
+  <text x="352" y="397" class="mono" font-size="9" letter-spacing="1" fill="#6b6a67">WHERE HAVE YOU USED IT? (OPTIONAL)</text>
+  <rect x="352" y="408" width="576" height="48" fill="#ffffff" stroke="#e2e0db"/>
+  <text x="364" y="428" class="mono" font-size="10" fill="#9a9892">Used SQL to build reporting dashboards for three client accounts.</text>
+
+  <rect x="336" y="484" width="608" height="116" fill="#ffffff" stroke="#e2e0db"/>
+  <rect x="352" y="502" width="16" height="16" fill="#ffffff" stroke="#6b6a67"/>
+  <text x="380" y="515" class="body" font-size="14" font-weight="600" fill="#111110">Experiment design</text>
+  <rect x="512" y="498" width="93" height="23" fill="#f0efec"/>
+  <text x="558" y="513" class="mono" font-size="9" text-anchor="middle" letter-spacing="1" fill="#6b6a67">EXPERIENCE</text>
+  <text x="380" y="540" class="body" font-size="12" fill="#6b6a67">The role calls for designing A/B tests and interpreting results.</text>
+  <text x="380" y="570" class="body" font-size="12" fill="#111110">I have this experience</text>
+
+  <text x="336" y="627" class="body" font-size="11" fill="#6b6a67">Only items you confirm will be used for this application. Your saved profile won't change.</text>
+  <line x1="336" y1="650" x2="944" y2="650" stroke="#e2e0db"/>
+  <text x="336" y="690" class="mono" font-size="10" letter-spacing="1" fill="#6b6a67">BACK TO POSTING</text>
+  <rect x="560" y="666" width="178" height="48" fill="#ffffff" stroke="#e2e0db"/>
+  <text x="649" y="695" class="mono" font-size="9" text-anchor="middle" letter-spacing="0.7" fill="#6b6a67">GENERATE WITHOUT THESE</text>
+  <rect x="750" y="666" width="194" height="48" fill="#111110"/>
+  <text x="847" y="695" class="mono" font-size="9" text-anchor="middle" letter-spacing="0.7" fill="#f7f6f4">GENERATE WITH 1 SELECTED</text>
+
+  <rect x="1090" y="74" width="112" height="24" fill="#ffffff" opacity="0.95"/>
+  <text x="1146" y="90" class="mono" font-size="9" text-anchor="middle" letter-spacing="1" fill="#6b6a67">SAMPLE PREVIEW</text>
+</svg>

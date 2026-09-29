@@ -9,6 +9,12 @@ This document records the agreed design for a backend serving the existing Caree
 - Keep the profile in browser storage and the current application draft in application memory. All three workflows send the full profile to the selected provider, including employment and compensation fields, as the frontend does today.
 - Preserve the current gap-confirmation flow: qualifications confirmed for one job opportunity may inform that application draft but do not modify the saved profile.
 
+## Technical stack
+
+- Keep the existing React, Vite, Tailwind CSS, and TypeScript frontend. Use Go for all backend application logic, with the standard HTTP and JSON libraries for the three fixed workflows and outbound Anthropic/OpenAI calls. Use the small AWS Lambda Go adapter required by Netlify Functions; no backend web framework, database, or application-owned AI key is needed.
+- In Figma Make preview, the running Vite server forwards same-origin API requests to a local Go process using the same workflow code. In production, the Vite frontend and Go Functions deploy together on Netlify Free. The production frontend calls the Functions on the same origin.
+- Use Go's standard test runner for backend contract and failure tests. Test the frontend integration in the browser and complete the live provider checks below. Use pnpm for frontend tooling; the repository's npm and pnpm lockfiles must be reconciled only after confirming Figma Make's install path.
+
 ## Backend contract
 
 - Expose only the three fixed workflows. The backend owns their prompts, provider calls, input checks, and response validation. It does not expose an arbitrary prompt or provider relay.
@@ -25,10 +31,10 @@ This document records the agreed design for a backend serving the existing Caree
 
 ## Non-functional requirements
 
-- **Platform cost:** Hosting must have no required recurring charge. Free-tier limits are acceptable and must not trigger automatic paid upgrades. If the free quota is exhausted, the UI shows a clear service-unavailable error.
-- **Deployment:** The same API behavior must work in the running Figma Make preview and in the deployed app. The selected approach is Vite development middleware for the preview and Cloudflare Pages Functions for deployment, sharing the request handlers. The Vite frontend is deployed on Cloudflare Pages. No database is required for v1.
+- **Platform cost:** Hosting must have no required recurring charge. Free-tier limits are acceptable and must not trigger automatic paid upgrades. The UI shows a clear service-unavailable error for API failures while the site remains available. If Netlify Free credits are exhausted, Netlify may pause the entire site until the next monthly reset; this is the accepted availability trade-off for a hard free limit.
+- **Deployment:** The same Go workflow behavior must work in the running Figma Make preview and the deployed Netlify app. Netlify's Free plan must remain selected, with no automatic paid upgrade. No database is required for v1.
 - **Privacy:** The backend does not store profiles, job postings, confirmed qualifications, application drafts, or provider keys. Application logs contain only operational metadata such as workflow, provider, status, and duration, never keys or user content. The deployed frontend-to-backend and backend-to-provider connections use HTTPS; responses containing user content are not cached by the application.
-- **Cost and resource bounds:** The API enforces explicit profile and job-posting size limits before a provider call and reports an exceeded limit clearly. Numeric limits and timeout values are set from representative content and runtime measurements before acceptance.
+- **Cost and resource bounds:** The API enforces explicit profile and job-posting size limits before a provider call and reports an exceeded limit clearly. Numeric limits and timeout values are set from representative content and runtime measurements before acceptance. Every synchronous workflow must complete within Netlify Functions' 60-second limit, including provider latency. If live calls cannot meet that limit reliably, deployment acceptance fails and the host must be reconsidered before launch.
 - **Failure behavior:** The app never silently makes another provider call after a timeout, invalid output, or provider failure. It never silently switches to a more expensive model.
 
 ## Acceptance gates
@@ -36,12 +42,12 @@ This document records the agreed design for a backend serving the existing Caree
 - Validate all three workflows in the Figma Make preview and the deployed app with real Anthropic and OpenAI keys: six live provider paths in each environment. Keys must be supplied through a secure configuration or UI flow, never committed or pasted into source.
 - Check the returned profile and application draft structures and inspect representative outputs for completeness and unsupported factual claims. Validate that confirmed qualifications remain specific to one draft.
 - Exercise input-limit, invalid-key, provider-failure, malformed-output, timeout, and free-quota error paths without making unapproved repeat provider calls.
-- Verify that neither application storage nor logs on the backend retain keys or user content. Confirm the deployed app works over HTTPS and remains within the free hosting plan.
+- Verify that neither application storage nor logs on the backend retain keys or user content. Confirm the deployed app works over HTTPS, stays on Netlify Free, and that its documented pause behavior is understood when free credits are exhausted.
 
 ## Current evidence and platform notes
 
 - The frontend currently saves the profile and Anthropic key in `localStorage`, holds the generated draft in memory, and calls Anthropic from `src/lib/ai.ts` for the three workflows. It has no backend, database, or sign-in flow.
-- As checked on 2026-09-29, Cloudflare lists static Pages requests as free and a shared Workers/Pages Functions Free quota of 100,000 function requests per day. [Pages Functions pricing](https://developers.cloudflare.com/pages/functions/pricing/), [Workers limits](https://developers.cloudflare.com/workers/platform/limits/).
+- As checked on 2026-09-29, Netlify documents Go Functions through its Lambda-compatible API, a 60-second synchronous execution limit, and a Free plan with a hard monthly credit limit that pauses service rather than charging. Netlify states that commercial projects may use its Free plan. [Go Functions](https://docs.netlify.com/build/functions/lambda-compatibility/), [Function limits](https://docs.netlify.com/build/functions/configuration/), [Free pricing](https://www.netlify.com/pricing/), [commercial use](https://www.netlify.com/blog/introducing-netlify-free-plan/).
 - As checked on 2026-09-29, Claude Haiku 4.5 lists $1 per million input tokens and $5 per million output tokens and has no effort parameter. [Anthropic model page](https://platform.claude.com/docs/en/models/haiku-4-5/overview).
 - As checked on 2026-09-29, GPT-6 Luna lists $0.10 per million input tokens and $0.50 per million output tokens and supports `reasoning.effort: "none"`. [Official OpenAI model page](https://developers.openai.com/api/docs/models/gpt-6-luna). Older GPT-5 nano has lower published rates, but its dated snapshot is scheduled for removal on 2026-12-11. [Official OpenAI model page](https://developers.openai.com/api/docs/models/gpt-5-nano), [deprecation schedule](https://developers.openai.com/api/docs/deprecations).
 

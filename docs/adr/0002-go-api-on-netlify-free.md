@@ -1,0 +1,3 @@
+# Run the v1 Go API with the frontend on Netlify Free
+
+V1 uses Go for its stateless AI workflows and deploys the Go Functions with the existing Vite frontend on Netlify Free. This replaces the earlier Cloudflare Pages Functions target: Cloudflare does not run Go natively on its free Workers runtime, while its native containers require a paid plan. Netlify supports Go Functions, commercial use on its Free plan, and a hard monthly limit, so the app can remain on one free host. The trade-offs are Netlify's 60-second synchronous Function limit and a whole-site pause if free credits run out; live calls must prove all three workflows finish reliably within the time limit before deployment is accepted.
