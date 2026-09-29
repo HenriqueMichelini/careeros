@@ -1,21 +1,89 @@
-import { useState, useCallback } from 'react'
-import { useStore } from '../lib/store'
-import { reviewRepository } from '../lib/ai'
-import { ExperienceEntry, ProjectEntry, ProfessionalRepository } from '../lib/types'
+import { useState, useCallback } from "react"
+import { useI18n, useStore } from "../lib/store"
+import { reviewRepository } from "../lib/ai"
+import {
+  ExperienceEntry,
+  ProjectEntry,
+  ProfessionalRepository,
+} from "../lib/types"
+import { TranslationKey } from "../lib/i18n"
 
-type Section = 'profile' | 'goals' | 'skills' | 'competencies' | 'experience' | 'tools' | 'projects' | 'compensation' | 'other'
+type Section = "profile" | "goals" | "skills" | "competencies" | "experience" | "tools" | "projects" | "compensation" | "other"
 
-const SECTIONS: { id: Section; label: string; desc: string }[] = [
-  { id: 'profile', label: 'PROFILE', desc: 'Edit your professional details by section' },
-  { id: 'goals', label: 'Career Goals', desc: 'Ambitions, target roles, long-term vision' },
-  { id: 'skills', label: 'Skills', desc: 'Technical and professional skills' },
-  { id: 'competencies', label: 'Competencies', desc: 'Core strengths and soft skills' },
-  { id: 'experience', label: 'Experience', desc: 'Work history, responsibilities, achievements' },
-  { id: 'tools', label: 'Tools & Tech', desc: 'Software, frameworks, platforms' },
-  { id: 'projects', label: 'Projects', desc: 'Personal and side projects' },
-  { id: 'compensation', label: 'Compensation', desc: 'Current and desired salary' },
-  { id: 'other', label: 'Other', desc: 'Certifications, education, languages, etc.' },
+const SECTIONS: {
+  id: Section
+  labelKey: TranslationKey
+  descKey: TranslationKey
+}[] = [
+  {
+    id: "profile",
+    labelKey: "repo.section.profile",
+    descKey: "repo.section.profileDesc",
+  },
+  {
+    id: "goals",
+    labelKey: "repo.section.goals",
+    descKey: "repo.section.goalsDesc",
+  },
+  {
+    id: "skills",
+    labelKey: "repo.section.skills",
+    descKey: "repo.section.skillsDesc",
+  },
+  {
+    id: "competencies",
+    labelKey: "repo.section.competencies",
+    descKey: "repo.section.competenciesDesc",
+  },
+  {
+    id: "experience",
+    labelKey: "repo.section.experience",
+    descKey: "repo.section.experienceDesc",
+  },
+  {
+    id: "tools",
+    labelKey: "repo.section.tools",
+    descKey: "repo.section.toolsDesc",
+  },
+  {
+    id: "projects",
+    labelKey: "repo.section.projects",
+    descKey: "repo.section.projectsDesc",
+  },
+  {
+    id: "compensation",
+    labelKey: "repo.section.compensation",
+    descKey: "repo.section.compensationDesc",
+  },
+  {
+    id: "other",
+    labelKey: "repo.section.other",
+    descKey: "repo.section.otherDesc",
+  },
 ]
+
+const EMPLOYMENT_STATUS_OPTIONS = [
+  { value: "employed-full-time", key: "repo.status.employedFullTime" },
+  { value: "employed-part-time", key: "repo.status.employedPartTime" },
+  { value: "employed-contract", key: "repo.status.employedContract" },
+  { value: "freelance", key: "repo.status.freelance" },
+  { value: "looking", key: "repo.status.looking" },
+  { value: "open", key: "repo.status.open" },
+  { value: "unemployed", key: "repo.status.unemployed" },
+  { value: "student", key: "repo.status.student" },
+] as const
+
+const LEGACY_EMPLOYMENT_STATUS: Record<string, string> = {
+  Employed: "employed-full-time",
+  "Employed — Full-time": "employed-full-time",
+  "Employed — Part-time": "employed-part-time",
+  "Employed — Contract": "employed-contract",
+  "Freelance / Self-employed": "freelance",
+  "Actively looking for work": "looking",
+  "Open to opportunities (not actively searching)": "open",
+  Unemployed: "unemployed",
+  Student: "student",
+}
 
 function uid() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36)
@@ -25,7 +93,7 @@ function Label({ children }: { children: React.ReactNode }) {
   return (
     <label
       className="text-xs uppercase tracking-[0.18em] block mb-2"
-      style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-muted-fg)' }}
+      style={{ fontFamily: "var(--font-mono)", color: "var(--color-muted-fg)" }}
     >
       {children}
     </label>
@@ -47,17 +115,17 @@ function Field({
     <textarea
       rows={rows}
       value={value}
-      onChange={e => onChange(e.target.value)}
+      onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       className="w-full text-sm p-3 resize-none focus:outline-none transition-colors leading-relaxed"
       style={{
-        border: '1px solid var(--color-border)',
-        backgroundColor: 'var(--color-card)',
-        color: 'var(--color-fg)',
-        fontFamily: 'var(--font-sans)',
+        border: "1px solid var(--color-border)",
+        backgroundColor: "var(--color-card)",
+        color: "var(--color-fg)",
+        fontFamily: "var(--font-sans)",
       }}
-      onFocus={e => (e.target.style.borderColor = 'var(--color-fg)')}
-      onBlur={e => (e.target.style.borderColor = 'var(--color-border)')}
+      onFocus={(e) => (e.target.style.borderColor = "var(--color-fg)")}
+      onBlur={(e) => (e.target.style.borderColor = "var(--color-border)")}
     />
   )
 }
@@ -66,7 +134,7 @@ function TextInput({
   value,
   onChange,
   placeholder,
-  type = 'text',
+  type = "text",
 }: {
   value: string
   onChange: (v: string) => void
@@ -77,17 +145,17 @@ function TextInput({
     <input
       type={type}
       value={value}
-      onChange={e => onChange(e.target.value)}
+      onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       className="w-full text-sm px-3 py-2 focus:outline-none transition-colors"
       style={{
-        border: '1px solid var(--color-border)',
-        backgroundColor: 'var(--color-card)',
-        color: 'var(--color-fg)',
-        fontFamily: 'var(--font-sans)',
+        border: "1px solid var(--color-border)",
+        backgroundColor: "var(--color-card)",
+        color: "var(--color-fg)",
+        fontFamily: "var(--font-sans)",
       }}
-      onFocus={e => (e.target.style.borderColor = 'var(--color-fg)')}
-      onBlur={e => (e.target.style.borderColor = 'var(--color-border)')}
+      onFocus={(e) => (e.target.style.borderColor = "var(--color-fg)")}
+      onBlur={(e) => (e.target.style.borderColor = "var(--color-border)")}
     />
   )
 }
@@ -101,54 +169,80 @@ function ExperienceForm({
   onChange: (e: ExperienceEntry) => void
   onDelete: () => void
 }) {
+  const { t } = useI18n()
   const u = (field: keyof ExperienceEntry) => (v: string | boolean) =>
     onChange({ ...entry, [field]: v })
 
   return (
     <div
       className="p-5 mb-4 border"
-      style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-card)' }}
+      style={{
+        borderColor: "var(--color-border)",
+        backgroundColor: "var(--color-card)",
+      }}
     >
       <div className="flex justify-between items-start mb-4">
         <span
           className="text-xs uppercase tracking-widest"
-          style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-muted-fg)' }}
+          style={{
+            fontFamily: "var(--font-mono)",
+            color: "var(--color-muted-fg)",
+          }}
         >
-          Position
+          {t("repo.position")}
         </span>
         <button
           onClick={onDelete}
           className="text-xs transition-opacity hover:opacity-60"
-          style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-accent)' }}
+          style={{
+            fontFamily: "var(--font-mono)",
+            color: "var(--color-accent)",
+          }}
         >
-          Remove
+          {t("common.remove")}
         </button>
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
-          <Label>Job Title</Label>
-          <TextInput value={entry.title} onChange={u('title')} placeholder="Senior Software Engineer" />
+          <Label>{t("repo.jobTitle")}</Label>
+          <TextInput
+            value={entry.title}
+            onChange={u("title")}
+            placeholder={t("repo.jobTitlePlaceholder")}
+          />
         </div>
         <div>
-          <Label>Company</Label>
-          <TextInput value={entry.company} onChange={u('company')} placeholder="Acme Corp" />
+          <Label>{t("repo.company")}</Label>
+          <TextInput
+            value={entry.company}
+            onChange={u("company")}
+            placeholder={t("repo.companyPlaceholder")}
+          />
         </div>
         <div>
-          <Label>Location</Label>
-          <TextInput value={entry.location} onChange={u('location')} placeholder="San Francisco, CA / Remote" />
+          <Label>{t("repo.location")}</Label>
+          <TextInput
+            value={entry.location}
+            onChange={u("location")}
+            placeholder={t("repo.locationPlaceholder")}
+          />
         </div>
         <div className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end">
           <div>
-            <Label>Start Date</Label>
-            <TextInput value={entry.startDate} onChange={u('startDate')} placeholder="Jan 2021" />
+            <Label>{t("repo.startDate")}</Label>
+            <TextInput
+              value={entry.startDate}
+              onChange={u("startDate")}
+              placeholder={t("repo.startDatePlaceholder")}
+            />
           </div>
           <div>
-            <Label>End Date</Label>
+            <Label>{t("repo.endDate")}</Label>
             <TextInput
               value={entry.endDate}
-              onChange={u('endDate')}
-              placeholder="Dec 2023"
+              onChange={u("endDate")}
+              placeholder={t("repo.endDatePlaceholder")}
             />
           </div>
           <div className="flex items-center gap-1.5 pb-2">
@@ -156,15 +250,18 @@ function ExperienceForm({
               type="checkbox"
               id={`current-${entry.id}`}
               checked={entry.current}
-              onChange={e => u('current')(e.target.checked)}
+              onChange={(e) => u("current")(e.target.checked)}
               className="cursor-pointer"
             />
             <label
               htmlFor={`current-${entry.id}`}
               className="text-xs cursor-pointer"
-              style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-muted-fg)' }}
+              style={{
+                fontFamily: "var(--font-mono)",
+                color: "var(--color-muted-fg)",
+              }}
             >
-              Current
+              {t("common.current")}
             </label>
           </div>
         </div>
@@ -172,30 +269,30 @@ function ExperienceForm({
 
       <div className="space-y-4">
         <div>
-          <Label>Overview / Description</Label>
+          <Label>{t("repo.overview")}</Label>
           <Field
             rows={3}
             value={entry.description}
-            onChange={u('description')}
-            placeholder="Brief overview of the role and your scope of work."
+            onChange={u("description")}
+            placeholder={t("repo.overviewPlaceholder")}
           />
         </div>
         <div>
-          <Label>Responsibilities</Label>
+          <Label>{t("repo.responsibilities")}</Label>
           <Field
             rows={4}
             value={entry.responsibilities}
-            onChange={u('responsibilities')}
-            placeholder="Key responsibilities — use one per line or bullet points."
+            onChange={u("responsibilities")}
+            placeholder={t("repo.responsibilitiesPlaceholder")}
           />
         </div>
         <div>
-          <Label>Achievements & Impact</Label>
+          <Label>{t("repo.achievements")}</Label>
           <Field
             rows={4}
             value={entry.achievements}
-            onChange={u('achievements')}
-            placeholder="Quantified achievements and notable outcomes. Include metrics where possible."
+            onChange={u("achievements")}
+            placeholder={t("repo.achievementsPlaceholder")}
           />
         </div>
       </div>
@@ -212,65 +309,84 @@ function ProjectForm({
   onChange: (e: ProjectEntry) => void
   onDelete: () => void
 }) {
-  const u = (field: keyof ProjectEntry) => (v: string) => onChange({ ...entry, [field]: v })
+  const { t } = useI18n()
+  const u = (field: keyof ProjectEntry) => (v: string) =>
+    onChange({ ...entry, [field]: v })
 
   return (
     <div
       className="p-5 mb-4 border"
-      style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-card)' }}
+      style={{
+        borderColor: "var(--color-border)",
+        backgroundColor: "var(--color-card)",
+      }}
     >
       <div className="flex justify-between items-start mb-4">
         <span
           className="text-xs uppercase tracking-widest"
-          style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-muted-fg)' }}
+          style={{
+            fontFamily: "var(--font-mono)",
+            color: "var(--color-muted-fg)",
+          }}
         >
-          Project
+          {t("repo.project")}
         </span>
         <button
           onClick={onDelete}
           className="text-xs transition-opacity hover:opacity-60"
-          style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-accent)' }}
+          style={{
+            fontFamily: "var(--font-mono)",
+            color: "var(--color-accent)",
+          }}
         >
-          Remove
+          {t("common.remove")}
         </button>
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
-          <Label>Project Name</Label>
-          <TextInput value={entry.name} onChange={u('name')} placeholder="OpenMetrics Dashboard" />
+          <Label>{t("repo.projectName")}</Label>
+          <TextInput
+            value={entry.name}
+            onChange={u("name")}
+            placeholder={t("repo.projectNamePlaceholder")}
+          />
         </div>
         <div>
-          <Label>URL</Label>
-          <TextInput value={entry.url} onChange={u('url')} placeholder="https://github.com/you/project" />
+          <Label>{t("repo.url")}</Label>
+          <TextInput
+            value={entry.url}
+            onChange={u("url")}
+            placeholder={t("repo.urlPlaceholder")}
+          />
         </div>
       </div>
 
       <div className="space-y-4">
         <div>
-          <Label>Description</Label>
+          <Label>{t("repo.description")}</Label>
           <Field
             rows={3}
             value={entry.description}
-            onChange={u('description')}
-            placeholder="What is this project and why did you build it?"
+            onChange={u("description")}
+            placeholder={t("repo.descriptionPlaceholder")}
           />
         </div>
         <div>
-          <Label>Technologies Used</Label>
+          <Label>{t("repo.technologiesUsed")}</Label>
           <TextInput
             value={entry.technologies}
-            onChange={u('technologies')}
-            placeholder="React, TypeScript, PostgreSQL, Docker"
+            onChange={u("technologies")}
+            placeholder={t("repo.technologiesPlaceholder")}
           />
         </div>
         <div>
-          <Label>Highlights & Impact</Label>
+          <Label>{t("repo.highlights")}</Label>
           <Field
             rows={3}
             value={entry.highlights}
-            onChange={u('highlights')}
-            placeholder="Key features, technical challenges solved, users reached, or results achieved."
+            onChange={u("highlights")}
+            placeholder={t("repo.highlightsPlaceholder")}
           />
         </div>
       </div>
@@ -280,80 +396,92 @@ function ProjectForm({
 
 export default function RepositoryPage() {
   const { state, dispatch } = useStore()
-  const [activeSection, setActiveSection] = useState<Section>('profile')
-  const [reviewError, setReviewError] = useState('')
+  const { t } = useI18n()
+  const [activeSection, setActiveSection] = useState<Section>("profile")
+  const [reviewError, setReviewError] = useState("")
   const repo = state.repository
 
   const updateRepo = useCallback(
     (patch: Partial<ProfessionalRepository>) =>
-      dispatch({ type: 'SET_REPO', payload: { ...repo, ...patch } }),
-    [repo, dispatch]
+      dispatch({ type: "SET_REPO", payload: { ...repo, ...patch } }),
+    [repo, dispatch],
   )
 
   async function handleAiReview() {
     if (!state.apiKey) {
-      setReviewError('Set your API key first.')
+      setReviewError(t("repo.setApiKeyFirst"))
       return
     }
-    setReviewError('')
-    dispatch({ type: 'SET_REVIEWING', payload: true })
+    setReviewError("")
+    dispatch({ type: "SET_REVIEWING", payload: true })
     try {
-      const sectionLabel = SECTIONS.find(s => s.id === activeSection)?.label || activeSection
-      const { updatedRepo, summary } = await reviewRepository(repo, sectionLabel, state.apiKey)
-      dispatch({ type: 'SET_REPO', payload: updatedRepo })
-      dispatch({ type: 'SET_REVIEW_SUMMARY', payload: summary })
+      const section = SECTIONS.find((s) => s.id === activeSection)
+      const sectionLabel = section ? t(section.labelKey) : activeSection
+      const { updatedRepo, summary } = await reviewRepository(
+        repo,
+        sectionLabel,
+        state.apiKey,
+      )
+      dispatch({ type: "SET_REPO", payload: updatedRepo })
+      dispatch({ type: "SET_REVIEW_SUMMARY", payload: summary })
     } catch (e: any) {
-      setReviewError(e.message || 'Review failed. Try again.')
+      setReviewError(e.message || t("repo.reviewFailed"))
     } finally {
-      dispatch({ type: 'SET_REVIEWING', payload: false })
+      dispatch({ type: "SET_REVIEWING", payload: false })
     }
   }
 
   function addExperience() {
     const entry: ExperienceEntry = {
       id: uid(),
-      company: '',
-      title: '',
-      startDate: '',
-      endDate: '',
+      company: "",
+      title: "",
+      startDate: "",
+      endDate: "",
       current: false,
-      location: '',
-      description: '',
-      responsibilities: '',
-      achievements: '',
+      location: "",
+      description: "",
+      responsibilities: "",
+      achievements: "",
     }
     updateRepo({ experience: [entry, ...repo.experience] })
   }
 
   function updateExperience(id: string, updated: ExperienceEntry) {
-    updateRepo({ experience: repo.experience.map(e => (e.id === id ? updated : e)) })
+    updateRepo({
+      experience: repo.experience.map((e) => (e.id === id ? updated : e)),
+    })
   }
 
   function deleteExperience(id: string) {
-    updateRepo({ experience: repo.experience.filter(e => e.id !== id) })
+    updateRepo({ experience: repo.experience.filter((e) => e.id !== id) })
   }
 
   function addProject() {
     const entry: ProjectEntry = {
       id: uid(),
-      name: '',
-      description: '',
-      technologies: '',
-      url: '',
-      highlights: '',
+      name: "",
+      description: "",
+      technologies: "",
+      url: "",
+      highlights: "",
     }
     updateRepo({ projects: [entry, ...repo.projects] })
   }
 
   function updateProject(id: string, updated: ProjectEntry) {
-    updateRepo({ projects: repo.projects.map(p => (p.id === id ? updated : p)) })
+    updateRepo({
+      projects: repo.projects.map((p) => (p.id === id ? updated : p)),
+    })
   }
 
   function deleteProject(id: string) {
-    updateRepo({ projects: repo.projects.filter(p => p.id !== id) })
+    updateRepo({ projects: repo.projects.filter((p) => p.id !== id) })
   }
 
-  const active = SECTIONS.find(s => s.id === activeSection)!
+  const active = SECTIONS.find((s) => s.id === activeSection)!
+  const employmentStatus =
+    LEGACY_EMPLOYMENT_STATUS[repo.employmentStatus] || repo.employmentStatus
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-10 grid grid-cols-[220px_1fr] gap-12">
@@ -361,56 +489,92 @@ export default function RepositoryPage() {
       <aside>
         <p
           className="text-xs uppercase tracking-[0.25em] mb-5"
-          style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-muted-fg)' }}
+          style={{
+            fontFamily: "var(--font-mono)",
+            color: "var(--color-muted-fg)",
+          }}
         >
-          Sections
+          {t("repo.sections")}
         </p>
         <nav className="space-y-0.5">
-          {SECTIONS.map(({ id, label }) => (
+          {SECTIONS.map(({ id, labelKey }) => (
             <button
               key={id}
               onClick={() => setActiveSection(id)}
-              className={`w-full text-left px-3 py-2.5 text-sm transition-colors block ${id === 'profile' ? 'font-semibold tracking-[0.12em] mb-2 border' : ''}`}
+              className={`w-full text-left px-3 py-2.5 text-sm transition-colors block ${
+                id === "profile"
+                  ? "font-semibold tracking-[0.12em] mb-2 border"
+                  : ""
+              }`}
               style={{
-                backgroundColor: activeSection === id ? (id === 'profile' ? 'var(--color-accent)' : 'var(--color-fg)') : id === 'profile' ? 'var(--color-muted)' : 'transparent',
-                color: activeSection === id && id !== 'profile' ? 'var(--color-bg)' : 'var(--color-fg)',
-                borderColor: id === 'profile' ? 'var(--color-accent)' : 'transparent',
+                backgroundColor:
+                  activeSection === id
+                    ? id === "profile"
+                      ? "var(--color-accent)"
+                      : "var(--color-fg)"
+                    : id === "profile"
+                      ? "var(--color-muted)"
+                      : "transparent",
+                color:
+                  activeSection === id && id !== "profile"
+                    ? "var(--color-bg)"
+                    : "var(--color-fg)",
+                borderColor:
+                  id === "profile" ? "var(--color-accent)" : "transparent",
               }}
             >
-              {label}
+              {t(labelKey)}
             </button>
           ))}
         </nav>
 
         {/* AI Review */}
-        <div className="mt-10 pt-6 border-t" style={{ borderColor: 'var(--color-border)' }}>
+        <div
+          className="mt-10 pt-6 border-t"
+          style={{ borderColor: "var(--color-border)" }}
+        >
           <p
             className="text-xs uppercase tracking-[0.18em] mb-3"
-            style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-muted-fg)' }}
+            style={{
+              fontFamily: "var(--font-mono)",
+              color: "var(--color-muted-fg)",
+            }}
           >
-            AI Review
+            {t("repo.aiReview")}
           </p>
-          <p className="text-xs mb-4 leading-relaxed" style={{ color: 'var(--color-muted-fg)' }}>
-            Analyzes the entire repository for consistency, clarity, and coherence after changes.
+          <p
+            className="text-xs mb-4 leading-relaxed"
+            style={{ color: "var(--color-muted-fg)" }}
+          >
+            {t("repo.aiReviewDescription")}
           </p>
           <button
             onClick={handleAiReview}
             disabled={state.isReviewingRepo}
             className="w-full py-2.5 text-xs uppercase tracking-[0.15em] transition-colors"
             style={{
-              fontFamily: 'var(--font-mono)',
-              border: '1px solid var(--color-fg)',
-              backgroundColor: state.isReviewingRepo ? 'var(--color-muted)' : 'transparent',
-              color: state.isReviewingRepo ? 'var(--color-muted-fg)' : 'var(--color-fg)',
-              cursor: state.isReviewingRepo ? 'not-allowed' : 'pointer',
+              fontFamily: "var(--font-mono)",
+              border: "1px solid var(--color-fg)",
+              backgroundColor: state.isReviewingRepo
+                ? "var(--color-muted)"
+                : "transparent",
+              color: state.isReviewingRepo
+                ? "var(--color-muted-fg)"
+                : "var(--color-fg)",
+              cursor: state.isReviewingRepo ? "not-allowed" : "pointer",
             }}
           >
-            {state.isReviewingRepo ? 'Reviewing...' : 'Review with AI'}
+            {state.isReviewingRepo
+              ? t("repo.reviewing")
+              : t("repo.reviewWithAi")}
           </button>
           {reviewError && (
             <p
               className="text-xs mt-2"
-              style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-accent)' }}
+              style={{
+                fontFamily: "var(--font-mono)",
+                color: "var(--color-accent)",
+              }}
             >
               {reviewError}
             </p>
@@ -418,9 +582,12 @@ export default function RepositoryPage() {
           {state.lastReviewSummary && !reviewError && (
             <p
               className="text-xs mt-3 leading-relaxed"
-              style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-muted-fg)' }}
+              style={{
+                fontFamily: "var(--font-mono)",
+                color: "var(--color-muted-fg)",
+              }}
             >
-              Last: {state.lastReviewSummary}
+              {t("repo.last")}: {state.lastReviewSummary}
             </p>
           )}
         </div>
@@ -431,119 +598,125 @@ export default function RepositoryPage() {
         <div className="mb-8">
           <h1
             className="text-5xl font-bold uppercase tracking-tight leading-none mb-2"
-            style={{ fontFamily: 'var(--font-display)' }}
+            style={{ fontFamily: "var(--font-display)" }}
           >
-            {active.label}
+            {t(active.labelKey)}
           </h1>
-          <p className="text-sm" style={{ color: 'var(--color-muted-fg)' }}>
-            {active.desc}
+          <p className="text-sm" style={{ color: "var(--color-muted-fg)" }}>
+            {t(active.descKey)}
           </p>
         </div>
 
         {/* Section content */}
-        {activeSection === 'profile' && (
+        {activeSection === "profile" && (
           <section
             className="p-5 border"
-            style={{ backgroundColor: 'var(--color-muted)', borderColor: 'var(--color-accent)' }}
+            style={{
+              backgroundColor: "var(--color-muted)",
+              borderColor: "var(--color-accent)",
+            }}
           >
-            <p className="text-xs mt-2" style={{ color: 'var(--color-muted-fg)' }}>
-              Add and update your information in the sections: Career Goals, Skills, Competencies, Experience, Tools &amp; Tech, Projects, Compensation, and Other.
+            <p
+              className="text-xs mt-2"
+              style={{ color: "var(--color-muted-fg)" }}
+            >
+              {t("repo.profileIntro")}
             </p>
           </section>
         )}
 
-        {activeSection === 'goals' && (
+        {activeSection === "goals" && (
           <div>
-            <Label>Career Goals & Ambitions</Label>
+            <Label>{t("repo.careerGoals")}</Label>
             <Field
               rows={10}
               value={repo.careerGoals}
-              onChange={v => updateRepo({ careerGoals: v })}
-              placeholder="Describe your short and long-term career goals. What roles are you targeting? What industries? What kind of impact do you want to make? Where do you see yourself in 3–5 years?"
+              onChange={(v) => updateRepo({ careerGoals: v })}
+              placeholder={t("repo.careerGoalsPlaceholder")}
             />
           </div>
         )}
 
-        {activeSection === 'skills' && (
+        {activeSection === "skills" && (
           <div>
-            <Label>Skills</Label>
+            <Label>{t("repo.section.skills")}</Label>
             <Field
               rows={12}
               value={repo.skills}
-              onChange={v => updateRepo({ skills: v })}
-              placeholder="List your technical and professional skills. Group them by category if helpful.
-
-Example:
-Programming Languages: Python, TypeScript, Rust, Go
-Frontend: React, Next.js, Vue, TailwindCSS
-Backend: Node.js, FastAPI, Django, PostgreSQL
-Cloud: AWS (EC2, S3, Lambda, RDS), GCP, Docker, Kubernetes
-..."
+              onChange={(v) => updateRepo({ skills: v })}
+              placeholder={t("repo.skillsPlaceholder")}
             />
           </div>
         )}
 
-        {activeSection === 'competencies' && (
+        {activeSection === "competencies" && (
           <div>
-            <Label>Core Competencies</Label>
+            <Label>{t("repo.competencies")}</Label>
             <Field
               rows={10}
               value={repo.competencies}
-              onChange={v => updateRepo({ competencies: v })}
-              placeholder="Describe your core strengths, soft skills, and professional competencies.
-
-Examples: Strategic thinking, cross-functional leadership, agile project management, stakeholder communication, data-driven decision making, mentoring junior engineers, system design, technical writing..."
+              onChange={(v) => updateRepo({ competencies: v })}
+              placeholder={t("repo.competenciesPlaceholder")}
             />
           </div>
         )}
 
-        {activeSection === 'experience' && (
+        {activeSection === "experience" && (
           <div>
             <div className="flex justify-between items-center mb-5">
               <span
                 className="text-xs uppercase tracking-[0.18em]"
-                style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-muted-fg)' }}
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  color: "var(--color-muted-fg)",
+                }}
               >
-                {repo.experience.length} {repo.experience.length === 1 ? 'Position' : 'Positions'}
+                {repo.experience.length}{" "}
+                {repo.experience.length === 1
+                  ? t("repo.position")
+                  : t("repo.positions")}
               </span>
               <button
                 onClick={addExperience}
                 className="text-xs uppercase tracking-[0.15em] px-4 py-2 transition-colors hover:opacity-75"
                 style={{
-                  fontFamily: 'var(--font-mono)',
-                  backgroundColor: 'var(--color-fg)',
-                  color: 'var(--color-bg)',
+                  fontFamily: "var(--font-mono)",
+                  backgroundColor: "var(--color-fg)",
+                  color: "var(--color-bg)",
                 }}
               >
-                + Add Position
+                {t("repo.addPosition")}
               </button>
             </div>
             {repo.experience.length === 0 ? (
               <div
                 className="py-16 text-center border border-dashed"
-                style={{ borderColor: 'var(--color-border)' }}
+                style={{ borderColor: "var(--color-border)" }}
               >
-                <p className="text-sm mb-4" style={{ color: 'var(--color-muted-fg)' }}>
-                  No positions added yet
+                <p
+                  className="text-sm mb-4"
+                  style={{ color: "var(--color-muted-fg)" }}
+                >
+                  {t("repo.noPositions")}
                 </p>
                 <button
                   onClick={addExperience}
                   className="text-xs uppercase tracking-widest px-4 py-2"
                   style={{
-                    fontFamily: 'var(--font-mono)',
-                    border: '1px solid var(--color-border)',
-                    color: 'var(--color-muted-fg)',
+                    fontFamily: "var(--font-mono)",
+                    border: "1px solid var(--color-border)",
+                    color: "var(--color-muted-fg)",
                   }}
                 >
-                  Add your first position
+                  {t("repo.addFirstPosition")}
                 </button>
               </div>
             ) : (
-              repo.experience.map(entry => (
+              repo.experience.map((entry) => (
                 <ExperienceForm
                   key={entry.id}
                   entry={entry}
-                  onChange={updated => updateExperience(entry.id, updated)}
+                  onChange={(updated) => updateExperience(entry.id, updated)}
                   onDelete={() => deleteExperience(entry.id)}
                 />
               ))
@@ -551,74 +724,74 @@ Examples: Strategic thinking, cross-functional leadership, agile project managem
           </div>
         )}
 
-        {activeSection === 'tools' && (
+        {activeSection === "tools" && (
           <div>
-            <Label>Tools & Technologies</Label>
+            <Label>{t("repo.tools")}</Label>
             <Field
               rows={12}
               value={repo.tools}
-              onChange={v => updateRepo({ tools: v })}
-              placeholder="List the software, frameworks, platforms, and tools you use.
-
-Examples:
-Development: VS Code, Git, GitHub, Docker, Kubernetes, Terraform
-Databases: PostgreSQL, MongoDB, Redis, Elasticsearch
-Cloud Platforms: AWS, GCP, Azure
-Design: Figma, Sketch
-Project Management: Jira, Linear, Notion, Confluence
-Communication: Slack, Zoom
-..."
+              onChange={(v) => updateRepo({ tools: v })}
+              placeholder={t("repo.toolsPlaceholder")}
             />
           </div>
         )}
 
-        {activeSection === 'projects' && (
+        {activeSection === "projects" && (
           <div>
             <div className="flex justify-between items-center mb-5">
               <span
                 className="text-xs uppercase tracking-[0.18em]"
-                style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-muted-fg)' }}
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  color: "var(--color-muted-fg)",
+                }}
               >
-                {repo.projects.length} {repo.projects.length === 1 ? 'Project' : 'Projects'}
+                {repo.projects.length}{" "}
+                {repo.projects.length === 1
+                  ? t("repo.projectsCountSingular")
+                  : t("repo.projectsCountPlural")}
               </span>
               <button
                 onClick={addProject}
                 className="text-xs uppercase tracking-[0.15em] px-4 py-2 transition-colors hover:opacity-75"
                 style={{
-                  fontFamily: 'var(--font-mono)',
-                  backgroundColor: 'var(--color-fg)',
-                  color: 'var(--color-bg)',
+                  fontFamily: "var(--font-mono)",
+                  backgroundColor: "var(--color-fg)",
+                  color: "var(--color-bg)",
                 }}
               >
-                + Add Project
+                {t("repo.addProject")}
               </button>
             </div>
             {repo.projects.length === 0 ? (
               <div
                 className="py-16 text-center border border-dashed"
-                style={{ borderColor: 'var(--color-border)' }}
+                style={{ borderColor: "var(--color-border)" }}
               >
-                <p className="text-sm mb-4" style={{ color: 'var(--color-muted-fg)' }}>
-                  No projects added yet
+                <p
+                  className="text-sm mb-4"
+                  style={{ color: "var(--color-muted-fg)" }}
+                >
+                  {t("repo.noProjects")}
                 </p>
                 <button
                   onClick={addProject}
                   className="text-xs uppercase tracking-widest px-4 py-2"
                   style={{
-                    fontFamily: 'var(--font-mono)',
-                    border: '1px solid var(--color-border)',
-                    color: 'var(--color-muted-fg)',
+                    fontFamily: "var(--font-mono)",
+                    border: "1px solid var(--color-border)",
+                    color: "var(--color-muted-fg)",
                   }}
                 >
-                  Add your first project
+                  {t("repo.addFirstProject")}
                 </button>
               </div>
             ) : (
-              repo.projects.map(entry => (
+              repo.projects.map((entry) => (
                 <ProjectForm
                   key={entry.id}
                   entry={entry}
-                  onChange={updated => updateProject(entry.id, updated)}
+                  onChange={(updated) => updateProject(entry.id, updated)}
                   onDelete={() => deleteProject(entry.id)}
                 />
               ))
@@ -626,83 +799,78 @@ Communication: Slack, Zoom
           </div>
         )}
 
-        {activeSection === 'compensation' && (
+        {activeSection === "compensation" && (
           <div className="space-y-8">
             <div>
-              <Label>Employment Status</Label>
+              <Label>{t("repo.employmentStatus")}</Label>
               <select
-                value={repo.employmentStatus}
-                onChange={e => updateRepo({ employmentStatus: e.target.value })}
+                value={employmentStatus}
+                onChange={(e) =>
+                  updateRepo({ employmentStatus: e.target.value })
+                }
                 className="w-full text-sm px-3 py-2 focus:outline-none"
                 style={{
-                  border: '1px solid var(--color-border)',
-                  backgroundColor: 'var(--color-card)',
-                  color: 'var(--color-fg)',
-                  fontFamily: 'var(--font-sans)',
+                  border: "1px solid var(--color-border)",
+                  backgroundColor: "var(--color-card)",
+                  color: "var(--color-fg)",
+                  fontFamily: "var(--font-sans)",
                 }}
               >
-                <option>Employed — Full-time</option>
-                <option>Employed — Part-time</option>
-                <option>Employed — Contract</option>
-                <option>Freelance / Self-employed</option>
-                <option>Actively looking for work</option>
-                <option>Open to opportunities (not actively searching)</option>
-                <option>Unemployed</option>
-                <option>Student</option>
+                {EMPLOYMENT_STATUS_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {t(option.key)}
+                  </option>
+                ))}
               </select>
             </div>
 
             <div className="grid grid-cols-2 gap-6">
               <div>
-                <Label>Current Compensation</Label>
+                <Label>{t("repo.currentCompensation")}</Label>
                 <TextInput
                   value={repo.currentSalary}
-                  onChange={v => updateRepo({ currentSalary: v })}
-                  placeholder="e.g. $120,000/yr + $20k bonus + equity"
+                  onChange={(v) => updateRepo({ currentSalary: v })}
+                  placeholder={t("repo.currentCompensationPlaceholder")}
                 />
                 <p
                   className="text-xs mt-1.5 leading-relaxed"
-                  style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-muted-fg)' }}
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    color: "var(--color-muted-fg)",
+                  }}
                 >
-                  Include base, bonus, equity, and benefits if relevant.
+                  {t("repo.compensationNote")}
                 </p>
               </div>
               <div>
-                <Label>Desired Compensation</Label>
+                <Label>{t("repo.desiredCompensation")}</Label>
                 <TextInput
                   value={repo.desiredSalary}
-                  onChange={v => updateRepo({ desiredSalary: v })}
-                  placeholder="e.g. $150,000–$180,000/yr"
+                  onChange={(v) => updateRepo({ desiredSalary: v })}
+                  placeholder={t("repo.desiredCompensationPlaceholder")}
                 />
                 <p
                   className="text-xs mt-1.5 leading-relaxed"
-                  style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-muted-fg)' }}
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    color: "var(--color-muted-fg)",
+                  }}
                 >
-                  Total compensation target, including equity if applicable.
+                  {t("repo.desiredCompensationNote")}
                 </p>
               </div>
             </div>
           </div>
         )}
 
-        {activeSection === 'other' && (
+        {activeSection === "other" && (
           <div>
-            <Label>Additional Professional Information</Label>
+            <Label>{t("repo.additionalInfo")}</Label>
             <Field
               rows={14}
               value={repo.additionalInfo}
-              onChange={v => updateRepo({ additionalInfo: v })}
-              placeholder="Include any additional information relevant to your professional background:
-
-Education: degrees, universities, graduation years
-Certifications: AWS Solutions Architect, PMP, CPA, etc.
-Languages: English (native), Spanish (conversational), etc.
-Publications & talks: conference presentations, articles, papers
-Awards & recognition: industry awards, hackathon wins, etc.
-Volunteer work: relevant volunteer roles or open source contributions
-Professional memberships: industry associations, boards, etc.
-Geographic preferences: cities, remote/hybrid/on-site preferences
-Visa status & work authorization (if relevant)"
+              onChange={(v) => updateRepo({ additionalInfo: v })}
+              placeholder={t("repo.additionalInfoPlaceholder")}
             />
           </div>
         )}

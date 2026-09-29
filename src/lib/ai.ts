@@ -2,6 +2,17 @@ import { ProfessionalRepository, GeneratedMaterials } from './types'
 
 const API_URL = 'https://api.anthropic.com/v1/messages'
 
+const employmentStatusLabels: Record<string, string> = {
+  'employed-full-time': 'Employed — Full-time',
+  'employed-part-time': 'Employed — Part-time',
+  'employed-contract': 'Employed — Contract',
+  freelance: 'Freelance / Self-employed',
+  looking: 'Actively looking for work',
+  open: 'Open to opportunities (not actively searching)',
+  unemployed: 'Unemployed',
+  student: 'Student',
+}
+
 function formatRepo(repo: ProfessionalRepository): string {
   const parts: string[] = []
 
@@ -37,7 +48,10 @@ function formatRepo(repo: ProfessionalRepository): string {
     parts.push(`PERSONAL PROJECTS\n${projText}`)
   }
 
-  if (repo.employmentStatus) parts.push(`EMPLOYMENT STATUS\n${repo.employmentStatus}`)
+  if (repo.employmentStatus) {
+    const status = employmentStatusLabels[repo.employmentStatus] || repo.employmentStatus
+    parts.push(`EMPLOYMENT STATUS\n${status}`)
+  }
   if (repo.currentSalary) parts.push(`CURRENT COMPENSATION\n${repo.currentSalary}`)
   if (repo.desiredSalary) parts.push(`DESIRED COMPENSATION\n${repo.desiredSalary}`)
   if (repo.additionalInfo) parts.push(`ADDITIONAL INFORMATION\n${repo.additionalInfo}`)

@@ -1,23 +1,24 @@
-import { useState } from 'react'
-import { useStore } from '../lib/store'
-import { Page } from '../lib/types'
+import { useState } from "react"
+import { useI18n, useStore } from "../lib/store"
+import { Page } from "../lib/types"
+import { TranslationKey } from "../lib/i18n"
 
-type Tab = 'summary' | 'resume' | 'cover' | 'answers'
+type Tab = "summary" | "resume" | "cover" | "answers"
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'summary', label: 'Summary' },
-  { id: 'resume', label: 'Résumé' },
-  { id: 'cover', label: 'Cover Letter' },
-  { id: 'answers', label: 'Application Q&A' },
+const TABS: { id: Tab; labelKey: TranslationKey }[] = [
+  { id: "summary", labelKey: "results.summary" },
+  { id: "resume", labelKey: "results.resume" },
+  { id: "cover", labelKey: "results.coverLetter" },
+  { id: "answers", labelKey: "results.applicationQa" },
 ]
 
 function copyToClipboard(text: string) {
   navigator.clipboard.writeText(text).catch(() => {
-    const el = document.createElement('textarea')
+    const el = document.createElement("textarea")
     el.value = text
     document.body.appendChild(el)
     el.select()
-    document.execCommand('copy')
+    document.execCommand("copy")
     document.body.removeChild(el)
   })
 }
@@ -27,8 +28,8 @@ function MarkdownContent({ content }: { content: string }) {
     <pre
       className="text-sm leading-relaxed whitespace-pre-wrap"
       style={{
-        fontFamily: 'var(--font-mono)',
-        color: 'var(--color-fg)',
+        fontFamily: "var(--font-mono)",
+        color: "var(--color-fg)",
       }}
     >
       {content}
@@ -42,7 +43,8 @@ interface Props {
 
 export default function ResultsPage({ setPage }: Props) {
   const { state } = useStore()
-  const [activeTab, setActiveTab] = useState<Tab>('summary')
+  const { t } = useI18n()
+  const [activeTab, setActiveTab] = useState<Tab>("summary")
   const [copied, setCopied] = useState(false)
   const materials = state.generatedMaterials
 
@@ -51,29 +53,32 @@ export default function ResultsPage({ setPage }: Props) {
       <div className="max-w-6xl mx-auto px-6 py-24 text-center">
         <p
           className="text-xs uppercase tracking-[0.25em] mb-5"
-          style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-muted-fg)' }}
+          style={{
+            fontFamily: "var(--font-mono)",
+            color: "var(--color-muted-fg)",
+          }}
         >
-          No results yet
+          {t("results.noResults")}
         </p>
         <h1
           className="text-5xl font-bold uppercase tracking-tight mb-6"
-          style={{ fontFamily: 'var(--font-display)' }}
+          style={{ fontFamily: "var(--font-display)" }}
         >
-          Nothing Generated
+          {t("results.nothingGenerated")}
         </h1>
-        <p className="text-sm mb-8" style={{ color: 'var(--color-muted-fg)' }}>
-          Go to Apply, paste a job opportunity, and click Generate Materials.
+        <p className="text-sm mb-8" style={{ color: "var(--color-muted-fg)" }}>
+          {t("results.noResultsDescription")}
         </p>
         <button
-          onClick={() => setPage('home')}
+          onClick={() => setPage("home")}
           className="text-sm uppercase tracking-[0.15em] px-8 py-3"
           style={{
-            fontFamily: 'var(--font-display)',
-            backgroundColor: 'var(--color-fg)',
-            color: 'var(--color-bg)',
+            fontFamily: "var(--font-display)",
+            backgroundColor: "var(--color-fg)",
+            color: "var(--color-bg)",
           }}
         >
-          Go to Apply
+          {t("results.goToApply")}
         </button>
       </div>
     )
@@ -99,18 +104,24 @@ export default function ResultsPage({ setPage }: Props) {
         <div>
           <p
             className="text-xs uppercase tracking-[0.25em] mb-3"
-            style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-muted-fg)' }}
+            style={{
+              fontFamily: "var(--font-mono)",
+              color: "var(--color-muted-fg)",
+            }}
           >
-            Generated Application
+            {t("results.generatedApplication")}
           </p>
           <h1
             className="text-5xl font-bold uppercase tracking-tight leading-tight"
-            style={{ fontFamily: 'var(--font-display)' }}
+            style={{ fontFamily: "var(--font-display)" }}
           >
-            {materials.jobTitle || 'Application Materials'}
+            {materials.jobTitle || t("results.applicationMaterials")}
           </h1>
           {materials.company && (
-            <p className="text-lg mt-1" style={{ color: 'var(--color-muted-fg)' }}>
+            <p
+              className="text-lg mt-1"
+              style={{ color: "var(--color-muted-fg)" }}
+            >
               {materials.company}
             </p>
           )}
@@ -121,41 +132,46 @@ export default function ResultsPage({ setPage }: Props) {
             onClick={handleCopy}
             className="text-xs uppercase tracking-[0.15em] px-4 py-2.5 border transition-colors"
             style={{
-              fontFamily: 'var(--font-mono)',
-              borderColor: 'var(--color-border)',
-              color: copied ? 'var(--color-accent)' : 'var(--color-muted-fg)',
+              fontFamily: "var(--font-mono)",
+              borderColor: "var(--color-border)",
+              color: copied ? "var(--color-accent)" : "var(--color-muted-fg)",
             }}
           >
-            {copied ? 'Copied!' : 'Copy'}
+            {copied ? t("common.copied") : t("common.copy")}
           </button>
           <button
-            onClick={() => setPage('home')}
+            onClick={() => setPage("home")}
             className="text-xs uppercase tracking-[0.15em] px-4 py-2.5 transition-opacity hover:opacity-75"
             style={{
-              fontFamily: 'var(--font-mono)',
-              backgroundColor: 'var(--color-fg)',
-              color: 'var(--color-bg)',
+              fontFamily: "var(--font-mono)",
+              backgroundColor: "var(--color-fg)",
+              color: "var(--color-bg)",
             }}
           >
-            New Application
+            {t("results.newApplication")}
           </button>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-0 mb-0 border-b" style={{ borderColor: 'var(--color-border)' }}>
-        {TABS.map(({ id, label }) => (
+      <div
+        className="flex gap-0 mb-0 border-b"
+        style={{ borderColor: "var(--color-border)" }}
+      >
+        {TABS.map(({ id, labelKey }) => (
           <button
             key={id}
             onClick={() => setActiveTab(id)}
             className="px-5 py-2.5 text-xs uppercase tracking-[0.18em] border-b-2 transition-colors -mb-px"
             style={{
-              fontFamily: 'var(--font-mono)',
-              borderBottomColor: activeTab === id ? 'var(--color-fg)' : 'transparent',
-              color: activeTab === id ? 'var(--color-fg)' : 'var(--color-muted-fg)',
+              fontFamily: "var(--font-mono)",
+              borderBottomColor:
+                activeTab === id ? "var(--color-fg)" : "transparent",
+              color:
+                activeTab === id ? "var(--color-fg)" : "var(--color-muted-fg)",
             }}
           >
-            {label}
+            {t(labelKey)}
           </button>
         ))}
       </div>
@@ -163,47 +179,81 @@ export default function ResultsPage({ setPage }: Props) {
       {/* Content */}
       <div
         className="mt-0 p-8"
-        style={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)', borderTop: 'none' }}
+        style={{
+          backgroundColor: "var(--color-card)",
+          border: "1px solid var(--color-border)",
+          borderTop: "none",
+        }}
       >
-        {activeTab === 'summary' ? (
+        {activeTab === "summary" ? (
           <div>
             <div className="grid grid-cols-3 gap-6 mb-8">
-              <div className="p-5" style={{ border: '1px solid var(--color-border)' }}>
+              <div
+                className="p-5"
+                style={{ border: "1px solid var(--color-border)" }}
+              >
                 <p
                   className="text-xs uppercase tracking-widest mb-2"
-                  style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-muted-fg)' }}
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    color: "var(--color-muted-fg)",
+                  }}
                 >
-                  Role
+                  {t("results.role")}
                 </p>
-                <p className="text-sm font-medium">{materials.jobTitle || '—'}</p>
+                <p className="text-sm font-medium">
+                  {materials.jobTitle || "—"}
+                </p>
               </div>
-              <div className="p-5" style={{ border: '1px solid var(--color-border)' }}>
+              <div
+                className="p-5"
+                style={{ border: "1px solid var(--color-border)" }}
+              >
                 <p
                   className="text-xs uppercase tracking-widest mb-2"
-                  style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-muted-fg)' }}
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    color: "var(--color-muted-fg)",
+                  }}
                 >
-                  Company
+                  {t("results.company")}
                 </p>
-                <p className="text-sm font-medium">{materials.company || '—'}</p>
+                <p className="text-sm font-medium">
+                  {materials.company || "—"}
+                </p>
               </div>
-              <div className="p-5" style={{ border: '1px solid var(--color-border)' }}>
+              <div
+                className="p-5"
+                style={{ border: "1px solid var(--color-border)" }}
+              >
                 <p
                   className="text-xs uppercase tracking-widest mb-2"
-                  style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-muted-fg)' }}
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    color: "var(--color-muted-fg)",
+                  }}
                 >
-                  Materials
+                  {t("results.materials")}
                 </p>
-                <p className="text-sm font-medium">Résumé + Cover Letter + Q&A</p>
+                <p className="text-sm font-medium">
+                  {t("results.materialsList")}
+                </p>
               </div>
             </div>
             <div>
               <p
                 className="text-xs uppercase tracking-[0.2em] mb-3"
-                style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-muted-fg)' }}
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  color: "var(--color-muted-fg)",
+                }}
               >
-                Role Summary
+                {t("results.roleSummary")}
               </p>
-              <p className="text-sm leading-relaxed max-w-2xl" style={{ color: 'var(--color-fg)' }}>
+              <p
+                className="text-sm leading-relaxed max-w-2xl"
+                style={{ color: "var(--color-fg)" }}
+              >
                 {materials.jobSummary}
               </p>
             </div>
@@ -215,12 +265,14 @@ export default function ResultsPage({ setPage }: Props) {
                 onClick={handleCopy}
                 className="text-xs uppercase tracking-widest px-3 py-1.5 transition-colors"
                 style={{
-                  fontFamily: 'var(--font-mono)',
-                  border: '1px solid var(--color-border)',
-                  color: copied ? 'var(--color-accent)' : 'var(--color-muted-fg)',
+                  fontFamily: "var(--font-mono)",
+                  border: "1px solid var(--color-border)",
+                  color: copied
+                    ? "var(--color-accent)"
+                    : "var(--color-muted-fg)",
                 }}
               >
-                {copied ? 'Copied!' : 'Copy text'}
+                {copied ? t("common.copied") : t("common.copyText")}
               </button>
             </div>
             <MarkdownContent content={tabContent[activeTab]} />

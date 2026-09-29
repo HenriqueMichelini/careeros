@@ -1,0 +1,594 @@
+export const SUPPORTED_LOCALES = ["en", "pt-BR"] as const
+
+export type Locale = typeof SUPPORTED_LOCALES[number]
+export type TranslationValue = string | number
+
+const messages = {
+  en: {
+    "language.label": "Language",
+    "language.english": "English",
+    "language.portuguese": "Português",
+    "nav.apply": "Apply",
+    "nav.profile": "Profile",
+    "nav.cv": "CV",
+    "nav.results": "Results",
+    "common.save": "Save",
+    "common.clear": "Clear",
+    "common.remove": "Remove",
+    "common.copy": "Copy",
+    "common.copied": "Copied!",
+    "common.copyText": "Copy text",
+    "common.sample": "Sample",
+    "common.sampleContent": "Sample content",
+    "common.present": "Present",
+    "common.current": "Current",
+    "api.keyConfigured": "API KEY ✓",
+    "api.setKey": "! SET API KEY",
+    "api.anthropicKey": "Anthropic API Key",
+    "api.placeholder": "sk-ant-api03-...",
+    "home.step": "Step 01 — Opportunity Input",
+    "home.titleFind": "Find Your",
+    "home.titleNext": "Next Role",
+    "home.intro":
+      "Paste a job posting URL, full job description, or any text about the opportunity. The AI will analyze it and generate tailored application materials from your profile.",
+    "home.jobPosting": "Job Posting or Description",
+    "home.jobPostingPlaceholder":
+      "Paste the full job description, URL, or any text about the role you're applying to. Include requirements, responsibilities, company info — the more detail, the better the tailoring.",
+    "home.characterCount": "{{count}} characters",
+    "home.checklist": "Checklist",
+    "home.apiKey": "API Key",
+    "home.configured": "Configured",
+    "home.setApiKeyAbove": 'Click "! SET API KEY" above',
+    "home.profile": "Profile",
+    "home.repositoryReady": "Repository ready",
+    "home.goToProfile": "Go to Profile and add your info",
+    "home.posting": "Posting",
+    "home.pasteJobDetails": "Paste job details on the left",
+    "home.generating": "Generating...",
+    "home.generateMaterials": "Generate Materials",
+    "home.generatingNote":
+      "Analyzing opportunity and tailoring your application — this may take 20–40 seconds.",
+    "home.output": "Output",
+    "home.tailoredResume": "Tailored Résumé",
+    "home.coverLetter": "Cover Letter",
+    "home.applicationQa": "Application Q&A",
+    "home.viewPreviousResults": "View Previous Results →",
+    "home.generationFailed":
+      "Generation failed. Check your API key and try again.",
+    "landing.howItWorks": "How it works",
+    "landing.whatYouGet": "What you get",
+    "landing.careerOsHome": "CareerOS home",
+    "landing.marketingNavigation": "Marketing navigation",
+    "landing.openApp": "Open app",
+    "landing.tagline": "A better starting point for every application",
+    "landing.titleStop": "Stop starting",
+    "landing.titleFromScratch": "from scratch.",
+    "landing.intro":
+      "CareerOS turns your professional story and any job opportunity into a focused, tailored application — without the blank-page spiral.",
+    "landing.tryCareerOs": "Try CareerOS",
+    "landing.seeHow": "See how it works ↓",
+    "landing.profileOpportunityMove":
+      "Your profile · The opportunity · A clear next move",
+    "landing.studioLabel": "CareerOS / Application studio",
+    "landing.targetOpportunity": "Target opportunity",
+    "landing.ready": "Ready",
+    "landing.storySignals": "Story signals",
+    "landing.found": "{{count}} found",
+    "landing.productThinking": "Product thinking",
+    "landing.crossFunctionalLeadership": "Cross-functional leadership",
+    "landing.customerEmpathy": "Customer empathy",
+    "landing.yourApplication": "Your application",
+    "landing.builtFrom": "Built from your experience, tuned to the role.",
+    "landing.oneSource": "One professional source of truth",
+    "landing.threeOutputs": "Three useful application outputs",
+    "landing.clearerStep": "A clearer next step, every time",
+    "landing.calmWorkflow": "A calmer application workflow",
+    "landing.bestApplications": "The best applications sound like",
+    "landing.you": "you.",
+    "landing.workflowIntro":
+      "Your experience is the raw material. CareerOS helps you shape it for the opportunity in front of you.",
+    "landing.stepOneTitle": "Build your career story once.",
+    "landing.stepOneDescription":
+      "Keep your experience, strengths, goals, and projects in one living professional repository.",
+    "landing.stepTwoTitle": "Bring the opportunity in.",
+    "landing.stepTwoDescription":
+      "Paste a job description and CareerOS pulls the signal from the noise so you know what matters.",
+    "landing.stepThreeTitle": "Apply as yourself — sharper.",
+    "landing.stepThreeDescription":
+      "Get a tailored résumé, cover letter, and application answers that connect your story to the role.",
+    "landing.lessBusywork": "Less busywork. More signal.",
+    "landing.oneProfile": "One profile.",
+    "landing.threePrecise": "Three precise outputs.",
+    "landing.readyWhen": "Ready when you are",
+    "landing.startWithWork":
+      "Start with the work you have already done. Let the role guide the emphasis.",
+    "landing.nextStarts": "Your next application starts here",
+    "landing.makeStory": "Make your story easier to",
+    "landing.use": "use.",
+    "landing.openCareerOs": "Open CareerOS",
+    "landing.footer": "Keep your work close. Take the next step clearly.",
+    "repo.sections": "Sections",
+    "repo.section.profile": "PROFILE",
+    "repo.section.profileDesc": "Edit your professional details by section",
+    "repo.section.goals": "Career Goals",
+    "repo.section.goalsDesc": "Ambitions, target roles, long-term vision",
+    "repo.section.skills": "Skills",
+    "repo.section.skillsDesc": "Technical and professional skills",
+    "repo.section.competencies": "Competencies",
+    "repo.section.competenciesDesc": "Core strengths and soft skills",
+    "repo.section.experience": "Experience",
+    "repo.section.experienceDesc":
+      "Work history, responsibilities, achievements",
+    "repo.section.tools": "Tools & Tech",
+    "repo.section.toolsDesc": "Software, frameworks, platforms",
+    "repo.section.projects": "Projects",
+    "repo.section.projectsDesc": "Personal and side projects",
+    "repo.section.compensation": "Compensation",
+    "repo.section.compensationDesc": "Current and desired salary",
+    "repo.section.other": "Other",
+    "repo.section.otherDesc": "Certifications, education, languages, etc.",
+    "repo.aiReview": "AI Review",
+    "repo.aiReviewDescription":
+      "Analyzes the entire repository for consistency, clarity, and coherence after changes.",
+    "repo.reviewing": "Reviewing...",
+    "repo.reviewWithAi": "Review with AI",
+    "repo.setApiKeyFirst": "Set your API key first.",
+    "repo.reviewFailed": "Review failed. Try again.",
+    "repo.last": "Last",
+    "repo.profileIntro":
+      "Add and update your information in the sections: Career Goals, Skills, Competencies, Experience, Tools & Tech, Projects, Compensation, and Other.",
+    "repo.careerGoals": "Career Goals & Ambitions",
+    "repo.careerGoalsPlaceholder":
+      "Describe your short and long-term career goals. What roles are you targeting? What industries? What kind of impact do you want to make? Where do you see yourself in 3–5 years?",
+    "repo.skillsPlaceholder":
+      "List your technical and professional skills. Group them by category if helpful.\n\nExample:\nProgramming Languages: Python, TypeScript, Rust, Go\nFrontend: React, Next.js, Vue, TailwindCSS\nBackend: Node.js, FastAPI, Django, PostgreSQL\nCloud: AWS (EC2, S3, Lambda, RDS), GCP, Docker, Kubernetes\n...",
+    "repo.competencies": "Core Competencies",
+    "repo.competenciesPlaceholder":
+      "Describe your core strengths, soft skills, and professional competencies.\n\nExamples: Strategic thinking, cross-functional leadership, agile project management, stakeholder communication, data-driven decision making, mentoring junior engineers, system design, technical writing...",
+    "repo.tools": "Tools & Technologies",
+    "repo.toolsPlaceholder":
+      "List the software, frameworks, platforms, and tools you use.\n\nExamples:\nDevelopment: VS Code, Git, GitHub, Docker, Kubernetes, Terraform\nDatabases: PostgreSQL, MongoDB, Redis, Elasticsearch\nCloud Platforms: AWS, GCP, Azure\nDesign: Figma, Sketch\nProject Management: Jira, Linear, Notion, Confluence\nCommunication: Slack, Zoom\n...",
+    "repo.additionalInfo": "Additional Professional Information",
+    "repo.additionalInfoPlaceholder":
+      "Include any additional information relevant to your professional background:\n\nEducation: degrees, universities, graduation years\nCertifications: AWS Solutions Architect, PMP, CPA, etc.\nLanguages: English (native), Spanish (conversational), etc.\nPublications & talks: conference presentations, articles, papers\nAwards & recognition: industry awards, hackathon wins, etc.\nVolunteer work: relevant volunteer roles or open source contributions\nProfessional memberships: industry associations, boards, etc.\nGeographic preferences: cities, remote/hybrid/on-site preferences\nVisa status & work authorization (if relevant)",
+    "repo.position": "Position",
+    "repo.positions": "Positions",
+    "repo.addPosition": "+ Add Position",
+    "repo.noPositions": "No positions added yet",
+    "repo.addFirstPosition": "Add your first position",
+    "repo.jobTitle": "Job Title",
+    "repo.company": "Company",
+    "repo.location": "Location",
+    "repo.startDate": "Start Date",
+    "repo.endDate": "End Date",
+    "repo.jobTitlePlaceholder": "Senior Software Engineer",
+    "repo.companyPlaceholder": "Acme Corp",
+    "repo.locationPlaceholder": "San Francisco, CA / Remote",
+    "repo.startDatePlaceholder": "Jan 2021",
+    "repo.endDatePlaceholder": "Dec 2023",
+    "repo.overview": "Overview / Description",
+    "repo.overviewPlaceholder":
+      "Brief overview of the role and your scope of work.",
+    "repo.responsibilities": "Responsibilities",
+    "repo.responsibilitiesPlaceholder":
+      "Key responsibilities — use one per line or bullet points.",
+    "repo.achievements": "Achievements & Impact",
+    "repo.achievementsPlaceholder":
+      "Quantified achievements and notable outcomes. Include metrics where possible.",
+    "repo.project": "Project",
+    "repo.projectName": "Project Name",
+    "repo.url": "URL",
+    "repo.description": "Description",
+    "repo.technologiesUsed": "Technologies Used",
+    "repo.highlights": "Highlights & Impact",
+    "repo.projectNamePlaceholder": "OpenMetrics Dashboard",
+    "repo.urlPlaceholder": "https://github.com/you/project",
+    "repo.descriptionPlaceholder":
+      "What is this project and why did you build it?",
+    "repo.technologiesPlaceholder": "React, TypeScript, PostgreSQL, Docker",
+    "repo.highlightsPlaceholder":
+      "Key features, technical challenges solved, users reached, or results achieved.",
+    "repo.projectsCountSingular": "Project",
+    "repo.projectsCountPlural": "Projects",
+    "repo.addProject": "+ Add Project",
+    "repo.noProjects": "No projects added yet",
+    "repo.addFirstProject": "Add your first project",
+    "repo.employmentStatus": "Employment Status",
+    "repo.status.employedFullTime": "Employed — Full-time",
+    "repo.status.employedPartTime": "Employed — Part-time",
+    "repo.status.employedContract": "Employed — Contract",
+    "repo.status.freelance": "Freelance / Self-employed",
+    "repo.status.looking": "Actively looking for work",
+    "repo.status.open": "Open to opportunities (not actively searching)",
+    "repo.status.unemployed": "Unemployed",
+    "repo.status.student": "Student",
+    "repo.currentCompensation": "Current Compensation",
+    "repo.desiredCompensation": "Desired Compensation",
+    "repo.currentCompensationPlaceholder":
+      "e.g. $120,000/yr + $20k bonus + equity",
+    "repo.desiredCompensationPlaceholder": "e.g. $150,000–$180,000/yr",
+    "repo.compensationNote":
+      "Include base, bonus, equity, and benefits if relevant.",
+    "repo.desiredCompensationNote":
+      "Total compensation target, including equity if applicable.",
+    "cv.step": "Step 03 — CV Studio",
+    "cv.titleYourCv": "Your CV,",
+    "cv.titleYourTemplate": "Your Template",
+    "cv.intro":
+      "Shape the master CV that future application templates can build on. This preview uses your Profile details and sample content where information is missing.",
+    "cv.sampleCareerLine":
+      "Product-minded leader · Building teams and experiences that move business forward",
+    "cv.sampleContact":
+      "name@email.com  ·  +1 555 010 2024  ·  New York, NY  ·  linkedin.com/in/name",
+    "cv.professionalProfile": "Professional Profile",
+    "cv.sampleProfile":
+      "Strategic professional with a record of turning complex challenges into clear plans, strong partnerships, and measurable results. Known for combining thoughtful leadership with a hands-on approach to delivery.",
+    "cv.experience": "Experience",
+    "cv.defaultLocation": "New York, NY",
+    "cv.defaultDescription":
+      "Led cross-functional initiatives, aligning team priorities with customer needs and business outcomes.",
+    "cv.sampleJobTitle": "Senior Product Manager · Northstar Labs",
+    "cv.sampleExperienceDescription":
+      "Lead product strategy and delivery for a platform serving 2M+ users across 12 markets.",
+    "cv.sampleAchievementOne":
+      "Grew activation by 28% through onboarding research and iterative experimentation.",
+    "cv.sampleAchievementTwo":
+      "Built a cross-functional roadmap that reduced delivery cycle time by 35%.",
+    "cv.sampleSecondJob": "Product Manager · Fieldwork",
+    "cv.sampleSecondJobDescription":
+      "Launched a new customer insights program and helped grow annual recurring revenue by 18%.",
+    "cv.skillsCompetencies": "Skills & Competencies",
+    "cv.sampleSkills":
+      "Product strategy · Team leadership · Data analysis · Stakeholder management · Roadmapping",
+    "cv.education": "Education",
+    "cv.degree": "B.S. Business Administration",
+    "cv.university": "University of California, Berkeley · 2018",
+    "cv.toolsTechnology": "Tools & Technology",
+    "cv.selectedProjects": "Selected Projects",
+    "cv.additional": "Additional",
+    "cv.languagesCertification":
+      "English (Native) · Spanish (Professional)\nCertified Scrum Product Owner",
+    "cv.previewSettings": "Preview settings",
+    "cv.template": "Template",
+    "cv.atsCv": "ATS CV",
+    "cv.pageFormat": "Page format",
+    "cv.a4Pages": "A4 · 2 pages",
+    "cv.accentColor": "Accent color",
+    "cv.red": "Red",
+    "cv.settingsNote":
+      "These settings describe this preview and cannot be changed here.",
+    "cv.profileCoverage": "Profile Coverage",
+    "cv.added": "Added",
+    "cv.editProfileNote":
+      "Edit your Profile to replace the sample sections with your details.",
+    "results.noResults": "No results yet",
+    "results.nothingGenerated": "Nothing Generated",
+    "results.noResultsDescription":
+      "Go to Apply, paste a job opportunity, and click Generate Materials.",
+    "results.goToApply": "Go to Apply",
+    "results.generatedApplication": "Generated Application",
+    "results.applicationMaterials": "Application Materials",
+    "results.newApplication": "New Application",
+    "results.summary": "Summary",
+    "results.resume": "Résumé",
+    "results.coverLetter": "Cover Letter",
+    "results.applicationQa": "Application Q&A",
+    "results.role": "Role",
+    "results.company": "Company",
+    "results.materials": "Materials",
+    "results.materialsList": "Résumé + Cover Letter + Q&A",
+    "results.roleSummary": "Role Summary",
+  },
+  "pt-BR": {
+    "language.label": "Idioma",
+    "language.english": "English",
+    "language.portuguese": "Português",
+    "nav.apply": "Aplicar",
+    "nav.profile": "Perfil",
+    "nav.cv": "Currículo",
+    "nav.results": "Resultados",
+    "common.save": "Salvar",
+    "common.clear": "Limpar",
+    "common.remove": "Remover",
+    "common.copy": "Copiar",
+    "common.copied": "Copiado!",
+    "common.copyText": "Copiar texto",
+    "common.sample": "Exemplo",
+    "common.sampleContent": "Conteúdo de exemplo",
+    "common.present": "Atual",
+    "common.current": "Atual",
+    "api.keyConfigured": "CHAVE API ✓",
+    "api.setKey": "! CONFIGURAR CHAVE API",
+    "api.anthropicKey": "Chave de API da Anthropic",
+    "api.placeholder": "sk-ant-api03-...",
+    "home.step": "Etapa 01 — Dados da oportunidade",
+    "home.titleFind": "Encontre sua",
+    "home.titleNext": "Próxima vaga",
+    "home.intro":
+      "Cole a URL de uma vaga, a descrição completa ou qualquer texto sobre a oportunidade. A IA fará a análise e criará materiais personalizados a partir do seu perfil.",
+    "home.jobPosting": "Vaga ou descrição",
+    "home.jobPostingPlaceholder":
+      "Cole a descrição completa da vaga, a URL ou qualquer texto sobre a oportunidade. Inclua requisitos, responsabilidades e informações sobre a empresa — quanto mais detalhes, melhor será a personalização.",
+    "home.characterCount": "{{count}} caracteres",
+    "home.checklist": "Checklist",
+    "home.apiKey": "Chave API",
+    "home.configured": "Configurada",
+    "home.setApiKeyAbove": 'Clique em "! CONFIGURAR CHAVE API" acima',
+    "home.profile": "Perfil",
+    "home.repositoryReady": "Repositório pronto",
+    "home.goToProfile": "Acesse Perfil e adicione suas informações",
+    "home.posting": "Vaga",
+    "home.pasteJobDetails": "Cole os detalhes da vaga à esquerda",
+    "home.generating": "Gerando...",
+    "home.generateMaterials": "Gerar materiais",
+    "home.generatingNote":
+      "Analisando a oportunidade e personalizando sua candidatura — isso pode levar de 20 a 40 segundos.",
+    "home.output": "Saída",
+    "home.tailoredResume": "Currículo personalizado",
+    "home.coverLetter": "Carta de apresentação",
+    "home.applicationQa": "Perguntas e respostas",
+    "home.viewPreviousResults": "Ver resultados anteriores →",
+    "home.generationFailed":
+      "Falha ao gerar. Verifique sua chave API e tente novamente.",
+    "landing.howItWorks": "Como funciona",
+    "landing.whatYouGet": "O que você recebe",
+    "landing.careerOsHome": "Página inicial do CareerOS",
+    "landing.marketingNavigation": "Navegação institucional",
+    "landing.openApp": "Abrir app",
+    "landing.tagline": "Um ponto de partida melhor para cada candidatura",
+    "landing.titleStop": "Pare de começar",
+    "landing.titleFromScratch": "do zero.",
+    "landing.intro":
+      "O CareerOS transforma sua trajetória profissional e qualquer oportunidade em uma candidatura focada e personalizada — sem a ansiedade da página em branco.",
+    "landing.tryCareerOs": "Experimentar o CareerOS",
+    "landing.seeHow": "Veja como funciona ↓",
+    "landing.profileOpportunityMove":
+      "Seu perfil · A oportunidade · Um próximo passo claro",
+    "landing.studioLabel": "CareerOS / Estúdio de candidatura",
+    "landing.targetOpportunity": "Oportunidade-alvo",
+    "landing.ready": "Pronto",
+    "landing.storySignals": "Sinais da trajetória",
+    "landing.found": "{{count}} encontrados",
+    "landing.productThinking": "Pensamento de produto",
+    "landing.crossFunctionalLeadership": "Liderança multifuncional",
+    "landing.customerEmpathy": "Empatia com o cliente",
+    "landing.yourApplication": "Sua candidatura",
+    "landing.builtFrom":
+      "Criado a partir da sua experiência e ajustado à vaga.",
+    "landing.oneSource": "Uma fonte profissional de verdade",
+    "landing.threeOutputs": "Três entregas úteis para a candidatura",
+    "landing.clearerStep": "Um próximo passo mais claro, sempre",
+    "landing.calmWorkflow": "Um fluxo de candidatura mais tranquilo",
+    "landing.bestApplications": "As melhores candidaturas soam como",
+    "landing.you": "você.",
+    "landing.workflowIntro":
+      "Sua experiência é a matéria-prima. O CareerOS ajuda você a moldá-la para a oportunidade à sua frente.",
+    "landing.stepOneTitle": "Conte sua história profissional uma vez.",
+    "landing.stepOneDescription":
+      "Mantenha sua experiência, seus pontos fortes, objetivos e projetos em um repositório profissional vivo.",
+    "landing.stepTwoTitle": "Traga a oportunidade para dentro.",
+    "landing.stepTwoDescription":
+      "Cole a descrição da vaga e o CareerOS separa o sinal do ruído para mostrar o que importa.",
+    "landing.stepThreeTitle": "Candidate-se como você — com mais precisão.",
+    "landing.stepThreeDescription":
+      "Receba currículo, carta de apresentação e respostas que conectam sua história à vaga.",
+    "landing.lessBusywork": "Menos trabalho repetitivo. Mais sinal.",
+    "landing.oneProfile": "Um perfil.",
+    "landing.threePrecise": "Três entregas precisas.",
+    "landing.readyWhen": "Pronto quando você estiver",
+    "landing.startWithWork":
+      "Comece pelo trabalho que você já fez. Deixe a vaga orientar a ênfase.",
+    "landing.nextStarts": "Sua próxima candidatura começa aqui",
+    "landing.makeStory": "Torne sua história mais fácil de",
+    "landing.use": "usar.",
+    "landing.openCareerOs": "Abrir o CareerOS",
+    "landing.footer":
+      "Mantenha seu trabalho por perto. Dê o próximo passo com clareza.",
+    "repo.sections": "Seções",
+    "repo.section.profile": "PERFIL",
+    "repo.section.profileDesc": "Edite seus dados profissionais por seção",
+    "repo.section.goals": "Objetivos de carreira",
+    "repo.section.goalsDesc":
+      "Ambições, cargos desejados e visão de longo prazo",
+    "repo.section.skills": "Habilidades",
+    "repo.section.skillsDesc": "Habilidades técnicas e profissionais",
+    "repo.section.competencies": "Competências",
+    "repo.section.competenciesDesc":
+      "Pontos fortes e habilidades comportamentais",
+    "repo.section.experience": "Experiência",
+    "repo.section.experienceDesc":
+      "Histórico profissional, responsabilidades e conquistas",
+    "repo.section.tools": "Ferramentas e tecnologia",
+    "repo.section.toolsDesc": "Softwares, frameworks e plataformas",
+    "repo.section.projects": "Projetos",
+    "repo.section.projectsDesc": "Projetos pessoais e paralelos",
+    "repo.section.compensation": "Remuneração",
+    "repo.section.compensationDesc": "Remuneração atual e desejada",
+    "repo.section.other": "Outros",
+    "repo.section.otherDesc": "Certificações, formação, idiomas etc.",
+    "repo.aiReview": "Revisão por IA",
+    "repo.aiReviewDescription":
+      "Analisa todo o repositório quanto à consistência, clareza e coerência após as alterações.",
+    "repo.reviewing": "Revisando...",
+    "repo.reviewWithAi": "Revisar com IA",
+    "repo.setApiKeyFirst": "Configure sua chave API primeiro.",
+    "repo.reviewFailed": "Falha na revisão. Tente novamente.",
+    "repo.last": "Última revisão",
+    "repo.profileIntro":
+      "Adicione e atualize suas informações nas seções: Objetivos de carreira, Habilidades, Competências, Experiência, Ferramentas e tecnologia, Projetos, Remuneração e Outros.",
+    "repo.careerGoals": "Objetivos e ambições de carreira",
+    "repo.careerGoalsPlaceholder":
+      "Descreva seus objetivos de carreira de curto e longo prazo. Quais cargos você busca? Em quais setores? Que impacto deseja gerar? Onde você se vê daqui a 3–5 anos?",
+    "repo.skillsPlaceholder":
+      "Liste suas habilidades técnicas e profissionais. Se ajudar, agrupe-as por categoria.\n\nExemplo:\nLinguagens: Python, TypeScript, Rust, Go\nFrontend: React, Next.js, Vue, TailwindCSS\nBackend: Node.js, FastAPI, Django, PostgreSQL\nCloud: AWS (EC2, S3, Lambda, RDS), GCP, Docker, Kubernetes\n...",
+    "repo.competencies": "Competências principais",
+    "repo.competenciesPlaceholder":
+      "Descreva seus principais pontos fortes, habilidades comportamentais e competências profissionais.\n\nExemplos: pensamento estratégico, liderança multifuncional, gestão ágil de projetos, comunicação com stakeholders, tomada de decisão orientada por dados, mentoria de engenheiros juniores, arquitetura de sistemas, redação técnica...",
+    "repo.tools": "Ferramentas e tecnologias",
+    "repo.toolsPlaceholder":
+      "Liste os softwares, frameworks, plataformas e ferramentas que você utiliza.\n\nExemplos:\nDesenvolvimento: VS Code, Git, GitHub, Docker, Kubernetes, Terraform\nBancos de dados: PostgreSQL, MongoDB, Redis, Elasticsearch\nCloud: AWS, GCP, Azure\nDesign: Figma, Sketch\nGestão de projetos: Jira, Linear, Notion, Confluence\nComunicação: Slack, Zoom\n...",
+    "repo.additionalInfo": "Informações profissionais adicionais",
+    "repo.additionalInfoPlaceholder":
+      "Inclua qualquer informação adicional relevante para sua trajetória profissional:\n\nFormação: cursos, universidades e anos de conclusão\nCertificações: AWS Solutions Architect, PMP, CPA etc.\nIdiomas: inglês (nativo), espanhol (conversação) etc.\nPublicações e palestras: apresentações, artigos e trabalhos\nPrêmios e reconhecimentos: prêmios do setor, hackathons etc.\nVoluntariado: funções relevantes ou contribuições open source\nAssociações profissionais: entidades, conselhos etc.\nPreferências geográficas: cidades, remoto/híbrido/presencial\nStatus de visto e autorização de trabalho (se relevante)",
+    "repo.position": "Cargo",
+    "repo.positions": "Cargos",
+    "repo.addPosition": "+ Adicionar cargo",
+    "repo.noPositions": "Nenhum cargo adicionado",
+    "repo.addFirstPosition": "Adicionar seu primeiro cargo",
+    "repo.jobTitle": "Cargo",
+    "repo.company": "Empresa",
+    "repo.location": "Localização",
+    "repo.startDate": "Data de início",
+    "repo.endDate": "Data de término",
+    "repo.jobTitlePlaceholder": "Engenheiro de software sênior",
+    "repo.companyPlaceholder": "Acme Corp",
+    "repo.locationPlaceholder": "São Paulo, SP / Remoto",
+    "repo.startDatePlaceholder": "jan. 2021",
+    "repo.endDatePlaceholder": "dez. 2023",
+    "repo.overview": "Visão geral / Descrição",
+    "repo.overviewPlaceholder":
+      "Breve visão geral do cargo e do seu escopo de trabalho.",
+    "repo.responsibilities": "Responsabilidades",
+    "repo.responsibilitiesPlaceholder":
+      "Principais responsabilidades — use uma por linha ou marcadores.",
+    "repo.achievements": "Conquistas e impacto",
+    "repo.achievementsPlaceholder":
+      "Conquistas quantificadas e resultados relevantes. Inclua métricas quando possível.",
+    "repo.project": "Projeto",
+    "repo.projectName": "Nome do projeto",
+    "repo.url": "URL",
+    "repo.description": "Descrição",
+    "repo.technologiesUsed": "Tecnologias utilizadas",
+    "repo.highlights": "Destaques e impacto",
+    "repo.projectNamePlaceholder": "Dashboard OpenMetrics",
+    "repo.urlPlaceholder": "https://github.com/voce/projeto",
+    "repo.descriptionPlaceholder":
+      "O que é este projeto e por que você o criou?",
+    "repo.technologiesPlaceholder": "React, TypeScript, PostgreSQL, Docker",
+    "repo.highlightsPlaceholder":
+      "Principais funcionalidades, desafios técnicos resolvidos, usuários alcançados ou resultados obtidos.",
+    "repo.projectsCountSingular": "Projeto",
+    "repo.projectsCountPlural": "Projetos",
+    "repo.addProject": "+ Adicionar projeto",
+    "repo.noProjects": "Nenhum projeto adicionado",
+    "repo.addFirstProject": "Adicionar seu primeiro projeto",
+    "repo.employmentStatus": "Situação profissional",
+    "repo.status.employedFullTime": "Empregado — período integral",
+    "repo.status.employedPartTime": "Empregado — meio período",
+    "repo.status.employedContract": "Empregado — contrato",
+    "repo.status.freelance": "Freelancer / Autônomo",
+    "repo.status.looking": "Buscando trabalho ativamente",
+    "repo.status.open": "Aberto a oportunidades (sem busca ativa)",
+    "repo.status.unemployed": "Desempregado",
+    "repo.status.student": "Estudante",
+    "repo.currentCompensation": "Remuneração atual",
+    "repo.desiredCompensation": "Remuneração desejada",
+    "repo.currentCompensationPlaceholder":
+      "ex.: R$ 12.000/mês + bônus + participação",
+    "repo.desiredCompensationPlaceholder": "ex.: R$ 15.000–R$ 18.000/mês",
+    "repo.compensationNote":
+      "Inclua salário-base, bônus, participação e benefícios, se relevante.",
+    "repo.desiredCompensationNote":
+      "Meta de remuneração total, incluindo participação, se aplicável.",
+    "cv.step": "Etapa 03 — Estúdio de currículo",
+    "cv.titleYourCv": "Seu currículo,",
+    "cv.titleYourTemplate": "Seu modelo",
+    "cv.intro":
+      "Prepare seu currículo-base para candidaturas futuras. Esta prévia usa seu Perfil e inclui exemplos quando faltam dados.",
+    "cv.sampleCareerLine":
+      "Líder orientado a produto · Construindo equipes e experiências que impulsionam negócios",
+    "cv.sampleContact":
+      "nome@email.com  ·  +55 11 5555-0101  ·  São Paulo, SP  ·  linkedin.com/in/nome",
+    "cv.professionalProfile": "Perfil profissional",
+    "cv.sampleProfile":
+      "Profissional estratégico com histórico de transformar desafios complexos em planos claros, parcerias sólidas e resultados mensuráveis. Conhecido por combinar liderança cuidadosa com uma abordagem prática de execução.",
+    "cv.experience": "Experiência",
+    "cv.defaultLocation": "São Paulo, SP",
+    "cv.defaultDescription":
+      "Liderou iniciativas multifuncionais, alinhando prioridades da equipe às necessidades dos clientes e aos resultados do negócio.",
+    "cv.sampleJobTitle": "Gerente de produto sênior · Northstar Labs",
+    "cv.sampleExperienceDescription":
+      "Liderou a estratégia e a entrega de produto de uma plataforma usada por mais de 2 milhões de pessoas em 12 mercados.",
+    "cv.sampleAchievementOne":
+      "Aumentou a ativação em 28% por meio de pesquisa de onboarding e experimentação iterativa.",
+    "cv.sampleAchievementTwo":
+      "Criou um roadmap multifuncional que reduziu o ciclo de entrega em 35%.",
+    "cv.sampleSecondJob": "Gerente de produto · Fieldwork",
+    "cv.sampleSecondJobDescription":
+      "Lançou um novo programa de insights de clientes e ajudou a aumentar a receita recorrente anual em 18%.",
+    "cv.skillsCompetencies": "Habilidades e competências",
+    "cv.sampleSkills":
+      "Estratégia de produto · Liderança de equipes · Análise de dados · Gestão de stakeholders · Roadmapping",
+    "cv.education": "Formação",
+    "cv.degree": "Bacharelado em Administração",
+    "cv.university": "Universidade de São Paulo · 2018",
+    "cv.toolsTechnology": "Ferramentas e tecnologia",
+    "cv.selectedProjects": "Projetos selecionados",
+    "cv.additional": "Informações adicionais",
+    "cv.languagesCertification":
+      "Inglês (nativo) · Espanhol (profissional)\nProduct Owner certificado",
+    "cv.previewSettings": "Ajustes da prévia",
+    "cv.template": "Modelo",
+    "cv.atsCv": "Currículo ATS",
+    "cv.pageFormat": "Formato da página",
+    "cv.a4Pages": "A4 · 2 páginas",
+    "cv.accentColor": "Cor de destaque",
+    "cv.red": "Vermelho",
+    "cv.settingsNote":
+      "Estas configurações descrevem esta prévia e não podem ser alteradas aqui.",
+    "cv.profileCoverage": "Cobertura do perfil",
+    "cv.added": "Adicionado",
+    "cv.editProfileNote":
+      "Edite seu Perfil para substituir as seções de exemplo pelos seus dados.",
+    "results.noResults": "Nenhum resultado ainda",
+    "results.nothingGenerated": "Nada gerado",
+    "results.noResultsDescription":
+      "Acesse Aplicar, cole uma oportunidade e clique em Gerar materiais.",
+    "results.goToApply": "Ir para Aplicar",
+    "results.generatedApplication": "Candidatura gerada",
+    "results.applicationMaterials": "Materiais de candidatura",
+    "results.newApplication": "Nova candidatura",
+    "results.summary": "Resumo",
+    "results.resume": "Currículo",
+    "results.coverLetter": "Carta de apresentação",
+    "results.applicationQa": "Perguntas e respostas",
+    "results.role": "Cargo",
+    "results.company": "Empresa",
+    "results.materials": "Materiais",
+    "results.materialsList": "Currículo + Carta de apresentação + P&R",
+    "results.roleSummary": "Resumo da vaga",
+  },
+} satisfies Record<Locale, Record<string, string>>
+
+export type TranslationKey = keyof typeof messages.en
+
+export function translate(
+  locale: Locale,
+  key: TranslationKey,
+  values?: Record<string, TranslationValue>,
+): string {
+  const template = messages[locale][key] || messages.en[key] || key
+
+  return Object.entries(values || {}).reduce(
+    (result, [name, value]) => result.split(`{{${name}}}`).join(String(value)),
+    template,
+  )
+}
+
+export function isLocale(value: string | null): value is Locale {
+  return value === "en" || value === "pt-BR"
+}
+
+export function getInitialLocale(): Locale {
+  try {
+    const saved = localStorage.getItem("careeros_locale")
+    if (isLocale(saved)) return saved
+  } catch {
+    // Fall back to the browser language when localStorage is unavailable.
+  }
+
+  return typeof navigator !== "undefined" &&
+    navigator.language.toLowerCase().startsWith("pt")
+    ? "pt-BR"
+    : "en"
+}
