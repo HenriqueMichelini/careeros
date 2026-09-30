@@ -1,4 +1,4 @@
-package main
+package profilereview
 
 import (
 	"bytes"
@@ -8,7 +8,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 )
@@ -75,16 +74,10 @@ type openAIResponse struct {
 
 type app struct{ client *http.Client }
 
-func main() {
-	port := os.Getenv("PROFILE_REVIEW_PORT")
-	if port == "" {
-		port = "8787"
-	}
-	server := &http.Server{Addr: ":" + port, Handler: app{client: &http.Client{Timeout: reviewTimeout}}.handler(), ReadHeaderTimeout: 3 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 30 * time.Second}
-	log.Printf("profile-review listening port=%s", port)
-	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.Fatal(err)
-	}
+// NewHandler returns the stateless Profile review HTTP API shared by local preview and Netlify.
+func NewHandler() http.Handler {
+	a := app{client: &http.Client{Timeout: reviewTimeout}}
+	return a.handler()
 }
 
 func (a app) handler() http.Handler {

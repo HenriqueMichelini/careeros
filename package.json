@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:review-api": "go run ./backend/profile-review",
+    "dev:review-api": "go run ./cmd/profile-review",
     "build": "vite build",
     "preview": "vite preview",
     "format": "oxfmt"
