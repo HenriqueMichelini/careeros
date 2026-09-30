@@ -153,10 +153,10 @@ function isCompleteReviewRepository(value: unknown, original: ProfessionalReposi
     items.every((item, index) => {
       if (!item || typeof item !== 'object') return false
       const record = item as Record<string, unknown>
-      return record.id === expected[index].id && fields.every((field) => typeof record[field] === 'string') &&
-        (fields.includes('current') ? typeof record.current === 'boolean' : true)
+      return record.id === expected[index].id && fields.every((field) => typeof record[field] === 'string')
     })
-  return sameEntries(result.experience, original.experience, ['company', 'title', 'startDate', 'endDate', 'location', 'description', 'responsibilities', 'achievements', 'current']) &&
+  return sameEntries(result.experience, original.experience, ['company', 'title', 'startDate', 'endDate', 'location', 'description', 'responsibilities', 'achievements']) &&
+    result.experience.every((item) => typeof (item as Record<string, unknown>).current === 'boolean') &&
     sameEntries(result.projects, original.projects, ['name', 'description', 'technologies', 'url', 'highlights'])
 }
 
