@@ -158,14 +158,27 @@ func hasExactFields(value map[string]json.RawMessage, fields ...string) bool {
 
 func completeRepository(raw json.RawMessage) bool {
 	var repo map[string]json.RawMessage
-	if json.Unmarshal(raw, &repo) != nil || !hasExactFields(repo, "careerGoals", "skills", "competencies", "experience", "tools", "projects", "employmentStatus", "currentSalary", "desiredSalary", "additionalInfo") {
+	if json.Unmarshal(raw, &repo) != nil || !hasExactFields(repo, repositoryFields...) {
 		return false
 	}
+	if !validRepositoryTextFields(repo) {
+		return false
+	}
+	return validRepositoryEntries(repo)
+}
+
+var repositoryFields = []string{"careerGoals", "skills", "competencies", "experience", "tools", "projects", "employmentStatus", "currentSalary", "desiredSalary", "additionalInfo"}
+
+func validRepositoryTextFields(repo map[string]json.RawMessage) bool {
 	for _, key := range []string{"careerGoals", "skills", "competencies", "tools", "employmentStatus", "currentSalary", "desiredSalary", "additionalInfo"} {
 		if !jsonString(repo[key]) {
 			return false
 		}
 	}
+	return true
+}
+
+func validRepositoryEntries(repo map[string]json.RawMessage) bool {
 	for _, pair := range []struct {
 		key    string
 		fields []string
@@ -173,31 +186,49 @@ func completeRepository(raw json.RawMessage) bool {
 		{"experience", []string{"id", "company", "title", "startDate", "endDate", "current", "location", "description", "responsibilities", "achievements"}},
 		{"projects", []string{"id", "name", "description", "technologies", "url", "highlights"}},
 	} {
-		if !jsonArray(repo[pair.key]) {
+		if !validRepositoryArray(repo[pair.key], pair.fields) {
 			return false
-		}
-		var entries []json.RawMessage
-		if json.Unmarshal(repo[pair.key], &entries) != nil {
-			return false
-		}
-		for _, entry := range entries {
-			var fields map[string]json.RawMessage
-			if json.Unmarshal(entry, &fields) != nil || !hasExactFields(fields, pair.fields...) {
-				return false
-			}
-			for name, value := range fields {
-				if name == "current" {
-					s := strings.TrimSpace(string(value))
-					if s != "true" && s != "false" {
-						return false
-					}
-				} else if !jsonString(value) {
-					return false
-				}
-			}
 		}
 	}
 	return true
+}
+
+func validRepositoryArray(raw json.RawMessage, expectedFields []string) bool {
+	if !jsonArray(raw) {
+		return false
+	}
+	var entries []json.RawMessage
+	if json.Unmarshal(raw, &entries) != nil {
+		return false
+	}
+	for _, entry := range entries {
+		if !validRepositoryEntry(entry, expectedFields) {
+			return false
+		}
+	}
+	return true
+}
+
+func validRepositoryEntry(raw json.RawMessage, expectedFields []string) bool {
+	var fields map[string]json.RawMessage
+	if json.Unmarshal(raw, &fields) != nil || !hasExactFields(fields, expectedFields...) {
+		return false
+	}
+	for name, value := range fields {
+		if name == "current" {
+			if !jsonBoolean(value) {
+				return false
+			}
+		} else if !jsonString(value) {
+			return false
+		}
+	}
+	return true
+}
+
+func jsonBoolean(raw json.RawMessage) bool {
+	value := strings.TrimSpace(string(raw))
+	return value == "true" || value == "false"
 }
 
 func jsonString(raw json.RawMessage) bool {

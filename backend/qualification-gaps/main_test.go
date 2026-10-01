@@ -3,6 +3,7 @@ package qualificationgaps
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -24,9 +25,9 @@ func sampleRequest() gapRequest {
 	}}
 }
 
-type blockingReader struct{ ctx context.Context }
+type blockingReader struct{ done <-chan struct{} }
 
-func (r blockingReader) Read([]byte) (int, error) { <-r.ctx.Done(); return 0, r.ctx.Err() }
+func (r blockingReader) Read([]byte) (int, error) { <-r.done; return 0, errors.New("read canceled") }
 func providerOK() string {
 	return `{"choices":[{"message":{"content":"{\"gaps\":[{\"kind\":\"skill\",\"requirement\":\"Distributed systems\",\"details\":\"The posting asks for distributed systems experience.\"}] }"}}]}`
 }
@@ -36,36 +37,45 @@ func TestProviderRequestUsesOnlyQualificationAllowlist(t *testing.T) {
 	calls := 0
 	a := app{client: &http.Client{Transport: transportFunc(func(r *http.Request) (*http.Response, error) {
 		calls++
-		if r.Header.Get("Authorization") != "Bearer sk-valid" {
-			t.Fatal("key not forwarded")
-		}
-		body, _ := io.ReadAll(r.Body)
-		var request struct {
-			Model    string `json:"model"`
-			Effort   string `json:"reasoning_effort"`
-			Messages []struct {
-				Content string `json:"content"`
-			} `json:"messages"`
-		}
-		if json.Unmarshal(body, &request) != nil || request.Model != model || request.Effort != "none" || len(request.Messages) != 1 {
-			t.Fatal("incorrect provider request contract")
-		}
-		prompt := request.Messages[0].Content
-		for _, want := range []string{"Senior engineer required", "Go and SQL", "systems thinking", "Docker", "Backend engineer", "Built services", "Owned APIs", "Reduced latency", "Open source service", "Go, Redis", "Added queue processing", "2 years", "ago"} {
-			if !strings.Contains(prompt, want) {
-				t.Errorf("allowlisted content %q missing", want)
-			}
-		}
-		for _, forbidden := range []string{"SENTINEL_CAREER_GOALS", "SENTINEL_COMPANY", "SENTINEL_ID", "SENTINEL_LOCATION", "SENTINEL_EMPLOYMENT", "SENTINEL_CURRENT_SALARY", "SENTINEL_DESIRED_SALARY", "SENTINEL_ADDITIONAL_INFO", "SENTINEL_PROJECT_ID", "SENTINEL_PROJECT_NAME", "SENTINEL_URL"} {
-			if strings.Contains(prompt, forbidden) {
-				t.Errorf("excluded profile field %q reached provider", forbidden)
-			}
-		}
+		assertQualificationProviderRequest(t, r)
 		return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(providerOK())), Header: make(http.Header)}, nil
 	})}}
 	result, code, err := a.callProvider(t.Context(), "sk-valid", input)
 	if err != nil || code != "" || calls != 1 || !validResult(result) || len(result.Gaps) != 1 {
 		t.Fatalf("result=%+v code=%s err=%v calls=%d", result, code, err, calls)
+	}
+}
+
+func assertQualificationProviderRequest(t *testing.T, r *http.Request) {
+	t.Helper()
+	if r.Header.Get("Authorization") != "Bearer sk-valid" {
+		t.Fatal("key not forwarded")
+	}
+	body, _ := io.ReadAll(r.Body)
+	var request struct {
+		Model    string `json:"model"`
+		Effort   string `json:"reasoning_effort"`
+		Messages []struct {
+			Content string `json:"content"`
+		} `json:"messages"`
+	}
+	if json.Unmarshal(body, &request) != nil || request.Model != model || request.Effort != "none" || len(request.Messages) != 1 {
+		t.Fatal("incorrect provider request contract")
+	}
+	assertPromptAllowlist(t, request.Messages[0].Content)
+}
+
+func assertPromptAllowlist(t *testing.T, prompt string) {
+	t.Helper()
+	for _, want := range []string{"Senior engineer required", "Go and SQL", "systems thinking", "Docker", "Backend engineer", "Built services", "Owned APIs", "Reduced latency", "Open source service", "Go, Redis", "Added queue processing", "2 years", "ago"} {
+		if !strings.Contains(prompt, want) {
+			t.Errorf("allowlisted content %q missing", want)
+		}
+	}
+	for _, forbidden := range []string{"SENTINEL_CAREER_GOALS", "SENTINEL_COMPANY", "SENTINEL_ID", "SENTINEL_LOCATION", "SENTINEL_EMPLOYMENT", "SENTINEL_CURRENT_SALARY", "SENTINEL_DESIRED_SALARY", "SENTINEL_ADDITIONAL_INFO", "SENTINEL_PROJECT_ID", "SENTINEL_PROJECT_NAME", "SENTINEL_URL"} {
+		if strings.Contains(prompt, forbidden) {
+			t.Errorf("excluded profile field %q reached provider", forbidden)
+		}
 	}
 }
 
@@ -143,7 +153,7 @@ func TestTimeoutWhileReadingProviderResponseBody(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 20*time.Millisecond)
 	defer cancel()
 	a := app{client: &http.Client{Transport: transportFunc(func(r *http.Request) (*http.Response, error) {
-		return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(blockingReader{ctx: r.Context()}), Header: make(http.Header)}, nil
+		return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(blockingReader{done: r.Context().Done()}), Header: make(http.Header)}, nil
 	})}}
 	body, _ := json.Marshal(sampleRequest())
 	req := httptest.NewRequest(http.MethodPost, "/api/qualification-gaps", strings.NewReader(string(body))).WithContext(ctx)

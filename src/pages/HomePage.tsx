@@ -116,11 +116,15 @@ export default function HomePage({ setPage }: Props) {
             invalid_output: "home.gapErrorInvalidOutput",
           } as const)[e.code as "input" | "key" | "rate_limit" | "outage" | "timeout" | "invalid_output"]
         : undefined
-      alert(gapError
-        ? t(gapError)
-        : e instanceof AnthropicWorkflowUnavailableError
-          ? t("home.openaiMigrationPending")
-          : e.message || t("home.generationFailed"))
+      let errorMessage: string
+      if (gapError) {
+        errorMessage = t(gapError)
+      } else if (e instanceof AnthropicWorkflowUnavailableError) {
+        errorMessage = t("home.openaiMigrationPending")
+      } else {
+        errorMessage = e.message || t("home.generationFailed")
+      }
+      alert(errorMessage)
     } finally {
       setIsCheckingRequirements(false)
       dispatch({ type: "SET_GENERATING", payload: false })
