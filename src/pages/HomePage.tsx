@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useI18n, useStore } from "../lib/store"
-import { AnthropicWorkflowUnavailableError, findProfileGaps, generateMaterials } from "../lib/ai"
+import { AnthropicWorkflowUnavailableError, findProfileGaps, generateMaterials, QualificationGapsError } from "../lib/ai"
 import { ConfirmedQualification, Page, ProfileGap } from "../lib/types"
 
 interface Props {
@@ -106,9 +106,21 @@ export default function HomePage({ setPage }: Props) {
       dispatch({ type: "SET_MATERIALS", payload: materials })
       setPage("results")
     } catch (e: any) {
-      alert(e instanceof AnthropicWorkflowUnavailableError
-        ? t("home.openaiMigrationPending")
-        : e.message || t("home.generationFailed"))
+      const gapError = e instanceof QualificationGapsError
+        ? ({
+            input: "home.gapErrorInput",
+            key: "home.gapErrorKey",
+            rate_limit: "home.gapErrorRateLimit",
+            outage: "home.gapErrorOutage",
+            timeout: "home.gapErrorTimeout",
+            invalid_output: "home.gapErrorInvalidOutput",
+          } as const)[e.code as "input" | "key" | "rate_limit" | "outage" | "timeout" | "invalid_output"]
+        : undefined
+      alert(gapError
+        ? t(gapError)
+        : e instanceof AnthropicWorkflowUnavailableError
+          ? t("home.openaiMigrationPending")
+          : e.message || t("home.generationFailed"))
     } finally {
       setIsCheckingRequirements(false)
       dispatch({ type: "SET_GENERATING", payload: false })

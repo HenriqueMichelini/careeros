@@ -14,6 +14,13 @@ export class ProfileReviewError extends Error {
   }
 }
 
+export class QualificationGapsError extends Error {
+  constructor(public readonly code: string) {
+    super(code)
+    this.name = 'QualificationGapsError'
+  }
+}
+
 export class AnthropicWorkflowUnavailableError extends Error {
   constructor() {
     super('This OpenAI API key is available for Profile Review. Application generation will be available after its OpenAI migration.')
@@ -219,44 +226,26 @@ export async function findProfileGaps(
   jobPosting: string,
   apiKey: string
 ): Promise<ProfileGap[]> {
-  const prompt = `You are checking whether a candidate's professional profile may omit qualifications they already have.
-
-JOB POSTING:
-${jobPosting}
-
-CANDIDATE PROFILE:
-${formatRepo(repo)}
-
-Find at most 5 specific skills or types of experience explicitly required or preferred by the posting that are not stated or clearly supported in the profile. This is only a memory prompt for the candidate; do not decide whether they truly have the qualification.
-
-Rules:
-- Return only concrete qualifications from the posting, not generic traits or duties.
-- Do not list qualifications already supported by equivalent wording in the profile.
-- Do not infer a gap just because an exact keyword is absent.
-- Prefer the most important and recognizable items.
-- If the input is only a URL, too vague, or there are no plausible omitted qualifications, return an empty list.
-- Keep requirement concise and details to one short sentence grounded in the posting.
-
-Respond ONLY with valid JSON in this shape. Set kind to either "skill" or "experience":
-{"gaps":[{"kind":"skill","requirement":"short qualification name","details":"what the posting asks for"}]}`
-
-  const text = await callClaude(apiKey, prompt, 1200)
-
-  const match = text.match(/\{[\s\S]*\}/)
-  if (!match) throw new Error('AI returned unexpected format')
-
-  const parsed = JSON.parse(match[0]) as { gaps?: unknown }
-  if (!Array.isArray(parsed.gaps)) throw new Error('AI returned unexpected format')
-
-  return parsed.gaps
-    .filter(
-      (gap): gap is ProfileGap =>
-        typeof gap === 'object' &&
-        gap !== null &&
-        ((gap as ProfileGap).kind === 'skill' ||
-          (gap as ProfileGap).kind === 'experience') &&
-        typeof (gap as ProfileGap).requirement === 'string' &&
-        typeof (gap as ProfileGap).details === 'string'
-    )
-    .slice(0, 5)
+  let response: Response
+  try {
+    response = await fetch('/api/qualification-gaps', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-OpenAI-Api-Key': apiKey },
+      body: JSON.stringify({ repository: repo, jobPosting }),
+      signal: AbortSignal.timeout(30_000),
+    })
+  } catch (error) {
+    throw new QualificationGapsError(error instanceof DOMException && error.name === 'TimeoutError' ? 'timeout' : 'outage')
+  }
+  const payload = await response.json().catch(() => null) as { error?: unknown; gaps?: unknown } | null
+  if (!response.ok) {
+    const known = new Set(['input', 'key', 'rate_limit', 'outage', 'timeout', 'invalid_output'])
+    throw new QualificationGapsError(typeof payload?.error === 'string' && known.has(payload.error) ? payload.error : 'outage')
+  }
+  if (!payload || !Array.isArray(payload.gaps) || payload.gaps.length > 5 || payload.gaps.some((gap) => {
+    if (!gap || typeof gap !== 'object') return true
+    const value = gap as Record<string, unknown>
+    return (value.kind !== 'skill' && value.kind !== 'experience') || typeof value.requirement !== 'string' || !value.requirement.trim() || typeof value.details !== 'string' || !value.details.trim()
+  })) throw new QualificationGapsError('invalid_output')
+  return payload.gaps as ProfileGap[]
 }

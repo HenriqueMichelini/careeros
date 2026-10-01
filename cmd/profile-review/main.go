@@ -8,6 +8,7 @@ import (
 	"time"
 
 	profilereview "professional-information-repo/backend/profile-review"
+	qualificationgaps "professional-information-repo/backend/qualification-gaps"
 )
 
 func main() {
@@ -16,8 +17,14 @@ func main() {
 		port = "8787"
 	}
 	server := &http.Server{
-		Addr:              ":" + port,
-		Handler:           profilereview.NewHandler(),
+		Addr: ":" + port,
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/qualification-gaps" {
+				qualificationgaps.NewHandler().ServeHTTP(w, r)
+				return
+			}
+			profilereview.NewHandler().ServeHTTP(w, r)
+		}),
 		ReadHeaderTimeout: 3 * time.Second,
 		WriteTimeout:      30 * time.Second,
 		IdleTimeout:       30 * time.Second,

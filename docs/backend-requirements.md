@@ -6,7 +6,7 @@ This document records the agreed design for a backend serving the existing Caree
 
 - Support the frontend's three existing AI workflows: profile review, qualification gap checks, and application draft generation.
 - Keep the current product flow: no application account or sign-in, no server-side profile or application draft storage, and no history of generated drafts. Server-side storage is deferred to v2.
-- Keep the profile in browser storage and the current application draft in application memory. All three workflows send the full profile to the selected provider, including employment and compensation fields, as the frontend does today.
+- Keep the profile in browser storage and the current application draft in application memory. Profile review and application drafting send the full profile to the selected provider. Qualification gap checks are an explicit exception: the browser sends the full profile and job posting to Go, while Go sends the provider only the posting and qualification-relevant skills, competencies, tools, role text and duration/recency, and project qualification text. The provider request excludes compensation, employment status, names, IDs, URLs, locations, career goals, and additional information. Free-text qualification fields can still contain sensitive details; this allowlist is not anonymization.
 - Preserve the current gap-confirmation flow: qualifications confirmed for one job opportunity may inform that application draft but do not modify the saved profile.
 
 ## Technical stack

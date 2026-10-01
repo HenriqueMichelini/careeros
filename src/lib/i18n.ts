@@ -58,6 +58,12 @@ const messages = {
     "home.viewPreviousResults": "View Previous Results →",
     "home.generationFailed":
       "Generation failed. Check your API key and try again.",
+    "home.gapErrorInput": "The profile or job posting is too large or invalid. Review it and try again.",
+    "home.gapErrorKey": "The OpenAI API key is missing or invalid. Update your key and try again.",
+    "home.gapErrorRateLimit": "OpenAI is receiving too many requests. Wait a moment before trying again.",
+    "home.gapErrorOutage": "The qualification check is temporarily unavailable. Try again shortly.",
+    "home.gapErrorTimeout": "The qualification check took too long and was stopped. You can retry it.",
+    "home.gapErrorInvalidOutput": "The qualification check returned an incomplete result. Try again.",
     "home.openaiMigrationPending":
       "This OpenAI key is available for Profile Review. Application generation will be available after its OpenAI migration.",
     "home.gapPromptEyebrow": "Quick profile check",
@@ -360,6 +366,12 @@ const messages = {
     "home.viewPreviousResults": "Ver resultados anteriores →",
     "home.generationFailed":
       "Falha ao gerar. Verifique sua chave API e tente novamente.",
+    "home.gapErrorInput": "O perfil ou a vaga é muito grande ou contém dados inválidos. Revise e tente novamente.",
+    "home.gapErrorKey": "A chave da API da OpenAI está ausente ou é inválida. Atualize a chave e tente novamente.",
+    "home.gapErrorRateLimit": "A OpenAI está recebendo muitas solicitações. Aguarde um momento antes de tentar novamente.",
+    "home.gapErrorOutage": "A verificação de qualificações está temporariamente indisponível. Tente novamente em instantes.",
+    "home.gapErrorTimeout": "A verificação demorou demais e foi interrompida. Você pode tentar novamente.",
+    "home.gapErrorInvalidOutput": "A verificação retornou um resultado incompleto. Tente novamente.",
     "home.openaiMigrationPending":
       "Esta chave da OpenAI está disponível para Revisão do Perfil. A geração de candidaturas estará disponível após sua migração para OpenAI.",
     "home.gapPromptEyebrow": "Revisão rápida do perfil",
