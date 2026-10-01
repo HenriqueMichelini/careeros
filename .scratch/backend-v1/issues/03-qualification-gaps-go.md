@@ -1,14 +1,18 @@
 # 03 — Qualification gap checks through Go
 
-**What to build:** A user can check a job opportunity against their Profile and confirm any suggested qualifications before generating an Application Draft. The gap check runs through Go in both preview and the deployed app.
+**What to build:** A user can check a job opportunity against their Profile and confirm any suggested qualifications before generating an Application Draft. The gap check runs through Go in a Netlify pull request deploy preview and the deployed app. Figma Make preview is not an acceptance environment for this workflow.
 
 **Blocked by:** 02 — Deploy Profile review on Netlify Free.
 
-**Status:** implementation complete; live preview and deployed acceptance pending
+**Status:** implementation complete; local checks and Netlify deploy preview UI smoke observed; real-provider acceptance pending
 
 - [ ] The browser sends the full Profile, including compensation, and job posting to Go. Go builds a separate allowlisted provider DTO containing only the posting, skills, competencies, tools, experience title/description/responsibilities/achievements plus derived duration/recency, and project description/technologies/highlights. Compensation, employment status, names, IDs, URLs, locations, career goals, and additional information are excluded. Free text may still contain sensitive details; this is not anonymization. The browser no longer calls Anthropic directly for this operation.
 - [ ] The backend owns the prompt, input limits, fixed OpenAI `gpt-6-luna` model call, and output validation, returning no more than five suggested gaps or an empty result.
 - [ ] The existing confirmation flow remains intact: suggested qualifications require user confirmation and do not mutate the saved Profile.
 - [ ] Invalid input or provider output, key failures, rate limits, outages, and timeouts show clear English and Portuguese errors without an automatic retry.
-- [ ] Go contract and failure tests pass, and a real OpenAI gap check succeeds in both Figma Make preview and the deployed app within the 60-second limit.
+- [ ] Go contract and failure tests pass. The Netlify pull request deploy preview exposes the same-origin Go function and passes relevant credential-free request/error checks; record the preview URL, response status, cache behavior, and operational logs without sending a provider key.
+- [ ] A real OpenAI gap check succeeds on the Netlify pull request deploy preview and the deployed app within the 60-second limit. Record measured elapsed time and inspect the validated result. Never send the vault OpenAI key to Netlify or include a real user Profile in this check; use only the previously approved qualification projection.
+- [ ] The deployed browser flow is checked with an explicitly mocked provider response: an unchecked suggestion requires explicit confirmation, confirmed qualifications remain application-scoped, and the saved Profile is unchanged. Clearly label this as mock UI evidence, not a real-provider check.
 - [ ] No job posting, Profile, key, or suggested qualification is stored or logged by the backend.
+
+**Evidence so far (2026-10-01):** The public PR deploy preview at <https://deploy-preview-2--beamish-bavarois-333d03.netlify.app/> returned the expected keyless `401 key` and invalid-input `400 input` responses; responses used `no-store` and bypassed cache. The browser mock flow confirmed explicit selection before adding a suggested qualification, no saved-Profile mutation, and zero qualification-gap network calls. This verifies preview availability/error handling and the UI confirmation boundary only; it does not demonstrate a live provider call or provider-backed preview flow. Separately, a local real OpenAI request using only the approved qualification projection completed in 2.99 seconds and returned one valid gap. This is local provider evidence and does not establish a provider-backed Netlify preview/deployment check. A credential-free verification cannot satisfy the real-provider gate if that gate remains in force.
