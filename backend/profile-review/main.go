@@ -1,7 +1,6 @@
 package profilereview
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -10,6 +9,9 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"professional-information-repo/internal/openaihttp"
+	"professional-information-repo/internal/profilevalidation"
 )
 
 const (
@@ -19,40 +21,9 @@ const (
 	model           = "gpt-6-luna"
 )
 
-type experience struct {
-	ID               string `json:"id"`
-	Company          string `json:"company"`
-	Title            string `json:"title"`
-	StartDate        string `json:"startDate"`
-	EndDate          string `json:"endDate"`
-	Current          bool   `json:"current"`
-	Location         string `json:"location"`
-	Description      string `json:"description"`
-	Responsibilities string `json:"responsibilities"`
-	Achievements     string `json:"achievements"`
-}
-
-type project struct {
-	ID           string `json:"id"`
-	Name         string `json:"name"`
-	Description  string `json:"description"`
-	Technologies string `json:"technologies"`
-	URL          string `json:"url"`
-	Highlights   string `json:"highlights"`
-}
-
-type repository struct {
-	CareerGoals      string       `json:"careerGoals"`
-	Skills           string       `json:"skills"`
-	Competencies     string       `json:"competencies"`
-	Experience       []experience `json:"experience"`
-	Tools            string       `json:"tools"`
-	Projects         []project    `json:"projects"`
-	EmploymentStatus string       `json:"employmentStatus"`
-	CurrentSalary    string       `json:"currentSalary"`
-	DesiredSalary    string       `json:"desiredSalary"`
-	AdditionalInfo   string       `json:"additionalInfo"`
-}
+type experience = profilevalidation.Experience
+type project = profilevalidation.Project
+type repository = profilevalidation.Profile
 
 type reviewRequest struct {
 	Repository     repository `json:"repository"`
@@ -169,36 +140,7 @@ func validRequest(in reviewRequest) bool {
 	if strings.TrimSpace(in.ChangedSection) == "" || len(in.ChangedSection) > 200 {
 		return false
 	}
-	r := in.Repository
-	values := []string{r.CareerGoals, r.Skills, r.Competencies, r.Tools, r.EmploymentStatus, r.CurrentSalary, r.DesiredSalary, r.AdditionalInfo}
-	for _, s := range values {
-		if len(s) > maxProfileText {
-			return false
-		}
-	}
-	if len(r.Experience) > 40 || len(r.Projects) > 40 {
-		return false
-	}
-	for _, e := range r.Experience {
-		if e.ID == "" || len(e.ID) > 100 || !bounded(e.Company, e.Title, e.StartDate, e.EndDate, e.Location, e.Description, e.Responsibilities, e.Achievements) {
-			return false
-		}
-	}
-	for _, p := range r.Projects {
-		if p.ID == "" || len(p.ID) > 100 || !bounded(p.Name, p.Description, p.Technologies, p.URL, p.Highlights) {
-			return false
-		}
-	}
-	return true
-}
-
-func bounded(values ...string) bool {
-	for _, value := range values {
-		if len(value) > maxProfileText {
-			return false
-		}
-	}
-	return true
+	return profilevalidation.Valid(in.Repository, maxProfileText)
 }
 
 func (a app) callProvider(parent context.Context, key string, input reviewRequest) (reviewResult, string, error) {
@@ -206,15 +148,8 @@ func (a app) callProvider(parent context.Context, key string, input reviewReques
 	repoJSON, _ := json.Marshal(input.Repository)
 	prompt := "You are an expert career coach reviewing a professional profile. The user updated the section: " + input.ChangedSection + ".\n\nProfile JSON:\n" + string(repoJSON) + "\n\nImprove clarity, grammar, and professional tone throughout; preserve all facts, numbers, names, dates, and structure. Never invent facts. Return only JSON with this exact shape: {\"updatedRepository\":<complete profile object with every original field>,\"summary\":\"brief description\"}. Include every field and every list entry."
 	body, _ := json.Marshal(map[string]any{"model": model, "reasoning_effort": "none", "max_completion_tokens": 5000, "response_format": map[string]string{"type": "json_object"}, "messages": []any{map[string]string{"role": "user", "content": prompt}}})
-	ctx, cancel := context.WithTimeout(parent, reviewTimeout)
+	ctx, cancel, resp, err := openaihttp.Post(parent, a.client, reviewTimeout, key, body)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.openai.com/v1/chat/completions", bytes.NewReader(body))
-	if err != nil {
-		return empty, "outage", err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+key)
-	resp, err := a.client.Do(req)
 	if err != nil {
 		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 			return empty, "timeout", err

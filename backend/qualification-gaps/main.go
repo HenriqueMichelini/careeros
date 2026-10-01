@@ -1,7 +1,6 @@
 package qualificationgaps
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -12,6 +11,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"professional-information-repo/internal/openaihttp"
+	"professional-information-repo/internal/profilevalidation"
 )
 
 const (
@@ -22,38 +24,9 @@ const (
 	model           = "gpt-6-luna"
 )
 
-type repository struct {
-	CareerGoals      string       `json:"careerGoals"`
-	Skills           string       `json:"skills"`
-	Competencies     string       `json:"competencies"`
-	Experience       []experience `json:"experience"`
-	Tools            string       `json:"tools"`
-	Projects         []project    `json:"projects"`
-	EmploymentStatus string       `json:"employmentStatus"`
-	CurrentSalary    string       `json:"currentSalary"`
-	DesiredSalary    string       `json:"desiredSalary"`
-	AdditionalInfo   string       `json:"additionalInfo"`
-}
-type experience struct {
-	ID               string `json:"id"`
-	Company          string `json:"company"`
-	Title            string `json:"title"`
-	StartDate        string `json:"startDate"`
-	EndDate          string `json:"endDate"`
-	Current          bool   `json:"current"`
-	Location         string `json:"location"`
-	Description      string `json:"description"`
-	Responsibilities string `json:"responsibilities"`
-	Achievements     string `json:"achievements"`
-}
-type project struct {
-	ID           string `json:"id"`
-	Name         string `json:"name"`
-	Description  string `json:"description"`
-	Technologies string `json:"technologies"`
-	URL          string `json:"url"`
-	Highlights   string `json:"highlights"`
-}
+type repository = profilevalidation.Profile
+type experience = profilevalidation.Experience
+type project = profilevalidation.Project
 type gapRequest struct {
 	Repository repository `json:"repository"`
 	JobPosting string     `json:"jobPosting"`
@@ -168,34 +141,7 @@ func validRequest(in gapRequest) bool {
 	if strings.TrimSpace(in.JobPosting) == "" || len(in.JobPosting) > maxPostingBytes {
 		return false
 	}
-	r := in.Repository
-	for _, v := range []string{r.CareerGoals, r.Skills, r.Competencies, r.Tools, r.EmploymentStatus, r.CurrentSalary, r.DesiredSalary, r.AdditionalInfo} {
-		if len(v) > maxTextBytes {
-			return false
-		}
-	}
-	if len(r.Experience) > 40 || len(r.Projects) > 40 {
-		return false
-	}
-	for _, e := range r.Experience {
-		if e.ID == "" || len(e.ID) > 100 || !bounded(e.Company, e.Title, e.StartDate, e.EndDate, e.Location, e.Description, e.Responsibilities, e.Achievements) {
-			return false
-		}
-	}
-	for _, p := range r.Projects {
-		if p.ID == "" || len(p.ID) > 100 || !bounded(p.Name, p.Description, p.Technologies, p.URL, p.Highlights) {
-			return false
-		}
-	}
-	return true
-}
-func bounded(values ...string) bool {
-	for _, v := range values {
-		if len(v) > maxTextBytes {
-			return false
-		}
-	}
-	return true
+	return profilevalidation.Valid(in.Repository, maxTextBytes)
 }
 
 func hasExactFields(value map[string]json.RawMessage, fields ...string) bool {
@@ -355,15 +301,8 @@ func (a app) callProvider(parent context.Context, key string, input gapRequest) 
 	profileJSON, _ := json.Marshal(toProviderProfile(input.Repository))
 	prompt := "You are checking whether a candidate's professional profile may omit qualifications they already have.\n\nJOB POSTING:\n" + input.JobPosting + "\n\nCANDIDATE QUALIFICATION PROFILE (JSON):\n" + string(profileJSON) + "\n\nFind at most 5 specific skills or types of experience explicitly required or preferred by the posting that are not stated or clearly supported in the profile. This is only a memory prompt for the candidate; do not decide whether they truly have the qualification. Return only concrete qualifications from the posting, not generic traits or duties. Do not list equivalent support or infer gaps from missing keywords. If the posting is only a URL, too vague, or there are no plausible omitted qualifications, return an empty list. Keep requirement concise and details to one short sentence grounded in the posting. Return only JSON: {\"gaps\":[{\"kind\":\"skill\",\"requirement\":\"short qualification name\",\"details\":\"what the posting asks for\"}]}"
 	body, _ := json.Marshal(map[string]any{"model": model, "reasoning_effort": "none", "max_completion_tokens": 1200, "response_format": map[string]string{"type": "json_object"}, "messages": []any{map[string]string{"role": "user", "content": prompt}}})
-	ctx, cancel := context.WithTimeout(parent, gapTimeout)
+	ctx, cancel, resp, err := openaihttp.Post(parent, a.client, gapTimeout, key, body)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.openai.com/v1/chat/completions", bytes.NewReader(body))
-	if err != nil {
-		return empty, "outage", err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+key)
-	resp, err := a.client.Do(req)
 	if err != nil {
 		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 			return empty, "timeout", err

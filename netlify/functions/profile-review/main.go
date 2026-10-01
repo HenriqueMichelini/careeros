@@ -1,15 +1,12 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"encoding/base64"
-	"io"
-	"net/http/httptest"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	profilereview "professional-information-repo/backend/profile-review"
+	"professional-information-repo/internal/netlifyproxy"
 )
 
 var reviewHandler = profilereview.NewHandler()
@@ -18,46 +15,6 @@ func main() {
 	lambda.Start(handler)
 }
 
-func handler(_ context.Context, event events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	body := []byte(event.Body)
-	if event.IsBase64Encoded {
-		decoded, err := base64.StdEncoding.DecodeString(event.Body)
-		if err != nil {
-			return nil, err
-		}
-		body = decoded
-	}
-	path := event.Path
-	if path != "/api/profile/review" {
-		path = "/api/profile/review"
-	}
-	request := httptest.NewRequest(event.HTTPMethod, path, bytes.NewReader(body))
-	for name, value := range event.Headers {
-		request.Header.Set(name, value)
-	}
-	for name, values := range event.MultiValueHeaders {
-		request.Header.Del(name)
-		for _, value := range values {
-			request.Header.Add(name, value)
-		}
-	}
-	response := httptest.NewRecorder()
-	reviewHandler.ServeHTTP(response, request)
-	result := response.Result()
-	defer result.Body.Close()
-	responseBody, err := io.ReadAll(result.Body)
-	if err != nil {
-		return nil, err
-	}
-	headers := make(map[string]string, len(result.Header))
-	for name, values := range result.Header {
-		if len(values) > 0 {
-			headers[name] = values[0]
-		}
-	}
-	return &events.APIGatewayProxyResponse{
-		StatusCode: result.StatusCode,
-		Headers:    headers,
-		Body:       string(responseBody),
-	}, nil
+func handler(ctx context.Context, event events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+	return netlifyproxy.Handle(reviewHandler, "/api/profile/review", ctx, event)
 }
