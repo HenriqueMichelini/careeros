@@ -27,7 +27,7 @@ func draftResponse() string {
 	return `{"choices":[{"message":{"content":"{\"jobTitle\":\"Engineer\",\"company\":\"Example\",\"jobSummary\":\"Build systems\",\"resume\":\"# Resume\",\"coverLetter\":\"Hello\",\"applicationAnswers\":\"Q&A\"}"}}]}`
 }
 func TestProviderUsesOpenAIAndFullPopulatedProfile(t *testing.T) {
-	in := request{JobPosting: "Senior engineer role", Repository: profilevalidation.Profile{CareerGoals: "leadership", Skills: "Go", Competencies: "systems", Tools: "Docker", EmploymentStatus: "employed", CurrentSalary: "salary", DesiredSalary: "target", AdditionalInfo: "extra", Experience: []profilevalidation.Experience{{ID: "id", Company: "company", Title: "engineer", StartDate: "2020", EndDate: "2022", Location: "location", Description: "description", Responsibilities: "responsibilities", Achievements: "achievement"}}, Projects: []profilevalidation.Project{{ID: "project-id", Name: "project", Description: "project detail", Technologies: "Go", URL: "url", Highlights: "highlight"}}}, Confirmed: []qualification{{Kind: "skill", Requirement: "Kubernetes", UserContext: "used it"}}}
+	in := request{JobPosting: "Senior engineer role", Profile: profilevalidation.Profile{CareerGoals: "leadership", Skills: "Go", Competencies: "systems", Tools: "Docker", EmploymentStatus: "employed", CurrentSalary: "salary", DesiredSalary: "target", AdditionalInfo: "extra", Experience: []profilevalidation.Experience{{ID: "id", Company: "company", Title: "engineer", StartDate: "2020", EndDate: "2022", Location: "location", Description: "description", Responsibilities: "responsibilities", Achievements: "achievement"}}, Projects: []profilevalidation.Project{{ID: "project-id", Name: "project", Description: "project detail", Technologies: "Go", URL: "url", Highlights: "highlight"}}}, Confirmed: []qualification{{Kind: "skill", Requirement: "Kubernetes", UserContext: "used it"}}}
 	calls := 0
 	a := app{client: &http.Client{Transport: transportFunc(func(r *http.Request) (*http.Response, error) {
 		calls++
@@ -150,6 +150,10 @@ func TestInvalidInputAndTrailingJSONRejectedBeforeProvider(t *testing.T) {
 		strings.Replace(validBody, `"experience":[]`, `"experience":null`, 1),
 		strings.Replace(validBody, `"projects":[]`, `"projects":null`, 1),
 		strings.Replace(validBody, `"confirmedQualifications":[]`, `"confirmedQualifications":null`, 1),
+		strings.Replace(validBody, `"skills":"Go"`, `"skills":null`, 1),
+		strings.Replace(validBody, `"jobPosting":"Engineer"`, `"jobPosting":null`, 1),
+		strings.Replace(validBody, `"confirmedQualifications":[]`, `"confirmedQualifications":[{"kind":"skill","requirement":"Go","userContext":null}]`, 1),
+		strings.Replace(validBody, `"experience":[]`, `"experience":[{"id":"x","company":"","title":"","startDate":"","endDate":"","current":null,"location":"","description":"","responsibilities":"","achievements":""}]`, 1),
 	} {
 		r := httptest.NewRequest(http.MethodPost, "/api/application-draft", strings.NewReader(body))
 		r.Header.Set("X-OpenAI-Api-Key", "sk-valid")
@@ -161,6 +165,28 @@ func TestInvalidInputAndTrailingJSONRejectedBeforeProvider(t *testing.T) {
 	}
 	if calls != 0 {
 		t.Fatalf("provider called %d times for invalid input", calls)
+	}
+}
+
+func TestInputLimitsRejectedBeforeProvider(t *testing.T) {
+	calls := 0
+	a := app{client: &http.Client{Transport: transportFunc(func(*http.Request) (*http.Response, error) { calls++; return nil, nil })}}
+	validBody := `{"repository":{"careerGoals":"","skills":"Go","competencies":"","experience":[],"tools":"Docker","projects":[],"employmentStatus":"","currentSalary":"","desiredSalary":"","additionalInfo":""},"jobPosting":"Engineer","confirmedQualifications":[]}`
+	profileTooLong := strings.Replace(validBody, `"skills":"Go"`, `"skills":"`+strings.Repeat("x", 12<<10+1)+`"`, 1)
+	postingTooLong := strings.Replace(validBody, `"jobPosting":"Engineer"`, `"jobPosting":"`+strings.Repeat("x", 30<<10+1)+`"`, 1)
+	qualificationTooLong := strings.Replace(validBody, `"confirmedQualifications":[]`, `"confirmedQualifications":[{"kind":"skill","requirement":"Go","userContext":"`+strings.Repeat("x", 2001)+`"}]`, 1)
+	tooManyQualifications := strings.Replace(validBody, `"confirmedQualifications":[]`, `"confirmedQualifications":[`+strings.TrimSuffix(strings.Repeat(`{"kind":"skill","requirement":"Go","userContext":""},`, 26), ",")+`]`, 1)
+	for _, body := range []string{profileTooLong, postingTooLong, qualificationTooLong, tooManyQualifications, strings.Repeat(" ", maxRequestBytes+1)} {
+		r := httptest.NewRequest(http.MethodPost, "/api/application-draft", strings.NewReader(body))
+		r.Header.Set("X-OpenAI-Api-Key", "sk-valid")
+		w := httptest.NewRecorder()
+		a.handler().ServeHTTP(w, r)
+		if w.Code != http.StatusBadRequest || !strings.Contains(w.Body.String(), `"error":"input"`) {
+			t.Errorf("body length=%d status=%d response=%s", len(body), w.Code, w.Body.String())
+		}
+	}
+	if calls != 0 {
+		t.Fatalf("provider called %d times for oversized input", calls)
 	}
 }
 

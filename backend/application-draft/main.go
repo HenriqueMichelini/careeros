@@ -23,7 +23,7 @@ const (
 
 type profile = profilevalidation.Profile
 type request struct {
-	Repository profile         `json:"repository"`
+	Profile    profile         `json:"repository"`
 	JobPosting string          `json:"jobPosting"`
 	Confirmed  []qualification `json:"confirmedQualifications"`
 }
@@ -84,7 +84,7 @@ func (a app) generate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var trailing any
-	if d.Decode(&trailing) != io.EOF || strings.TrimSpace(in.JobPosting) == "" || len(in.JobPosting) > 30<<10 || !profilevalidation.Valid(in.Repository, 12<<10) || len(in.Confirmed) > 25 {
+	if d.Decode(&trailing) != io.EOF || strings.TrimSpace(in.JobPosting) == "" || len(in.JobPosting) > 30<<10 || !profilevalidation.Valid(in.Profile, 12<<10) || len(in.Confirmed) > 25 {
 		status, outcome = 400, "input"
 		writeError(w, status, outcome)
 		return
@@ -116,7 +116,7 @@ func (a app) generate(w http.ResponseWriter, r *http.Request) {
 }
 func (a app) call(parent context.Context, key string, in request) (result, string, error) {
 	var empty result
-	repo, _ := json.Marshal(in.Repository)
+	repo, _ := json.Marshal(in.Profile)
 	repo = omitEmptyProfileFields(repo)
 	quals, _ := json.Marshal(in.Confirmed)
 	prompt := "You are an expert career coach and professional writer. Generate highly personalized application materials from the candidate's full professional profile and this job posting. Draw specifically on real experience, skills, and projects; tailor every sentence to the role; mirror the posting's tone; and never invent employers, dates, proficiency, duration, examples, outcomes, or other facts. The resume must be clean Markdown with clear sections. The cover letter must be specific and under 400 words. Provide 5-6 useful application answers in Markdown. Qualifications listed below were explicitly confirmed for this application only. Use them as relevant, but if no candidate context is supplied, mention only the qualification and do not imply a specific achievement or work history. Do not add confirmed qualifications to the saved profile. Return only JSON with exactly these non-empty string fields: jobTitle, company, jobSummary, resume, coverLetter, applicationAnswers.\nPROFILE:\n" + string(repo) + "\nJOB POSTING:\n" + in.JobPosting + "\nUSER-CONFIRMED QUALIFICATIONS FOR THIS DRAFT ONLY:\n" + string(quals)
@@ -187,11 +187,19 @@ func completeInputShape(raw map[string]json.RawMessage) bool {
 			return false
 		}
 	}
+	if !jsonString(raw["jobPosting"]) {
+		return false
+	}
 	if !exactFields(raw["repository"], "careerGoals", "skills", "competencies", "experience", "tools", "projects", "employmentStatus", "currentSalary", "desiredSalary", "additionalInfo") {
 		return false
 	}
 	var repo map[string]json.RawMessage
 	_ = json.Unmarshal(raw["repository"], &repo)
+	for _, key := range []string{"careerGoals", "skills", "competencies", "tools", "employmentStatus", "currentSalary", "desiredSalary", "additionalInfo"} {
+		if !jsonString(repo[key]) {
+			return false
+		}
+	}
 	for _, group := range []struct {
 		key    string
 		fields []string
@@ -207,6 +215,17 @@ func completeInputShape(raw map[string]json.RawMessage) bool {
 			if !exactFields(item, group.fields...) {
 				return false
 			}
+			var fields map[string]json.RawMessage
+			_ = json.Unmarshal(item, &fields)
+			for key, value := range fields {
+				if group.key == "experience" && key == "current" {
+					if !jsonBoolean(value) {
+						return false
+					}
+				} else if !jsonString(value) {
+					return false
+				}
+			}
 		}
 	}
 	if !jsonArray(raw["confirmedQualifications"]) {
@@ -220,8 +239,29 @@ func completeInputShape(raw map[string]json.RawMessage) bool {
 		if !exactFields(q, "kind", "requirement", "userContext") {
 			return false
 		}
+		var fields map[string]json.RawMessage
+		_ = json.Unmarshal(q, &fields)
+		for _, key := range []string{"kind", "requirement", "userContext"} {
+			if !jsonString(fields[key]) {
+				return false
+			}
+		}
 	}
 	return true
+}
+
+func jsonString(raw json.RawMessage) bool {
+	rawValue := strings.TrimSpace(string(raw))
+	if len(rawValue) == 0 || rawValue[0] != '"' {
+		return false
+	}
+	var value string
+	return json.Unmarshal(raw, &value) == nil
+}
+
+func jsonBoolean(raw json.RawMessage) bool {
+	value := strings.TrimSpace(string(raw))
+	return value == "true" || value == "false"
 }
 
 func jsonArray(raw json.RawMessage) bool {
