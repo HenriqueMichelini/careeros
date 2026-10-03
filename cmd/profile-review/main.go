@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	applicationdraft "professional-information-repo/backend/application-draft"
 	profilereview "professional-information-repo/backend/profile-review"
 	qualificationgaps "professional-information-repo/backend/qualification-gaps"
 )
@@ -19,6 +20,10 @@ func main() {
 	server := &http.Server{
 		Addr: ":" + port,
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/application-draft" {
+				applicationdraft.NewHandler().ServeHTTP(w, r)
+				return
+			}
 			if r.URL.Path == "/api/qualification-gaps" {
 				qualificationgaps.NewHandler().ServeHTTP(w, r)
 				return
