@@ -11,6 +11,16 @@
   status = 200
 
 [[redirects]]
+  from = "/api/qualification-gaps"
+  to = "/.netlify/functions/qualification-gaps"
+  status = 200
+
+[[redirects]]
+  from = "/api/application-draft"
+  to = "/.netlify/functions/application-draft"
+  status = 200
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200

@@ -1,11 +1,20 @@
 import { useState } from "react"
 import { useI18n, useStore } from "../lib/store"
-import { AnthropicWorkflowUnavailableError, findProfileGaps, generateMaterials } from "../lib/ai"
+import { ApplicationDraftError, findProfileGaps, generateMaterials, QualificationGapsError } from "../lib/ai"
 import { ConfirmedQualification, Page, ProfileGap } from "../lib/types"
 
 interface Props {
   setPage: (p: Page) => void
 }
+
+const draftErrorTranslationKeys = {
+  input: "home.draftErrorInput",
+  key: "home.draftErrorKey",
+  rate_limit: "home.draftErrorRateLimit",
+  outage: "home.draftErrorOutage",
+  timeout: "home.draftErrorTimeout",
+  invalid_output: "home.draftErrorInvalidOutput",
+} as const
 
 function StatusDot({ ok }: { ok: boolean }) {
   return (
@@ -106,9 +115,25 @@ export default function HomePage({ setPage }: Props) {
       dispatch({ type: "SET_MATERIALS", payload: materials })
       setPage("results")
     } catch (e: any) {
-      alert(e instanceof AnthropicWorkflowUnavailableError
-        ? t("home.openaiMigrationPending")
-        : e.message || t("home.generationFailed"))
+      const gapError = e instanceof QualificationGapsError
+        ? ({
+            input: "home.gapErrorInput",
+            key: "home.gapErrorKey",
+            rate_limit: "home.gapErrorRateLimit",
+            outage: "home.gapErrorOutage",
+            timeout: "home.gapErrorTimeout",
+            invalid_output: "home.gapErrorInvalidOutput",
+          } as const)[e.code as "input" | "key" | "rate_limit" | "outage" | "timeout" | "invalid_output"]
+        : undefined
+      let errorMessage: string
+      if (gapError) {
+        errorMessage = t(gapError)
+      } else if (e instanceof ApplicationDraftError) {
+        errorMessage = t(draftErrorTranslationKeys[e.code as keyof typeof draftErrorTranslationKeys])
+      } else {
+        errorMessage = e.message || t("home.generationFailed")
+      }
+      alert(errorMessage)
     } finally {
       setIsCheckingRequirements(false)
       dispatch({ type: "SET_GENERATING", payload: false })
@@ -145,8 +170,8 @@ export default function HomePage({ setPage }: Props) {
       setShowGapPrompt(false)
       setPage("results")
     } catch (e: any) {
-      alert(e instanceof AnthropicWorkflowUnavailableError
-        ? t("home.openaiMigrationPending")
+      alert(e instanceof ApplicationDraftError
+        ? t(draftErrorTranslationKeys[e.code as keyof typeof draftErrorTranslationKeys])
         : e.message || t("home.generationFailed"))
     } finally {
       dispatch({ type: "SET_GENERATING", payload: false })
