@@ -176,7 +176,7 @@ func TestInputLimitsRejectedBeforeProvider(t *testing.T) {
 	postingTooLong := strings.Replace(validBody, `"jobPosting":"Engineer"`, `"jobPosting":"`+strings.Repeat("x", 30<<10+1)+`"`, 1)
 	qualificationTooLong := strings.Replace(validBody, `"confirmedQualifications":[]`, `"confirmedQualifications":[{"kind":"skill","requirement":"Go","userContext":"`+strings.Repeat("x", 2001)+`"}]`, 1)
 	tooManyQualifications := strings.Replace(validBody, `"confirmedQualifications":[]`, `"confirmedQualifications":[`+strings.TrimSuffix(strings.Repeat(`{"kind":"skill","requirement":"Go","userContext":""},`, 26), ",")+`]`, 1)
-	for _, body := range []string{profileTooLong, postingTooLong, qualificationTooLong, tooManyQualifications, strings.Repeat(" ", maxRequestBytes+1)} {
+	for _, body := range []string{profileTooLong, postingTooLong, qualificationTooLong, tooManyQualifications, strings.Repeat(" ", maxRequestBytes) + validBody} {
 		r := httptest.NewRequest(http.MethodPost, "/api/application-draft", strings.NewReader(body))
 		r.Header.Set("X-OpenAI-Api-Key", "sk-valid")
 		w := httptest.NewRecorder()
