@@ -67,15 +67,48 @@ func assertQualificationProviderRequest(t *testing.T, r *http.Request) {
 
 func assertPromptAllowlist(t *testing.T, prompt string) {
 	t.Helper()
-	for _, want := range []string{"Senior engineer required", "Go and SQL", "systems thinking", "Docker", "Backend engineer", "Built services", "Owned APIs", "Reduced latency", "Open source service", "Go, Redis", "Added queue processing", "2 years", "ago"} {
+	for _, want := range []string{"Senior engineer required", "Go and SQL", "systems thinking", "Docker", "Backend engineer", "Built services", "Owned APIs", "Reduced latency", "Open source service", "Go, Redis", "Added queue processing", "2 years"} {
 		if !strings.Contains(prompt, want) {
 			t.Errorf("allowlisted content %q missing", want)
 		}
 	}
-	for _, forbidden := range []string{"SENTINEL_CAREER_GOALS", "SENTINEL_COMPANY", "SENTINEL_ID", "SENTINEL_LOCATION", "SENTINEL_EMPLOYMENT", "SENTINEL_CURRENT_SALARY", "SENTINEL_DESIRED_SALARY", "SENTINEL_ADDITIONAL_INFO", "SENTINEL_PROJECT_ID", "SENTINEL_PROJECT_NAME", "SENTINEL_URL"} {
+	for _, forbidden := range []string{"SENTINEL_CAREER_GOALS", "SENTINEL_COMPANY", "SENTINEL_ID", "SENTINEL_LOCATION", "SENTINEL_EMPLOYMENT", "SENTINEL_CURRENT_SALARY", "SENTINEL_DESIRED_SALARY", "SENTINEL_ADDITIONAL_INFO", "SENTINEL_PROJECT_ID", "SENTINEL_PROJECT_NAME", "SENTINEL_URL", `"recency"`, "ago", "current"} {
 		if strings.Contains(prompt, forbidden) {
 			t.Errorf("excluded profile field %q reached provider", forbidden)
 		}
+	}
+	marker := "CANDIDATE QUALIFICATION PROFILE (JSON):\n"
+	start := strings.Index(prompt, marker) + len(marker)
+	end := strings.Index(prompt[start:], "\n\nFind at most")
+	if start < len(marker) || end < 0 {
+		t.Fatal("provider profile JSON missing or invalid")
+	}
+	var serializedFields map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(prompt[start:start+end]), &serializedFields); err != nil {
+		t.Fatalf("provider profile JSON invalid: %v", err)
+	}
+	var experienceFields []map[string]json.RawMessage
+	if json.Unmarshal(serializedFields["experience"], &experienceFields) != nil {
+		t.Fatal("provider profile serialization invalid")
+	}
+	if len(experienceFields) != 1 || string(experienceFields[0]["duration"]) != `"2 years"` {
+		t.Fatalf("derived duration missing from provider profile: %s", serializedFields["experience"])
+	}
+	for _, field := range []string{"title", "description", "responsibilities", "achievements", "duration"} {
+		if _, ok := experienceFields[0][field]; !ok {
+			t.Errorf("approved experience field %q missing from provider profile", field)
+		}
+	}
+	if len(experienceFields[0]) != 5 {
+		t.Errorf("provider experience has unexpected fields: %v", experienceFields[0])
+	}
+	for _, field := range []string{"skills", "competencies", "tools", "experience", "projects"} {
+		if _, ok := serializedFields[field]; !ok {
+			t.Errorf("approved provider profile field %q missing", field)
+		}
+	}
+	if len(serializedFields) != 5 {
+		t.Errorf("provider profile has unexpected fields: %v", serializedFields)
 	}
 }
 
@@ -168,16 +201,19 @@ func TestTimeoutWhileReadingProviderResponseBody(t *testing.T) {
 func TestExperienceTimingParsesUserFacingEnglishAndPortugueseDates(t *testing.T) {
 	now := time.Date(2026, time.October, 1, 0, 0, 0, 0, time.UTC)
 	for _, dates := range [][2]string{{"Jan 2021", "Dec 2023"}, {"jan. 2021", "dez. 2023"}, {"2021-01", "2023-12"}} {
-		duration, recency := experienceTiming(dates[0], dates[1], false, now)
-		if duration != "2 years 11 months" || recency != "2 years 10 months ago" {
-			t.Errorf("experienceTiming(%q, %q) = (%q, %q)", dates[0], dates[1], duration, recency)
+		duration := experienceDuration(dates[0], dates[1], false, now)
+		if duration != "2 years 11 months" {
+			t.Errorf("experienceDuration(%q, %q) = %q", dates[0], dates[1], duration)
 		}
 	}
-	duration, recency := experienceTiming("jan. 2021", "", true, now)
-	if duration != "5 years 9 months" || recency != "current" {
-		t.Errorf("current experience timing = (%q, %q)", duration, recency)
+	duration := experienceDuration("jan. 2021", "", true, now)
+	if duration != "5 years 9 months" {
+		t.Errorf("current experience duration = %q", duration)
 	}
-	if duration, recency := experienceTiming("Not a date", "Dec 2023", false, now); duration != "" || recency != "" {
-		t.Errorf("unparseable dates produced timing (%q, %q)", duration, recency)
+	if duration := experienceDuration("Not a date", "Dec 2023", false, now); duration != "" {
+		t.Errorf("unparseable dates produced duration %q", duration)
+	}
+	if duration := experienceDuration("Jan 2021", "Nov 2026", false, now); duration != "" {
+		t.Errorf("future-ended experience produced duration %q", duration)
 	}
 }

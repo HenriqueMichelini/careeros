@@ -46,7 +46,6 @@ type providerExperience struct {
 	Responsibilities string `json:"responsibilities"`
 	Achievements     string `json:"achievements"`
 	Duration         string `json:"duration,omitempty"`
-	Recency          string `json:"recency,omitempty"`
 }
 type providerProject struct {
 	Description  string `json:"description"`
@@ -243,41 +242,37 @@ func jsonArray(raw json.RawMessage) bool {
 func toProviderProfile(r repository) providerProfile {
 	out := providerProfile{Skills: r.Skills, Competencies: r.Competencies, Tools: r.Tools}
 	for _, e := range r.Experience {
-		duration, recency := experienceTiming(e.StartDate, e.EndDate, e.Current, time.Now())
-		out.Experience = append(out.Experience, providerExperience{e.Title, e.Description, e.Responsibilities, e.Achievements, duration, recency})
+		duration := experienceDuration(e.StartDate, e.EndDate, e.Current, time.Now())
+		out.Experience = append(out.Experience, providerExperience{e.Title, e.Description, e.Responsibilities, e.Achievements, duration})
 	}
 	for _, p := range r.Projects {
 		out.Projects = append(out.Projects, providerProject{p.Description, p.Technologies, p.Highlights})
 	}
 	return out
 }
-func experienceTiming(startText, endText string, current bool, now time.Time) (string, string) {
+func experienceDuration(startText, endText string, current bool, now time.Time) string {
 	start, ok := parseMonthYear(startText)
 	if !ok {
-		return "", ""
+		return ""
 	}
 	end := now
 	if !current {
 		parsed, ok := parseMonthYear(endText)
 		if !ok {
-			return "", ""
+			return ""
 		}
 		end = time.Date(parsed.Year(), parsed.Month(), 1, 0, 0, 0, 0, time.UTC)
+		currentMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+		if end.After(currentMonth) {
+			return ""
+		}
 	}
 	start = time.Date(start.Year(), start.Month(), 1, 0, 0, 0, 0, time.UTC)
 	months := (end.Year()-start.Year())*12 + int(end.Month()-start.Month())
 	if months < 0 {
-		return "", ""
+		return ""
 	}
-	duration := fmtMonths(months)
-	if current {
-		return duration, "current"
-	}
-	ago := (now.Year()-end.Year())*12 + int(now.Month()-end.Month())
-	if ago < 0 {
-		return "", ""
-	}
-	return duration, fmtMonths(ago) + " ago"
+	return fmtMonths(months)
 }
 
 func parseMonthYear(value string) (time.Time, bool) {
