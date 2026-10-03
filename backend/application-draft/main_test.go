@@ -141,7 +141,16 @@ func TestInvalidInputAndTrailingJSONRejectedBeforeProvider(t *testing.T) {
 	calls := 0
 	a := app{client: &http.Client{Transport: transportFunc(func(*http.Request) (*http.Response, error) { calls++; return nil, nil })}}
 	validBody := `{"repository":{"careerGoals":"","skills":"Go","competencies":"","experience":[],"tools":"Docker","projects":[],"employmentStatus":"","currentSalary":"","desiredSalary":"","additionalInfo":""},"jobPosting":"Engineer","confirmedQualifications":[]}`
-	for _, body := range []string{`{}`, validBody + ` {}`, strings.Replace(validBody, `"jobPosting":"Engineer"`, `"jobPosting":""`, 1), strings.Replace(validBody, `"repository":{`, `"repository":null`, 1), strings.Replace(validBody, `"careerGoals":"","skills":"Go",`, `"skills":"Go",`, 1)} {
+	for _, body := range []string{
+		`{}`,
+		validBody + ` {}`,
+		strings.Replace(validBody, `"jobPosting":"Engineer"`, `"jobPosting":""`, 1),
+		strings.Replace(validBody, `"repository":{`, `"repository":null`, 1),
+		strings.Replace(validBody, `"careerGoals":"","skills":"Go",`, `"skills":"Go",`, 1),
+		strings.Replace(validBody, `"experience":[]`, `"experience":null`, 1),
+		strings.Replace(validBody, `"projects":[]`, `"projects":null`, 1),
+		strings.Replace(validBody, `"confirmedQualifications":[]`, `"confirmedQualifications":null`, 1),
+	} {
 		r := httptest.NewRequest(http.MethodPost, "/api/application-draft", strings.NewReader(body))
 		r.Header.Set("X-OpenAI-Api-Key", "sk-valid")
 		w := httptest.NewRecorder()

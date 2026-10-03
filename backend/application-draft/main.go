@@ -196,6 +196,9 @@ func completeInputShape(raw map[string]json.RawMessage) bool {
 		key    string
 		fields []string
 	}{{"experience", []string{"id", "company", "title", "startDate", "endDate", "current", "location", "description", "responsibilities", "achievements"}}, {"projects", []string{"id", "name", "description", "technologies", "url", "highlights"}}} {
+		if !jsonArray(repo[group.key]) {
+			return false
+		}
 		var items []json.RawMessage
 		if json.Unmarshal(repo[group.key], &items) != nil {
 			return false
@@ -205,6 +208,9 @@ func completeInputShape(raw map[string]json.RawMessage) bool {
 				return false
 			}
 		}
+	}
+	if !jsonArray(raw["confirmedQualifications"]) {
+		return false
 	}
 	var quals []json.RawMessage
 	if json.Unmarshal(raw["confirmedQualifications"], &quals) != nil {
@@ -216,6 +222,11 @@ func completeInputShape(raw map[string]json.RawMessage) bool {
 		}
 	}
 	return true
+}
+
+func jsonArray(raw json.RawMessage) bool {
+	value := strings.TrimSpace(string(raw))
+	return len(value) > 0 && value[0] == '['
 }
 
 // Empty optional fields are omitted while all populated profile fields are retained.
