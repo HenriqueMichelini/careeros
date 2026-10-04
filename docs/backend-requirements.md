@@ -11,22 +11,22 @@ This document records the agreed design for a backend serving the existing Caree
 
 ## Technical stack
 
-- Keep the existing React, Vite, Tailwind CSS, and TypeScript frontend. Use Go for all backend application logic, with the standard HTTP and JSON libraries for the three fixed workflows and outbound Anthropic/OpenAI calls. Use the small AWS Lambda Go adapter required by Netlify Functions; no backend web framework, database, or application-owned AI key is needed.
+- Keep the existing React, Vite, Tailwind CSS, and TypeScript frontend. Use Go for all backend application logic, with the standard HTTP and JSON libraries for the three fixed workflows and outbound OpenAI calls. OpenAI is the sole v1 provider across all workflows. Use the small AWS Lambda Go adapter required by Netlify Functions; no backend web framework, database, or application-owned AI key is needed.
 - In Figma Make preview, the running Vite server forwards same-origin API requests to a local Go process using the same workflow code. In production, the Vite frontend and Go Functions deploy together on Netlify Free. The production frontend calls the Functions on the same origin.
 - Use Go's standard test runner for backend contract and failure tests. Test the frontend integration in the browser and complete the live provider checks below. Use pnpm for frontend tooling; the repository's npm and pnpm lockfiles must be reconciled only after confirming Figma Make's install path.
 
 ## Backend contract
 
 - Expose only the three fixed workflows. The backend owns their prompts, provider calls, input checks, and response validation. It does not expose an arbitrary prompt or provider relay.
-- Accept Anthropic and OpenAI API keys supplied by the user. One explicitly selected provider is active for the whole app, and all three workflows use it. The frontend sends only that provider's key with each request; the backend does not persist it.
+- Accept one OpenAI API key supplied by the user. All three workflows use OpenAI; the frontend sends that key with each request and the backend does not persist it. Provider switching and Anthropic credentials are out of scope for v1.
 - Return the data the existing screens need: an updated profile and summary from review; up to five potential qualification gaps from the gap check; and a job title, company, role summary, resume, cover letter, and application answers from draft generation.
 - Reject malformed inputs before contacting a provider and reject incomplete or structurally invalid provider responses before changing the profile or displaying an application draft. Preserve stable error categories so the English and Portuguese UI can show clear messages for invalid input or key, provider rate limits or outages, timeout, and invalid output.
 - Each workflow is one synchronous request with a bounded timeout. A failure returns an error; another billable provider call happens only after a deliberate user retry. There is no automatic retry, provider switch, background job, or progress tracker in v1.
 
 ## Keys and models
 
-- The browser remembers one Anthropic key and one OpenAI key across visits. Editing a provider's key replaces its old saved value. Switching the active provider does not delete the other provider's key.
-- Use one fixed model per provider, with no model picker. Cost is the priority: Claude Haiku 4.5 (`claude-haiku-4-5-20251001`) with extended thinking off, and GPT-6 Luna (`gpt-6-luna`) with reasoning effort `none`.
+- The browser remembers the user's OpenAI key across visits; editing it replaces its old value.
+- Use the fixed GPT-6 Luna model (`gpt-6-luna`) with reasoning effort `none`; there is no model or provider picker.
 - AI provider charges, if any, belong to the user's provider account. V1 does not use an application-owned AI key or shared AI billing.
 
 ## Non-functional requirements
@@ -46,9 +46,8 @@ This document records the agreed design for a backend serving the existing Caree
 
 ## Current evidence and platform notes
 
-- The frontend currently saves the profile and Anthropic key in `localStorage`, holds the generated draft in memory, and calls Anthropic from `src/lib/ai.ts` for the three workflows. It has no backend, database, or sign-in flow.
+- The frontend saves the profile and OpenAI key in `localStorage` and holds the generated draft in memory. All three workflows call their same-origin Go handlers, which use OpenAI. It has no backend database or sign-in flow.
 - As checked on 2026-09-29, Netlify documents Go Functions through its Lambda-compatible API, a 60-second synchronous execution limit, and a Free plan with a hard monthly credit limit that pauses service rather than charging. Netlify states that commercial projects may use its Free plan. [Go Functions](https://docs.netlify.com/build/functions/lambda-compatibility/), [Function limits](https://docs.netlify.com/build/functions/configuration/), [Free pricing](https://www.netlify.com/pricing/), [commercial use](https://www.netlify.com/blog/introducing-netlify-free-plan/).
-- As checked on 2026-09-29, Claude Haiku 4.5 lists $1 per million input tokens and $5 per million output tokens and has no effort parameter. [Anthropic model page](https://platform.claude.com/docs/en/models/haiku-4-5/overview).
 - As checked on 2026-09-29, GPT-6 Luna lists $0.10 per million input tokens and $0.50 per million output tokens and supports `reasoning.effort: "none"`. [Official OpenAI model page](https://developers.openai.com/api/docs/models/gpt-6-luna). Older GPT-5 nano has lower published rates, but its dated snapshot is scheduled for removal on 2026-12-11. [Official OpenAI model page](https://developers.openai.com/api/docs/models/gpt-5-nano), [deprecation schedule](https://developers.openai.com/api/docs/deprecations).
 
 ## Values to set during implementation

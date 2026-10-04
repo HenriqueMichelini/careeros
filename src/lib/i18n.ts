@@ -70,8 +70,6 @@ const messages = {
     "home.draftErrorOutage": "Application generation is temporarily unavailable. Try again shortly.",
     "home.draftErrorTimeout": "Application generation took too long and was stopped. You can retry it.",
     "home.draftErrorInvalidOutput": "Application generation returned an incomplete result. Try again.",
-    "home.openaiMigrationPending":
-      "This OpenAI key is available for Profile Review. Application generation will be available after its OpenAI migration.",
     "home.gapPromptEyebrow": "Quick profile check",
     "home.gapPromptTitle": "Did we miss something?",
     "home.gapPromptDescription":
@@ -384,8 +382,6 @@ const messages = {
     "home.draftErrorOutage": "A geração da candidatura está temporariamente indisponível. Tente novamente em instantes.",
     "home.draftErrorTimeout": "A geração demorou demais e foi interrompida. Você pode tentar novamente.",
     "home.draftErrorInvalidOutput": "A geração retornou um resultado incompleto. Tente novamente.",
-    "home.openaiMigrationPending":
-      "Esta chave da OpenAI está disponível para Revisão do Perfil. A geração de candidaturas estará disponível após sua migração para OpenAI.",
     "home.gapPromptEyebrow": "Revisão rápida do perfil",
     "home.gapPromptTitle": "Faltou alguma coisa?",
     "home.gapPromptDescription":
