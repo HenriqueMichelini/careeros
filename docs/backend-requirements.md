@@ -53,5 +53,5 @@ This document records the agreed design for a backend serving the existing Caree
 ## Values to set during implementation
 
 - Maximum profile and job-posting sizes, based on representative content and the free runtime's limits.
-- Per-workflow timeout values, based on measured requests to both selected models.
+- Per-workflow timeout values, based on measured requests across all three workflows using the fixed GPT-6 Luna model.
 - Exact route names and payload fields, while preserving the contract above and existing screen behavior.
