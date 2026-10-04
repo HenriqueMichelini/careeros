@@ -18,6 +18,6 @@
 
 Any real OpenAI request for this ticket must use only approved minimized synthetic input and pass an exact outbound-payload preflight before the request. Never use a real Profile, expose a credential in source or logs, or send the vault key to Netlify. Local synthetic success evidence recorded for Tickets 03 and 04 is historical evidence for those checks only; it does not replace any of the six checks above. The separate overall v1 release gates also remain open until a provider-backed Netlify call and duration, actual Netlify Function log review, and factual-claim review are recorded.
 
-**Comments**
+## Comments
 
 - 2026-10-04 — User approved accepting Ticket 05 based on accumulated Ticket 01–04 evidence. The six real Figma Make/deployed workflow checks with durations under 60 seconds, representative output factual/completeness review, and actual deployed Function log/privacy review remain explicit overall v1 release gates. No new provider call or credential use is authorized by this acceptance.
