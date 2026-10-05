@@ -457,7 +457,7 @@ export default function RepositoryPage() {
       const lookup = {
         input:"repo.ingestErrorInput", key:"repo.reviewErrorKey", rate_limit:"repo.reviewErrorRateLimit",
         outage:"repo.reviewErrorOutage", timeout:"repo.reviewErrorTimeout",
-        invalid_output:"repo.reviewErrorInvalidOutput",
+        truncated:"repo.ingestErrorTruncated", invalid_output:"repo.ingestErrorInvalidOutput",
       } as const
       setIngestionError(t(lookup[code as keyof typeof lookup] || "repo.reviewFailed"))
     } finally { if (ingestionRequest.current === requestId) setIsIngesting(false) }

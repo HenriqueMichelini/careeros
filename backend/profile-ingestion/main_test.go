@@ -17,8 +17,70 @@ type roundTripFunc func(*http.Request) (*http.Response, error)
 
 func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
 func completion(content string) *http.Response {
-	body, _ := json.Marshal(map[string]any{"choices": []any{map[string]any{"message": map[string]string{"content": content}}}})
+	body, _ := json.Marshal(map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": content}}}})
 	return &http.Response{StatusCode: 200, Body: io.NopCloser(bytes.NewReader(body)), Header: http.Header{}}
+}
+
+func TestLargePasteUsesStrictSchemasAndEnoughOutputBudget(t *testing.T) {
+	input := strings.Repeat("Worked with Java and PostgreSQL.\n", 180)
+	calls := 0
+	client := &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		calls++
+		var body struct {
+			MaxCompletionTokens int `json:"max_completion_tokens"`
+			ResponseFormat      struct {
+				Type       string `json:"type"`
+				JSONSchema struct {
+					Strict bool `json:"strict"`
+					Schema struct {
+						Required             []string `json:"required"`
+						AdditionalProperties bool     `json:"additionalProperties"`
+					} `json:"schema"`
+				} `json:"json_schema"`
+			} `json:"response_format"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatal(err)
+		}
+		if body.ResponseFormat.Type != "json_schema" || !body.ResponseFormat.JSONSchema.Strict || body.ResponseFormat.JSONSchema.Schema.AdditionalProperties || body.MaxCompletionTokens < 6000 {
+			t.Fatalf("call %d must request bounded strict output with sufficient budget", calls)
+		}
+		if calls == 1 {
+			if !contains(body.ResponseFormat.JSONSchema.Schema.Required, "claims") {
+				t.Fatal("missing claims requirement")
+			}
+			return completion(`{"claims":[{"id":"c1","source":"Worked with Java and PostgreSQL.","text":"Used Java and PostgreSQL","targets":["skills"],"question":""}]}`), nil
+		}
+		if !contains(body.ResponseFormat.JSONSchema.Schema.Required, "operations") {
+			t.Fatal("missing operations requirement")
+		}
+		return completion(`{"operations":[{"claimId":"c1","target":"skills","entryId":"","field":"skills","action":"add","value":"Java and PostgreSQL","finding":"addition"}]}`), nil
+	})}
+	w := send(t, (app{client: client}).handler(), request{Input: input, Profile: profile()})
+	if w.Code != 200 || calls != 2 {
+		t.Fatalf("status %d calls %d", w.Code, calls)
+	}
+}
+
+func TestTruncatedProviderOutputIsRejectedBeforeParsing(t *testing.T) {
+	client := &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		body := `{"choices":[{"finish_reason":"length","message":{"content":"{\"claims\":[]}"}}]}`
+		return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(body)), Header: http.Header{}}, nil
+	})}
+	w := send(t, (app{client: client}).handler(), request{Input: "Used Java", Profile: profile()})
+	if w.Code != 502 || !strings.Contains(w.Body.String(), `"error":"truncated"`) {
+		t.Fatalf("status %d body %s", w.Code, w.Body.String())
+	}
+}
+
+func TestWrappedSourceIsMappedToExactInputExcerpt(t *testing.T) {
+	client := &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		return completion(`{"claims":[{"id":"c1","source":"Worked with Java and PostgreSQL.","text":"Used Java and PostgreSQL","targets":["skills"],"question":""}]}`), nil
+	})}
+	claims, code := (app{client: client}).extract(httptest.NewRequest("POST", "/", nil).Context(), "sk-test", "Worked with Java\nand PostgreSQL.")
+	if code != "" || len(claims) != 1 || claims[0].Source != "Worked with Java\nand PostgreSQL." {
+		t.Fatalf("code %s claims %#v", code, claims)
+	}
 }
 func profile() profilevalidation.Profile {
 	return profilevalidation.Profile{EmploymentStatus: "", Skills: "React", CurrentSalary: "SECRET SALARY", AdditionalInfo: "PRIVATE NOTES", Experience: []profilevalidation.Experience{{ID: "e1", Company: "Acme", Title: "Engineer", Location: "SECRET CITY", Achievements: "Built a search tool"}}, Projects: []profilevalidation.Project{{ID: "p1", Name: "Side project", URL: "https://secret.example"}}}

@@ -204,6 +204,8 @@ const messages = {
     "repo.reviewErrorOutage": "The review service is temporarily unavailable. Try again shortly.",
     "repo.reviewErrorTimeout": "The review took too long and was stopped. Try again with a smaller profile.",
     "repo.reviewErrorInvalidOutput": "The review returned an incomplete result. Your saved profile was not changed.",
+    "repo.ingestErrorTruncated": "This paste produced more proposed changes than the review could return. Try smaller portions. Your saved profile was not changed.",
+    "repo.ingestErrorInvalidOutput": "We couldn't safely prepare changes from this text. Try a smaller portion. Your saved profile was not changed.",
     "repo.last": "Last",
     "repo.profileIntro":
       "Add and update your information in the sections: Career Goals, Skills, Competencies, Experience, Tools & Tech, Projects, Compensation, and Other.",
@@ -553,6 +555,8 @@ const messages = {
     "repo.reviewErrorOutage": "O serviço de revisão está temporariamente indisponível. Tente novamente em instantes.",
     "repo.reviewErrorTimeout": "A revisão demorou demais e foi interrompida. Tente novamente com um perfil menor.",
     "repo.reviewErrorInvalidOutput": "A revisão retornou um resultado incompleto. Seu perfil salvo não foi alterado.",
+    "repo.ingestErrorTruncated": "Este texto gerou mais alterações propostas do que a revisão conseguiu retornar. Tente dividir em partes menores. Seu perfil salvo não foi alterado.",
+    "repo.ingestErrorInvalidOutput": "Não foi possível preparar alterações seguras a partir deste texto. Tente uma parte menor. Seu perfil salvo não foi alterado.",
     "repo.last": "Última revisão",
     "repo.profileIntro":
       "Adicione e atualize suas informações nas seções: Objetivos de carreira, Habilidades, Competências, Experiência, Ferramentas e tecnologia, Projetos, Remuneração e Outros.",

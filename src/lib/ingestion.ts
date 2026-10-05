@@ -290,6 +290,7 @@ export async function ingestProfile(
           "rate_limit",
           "outage",
           "timeout",
+          "truncated",
           "invalid_output",
         ].includes(raw.error)
         ? raw.error
