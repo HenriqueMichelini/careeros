@@ -5,16 +5,13 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	profilereview "professional-information-repo/backend/profile-review"
+	qualificationgaps "professional-information-repo/backend/qualification-gaps"
 	"professional-information-repo/internal/netlifyproxy"
 )
 
-var reviewHandler = profilereview.NewHandler()
+var gapHandler = qualificationgaps.NewHandler()
 
-func main() {
-	lambda.Start(handler)
-}
-
+func main() { lambda.Start(handler) }
 func handler(ctx context.Context, event events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	return netlifyproxy.Handle(reviewHandler, "/api/profile/review", ctx, event)
+	return netlifyproxy.Handle(gapHandler, "/api/qualification-gaps", ctx, event)
 }

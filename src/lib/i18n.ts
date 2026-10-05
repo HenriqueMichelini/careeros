@@ -58,8 +58,18 @@ const messages = {
     "home.viewPreviousResults": "View Previous Results →",
     "home.generationFailed":
       "Generation failed. Check your API key and try again.",
-    "home.openaiMigrationPending":
-      "This OpenAI key is available for Profile Review. Application generation will be available after its OpenAI migration.",
+    "home.gapErrorInput": "The profile or job posting is too large or invalid. Review it and try again.",
+    "home.gapErrorKey": "The OpenAI API key is missing or invalid. Update your key and try again.",
+    "home.gapErrorRateLimit": "OpenAI is receiving too many requests. Wait a moment before trying again.",
+    "home.gapErrorOutage": "The qualification check is temporarily unavailable. Try again shortly.",
+    "home.gapErrorTimeout": "The qualification check took too long and was stopped. You can retry it.",
+    "home.gapErrorInvalidOutput": "The qualification check returned an incomplete result. Try again.",
+    "home.draftErrorInput": "The profile, job posting, or confirmed qualifications are invalid or too large. Review them and try again.",
+    "home.draftErrorKey": "The OpenAI API key is missing or invalid. Update your key and try again.",
+    "home.draftErrorRateLimit": "OpenAI is receiving too many requests. Wait a moment before trying again.",
+    "home.draftErrorOutage": "Application generation is temporarily unavailable. Try again shortly.",
+    "home.draftErrorTimeout": "Application generation took too long and was stopped. You can retry it.",
+    "home.draftErrorInvalidOutput": "Application generation returned an incomplete result. Try again.",
     "home.gapPromptEyebrow": "Quick profile check",
     "home.gapPromptTitle": "Did we miss something?",
     "home.gapPromptDescription":
@@ -360,8 +370,18 @@ const messages = {
     "home.viewPreviousResults": "Ver resultados anteriores →",
     "home.generationFailed":
       "Falha ao gerar. Verifique sua chave API e tente novamente.",
-    "home.openaiMigrationPending":
-      "Esta chave da OpenAI está disponível para Revisão do Perfil. A geração de candidaturas estará disponível após sua migração para OpenAI.",
+    "home.gapErrorInput": "O perfil ou a vaga é muito grande ou contém dados inválidos. Revise e tente novamente.",
+    "home.gapErrorKey": "A chave da API da OpenAI está ausente ou é inválida. Atualize a chave e tente novamente.",
+    "home.gapErrorRateLimit": "A OpenAI está recebendo muitas solicitações. Aguarde um momento antes de tentar novamente.",
+    "home.gapErrorOutage": "A verificação de qualificações está temporariamente indisponível. Tente novamente em instantes.",
+    "home.gapErrorTimeout": "A verificação demorou demais e foi interrompida. Você pode tentar novamente.",
+    "home.gapErrorInvalidOutput": "A verificação retornou um resultado incompleto. Tente novamente.",
+    "home.draftErrorInput": "O perfil, a vaga ou as qualificações confirmadas são inválidos ou muito grandes. Revise e tente novamente.",
+    "home.draftErrorKey": "A chave da API da OpenAI está ausente ou é inválida. Atualize sua chave e tente novamente.",
+    "home.draftErrorRateLimit": "A OpenAI está recebendo muitas solicitações. Aguarde um momento antes de tentar novamente.",
+    "home.draftErrorOutage": "A geração da candidatura está temporariamente indisponível. Tente novamente em instantes.",
+    "home.draftErrorTimeout": "A geração demorou demais e foi interrompida. Você pode tentar novamente.",
+    "home.draftErrorInvalidOutput": "A geração retornou um resultado incompleto. Tente novamente.",
     "home.gapPromptEyebrow": "Revisão rápida do perfil",
     "home.gapPromptTitle": "Faltou alguma coisa?",
     "home.gapPromptDescription":

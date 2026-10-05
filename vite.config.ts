@@ -38,6 +38,14 @@ react(),
           target: 'http://127.0.0.1:8787',
           changeOrigin: false,
         },
+        '/api/qualification-gaps': {
+          target: 'http://127.0.0.1:8787',
+          changeOrigin: false,
+        },
+        '/api/application-draft': {
+          target: 'http://127.0.0.1:8787',
+          changeOrigin: false,
+        },
       },
       watch: {
         ignored: [
@@ -50,6 +58,14 @@ react(),
       port: parseInt(process.env.PORT || '8443'),
       proxy: {
         '/api/profile/review': {
+          target: 'http://127.0.0.1:8787',
+          changeOrigin: false,
+        },
+        '/api/qualification-gaps': {
+          target: 'http://127.0.0.1:8787',
+          changeOrigin: false,
+        },
+        '/api/application-draft': {
           target: 'http://127.0.0.1:8787',
           changeOrigin: false,
         },
