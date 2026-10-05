@@ -177,6 +177,18 @@ test("repeat adds, explicit removal, and new IDs", () => {
     "React",
   )
   assert.equal(
+    applyIngestion({ ...before, skills: "Built payment APIs." }, JSON.stringify({ ...before, skills: "Built payment APIs." }), [op({ value: "Built payment APIs" })]).skills,
+    "Built payment APIs.",
+  )
+  assert.equal(
+    applyIngestion({ ...before, skills: "• Built payment APIs" }, JSON.stringify({ ...before, skills: "• Built payment APIs" }), [op({ value: "Built payment APIs." })]).skills,
+    "• Built payment APIs",
+  )
+  assert.equal(
+    applyIngestion({ ...before, skills: "Built payment APIs" }, JSON.stringify({ ...before, skills: "Built payment APIs" }), [op({ value: "Built payment API" })]).skills,
+    "Built payment APIs\nBuilt payment API",
+  )
+  assert.equal(
     applyIngestion(before, JSON.stringify(before), [
       op({ action: "remove", value: "" }),
     ]).skills,
@@ -205,6 +217,64 @@ test("repeat adds, explicit removal, and new IDs", () => {
       applyIngestion(before, JSON.stringify(before), operations.slice(0, 1)),
     /incomplete/,
   )
+})
+
+test("related claims create one detailed experience and one project", () => {
+  const before = profile()
+  const operations = [
+    op({ target: "experience", entryId: "new:c1", field: "company", value: "Aster Labs" }),
+    op({ target: "experience", entryId: "new:c1", field: "title", value: "Engineer" }),
+    op({ claimId: "c2", target: "experience", entryId: "new:c1", field: "description", value: "Backend engineer for payment systems." }),
+    op({ claimId: "c3", target: "experience", entryId: "new:c1", field: "responsibilities", value: "Built payment APIs." }),
+    op({ claimId: "c4", target: "experience", entryId: "new:c1", field: "achievements", value: "Cut validation time to 20 seconds." }),
+    op({ claimId: "c5", target: "projects", entryId: "new:c5", field: "name", value: "Harbor" }),
+    op({ claimId: "c6", target: "projects", entryId: "new:c5", field: "description", value: "Inventory project for small shops." }),
+    op({ claimId: "c7", target: "projects", entryId: "new:c5", field: "highlights", value: "Added audit trails with Go." }),
+  ]
+  const next = applyIngestion(before, JSON.stringify(before), operations)
+  assert.equal(next.experience.length, 2)
+  assert.equal(next.experience[1].description, "Backend engineer for payment systems.")
+  assert.equal(next.experience[1].responsibilities, "Built payment APIs.")
+  assert.equal(next.experience[1].achievements, "Cut validation time to 20 seconds.")
+  assert.equal(next.projects.length, 2)
+  assert.equal(next.projects[1].highlights, "Added audit trails with Go.")
+})
+
+test("new entry references require a reviewed anchor and identity fields", () => {
+  const claims = [claim({ targets: ["experience"] }), claim({ id: "c2", source: "Built APIs", text: "Built APIs", targets: ["experience"] })]
+  const { approved: _approved, ...company } = op({ target: "experience", entryId: "new:c1", field: "company", value: "Aster Labs" })
+  const raw = review({ claims, operations: [company, { ...company, claimId: "c2", field: "responsibilities", value: "Built APIs" }] })
+  assert.throws(() => validateIngestionResult(raw, "TypeScript Built APIs", profile()))
+})
+
+test("two approved new entries cannot save the same project twice", () => {
+  const before = profile()
+  const operations = [
+    op({ target: "projects", entryId: "new:c1", field: "name", value: "Harbor" }),
+    op({ claimId: "c2", target: "projects", entryId: "new:c2", field: "name", value: "Harbor" }),
+  ]
+  assert.throws(() => applyIngestion(before, JSON.stringify(before), operations), /incomplete/)
+  assert.equal(before.projects.length, 1)
+})
+
+test("reviewed updates can enrich sparse saved entries without replacing unrelated fields", () => {
+  const before = profile()
+  before.experience[0].description = "Software engineer."
+  before.projects[0].description = "Inventory project."
+  const next = applyIngestion(before, JSON.stringify(before), [
+    op({ target: "experience", entryId: before.experience[0].id, field: "description", action: "update", value: "Backend engineer developing payment APIs and integration tests." }),
+    op({ target: "experience", entryId: before.experience[0].id, field: "responsibilities", value: "Built transactional APIs." }),
+    op({ target: "projects", entryId: before.projects[0].id, field: "description", action: "update", value: "Inventory platform for small shops." }),
+    op({ target: "projects", entryId: before.projects[0].id, field: "highlights", value: "Added audit trails with Go." }),
+  ])
+  assert.equal(next.experience[0].description, "Backend engineer developing payment APIs and integration tests.")
+  assert.equal(next.experience[0].responsibilities, "Built transactional APIs.")
+  assert.equal(next.experience[0].id, before.experience[0].id)
+  assert.equal(next.projects[0].description, "Inventory platform for small shops.")
+  assert.equal(next.projects[0].highlights, "Added audit trails with Go.")
+  assert.equal(next.projects[0].id, before.projects[0].id)
+  assert.equal(before.experience[0].description, "Software engineer.")
+  assert.equal(before.projects[0].description, "Inventory project.")
 })
 
 test("stale or invalid patches do not mutate the Profile", () => {

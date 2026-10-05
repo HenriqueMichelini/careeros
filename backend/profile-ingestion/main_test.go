@@ -145,6 +145,98 @@ func TestUnsafeEntryWithholdsOnlyItsClaimGroup(t *testing.T) {
 	}
 }
 
+func TestRelatedClaimsFillOneNewExperienceAndProject(t *testing.T) {
+	calls := 0
+	client := &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		calls++
+		if calls == 1 {
+			return completion(`{"claims":[{"id":"c1","source":"Engineer at Aster Labs","text":"Engineer at Aster Labs","targets":["experience"],"question":""},{"id":"c2","source":"Built payment APIs","text":"Built payment APIs","targets":["experience"],"question":""},{"id":"c3","source":"Cut validation to 20 seconds","text":"Cut validation to 20 seconds","targets":["experience"],"question":""},{"id":"c4","source":"Harbor inventory project","text":"Harbor inventory project","targets":["projects"],"question":""},{"id":"c5","source":"Added audit trails with Go","text":"Added audit trails with Go","targets":["projects"],"question":""}]}`), nil
+		}
+		body, _ := io.ReadAll(r.Body)
+		if !bytes.Contains(body, []byte("one Experience entry")) || !bytes.Contains(body, []byte("Responsibilities: distinct actions")) || !bytes.Contains(body, []byte("existing Profile field repeats")) || !bytes.Contains(body, []byte("anchor's identity plus a linked claim")) {
+			t.Fatal("comparison prompt must request grouped, detailed, concise fields and reviewed cleanup")
+		}
+		return completion(`{"operations":[{"claimId":"c1","target":"experience","entryId":"new:c1","field":"company","action":"add","value":"Aster Labs","finding":"addition"},{"claimId":"c1","target":"experience","entryId":"new:c1","field":"title","action":"add","value":"Engineer","finding":"addition"},{"claimId":"c2","target":"experience","entryId":"new:c1","field":"responsibilities","action":"add","value":"Built payment APIs","finding":"addition"},{"claimId":"c3","target":"experience","entryId":"new:c1","field":"achievements","action":"add","value":"Cut validation to 20 seconds","finding":"addition"},{"claimId":"c4","target":"projects","entryId":"new:c4","field":"name","action":"add","value":"Harbor","finding":"addition"},{"claimId":"c4","target":"projects","entryId":"new:c4","field":"description","action":"add","value":"Inventory project","finding":"addition"},{"claimId":"c5","target":"projects","entryId":"new:c4","field":"highlights","action":"add","value":"Added audit trails with Go","finding":"addition"}]}`), nil
+	})}
+	p := profilevalidation.Profile{Experience: []profilevalidation.Experience{}, Projects: []profilevalidation.Project{}}
+	w := send(t, (app{client: client}).handler(), request{Input: "Engineer at Aster Labs\nBuilt payment APIs\nCut validation to 20 seconds\nHarbor inventory project\nAdded audit trails with Go", Profile: p})
+	if w.Code != 200 || calls != 2 {
+		t.Fatalf("status %d calls %d", w.Code, calls)
+	}
+	var got result
+	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Operations) != 7 || len(got.UnresolvedClaimIds) != 0 {
+		t.Fatalf("operations %d unresolved %v", len(got.Operations), got.UnresolvedClaimIds)
+	}
+}
+
+func TestUnsafeNewEntryWithholdsAllLinkedClaims(t *testing.T) {
+	claims := []claim{{ID: "c1", Targets: []string{"experience"}}, {ID: "c2", Targets: []string{"experience"}}}
+	valid := []operation{{ClaimID: "c1", Target: "experience", EntryID: "new:c1", Field: "company", Action: "add", Value: "Aster"}, {ClaimID: "c1", Target: "experience", EntryID: "new:c1", Field: "title", Action: "add", Value: "Engineer"}}
+	raw := append(append([]operation{}, valid...), operation{ClaimID: "c2", Target: "experience", EntryID: "new:c1", Field: "responsibilities", Action: "add", Value: "Built APIs"})
+	filtered, unresolved := filterUnsafeNewGroups(valid, raw, claims, map[string]bool{"c2": true}, nil)
+	if len(filtered) != 0 || len(unresolved) != 2 {
+		t.Fatalf("filtered %#v unresolved %#v", filtered, unresolved)
+	}
+}
+
+func TestUnknownClaimWithholdsItsNewEntryGroup(t *testing.T) {
+	claims := []claim{{ID: "c1", Targets: []string{"projects"}}}
+	valid := []operation{{ClaimID: "c1", Target: "projects", EntryID: "new:c1", Field: "name", Action: "add", Value: "Harbor"}}
+	raw := append(append([]operation{}, valid...), operation{ClaimID: "unknown", Target: "projects", EntryID: "new:c1", Field: "highlights", Action: "add", Value: "Invented result"})
+	filtered, unresolved := filterUnsafeNewGroups(valid, raw, claims, map[string]bool{}, map[string]bool{"projects/new:c1": true})
+	if len(filtered) != 0 || len(unresolved) != 1 || unresolved[0] != "c1" {
+		t.Fatalf("filtered %#v unresolved %#v", filtered, unresolved)
+	}
+}
+
+func TestRepeatedFactProducesOneSuggestion(t *testing.T) {
+	calls := 0
+	client := &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		calls++
+		if calls == 1 {
+			return completion(`{"claims":[{"id":"c1","source":"Built payment APIs","text":"Built payment APIs","targets":["experience"],"question":""},{"id":"c2","source":"Built payment APIs.","text":"Built payment APIs","targets":["experience"],"question":""}]}`), nil
+		}
+		return completion(`{"operations":[{"claimId":"c1","target":"experience","entryId":"e1","field":"responsibilities","action":"add","value":"Built payment APIs","finding":"in_place"},{"claimId":"c2","target":"experience","entryId":"e1","field":"responsibilities","action":"add","value":"Built payment APIs.","finding":"in_place"}]}`), nil
+	})}
+	w := send(t, (app{client: client}).handler(), request{Input: "Built payment APIs\nBuilt payment APIs.", Profile: profile()})
+	var got result
+	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if w.Code != 200 || len(got.Operations) != 1 || len(got.UnresolvedClaimIds) != 0 {
+		t.Fatalf("status %d operations %#v unresolved %#v", w.Code, got.Operations, got.UnresolvedClaimIds)
+	}
+}
+
+func TestRepeatedCapabilityAcrossSectionsIsSuggestedOnlyOnce(t *testing.T) {
+	p := profilevalidation.Profile{Skills: "React\nDocker"}
+	ops := []operation{
+		{Target: "skills", Field: "skills", Action: "add", Value: "Go"},
+		{Target: "tools", Field: "tools", Action: "add", Value: "Go."},
+		{Target: "tools", Field: "tools", Action: "add", Value: "React"},
+		{Target: "projects", Field: "technologies", Action: "add", Value: "Go, React"},
+	}
+	got := suppressRepeatedCapabilityFacts(ops, p)
+	if len(got) != 2 || got[0].Target != "skills" || got[1].Target != "projects" {
+		t.Fatalf("unexpected suggestions %#v", got)
+	}
+}
+
+func TestMovingCapabilityKeepsDestinationSuggestion(t *testing.T) {
+	p := profilevalidation.Profile{Skills: "Go"}
+	ops := []operation{
+		{Target: "skills", Field: "skills", Action: "remove"},
+		{Target: "tools", Field: "tools", Action: "add", Value: "Go"},
+	}
+	got := suppressRepeatedCapabilityFacts(ops, p)
+	if len(got) != 2 {
+		t.Fatalf("moving a fact between sections needs both reviewable changes: %#v", got)
+	}
+}
+
 func TestUnverifiableSourceDoesNotHideOtherClaims(t *testing.T) {
 	client := &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
 		return completion(`{"claims":[{"id":"c1","source":"Used Go","text":"Used Go","targets":["skills"],"question":""},{"id":"c2","source":"Invented source","text":"Invented","targets":["skills"],"question":""}]}`), nil
@@ -178,8 +270,11 @@ func TestProjectionSendsOnlyClaimDestinations(t *testing.T) {
 			}
 			return completion(`{"claims":[{"id":"c1","source":"I used React at Acme","text":"Used React at Acme","targets":["skills","experience"],"question":""}]}`), nil
 		}
-		if bytes.Contains(raw, []byte("SECRET SALARY")) || bytes.Contains(raw, []byte("PRIVATE NOTES")) || bytes.Contains(raw, []byte("SECRET CITY")) || bytes.Contains(raw, []byte("https://secret.example")) {
+		if bytes.Contains(raw, []byte("SECRET SALARY")) || bytes.Contains(raw, []byte("PRIVATE NOTES")) || bytes.Contains(raw, []byte("SECRET CITY")) || bytes.Contains(raw, []byte("https://secret.example")) || bytes.Contains(raw, []byte(`"p1"`)) {
 			t.Fatal("unrelated sensitive field sent")
+		}
+		if !bytes.Contains(raw, []byte(`"enum":["","new:c1","e1"]`)) {
+			t.Fatal("comparison response must be constrained to relevant exact entry IDs")
 		}
 		if !bytes.Contains(raw, []byte("Built a search tool")) || !bytes.Contains(raw, []byte("Acme")) {
 			t.Fatal("relevant experience omitted")

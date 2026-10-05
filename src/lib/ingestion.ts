@@ -98,12 +98,19 @@ const entry = (
     : target === "projects"
       ? profile.projects.find((p) => p.id === id)
       : undefined
+const normalizedFact = (value: string) =>
+  value
+    .trim()
+    .toLocaleLowerCase()
+    .replace(/^(?:•|-)\s+/, "")
+    .replace(/[.;,\s]+$/, "")
+    .replace(/\s+/g, " ")
 const duplicate = (before: string, value: string) =>
   before
     .split(/[\n,;]+/)
     .some(
       (part) =>
-        part.trim().toLocaleLowerCase() === value.trim().toLocaleLowerCase(),
+        normalizedFact(part) === normalizedFact(value),
     )
 
 export function validProfile(profile: ProfessionalRepository): boolean {
@@ -237,13 +244,18 @@ export function validateIngestionResult(
         : !(
             item.target === "experience" ? experienceFields : projectFields
           ).includes(item.field as string) ||
-          !(
-            item.entryId === "new:" + claim.id ||
-            entry(profile, item.target, item.entryId as string)
-          )
+          !((item.entryId as string).startsWith("new:")
+            ? claims.some(
+                anchor =>
+                  anchor.id === (item.entryId as string).slice(4) &&
+                  anchor.targets.includes(item.target as IngestionTarget) &&
+                  !anchor.question &&
+                  !unresolvedClaimIds.includes(anchor.id),
+              )
+            : entry(profile, item.target, item.entryId as string))
     )
       throw new IngestionError("invalid_output")
-    if (item.entryId === "new:" + claim.id && item.action !== "add")
+    if (item.entryId.startsWith("new:") && item.action !== "add")
       throw new IngestionError("invalid_output")
     if (
       item.field === "current" && item.action !== "remove" &&
@@ -262,7 +274,24 @@ export function validateIngestionResult(
       throw new IngestionError("invalid_output")
     operations.push({ ...item, approved: false } as IngestionOperation)
   }
-  operations.sort((a,b) => claims.findIndex(c => c.id === a.claimId) - claims.findIndex(c => c.id === b.claimId))
+  const newGroups = new Map<string, IngestionOperation[]>()
+  for (const operation of operations) {
+    if (!operation.entryId.startsWith("new:")) continue
+    const key = operation.target + "/" + operation.entryId
+    newGroups.set(key, [...(newGroups.get(key) ?? []), operation])
+  }
+  for (const group of newGroups.values()) {
+    const anchor = group[0].entryId.slice(4)
+    const fields = new Set(group.map(operation => operation.field))
+    if (
+      !group.some(operation => operation.claimId === anchor) ||
+      (group[0].target === "experience"
+        ? !fields.has("company") || !fields.has("title")
+        : !fields.has("name"))
+    )
+      throw new IngestionError("invalid_output")
+  }
+  operations.sort((a, b) => claims.findIndex(c => c.id === a.claimId) - claims.findIndex(c => c.id === b.claimId))
   return { claims, operations, unverifiedClaimCount: raw.unverifiedClaimCount as number,
     unresolvedClaimIds: unresolvedClaimIds as string[], unplacedOperationCount: raw.unplacedOperationCount as number }
 }
@@ -364,7 +393,8 @@ export function applyIngestion(
     throw new IngestionError("stale")
   const next: ProfessionalRepository = structuredClone(profile)
   const created = new Map<string, ExperienceEntry | ProjectEntry>()
-  for (const op of ops.filter((o) => o.approved)) {
+  const approvedOps = ops.filter((o) => o.approved)
+  for (const op of approvedOps) {
     const claim: IngestionClaim = {
       id: op.claimId,
       source: "",
@@ -404,9 +434,19 @@ export function applyIngestion(
         op.entryId,
       ) as unknown as Record<string, unknown> | undefined
       if (op.entryId.startsWith("new:")) {
-        if (op.entryId !== "new:" + op.claimId || op.action !== "add")
+        const anchorId = op.entryId.slice(4)
+        if (
+          !anchorId || op.action !== "add" ||
+          !approvedOps.some(
+            candidate =>
+              candidate.claimId === anchorId &&
+              candidate.target === op.target &&
+              candidate.entryId === op.entryId,
+          )
+        )
           throw new IngestionError("invalid_output")
-        if (!created.has(op.entryId)) {
+        const groupKey = op.target + "/" + op.entryId
+        if (!created.has(groupKey)) {
           const id = crypto.randomUUID()
           const fresh =
             op.target === "experience"
@@ -430,12 +470,12 @@ export function applyIngestion(
                   url: "",
                   highlights: "",
                 } as ProjectEntry
-          created.set(op.entryId, fresh)
+          created.set(groupKey, fresh)
           if (op.target === "experience")
             next.experience.push(fresh as ExperienceEntry)
           else next.projects.push(fresh as ProjectEntry)
         }
-        target = (created.get(op.entryId) as unknown as Record<string, unknown>)
+        target = (created.get(groupKey) as unknown as Record<string, unknown>)
       }
       if (!target) throw new IngestionError("stale")
       const prior = String(target[op.field] ?? "")
@@ -450,26 +490,32 @@ export function applyIngestion(
     !validProfile(next)
   )
     throw new IngestionError("incomplete")
+  const freshExperience = new Set<string>()
+  const freshProjects = new Set<string>()
   for (const fresh of created.values()) {
     if ("company" in fresh) {
+      const key = normalizedFact(fresh.company) + "/" + normalizedFact(fresh.title)
       if (
+        freshExperience.has(key) ||
         profile.experience.some(
           (existing) =>
-            existing.company.trim().toLocaleLowerCase() ===
-              fresh.company.trim().toLocaleLowerCase() &&
-            existing.title.trim().toLocaleLowerCase() ===
-              fresh.title.trim().toLocaleLowerCase(),
+            normalizedFact(existing.company) + "/" +
+              normalizedFact(existing.title) === key,
         )
       )
         throw new IngestionError("incomplete")
-    } else if (
-      profile.projects.some(
-        (existing) =>
-          existing.name.trim().toLocaleLowerCase() ===
-          fresh.name.trim().toLocaleLowerCase(),
+      freshExperience.add(key)
+    } else {
+      const key = normalizedFact(fresh.name)
+      if (
+        freshProjects.has(key) ||
+        profile.projects.some(
+          existing => normalizedFact(existing.name) === key,
+        )
       )
-    )
-      throw new IngestionError("incomplete")
+        throw new IngestionError("incomplete")
+      freshProjects.add(key)
+    }
   }
   return next
 }

@@ -753,12 +753,15 @@ export default function RepositoryPage() {
                         <input type="checkbox" checked={op.approved} onChange={e => editOperation(index,{approved:e.target.checked})} />
                         {t(("repo.ingestAction."+op.action) as TranslationKey)} · {op.target}{op.entryId ? " / "+op.entryId : ""} · {op.field} · {t(("repo.ingestFinding."+op.finding) as TranslationKey)}
                       </label>
-                      <p className="text-xs mt-2 whitespace-pre-wrap break-words">{t("repo.ingestBefore")}: {previewValues(repo,ingestionResult.operations,index).before || "—"}</p>
-                      <p className="text-xs mt-2 whitespace-pre-wrap break-words">{t("repo.ingestResult")}: {previewValues(repo,ingestionResult.operations,index).after || "—"}</p>
                       <label className="text-xs block mt-2">{t("repo.ingestAfter")}
                         <textarea value={op.value} onChange={e => editOperation(index,{value:e.target.value})} rows={2}
                           className="w-full p-2 mt-1 border text-sm resize-y" style={{borderColor:"var(--color-border)",backgroundColor:"var(--color-card)",color:"var(--color-fg)"}} />
                       </label>
+                      <details className="text-xs mt-2" open={op.action !== "add" || op.finding === "conflict"}>
+                        <summary className="cursor-pointer">{t("repo.ingestPreviewField")}</summary>
+                        <p className="mt-2 whitespace-pre-wrap break-words">{t("repo.ingestBefore")}: {previewValues(repo,ingestionResult.operations,index).before || "—"}</p>
+                        <p className="mt-2 whitespace-pre-wrap break-words">{t("repo.ingestResult")}: {previewValues(repo,ingestionResult.operations,index).after || "—"}</p>
+                      </details>
                       {op.action === "remove" && <p className="text-xs mt-1" role="note">{t("repo.ingestRemoval")}</p>}
                     </div>)}
                   </>}
