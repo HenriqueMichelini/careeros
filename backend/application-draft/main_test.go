@@ -101,33 +101,44 @@ func TestMissingKeyRejectedBeforeProvider(t *testing.T) {
 	}
 }
 
-func TestSyntheticHandlerOutboundBodyHasOnlyApprovedQualificationFields(t *testing.T) {
+func TestSyntheticDraftOutboundBodyUsesApprovedProfileAndConfirmation(t *testing.T) {
 	calls := 0
 	a := app{client: &http.Client{Transport: transportFunc(func(r *http.Request) (*http.Response, error) {
 		calls++
 		body, _ := io.ReadAll(r.Body)
 		var payload struct {
+			Model           string `json:"model"`
+			ReasoningEffort string `json:"reasoning_effort"`
+			MaxTokens       int    `json:"max_completion_tokens"`
+			ResponseFormat  struct {
+				Type string `json:"type"`
+			} `json:"response_format"`
 			Messages []struct {
+				Role    string `json:"role"`
 				Content string `json:"content"`
 			} `json:"messages"`
 		}
-		if json.Unmarshal(body, &payload) != nil || len(payload.Messages) != 1 {
+		var topLevel map[string]json.RawMessage
+		if json.Unmarshal(body, &payload) != nil || json.Unmarshal(body, &topLevel) != nil ||
+			len(topLevel) != 5 || payload.Model != model || payload.ReasoningEffort != "none" ||
+			payload.MaxTokens != 8000 || payload.ResponseFormat.Type != "json_object" ||
+			len(payload.Messages) != 1 || payload.Messages[0].Role != "user" {
 			t.Fatal("bad provider body")
 		}
 		prompt := payload.Messages[0].Content
-		for _, forbidden := range []string{`"careerGoals"`, `"employmentStatus"`, `"currentSalary"`, `"desiredSalary"`, `"additionalInfo"`, `"experience"`, `"projects"`, `"id"`, `"company"`, `"location"`, `"url"`} {
+		for _, forbidden := range []string{`"currentSalary"`, `"desiredSalary"`, `"additionalInfo"`, `"projects"`, `"tools"`, `"location":"San Francisco"`, `"url"`} {
 			if strings.Contains(prompt, forbidden) {
 				t.Errorf("forbidden field %s in provider prompt", forbidden)
 			}
 		}
-		for _, allowed := range []string{`"skills":"Go"`, `"competencies":"systems"`, `"tools":"Docker"`, "QUALIFICATION ONLY SYNTHETIC POSTING"} {
+		for _, allowed := range []string{`"careerGoals":"Lead data projects"`, `"skills":"SQL, dashboard design"`, `"competencies":"Clear communication"`, `"employmentStatus":"employed-full-time"`, `"title":"Data Analyst"`, `"company":"Northstar Analytics"`, `"achievements":"Reduced report preparation time"`, "QUALIFICATION ONLY SYNTHETIC POSTING", `"kind":"skill"`, `"requirement":"Kubernetes"`, `"userContext":"Confirmed for this role only"`} {
 			if !strings.Contains(prompt, allowed) {
 				t.Errorf("approved content missing: %s", allowed)
 			}
 		}
 		return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(draftResponse())), Header: make(http.Header)}, nil
 	})}}
-	body := `{"repository":{"careerGoals":"","skills":"Go","competencies":"systems","experience":[],"tools":"Docker","projects":[],"employmentStatus":"","currentSalary":"","desiredSalary":"","additionalInfo":""},"jobPosting":"QUALIFICATION ONLY SYNTHETIC POSTING","confirmedQualifications":[]}`
+	body := `{"repository":{"careerGoals":"Lead data projects","skills":"SQL, dashboard design","competencies":"Clear communication","experience":[{"id":"synthetic-1","company":"Northstar Analytics","title":"Data Analyst","startDate":"Jan 2022","endDate":"Jun 2024","current":false,"location":"","description":"Built dashboards","responsibilities":"Translated reporting needs","achievements":"Reduced report preparation time"}],"tools":"","projects":[],"employmentStatus":"employed-full-time","currentSalary":"","desiredSalary":"","additionalInfo":""},"jobPosting":"QUALIFICATION ONLY SYNTHETIC POSTING","confirmedQualifications":[{"kind":"skill","requirement":"Kubernetes","userContext":"Confirmed for this role only"}]}`
 	r := httptest.NewRequest(http.MethodPost, "/api/application-draft", strings.NewReader(body))
 	r.Header.Set("X-OpenAI-Api-Key", "sk-valid")
 	w := httptest.NewRecorder()
