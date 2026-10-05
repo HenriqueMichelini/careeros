@@ -732,13 +732,17 @@ export default function RepositoryPage() {
             {ingestionResult && <section className="space-y-4" aria-label={t("repo.ingestProposals")}>
               <h2 className="text-xl font-bold">{t("repo.ingestProposals")}</h2>
               <p className="text-sm" style={{color:"var(--color-muted-fg)"}}>{t("repo.ingestReviewNote")}</p>
+              {(ingestionResult.unverifiedClaimCount > 0 || ingestionResult.unresolvedClaimIds.length > 0 || ingestionResult.unplacedOperationCount > 0) &&
+                <p className="text-sm border p-3" role="status" style={{borderColor:"var(--color-border)"}}>{t("repo.ingestPartialNotice")}</p>}
               {ingestionResult.claims.map(claim => {
                 const indexed = ingestionResult.operations.map((op,index) => ({op,index})).filter(item => item.op.claimId === claim.id)
+                const unresolved = ingestionResult.unresolvedClaimIds.includes(claim.id)
                 return <article key={claim.id} className="border p-4 min-w-0" style={{borderColor:"var(--color-border)"}}>
                   <p className="text-sm font-semibold break-words">{claim.text}</p>
                   <p className="text-xs mt-1 break-words" style={{color:"var(--color-muted-fg)"}}>{t("repo.ingestSource")}: “{claim.source}”</p>
                   {claim.question && <p className="text-sm mt-2" role="note">{t("repo.ingestClarify")}: {claim.question}</p>}
-                  {indexed.length === 0 && !claim.question && <p className="text-sm mt-2">{t("repo.ingestNoChange")}</p>}
+                  {unresolved && <p className="text-sm mt-2" role="note">{t("repo.ingestUnresolvedClaim")}</p>}
+                  {indexed.length === 0 && !claim.question && !unresolved && <p className="text-sm mt-2">{t("repo.ingestNoChange")}</p>}
                   {indexed.length > 0 && <>
                     <div className="flex flex-wrap gap-2 mt-3">
                       <button type="button" onClick={() => approveClaim(claim.id,true)} className="border px-3 py-1 text-xs" style={{borderColor:"var(--color-border)"}}>{t("repo.ingestApproveClaim")}</button>

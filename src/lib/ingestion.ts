@@ -21,6 +21,9 @@ export interface IngestionOperation {
 export interface IngestionResult {
   claims: IngestionClaim[]
   operations: IngestionOperation[]
+  unverifiedClaimCount: number
+  unresolvedClaimIds: string[]
+  unplacedOperationCount: number
 }
 
 const scalarFields = [
@@ -151,10 +154,20 @@ export function validateIngestionResult(
 ): IngestionResult {
   if (
     !record(raw) ||
-    !keys(raw, ["claims", "operations"]) ||
+    !keys(raw, ["claims", "operations", "unverifiedClaimCount", "unresolvedClaimIds", "unplacedOperationCount"]) ||
     !Array.isArray(raw.claims) ||
     !Array.isArray(raw.operations) ||
+    typeof raw.unverifiedClaimCount !== "number" ||
+    !Number.isInteger(raw.unverifiedClaimCount) ||
+    raw.unverifiedClaimCount < 0 ||
+    raw.unverifiedClaimCount > 30 ||
+    !Array.isArray(raw.unresolvedClaimIds) ||
+    typeof raw.unplacedOperationCount !== "number" ||
+    !Number.isInteger(raw.unplacedOperationCount) ||
+    raw.unplacedOperationCount < 0 ||
+    raw.unplacedOperationCount > 60 ||
     raw.claims.length > 30 ||
+    raw.claims.length + raw.unverifiedClaimCount > 30 ||
     raw.operations.length > 60
   )
     throw new IngestionError("invalid_output")
@@ -181,6 +194,10 @@ export function validateIngestionResult(
     ids.add(item.id)
     claims.push(item as unknown as IngestionClaim)
   }
+  const unresolvedClaimIds = raw.unresolvedClaimIds as unknown[]
+  if (unresolvedClaimIds.length > claims.length || new Set(unresolvedClaimIds).size !== unresolvedClaimIds.length ||
+      unresolvedClaimIds.some(id => typeof id !== "string" || !ids.has(id)))
+    throw new IngestionError("invalid_output")
   const operations: IngestionOperation[] = []
   for (const item of raw.operations) {
     if (
@@ -205,6 +222,7 @@ export function validateIngestionResult(
     const claim = claims.find((c) => c.id === item.claimId)
     if (
       !claim ||
+      unresolvedClaimIds.includes(claim.id) ||
       claim.question ||
       !hasTarget(claim.targets, item.target) ||
       !["add", "update", "remove"].includes(item.action as string) ||
@@ -245,7 +263,8 @@ export function validateIngestionResult(
     operations.push({ ...item, approved: false } as IngestionOperation)
   }
   operations.sort((a,b) => claims.findIndex(c => c.id === a.claimId) - claims.findIndex(c => c.id === b.claimId))
-  return { claims, operations }
+  return { claims, operations, unverifiedClaimCount: raw.unverifiedClaimCount as number,
+    unresolvedClaimIds: unresolvedClaimIds as string[], unplacedOperationCount: raw.unplacedOperationCount as number }
 }
 
 export async function ingestProfile(

@@ -73,10 +73,11 @@ const claim = (overrides = {}) => ({
   question: "",
   ...overrides,
 })
+const review = (data) => ({ unverifiedClaimCount: 0, unresolvedClaimIds: [], unplacedOperationCount: 0, ...data })
 
 test("maps one claim to linked sections and validates source and target", () => {
   const result = validateIngestionResult(
-    {
+    review({
       claims: [claim({ targets: ["skills", "experience"] })],
       operations: [
         {
@@ -98,7 +99,7 @@ test("maps one claim to linked sections and validates source and target", () => 
           finding: "in_place",
         },
       ],
-    },
+    }),
     "TypeScript",
     profile(),
   )
@@ -106,23 +107,37 @@ test("maps one claim to linked sections and validates source and target", () => 
   assert.ok(result.operations.every((o) => o.approved === false))
   assert.throws(() =>
     validateIngestionResult(
-      { claims: [claim({ source: "invented" })], operations: [] },
+      review({ claims: [claim({ source: "invented" })], operations: [] }),
       "TypeScript",
       profile(),
     ),
   )
   assert.throws(() =>
     validateIngestionResult(
-      {
+      review({
         claims: [claim()],
         operations: [
           { ...op(), target: "desiredSalary", field: "desiredSalary" },
         ],
-      },
+      }),
       "TypeScript",
       profile(),
     ),
   )
+})
+
+test("partial review identifies withheld claims and cannot carry their operations", () => {
+  const { approved: _approved, ...rawOp } = op()
+  const partial = review({
+    claims: [claim(), claim({ id: "c2", text: "Project", source: "Project", targets: ["projects"] })],
+    operations: [rawOp],
+    unverifiedClaimCount: 1,
+    unresolvedClaimIds: ["c2"],
+  })
+  const result = validateIngestionResult(partial, "TypeScript Project", profile())
+  assert.equal(result.unverifiedClaimCount, 1)
+  assert.deepEqual(result.unresolvedClaimIds, ["c2"])
+  assert.throws(() => validateIngestionResult({ ...partial, operations: [{ ...rawOp, claimId: "c2", target: "projects", entryId: "p1", field: "name" }] }, "TypeScript Project", profile()))
 })
 
 test("applies edited in-place facts while preserving IDs and unrelated fields", () => {

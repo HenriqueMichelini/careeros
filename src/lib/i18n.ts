@@ -206,6 +206,8 @@ const messages = {
     "repo.reviewErrorInvalidOutput": "The review returned an incomplete result. Your saved profile was not changed.",
     "repo.ingestErrorTruncated": "This paste produced more proposed changes than the review could return. Try smaller portions. Your saved profile was not changed.",
     "repo.ingestErrorInvalidOutput": "We couldn't safely prepare changes from this text. Try a smaller portion. Your saved profile was not changed.",
+    "repo.ingestPartialNotice": "Some information could not be verified or placed safely. It was left out of the proposed changes. Review what is shown and add the missing details separately.",
+    "repo.ingestUnresolvedClaim": "No change was proposed for this claim because its destination could not be verified. Add it separately or edit your Profile manually.",
     "repo.last": "Last",
     "repo.profileIntro":
       "Add and update your information in the sections: Career Goals, Skills, Competencies, Experience, Tools & Tech, Projects, Compensation, and Other.",
@@ -557,6 +559,8 @@ const messages = {
     "repo.reviewErrorInvalidOutput": "A revisão retornou um resultado incompleto. Seu perfil salvo não foi alterado.",
     "repo.ingestErrorTruncated": "Este texto gerou mais alterações propostas do que a revisão conseguiu retornar. Tente dividir em partes menores. Seu perfil salvo não foi alterado.",
     "repo.ingestErrorInvalidOutput": "Não foi possível preparar alterações seguras a partir deste texto. Tente uma parte menor. Seu perfil salvo não foi alterado.",
+    "repo.ingestPartialNotice": "Algumas informações não puderam ser verificadas ou alocadas com segurança e ficaram fora das alterações propostas. Revise o que aparece e adicione os detalhes ausentes separadamente.",
+    "repo.ingestUnresolvedClaim": "Nenhuma alteração foi proposta para esta afirmação porque não foi possível verificar o destino. Adicione-a separadamente ou edite seu Perfil manualmente.",
     "repo.last": "Última revisão",
     "repo.profileIntro":
       "Adicione e atualize suas informações nas seções: Objetivos de carreira, Habilidades, Competências, Experiência, Ferramentas e tecnologia, Projetos, Remuneração e Outros.",
