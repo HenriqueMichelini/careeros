@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useReducer,
+  useRef,
   ReactNode,
 } from "react"
 import { ProfessionalRepository, GeneratedMaterials } from "./types"
@@ -22,7 +23,7 @@ const defaultRepo: ProfessionalRepository = {
   experience: [],
   tools: "",
   projects: [],
-  employmentStatus: "employed-full-time",
+  employmentStatus: "",
   currentSalary: "",
   desiredSalary: "",
   additionalInfo: "",
@@ -91,6 +92,7 @@ const StoreContext = createContext<{
 } | null>(null)
 
 export function StoreProvider({ children }: { children: ReactNode }) {
+  const lastPersistedRepo = useRef<string | null>(localStorage.getItem("careeros_repo"))
   const [state, dispatch] = useReducer(reducer, {
     locale: getInitialLocale(),
     repository: loadRepo(),
@@ -103,7 +105,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   })
 
   useEffect(() => {
-    localStorage.setItem("careeros_repo", JSON.stringify(state.repository))
+    const serialized = JSON.stringify(state.repository)
+    if (lastPersistedRepo.current === null && serialized === JSON.stringify(defaultRepo)) return
+    if (lastPersistedRepo.current !== serialized) {
+      localStorage.setItem("careeros_repo", serialized)
+      lastPersistedRepo.current = serialized
+    }
   }, [state.repository])
 
   useEffect(() => {

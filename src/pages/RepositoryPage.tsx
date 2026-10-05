@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { useI18n, useStore } from "../lib/store"
 import { reviewRepository } from "../lib/ai"
 import { ProfileReviewError } from "../lib/ai"
@@ -8,6 +8,7 @@ import {
   ProfessionalRepository,
 } from "../lib/types"
 import { TranslationKey } from "../lib/i18n"
+import { previewValues, applyIngestion, ingestProfile, IngestionError, IngestionOperation, IngestionResult } from "../lib/ingestion"
 
 type Section = "profile" | "goals" | "skills" | "competencies" | "experience" | "tools" | "projects" | "compensation" | "other"
 
@@ -400,13 +401,93 @@ export default function RepositoryPage() {
   const { t } = useI18n()
   const [activeSection, setActiveSection] = useState<Section>("profile")
   const [reviewError, setReviewError] = useState("")
+  const [ingestionText, setIngestionText] = useState("")
+  const [ingestionResult, setIngestionResult] = useState<IngestionResult | null>(null)
+  const [ingestionSnapshot, setIngestionSnapshot] = useState("")
+  const [ingestionError, setIngestionError] = useState("")
+  const [isIngesting, setIsIngesting] = useState(false)
+  const ingestionRequest = useRef(0)
+  const ingestionController = useRef<AbortController | null>(null)
   const repo = state.repository
+
+  useEffect(() => () => ingestionController.current?.abort(), [])
 
   const updateRepo = useCallback(
     (patch: Partial<ProfessionalRepository>) =>
       dispatch({ type: "SET_REPO", payload: { ...repo, ...patch } }),
     [repo, dispatch],
   )
+
+  function discardIngestion() {
+    ingestionRequest.current += 1
+    ingestionController.current?.abort()
+    setIsIngesting(false)
+    setIngestionText("")
+    setIngestionResult(null)
+    setIngestionSnapshot("")
+    setIngestionError("")
+  }
+
+  function changeIngestionText(value: string) {
+    ingestionRequest.current += 1
+    ingestionController.current?.abort()
+    setIsIngesting(false)
+    setIngestionText(value)
+    setIngestionResult(null)
+    setIngestionError("")
+  }
+
+  async function handleIngestion() {
+    setIngestionError("")
+    setIngestionResult(null)
+    if (!state.apiKey) { setIngestionError(t("repo.setApiKeyFirst")); return }
+    const requestId = ++ingestionRequest.current
+    const controller = new AbortController()
+    ingestionController.current = controller
+    setIsIngesting(true)
+    const snapshot = JSON.stringify(repo)
+    try {
+      const proposals = await ingestProfile(ingestionText, repo, state.apiKey, controller.signal)
+      if (ingestionRequest.current !== requestId) return
+      setIngestionSnapshot(snapshot)
+      setIngestionResult(proposals)
+    } catch (error) {
+      if (ingestionRequest.current !== requestId) return
+      const code = error instanceof IngestionError ? error.code : "outage"
+      const lookup = {
+        input:"repo.ingestErrorInput", key:"repo.reviewErrorKey", rate_limit:"repo.reviewErrorRateLimit",
+        outage:"repo.reviewErrorOutage", timeout:"repo.reviewErrorTimeout",
+        invalid_output:"repo.reviewErrorInvalidOutput",
+      } as const
+      setIngestionError(t(lookup[code as keyof typeof lookup] || "repo.reviewFailed"))
+    } finally { if (ingestionRequest.current === requestId) setIsIngesting(false) }
+  }
+
+  function editOperation(index: number, patch: Partial<IngestionOperation>) {
+    setIngestionResult(previous => previous && ({
+      ...previous, operations: previous.operations.map((op, i) => i === index ? {...op,...patch} : op),
+    }))
+  }
+
+  function approveClaim(claimId: string, approved: boolean) {
+    setIngestionResult(previous => previous && ({
+      ...previous, operations: previous.operations.map(op => op.claimId === claimId ? {...op,approved} : op),
+    }))
+  }
+
+  function confirmIngestion() {
+    if (!ingestionResult?.operations.some(op => op.approved)) return
+    try {
+      const saved = localStorage.getItem("careeros_repo")
+      if (saved && saved !== ingestionSnapshot) throw new IngestionError("stale")
+      const updated = applyIngestion(repo, ingestionSnapshot, ingestionResult.operations)
+      dispatch({type:"SET_REPO",payload:updated})
+      discardIngestion()
+    } catch (error) {
+      const code = error instanceof IngestionError ? error.code : "invalid_output"
+      setIngestionError(t(code === "stale" ? "repo.ingestStale" : "repo.ingestInvalidEdit"))
+    }
+  }
 
   async function handleAiReview() {
     if (!state.apiKey) {
@@ -495,7 +576,7 @@ export default function RepositoryPage() {
     LEGACY_EMPLOYMENT_STATUS[repo.employmentStatus] || repo.employmentStatus
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-10 grid grid-cols-[220px_1fr] gap-12">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] gap-8 md:gap-12">
       {/* Sidebar nav */}
       <aside>
         <p
@@ -507,12 +588,12 @@ export default function RepositoryPage() {
         >
           {t("repo.sections")}
         </p>
-        <nav className="space-y-0.5">
+        <nav className="grid grid-cols-3 gap-1 md:block md:space-y-0.5">
           {SECTIONS.map(({ id, labelKey }) => (
             <button
               key={id}
               onClick={() => setActiveSection(id)}
-              className={`w-full text-left px-3 py-2.5 text-sm transition-colors block ${
+              className={`w-full text-left px-2 md:px-3 py-2.5 text-xs md:text-sm transition-colors block ${
                 id === "profile"
                   ? "font-semibold tracking-[0.12em] mb-2 border"
                   : ""
@@ -538,10 +619,17 @@ export default function RepositoryPage() {
             </button>
           ))}
         </nav>
+        {activeSection !== "profile" && (
+          <button type="button" onClick={() => setActiveSection("profile")}
+            className="mt-5 w-full border px-3 py-2 text-xs text-left uppercase tracking-wide"
+            style={{borderColor:"var(--color-accent)",color:"var(--color-accent)"}}>
+            {t("repo.quickAdd")}
+          </button>
+        )}
 
         {/* AI Review */}
         <div
-          className="mt-10 pt-6 border-t"
+          className="mt-4 md:mt-10 pt-4 md:pt-6 border-t"
           style={{ borderColor: "var(--color-border)" }}
         >
           <p
@@ -620,20 +708,65 @@ export default function RepositoryPage() {
 
         {/* Section content */}
         {activeSection === "profile" && (
-          <section
-            className="p-5 border"
-            style={{
-              backgroundColor: "var(--color-muted)",
-              borderColor: "var(--color-accent)",
-            }}
-          >
-            <p
-              className="text-xs mt-2"
-              style={{ color: "var(--color-muted-fg)" }}
-            >
-              {t("repo.profileIntro")}
-            </p>
-          </section>
+          <div className="space-y-5 min-w-0">
+            <section className="p-5 border" style={{backgroundColor:"var(--color-muted)",borderColor:"var(--color-accent)"}}>
+              <p className="text-xs mt-2" style={{color:"var(--color-muted-fg)"}}>{t("repo.profileIntro")}</p>
+            </section>
+            <section className="p-5 border min-w-0" style={{borderColor:"var(--color-border)"}}>
+              <h2 className="text-lg font-bold mb-2">{t("repo.ingestTitle")}</h2>
+              <p className="text-sm mb-3" style={{color:"var(--color-muted-fg)"}}>{t("repo.ingestPrivacy")}</p>
+              <label htmlFor="ingestion-text" className="text-sm block mb-2">{t("repo.ingestLabel")}</label>
+              <textarea id="ingestion-text" value={ingestionText} onChange={e => changeIngestionText(e.target.value)} rows={9}
+                maxLength={30000} placeholder={t("repo.ingestPlaceholder")}
+                className="w-full min-w-0 p-3 border text-sm resize-y" style={{backgroundColor:"var(--color-card)",borderColor:"var(--color-border)",color:"var(--color-fg)"}} />
+              <p className="text-xs mb-3" style={{color:"var(--color-muted-fg)"}}>{new TextEncoder().encode(ingestionText).length} / 30000 {t("repo.bytes")}</p>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={handleIngestion} disabled={isIngesting || !ingestionText.trim()}
+                  className="px-4 py-2 text-sm disabled:opacity-50" style={{backgroundColor:"var(--color-fg)",color:"var(--color-bg)"}}>
+                  {isIngesting ? t("repo.ingestWorking") : t("repo.ingestReview")}
+                </button>
+                <button type="button" onClick={discardIngestion} className="px-4 py-2 text-sm border" style={{borderColor:"var(--color-border)"}}>{t("repo.ingestDiscard")}</button>
+              </div>
+              {ingestionError && <p role="alert" className="text-sm mt-3" style={{color:"var(--color-accent)"}}>{ingestionError}</p>}
+            </section>
+            {ingestionResult && <section className="space-y-4" aria-label={t("repo.ingestProposals")}>
+              <h2 className="text-xl font-bold">{t("repo.ingestProposals")}</h2>
+              <p className="text-sm" style={{color:"var(--color-muted-fg)"}}>{t("repo.ingestReviewNote")}</p>
+              {ingestionResult.claims.map(claim => {
+                const indexed = ingestionResult.operations.map((op,index) => ({op,index})).filter(item => item.op.claimId === claim.id)
+                return <article key={claim.id} className="border p-4 min-w-0" style={{borderColor:"var(--color-border)"}}>
+                  <p className="text-sm font-semibold break-words">{claim.text}</p>
+                  <p className="text-xs mt-1 break-words" style={{color:"var(--color-muted-fg)"}}>{t("repo.ingestSource")}: “{claim.source}”</p>
+                  {claim.question && <p className="text-sm mt-2" role="note">{t("repo.ingestClarify")}: {claim.question}</p>}
+                  {indexed.length === 0 && !claim.question && <p className="text-sm mt-2">{t("repo.ingestNoChange")}</p>}
+                  {indexed.length > 0 && <>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      <button type="button" onClick={() => approveClaim(claim.id,true)} className="border px-3 py-1 text-xs" style={{borderColor:"var(--color-border)"}}>{t("repo.ingestApproveClaim")}</button>
+                      <button type="button" onClick={() => approveClaim(claim.id,false)} className="border px-3 py-1 text-xs" style={{borderColor:"var(--color-border)"}}>{t("repo.ingestRejectClaim")}</button>
+                    </div>
+                    {indexed.map(({op,index}) => <div key={index} className="mt-3 p-3 border min-w-0" style={{borderColor:"var(--color-border)"}}>
+                      <label className="flex items-start gap-2 text-sm break-words">
+                        <input type="checkbox" checked={op.approved} onChange={e => editOperation(index,{approved:e.target.checked})} />
+                        {t(("repo.ingestAction."+op.action) as TranslationKey)} · {op.target}{op.entryId ? " / "+op.entryId : ""} · {op.field} · {t(("repo.ingestFinding."+op.finding) as TranslationKey)}
+                      </label>
+                      <p className="text-xs mt-2 whitespace-pre-wrap break-words">{t("repo.ingestBefore")}: {previewValues(repo,ingestionResult.operations,index).before || "—"}</p>
+                      <p className="text-xs mt-2 whitespace-pre-wrap break-words">{t("repo.ingestResult")}: {previewValues(repo,ingestionResult.operations,index).after || "—"}</p>
+                      <label className="text-xs block mt-2">{t("repo.ingestAfter")}
+                        <textarea value={op.value} onChange={e => editOperation(index,{value:e.target.value})} rows={2}
+                          className="w-full p-2 mt-1 border text-sm resize-y" style={{borderColor:"var(--color-border)",backgroundColor:"var(--color-card)",color:"var(--color-fg)"}} />
+                      </label>
+                      {op.action === "remove" && <p className="text-xs mt-1" role="note">{t("repo.ingestRemoval")}</p>}
+                    </div>)}
+                  </>}
+                </article>
+              })}
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={confirmIngestion} disabled={!ingestionResult.operations.some(op => op.approved)}
+                  className="px-4 py-2 text-sm disabled:opacity-50" style={{backgroundColor:"var(--color-fg)",color:"var(--color-bg)"}}>{t("repo.ingestApply")}</button>
+                <button type="button" onClick={discardIngestion} className="px-4 py-2 border text-sm" style={{borderColor:"var(--color-border)"}}>{t("repo.ingestCancel")}</button>
+              </div>
+            </section>}
+          </div>
         )}
 
         {activeSection === "goals" && (
@@ -827,6 +960,7 @@ export default function RepositoryPage() {
                   fontFamily: "var(--font-sans)",
                 }}
               >
+                <option value="">{t("repo.status.unspecified")}</option>
                 {EMPLOYMENT_STATUS_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {t(option.key)}
