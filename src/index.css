@@ -76,6 +76,7 @@ html {
   body.cv-print-ready .app-header,
   body.cv-print-ready .cv-page-header,
   body.cv-print-ready .cv-controls,
+  body.cv-print-ready .cv-preview-zoom,
   body.cv-print-ready .cv-page-boundary,
   body.cv-print-ready [data-cv-sample] {
     display: none !important;

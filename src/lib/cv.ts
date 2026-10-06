@@ -4,12 +4,12 @@ export const cvSections = [
   "contact",
   "summary",
   "skills",
+  "tools",
   "experience",
+  "projects",
   "education",
   "certifications",
   "languages",
-  "tools",
-  "projects",
   "additional",
 ] as const
 

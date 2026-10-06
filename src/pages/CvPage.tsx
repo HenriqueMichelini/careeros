@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
+import CvPaper from "../components/CvPaper"
 import { useI18n, useStore } from "../lib/store"
 import { cvQualifications } from "../lib/profile"
 import {
@@ -73,6 +74,7 @@ export default function CvPage() {
   const boundaryRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const [previewScale, setPreviewScale] = useState(1)
+  const [readFullSize, setReadFullSize] = useState(false)
   const [choices, setChoices] = useState<CvChoices>(() => {
     try {
       return parseCvChoices(localStorage.getItem(CV_STORAGE_KEY))
@@ -92,6 +94,7 @@ export default function CvPage() {
     return () => document.body.classList.remove("cv-print-ready")
   }, [])
   const overflows = fit.overflows
+  const paperScale = readFullSize ? 1 : previewScale
   const visible = (section: CvSection) =>
     !choices.hiddenSections.includes(section)
   const selectedEntry = (section: CvSection, id: string) =>
@@ -224,6 +227,18 @@ export default function CvPage() {
         project.highlights,
       ).filter((bullet) => selectedBullet(bullet.key) && bullet.text.trim()),
     }))
+  const technicalSkills = [
+    ...(visible("skills") ? [...selectedSkills, ...selectedCompetencies] : []),
+    ...(visible("tools") ? selectedTools : []),
+  ]
+  const sampleTechnicalSkills =
+    visible("skills") && !skills.length && !competencies.length && !tools.length
+  const sampleExperience =
+    visible("experience") && !experience.length && !projects.length
+  const showExperience =
+    sampleExperience ||
+    (visible("experience") && selectedExperience.length > 0) ||
+    (visible("projects") && selectedProjects.length > 0)
   const summary = choices.summary ?? repo.careerGoals
   const sectionLabels: Record<CvSection, string> = {
     contact: t("cv.contact"),
@@ -375,11 +390,11 @@ export default function CvPage() {
       )
       const first = blocks.find(
         (block) =>
-          block.getBoundingClientRect().bottom > pageBottom + 2 * previewScale,
+          block.getBoundingClientRect().bottom > pageBottom + 2 * paperScale,
       )
       // Bottom padding can cross the boundary even when the last section does not.
       const next = {
-        overflows: overflowHeight > 2 * previewScale,
+        overflows: overflowHeight > 2 * paperScale,
         section: (first || blocks.at(-1))?.dataset.cvBlock || "header",
         overflowPercent,
       }
@@ -396,7 +411,7 @@ export default function CvPage() {
     observer.observe(content)
     measure()
     return () => observer.disconnect()
-  }, [choices, state.locale, repo, previewScale])
+  }, [choices, state.locale, repo, paperScale])
 
   return (
     <div className="cv-page mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -420,293 +435,185 @@ export default function CvPage() {
           ref={previewSlotRef}
           className="cv-preview-slot order-2 min-w-0 overflow-x-auto lg:order-1"
         >
-          <article
-            aria-label={t("cv.documentPreview")}
-            className="cv-paper relative mx-auto w-[210mm] border border-[var(--color-border)] bg-[var(--color-card)] shadow-sm"
-            style={{ zoom: previewScale }}
+          {previewScale < 0.99 && (
+            <button
+              type="button"
+              aria-pressed={readFullSize}
+              onClick={() => setReadFullSize((value) => !value)}
+              className="cv-preview-zoom mb-3 border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2 text-xs"
+            >
+              {t(readFullSize ? "cv.fitPage" : "cv.readFullSize")}
+            </button>
+          )}
+          <CvPaper
+            label={t("cv.documentPreview")}
+            scale={paperScale}
+            overflows={overflows}
+            pageEndLabel={t("cv.pageOneEnds")}
+            boundaryRef={boundaryRef}
+            contentRef={contentRef}
           >
-            <div
-              ref={boundaryRef}
-              aria-hidden="true"
-              className="cv-page-boundary pointer-events-none absolute left-0 top-0 w-full"
-            >
-              {overflows && (
-                <span className="absolute bottom-0 right-0 bg-[var(--color-accent)] px-2 py-1 text-[10px] font-semibold text-white">
-                  {t("cv.pageOneEnds")}
-                </span>
+            <header className="mb-7 border-b-2 border-[var(--color-accent)] pb-6">
+              {!repo.fullName.trim() && (
+                <p
+                  data-cv-sample="true"
+                  className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-muted-fg)]"
+                >
+                  {t("common.sample")}
+                </p>
               )}
-            </div>
-            <div
-              ref={contentRef}
-              className="cv-paper-content relative px-12 py-11"
-            >
-              <header className="mb-7 border-b-2 border-[var(--color-accent)] pb-6">
-                {!repo.fullName.trim() && (
-                  <p
-                    data-cv-sample="true"
-                    className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-muted-fg)]"
-                  >
-                    {t("common.sample")}
-                  </p>
-                )}
-                <h2
-                  data-cv-sample={!repo.fullName.trim() || undefined}
-                  className="break-words text-5xl font-bold uppercase leading-none tracking-tight [font-family:var(--font-display)]"
-                >
-                  {repo.fullName.trim() || t("cv.sampleName")}
-                </h2>
-                {visible("contact") &&
-                  contact.some((item) => selectedEntry("contact", item.id)) && (
-                    <ul className="mt-4 flex flex-wrap gap-x-2 text-[11px] leading-5 text-[var(--color-muted-fg)] [font-family:var(--font-mono)]">
-                      {contact
-                        .filter((item) => selectedEntry("contact", item.id))
-                        .map((item) => (
-                          <li
-                            key={item.id}
-                            className="break-all after:ml-2 after:content-['·'] last:after:content-none"
-                          >
-                            {item.kind === "link" ? (
-                              <CvLink value={item.value} />
-                            ) : (
-                              item.value
-                            )}
-                          </li>
-                        ))}
-                    </ul>
-                  )}
-              </header>
-              {visible("summary") && (
-                <Section
-                  id="summary"
-                  title={t("cv.professionalProfile")}
-                  sample={!summary.trim()}
-                >
-                  <p className="whitespace-pre-wrap break-words text-[13px] leading-6">
-                    {summary.trim() ||
-                      (choices.summary === null && !repo.careerGoals.trim() && (
-                        <>
-                          <span className="text-[10px] uppercase tracking-widest text-[var(--color-muted-fg)]">
-                            {t("common.sample")} ·{" "}
-                          </span>
-                          {t("cv.sampleProfile")}
-                        </>
+              <h2
+                data-cv-sample={!repo.fullName.trim() || undefined}
+                className="break-words text-5xl font-bold uppercase leading-none tracking-tight [font-family:var(--font-display)]"
+              >
+                {repo.fullName.trim() || t("cv.sampleName")}
+              </h2>
+              {visible("contact") &&
+                contact.some((item) => selectedEntry("contact", item.id)) && (
+                  <ul className="mt-4 flex flex-wrap gap-x-2 text-[11px] leading-5 text-[var(--color-muted-fg)] [font-family:var(--font-mono)]">
+                    {contact
+                      .filter((item) => selectedEntry("contact", item.id))
+                      .map((item) => (
+                        <li
+                          key={item.id}
+                          className="break-all after:ml-2 after:content-['·'] last:after:content-none"
+                        >
+                          {item.kind === "link" ? (
+                            <CvLink value={item.value} />
+                          ) : (
+                            item.value
+                          )}
+                        </li>
                       ))}
-                  </p>
-                </Section>
-              )}
-              {visible("skills") &&
-                ((!skills.length && !competencies.length) ||
-                  selectedSkills.length > 0 ||
-                  selectedCompetencies.length > 0) && (
-                  <Section
-                    id="skills"
-                    title={t("cv.skillsCompetencies")}
-                    sample={!skills.length && !competencies.length}
-                  >
-                    {skills.length || competencies.length ? (
-                      <p className="break-words text-[12px] leading-5">
-                        {[...selectedSkills, ...selectedCompetencies].join(
-                          " · ",
-                        )}
-                      </p>
-                    ) : (
-                      <p className="text-[12px] leading-5">
+                  </ul>
+                )}
+            </header>
+            {visible("summary") && (
+              <Section
+                id="summary"
+                title={t("cv.professionalProfile")}
+                sample={!summary.trim()}
+              >
+                <p className="whitespace-pre-wrap break-words text-[13px] leading-6">
+                  {summary.trim() ||
+                    (choices.summary === null && !repo.careerGoals.trim() && (
+                      <>
                         <span className="text-[10px] uppercase tracking-widest text-[var(--color-muted-fg)]">
                           {t("common.sample")} ·{" "}
                         </span>
-                        {t("cv.sampleSkills")}
-                      </p>
-                    )}
-                  </Section>
-                )}
-              {visible("experience") &&
-                (experience.length === 0 || selectedExperience.length > 0) && (
-                  <Section
-                    id="experience"
-                    title={t("cv.experience")}
-                    sample={!experience.length}
-                  >
-                    {experience.length ? (
-                      selectedExperience.map(({ item, bullets }) => (
-                        <div
-                          key={item.id}
-                          className="mb-5 break-words text-[12px] leading-5 last:mb-0"
-                        >
-                          {(item.title || item.company) && (
-                            <h4 className="text-[13px] font-semibold">
-                              {[item.title, item.company]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            </h4>
-                          )}
-                          {(item.startDate ||
-                            item.endDate ||
-                            item.current ||
-                            item.location) && (
-                            <p className="mt-1 text-[11px] text-[var(--color-muted-fg)]">
-                              {[
-                                item.startDate && (item.endDate || item.current)
-                                  ? `${item.startDate} — ${
-                                      item.current
-                                        ? t("common.present")
-                                        : item.endDate
-                                    }`
-                                  : item.startDate ||
-                                    (item.current
-                                      ? t("common.present")
-                                      : item.endDate),
-                                item.location,
-                              ]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            </p>
-                          )}
-                          {item.description && (
-                            <p className="mt-2 whitespace-pre-wrap">
-                              {item.description}
-                            </p>
-                          )}
-                          {bullets.length > 0 && (
-                            <ul className="mt-2 list-disc space-y-1 pl-5">
-                              {bullets.map((bullet) => (
-                                <li key={bullet.key}>{bullet.text}</li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-[12px] leading-5">
-                        <p className="mb-2 text-[10px] uppercase tracking-widest text-[var(--color-muted-fg)]">
-                          {t("common.sampleContent")}
-                        </p>
-                        <h4 className="font-semibold">
-                          {t("cv.sampleJobTitle")}
-                        </h4>
-                        <p className="mt-1 text-[var(--color-muted-fg)]">
-                          2021 — {t("common.present")}
-                        </p>
-                        <p className="mt-2">
-                          {t("cv.sampleExperienceDescription")}
-                        </p>
-                        <ul className="mt-2 list-disc space-y-1 pl-5">
-                          <li>{t("cv.sampleAchievementOne")}</li>
-                          <li>{t("cv.sampleAchievementTwo")}</li>
-                        </ul>
-                      </div>
-                    )}
-                  </Section>
-                )}
-              {visible("education") &&
-                education.some((item) =>
-                  selectedEntry("education", item.id),
-                ) && (
-                  <Section id="education" title={t("cv.education")}>
-                    {education
-                      .filter((item) => selectedEntry("education", item.id))
-                      .map((item) => (
-                        <div
-                          key={item.id}
-                          className="mb-4 break-words text-[12px] leading-5 last:mb-0"
-                        >
-                          {item.degree && (
-                            <h4 className="text-[13px] font-semibold">
-                              {item.degree}
-                            </h4>
-                          )}
-                          {[
-                            item.institution,
-                            item.location,
-                            item.graduationDate,
-                          ].filter(Boolean).length > 0 && (
-                            <p className="mt-1 text-[var(--color-muted-fg)]">
-                              {[
-                                item.institution,
-                                item.location,
-                                item.graduationDate,
-                              ]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            </p>
-                          )}
-                          {item.details && (
-                            <p className="mt-1 whitespace-pre-wrap">
-                              {item.details}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                  </Section>
-                )}
-              {visible("certifications") &&
-                certifications.some((item) =>
-                  selectedEntry("certifications", item.id),
-                ) && (
-                  <Section id="certifications" title={t("cv.certifications")}>
-                    {certifications
-                      .filter((item) =>
-                        selectedEntry("certifications", item.id),
-                      )
-                      .map((item) => (
-                        <div
-                          key={item.id}
-                          className="mb-4 break-words text-[12px] leading-5 last:mb-0"
-                        >
-                          <h4 className="text-[13px] font-semibold">
-                            {item.name}
-                          </h4>
-                          {[item.issuer, item.date, item.credentialId].filter(
-                            Boolean,
-                          ).length > 0 && (
-                            <p className="mt-1 text-[var(--color-muted-fg)]">
-                              {[item.issuer, item.date, item.credentialId]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            </p>
-                          )}
-                          {item.url && (
-                            <p className="mt-1 break-all text-[var(--color-muted-fg)]">
-                              <CvLink value={item.url} />
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                  </Section>
-                )}
-              {visible("languages") &&
-                languages.some((item) =>
-                  selectedEntry("languages", item.id),
-                ) && (
-                  <Section id="languages" title={t("cv.languages")}>
-                    <ul className="space-y-1 text-[12px] leading-5">
-                      {languages
-                        .filter((item) => selectedEntry("languages", item.id))
-                        .map((item) => (
-                          <li key={item.id} className="break-words">
-                            {[item.name, item.proficiency]
-                              .filter(Boolean)
-                              .join(" · ")}
-                          </li>
-                        ))}
-                    </ul>
-                  </Section>
-                )}
-              {visible("tools") && selectedTools.length > 0 && (
-                <Section id="tools" title={t("cv.toolsTechnology")}>
-                  <p className="break-words text-[12px] leading-5">
-                    {selectedTools.join(" · ")}
+                        {t("cv.sampleProfile")}
+                      </>
+                    ))}
+                </p>
+              </Section>
+            )}
+            {(technicalSkills.length > 0 || sampleTechnicalSkills) && (
+              <Section
+                id="skills"
+                title={t("cv.skillsCompetencies")}
+                sample={sampleTechnicalSkills}
+              >
+                {technicalSkills.length > 0 ? (
+                  <ul className="list-disc space-y-1 pl-5 text-[12px] leading-5">
+                    {technicalSkills.map((skill, index) => (
+                      <li key={`${index}-${skill}`} className="break-words">
+                        {skill}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-[12px] leading-5">
+                    <span className="text-[10px] uppercase tracking-widest text-[var(--color-muted-fg)]">
+                      {t("common.sample")} ·{" "}
+                    </span>
+                    {t("cv.sampleSkills")}
                   </p>
-                </Section>
-              )}
-              {visible("projects") && selectedProjects.length > 0 && (
-                <Section id="projects" title={t("cv.selectedProjects")}>
-                  {selectedProjects.map(({ project, bullets }) => (
+                )}
+              </Section>
+            )}
+            {showExperience && (
+              <Section
+                id="experience"
+                title={t("cv.experience")}
+                sample={sampleExperience}
+              >
+                {visible("experience") && selectedExperience.length > 0 ? (
+                  selectedExperience.map(({ item, bullets }) => (
+                    <div
+                      key={item.id}
+                      className="mb-5 break-words text-[12px] leading-5 last:mb-0"
+                    >
+                      {(item.title || item.company) && (
+                        <h4 className="text-[13px] font-semibold">
+                          {[item.title, item.company]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </h4>
+                      )}
+                      {(item.startDate ||
+                        item.endDate ||
+                        item.current ||
+                        item.location) && (
+                        <p className="mt-1 text-[11px] text-[var(--color-muted-fg)]">
+                          {[
+                            item.startDate && (item.endDate || item.current)
+                              ? `${item.startDate} — ${
+                                  item.current
+                                    ? t("common.present")
+                                    : item.endDate
+                                }`
+                              : item.startDate ||
+                                (item.current
+                                  ? t("common.present")
+                                  : item.endDate),
+                            item.location,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
+                      )}
+                      {item.description && (
+                        <p className="mt-2 whitespace-pre-wrap">
+                          {item.description}
+                        </p>
+                      )}
+                      {bullets.length > 0 && (
+                        <ul className="mt-2 list-disc space-y-1 pl-5">
+                          {bullets.map((bullet) => (
+                            <li key={bullet.key}>{bullet.text}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))
+                ) : sampleExperience ? (
+                  <div className="text-[12px] leading-5">
+                    <p className="mb-2 text-[10px] uppercase tracking-widest text-[var(--color-muted-fg)]">
+                      {t("common.sampleContent")}
+                    </p>
+                    <h4 className="font-semibold">{t("cv.sampleJobTitle")}</h4>
+                    <p className="mt-1 text-[var(--color-muted-fg)]">
+                      2021 — {t("common.present")}
+                    </p>
+                    <p className="mt-2">
+                      {t("cv.sampleExperienceDescription")}
+                    </p>
+                    <ul className="mt-2 list-disc space-y-1 pl-5">
+                      <li>{t("cv.sampleAchievementOne")}</li>
+                      <li>{t("cv.sampleAchievementTwo")}</li>
+                    </ul>
+                  </div>
+                ) : null}
+                {visible("projects") &&
+                  selectedProjects.map(({ project, bullets }) => (
                     <div
                       key={project.id}
                       className="mb-4 break-words text-[12px] leading-5 last:mb-0"
                     >
                       {project.name && (
-                        <h4 className="font-semibold">{project.name}</h4>
+                        <h4 className="text-[13px] font-semibold">
+                          {project.name}
+                        </h4>
                       )}
                       {project.description && (
                         <p className="mt-1 whitespace-pre-wrap">
@@ -732,17 +639,104 @@ export default function CvPage() {
                       )}
                     </div>
                   ))}
+              </Section>
+            )}
+            {visible("education") &&
+              education.some((item) => selectedEntry("education", item.id)) && (
+                <Section id="education" title={t("cv.education")}>
+                  {education
+                    .filter((item) => selectedEntry("education", item.id))
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        className="mb-4 break-words text-[12px] leading-5 last:mb-0"
+                      >
+                        {item.degree && (
+                          <h4 className="text-[13px] font-semibold">
+                            {item.degree}
+                          </h4>
+                        )}
+                        {[
+                          item.institution,
+                          item.location,
+                          item.graduationDate,
+                        ].filter(Boolean).length > 0 && (
+                          <p className="mt-1 text-[var(--color-muted-fg)]">
+                            {[
+                              item.institution,
+                              item.location,
+                              item.graduationDate,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </p>
+                        )}
+                        {item.details && (
+                          <p className="mt-1 whitespace-pre-wrap">
+                            {item.details}
+                          </p>
+                        )}
+                      </div>
+                    ))}
                 </Section>
               )}
-              {visible("additional") && repo.additionalInfo.trim() && (
-                <Section id="additional" title={t("cv.additional")}>
-                  <p className="whitespace-pre-line break-words text-[12px] leading-5 text-[var(--color-muted-fg)]">
-                    {repo.additionalInfo}
-                  </p>
+            {visible("certifications") &&
+              certifications.some((item) =>
+                selectedEntry("certifications", item.id),
+              ) && (
+                <Section id="certifications" title={t("cv.certifications")}>
+                  {certifications
+                    .filter((item) => selectedEntry("certifications", item.id))
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        className="mb-4 break-words text-[12px] leading-5 last:mb-0"
+                      >
+                        <h4 className="text-[13px] font-semibold">
+                          {item.name}
+                        </h4>
+                        {[item.issuer, item.date, item.credentialId].filter(
+                          Boolean,
+                        ).length > 0 && (
+                          <p className="mt-1 text-[var(--color-muted-fg)]">
+                            {[item.issuer, item.date, item.credentialId]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </p>
+                        )}
+                        {item.url && (
+                          <p className="mt-1 break-all text-[var(--color-muted-fg)]">
+                            <CvLink value={item.url} />
+                          </p>
+                        )}
+                      </div>
+                    ))}
                 </Section>
               )}
-            </div>
-          </article>
+            {visible("languages") &&
+              languages.some((item) => selectedEntry("languages", item.id)) && (
+                <Section id="languages" title={t("cv.languages")}>
+                  <ul className="space-y-1 text-[12px] leading-5">
+                    {languages
+                      .filter((item) => selectedEntry("languages", item.id))
+                      .map((item) => (
+                        <li key={item.id} className="break-words">
+                          {[item.name, item.proficiency]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </li>
+                      ))}
+                  </ul>
+                </Section>
+              )}
+            {visible("additional") && repo.additionalInfo.trim() && (
+              <Section id="additional" title={t("cv.additional")}>
+                <p className="whitespace-pre-line break-words text-[12px] leading-5 text-[var(--color-muted-fg)]">
+                  {repo.additionalInfo}
+                </p>
+              </Section>
+            )}
+          </CvPaper>
         </div>
         <aside className="cv-controls order-1 lg:order-2 lg:sticky lg:top-24">
           <div className="mb-4 border border-[var(--color-border)] bg-[var(--color-card)] p-5">
@@ -751,6 +745,9 @@ export default function CvPage() {
             </h2>
             <p className="mb-4 text-xs leading-5 text-[var(--color-muted-fg)]">
               {t("cv.curationIntro")}
+            </p>
+            <p className="mb-4 text-xs leading-5 text-[var(--color-muted-fg)]">
+              {t("cv.groupingNote")}
             </p>
             <p
               role="status"

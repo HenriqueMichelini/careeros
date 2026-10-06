@@ -327,6 +327,8 @@ const messages = {
     "cv.intro":
       "Shape the master CV that future application templates can build on. This preview uses your Profile details and sample content where information is missing.",
     "cv.documentPreview": "CV document preview",
+    "cv.readFullSize": "Read at 100%",
+    "cv.fitPage": "Fit page",
     "cv.sampleName": "Your name",
     "cv.pageOneEnds": "Page 1 ends",
     "cv.overflowNotice": "Content extends beyond the first page. All Profile details remain visible below the page boundary.",
@@ -334,6 +336,7 @@ const messages = {
     "cv.curation": "Choose CV content",
     "cv.contact": "Contact details",
     "cv.curationIntro": "Select Profile facts and adjust CV wording while checking the page preview.",
+    "cv.groupingNote": "Tools appear under Technical Skills; projects appear under Professional Experience.",
     "cv.editSummary": "Edit CV summary",
     "cv.editBullet": "Edit CV bullet",
     "cv.summaryGuidance": "{{count}} words · suggested 40–80 words",
@@ -353,10 +356,10 @@ const messages = {
       "Product-minded leader · Building teams and experiences that move business forward",
     "cv.sampleContact":
       "name@email.com  ·  +1 555 010 2024  ·  New York, NY  ·  linkedin.com/in/name",
-    "cv.professionalProfile": "Professional Profile",
+    "cv.professionalProfile": "Professional Summary",
     "cv.sampleProfile":
       "Strategic professional with a record of turning complex challenges into clear plans, strong partnerships, and measurable results. Known for combining thoughtful leadership with a hands-on approach to delivery.",
-    "cv.experience": "Experience",
+    "cv.experience": "Professional Experience",
     "cv.defaultLocation": "New York, NY",
     "cv.defaultDescription":
       "Led cross-functional initiatives, aligning team priorities with customer needs and business outcomes.",
@@ -370,7 +373,7 @@ const messages = {
     "cv.sampleSecondJob": "Product Manager · Fieldwork",
     "cv.sampleSecondJobDescription":
       "Launched a new customer insights program and helped grow annual recurring revenue by 18%.",
-    "cv.skillsCompetencies": "Skills & Competencies",
+    "cv.skillsCompetencies": "Technical Skills",
     "cv.sampleSkills":
       "Product strategy · Team leadership · Data analysis · Stakeholder management · Roadmapping",
     "cv.education": "Education",
@@ -414,6 +417,8 @@ const messages = {
     "results.materials": "Materials",
     "results.materialsList": "Résumé + Cover Letter + Q&A",
     "results.roleSummary": "Role Summary",
+    "results.resumeFits": "This draft fits on one A4 page.",
+    "results.resumeOverflow": "This draft extends beyond the first A4 page. All content remains visible below the boundary.",
   },
   "pt-BR": {
     "language.label": "Idioma",
@@ -742,6 +747,8 @@ const messages = {
     "cv.intro":
       "Prepare seu currículo-base para candidaturas futuras. Esta prévia usa seu Perfil e inclui exemplos quando faltam dados.",
     "cv.documentPreview": "Prévia do currículo",
+    "cv.readFullSize": "Ler em 100%",
+    "cv.fitPage": "Ajustar à página",
     "cv.sampleName": "Seu nome",
     "cv.pageOneEnds": "Fim da página 1",
     "cv.overflowNotice": "O conteúdo ultrapassa a primeira página. Todos os dados do Perfil continuam visíveis abaixo do limite da página.",
@@ -749,6 +756,7 @@ const messages = {
     "cv.curation": "Escolha o conteúdo do currículo",
     "cv.contact": "Dados de contato",
     "cv.curationIntro": "Selecione dados do Perfil e ajuste o texto do currículo acompanhando a prévia da página.",
+    "cv.groupingNote": "Ferramentas aparecem em Habilidades técnicas; projetos aparecem em Experiência profissional.",
     "cv.editSummary": "Editar resumo do currículo",
     "cv.editBullet": "Editar tópico do currículo",
     "cv.summaryGuidance": "{{count}} palavras · sugestão: 40–80 palavras",
@@ -768,10 +776,10 @@ const messages = {
       "Líder orientado a produto · Construindo equipes e experiências que impulsionam negócios",
     "cv.sampleContact":
       "nome@email.com  ·  +55 11 5555-0101  ·  São Paulo, SP  ·  linkedin.com/in/nome",
-    "cv.professionalProfile": "Perfil profissional",
+    "cv.professionalProfile": "Resumo profissional",
     "cv.sampleProfile":
       "Profissional estratégico com histórico de transformar desafios complexos em planos claros, parcerias sólidas e resultados mensuráveis. Conhecido por combinar liderança cuidadosa com uma abordagem prática de execução.",
-    "cv.experience": "Experiência",
+    "cv.experience": "Experiência profissional",
     "cv.defaultLocation": "São Paulo, SP",
     "cv.defaultDescription":
       "Liderou iniciativas multifuncionais, alinhando prioridades da equipe às necessidades dos clientes e aos resultados do negócio.",
@@ -785,7 +793,7 @@ const messages = {
     "cv.sampleSecondJob": "Gerente de produto · Fieldwork",
     "cv.sampleSecondJobDescription":
       "Lançou um novo programa de insights de clientes e ajudou a aumentar a receita recorrente anual em 18%.",
-    "cv.skillsCompetencies": "Habilidades e competências",
+    "cv.skillsCompetencies": "Habilidades técnicas",
     "cv.sampleSkills":
       "Estratégia de produto · Liderança de equipes · Análise de dados · Gestão de stakeholders · Roadmapping",
     "cv.education": "Formação",
@@ -829,6 +837,8 @@ const messages = {
     "results.materials": "Materiais",
     "results.materialsList": "Currículo + Carta de apresentação + P&R",
     "results.roleSummary": "Resumo da vaga",
+    "results.resumeFits": "Este currículo cabe em uma página A4.",
+    "results.resumeOverflow": "Este currículo ultrapassa a primeira página A4. Todo o conteúdo continua visível abaixo do limite.",
   },
 } satisfies Record<Locale, Record<string, string>>
 
