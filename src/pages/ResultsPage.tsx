@@ -1,10 +1,13 @@
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useI18n, useStore } from "../lib/store"
 import { Page } from "../lib/types"
 import { TranslationKey } from "../lib/i18n"
+import { parseResumeHeader } from "../lib/resume"
 import GeneratedResumePreview from "../components/GeneratedResumePreview"
 
 type Tab = "summary" | "resume" | "cover" | "answers"
+type PdfTarget = "resume" | "cover"
+const A4_HEIGHT_PX = (297 * 96) / 25.4
 
 const TABS: { id: Tab; labelKey: TranslationKey }[] = [
   { id: "summary", labelKey: "results.summary" },
@@ -47,8 +50,15 @@ export default function ResultsPage({ setPage }: Props) {
   const { t } = useI18n()
   const [activeTab, setActiveTab] = useState<Tab>("summary")
   const [copied, setCopied] = useState(false)
+  const [pdfOverflow, setPdfOverflow] = useState(false)
   const resumePreviewRef = useRef<HTMLDivElement>(null)
+  const printCleanupRef = useRef<(() => void) | null>(null)
   const materials = state.generatedMaterials
+
+  useEffect(() => {
+    return () => printCleanupRef.current?.()
+  }, [])
+  useEffect(() => setPdfOverflow(false), [activeTab, materials?.resume])
 
   if (!materials) {
     return (
@@ -105,10 +115,51 @@ export default function ResultsPage({ setPage }: Props) {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  async function savePdf(target: PdfTarget) {
+    if (!materials) return
+    await document.fonts.ready
+    if (target === "resume") {
+      const paper = resumePreviewRef.current?.querySelector<HTMLElement>(".cv-paper")
+      if (!paper) return
+      const measure = paper.cloneNode(true) as HTMLElement
+      measure.classList.add("cv-export-measure")
+      measure.style.zoom = "1"
+      document.body.append(measure)
+      const height = measure.querySelector<HTMLElement>(".cv-paper-content")?.getBoundingClientRect().height ?? 0
+      measure.remove()
+      if (height > A4_HEIGHT_PX - 4) {
+        setPdfOverflow(true)
+        return
+      }
+    }
+    setPdfOverflow(false)
+    printCleanupRef.current?.()
+    const printClass = target === "resume" ? "results-print-resume" : "results-print-cover"
+    document.body.classList.remove("results-print-resume", "results-print-cover")
+    document.body.classList.add(printClass)
+    const previousTitle = document.title
+    const name = state.repository.fullName.trim() || parseResumeHeader(materials.resume).name || materials.company || "CareerOS"
+    document.title = `${name} - ${target === "resume" ? "Resume" : "Cover Letter"}`
+    const finish = () => {
+      window.removeEventListener("afterprint", finish)
+      document.body.classList.remove(printClass)
+      document.title = previousTitle
+      if (printCleanupRef.current === finish) printCleanupRef.current = null
+    }
+    printCleanupRef.current = finish
+    window.addEventListener("afterprint", finish)
+    try {
+      window.print()
+    } catch (error) {
+      finish()
+      throw error
+    }
+  }
+
   return (
-    <div className="max-w-6xl mx-auto px-6 py-10">
+    <div className="results-page max-w-6xl mx-auto px-6 py-10">
       {/* Header */}
-      <div className="mb-10 grid items-start gap-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-8">
+      <div className="results-page-header mb-10 grid items-start gap-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-8">
         <div className="min-w-0">
           <p
             className="text-xs uppercase tracking-[0.25em] mb-3"
@@ -163,7 +214,7 @@ export default function ResultsPage({ setPage }: Props) {
 
       {/* Tabs */}
       <div
-        className="flex w-full gap-0 mb-0 overflow-x-auto border-b"
+        className="results-tabs flex w-full gap-0 mb-0 overflow-x-auto border-b"
         style={{ borderColor: "var(--color-border)" }}
       >
         {TABS.map(({ id, labelKey }) => (
@@ -186,7 +237,7 @@ export default function ResultsPage({ setPage }: Props) {
 
       {/* Content */}
       <div
-        className="mt-0 min-w-0 p-4 sm:p-8"
+        className="results-content mt-0 min-w-0 p-4 sm:p-8"
         style={{
           backgroundColor: "var(--color-card)",
           border: "1px solid var(--color-border)",
@@ -268,21 +319,21 @@ export default function ResultsPage({ setPage }: Props) {
           </div>
         ) : activeTab === "resume" ? (
           <div>
-            <div className="flex justify-end mb-4">
+            <div className="results-resume-actions flex flex-wrap justify-end gap-3 mb-4">
               <button
-                onClick={handleCopy}
+                onClick={() => savePdf("resume")}
                 className="text-xs uppercase tracking-widest px-3 py-1.5 transition-colors"
                 style={{
                   fontFamily: "var(--font-mono)",
                   border: "1px solid var(--color-border)",
-                  color: copied
-                    ? "var(--color-accent)"
-                    : "var(--color-muted-fg)",
+                  color: "var(--color-muted-fg)",
                 }}
               >
-                {copied ? t("common.copied") : t("common.copyText")}
+                {t("results.savePdf")}
               </button>
             </div>
+            {pdfOverflow && <p role="alert" className="mb-4 text-xs text-[var(--color-accent)]">{t("results.pdfOverflow")}</p>}
+            <p className="results-pdf-help mb-4 text-xs text-[var(--color-muted-fg)]">{t("results.pdfHelp")}</p>
             <div ref={resumePreviewRef}>
               <GeneratedResumePreview
                 resume={materials.resume}
@@ -293,7 +344,7 @@ export default function ResultsPage({ setPage }: Props) {
           </div>
         ) : (
           <div>
-            <div className="flex justify-end mb-4">
+            <div className="results-other-actions flex flex-wrap justify-end gap-3 mb-4">
               <button
                 onClick={handleCopy}
                 className="text-xs uppercase tracking-widest px-3 py-1.5 transition-colors"
@@ -307,11 +358,22 @@ export default function ResultsPage({ setPage }: Props) {
               >
                 {copied ? t("common.copied") : t("common.copyText")}
               </button>
+              {activeTab === "cover" && (
+                <button
+                  onClick={() => savePdf("cover")}
+                  className="text-xs uppercase tracking-widest px-3 py-1.5 transition-colors"
+                  style={{ fontFamily: "var(--font-mono)", border: "1px solid var(--color-border)", color: "var(--color-muted-fg)" }}
+                >
+                  {t("results.savePdf")}
+                </button>
+              )}
             </div>
+            {activeTab === "cover" && <p className="results-pdf-help mb-4 text-xs text-[var(--color-muted-fg)]">{t("results.pdfHelp")}</p>}
             <MarkdownContent content={tabContent[activeTab]} />
           </div>
         )}
       </div>
+      <div className="results-cover-print" aria-hidden="true">{materials.coverLetter}</div>
     </div>
   )
 }

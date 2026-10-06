@@ -119,7 +119,7 @@ export default function GeneratedResumePreview({
   }, [resume, profile, paperScale])
 
   return (
-    <div>
+    <div className="generated-resume-preview">
       <p
         role="status"
         className="mb-4 text-xs leading-5 text-[var(--color-muted-fg)]"

@@ -421,6 +421,9 @@ const messages = {
     "results.resumeFits": "This draft fits on one A4 page.",
     "results.resumeOverflow": "This draft extends beyond the first A4 page. All content remains visible below the boundary.",
     "results.resumeMissingIdentity": "Add your name and contact details in Profile to complete the résumé header.",
+    "results.savePdf": "Save as PDF",
+    "results.pdfHelp": "In the print dialog, choose Save as PDF and A4 paper.",
+    "results.pdfOverflow": "This résumé exceeds one A4 page. Generate a shorter draft before saving it as PDF.",
   },
   "pt-BR": {
     "language.label": "Idioma",
@@ -843,6 +846,9 @@ const messages = {
     "results.resumeFits": "Este currículo cabe em uma página A4.",
     "results.resumeOverflow": "Este currículo ultrapassa a primeira página A4. Todo o conteúdo continua visível abaixo do limite.",
     "results.resumeMissingIdentity": "Adicione seu nome e seus dados de contato no Perfil para completar o cabeçalho do currículo.",
+    "results.savePdf": "Salvar como PDF",
+    "results.pdfHelp": "Na janela de impressão, escolha Salvar como PDF e papel A4.",
+    "results.pdfOverflow": "Este currículo excede uma página A4. Gere uma versão mais curta antes de salvar em PDF.",
   },
 } satisfies Record<Locale, Record<string, string>>
 
