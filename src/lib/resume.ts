@@ -59,6 +59,36 @@ function sectionId(title: string): CvSection | null {
   return sectionAliases[normalized] ?? null
 }
 
+export function parseResumeHeader(markdown: string): {
+  name: string
+  contacts: string[]
+  body: string
+} {
+  const lines = markdown.replace(/\r\n?/g, "\n").split("\n")
+  const first = lines.findIndex((line) => line.trim())
+  const nameMatch = first >= 0 ? lines[first].trim().match(/^#(?!#)\s+(.+)$/) : null
+  if (!nameMatch) return { name: "", contacts: [], body: markdown }
+
+  const contacts: string[] = []
+  const kept: string[] = []
+  let index = first + 1
+  for (; index < lines.length; index++) {
+    const line = lines[index].trim()
+    const boldHeading = line.match(/^\*\*(.+)\*\*$/)
+    if (/^#{2,6}\s+/.test(line) || (boldHeading && sectionId(boldHeading[1]))) break
+    if (line && /@|https?:\/\/|www\.|\+?\d[\d\s().-]{6,}\d/.test(line)) {
+      contacts.push(...line.split(/\s*[|·]\s*/).map((part) => part.trim()).filter(Boolean))
+    } else {
+      kept.push(lines[index])
+    }
+  }
+  return {
+    name: nameMatch[1].replace(/[*_`]/g, "").trim(),
+    contacts,
+    body: [...kept, ...lines.slice(index)].join("\n"),
+  }
+}
+
 export function parseResumeMarkdown(markdown: string): ResumeSection[] {
   const sections: ResumeSection[] = []
   let current: ResumeSection | null = null

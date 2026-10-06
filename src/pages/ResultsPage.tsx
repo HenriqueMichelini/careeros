@@ -287,6 +287,7 @@ export default function ResultsPage({ setPage }: Props) {
               <GeneratedResumePreview
                 resume={materials.resume}
                 profile={state.repository}
+                onEditProfile={() => setPage("repository")}
               />
             </div>
           </div>

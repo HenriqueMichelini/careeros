@@ -13,7 +13,7 @@ import {
 import { TranslationKey } from "../lib/i18n"
 import { previewValues, applyIngestion, ingestProfile, IngestionError, IngestionOperation, IngestionResult } from "../lib/ingestion"
 
-type Section = "profile" | "goals" | "skills" | "competencies" | "experience" | "tools" | "projects" | "education" | "certifications" | "languages" | "compensation" | "other"
+type Section = "profile" | "goals" | "skills" | "experience" | "projects" | "education" | "certifications" | "languages" | "compensation" | "other"
 
 const SECTIONS: {
   id: Section
@@ -36,19 +36,9 @@ const SECTIONS: {
     descKey: "repo.section.skillsDesc",
   },
   {
-    id: "competencies",
-    labelKey: "repo.section.competencies",
-    descKey: "repo.section.competenciesDesc",
-  },
-  {
     id: "experience",
     labelKey: "repo.section.experience",
     descKey: "repo.section.experienceDesc",
-  },
-  {
-    id: "tools",
-    labelKey: "repo.section.tools",
-    descKey: "repo.section.toolsDesc",
   },
   {
     id: "projects",
@@ -880,26 +870,34 @@ export default function RepositoryPage() {
         )}
 
         {activeSection === "skills" && (
-          <div>
-            <Label>{t("repo.section.skills")}</Label>
-            <Field
-              rows={12}
-              value={repo.skills}
-              onChange={(v) => updateRepo({ skills: v })}
-              placeholder={t("repo.skillsPlaceholder")}
-            />
-          </div>
-        )}
-
-        {activeSection === "competencies" && (
-          <div>
-            <Label>{t("repo.competencies")}</Label>
-            <Field
-              rows={10}
-              value={repo.competencies}
-              onChange={(v) => updateRepo({ competencies: v })}
-              placeholder={t("repo.competenciesPlaceholder")}
-            />
+          <div className="space-y-6">
+            <div>
+              <Label>{t("repo.skills")}</Label>
+              <Field
+                rows={12}
+                value={repo.skills}
+                onChange={(v) => updateRepo({ skills: v })}
+                placeholder={t("repo.skillsPlaceholder")}
+              />
+            </div>
+            <div>
+              <Label>{t("repo.competencies")}</Label>
+              <Field
+                rows={10}
+                value={repo.competencies}
+                onChange={(v) => updateRepo({ competencies: v })}
+                placeholder={t("repo.competenciesPlaceholder")}
+              />
+            </div>
+            <div>
+              <Label>{t("repo.tools")}</Label>
+              <Field
+                rows={12}
+                value={repo.tools}
+                onChange={(v) => updateRepo({ tools: v })}
+                placeholder={t("repo.toolsPlaceholder")}
+              />
+            </div>
           </div>
         )}
 
@@ -963,18 +961,6 @@ export default function RepositoryPage() {
                 />
               ))
             )}
-          </div>
-        )}
-
-        {activeSection === "tools" && (
-          <div>
-            <Label>{t("repo.tools")}</Label>
-            <Field
-              rows={12}
-              value={repo.tools}
-              onChange={(v) => updateRepo({ tools: v })}
-              placeholder={t("repo.toolsPlaceholder")}
-            />
           </div>
         )}
 

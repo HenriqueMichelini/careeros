@@ -184,8 +184,8 @@ const messages = {
     "repo.professionalLinksHint": "One link per line",
     "repo.section.goals": "Career Goals",
     "repo.section.goalsDesc": "Ambitions, target roles, long-term vision",
-    "repo.section.skills": "Skills",
-    "repo.section.skillsDesc": "Technical and professional skills",
+    "repo.section.skills": "Skills, tools & tech",
+    "repo.section.skillsDesc": "Skills, competencies, tools and technologies",
     "repo.section.competencies": "Competencies",
     "repo.section.competenciesDesc": "Core strengths and soft skills",
     "repo.section.experience": "Experience",
@@ -252,6 +252,7 @@ const messages = {
       "Describe your short and long-term career goals. What roles are you targeting? What industries? What kind of impact do you want to make? Where do you see yourself in 3–5 years?",
     "repo.skillsPlaceholder":
       "List your technical and professional skills. Group them by category if helpful.\n\nExample:\nProgramming Languages: Python, TypeScript, Rust, Go\nFrontend: React, Next.js, Vue, TailwindCSS\nBackend: Node.js, FastAPI, Django, PostgreSQL\nCloud: AWS (EC2, S3, Lambda, RDS), GCP, Docker, Kubernetes\n...",
+    "repo.skills": "Skills",
     "repo.competencies": "Core Competencies",
     "repo.competenciesPlaceholder":
       "Describe your core strengths, soft skills, and professional competencies.\n\nExamples: Strategic thinking, cross-functional leadership, agile project management, stakeholder communication, data-driven decision making, mentoring junior engineers, system design, technical writing...",
@@ -419,6 +420,7 @@ const messages = {
     "results.roleSummary": "Role Summary",
     "results.resumeFits": "This draft fits on one A4 page.",
     "results.resumeOverflow": "This draft extends beyond the first A4 page. All content remains visible below the boundary.",
+    "results.resumeMissingIdentity": "Add your name and contact details in Profile to complete the résumé header.",
   },
   "pt-BR": {
     "language.label": "Idioma",
@@ -603,8 +605,8 @@ const messages = {
     "repo.section.goals": "Objetivos de carreira",
     "repo.section.goalsDesc":
       "Ambições, cargos desejados e visão de longo prazo",
-    "repo.section.skills": "Habilidades",
-    "repo.section.skillsDesc": "Habilidades técnicas e profissionais",
+    "repo.section.skills": "Habilidades e tecnologias",
+    "repo.section.skillsDesc": "Habilidades, competências, ferramentas e tecnologias",
     "repo.section.competencies": "Competências",
     "repo.section.competenciesDesc":
       "Pontos fortes e habilidades comportamentais",
@@ -672,6 +674,7 @@ const messages = {
       "Descreva seus objetivos de carreira de curto e longo prazo. Quais cargos você busca? Em quais setores? Que impacto deseja gerar? Onde você se vê daqui a 3–5 anos?",
     "repo.skillsPlaceholder":
       "Liste suas habilidades técnicas e profissionais. Se ajudar, agrupe-as por categoria.\n\nExemplo:\nLinguagens: Python, TypeScript, Rust, Go\nFrontend: React, Next.js, Vue, TailwindCSS\nBackend: Node.js, FastAPI, Django, PostgreSQL\nCloud: AWS (EC2, S3, Lambda, RDS), GCP, Docker, Kubernetes\n...",
+    "repo.skills": "Habilidades",
     "repo.competencies": "Competências principais",
     "repo.competenciesPlaceholder":
       "Descreva seus principais pontos fortes, habilidades comportamentais e competências profissionais.\n\nExemplos: pensamento estratégico, liderança multifuncional, gestão ágil de projetos, comunicação com stakeholders, tomada de decisão orientada por dados, mentoria de engenheiros juniores, arquitetura de sistemas, redação técnica...",
@@ -839,6 +842,7 @@ const messages = {
     "results.roleSummary": "Resumo da vaga",
     "results.resumeFits": "Este currículo cabe em uma página A4.",
     "results.resumeOverflow": "Este currículo ultrapassa a primeira página A4. Todo o conteúdo continua visível abaixo do limite.",
+    "results.resumeMissingIdentity": "Adicione seu nome e seus dados de contato no Perfil para completar o cabeçalho do currículo.",
   },
 } satisfies Record<Locale, Record<string, string>>
 

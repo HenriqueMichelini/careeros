@@ -18,11 +18,11 @@ const port = await new Promise((resolve) => {
   })
 })
 const repo = {
-  fullName: "Avery Morgan",
-  email: "avery@example.com",
+  fullName: "",
+  email: "",
   phone: "",
   location: "",
-  professionalLinks: "https://example.com/avery",
+  professionalLinks: "",
   careerGoals: "Product leader focused on useful services.",
   skills: "Research, Product strategy",
   competencies: "",
@@ -186,6 +186,19 @@ try {
   const base = await evaluate(
     "Array.from(document.querySelectorAll('.cv-paper-content section h3')).map(el => el.textContent.trim())",
   )
+  await evaluate("document.querySelectorAll('nav button')[1].click()")
+  await until("!!document.querySelector('aside nav')")
+  assert.equal(
+    await evaluate("Array.from(document.querySelectorAll('aside nav button')).filter(el => /Skills|Competencies|Tools & Tech/.test(el.textContent)).length"),
+    1,
+    "Profile should group skills, competencies, tools and technology in one section",
+  )
+  await evaluate("Array.from(document.querySelectorAll('aside nav button')).find(el => el.textContent.includes('Skills')).click()")
+  assert.equal(
+    await evaluate("document.querySelectorAll('main textarea').length >= 3"),
+    true,
+    "grouped Profile section should keep all three editable fields",
+  )
   if (process.env.CV_PREVIEW_KEEP) {
     const shot = await call("Page.captureScreenshot", {
       format: "png",
@@ -196,7 +209,7 @@ try {
       Buffer.from(shot.data, "base64"),
     )
   }
-  await evaluate("document.querySelectorAll('nav button')[0].click()")
+  await evaluate("document.querySelectorAll('header nav button')[0].click()")
   await until("!!document.querySelector('textarea')")
   await evaluate(
     `window.fetch = async (url) => new Response(JSON.stringify(String(url).includes('qualification-gaps') ? { gaps: [] } : ${JSON.stringify(materials)}), { status: 200, headers: { 'Content-Type': 'application/json' } }); const el = document.querySelector('textarea'); Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(el, 'A long synthetic job posting for a product lead at Harbor Works.'); el.dispatchEvent(new Event('input', { bubbles: true }))`,
@@ -246,6 +259,11 @@ try {
       "document.querySelector('.cv-paper-content').textContent.match(/avery@example\\.com/g)?.length",
     ),
     1,
+  )
+  assert.equal(
+    await evaluate("document.querySelector('.cv-paper-content header h2')?.textContent.trim()"),
+    "Avery Morgan",
+    "Results should recover a generated name when Profile has none",
   )
   assert.ok(
     await evaluate("document.querySelector('.cv-paper-content').textContent.includes('my_variable')"),
@@ -331,6 +349,43 @@ try {
   await until("document.querySelector('nav button')?.textContent.trim() === 'Apply'")
   await evaluate("document.querySelectorAll('nav button')[0].click()")
   await until("!!document.querySelector('textarea')")
+  const denseMaterials = {
+    ...materials,
+    resume: [
+      "# Avery Morgan",
+      "avery@example.com | https://example.com/avery",
+      "## Professional Summary",
+      "Product leader with experience shaping service journeys, collaborating across teams, and improving onboarding for customers.",
+      "## Technical Skills",
+      "- Research, product strategy, discovery, prioritization, stakeholder alignment, service design, analytics, accessibility, and delivery planning.",
+      "- Figma, spreadsheets, reporting tools, prototyping, and cross-functional workshops.",
+      "## Professional Experience",
+      ...Array.from({ length: 3 }, (_, job) => [
+        `### Product Lead · Harbor Works ${job + 1}`,
+        "2021 — 2024",
+        ...Array.from({ length: 5 }, (_, bullet) => `- Led service research and delivery with partner teams; improved customer journeys and onboarding through evidence-based product decisions ${bullet + 1}.`),
+      ]).flat(),
+      "## Education",
+      "### BSc Design · East College",
+      "2018 · Research, design systems, and digital services.",
+      "## Certifications",
+      "- Research Certificate · Design Guild · 2020",
+      "## Languages",
+      "- English: Fluent",
+    ].join("\n"),
+  }
+  await evaluate(`window.fetch = async (url) => new Response(JSON.stringify(String(url).includes('qualification-gaps') ? { gaps: [] } : ${JSON.stringify(denseMaterials)}), { status: 200, headers: { 'Content-Type': 'application/json' } })`)
+  await evaluate("Array.from(document.querySelectorAll('button')).find(el => /Generate/i.test(el.textContent) && !el.disabled).click()")
+  await until("document.querySelector('h1')?.textContent.includes('Product Lead')")
+  await evaluate("Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'Résumé').click()")
+  await until("document.querySelector('.cv-paper-content')?.textContent.includes('evidence-based product decisions 5')")
+  const denseFit = await evaluate("({ status: document.querySelector('[role=status]')?.textContent, height: Math.round(document.querySelector('.cv-paper-content').getBoundingClientRect().height), page: Math.round(document.querySelector('.cv-page-boundary').getBoundingClientRect().height) })")
+  assert.ok(
+    denseFit.status?.includes("fits on one A4 page"),
+    `a representative dense résumé should fit within one A4 page: ${JSON.stringify(denseFit)}`,
+  )
+  await evaluate("document.querySelectorAll('nav button')[0].click()")
+  await until("!!document.querySelector('textarea')")
   const longMaterials = {
     ...materials,
     resume: `## Professional Summary\n${"Long draft detail. ".repeat(2500)}END-MARKER`,
@@ -341,6 +396,9 @@ try {
   await evaluate("Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'Résumé').click()")
   await until("document.querySelector('[role=status]')?.textContent.includes('extends beyond')")
   assert.ok(await evaluate("document.querySelector('.cv-paper-content').textContent.includes('END-MARKER')"), "overflow must not hide generated text")
+  assert.ok(await evaluate("document.body.textContent.includes('Add your name and contact details in Profile')"), "a draft without identity should direct the user to Profile")
+  await evaluate("Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'Profile').click()")
+  await until("!!document.querySelector('aside nav')")
   console.log(
     "CV and Apply use an A4 document preview with matching section order",
   )
