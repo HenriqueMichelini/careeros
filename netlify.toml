@@ -6,6 +6,11 @@
   directory = "netlify/functions"
 
 [[redirects]]
+  from = "/api/profile/ingest"
+  to = "/.netlify/functions/profile-ingestion"
+  status = 200
+
+[[redirects]]
   from = "/api/profile/review"
   to = "/.netlify/functions/profile-review"
   status = 200

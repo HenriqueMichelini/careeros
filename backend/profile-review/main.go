@@ -88,7 +88,7 @@ func (a app) review(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var input reviewRequest
-	if err := json.Unmarshal(mustMarshal(rawInput), &input); err != nil || !completeRepository(rawInput["repository"]) {
+	if err := json.Unmarshal(mustMarshal(rawInput), &input); err != nil || !profilevalidation.CompleteJSON(rawInput["repository"]) {
 		status = http.StatusBadRequest
 		outcome = "input"
 		writeError(w, status, "input")
@@ -174,7 +174,7 @@ func (a app) callProvider(parent context.Context, key string, input reviewReques
 	decoder.DisallowUnknownFields()
 	var result reviewResult
 	var rawResult map[string]json.RawMessage
-	if err := decoder.Decode(&rawResult); err != nil || !hasFields(rawResult, "updatedRepository", "summary") || !completeRepository(rawResult["updatedRepository"]) {
+	if err := decoder.Decode(&rawResult); err != nil || !hasFields(rawResult, "updatedRepository", "summary") || !profilevalidation.CompleteJSON(rawResult["updatedRepository"]) {
 		return empty, "invalid_output", errors.New("incomplete provider result")
 	}
 	if err := json.Unmarshal(mustMarshal(rawResult), &result); err != nil {
@@ -218,61 +218,6 @@ func hasFields(value map[string]json.RawMessage, fields ...string) bool {
 		}
 	}
 	return true
-}
-
-func completeRepository(raw json.RawMessage) bool {
-	var value map[string]json.RawMessage
-	if json.Unmarshal(raw, &value) != nil || !hasFields(value, "careerGoals", "skills", "competencies", "experience", "tools", "projects", "employmentStatus", "currentSalary", "desiredSalary", "additionalInfo") {
-		return false
-	}
-	for _, field := range []string{"careerGoals", "skills", "competencies", "tools", "employmentStatus", "currentSalary", "desiredSalary", "additionalInfo"} {
-		if !isJSONType(value[field], '"') {
-			return false
-		}
-	}
-	if !isJSONType(value["experience"], '[') || !isJSONType(value["projects"], '[') {
-		return false
-	}
-	var entries []json.RawMessage
-	if json.Unmarshal(value["experience"], &entries) != nil {
-		return false
-	}
-	for _, entry := range entries {
-		var fields map[string]json.RawMessage
-		if json.Unmarshal(entry, &fields) != nil || !hasFields(fields, "id", "company", "title", "startDate", "endDate", "current", "location", "description", "responsibilities", "achievements") {
-			return false
-		}
-		for _, field := range []string{"id", "company", "title", "startDate", "endDate", "location", "description", "responsibilities", "achievements"} {
-			if !isJSONType(fields[field], '"') {
-				return false
-			}
-		}
-		current := strings.TrimSpace(string(fields["current"]))
-		if current != "true" && current != "false" {
-			return false
-		}
-	}
-	entries = nil
-	if json.Unmarshal(value["projects"], &entries) != nil {
-		return false
-	}
-	for _, entry := range entries {
-		var fields map[string]json.RawMessage
-		if json.Unmarshal(entry, &fields) != nil || !hasFields(fields, "id", "name", "description", "technologies", "url", "highlights") {
-			return false
-		}
-		for _, field := range []string{"id", "name", "description", "technologies", "url", "highlights"} {
-			if !isJSONType(fields[field], '"') {
-				return false
-			}
-		}
-	}
-	return true
-}
-
-func isJSONType(raw json.RawMessage, first byte) bool {
-	value := strings.TrimSpace(string(raw))
-	return len(value) > 0 && value[0] == first
 }
 
 func mustMarshal(value any) []byte { encoded, _ := json.Marshal(value); return encoded }

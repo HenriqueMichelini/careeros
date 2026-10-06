@@ -10,6 +10,7 @@ import (
 	applicationdraft "professional-information-repo/backend/application-draft"
 	profilereview "professional-information-repo/backend/profile-review"
 	qualificationgaps "professional-information-repo/backend/qualification-gaps"
+	profileingestion "professional-information-repo/backend/profile-ingestion"
 )
 
 func main() {
@@ -20,6 +21,10 @@ func main() {
 	server := &http.Server{
 		Addr: ":" + port,
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/profile/ingest" {
+				profileingestion.NewHandler().ServeHTTP(w, r)
+				return
+			}
 			if r.URL.Path == "/api/application-draft" {
 				applicationdraft.NewHandler().ServeHTTP(w, r)
 				return
@@ -31,7 +36,7 @@ func main() {
 			profilereview.NewHandler().ServeHTTP(w, r)
 		}),
 		ReadHeaderTimeout: 3 * time.Second,
-		WriteTimeout:      30 * time.Second,
+		WriteTimeout:      55 * time.Second,
 		IdleTimeout:       30 * time.Second,
 	}
 	log.Printf("profile-review listening port=%s", port)

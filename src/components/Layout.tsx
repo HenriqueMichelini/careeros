@@ -50,7 +50,7 @@ export default function Layout({ page, setPage, children }: Props) {
           backgroundColor: "var(--color-bg)",
         }}
       >
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between gap-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2 md:py-0 min-h-14 flex flex-wrap md:flex-nowrap items-center justify-between gap-x-3 gap-y-2 md:gap-8">
           {/* Wordmark */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <div
@@ -66,12 +66,12 @@ export default function Layout({ page, setPage, children }: Props) {
           </div>
 
           {/* Nav */}
-          <nav className="flex items-center gap-1">
+          <nav className="order-3 md:order-none w-full md:w-auto flex items-center justify-between md:justify-start gap-1">
             {navItems.map(({ id, label }) => (
               <button
                 key={id}
                 onClick={() => setPage(id)}
-                className="px-4 py-1.5 text-xs uppercase tracking-[0.18em] transition-colors"
+                className="px-2 md:px-4 py-1.5 text-[10px] md:text-xs uppercase tracking-[0.12em] md:tracking-[0.18em] transition-colors"
                 style={{
                   fontFamily: "var(--font-mono)",
                   backgroundColor:
@@ -86,14 +86,14 @@ export default function Layout({ page, setPage, children }: Props) {
           </nav>
 
           {/* Preferences and API key */}
-          <div className="grid grid-cols-[7rem_12rem] gap-3 flex-shrink-0">
+          <div className="flex items-center gap-2 md:grid md:grid-cols-[7rem_12rem] md:gap-3 flex-shrink-0">
             <LanguageSelector />
             <button
               onClick={() => {
                 setKeyDraft(state.apiKey)
                 setShowKey((v) => !v)
               }}
-              className="w-full text-xs px-3 py-1.5 border text-center transition-colors"
+              className="text-[10px] md:text-xs px-2 md:px-3 py-1.5 border text-center transition-colors"
               style={{
                 fontFamily: "var(--font-mono)",
                 borderColor: state.apiKey
@@ -117,7 +117,7 @@ export default function Layout({ page, setPage, children }: Props) {
               backgroundColor: "var(--color-card)",
             }}
           >
-            <div className="max-w-6xl mx-auto px-6 py-3 flex items-center gap-4">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap md:flex-nowrap items-center gap-3 md:gap-4">
               <span
                 className="text-xs uppercase tracking-widest flex-shrink-0"
                 style={{
@@ -133,7 +133,7 @@ export default function Layout({ page, setPage, children }: Props) {
                 onChange={(e) => setKeyDraft(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && saveKey()}
                 placeholder={t("api.placeholder")}
-                className="flex-1 text-sm bg-transparent border-b py-1 focus:outline-none transition-colors"
+                className="min-w-0 flex-1 text-sm bg-transparent border-b py-1 focus:outline-none transition-colors"
                 style={{
                   fontFamily: "var(--font-mono)",
                   borderColor: "var(--color-border)",
