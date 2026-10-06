@@ -9,6 +9,7 @@ import {
   cvSections,
   entryKey,
   parseCvChoices,
+  professionalLinkHref,
 } from "../lib/cv"
 
 function lines(value: string, splitCommas = true) {
@@ -25,23 +26,41 @@ interface CvBullet {
 }
 
 const A4_WIDTH_PX = (210 * 96) / 25.4
+const A4_HEIGHT_PX = (297 * 96) / 25.4
 
 function Section({
   id,
   title,
   children,
+  sample = false,
 }: {
   id: CvSection
   title: string
   children: React.ReactNode
+  sample?: boolean
 }) {
   return (
-    <section data-cv-block={id} className="mb-7 last:mb-0">
+    <section
+      data-cv-block={id}
+      data-cv-sample={sample || undefined}
+      className="mb-7 last:mb-0"
+    >
       <h3 className="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--color-accent)]">
         {title}
       </h3>
       {children}
     </section>
+  )
+}
+
+function CvLink({ value }: { value: string }) {
+  const href = professionalLinkHref(value)
+  return href ? (
+    <a href={href} className="underline underline-offset-2">
+      {value}
+    </a>
+  ) : (
+    value
   )
 }
 
@@ -67,6 +86,11 @@ export default function CvPage() {
     overflowPercent: 0,
   })
   const [saveError, setSaveError] = useState(false)
+  const [exportOverflow, setExportOverflow] = useState(false)
+  useEffect(() => {
+    document.body.classList.add("cv-print-ready")
+    return () => document.body.classList.remove("cv-print-ready")
+  }, [])
   const overflows = fit.overflows
   const visible = (section: CvSection) =>
     !choices.hiddenSections.includes(section)
@@ -96,21 +120,30 @@ export default function CvPage() {
       setSaveError(true)
     }
   }, [choices])
+  useEffect(() => setExportOverflow(false), [choices, repo, state.locale])
   const skills = useMemo(() => lines(repo.skills), [repo.skills])
   const competencies = useMemo(
     () => lines(repo.competencies),
     [repo.competencies],
   )
   const tools = useMemo(() => lines(repo.tools), [repo.tools])
-  const contact = [
-    repo.email,
-    repo.phone,
-    repo.location,
-    ...lines(repo.professionalLinks, false),
+  const contactValues: {
+    value: string
+    kind: "email" | "phone" | "location" | "link"
+  }[] = [
+    { value: repo.email, kind: "email" },
+    { value: repo.phone, kind: "phone" },
+    { value: repo.location, kind: "location" },
+    ...lines(repo.professionalLinks, false).map((value) => ({
+      value,
+      kind: "link" as const,
+    })),
   ]
-    .map((value, index) => ({
-      value: value.trim(),
-      id: JSON.stringify([index, value.trim()]),
+  const contact = contactValues
+    .map((item, index) => ({
+      value: item.value.trim(),
+      id: JSON.stringify([index, item.value.trim()]),
+      kind: item.kind,
     }))
     .filter((item) => item.value)
   const textKey = (
@@ -205,6 +238,25 @@ export default function CvPage() {
     additional: t("cv.additional"),
   }
   const summaryWords = summary.trim() ? summary.trim().split(/\s+/).length : 0
+  const exportPdf = async () => {
+    const content = contentRef.current
+    if (!content) return
+    await document.fonts.ready
+    const copy = content.cloneNode(true) as HTMLDivElement
+    copy.classList.add("cv-export-measure")
+    copy
+      .querySelectorAll("[data-cv-sample]")
+      .forEach((sample) => sample.remove())
+    document.body.append(copy)
+    const contentHeight = copy.getBoundingClientRect().height
+    copy.remove()
+    if (contentHeight > A4_HEIGHT_PX - 4) {
+      setExportOverflow(true)
+      return
+    }
+    setExportOverflow(false)
+    window.print()
+  }
   const textControls = (section: CvSection, field: string, values: string[]) =>
     values.map((value, index) => (
       <label
@@ -347,8 +399,8 @@ export default function CvPage() {
   }, [choices, state.locale, repo, previewScale])
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <header className="mb-9">
+    <div className="cv-page mx-auto max-w-6xl px-4 py-10 sm:px-6">
+      <header className="cv-page-header mb-9">
         <p className="mb-3 text-xs uppercase tracking-[0.25em] text-[var(--color-muted-fg)] [font-family:var(--font-mono)]">
           {t("cv.step")}
         </p>
@@ -363,10 +415,10 @@ export default function CvPage() {
           {t("cv.intro")}
         </p>
       </header>
-      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_330px]">
+      <div className="cv-page-grid grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_330px]">
         <div
           ref={previewSlotRef}
-          className="order-2 min-w-0 overflow-x-auto lg:order-1"
+          className="cv-preview-slot order-2 min-w-0 overflow-x-auto lg:order-1"
         >
           <article
             aria-label={t("cv.documentPreview")}
@@ -384,14 +436,23 @@ export default function CvPage() {
                 </span>
               )}
             </div>
-            <div ref={contentRef} className="relative px-12 py-11">
+            <div
+              ref={contentRef}
+              className="cv-paper-content relative px-12 py-11"
+            >
               <header className="mb-7 border-b-2 border-[var(--color-accent)] pb-6">
                 {!repo.fullName.trim() && (
-                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-muted-fg)]">
+                  <p
+                    data-cv-sample="true"
+                    className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-muted-fg)]"
+                  >
                     {t("common.sample")}
                   </p>
                 )}
-                <h2 className="break-words text-5xl font-bold uppercase leading-none tracking-tight [font-family:var(--font-display)]">
+                <h2
+                  data-cv-sample={!repo.fullName.trim() || undefined}
+                  className="break-words text-5xl font-bold uppercase leading-none tracking-tight [font-family:var(--font-display)]"
+                >
                   {repo.fullName.trim() || t("cv.sampleName")}
                 </h2>
                 {visible("contact") &&
@@ -404,14 +465,22 @@ export default function CvPage() {
                             key={item.id}
                             className="break-all after:ml-2 after:content-['·'] last:after:content-none"
                           >
-                            {item.value}
+                            {item.kind === "link" ? (
+                              <CvLink value={item.value} />
+                            ) : (
+                              item.value
+                            )}
                           </li>
                         ))}
                     </ul>
                   )}
               </header>
               {visible("summary") && (
-                <Section id="summary" title={t("cv.professionalProfile")}>
+                <Section
+                  id="summary"
+                  title={t("cv.professionalProfile")}
+                  sample={!summary.trim()}
+                >
                   <p className="whitespace-pre-wrap break-words text-[13px] leading-6">
                     {summary.trim() ||
                       (choices.summary === null && !repo.careerGoals.trim() && (
@@ -429,7 +498,11 @@ export default function CvPage() {
                 ((!skills.length && !competencies.length) ||
                   selectedSkills.length > 0 ||
                   selectedCompetencies.length > 0) && (
-                  <Section id="skills" title={t("cv.skillsCompetencies")}>
+                  <Section
+                    id="skills"
+                    title={t("cv.skillsCompetencies")}
+                    sample={!skills.length && !competencies.length}
+                  >
                     {skills.length || competencies.length ? (
                       <p className="break-words text-[12px] leading-5">
                         {[...selectedSkills, ...selectedCompetencies].join(
@@ -448,7 +521,11 @@ export default function CvPage() {
                 )}
               {visible("experience") &&
                 (experience.length === 0 || selectedExperience.length > 0) && (
-                  <Section id="experience" title={t("cv.experience")}>
+                  <Section
+                    id="experience"
+                    title={t("cv.experience")}
+                    sample={!experience.length}
+                  >
                     {experience.length ? (
                       selectedExperience.map(({ item, bullets }) => (
                         <div
@@ -589,7 +666,7 @@ export default function CvPage() {
                           )}
                           {item.url && (
                             <p className="mt-1 break-all text-[var(--color-muted-fg)]">
-                              {item.url}
+                              <CvLink value={item.url} />
                             </p>
                           )}
                         </div>
@@ -650,7 +727,7 @@ export default function CvPage() {
                       )}
                       {project.url && (
                         <p className="mt-1 text-[var(--color-muted-fg)]">
-                          {project.url}
+                          <CvLink value={project.url} />
                         </p>
                       )}
                     </div>
@@ -667,7 +744,7 @@ export default function CvPage() {
             </div>
           </article>
         </div>
-        <aside className="order-1 lg:order-2 lg:sticky lg:top-24">
+        <aside className="cv-controls order-1 lg:order-2 lg:sticky lg:top-24">
           <div className="mb-4 border border-[var(--color-border)] bg-[var(--color-card)] p-5">
             <h2 className="mb-2 text-xs uppercase tracking-[0.2em] [font-family:var(--font-mono)]">
               {t("cv.curation")}
@@ -844,6 +921,29 @@ export default function CvPage() {
             </div>
             <p className="mt-4 text-[10px] leading-5 text-[var(--color-muted-fg)]">
               {t("cv.cvOnlyNote")}
+            </p>
+          </div>
+          <div className="mb-4 border border-[var(--color-border)] bg-[var(--color-card)] p-5">
+            <button
+              type="button"
+              onClick={exportPdf}
+              className="w-full bg-[var(--color-fg)] px-4 py-3 text-xs font-semibold uppercase tracking-widest text-[var(--color-card)]"
+            >
+              {t("cv.exportPdf")}
+            </button>
+            <p className="mt-3 text-xs leading-5 text-[var(--color-muted-fg)]">
+              {t("cv.exportHelp")}
+            </p>
+            {exportOverflow && (
+              <p
+                role="alert"
+                className="mt-3 border-l-2 border-[var(--color-accent)] pl-3 text-xs leading-5"
+              >
+                {t("cv.exportOverflow")}
+              </p>
+            )}
+            <p className="mt-3 text-[10px] leading-5 text-[var(--color-muted-fg)]">
+              {t("cv.parserNote")}
             </p>
           </div>
           <div className="border border-[var(--color-border)] bg-[var(--color-card)] p-5">

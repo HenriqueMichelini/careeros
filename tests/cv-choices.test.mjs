@@ -17,7 +17,7 @@ const compiled = ts.transpileModule(source, {
 }).outputText
 const path = join(mkdtempSync(join(tmpdir(), "careeros-cv-")), "cv.mjs")
 writeFileSync(path, compiled)
-const { parseCvChoices, entryKey, bulletKey } = await import(path)
+const { parseCvChoices, entryKey, bulletKey, professionalLinkHref } = await import(path)
 
 test("CV choices round trip independently and legacy or damaged data loads safely", () => {
   const choices = {
@@ -67,4 +67,11 @@ test("long CV wording is restored without truncation", () => {
     bulletWording: { example: longText },
   }
   assert.deepEqual(parseCvChoices(JSON.stringify(choices)), choices)
+})
+
+test("professional links become safe PDF destinations", () => {
+  assert.equal(professionalLinkHref("linkedin.com/in/example"), "https://linkedin.com/in/example")
+  assert.equal(professionalLinkHref("https://example.com/work"), "https://example.com/work")
+  assert.equal(professionalLinkHref("javascript:alert(1)"), null)
+  assert.equal(professionalLinkHref("https://user:pass@example.com"), null)
 })

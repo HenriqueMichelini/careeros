@@ -345,6 +345,10 @@ const messages = {
     "cv.header": "header",
     "cv.fits": "The selected content fits on one A4 page.",
     "cv.saveError": "This browser could not save your CV choices. Your edits will be lost if you reload or leave this page.",
+    "cv.exportPdf": "Export A4 PDF",
+    "cv.exportHelp": "Opens your browser's print dialog. Choose Save as PDF and keep A4 paper at 100% scale.",
+    "cv.exportOverflow": "The selected CV exceeds one A4 page. Shorten the text or deselect content, then export again. Nothing was exported.",
+    "cv.parserNote": "Single-column text designed for common résumé parsers. Compatibility with every applicant tracking system is not guaranteed.",
     "cv.sampleCareerLine":
       "Product-minded leader · Building teams and experiences that move business forward",
     "cv.sampleContact":
@@ -756,6 +760,10 @@ const messages = {
     "cv.header": "cabeçalho",
     "cv.fits": "O conteúdo selecionado cabe em uma página A4.",
     "cv.saveError": "O navegador não conseguiu salvar suas escolhas para o currículo. Suas alterações serão perdidas se você recarregar ou sair desta página.",
+    "cv.exportPdf": "Exportar PDF A4",
+    "cv.exportHelp": "Abre a janela de impressão do navegador. Escolha Salvar como PDF e mantenha papel A4 na escala de 100%.",
+    "cv.exportOverflow": "O currículo selecionado excede uma página A4. Encurte o texto ou desmarque conteúdo e tente exportar novamente. Nada foi exportado.",
+    "cv.parserNote": "Texto em uma coluna, projetado para leitores comuns de currículos. A compatibilidade com todos os sistemas de recrutamento não é garantida.",
     "cv.sampleCareerLine":
       "Líder orientado a produto · Construindo equipes e experiências que impulsionam negócios",
     "cv.sampleContact":

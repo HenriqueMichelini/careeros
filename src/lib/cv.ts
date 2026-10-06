@@ -43,6 +43,25 @@ export const bulletKey = (
   source: string,
 ) => JSON.stringify([section, id, field, index, source])
 
+export function professionalLinkHref(value: string): string | null {
+  const text = value.trim()
+  if (!text || /\s/.test(text)) return null
+  const candidate = /^https?:\/\//i.test(text) ? text : `https://${text}`
+  try {
+    const url = new URL(candidate)
+    if (
+      !["http:", "https:"].includes(url.protocol) ||
+      !url.hostname.includes(".") ||
+      url.username ||
+      url.password
+    )
+      return null
+    return url.href
+  } catch {
+    return null
+  }
+}
+
 export function parseCvChoices(raw: string | null): CvChoices {
   if (!raw) return emptyCvChoices()
   try {
