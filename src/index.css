@@ -30,6 +30,16 @@ html {
   scroll-behavior: smooth;
 }
 
+.cv-paper {
+  --cv-a4-ratio: 210 / 297;
+  aspect-ratio: var(--cv-a4-ratio);
+}
+
+.cv-page-boundary {
+  aspect-ratio: var(--cv-a4-ratio);
+  border-bottom: 2px dashed var(--color-accent);
+}
+
 * {
   scrollbar-width: none;
 }

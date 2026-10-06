@@ -1,27 +1,27 @@
-import { useMemo, useState } from "react"
+import { useLayoutEffect, useMemo, useRef, useState } from "react"
 import { useI18n, useStore } from "../lib/store"
 
-function splitLines(value: string) {
+function lines(value: string, splitCommas = true) {
   return value
-    .split(/\n|,/)
-    .map((item) => item.replace(/^[-•*]\s*/, "").trim())
+    .split(splitCommas ? /\n|,/ : /\n/)
+    .map((part) => part.replace(/^[-•*]\s*/, "").trim())
     .filter(Boolean)
 }
 
-function SectionTitle({
+function Section({
+  title,
   children,
-  muted = false,
 }: {
+  title: string
   children: React.ReactNode
-  muted?: boolean
 }) {
   return (
-    <h3
-      className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3"
-      style={{ color: muted ? "var(--color-muted-fg)" : "var(--color-accent)" }}
-    >
+    <section className="mb-7 last:mb-0">
+      <h3 className="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--color-accent)]">
+        {title}
+      </h3>
       {children}
-    </h3>
+    </section>
   )
 }
 
@@ -29,391 +29,304 @@ export default function CvPage() {
   const { state } = useStore()
   const { t } = useI18n()
   const repo = state.repository
-  const skills = useMemo(() => splitLines(repo.skills), [repo.skills])
+  const boundaryRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [overflows, setOverflows] = useState(false)
+  const skills = useMemo(() => lines(repo.skills), [repo.skills])
   const competencies = useMemo(
-    () => splitLines(repo.competencies),
+    () => lines(repo.competencies),
     [repo.competencies],
   )
-  const tools = useMemo(() => splitLines(repo.tools), [repo.tools])
-  const projects = repo.projects.filter(
-    (project) => project.name || project.description,
+  const tools = useMemo(() => lines(repo.tools), [repo.tools])
+  const experience = repo.experience.filter((item) =>
+    [
+      item.title,
+      item.company,
+      item.startDate,
+      item.endDate,
+      item.location,
+      item.description,
+      item.responsibilities,
+      item.achievements,
+    ].some(Boolean),
   )
-  const experience = repo.experience.filter(
-    (item) => item.title || item.company,
+  const projects = repo.projects.filter((item) =>
+    [
+      item.name,
+      item.description,
+      item.technologies,
+      item.url,
+      item.highlights,
+    ].some(Boolean),
   )
-  const name = "YOUR NAME"
+
+  useLayoutEffect(() => {
+    const boundary = boundaryRef.current
+    const content = contentRef.current
+    if (!boundary || !content) return
+    const measure = () =>
+      setOverflows(
+        content.getBoundingClientRect().height >
+          boundary.getBoundingClientRect().height + 2,
+      )
+    const observer = new ResizeObserver(measure)
+    observer.observe(boundary)
+    observer.observe(content)
+    measure()
+    return () => observer.disconnect()
+  }, [])
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-10">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-9">
-        <div>
-          <p
-            className="text-xs uppercase tracking-[0.25em] mb-3"
-            style={{
-              fontFamily: "var(--font-mono)",
-              color: "var(--color-muted-fg)",
-            }}
-          >
-            {t("cv.step")}
-          </p>
-          <h1
-            className="text-6xl font-bold uppercase tracking-tight leading-[0.9]"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            {t("cv.titleYourCv")}
-            <br />
-            <span style={{ color: "var(--color-accent)" }}>
-              {t("cv.titleYourTemplate")}
-            </span>
-          </h1>
-          <p
-            className="text-sm max-w-xl mt-4 leading-relaxed"
-            style={{ color: "var(--color-muted-fg)" }}
-          >
-            {t("cv.intro")}
-          </p>
-        </div>
-      </div>
-
-      <div className="grid lg:grid-cols-[minmax(0,1fr)_260px] gap-8 items-start">
+    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+      <header className="mb-9">
+        <p className="mb-3 text-xs uppercase tracking-[0.25em] text-[var(--color-muted-fg)] [font-family:var(--font-mono)]">
+          {t("cv.step")}
+        </p>
+        <h1 className="text-5xl font-bold uppercase leading-[0.9] tracking-tight sm:text-6xl [font-family:var(--font-display)]">
+          {t("cv.titleYourCv")}
+          <br />
+          <span className="text-[var(--color-accent)]">
+            {t("cv.titleYourTemplate")}
+          </span>
+        </h1>
+        <p className="mt-4 max-w-xl text-sm leading-relaxed text-[var(--color-muted-fg)]">
+          {t("cv.intro")}
+        </p>
+      </header>
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_260px]">
         <article
-          className="min-h-[900px] shadow-sm"
-          style={{
-            backgroundColor: "var(--color-card)",
-            border: "1px solid var(--color-border)",
-          }}
+          aria-label={t("cv.documentPreview")}
+          className="cv-paper relative mx-auto w-full max-w-[210mm] border border-[var(--color-border)] bg-[var(--color-card)] shadow-sm"
         >
-          <div className="p-8 md:p-12">
-            <header
-              className="pb-7 mb-8 border-b-2"
-              style={{ borderColor: "var(--color-accent)" }}
-            >
-              <h2
-                className="text-5xl md:text-6xl font-bold uppercase tracking-tight leading-none"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                {name}
-              </h2>
-              <p
-                className="text-sm mt-3"
-                style={{ color: "var(--color-muted-fg)" }}
-              >
-                {repo.careerGoals || (
-                  <>
-                    <span className="text-[9px] uppercase tracking-widest">
-                      {t("common.sample")}
-                    </span>{" "}
-                    · {t("cv.sampleCareerLine")}
-                  </>
-                )}
+          <div
+            ref={boundaryRef}
+            aria-hidden="true"
+            className="cv-page-boundary pointer-events-none absolute left-0 top-0 w-full"
+          >
+            {overflows && (
+              <span className="absolute bottom-0 right-0 bg-[var(--color-accent)] px-2 py-1 text-[10px] font-semibold text-white">
+                {t("cv.pageOneEnds")}
+              </span>
+            )}
+          </div>
+          <div
+            ref={contentRef}
+            className="relative px-5 py-7 sm:px-8 sm:py-9 md:px-12 md:py-11"
+          >
+            <header className="mb-7 border-b-2 border-[var(--color-accent)] pb-6">
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-muted-fg)]">
+                {t("common.sampleContent")}
               </p>
-              <p
-                className="text-[10px] mt-5 tracking-wide"
-                style={{
-                  color: "var(--color-muted-fg)",
-                  fontFamily: "var(--font-mono)",
-                }}
-              >
+              <h2 className="break-words text-4xl font-bold uppercase leading-none tracking-tight sm:text-5xl [font-family:var(--font-display)]">
+                {t("cv.sampleName")}
+              </h2>
+              <p className="mt-4 break-words text-[11px] leading-5 text-[var(--color-muted-fg)] [font-family:var(--font-mono)]">
                 <span className="uppercase tracking-widest">
                   {t("common.sample")}
                 </span>{" "}
                 · {t("cv.sampleContact")}
               </p>
             </header>
-
-            <section className="mb-8">
-              <SectionTitle>{t("cv.professionalProfile")}</SectionTitle>
-              <p
-                className="text-sm leading-7"
-                style={{ color: "var(--color-fg)" }}
-              >
-                {repo.additionalInfo || repo.careerGoals || (
+            <Section title={t("cv.professionalProfile")}>
+              <p className="whitespace-pre-wrap break-words text-[13px] leading-6">
+                {repo.careerGoals || (
                   <>
-                    <span
-                      className="text-[9px] uppercase tracking-widest"
-                      style={{ color: "var(--color-muted-fg)" }}
-                    >
+                    <span className="text-[10px] uppercase tracking-widest text-[var(--color-muted-fg)]">
                       {t("common.sample")} ·{" "}
                     </span>
                     {t("cv.sampleProfile")}
                   </>
                 )}
               </p>
-            </section>
-
-            <section className="mb-8">
-              <SectionTitle>{t("cv.experience")}</SectionTitle>
+            </Section>
+            <Section title={t("cv.skillsCompetencies")}>
+              {skills.length || competencies.length ? (
+                <p className="break-words text-[12px] leading-5">
+                  {[...skills, ...competencies].join(" · ")}
+                </p>
+              ) : (
+                <p className="text-[12px] leading-5">
+                  <span className="text-[10px] uppercase tracking-widest text-[var(--color-muted-fg)]">
+                    {t("common.sample")} ·{" "}
+                  </span>
+                  {t("cv.sampleSkills")}
+                </p>
+              )}
+            </Section>
+            <Section title={t("cv.experience")}>
               {experience.length ? (
                 experience.map((item) => (
-                  <div key={item.id} className="mb-6">
-                    <div className="flex flex-wrap justify-between gap-2">
-                      <h4 className="text-sm font-semibold">
-                        {item.title}{" "}
-                        <span className="font-normal">· {item.company}</span>
+                  <div
+                    key={item.id}
+                    className="mb-5 break-words text-[12px] leading-5 last:mb-0"
+                  >
+                    {(item.title || item.company) && (
+                      <h4 className="text-[13px] font-semibold">
+                        {[item.title, item.company].filter(Boolean).join(" · ")}
                       </h4>
-                      <span
-                        className="text-[10px] uppercase tracking-wide"
-                        style={{
-                          color: "var(--color-muted-fg)",
-                          fontFamily: "var(--font-mono)",
-                        }}
-                      >
-                        {item.startDate || "2021"} —{" "}
-                        {item.current
-                          ? t("common.present")
-                          : item.endDate || "2024"}
-                      </span>
-                    </div>
-                    <p
-                      className="text-xs mt-1 mb-2"
-                      style={{ color: "var(--color-muted-fg)" }}
-                    >
-                      {item.location || t("cv.defaultLocation")}
-                    </p>
-                    <p className="text-xs leading-6">
-                      {item.description || t("cv.defaultDescription")}
-                    </p>
-                    <ul className="mt-2 space-y-1">
-                      {splitLines(item.achievements || item.responsibilities)
-                        .slice(0, 3)
-                        .map((line, index) => (
-                          <li
-                            key={index}
-                            className="text-xs leading-5 pl-4 relative before:content-['•'] before:absolute before:left-0"
-                            style={{ color: "var(--color-muted-fg)" }}
-                          >
-                            {line}
-                          </li>
+                    )}
+                    {(item.startDate ||
+                      item.endDate ||
+                      item.current ||
+                      item.location) && (
+                      <p className="mt-1 text-[11px] text-[var(--color-muted-fg)]">
+                        {[
+                          item.startDate && (item.endDate || item.current)
+                            ? `${item.startDate} — ${
+                                item.current
+                                  ? t("common.present")
+                                  : item.endDate
+                              }`
+                            : item.startDate ||
+                              (item.current
+                                ? t("common.present")
+                                : item.endDate),
+                          item.location,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
+                    )}
+                    {item.description && (
+                      <p className="mt-2 whitespace-pre-wrap">
+                        {item.description}
+                      </p>
+                    )}
+                    {item.responsibilities && (
+                      <p className="mt-2 whitespace-pre-wrap">
+                        {item.responsibilities}
+                      </p>
+                    )}
+                    {item.achievements && (
+                      <ul className="mt-2 list-disc space-y-1 pl-5">
+                        {lines(item.achievements, false).map((line, index) => (
+                          <li key={index}>{line}</li>
                         ))}
-                    </ul>
+                      </ul>
+                    )}
                   </div>
                 ))
               ) : (
-                <div className="mb-6">
-                  <p
-                    className="text-[9px] uppercase tracking-widest mb-2"
-                    style={{ color: "var(--color-muted-fg)" }}
-                  >
+                <div className="text-[12px] leading-5">
+                  <p className="mb-2 text-[10px] uppercase tracking-widest text-[var(--color-muted-fg)]">
                     {t("common.sampleContent")}
                   </p>
-                  <div className="flex justify-between gap-2">
-                    <h4 className="text-sm font-semibold">
-                      {t("cv.sampleJobTitle")}
-                    </h4>
-                    <span
-                      className="text-[10px]"
-                      style={{
-                        color: "var(--color-muted-fg)",
-                        fontFamily: "var(--font-mono)",
-                      }}
-                    >
-                      2021 — {t("common.present")}
-                    </span>
-                  </div>
-                  <p
-                    className="text-xs mt-1 mb-2"
-                    style={{ color: "var(--color-muted-fg)" }}
-                  >
-                    {t("cv.defaultLocation")}
+                  <h4 className="font-semibold">{t("cv.sampleJobTitle")}</h4>
+                  <p className="mt-1 text-[var(--color-muted-fg)]">
+                    2021 — {t("common.present")}
                   </p>
-                  <p className="text-xs leading-6">
-                    {t("cv.sampleExperienceDescription")}
-                  </p>
-                  <ul className="mt-2 space-y-1">
-                    <li
-                      className="text-xs leading-5 pl-4 relative before:content-['•'] before:absolute before:left-0"
-                      style={{ color: "var(--color-muted-fg)" }}
-                    >
-                      {t("cv.sampleAchievementOne")}
-                    </li>
-                    <li
-                      className="text-xs leading-5 pl-4 relative before:content-['•'] before:absolute before:left-0"
-                      style={{ color: "var(--color-muted-fg)" }}
-                    >
-                      {t("cv.sampleAchievementTwo")}
-                    </li>
+                  <p className="mt-2">{t("cv.sampleExperienceDescription")}</p>
+                  <ul className="mt-2 list-disc space-y-1 pl-5">
+                    <li>{t("cv.sampleAchievementOne")}</li>
+                    <li>{t("cv.sampleAchievementTwo")}</li>
                   </ul>
                 </div>
               )}
-              {experience.length > 1 && null}
-              {!experience.length && (
-                <div
-                  className="pt-4 border-t"
-                  style={{ borderColor: "var(--color-border)" }}
-                >
-                  <div className="flex justify-between gap-2">
-                    <h4 className="text-sm font-semibold">
-                      {t("cv.sampleSecondJob")}
-                    </h4>
-                    <span
-                      className="text-[10px]"
-                      style={{
-                        color: "var(--color-muted-fg)",
-                        fontFamily: "var(--font-mono)",
-                      }}
-                    >
-                      2018 — 2021
-                    </span>
-                  </div>
-                  <p
-                    className="text-xs leading-6 mt-2"
-                    style={{ color: "var(--color-muted-fg)" }}
+            </Section>
+            <Section title={t("cv.education")}>
+              <p className="mb-1 text-[10px] uppercase tracking-widest text-[var(--color-muted-fg)]">
+                {t("common.sampleContent")}
+              </p>
+              <h4 className="text-[13px] font-semibold">{t("cv.degree")}</h4>
+              <p className="mt-1 text-[12px] text-[var(--color-muted-fg)]">
+                {t("cv.university")}
+              </p>
+            </Section>
+            {tools.length > 0 && (
+              <Section title={t("cv.toolsTechnology")}>
+                <p className="break-words text-[12px] leading-5">
+                  {tools.join(" · ")}
+                </p>
+              </Section>
+            )}
+            {projects.length > 0 && (
+              <Section title={t("cv.selectedProjects")}>
+                {projects.map((project) => (
+                  <div
+                    key={project.id}
+                    className="mb-4 break-words text-[12px] leading-5 last:mb-0"
                   >
-                    {t("cv.sampleSecondJobDescription")}
-                  </p>
-                </div>
-              )}
-            </section>
-
-            <div className="grid md:grid-cols-2 gap-8">
-              <section>
-                <SectionTitle>{t("cv.skillsCompetencies")}</SectionTitle>
-                <p className="text-xs leading-6">
-                  {[...skills, ...competencies].slice(0, 12).join(" · ") || (
-                    <>
-                      <span
-                        className="text-[9px] uppercase tracking-widest"
-                        style={{ color: "var(--color-muted-fg)" }}
-                      >
-                        {t("common.sample")} ·{" "}
-                      </span>
-                      {t("cv.sampleSkills")}
-                    </>
-                  )}
-                </p>
-              </section>
-              <section>
-                <SectionTitle>{t("cv.education")}</SectionTitle>
-                <p
-                  className="text-[9px] uppercase tracking-widest mb-1"
-                  style={{ color: "var(--color-muted-fg)" }}
-                >
-                  {t("common.sampleContent")}
-                </p>
-                <h4 className="text-sm font-semibold">{t("cv.degree")}</h4>
-                <p
-                  className="text-xs mt-1"
-                  style={{ color: "var(--color-muted-fg)" }}
-                >
-                  {t("cv.university")}
-                </p>
-              </section>
-              {tools.length > 0 && (
-                <section>
-                  <SectionTitle>{t("cv.toolsTechnology")}</SectionTitle>
-                  <p className="text-xs leading-6">
-                    {tools.slice(0, 12).join(" · ")}
-                  </p>
-                </section>
-              )}
-              {projects.length > 0 && (
-                <section>
-                  <SectionTitle>{t("cv.selectedProjects")}</SectionTitle>
-                  {projects.slice(0, 2).map((project) => (
-                    <div key={project.id} className="mb-3">
-                      <h4 className="text-xs font-semibold">{project.name}</h4>
-                      <p
-                        className="text-xs leading-5 mt-1"
-                        style={{ color: "var(--color-muted-fg)" }}
-                      >
-                        {project.description || project.highlights}
+                    {project.name && (
+                      <h4 className="font-semibold">{project.name}</h4>
+                    )}
+                    {project.description && (
+                      <p className="mt-1 whitespace-pre-wrap">
+                        {project.description}
                       </p>
-                    </div>
-                  ))}
-                </section>
-              )}
-              <section>
-                <SectionTitle>{t("cv.additional")}</SectionTitle>
-                <p
-                  className="text-[9px] uppercase tracking-widest mb-1"
-                  style={{ color: "var(--color-muted-fg)" }}
-                >
+                    )}
+                    {project.highlights && (
+                      <p className="mt-1 whitespace-pre-wrap">
+                        {project.highlights}
+                      </p>
+                    )}
+                    {project.technologies && (
+                      <p className="mt-1 text-[var(--color-muted-fg)]">
+                        {project.technologies}
+                      </p>
+                    )}
+                    {project.url && (
+                      <p className="mt-1 text-[var(--color-muted-fg)]">
+                        {project.url}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </Section>
+            )}
+            <Section title={t("cv.additional")}>
+              {!repo.additionalInfo && (
+                <p className="mb-1 text-[10px] uppercase tracking-widest text-[var(--color-muted-fg)]">
                   {t("common.sampleContent")}
                 </p>
-                <p
-                  className="text-xs leading-6 whitespace-pre-line"
-                  style={{ color: "var(--color-muted-fg)" }}
-                >
-                  {t("cv.languagesCertification")}
-                </p>
-              </section>
-            </div>
+              )}
+              <p className="whitespace-pre-line break-words text-[12px] leading-5 text-[var(--color-muted-fg)]">
+                {repo.additionalInfo || t("cv.languagesCertification")}
+              </p>
+            </Section>
           </div>
         </article>
-
         <aside className="lg:sticky lg:top-24">
-          <div
-            className="p-5 border"
-            style={{
-              borderColor: "var(--color-border)",
-              backgroundColor: "var(--color-card)",
-            }}
-          >
-            <p
-              className="text-xs uppercase tracking-[0.2em] mb-4"
-              style={{
-                fontFamily: "var(--font-mono)",
-                color: "var(--color-muted-fg)",
-              }}
-            >
+          <div className="border border-[var(--color-border)] bg-[var(--color-card)] p-5">
+            <p className="mb-4 text-xs uppercase tracking-[0.2em] text-[var(--color-muted-fg)] [font-family:var(--font-mono)]">
               {t("cv.previewSettings")}
             </p>
-            <div className="space-y-4">
+            <dl className="space-y-4 text-xs">
               <div>
-                <label
-                  className="text-xs block mb-1"
-                  style={{ color: "var(--color-muted-fg)" }}
-                >
+                <dt className="mb-1 text-[var(--color-muted-fg)]">
                   {t("cv.template")}
-                </label>
-                <p className="text-xs">{t("cv.atsCv")}</p>
+                </dt>
+                <dd>{t("cv.atsCv")}</dd>
               </div>
               <div>
-                <label
-                  className="text-xs block mb-1"
-                  style={{ color: "var(--color-muted-fg)" }}
-                >
+                <dt className="mb-1 text-[var(--color-muted-fg)]">
                   {t("cv.pageFormat")}
-                </label>
-                <p className="text-xs">{t("cv.a4Pages")}</p>
+                </dt>
+                <dd>{overflows ? t("cv.a4Overflow") : t("cv.a4Pages")}</dd>
               </div>
               <div>
-                <label
-                  className="text-xs block mb-2"
-                  style={{ color: "var(--color-muted-fg)" }}
-                >
+                <dt className="mb-2 text-[var(--color-muted-fg)]">
                   {t("cv.accentColor")}
-                </label>
-                <div className="flex items-center gap-2">
-                  <span
-                    className="inline-block w-4 h-4 border"
-                    style={{
-                      backgroundColor: "#C8102E",
-                      borderColor: "var(--color-border)",
-                    }}
-                  />
-                  <span className="text-xs">{t("cv.red")}</span>
-                </div>
+                </dt>
+                <dd className="flex items-center gap-2">
+                  <span className="inline-block h-4 w-4 border border-[var(--color-border)] bg-[var(--color-accent)]" />
+                  {t("cv.red")}
+                </dd>
               </div>
-            </div>
-            <p
-              className="text-[10px] leading-5 mt-4"
-              style={{ color: "var(--color-muted-fg)" }}
-            >
+            </dl>
+            {overflows && (
+              <p
+                role="status"
+                className="mt-4 border-l-2 border-[var(--color-accent)] pl-3 text-xs leading-5"
+              >
+                {t("cv.overflowNotice")}
+              </p>
+            )}
+            <p className="mt-4 text-[10px] leading-5 text-[var(--color-muted-fg)]">
               {t("cv.settingsNote")}
             </p>
           </div>
-          <div
-            className="p-5 mt-4 border"
-            style={{ borderColor: "var(--color-border)" }}
-          >
-            <p
-              className="text-xs uppercase tracking-[0.2em] mb-3"
-              style={{
-                fontFamily: "var(--font-mono)",
-                color: "var(--color-muted-fg)",
-              }}
-            >
+          <div className="mt-4 border border-[var(--color-border)] p-5">
+            <p className="mb-3 text-xs uppercase tracking-[0.2em] text-[var(--color-muted-fg)] [font-family:var(--font-mono)]">
               {t("cv.profileCoverage")}
             </p>
             {[
@@ -423,25 +336,17 @@ export default function CvPage() {
             ].map(([label, complete]) => (
               <div
                 key={label as string}
-                className="flex justify-between py-2 border-b text-xs"
-                style={{ borderColor: "var(--color-border)" }}
+                className="flex justify-between border-b border-[var(--color-border)] py-2 text-xs"
               >
                 <span>{label}</span>
                 <span
-                  style={{
-                    color: complete
-                      ? "var(--color-fg)"
-                      : "var(--color-muted-fg)",
-                  }}
+                  className={complete ? "" : "text-[var(--color-muted-fg)]"}
                 >
                   {complete ? t("cv.added") : t("common.sampleContent")}
                 </span>
               </div>
             ))}
-            <p
-              className="text-[10px] leading-5 mt-3"
-              style={{ color: "var(--color-muted-fg)" }}
-            >
+            <p className="mt-3 text-[10px] leading-5 text-[var(--color-muted-fg)]">
               {t("cv.editProfileNote")}
             </p>
           </div>

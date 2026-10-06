@@ -291,6 +291,11 @@ const messages = {
     "cv.titleYourTemplate": "Your Template",
     "cv.intro":
       "Shape the master CV that future application templates can build on. This preview uses your Profile details and sample content where information is missing.",
+    "cv.documentPreview": "CV document preview",
+    "cv.sampleName": "Your name",
+    "cv.pageOneEnds": "Page 1 ends",
+    "cv.overflowNotice": "Content extends beyond the first page. All Profile details remain visible below the page boundary.",
+    "cv.a4Overflow": "A4 · exceeds 1 page",
     "cv.sampleCareerLine":
       "Product-minded leader · Building teams and experiences that move business forward",
     "cv.sampleContact":
@@ -327,7 +332,7 @@ const messages = {
     "cv.template": "Template",
     "cv.atsCv": "ATS CV",
     "cv.pageFormat": "Page format",
-    "cv.a4Pages": "A4 · 2 pages",
+    "cv.a4Pages": "A4 · 1 page",
     "cv.accentColor": "Accent color",
     "cv.red": "Red",
     "cv.settingsNote":
@@ -645,6 +650,11 @@ const messages = {
     "cv.titleYourTemplate": "Seu modelo",
     "cv.intro":
       "Prepare seu currículo-base para candidaturas futuras. Esta prévia usa seu Perfil e inclui exemplos quando faltam dados.",
+    "cv.documentPreview": "Prévia do currículo",
+    "cv.sampleName": "Seu nome",
+    "cv.pageOneEnds": "Fim da página 1",
+    "cv.overflowNotice": "O conteúdo ultrapassa a primeira página. Todos os dados do Perfil continuam visíveis abaixo do limite da página.",
+    "cv.a4Overflow": "A4 · excede 1 página",
     "cv.sampleCareerLine":
       "Líder orientado a produto · Construindo equipes e experiências que impulsionam negócios",
     "cv.sampleContact":
@@ -681,7 +691,7 @@ const messages = {
     "cv.template": "Modelo",
     "cv.atsCv": "Currículo ATS",
     "cv.pageFormat": "Formato da página",
-    "cv.a4Pages": "A4 · 2 páginas",
+    "cv.a4Pages": "A4 · 1 página",
     "cv.accentColor": "Cor de destaque",
     "cv.red": "Vermelho",
     "cv.settingsNote":
