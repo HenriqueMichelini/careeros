@@ -1,5 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState } from "react"
 import { useI18n, useStore } from "../lib/store"
+import { cvQualifications } from "../lib/profile"
 
 function lines(value: string, splitCommas = true) {
   return value
@@ -29,6 +30,7 @@ export default function CvPage() {
   const { state } = useStore()
   const { t } = useI18n()
   const repo = state.repository
+  const { education, certifications, languages } = cvQualifications(repo)
   const boundaryRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const [overflows, setOverflows] = useState(false)
@@ -222,15 +224,27 @@ export default function CvPage() {
                 </div>
               )}
             </Section>
-            <Section title={t("cv.education")}>
-              <p className="mb-1 text-[10px] uppercase tracking-widest text-[var(--color-muted-fg)]">
-                {t("common.sampleContent")}
-              </p>
-              <h4 className="text-[13px] font-semibold">{t("cv.degree")}</h4>
-              <p className="mt-1 text-[12px] text-[var(--color-muted-fg)]">
-                {t("cv.university")}
-              </p>
-            </Section>
+            {education.length > 0 && <Section title={t("cv.education")}>
+              {education.map(item => <div key={item.id} className="mb-4 break-words text-[12px] leading-5 last:mb-0">
+                {item.degree && <h4 className="text-[13px] font-semibold">{item.degree}</h4>}
+                {[item.institution, item.location, item.graduationDate].filter(Boolean).length > 0 &&
+                  <p className="mt-1 text-[var(--color-muted-fg)]">{[item.institution, item.location, item.graduationDate].filter(Boolean).join(" · ")}</p>}
+                {item.details && <p className="mt-1 whitespace-pre-wrap">{item.details}</p>}
+              </div>)}
+            </Section>}
+            {certifications.length > 0 && <Section title={t("cv.certifications")}>
+              {certifications.map(item => <div key={item.id} className="mb-4 break-words text-[12px] leading-5 last:mb-0">
+                <h4 className="text-[13px] font-semibold">{item.name}</h4>
+                {[item.issuer, item.date, item.credentialId].filter(Boolean).length > 0 &&
+                  <p className="mt-1 text-[var(--color-muted-fg)]">{[item.issuer, item.date, item.credentialId].filter(Boolean).join(" · ")}</p>}
+                {item.url && <p className="mt-1 break-all text-[var(--color-muted-fg)]">{item.url}</p>}
+              </div>)}
+            </Section>}
+            {languages.length > 0 && <Section title={t("cv.languages")}>
+              <ul className="space-y-1 text-[12px] leading-5">
+                {languages.map(item => <li key={item.id} className="break-words">{[item.name, item.proficiency].filter(Boolean).join(" · ")}</li>)}
+              </ul>
+            </Section>}
             {tools.length > 0 && (
               <Section title={t("cv.toolsTechnology")}>
                 <p className="break-words text-[12px] leading-5">
@@ -272,16 +286,11 @@ export default function CvPage() {
                 ))}
               </Section>
             )}
-            <Section title={t("cv.additional")}>
-              {!repo.additionalInfo && (
-                <p className="mb-1 text-[10px] uppercase tracking-widest text-[var(--color-muted-fg)]">
-                  {t("common.sampleContent")}
-                </p>
-              )}
+            {repo.additionalInfo.trim() && <Section title={t("cv.additional")}>
               <p className="whitespace-pre-line break-words text-[12px] leading-5 text-[var(--color-muted-fg)]">
-                {repo.additionalInfo || t("cv.languagesCertification")}
+                {repo.additionalInfo}
               </p>
-            </Section>
+            </Section>}
           </div>
         </article>
         <aside className="lg:sticky lg:top-24">
@@ -329,10 +338,13 @@ export default function CvPage() {
               {t("cv.profileCoverage")}
             </p>
             {[
-              [t("cv.experience"), experience.length > 0],
-              [t("repo.section.skills"), skills.length > 0],
-              [t("repo.section.projects"), projects.length > 0],
-            ].map(([label, complete]) => (
+              [t("cv.experience"), experience.length > 0, true],
+              [t("repo.section.skills"), skills.length > 0, true],
+              [t("repo.section.projects"), projects.length > 0, false],
+              [t("cv.education"), education.length > 0, false],
+              [t("cv.certifications"), certifications.length > 0, false],
+              [t("cv.languages"), languages.length > 0, false],
+            ].map(([label, complete, hasSample]) => (
               <div
                 key={label as string}
                 className="flex justify-between border-b border-[var(--color-border)] py-2 text-xs"
@@ -341,7 +353,7 @@ export default function CvPage() {
                 <span
                   className={complete ? "" : "text-[var(--color-muted-fg)]"}
                 >
-                  {complete ? t("cv.added") : t("common.sampleContent")}
+                  {complete ? t("cv.added") : hasSample ? t("common.sampleContent") : t("cv.notAdded")}
                 </span>
               </div>
             ))}

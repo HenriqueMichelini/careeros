@@ -23,9 +23,10 @@ const (
 
 type profile = profilevalidation.Profile
 type request struct {
-	Profile    profile         `json:"repository"`
-	JobPosting string          `json:"jobPosting"`
-	Confirmed  []qualification `json:"confirmedQualifications"`
+	Profile        profile                           `json:"repository"`
+	JobPosting     string                            `json:"jobPosting"`
+	Confirmed      []qualification                   `json:"confirmedQualifications"`
+	Qualifications *profilevalidation.Qualifications `json:"qualifications,omitempty"`
 }
 type qualification struct {
 	Kind        string `json:"kind"`
@@ -84,7 +85,8 @@ func (a app) generate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var trailing any
-	if d.Decode(&trailing) != io.EOF || strings.TrimSpace(in.JobPosting) == "" || len(in.JobPosting) > 30<<10 || !profilevalidation.Valid(in.Profile, 12<<10) || len(in.Confirmed) > 25 {
+	if d.Decode(&trailing) != io.EOF || strings.TrimSpace(in.JobPosting) == "" || len(in.JobPosting) > 30<<10 || !profilevalidation.Valid(in.Profile, 12<<10) || len(in.Confirmed) > 25 ||
+		(in.Qualifications != nil && !profilevalidation.ValidQualifications(*in.Qualifications)) {
 		status, outcome = 400, "input"
 		writeError(w, status, outcome)
 		return
@@ -119,7 +121,11 @@ func (a app) call(parent context.Context, key string, in request) (result, strin
 	repo, _ := json.Marshal(in.Profile)
 	repo = omitEmptyProfileFields(repo)
 	quals, _ := json.Marshal(in.Confirmed)
-	prompt := "You are an expert career coach and professional writer. Generate highly personalized application materials from the candidate's full professional profile and this job posting. Draw specifically on real experience, skills, and projects; tailor every sentence to the role; mirror the posting's tone; and never invent employers, dates, proficiency, duration, examples, outcomes, or other facts. The resume must be clean Markdown with clear sections. The cover letter must be specific and under 400 words. Provide 5-6 useful application answers in Markdown. Qualifications listed below were explicitly confirmed for this application only. Use them as relevant, but if no candidate context is supplied, mention only the qualification and do not imply a specific achievement or work history. Do not add confirmed qualifications to the saved profile. Return only JSON with exactly these non-empty string fields: jobTitle, company, jobSummary, resume, coverLetter, applicationAnswers.\nPROFILE:\n" + string(repo) + "\nJOB POSTING:\n" + in.JobPosting + "\nUSER-CONFIRMED QUALIFICATIONS FOR THIS DRAFT ONLY:\n" + string(quals)
+	structured := []byte("{}")
+	if in.Qualifications != nil {
+		structured, _ = json.Marshal(qualificationFacts(*in.Qualifications))
+	}
+	prompt := "You are an expert career coach and professional writer. Generate highly personalized application materials from the candidate's full professional profile and this job posting. Draw specifically on real experience, skills, projects, education, certifications, and languages; tailor every sentence to the role; mirror the posting's tone; and never invent employers, dates, proficiency, duration, examples, outcomes, or other facts. The resume must be clean Markdown with clear sections. The cover letter must be specific and under 400 words. Provide 5-6 useful application answers in Markdown. Qualifications listed below were explicitly confirmed for this application only. Use them as relevant, but if no candidate context is supplied, mention only the qualification and do not imply a specific achievement or work history. Do not add confirmed qualifications to the saved profile. Return only JSON with exactly these non-empty string fields: jobTitle, company, jobSummary, resume, coverLetter, applicationAnswers.\nPROFILE:\n" + string(repo) + "\nSTRUCTURED PROFILE QUALIFICATIONS:\n" + string(structured) + "\nJOB POSTING:\n" + in.JobPosting + "\nUSER-CONFIRMED QUALIFICATIONS FOR THIS DRAFT ONLY:\n" + string(quals)
 	body, _ := json.Marshal(map[string]any{"model": model, "reasoning_effort": "none", "max_completion_tokens": 8000, "response_format": map[string]string{"type": "json_object"}, "messages": []any{map[string]string{"role": "user", "content": prompt}}})
 	ctx, cancel, resp, err := openaihttp.Post(parent, a.client, timeout, key, body)
 	defer cancel()
@@ -162,6 +168,30 @@ func (a app) call(parent context.Context, key string, in request) (result, strin
 	}
 	return empty, "", nil
 }
+func qualificationFacts(q profilevalidation.Qualifications) map[string]any {
+	education := make([]map[string]string, 0, len(q.Education))
+	for _, e := range q.Education {
+		if strings.TrimSpace(e.Degree) == "" && strings.TrimSpace(e.Institution) == "" {
+			continue
+		}
+		education = append(education, map[string]string{"degree": e.Degree, "institution": e.Institution, "location": e.Location, "graduationDate": e.GraduationDate, "details": e.Details})
+	}
+	certifications := make([]map[string]string, 0, len(q.Certifications))
+	for _, c := range q.Certifications {
+		if strings.TrimSpace(c.Name) == "" {
+			continue
+		}
+		certifications = append(certifications, map[string]string{"name": c.Name, "issuer": c.Issuer, "date": c.Date, "credentialId": c.CredentialID, "url": c.URL})
+	}
+	languages := make([]map[string]string, 0, len(q.Languages))
+	for _, l := range q.Languages {
+		if strings.TrimSpace(l.Name) == "" {
+			continue
+		}
+		languages = append(languages, map[string]string{"name": l.Name, "proficiency": l.Proficiency})
+	}
+	return map[string]any{"education": education, "certifications": certifications, "languages": languages}
+}
 func valid(r result) bool {
 	return strings.TrimSpace(r.JobTitle) != "" && strings.TrimSpace(r.Company) != "" && strings.TrimSpace(r.JobSummary) != "" && strings.TrimSpace(r.Resume) != "" && strings.TrimSpace(r.CoverLetter) != "" && strings.TrimSpace(r.ApplicationAnswers) != ""
 }
@@ -179,13 +209,16 @@ func exactFields(raw json.RawMessage, expected ...string) bool {
 	return true
 }
 func completeInputShape(raw map[string]json.RawMessage) bool {
-	if len(raw) != 3 {
+	if len(raw) != 3 && len(raw) != 4 {
 		return false
 	}
 	for _, key := range []string{"repository", "jobPosting", "confirmedQualifications"} {
 		if _, ok := raw[key]; !ok {
 			return false
 		}
+	}
+	if len(raw) == 4 && (raw["qualifications"] == nil || !profilevalidation.CompleteQualifications(raw["qualifications"])) {
+		return false
 	}
 	if !jsonString(raw["jobPosting"]) {
 		return false

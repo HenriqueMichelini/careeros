@@ -4,7 +4,7 @@ import {
   ProfileGap,
   ConfirmedQualification,
 } from './types'
-import { careerProfile } from './profile'
+import { careerProfile, cvQualifications, validQualifications } from './profile'
 
 export class ProfileReviewError extends Error {
   constructor(public readonly code: string) {
@@ -32,6 +32,7 @@ export async function reviewRepository(
   changedSection: string,
   apiKey: string
 ): Promise<{ updatedRepo: ProfessionalRepository; summary: string }> {
+  if (!validQualifications(repo)) throw new ProfileReviewError('input')
   const response = await fetch('/api/profile/review', {
     method: 'POST',
     headers: {
@@ -88,11 +89,12 @@ export async function generateMaterials(
   apiKey: string,
   confirmedQualifications: ConfirmedQualification[] = []
 ): Promise<GeneratedMaterials> {
+  if (!validQualifications(repo)) throw new ApplicationDraftError('input')
   let response: Response
   try {
     response = await fetch('/api/application-draft', {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'X-OpenAI-Api-Key': apiKey },
-      body: JSON.stringify({ repository: careerProfile(repo), jobPosting, confirmedQualifications }), signal: AbortSignal.timeout(30_000),
+      body: JSON.stringify({ repository: careerProfile(repo), qualifications: cvQualifications(repo), jobPosting, confirmedQualifications }), signal: AbortSignal.timeout(30_000),
     })
   } catch (error) {
     throw new ApplicationDraftError(error instanceof DOMException && error.name === 'TimeoutError' ? 'timeout' : 'outage')
@@ -109,12 +111,13 @@ export async function findProfileGaps(
   jobPosting: string,
   apiKey: string
 ): Promise<ProfileGap[]> {
+  if (!validQualifications(repo)) throw new QualificationGapsError('input')
   let response: Response
   try {
     response = await fetch('/api/qualification-gaps', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-OpenAI-Api-Key': apiKey },
-      body: JSON.stringify({ repository: careerProfile(repo), jobPosting }),
+      body: JSON.stringify({ repository: careerProfile(repo), qualifications: cvQualifications(repo), jobPosting }),
       signal: AbortSignal.timeout(30_000),
     })
   } catch (error) {

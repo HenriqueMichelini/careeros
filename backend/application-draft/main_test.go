@@ -28,6 +28,7 @@ func draftResponse() string {
 }
 func TestProviderUsesOpenAIAndFullPopulatedProfile(t *testing.T) {
 	in := request{JobPosting: "Senior engineer role", Profile: profilevalidation.Profile{CareerGoals: "leadership", Skills: "Go", Competencies: "systems", Tools: "Docker", EmploymentStatus: "employed", CurrentSalary: "salary", DesiredSalary: "target", AdditionalInfo: "extra", Experience: []profilevalidation.Experience{{ID: "id", Company: "company", Title: "engineer", StartDate: "2020", EndDate: "2022", Location: "location", Description: "description", Responsibilities: "responsibilities", Achievements: "achievement"}}, Projects: []profilevalidation.Project{{ID: "project-id", Name: "project", Description: "project detail", Technologies: "Go", URL: "url", Highlights: "highlight"}}}, Confirmed: []qualification{{Kind: "skill", Requirement: "Kubernetes", UserContext: "used it"}}}
+	in.Qualifications = &profilevalidation.Qualifications{Education: []profilevalidation.Education{{ID: "private-education-id", Degree: "BSc", Institution: "Example University"}}}
 	calls := 0
 	a := app{client: &http.Client{Transport: transportFunc(func(r *http.Request) (*http.Response, error) {
 		calls++
@@ -44,10 +45,13 @@ func TestProviderUsesOpenAIAndFullPopulatedProfile(t *testing.T) {
 		if json.Unmarshal(body, &payload) != nil || payload.Model != model || len(payload.Messages) != 1 {
 			t.Fatal("incorrect provider request")
 		}
-		for _, want := range []string{"leadership", "Go", "company", "location", "salary", "target", "extra", "project-id", "Kubernetes", "used it"} {
+		for _, want := range []string{"leadership", "Go", "company", "location", "salary", "target", "extra", "project-id", "Kubernetes", "used it", "BSc", "Example University"} {
 			if !strings.Contains(payload.Messages[0].Content, want) {
 				t.Errorf("full profile or confirmed context missing %q", want)
 			}
+		}
+		if strings.Contains(payload.Messages[0].Content, "private-education-id") {
+			t.Error("local qualification ID reached provider")
 		}
 		return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(draftResponse())), Header: make(http.Header)}, nil
 	})}}
@@ -65,6 +69,22 @@ func TestOmitEmptyProfileFieldsKeepsPopulatedFields(t *testing.T) {
 	}
 	if len(fields) != 2 || string(fields["skills"]) != `"Go"` || string(fields["tools"]) != `"Docker"` {
 		t.Fatalf("unexpected fields: %s", raw)
+	}
+}
+
+func TestQualificationFactsOmitLocalIDs(t *testing.T) {
+	facts := qualificationFacts(profilevalidation.Qualifications{
+		Education: []profilevalidation.Education{{ID: "private-local-id", Degree: "BSc", Institution: "Example University", GraduationDate: "2018"}},
+		Languages: []profilevalidation.Language{{ID: "another-local-id", Name: "English", Proficiency: "Fluent"}},
+	})
+	serialized, _ := json.Marshal(facts)
+	for _, want := range []string{"BSc", "Example University", "2018", "English", "Fluent"} {
+		if !strings.Contains(string(serialized), want) {
+			t.Errorf("missing %s", want)
+		}
+	}
+	if strings.Contains(string(serialized), "local-id") || strings.Contains(string(serialized), `"id"`) {
+		t.Fatal("local ID reached provider projection")
 	}
 }
 

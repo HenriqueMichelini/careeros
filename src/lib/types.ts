@@ -20,6 +20,30 @@ export interface ProjectEntry {
   highlights: string
 }
 
+export interface EducationEntry {
+  id: string
+  degree: string
+  institution: string
+  location: string
+  graduationDate: string
+  details: string
+}
+
+export interface CertificationEntry {
+  id: string
+  name: string
+  issuer: string
+  date: string
+  credentialId: string
+  url: string
+}
+
+export interface LanguageEntry {
+  id: string
+  name: string
+  proficiency: string
+}
+
 export interface ProfessionalRepository {
   fullName: string
   email: string
@@ -32,6 +56,9 @@ export interface ProfessionalRepository {
   experience: ExperienceEntry[]
   tools: string
   projects: ProjectEntry[]
+  education: EducationEntry[]
+  certifications: CertificationEntry[]
+  languages: LanguageEntry[]
   employmentStatus: string
   currentSalary: string
   desiredSalary: string

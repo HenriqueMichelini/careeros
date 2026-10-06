@@ -5,12 +5,15 @@ import { ProfileReviewError } from "../lib/ai"
 import {
   ExperienceEntry,
   ProjectEntry,
+  EducationEntry,
+  CertificationEntry,
+  LanguageEntry,
   ProfessionalRepository,
 } from "../lib/types"
 import { TranslationKey } from "../lib/i18n"
 import { previewValues, applyIngestion, ingestProfile, IngestionError, IngestionOperation, IngestionResult } from "../lib/ingestion"
 
-type Section = "profile" | "goals" | "skills" | "competencies" | "experience" | "tools" | "projects" | "compensation" | "other"
+type Section = "profile" | "goals" | "skills" | "competencies" | "experience" | "tools" | "projects" | "education" | "certifications" | "languages" | "compensation" | "other"
 
 const SECTIONS: {
   id: Section
@@ -52,6 +55,9 @@ const SECTIONS: {
     labelKey: "repo.section.projects",
     descKey: "repo.section.projectsDesc",
   },
+  { id: "education", labelKey: "repo.section.education", descKey: "repo.section.educationDesc" },
+  { id: "certifications", labelKey: "repo.section.certifications", descKey: "repo.section.certificationsDesc" },
+  { id: "languages", labelKey: "repo.section.languages", descKey: "repo.section.languagesDesc" },
   {
     id: "compensation",
     labelKey: "repo.section.compensation",
@@ -139,17 +145,20 @@ function TextInput({
   onChange,
   placeholder,
   type = "text",
+  maxLength,
 }: {
   id?: string
   value: string
   onChange: (v: string) => void
   placeholder?: string
   type?: string
+  maxLength?: number
 }) {
   return (
     <input
       id={id}
       type={type}
+      maxLength={maxLength}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
@@ -164,6 +173,48 @@ function TextInput({
       onBlur={(e) => (e.target.style.borderColor = "var(--color-border)")}
     />
   )
+}
+
+function QualificationList<T extends { id: string }>({
+  items, fields, title, addLabel, emptyLabel, onAdd, onChange, onDelete,
+}: {
+  items: T[]
+  fields: { key: keyof T & string; label: TranslationKey }[]
+  title: string
+  addLabel: string
+  emptyLabel: string
+  onAdd: () => void
+  onChange: (item: T) => void
+  onDelete: (id: string) => void
+}) {
+  const { t } = useI18n()
+  const [tooLongField, setTooLongField] = useState("")
+  const updateField = (item: T, key: keyof T & string, value: string) => {
+    if (new TextEncoder().encode(value).length > 2000) {
+      setTooLongField(`${item.id}-${key}`)
+      return
+    }
+    setTooLongField("")
+    onChange({ ...item, [key]: value })
+  }
+  return <div>
+    <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <span className="text-xs uppercase tracking-widest text-[var(--color-muted-fg)]">{title} · {items.length}</span>
+      <button type="button" onClick={onAdd} disabled={items.length >= 40} className="bg-[var(--color-fg)] px-4 py-2 text-xs uppercase tracking-widest text-[var(--color-bg)] disabled:cursor-not-allowed disabled:opacity-50">{addLabel}</button>
+    </div>
+    {items.length >= 40 && <p role="note" className="mb-4 text-xs text-[var(--color-muted-fg)]">{t("repo.qualificationLimit")}</p>}
+    {items.length === 0 && <p className="border border-dashed border-[var(--color-border)] px-4 py-8 text-center text-sm text-[var(--color-muted-fg)]">{emptyLabel}</p>}
+    {items.map(item => <div key={item.id} className="mb-4 border border-[var(--color-border)] bg-[var(--color-card)] p-4 sm:p-5">
+      <div className="mb-4 flex justify-end"><button type="button" onClick={() => onDelete(item.id)} className="text-xs text-[var(--color-accent)]">{t("common.remove")}</button></div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {fields.map(field => <div key={field.key}>
+          <Label htmlFor={`${field.key}-${item.id}`}>{t(field.label)}</Label>
+          <TextInput id={`${field.key}-${item.id}`} value={String(item[field.key])} maxLength={2000} onChange={value => updateField(item, field.key, value)} />
+          {tooLongField === `${item.id}-${field.key}` && <p role="alert" className="mt-1 text-xs text-[var(--color-accent)]">{t("repo.qualificationTooLong")}</p>}
+        </div>)}
+      </div>
+    </div>)}
+  </div>
 }
 
 function ExperienceForm({
@@ -575,6 +626,16 @@ export default function RepositoryPage() {
     updateRepo({ projects: repo.projects.filter((p) => p.id !== id) })
   }
 
+  function updateEntry<T extends EducationEntry | CertificationEntry | LanguageEntry>(
+    section: "education" | "certifications" | "languages", id: string, updated: T,
+  ) {
+    updateRepo({ [section]: repo[section].map(item => item.id === id ? updated : item) })
+  }
+
+  function deleteEntry(section: "education" | "certifications" | "languages", id: string) {
+    updateRepo({ [section]: repo[section].filter(item => item.id !== id) })
+  }
+
   const active = SECTIONS.find((s) => s.id === activeSection)!
   const employmentStatus =
     LEGACY_EMPLOYMENT_STATUS[repo.employmentStatus] || repo.employmentStatus
@@ -980,6 +1041,54 @@ export default function RepositoryPage() {
           </div>
         )}
 
+        {activeSection === "education" && <QualificationList<EducationEntry>
+          items={repo.education}
+          fields={[
+            { key: "degree", label: "repo.education.degree" },
+            { key: "institution", label: "repo.education.institution" },
+            { key: "location", label: "repo.education.location" },
+            { key: "graduationDate", label: "repo.education.graduationDate" },
+            { key: "details", label: "repo.education.details" },
+          ]}
+          title={t("repo.section.education")}
+          addLabel={t("repo.education.add")}
+          emptyLabel={t("repo.education.empty")}
+          onAdd={() => updateRepo({ education: [{ id: uid(), degree: "", institution: "", location: "", graduationDate: "", details: "" }, ...repo.education] })}
+          onChange={item => updateEntry("education", item.id, item)}
+          onDelete={id => deleteEntry("education", id)}
+        />}
+
+        {activeSection === "certifications" && <QualificationList<CertificationEntry>
+          items={repo.certifications}
+          fields={[
+            { key: "name", label: "repo.certification.name" },
+            { key: "issuer", label: "repo.certification.issuer" },
+            { key: "date", label: "repo.certification.date" },
+            { key: "credentialId", label: "repo.certification.credentialId" },
+            { key: "url", label: "repo.certification.url" },
+          ]}
+          title={t("repo.section.certifications")}
+          addLabel={t("repo.certification.add")}
+          emptyLabel={t("repo.certification.empty")}
+          onAdd={() => updateRepo({ certifications: [{ id: uid(), name: "", issuer: "", date: "", credentialId: "", url: "" }, ...repo.certifications] })}
+          onChange={item => updateEntry("certifications", item.id, item)}
+          onDelete={id => deleteEntry("certifications", id)}
+        />}
+
+        {activeSection === "languages" && <QualificationList<LanguageEntry>
+          items={repo.languages}
+          fields={[
+            { key: "name", label: "repo.language.name" },
+            { key: "proficiency", label: "repo.language.proficiency" },
+          ]}
+          title={t("repo.section.languages")}
+          addLabel={t("repo.language.add")}
+          emptyLabel={t("repo.language.empty")}
+          onAdd={() => updateRepo({ languages: [{ id: uid(), name: "", proficiency: "" }, ...repo.languages] })}
+          onChange={item => updateEntry("languages", item.id, item)}
+          onDelete={id => deleteEntry("languages", id)}
+        />}
+
         {activeSection === "compensation" && (
           <div className="space-y-8">
             <div>
@@ -1047,6 +1156,7 @@ export default function RepositoryPage() {
 
         {activeSection === "other" && (
           <div>
+            <p className="mb-4 text-sm text-[var(--color-muted-fg)]">{t("repo.otherLegacyNote")}</p>
             <Label>{t("repo.additionalInfo")}</Label>
             <Field
               rows={14}

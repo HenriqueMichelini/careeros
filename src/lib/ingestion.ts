@@ -1,5 +1,5 @@
 import { ProfessionalRepository, ExperienceEntry, ProjectEntry } from "./types"
-import { careerProfile, emptyContact } from "./profile"
+import { careerProfile, emptyContact, validQualifications } from "./profile"
 
 export type IngestionTarget = "careerGoals" | "skills" | "competencies" | "experience" | "tools" | "projects" | "employmentStatus" | "currentSalary" | "desiredSalary" | "additionalInfo"
 export interface IngestionClaim {
@@ -118,7 +118,8 @@ const duplicate = (before: string, value: string) =>
 export function validProfile(profile: ProfessionalRepository): boolean {
   if (
     !record(profile) ||
-    !(keys(profile, profileFields) || keys(profile, [...profileFields, ...contactFields])) ||
+    !(keys(profile, profileFields) || keys(profile, [...profileFields, ...contactFields]) ||
+      keys(profile, [...profileFields, ...contactFields, "education", "certifications", "languages"])) ||
     contactFields.some(f => f in profile && !string(profile[f as keyof ProfessionalRepository], 2000)) ||
     scalarFields.some(
       (f) => !string(profile[(f as keyof ProfessionalRepository)], 12 << 10),
@@ -154,7 +155,7 @@ export function validProfile(profile: ProfessionalRepository): boolean {
       if ("current" in item && typeof item.current !== "boolean") return false
     }
   }
-  return true
+  return !("education" in profile) || validQualifications(profile)
 }
 
 export function validateIngestionResult(

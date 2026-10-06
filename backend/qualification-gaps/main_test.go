@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"professional-information-repo/internal/profilevalidation"
 )
 
 type transportFunc func(*http.Request) (*http.Response, error)
@@ -43,6 +45,25 @@ func TestProviderRequestUsesOnlyQualificationAllowlist(t *testing.T) {
 	result, code, err := a.callProvider(t.Context(), "sk-valid", input)
 	if err != nil || code != "" || calls != 1 || !validResult(result) || len(result.Gaps) != 1 {
 		t.Fatalf("result=%+v code=%s err=%v calls=%d", result, code, err, calls)
+	}
+}
+
+func TestStructuredQualificationsUseSmallGapProjection(t *testing.T) {
+	q := profilevalidation.Qualifications{
+		Education:      []profilevalidation.Education{{ID: "secret-education-id", Degree: "BSc", Institution: "Example University", Location: "private address"}},
+		Certifications: []profilevalidation.Certification{{ID: "secret-cert-id", Name: "Cloud Certificate", Issuer: "Example", URL: "private url"}},
+		Languages:      []profilevalidation.Language{{ID: "secret-language-id", Name: "English", Proficiency: "Fluent"}},
+	}
+	serialized, _ := json.Marshal(toProviderProfile(sampleRequest().Repository, &q))
+	for _, want := range []string{"BSc", "Example University", "Cloud Certificate", "English", "Fluent"} {
+		if !strings.Contains(string(serialized), want) {
+			t.Errorf("missing %s", want)
+		}
+	}
+	for _, forbidden := range []string{"secret-", "private address", "private url"} {
+		if strings.Contains(string(serialized), forbidden) {
+			t.Errorf("unnecessary fact leaked: %s", forbidden)
+		}
 	}
 }
 

@@ -80,6 +80,20 @@ const claim = (overrides = {}) => ({
 })
 const review = (data) => ({ unverifiedClaimCount: 0, unresolvedClaimIds: [], unplacedOperationCount: 0, ...data })
 
+test("expanded Profile validates and Quick Add preserves structured qualifications", () => {
+  const expanded = {
+    ...profile(), fullName: "Ada", email: "", phone: "", location: "", professionalLinks: "",
+    education: [{ id: "ed1", degree: "BSc", institution: "Example University", location: "", graduationDate: "2018", details: "" }],
+    certifications: [], languages: [{ id: "lang1", name: "English", proficiency: "Fluent" }],
+  }
+  assert.equal(validProfile(expanded), true)
+  const next = applyIngestion(expanded, JSON.stringify(expanded), [op()])
+  assert.deepEqual(next.education, expanded.education)
+  assert.deepEqual(next.languages, expanded.languages)
+  assert.equal(next.skills, "React\nTypeScript")
+  assert.equal(validProfile({ ...expanded, languages: [{ ...expanded.languages[0], id: "ed1" }] }), false)
+})
+
 test("maps one claim to linked sections and validates source and target", () => {
   const result = validateIngestionResult(
     review({
