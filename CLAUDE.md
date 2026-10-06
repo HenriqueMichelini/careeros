@@ -4,12 +4,12 @@
 
 ### Issue tracker
 
-Implementation tickets live as local Markdown files under `.scratch/<feature-slug>/issues/`. See `docs/agents/issue-tracker.md`.
+Implementation tickets live as GitHub Issues in `HenriqueMichelini/careeros`. Use the GitHub CLI to list, read, create, update, comment on, and close tickets. See [docs/agents/issue-tracker.md](docs/agents/issue-tracker.md).
 
-### Triage labels
+### Triage
 
-Local ticket status uses the default triage roles, including `ready-for-agent`. See `docs/agents/triage-labels.md`.
+Use GitHub issue state and the triage guidance in [docs/agents/triage-labels.md](docs/agents/triage-labels.md). Do not create a parallel local status file.
 
 ### Domain docs
 
-This is a single-context repo with a root glossary and shared ADRs. See `docs/agents/domain.md`.
+This is a single-context repo with a root glossary and shared ADRs. See [docs/agents/domain.md](docs/agents/domain.md).
