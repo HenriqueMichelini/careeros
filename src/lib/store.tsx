@@ -8,6 +8,7 @@ import {
   ReactNode,
 } from "react"
 import { ProfessionalRepository, GeneratedMaterials } from "./types"
+import { emptyContact, withContactFields } from "./profile"
 import {
   getInitialLocale,
   Locale,
@@ -17,6 +18,7 @@ import {
 } from "./i18n"
 
 const defaultRepo: ProfessionalRepository = {
+  ...emptyContact,
   careerGoals: "",
   skills: "",
   competencies: "",
@@ -80,7 +82,7 @@ function reducer(state: AppState, action: Action): AppState {
 function loadRepo(): ProfessionalRepository {
   try {
     const saved = localStorage.getItem("careeros_repo")
-    return saved ? JSON.parse(saved) : defaultRepo
+    return saved ? withContactFields(JSON.parse(saved)) : defaultRepo
   } catch {
     return defaultRepo
   }

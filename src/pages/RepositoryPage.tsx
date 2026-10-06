@@ -91,9 +91,10 @@ function uid() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36)
 }
 
-function Label({ children }: { children: React.ReactNode }) {
+function Label({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
   return (
     <label
+      htmlFor={htmlFor}
       className="text-xs uppercase tracking-[0.18em] block mb-2"
       style={{ fontFamily: "var(--font-mono)", color: "var(--color-muted-fg)" }}
     >
@@ -133,11 +134,13 @@ function Field({
 }
 
 function TextInput({
+  id,
   value,
   onChange,
   placeholder,
   type = "text",
 }: {
+  id?: string
   value: string
   onChange: (v: string) => void
   placeholder?: string
@@ -145,6 +148,7 @@ function TextInput({
 }) {
   return (
     <input
+      id={id}
       type={type}
       value={value}
       onChange={(e) => onChange(e.target.value)}
@@ -711,6 +715,32 @@ export default function RepositoryPage() {
           <div className="space-y-5 min-w-0">
             <section className="p-5 border" style={{backgroundColor:"var(--color-muted)",borderColor:"var(--color-accent)"}}>
               <p className="text-xs mt-2" style={{color:"var(--color-muted-fg)"}}>{t("repo.profileIntro")}</p>
+            </section>
+            <section className="p-5 border min-w-0" style={{borderColor:"var(--color-border)"}}>
+              <h2 className="text-lg font-bold mb-2">{t("repo.contactTitle")}</h2>
+              <p className="text-sm mb-4" style={{color:"var(--color-muted-fg)"}}>{t("repo.contactDescription")}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {([
+                  ["fullName", "repo.fullName", "text"],
+                  ["email", "repo.email", "email"],
+                  ["phone", "repo.phone", "tel"],
+                  ["location", "repo.contactLocation", "text"],
+                ] as const).map(([field, label, type]) => (
+                  <div key={field} className="min-w-0">
+                    <Label htmlFor={`contact-${field}`}>{t(label)}</Label>
+                    <TextInput id={`contact-${field}`} type={type} value={repo[field]}
+                      onChange={value => updateRepo({[field]: value})} />
+                  </div>
+                ))}
+                <div className="min-w-0 sm:col-span-2">
+                  <Label htmlFor="contact-professionalLinks">{t("repo.professionalLinks")}</Label>
+                  <textarea id="contact-professionalLinks" rows={3} value={repo.professionalLinks}
+                    onChange={event => updateRepo({professionalLinks: event.target.value})}
+                    placeholder={t("repo.professionalLinksHint")}
+                    className="w-full min-w-0 p-3 border text-sm resize-y"
+                    style={{backgroundColor:"var(--color-card)",borderColor:"var(--color-border)",color:"var(--color-fg)"}} />
+                </div>
+              </div>
             </section>
             <section className="p-5 border min-w-0" style={{borderColor:"var(--color-border)"}}>
               <h2 className="text-lg font-bold mb-2">{t("repo.ingestTitle")}</h2>

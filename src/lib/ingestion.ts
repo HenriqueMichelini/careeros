@@ -1,4 +1,5 @@
 import { ProfessionalRepository, ExperienceEntry, ProjectEntry } from "./types"
+import { careerProfile, emptyContact } from "./profile"
 
 export type IngestionTarget = "careerGoals" | "skills" | "competencies" | "experience" | "tools" | "projects" | "employmentStatus" | "currentSalary" | "desiredSalary" | "additionalInfo"
 export interface IngestionClaim {
@@ -71,6 +72,7 @@ const legacyStatuses = [
   "Unemployed", "Student",
 ]
 const profileFields = [...scalarFields, "experience", "projects"]
+const contactFields = Object.keys(emptyContact)
 export class IngestionError extends Error {
   constructor(public readonly code: string) {
     super(code)
@@ -116,7 +118,8 @@ const duplicate = (before: string, value: string) =>
 export function validProfile(profile: ProfessionalRepository): boolean {
   if (
     !record(profile) ||
-    !keys(profile, profileFields) ||
+    !(keys(profile, profileFields) || keys(profile, [...profileFields, ...contactFields])) ||
+    contactFields.some(f => f in profile && !string(profile[f as keyof ProfessionalRepository], 2000)) ||
     scalarFields.some(
       (f) => !string(profile[(f as keyof ProfessionalRepository)], 12 << 10),
     )
@@ -316,7 +319,7 @@ export async function ingestProfile(
         "Content-Type": "application/json",
         "X-OpenAI-Api-Key": apiKey,
       },
-      body: JSON.stringify({ input, profile: profile }),
+      body: JSON.stringify({ input, profile: careerProfile(profile) }),
       cache: "no-store",
       signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(55_000)]) : AbortSignal.timeout(55_000),
     })

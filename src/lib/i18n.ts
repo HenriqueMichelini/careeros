@@ -174,6 +174,14 @@ const messages = {
     "repo.status.unspecified": "Not specified",
     "repo.section.profile": "PROFILE",
     "repo.section.profileDesc": "Edit your professional details by section",
+    "repo.contactTitle": "Identity & contact",
+    "repo.contactDescription": "These details appear in your CV header. Leave any field blank to omit it.",
+    "repo.fullName": "Full name",
+    "repo.email": "Email",
+    "repo.phone": "Phone",
+    "repo.contactLocation": "Location",
+    "repo.professionalLinks": "Professional links",
+    "repo.professionalLinksHint": "One link per line",
     "repo.section.goals": "Career Goals",
     "repo.section.goalsDesc": "Ambitions, target roles, long-term vision",
     "repo.section.skills": "Skills",
@@ -211,7 +219,7 @@ const messages = {
     "repo.ingestPreviewField": "Show complete field preview",
     "repo.last": "Last",
     "repo.profileIntro":
-      "Add and update your information in the sections: Career Goals, Skills, Competencies, Experience, Tools & Tech, Projects, Compensation, and Other.",
+      "Add your identity and contact details here, then update your professional information in the other sections.",
     "repo.careerGoals": "Career Goals & Ambitions",
     "repo.careerGoalsPlaceholder":
       "Describe your short and long-term career goals. What roles are you targeting? What industries? What kind of impact do you want to make? Where do you see yourself in 3–5 years?",
@@ -531,6 +539,14 @@ const messages = {
     "repo.status.unspecified": "Não informado",
     "repo.section.profile": "PERFIL",
     "repo.section.profileDesc": "Edite seus dados profissionais por seção",
+    "repo.contactTitle": "Identidade e contato",
+    "repo.contactDescription": "Estes dados aparecem no cabeçalho do currículo. Deixe um campo vazio para omiti-lo.",
+    "repo.fullName": "Nome completo",
+    "repo.email": "E-mail",
+    "repo.phone": "Telefone",
+    "repo.contactLocation": "Localização",
+    "repo.professionalLinks": "Links profissionais",
+    "repo.professionalLinksHint": "Um link por linha",
     "repo.section.goals": "Objetivos de carreira",
     "repo.section.goalsDesc":
       "Ambições, cargos desejados e visão de longo prazo",
@@ -570,7 +586,7 @@ const messages = {
     "repo.ingestPreviewField": "Mostrar prévia completa do campo",
     "repo.last": "Última revisão",
     "repo.profileIntro":
-      "Adicione e atualize suas informações nas seções: Objetivos de carreira, Habilidades, Competências, Experiência, Ferramentas e tecnologia, Projetos, Remuneração e Outros.",
+      "Adicione seus dados de identidade e contato aqui e atualize suas informações profissionais nas outras seções.",
     "repo.careerGoals": "Objetivos e ambições de carreira",
     "repo.careerGoalsPlaceholder":
       "Descreva seus objetivos de carreira de curto e longo prazo. Quais cargos você busca? Em quais setores? Que impacto deseja gerar? Onde você se vê daqui a 3–5 anos?",

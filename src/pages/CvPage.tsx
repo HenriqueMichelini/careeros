@@ -38,6 +38,8 @@ export default function CvPage() {
     [repo.competencies],
   )
   const tools = useMemo(() => lines(repo.tools), [repo.tools])
+  const contact = [repo.email, repo.phone, repo.location, ...lines(repo.professionalLinks, false)]
+    .map(value => value.trim()).filter(Boolean)
   const experience = repo.experience.filter((item) =>
     [
       item.title,
@@ -114,18 +116,15 @@ export default function CvPage() {
             className="relative px-5 py-7 sm:px-8 sm:py-9 md:px-12 md:py-11"
           >
             <header className="mb-7 border-b-2 border-[var(--color-accent)] pb-6">
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-muted-fg)]">
-                {t("common.sampleContent")}
-              </p>
+              {!repo.fullName.trim() && <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-muted-fg)]">
+                {t("common.sample")}
+              </p>}
               <h2 className="break-words text-4xl font-bold uppercase leading-none tracking-tight sm:text-5xl [font-family:var(--font-display)]">
-                {t("cv.sampleName")}
+                {repo.fullName.trim() || t("cv.sampleName")}
               </h2>
-              <p className="mt-4 break-words text-[11px] leading-5 text-[var(--color-muted-fg)] [font-family:var(--font-mono)]">
-                <span className="uppercase tracking-widest">
-                  {t("common.sample")}
-                </span>{" "}
-                · {t("cv.sampleContact")}
-              </p>
+              {contact.length > 0 && <ul className="mt-4 flex flex-wrap gap-x-2 text-[11px] leading-5 text-[var(--color-muted-fg)] [font-family:var(--font-mono)]">
+                {contact.map((value, index) => <li key={index} className="break-all after:ml-2 after:content-['·'] last:after:content-none">{value}</li>)}
+              </ul>}
             </header>
             <Section title={t("cv.professionalProfile")}>
               <p className="whitespace-pre-wrap break-words text-[13px] leading-6">

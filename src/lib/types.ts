@@ -21,6 +21,11 @@ export interface ProjectEntry {
 }
 
 export interface ProfessionalRepository {
+  fullName: string
+  email: string
+  phone: string
+  location: string
+  professionalLinks: string
   careerGoals: string
   skills: string
   competencies: string
