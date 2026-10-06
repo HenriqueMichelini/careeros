@@ -1,0 +1,216 @@
+import { Fragment, useLayoutEffect, useMemo, useRef, useState } from "react"
+import CvPaper from "./CvPaper"
+import { useI18n } from "../lib/store"
+import { professionalLinkHref } from "../lib/cv"
+import { parseResumeMarkdown } from "../lib/resume"
+import { ProfessionalRepository } from "../lib/types"
+
+const A4_WIDTH_PX = (210 * 96) / 25.4
+
+function plainText(value: string) {
+  return value
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/(?<!\w)\*([^*]+)\*(?!\w)/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+}
+
+function inlineText(value: string) {
+  const links = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g
+  const parts: React.ReactNode[] = []
+  let from = 0
+  for (const match of value.matchAll(links)) {
+    const index = match.index ?? 0
+    if (index > from) parts.push(plainText(value.slice(from, index)))
+    const href = professionalLinkHref(match[2])
+    parts.push(
+      href ? (
+        <a key={index} href={href} className="underline underline-offset-2">
+          {plainText(match[1])}
+        </a>
+      ) : (
+        plainText(match[1])
+      ),
+    )
+    from = index + match[0].length
+  }
+  if (from < value.length) parts.push(plainText(value.slice(from)))
+  return parts
+}
+
+export default function GeneratedResumePreview({
+  resume,
+  profile,
+}: {
+  resume: string
+  profile: ProfessionalRepository
+}) {
+  const { t } = useI18n()
+  const slotRef = useRef<HTMLDivElement>(null)
+  const boundaryRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [fitScale, setFitScale] = useState(1)
+  const [readFullSize, setReadFullSize] = useState(false)
+  const paperScale = readFullSize ? 1 : fitScale
+  const [overflows, setOverflows] = useState(false)
+  const sections = useMemo(() => parseResumeMarkdown(resume), [resume])
+  const labels = {
+    summary: t("cv.professionalProfile"),
+    experience: t("cv.experience"),
+    skills: t("cv.skillsCompetencies"),
+    projects: t("cv.selectedProjects"),
+    education: t("cv.education"),
+    certifications: t("cv.certifications"),
+    languages: t("cv.languages"),
+    tools: t("cv.toolsTechnology"),
+    additional: t("cv.additional"),
+    contact: t("cv.contact"),
+  }
+  const contacts = [
+    profile.email,
+    profile.phone,
+    profile.location,
+    ...profile.professionalLinks.split("\n"),
+  ]
+    .map((item) => item.trim())
+    .filter(Boolean)
+  const visibleSections = sections.filter(
+    (section) =>
+      section.title ||
+      !section.blocks.every((block) =>
+        block.text
+          .split(/\s*[|·]\s*/)
+          .every((part) =>
+            contacts.includes(
+              part.replace(/^\[[^\]]+\]\(([^)]+)\)$/, "$1").trim(),
+            ),
+          ),
+      ),
+  )
+
+  useLayoutEffect(() => {
+    const slot = slotRef.current
+    if (!slot) return
+    const measure = () =>
+      setFitScale(Math.min(1, slot.getBoundingClientRect().width / A4_WIDTH_PX))
+    const observer = new ResizeObserver(measure)
+    observer.observe(slot)
+    measure()
+    return () => observer.disconnect()
+  }, [])
+  useLayoutEffect(() => {
+    const boundary = boundaryRef.current
+    const content = contentRef.current
+    if (!boundary || !content) return
+    const measure = () =>
+      setOverflows(
+        content.getBoundingClientRect().bottom >
+          boundary.getBoundingClientRect().bottom + 2 * paperScale,
+      )
+    const observer = new ResizeObserver(measure)
+    observer.observe(boundary)
+    observer.observe(content)
+    measure()
+    return () => observer.disconnect()
+  }, [resume, profile, paperScale])
+
+  return (
+    <div>
+      <p
+        role="status"
+        className="mb-4 text-xs leading-5 text-[var(--color-muted-fg)]"
+      >
+        {overflows ? t("results.resumeOverflow") : t("results.resumeFits")}
+      </p>
+      <div ref={slotRef} className="cv-preview-slot min-w-0 overflow-x-auto">
+        {fitScale < 0.99 && (
+          <button
+            type="button"
+            aria-pressed={readFullSize}
+            onClick={() => setReadFullSize((value) => !value)}
+            className="cv-preview-zoom mb-3 border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2 text-xs"
+          >
+            {t(readFullSize ? "cv.fitPage" : "cv.readFullSize")}
+          </button>
+        )}
+        <CvPaper
+          label={t("results.resume")}
+          scale={paperScale}
+          overflows={overflows}
+          pageEndLabel={t("cv.pageOneEnds")}
+          boundaryRef={boundaryRef}
+          contentRef={contentRef}
+        >
+          {(profile.fullName.trim() || contacts.length > 0) && (
+            <header className="mb-7 border-b-2 border-[var(--color-accent)] pb-6">
+              {profile.fullName.trim() && (
+                <h2 className="break-words text-5xl font-bold uppercase leading-none tracking-tight [font-family:var(--font-display)]">
+                  {profile.fullName.trim()}
+                </h2>
+              )}
+              {contacts.length > 0 && (
+                <ul className="mt-4 flex flex-wrap gap-x-2 text-[11px] leading-5 text-[var(--color-muted-fg)] [font-family:var(--font-mono)]">
+                  {contacts.map((item, index) => {
+                    const href = item.includes("@")
+                      ? null
+                      : professionalLinkHref(item)
+                    return (
+                      <li
+                        key={`${index}-${item}`}
+                        className="break-all after:ml-2 after:content-['·'] last:after:content-none"
+                      >
+                        {href ? (
+                          <a
+                            href={href}
+                            className="underline underline-offset-2"
+                          >
+                            {item}
+                          </a>
+                        ) : (
+                          item
+                        )}
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </header>
+          )}
+          {visibleSections.map((section, sectionIndex) => (
+            <section
+              key={sectionIndex}
+              data-cv-block={section.id ?? section.title}
+              className="mb-7 last:mb-0"
+            >
+              <h3 className="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--color-accent)]">
+                {section.id
+                  ? labels[section.id]
+                  : section.title || t("results.resume")}
+              </h3>
+              {section.blocks.map((block, blockIndex) => (
+                <Fragment key={blockIndex}>
+                  {block.kind === "subheading" ? (
+                    <h4 className="mt-4 mb-1 break-words text-[13px] font-semibold first:mt-0">
+                      {inlineText(block.text)}
+                    </h4>
+                  ) : block.kind === "bullet" ? (
+                    <p className="break-words pl-5 text-[12px] leading-5 before:-ml-4 before:mr-2 before:content-['•']">
+                      {inlineText(block.text)}
+                    </p>
+                  ) : block.kind === "numbered" ? (
+                    <p className="break-words pl-5 text-[12px] leading-5">
+                      {inlineText(block.text)}
+                    </p>
+                  ) : (
+                    <p className="mb-2 whitespace-pre-wrap break-words text-[12px] leading-5 last:mb-0">
+                      {inlineText(block.text)}
+                    </p>
+                  )}
+                </Fragment>
+              ))}
+            </section>
+          ))}
+        </CvPaper>
+      </div>
+    </div>
+  )
+}

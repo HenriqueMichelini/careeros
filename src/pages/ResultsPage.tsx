@@ -1,7 +1,8 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useI18n, useStore } from "../lib/store"
 import { Page } from "../lib/types"
 import { TranslationKey } from "../lib/i18n"
+import GeneratedResumePreview from "../components/GeneratedResumePreview"
 
 type Tab = "summary" | "resume" | "cover" | "answers"
 
@@ -46,6 +47,7 @@ export default function ResultsPage({ setPage }: Props) {
   const { t } = useI18n()
   const [activeTab, setActiveTab] = useState<Tab>("summary")
   const [copied, setCopied] = useState(false)
+  const resumePreviewRef = useRef<HTMLDivElement>(null)
   const materials = state.generatedMaterials
 
   if (!materials) {
@@ -92,7 +94,13 @@ export default function ResultsPage({ setPage }: Props) {
   }
 
   function handleCopy() {
-    copyToClipboard(tabContent[activeTab])
+    const text =
+      activeTab === "resume"
+        ? (resumePreviewRef.current?.querySelector<HTMLElement>(
+            ".cv-paper-content",
+          )?.innerText ?? materials!.resume)
+        : tabContent[activeTab]
+    copyToClipboard(text)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -100,8 +108,8 @@ export default function ResultsPage({ setPage }: Props) {
   return (
     <div className="max-w-6xl mx-auto px-6 py-10">
       {/* Header */}
-      <div className="mb-10 grid grid-cols-[1fr_auto] items-start gap-8">
-        <div>
+      <div className="mb-10 grid items-start gap-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-8">
+        <div className="min-w-0">
           <p
             className="text-xs uppercase tracking-[0.25em] mb-3"
             style={{
@@ -112,7 +120,7 @@ export default function ResultsPage({ setPage }: Props) {
             {t("results.generatedApplication")}
           </p>
           <h1
-            className="text-5xl font-bold uppercase tracking-tight leading-tight"
+            className="break-words text-5xl font-bold uppercase tracking-tight leading-tight"
             style={{ fontFamily: "var(--font-display)" }}
           >
             {materials.jobTitle || t("results.applicationMaterials")}
@@ -127,7 +135,7 @@ export default function ResultsPage({ setPage }: Props) {
           )}
         </div>
 
-        <div className="flex gap-3 pt-4">
+        <div className="flex flex-wrap gap-3 sm:pt-4">
           <button
             onClick={handleCopy}
             className="text-xs uppercase tracking-[0.15em] px-4 py-2.5 border transition-colors"
@@ -155,14 +163,14 @@ export default function ResultsPage({ setPage }: Props) {
 
       {/* Tabs */}
       <div
-        className="flex gap-0 mb-0 border-b"
+        className="flex w-full gap-0 mb-0 overflow-x-auto border-b"
         style={{ borderColor: "var(--color-border)" }}
       >
         {TABS.map(({ id, labelKey }) => (
           <button
             key={id}
             onClick={() => setActiveTab(id)}
-            className="px-5 py-2.5 text-xs uppercase tracking-[0.18em] border-b-2 transition-colors -mb-px"
+            className="shrink-0 px-5 py-2.5 text-xs uppercase tracking-[0.18em] border-b-2 transition-colors -mb-px"
             style={{
               fontFamily: "var(--font-mono)",
               borderBottomColor:
@@ -178,7 +186,7 @@ export default function ResultsPage({ setPage }: Props) {
 
       {/* Content */}
       <div
-        className="mt-0 p-8"
+        className="mt-0 min-w-0 p-4 sm:p-8"
         style={{
           backgroundColor: "var(--color-card)",
           border: "1px solid var(--color-border)",
@@ -256,6 +264,30 @@ export default function ResultsPage({ setPage }: Props) {
               >
                 {materials.jobSummary}
               </p>
+            </div>
+          </div>
+        ) : activeTab === "resume" ? (
+          <div>
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={handleCopy}
+                className="text-xs uppercase tracking-widest px-3 py-1.5 transition-colors"
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  border: "1px solid var(--color-border)",
+                  color: copied
+                    ? "var(--color-accent)"
+                    : "var(--color-muted-fg)",
+                }}
+              >
+                {copied ? t("common.copied") : t("common.copyText")}
+              </button>
+            </div>
+            <div ref={resumePreviewRef}>
+              <GeneratedResumePreview
+                resume={materials.resume}
+                profile={state.repository}
+              />
             </div>
           </div>
         ) : (

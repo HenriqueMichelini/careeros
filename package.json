@@ -9,6 +9,7 @@
     "build": "vite build",
     "test": "node --test tests/*.test.mjs",
     "test:cv-pdf": "node tests/cv-pdf.check.mjs",
+    "test:cv-preview": "node tests/cv-shared-preview.check.mjs",
     "preview": "vite preview",
     "format": "oxfmt"
   },

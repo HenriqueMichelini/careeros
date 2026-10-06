@@ -53,6 +53,17 @@ func TestProviderUsesOpenAIAndFullPopulatedProfile(t *testing.T) {
 		if strings.Contains(payload.Messages[0].Content, "private-education-id") {
 			t.Error("local qualification ID reached provider")
 		}
+		previous := -1
+		for _, heading := range []string{"Professional Summary", "Technical Skills", "Professional Experience", "Education", "Certifications", "Languages"} {
+			index := strings.Index(payload.Messages[0].Content, heading)
+			if index <= previous {
+				t.Errorf("resume heading %q missing or out of order", heading)
+			}
+			previous = index
+		}
+		if !strings.Contains(payload.Messages[0].Content, "Do not add a name or contact header") {
+			t.Error("resume must leave identity and contact to saved Profile facts")
+		}
 		return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(draftResponse())), Header: make(http.Header)}, nil
 	})}}
 	out, code, err := a.call(t.Context(), "sk-valid", in)
