@@ -40,6 +40,10 @@ html {
   border-bottom: 2px dashed var(--color-accent);
 }
 
+.generated-resume-paper .cv-paper-content {
+  padding: 27px 36px;
+}
+
 .cv-export-measure {
   position: fixed !important;
   top: 0;

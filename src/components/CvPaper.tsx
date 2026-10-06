@@ -8,6 +8,7 @@ interface Props {
   boundaryRef?: Ref<HTMLDivElement>
   contentRef?: Ref<HTMLDivElement>
   children: ReactNode
+  className?: string
 }
 
 export default function CvPaper({
@@ -18,11 +19,12 @@ export default function CvPaper({
   boundaryRef,
   contentRef,
   children,
+  className = "",
 }: Props) {
   return (
     <article
       aria-label={label}
-      className="cv-paper relative mx-auto w-[210mm] border border-[var(--color-border)] bg-[var(--color-card)] shadow-sm"
+      className={`cv-paper relative mx-auto w-[210mm] border border-[var(--color-border)] bg-[var(--color-card)] shadow-sm ${className}`}
       style={{ zoom: scale }}
     >
       <div

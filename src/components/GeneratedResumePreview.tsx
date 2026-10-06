@@ -2,7 +2,7 @@ import { Fragment, useLayoutEffect, useMemo, useRef, useState } from "react"
 import CvPaper from "./CvPaper"
 import { useI18n } from "../lib/store"
 import { professionalLinkHref } from "../lib/cv"
-import { parseResumeMarkdown } from "../lib/resume"
+import { parseResumeHeader, parseResumeMarkdown } from "../lib/resume"
 import { ProfessionalRepository } from "../lib/types"
 
 const A4_WIDTH_PX = (210 * 96) / 25.4
@@ -40,9 +40,11 @@ function inlineText(value: string) {
 export default function GeneratedResumePreview({
   resume,
   profile,
+  onEditProfile,
 }: {
   resume: string
   profile: ProfessionalRepository
+  onEditProfile: () => void
 }) {
   const { t } = useI18n()
   const slotRef = useRef<HTMLDivElement>(null)
@@ -52,7 +54,8 @@ export default function GeneratedResumePreview({
   const [readFullSize, setReadFullSize] = useState(false)
   const paperScale = readFullSize ? 1 : fitScale
   const [overflows, setOverflows] = useState(false)
-  const sections = useMemo(() => parseResumeMarkdown(resume), [resume])
+  const parsed = useMemo(() => parseResumeHeader(resume), [resume])
+  const sections = useMemo(() => parseResumeMarkdown(parsed.body), [parsed.body])
   const labels = {
     summary: t("cv.professionalProfile"),
     experience: t("cv.experience"),
@@ -65,7 +68,7 @@ export default function GeneratedResumePreview({
     additional: t("cv.additional"),
     contact: t("cv.contact"),
   }
-  const contacts = [
+  const profileContacts = [
     profile.email,
     profile.phone,
     profile.location,
@@ -73,6 +76,8 @@ export default function GeneratedResumePreview({
   ]
     .map((item) => item.trim())
     .filter(Boolean)
+  const name = profile.fullName.trim() || parsed.name
+  const contacts = profileContacts.length ? profileContacts : parsed.contacts
   const visibleSections = sections.filter(
     (section) =>
       section.title ||
@@ -121,6 +126,14 @@ export default function GeneratedResumePreview({
       >
         {overflows ? t("results.resumeOverflow") : t("results.resumeFits")}
       </p>
+      {(!name || contacts.length === 0) && (
+        <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs leading-5 text-[var(--color-muted-fg)]">
+          <span>{t("results.resumeMissingIdentity")}</span>
+          <button type="button" onClick={onEditProfile} className="underline underline-offset-2 text-[var(--color-accent)]">
+            {t("nav.profile")}
+          </button>
+        </div>
+      )}
       <div ref={slotRef} className="cv-preview-slot min-w-0 overflow-x-auto">
         {fitScale < 0.99 && (
           <button
@@ -134,21 +147,22 @@ export default function GeneratedResumePreview({
         )}
         <CvPaper
           label={t("results.resume")}
+          className="generated-resume-paper"
           scale={paperScale}
           overflows={overflows}
           pageEndLabel={t("cv.pageOneEnds")}
           boundaryRef={boundaryRef}
           contentRef={contentRef}
         >
-          {(profile.fullName.trim() || contacts.length > 0) && (
-            <header className="mb-7 border-b-2 border-[var(--color-accent)] pb-6">
-              {profile.fullName.trim() && (
-                <h2 className="break-words text-5xl font-bold uppercase leading-none tracking-tight [font-family:var(--font-display)]">
-                  {profile.fullName.trim()}
+          {(name || contacts.length > 0) && (
+            <header className="mb-3 border-b-2 border-[var(--color-accent)] pb-2.5">
+              {name && (
+                <h2 className="break-words text-[31px] font-bold uppercase leading-none tracking-tight [font-family:var(--font-display)]">
+                  {name}
                 </h2>
               )}
               {contacts.length > 0 && (
-                <ul className="mt-4 flex flex-wrap gap-x-2 text-[11px] leading-5 text-[var(--color-muted-fg)] [font-family:var(--font-mono)]">
+                <ul className="mt-2 flex flex-wrap gap-x-1.5 text-[10px] leading-4 text-[var(--color-muted-fg)] [font-family:var(--font-mono)]">
                   {contacts.map((item, index) => {
                     const href = item.includes("@")
                       ? null
@@ -158,7 +172,7 @@ export default function GeneratedResumePreview({
                         key={`${index}-${item}`}
                         className="break-all after:ml-2 after:content-['·'] last:after:content-none"
                       >
-                        {href ? (
+                        {profileContacts.length && href ? (
                           <a
                             href={href}
                             className="underline underline-offset-2"
@@ -166,7 +180,7 @@ export default function GeneratedResumePreview({
                             {item}
                           </a>
                         ) : (
-                          item
+                          inlineText(item)
                         )}
                       </li>
                     )
@@ -179,9 +193,9 @@ export default function GeneratedResumePreview({
             <section
               key={sectionIndex}
               data-cv-block={section.id ?? section.title}
-              className="mb-7 last:mb-0"
+              className="mb-3 last:mb-0"
             >
-              <h3 className="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--color-accent)]">
+              <h3 className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-accent)]">
                 {section.id
                   ? labels[section.id]
                   : section.title || t("results.resume")}
@@ -189,19 +203,19 @@ export default function GeneratedResumePreview({
               {section.blocks.map((block, blockIndex) => (
                 <Fragment key={blockIndex}>
                   {block.kind === "subheading" ? (
-                    <h4 className="mt-4 mb-1 break-words text-[13px] font-semibold first:mt-0">
+                    <h4 className="mt-1.5 mb-0.5 break-words text-[11.5px] font-semibold first:mt-0">
                       {inlineText(block.text)}
                     </h4>
                   ) : block.kind === "bullet" ? (
-                    <p className="break-words pl-5 text-[12px] leading-5 before:-ml-4 before:mr-2 before:content-['•']">
+                    <p className="break-words pl-4 text-[11px] leading-[1.4] before:-ml-3 before:mr-1.5 before:content-['•']">
                       {inlineText(block.text)}
                     </p>
                   ) : block.kind === "numbered" ? (
-                    <p className="break-words pl-5 text-[12px] leading-5">
+                    <p className="break-words pl-4 text-[11px] leading-[1.4]">
                       {inlineText(block.text)}
                     </p>
                   ) : (
-                    <p className="mb-2 whitespace-pre-wrap break-words text-[12px] leading-5 last:mb-0">
+                    <p className="mb-1 whitespace-pre-wrap break-words text-[11px] leading-[1.4] last:mb-0">
                       {inlineText(block.text)}
                     </p>
                   )}
