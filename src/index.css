@@ -30,6 +30,86 @@ html {
   scroll-behavior: smooth;
 }
 
+.cv-paper {
+  --cv-a4-ratio: 210 / 297;
+  aspect-ratio: var(--cv-a4-ratio);
+}
+
+.cv-page-boundary {
+  aspect-ratio: var(--cv-a4-ratio);
+  border-bottom: 2px dashed var(--color-accent);
+}
+
+.cv-export-measure {
+  position: fixed !important;
+  top: 0;
+  left: -10000px;
+  width: 210mm;
+  box-sizing: border-box;
+  visibility: hidden;
+}
+.cv-export-measure [data-cv-sample] {
+  display: none !important;
+}
+.cv-export-measure, .cv-export-measure * {
+  font-family: Arial, sans-serif !important;
+  letter-spacing: normal !important;
+}
+
+@page cv-export {
+  size: A4;
+  margin: 0;
+}
+
+@media print {
+  body.cv-print-ready,
+  body.cv-print-ready #root,
+  body.cv-print-ready .app-shell,
+  body.cv-print-ready .app-main {
+    width: 210mm !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+  body.cv-print-ready .app-header,
+  body.cv-print-ready .cv-page-header,
+  body.cv-print-ready .cv-controls,
+  body.cv-print-ready .cv-page-boundary,
+  body.cv-print-ready [data-cv-sample] {
+    display: none !important;
+  }
+  body.cv-print-ready .cv-page,
+  body.cv-print-ready .cv-page-grid,
+  body.cv-print-ready .cv-preview-slot {
+    display: block !important;
+    width: 210mm !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  body.cv-print-ready .cv-paper {
+    page: cv-export;
+    width: 210mm !important;
+    height: 297mm !important;
+    min-height: 0 !important;
+    aspect-ratio: auto !important;
+    margin: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    zoom: 1 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  body.cv-print-ready .cv-paper,
+  body.cv-print-ready .cv-paper * {
+    font-family: Arial, sans-serif !important;
+    letter-spacing: normal !important;
+  }
+}
+
 * {
   scrollbar-width: none;
 }

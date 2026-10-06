@@ -4,6 +4,7 @@ import {
   ProfileGap,
   ConfirmedQualification,
 } from './types'
+import { careerProfile, cvQualifications, validQualifications } from './profile'
 
 export class ProfileReviewError extends Error {
   constructor(public readonly code: string) {
@@ -31,13 +32,14 @@ export async function reviewRepository(
   changedSection: string,
   apiKey: string
 ): Promise<{ updatedRepo: ProfessionalRepository; summary: string }> {
+  if (!validQualifications(repo)) throw new ProfileReviewError('input')
   const response = await fetch('/api/profile/review', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'X-OpenAI-Api-Key': apiKey,
     },
-    body: JSON.stringify({ repository: repo, changedSection }),
+    body: JSON.stringify({ repository: careerProfile(repo), changedSection }),
     signal: AbortSignal.timeout(30_000),
   }).catch((error: unknown) => {
     if (error instanceof DOMException && error.name === 'TimeoutError') {
@@ -60,10 +62,10 @@ export async function reviewRepository(
       !isCompleteReviewRepository(payload.updatedRepository, repo)) {
     throw new ProfileReviewError('invalid_output')
   }
-  return { updatedRepo: payload.updatedRepository, summary: payload.summary }
+  return { updatedRepo: { ...repo, ...payload.updatedRepository }, summary: payload.summary }
 }
 
-function isCompleteReviewRepository(value: unknown, original: ProfessionalRepository): value is ProfessionalRepository {
+function isCompleteReviewRepository(value: unknown, original: ProfessionalRepository): value is ReturnType<typeof careerProfile> {
   if (!value || typeof value !== 'object') return false
   const result = value as Record<string, unknown>
   const textFields = ['careerGoals', 'skills', 'competencies', 'tools', 'employmentStatus', 'currentSalary', 'desiredSalary', 'additionalInfo']
@@ -87,11 +89,12 @@ export async function generateMaterials(
   apiKey: string,
   confirmedQualifications: ConfirmedQualification[] = []
 ): Promise<GeneratedMaterials> {
+  if (!validQualifications(repo)) throw new ApplicationDraftError('input')
   let response: Response
   try {
     response = await fetch('/api/application-draft', {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'X-OpenAI-Api-Key': apiKey },
-      body: JSON.stringify({ repository: repo, jobPosting, confirmedQualifications }), signal: AbortSignal.timeout(30_000),
+      body: JSON.stringify({ repository: careerProfile(repo), qualifications: cvQualifications(repo), jobPosting, confirmedQualifications }), signal: AbortSignal.timeout(30_000),
     })
   } catch (error) {
     throw new ApplicationDraftError(error instanceof DOMException && error.name === 'TimeoutError' ? 'timeout' : 'outage')
@@ -108,12 +111,13 @@ export async function findProfileGaps(
   jobPosting: string,
   apiKey: string
 ): Promise<ProfileGap[]> {
+  if (!validQualifications(repo)) throw new QualificationGapsError('input')
   let response: Response
   try {
     response = await fetch('/api/qualification-gaps', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-OpenAI-Api-Key': apiKey },
-      body: JSON.stringify({ repository: repo, jobPosting }),
+      body: JSON.stringify({ repository: careerProfile(repo), qualifications: cvQualifications(repo), jobPosting }),
       signal: AbortSignal.timeout(30_000),
     })
   } catch (error) {

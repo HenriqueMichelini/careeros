@@ -40,11 +40,11 @@ export default function Layout({ page, setPage, children }: Props) {
 
   return (
     <div
-      className="min-h-screen flex flex-col"
+      className="app-shell min-h-screen flex flex-col"
       style={{ backgroundColor: "var(--color-bg)", color: "var(--color-fg)" }}
     >
       <header
-        className="sticky top-0 z-50 border-b"
+        className="app-header sticky top-0 z-50 border-b"
         style={{
           borderColor: "var(--color-border)",
           backgroundColor: "var(--color-bg)",
@@ -156,7 +156,7 @@ export default function Layout({ page, setPage, children }: Props) {
         )}
       </header>
 
-      <main className="flex-1">{children}</main>
+      <main className="app-main flex-1">{children}</main>
     </div>
   )
 }

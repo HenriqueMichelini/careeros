@@ -28,17 +28,33 @@ type repository = profilevalidation.Profile
 type experience = profilevalidation.Experience
 type project = profilevalidation.Project
 type gapRequest struct {
-	Repository repository `json:"repository"`
-	JobPosting string     `json:"jobPosting"`
+	Repository     repository                        `json:"repository"`
+	JobPosting     string                            `json:"jobPosting"`
+	Qualifications *profilevalidation.Qualifications `json:"qualifications,omitempty"`
 }
 
 // These allowlisted types are the only profile fields that can reach the provider.
 type providerProfile struct {
-	Skills       string               `json:"skills"`
-	Competencies string               `json:"competencies"`
-	Tools        string               `json:"tools"`
-	Experience   []providerExperience `json:"experience"`
-	Projects     []providerProject    `json:"projects"`
+	Skills         string                  `json:"skills"`
+	Competencies   string                  `json:"competencies"`
+	Tools          string                  `json:"tools"`
+	Experience     []providerExperience    `json:"experience"`
+	Projects       []providerProject       `json:"projects"`
+	Education      []providerEducation     `json:"education,omitempty"`
+	Certifications []providerCertification `json:"certifications,omitempty"`
+	Languages      []providerLanguage      `json:"languages,omitempty"`
+}
+type providerEducation struct {
+	Degree      string `json:"degree"`
+	Institution string `json:"institution"`
+}
+type providerCertification struct {
+	Name   string `json:"name"`
+	Issuer string `json:"issuer"`
+}
+type providerLanguage struct {
+	Name        string `json:"name"`
+	Proficiency string `json:"proficiency"`
 }
 type providerExperience struct {
 	Title            string `json:"title"`
@@ -97,14 +113,15 @@ func (a app) check(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	var raw map[string]json.RawMessage
-	if err := decoder.Decode(&raw); err != nil || !hasExactFields(raw, "repository", "jobPosting") {
+	if err := decoder.Decode(&raw); err != nil || !(hasExactFields(raw, "repository", "jobPosting") || hasExactFields(raw, "repository", "jobPosting", "qualifications")) {
 		status, outcome = http.StatusBadRequest, "input"
 		writeError(w, status, outcome)
 		return
 	}
 	var input gapRequest
 	encoded, _ := json.Marshal(raw)
-	if json.Unmarshal(encoded, &input) != nil || !completeRepository(raw["repository"]) {
+	if json.Unmarshal(encoded, &input) != nil || !completeRepository(raw["repository"]) ||
+		(raw["qualifications"] != nil && !profilevalidation.CompleteQualifications(raw["qualifications"])) {
 		status, outcome = http.StatusBadRequest, "input"
 		writeError(w, status, outcome)
 		return
@@ -140,7 +157,8 @@ func validRequest(in gapRequest) bool {
 	if strings.TrimSpace(in.JobPosting) == "" || len(in.JobPosting) > maxPostingBytes {
 		return false
 	}
-	return profilevalidation.Valid(in.Repository, maxTextBytes)
+	return profilevalidation.Valid(in.Repository, maxTextBytes) &&
+		(in.Qualifications == nil || profilevalidation.ValidQualifications(*in.Qualifications))
 }
 
 func hasExactFields(value map[string]json.RawMessage, fields ...string) bool {
@@ -239,7 +257,7 @@ func jsonArray(raw json.RawMessage) bool {
 	value := strings.TrimSpace(string(raw))
 	return len(value) > 0 && value[0] == '['
 }
-func toProviderProfile(r repository) providerProfile {
+func toProviderProfile(r repository, qualifications *profilevalidation.Qualifications) providerProfile {
 	out := providerProfile{Skills: r.Skills, Competencies: r.Competencies, Tools: r.Tools}
 	for _, e := range r.Experience {
 		duration := experienceDuration(e.StartDate, e.EndDate, e.Current, time.Now())
@@ -247,6 +265,23 @@ func toProviderProfile(r repository) providerProfile {
 	}
 	for _, p := range r.Projects {
 		out.Projects = append(out.Projects, providerProject{p.Description, p.Technologies, p.Highlights})
+	}
+	if qualifications != nil {
+		for _, e := range qualifications.Education {
+			if strings.TrimSpace(e.Degree) != "" || strings.TrimSpace(e.Institution) != "" {
+				out.Education = append(out.Education, providerEducation{e.Degree, e.Institution})
+			}
+		}
+		for _, c := range qualifications.Certifications {
+			if strings.TrimSpace(c.Name) != "" {
+				out.Certifications = append(out.Certifications, providerCertification{c.Name, c.Issuer})
+			}
+		}
+		for _, l := range qualifications.Languages {
+			if strings.TrimSpace(l.Name) != "" {
+				out.Languages = append(out.Languages, providerLanguage{l.Name, l.Proficiency})
+			}
+		}
 	}
 	return out
 }
@@ -324,7 +359,8 @@ func fmtMonths(months int) string {
 }
 func (a app) callProvider(parent context.Context, key string, input gapRequest) (gapResult, string, error) {
 	var empty gapResult
-	profileJSON, _ := json.Marshal(toProviderProfile(input.Repository))
+	profile := toProviderProfile(input.Repository, input.Qualifications)
+	profileJSON, _ := json.Marshal(profile)
 	prompt := "You are checking whether a candidate's professional profile may omit qualifications they already have.\n\nJOB POSTING:\n" + input.JobPosting + "\n\nCANDIDATE QUALIFICATION PROFILE (JSON):\n" + string(profileJSON) + "\n\nFind at most 5 specific skills or types of experience explicitly required or preferred by the posting that are not stated or clearly supported in the profile. This is only a memory prompt for the candidate; do not decide whether they truly have the qualification. Return only concrete qualifications from the posting, not generic traits or duties. Do not list equivalent support or infer gaps from missing keywords. If the posting is only a URL, too vague, or there are no plausible omitted qualifications, return an empty list. Keep requirement concise and details to one short sentence grounded in the posting. Return only JSON: {\"gaps\":[{\"kind\":\"skill\",\"requirement\":\"short qualification name\",\"details\":\"what the posting asks for\"}]}"
 	body, _ := json.Marshal(map[string]any{"model": model, "reasoning_effort": "none", "max_completion_tokens": 1200, "response_format": map[string]string{"type": "json_object"}, "messages": []any{map[string]string{"role": "user", "content": prompt}}})
 	ctx, cancel, resp, err := openaihttp.Post(parent, a.client, gapTimeout, key, body)

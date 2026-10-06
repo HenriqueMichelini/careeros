@@ -8,6 +8,7 @@
     "dev:review-api": "go run ./cmd/profile-review",
     "build": "vite build",
     "test": "node --test tests/*.test.mjs",
+    "test:cv-pdf": "node tests/cv-pdf.check.mjs",
     "preview": "vite preview",
     "format": "oxfmt"
   },

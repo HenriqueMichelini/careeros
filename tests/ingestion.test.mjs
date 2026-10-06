@@ -14,10 +14,15 @@ const compiled = ts.transpileModule(
       verbatimModuleSyntax: false,
     },
   },
+).outputText.replace(/from ['"]\.\/profile['"]/g, `from "./careeros-profile-${process.pid}.mjs"`)
+const profileCompiled = ts.transpileModule(
+  readFileSync(new URL("../src/lib/profile.ts", import.meta.url), "utf8"),
+  { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } },
 ).outputText
+writeFileSync(join(tmpdir(), `careeros-profile-${process.pid}.mjs`), profileCompiled)
 const output = join(tmpdir(), "careeros-ingestion-" + process.pid + ".mjs")
 writeFileSync(output, compiled)
-const { validateIngestionResult, applyIngestion, beforeValue, afterValue, previewValues, validProfile } =
+const { validateIngestionResult, applyIngestion, beforeValue, afterValue, previewValues, validProfile, ingestProfile } =
   await import(output)
 
 const profile = () => ({
@@ -74,6 +79,20 @@ const claim = (overrides = {}) => ({
   ...overrides,
 })
 const review = (data) => ({ unverifiedClaimCount: 0, unresolvedClaimIds: [], unplacedOperationCount: 0, ...data })
+
+test("expanded Profile validates and Quick Add preserves structured qualifications", () => {
+  const expanded = {
+    ...profile(), fullName: "Ada", email: "", phone: "", location: "", professionalLinks: "",
+    education: [{ id: "ed1", degree: "BSc", institution: "Example University", location: "", graduationDate: "2018", details: "" }],
+    certifications: [], languages: [{ id: "lang1", name: "English", proficiency: "Fluent" }],
+  }
+  assert.equal(validProfile(expanded), true)
+  const next = applyIngestion(expanded, JSON.stringify(expanded), [op()])
+  assert.deepEqual(next.education, expanded.education)
+  assert.deepEqual(next.languages, expanded.languages)
+  assert.equal(next.skills, "React\nTypeScript")
+  assert.equal(validProfile({ ...expanded, languages: [{ ...expanded.languages[0], id: "ed1" }] }), false)
+})
 
 test("maps one claim to linked sections and validates source and target", () => {
   const result = validateIngestionResult(
@@ -315,4 +334,27 @@ test("legacy saved employment status is preserved by Quick Add", () => {
   const before={...profile(),employmentStatus:"Employed — Full-time"}
   assert.equal(validProfile(before),true)
   assert.equal(applyIngestion(before,JSON.stringify(before),[op()]).employmentStatus,"Employed — Full-time")
+})
+
+test("Quick Add preserves contact facts and excludes them from its AI request", async () => {
+  const before = {
+    ...profile(), fullName: "Ada Lovelace", email: "ada@example.test",
+    phone: "+1 555 0100", location: "London", professionalLinks: "example.test/ada",
+  }
+  assert.equal(validProfile(before), true)
+  const updated = applyIngestion(before, JSON.stringify(before), [op()])
+  assert.equal(updated.email, before.email)
+  assert.equal(updated.professionalLinks, before.professionalLinks)
+  const originalFetch = globalThis.fetch
+  let body
+  globalThis.fetch = async (_url, options) => {
+    body = JSON.parse(options.body)
+    return { ok: true, json: async () => review({ claims: [], operations: [] }) }
+  }
+  try {
+    await ingestProfile("TypeScript", before, "test-key")
+    assert.deepEqual(body.profile, profile())
+  } finally {
+    globalThis.fetch = originalFetch
+  }
 })
