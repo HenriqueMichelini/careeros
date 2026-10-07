@@ -222,7 +222,7 @@ try {
       "document.readyState === 'complete' && !!document.querySelector('header button')",
     )
     await evaluate(
-      `localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_locale', ${JSON.stringify(locale)}); localStorage.removeItem('careeros_curated_cv_v1'); localStorage.setItem('careeros_apikey','sk-synthetic'); localStorage.removeItem('careeros_cv_v1'); localStorage.removeItem('careeros_cv_preferences_v1'); location.reload()`,
+      `localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_locale', ${JSON.stringify(locale)}); localStorage.setItem('careeros_cv_language', ${JSON.stringify(locale)}); localStorage.removeItem('careeros_curated_cv_v1'); localStorage.setItem('careeros_apikey','sk-synthetic'); localStorage.removeItem('careeros_cv_v1'); localStorage.removeItem('careeros_cv_preferences_v1'); location.reload()`,
     )
     await until(
       "document.readyState === 'complete' && !!document.querySelector('header button')",

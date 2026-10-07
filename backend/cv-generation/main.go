@@ -24,9 +24,10 @@ type fact struct {
 	Text    string `json:"text"`
 }
 type request struct {
-	Locale  string `json:"locale"`
-	Density string `json:"density"`
-	Facts   []fact `json:"facts"`
+	Locale     string `json:"locale,omitempty"` // Legacy CV language, never the site language.
+	CvLanguage string `json:"cvLanguage"`
+	Density    string `json:"density"`
+	Facts      []fact `json:"facts"`
 }
 type excerpt struct {
 	SourceID string `json:"sourceId"`
@@ -77,7 +78,14 @@ func validRequest(in request) bool {
 	if in.Density != "" && in.Density != "compact" && in.Density != "balanced" && in.Density != "detailed" {
 		return false
 	}
-	if (in.Locale != "en" && in.Locale != "pt-BR") || len(in.Facts) == 0 || len(in.Facts) > 500 {
+	language := in.CvLanguage
+	if language == "" {
+		language = in.Locale
+	}
+	if in.CvLanguage != "" && in.Locale != "" && in.CvLanguage != in.Locale {
+		return false
+	}
+	if (language != "en" && language != "pt-BR") || len(in.Facts) == 0 || len(in.Facts) > 500 {
 		return false
 	}
 	seen := map[string]bool{}
@@ -207,7 +215,7 @@ Rank professional relevance to demonstrated trajectory, evidence of impact, rece
 Return ONLY JSON {"summary":[{"sourceId":"fact id","text":"concise grounded professional sentence"}],"selected":["fact id"],"wording":{"selected fact id":"concise supporting wording"}}.
 Compose a coherent professional summary in natural reading order. Each sentence must cite the substantive source fact that supports all its claims. Use concise professional prose rather than copying noisy paragraphs. A summary fact must also appear in selected. Preserve negation, uncertainty, qualifications and factual meaning. Never invent achievements, metrics, tools, employers, roles, qualifications or proficiency. Do not strengthen contributed/supported into led/owned. Do not introduce numbers not in the cited fact.
 Selected is the ranked ordered set of facts to include. Select entry anchors and relevant supporting facts. The client preserves original employer/role/date/qualification/proficiency metadata of included entries verbatim, so omit an entry completely when irrelevant. Wording is optional concise paraphrasing of selected descriptions, responsibilities, achievements, project highlights or qualification details only. Condense repeated content inside a long paragraph while retaining its concrete useful evidence. Do not rewrite protected metadata, skills, technologies or proficiency. No unknown IDs or duplicate selections.
-Use the requested locale for generated prose; keep source proper names and original qualifications unchanged. Target one readable A4 page, without including nearly every fact by default. Never claim word count proves page fit. No tools, alternative model or custom workflow.
+Use the explicit cvLanguage (en = English, pt-BR = Brazilian Portuguese) for all generated prose, independently of the site language; keep source proper names and original qualifications unchanged. Target one readable A4 page, without including nearly every fact by default. Never claim word count proves page fit. No tools, alternative model or custom workflow.
 `
 
 // Density changes evidence selection and prose compression, never typography or truncation.
@@ -219,6 +227,10 @@ var densityPolicy = map[string]string{
 
 func (a app) call(parent context.Context, key string, in request) (result, string) {
 	var empty result
+	if in.CvLanguage == "" {
+		in.CvLanguage = in.Locale
+	}
+	in.Locale = ""
 	data, _ := json.Marshal(in)
 	body, _ := json.Marshal(map[string]any{"model": "gpt-6-luna", "reasoning_effort": "none", "max_completion_tokens": 4000, "response_format": map[string]string{"type": "json_object"}, "messages": []any{map[string]string{"role": "system", "content": policy + densityPolicy[in.Density]}, map[string]string{"role": "user", "content": string(data)}}})
 	ctx, cancel, response, err := openaihttp.Post(parent, a.client, deadline, key, body)

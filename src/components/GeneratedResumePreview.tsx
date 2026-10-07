@@ -2,6 +2,7 @@ import { Fragment, useLayoutEffect, useMemo, useRef, useState } from "react"
 import CvFontSizeControl from "./CvFontSizeControl"
 import { useCvPreferences } from "../lib/cvPreferences"
 import CvPaper from "./CvPaper"
+import { translate, type Locale } from "../lib/i18n"
 import { useI18n } from "../lib/store"
 import {
   professionalLinkHref,
@@ -45,9 +46,11 @@ function inlineText(value: string) {
 
 export default function GeneratedResumePreview({
   resume,
+  cvLanguage = "en",
   profile,
   onEditProfile,
 }: {
+  cvLanguage?: Locale
   resume: string
   profile: ProfessionalRepository
   onEditProfile: () => void
@@ -65,17 +68,18 @@ export default function GeneratedResumePreview({
     () => parseResumeMarkdown(parsed.body),
     [parsed.body],
   )
+  const cvT: typeof t = (key, values) => translate(cvLanguage, key, values)
   const labels = {
-    summary: t("cv.professionalProfile"),
-    experience: t("cv.experience"),
-    skills: t("cv.skillsCompetencies"),
-    projects: t("cv.selectedProjects"),
-    education: t("cv.education"),
-    certifications: t("cv.certifications"),
-    languages: t("cv.languages"),
-    tools: t("cv.toolsTechnology"),
-    additional: t("cv.additional"),
-    contact: t("cv.contact"),
+    summary: cvT("cv.professionalProfile"),
+    experience: cvT("cv.experience"),
+    skills: cvT("cv.skillsCompetencies"),
+    projects: cvT("cv.selectedProjects"),
+    education: cvT("cv.education"),
+    certifications: cvT("cv.certifications"),
+    languages: cvT("cv.languages"),
+    tools: cvT("cv.toolsTechnology"),
+    additional: cvT("cv.additional"),
+    contact: cvT("cv.contact"),
   }
   const profileContacts = [
     profile.email,
@@ -154,6 +158,7 @@ export default function GeneratedResumePreview({
       )}
       <div ref={slotRef} className="cv-preview-slot min-w-0 overflow-x-auto">
         <CvPaper
+          language={cvLanguage}
           fontSize={typography.fontSize}
           label={t("results.resume")}
           className="generated-resume-paper"

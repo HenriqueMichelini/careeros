@@ -328,3 +328,44 @@ func TestProviderAcceptsProseWithEnglishAndPortugueseTransitions(t *testing.T) {
 		})
 	}
 }
+
+func TestCvLanguageControlsApplicationProse(t *testing.T) {
+	for _, language := range []string{"en", "pt-BR"} {
+		a := app{client: &http.Client{Transport: transportFunc(func(r *http.Request) (*http.Response, error) {
+			var body struct {
+				Messages []struct {
+					Content string `json:"content"`
+				} `json:"messages"`
+			}
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			prompt := body.Messages[0].Content
+			if !strings.Contains(prompt, "CV language: "+language) || !strings.Contains(prompt, "independent of the site and job posting languages") {
+				t.Fatal("missing explicit language policy")
+			}
+			if language == "pt-BR" && !strings.Contains(prompt, "Resumo Profissional, Competências Técnicas, Experiência Profissional") {
+				t.Fatal("missing Portuguese headings")
+			}
+			return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(draftResponse()))}, nil
+		})}}
+		_, code, err := a.call(t.Context(), "sk-test", request{CvLanguage: language})
+		if err != nil || code != "" {
+			t.Fatal(code, err)
+		}
+	}
+	body := `{"repository":{"careerGoals":"","skills":"Go","competencies":"","experience":[],"tools":"Docker","projects":[],"employmentStatus":"","currentSalary":"","desiredSalary":"","additionalInfo":""},"jobPosting":"Engineer","confirmedQualifications":[]}`
+	for _, tc := range []struct {
+		language string
+		want     bool
+	}{{`"en"`, true}, {`"pt-BR"`, true}, {`"fr"`, false}, {`null`, false}, {`42`, false}, {`""`, false}} {
+		var raw map[string]json.RawMessage
+		_ = json.Unmarshal([]byte(body), &raw)
+		raw["cvLanguage"] = json.RawMessage(tc.language)
+		if completeInputShape(raw) != tc.want {
+			t.Fatalf("cvLanguage=%s", tc.language)
+		}
+		raw["uiLocale"] = json.RawMessage(`"en"`)
+		if completeInputShape(raw) {
+			t.Fatal("site language accepted as generation input")
+		}
+	}
+}

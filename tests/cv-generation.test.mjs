@@ -152,7 +152,7 @@ test("supporting paraphrases condense source facts while protected metadata and 
   )
 })
 
-test("requested density travels with facts and locale; accepted density survives reload with legacy default", async () => {
+test("requested density travels with facts and CV language; accepted density survives reload with legacy default", async () => {
   const { generateCv } = await import(path)
   const repo = structuredClone(profile)
   const facts = cvFacts(repo)
@@ -178,7 +178,9 @@ test("requested density travels with facts and locale; accepted density survives
         density,
       )
       assert.equal(outbound.density, density)
-      assert.equal(outbound.locale, "pt-BR")
+      assert.equal(outbound.cvLanguage, "pt-BR")
+      assert.equal(outbound.locale, undefined)
+      assert.equal(outbound.uiLocale, undefined)
       const saved = createCuratedCv(repo, facts, result, "pt-BR", density)
       assert.equal(parseCuratedCv(JSON.stringify(saved)).density, density)
       delete saved.density
@@ -188,4 +190,22 @@ test("requested density travels with facts and locale; accepted density survives
   } finally {
     globalThis.fetch = originalFetch
   }
+})
+
+test("CV language survives saved document reload and migrates legacy locale", () => {
+  const facts = cvFacts(profile)
+  const result = {
+    summary: [{ sourceId: facts[0].id, text: facts[0].text }],
+    selected: [facts[0].id],
+  }
+  const saved = createCuratedCv(profile, facts, result, "pt-BR")
+  assert.equal(saved.cvLanguage, "pt-BR")
+  assert.equal(saved.locale, undefined)
+  assert.equal(parseCuratedCv(JSON.stringify(saved)).cvLanguage, "pt-BR")
+  const { cvLanguage, ...legacy } = saved
+  assert.equal(
+    parseCuratedCv(JSON.stringify({ ...legacy, locale: cvLanguage }))
+      .cvLanguage,
+    "pt-BR",
+  )
 })

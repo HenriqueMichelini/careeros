@@ -4,6 +4,7 @@ import {
   ProfileGap,
   ConfirmedQualification,
 } from './types'
+import type { Locale } from "./i18n"
 import { completeCoverLetter } from './cover-letter'
 import { careerProfile, cvQualifications, validQualifications, profileReviewFields } from './profile'
 
@@ -93,14 +94,15 @@ export async function generateMaterials(
   repo: ProfessionalRepository,
   jobPosting: string,
   apiKey: string,
-  confirmedQualifications: ConfirmedQualification[] = []
+  confirmedQualifications: ConfirmedQualification[] = [],
+  cvLanguage: Locale = "en"
 ): Promise<GeneratedMaterials> {
   if (!validQualifications(repo)) throw new ApplicationDraftError('input')
   let response: Response
   try {
     response = await fetch('/api/application-draft', {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'X-OpenAI-Api-Key': apiKey },
-      body: JSON.stringify({ repository: careerProfile(repo), qualifications: cvQualifications(repo), jobPosting, confirmedQualifications }), signal: AbortSignal.timeout(30_000),
+      body: JSON.stringify({ repository: careerProfile(repo), qualifications: cvQualifications(repo), jobPosting, confirmedQualifications, cvLanguage }), signal: AbortSignal.timeout(30_000),
     })
   } catch (error) {
     throw new ApplicationDraftError(error instanceof DOMException && error.name === 'TimeoutError' ? 'timeout' : 'outage')
@@ -112,7 +114,7 @@ export async function generateMaterials(
   const fullName = repo.fullName?.trim() || ''
   const coverLetter = completeCoverLetter(payload.coverLetter, fullName)
   if (coverLetter === null) throw new ApplicationDraftError('invalid_output')
-  return { ...payload, coverLetter, coverLetterHasSignature: !!fullName } as GeneratedMaterials
+  return { ...payload, cvLanguage, coverLetter, coverLetterHasSignature: !!fullName } as GeneratedMaterials
 }
 
 export async function findProfileGaps(

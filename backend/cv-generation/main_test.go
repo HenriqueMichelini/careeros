@@ -156,3 +156,36 @@ func TestDensityRequestPolicy(t *testing.T) {
 		}
 	}
 }
+
+func TestCvLanguageIsExplicitAndValidated(t *testing.T) {
+	facts := []fact{{ID: "f0", Section: "skills", Field: "skills", Text: "Research"}}
+	for _, tc := range []struct {
+		language, legacy string
+		want             bool
+	}{
+		{"en", "", true}, {"pt-BR", "", true}, {"", "en", true},
+		{"fr", "", false}, {"", "", false}, {"pt-BR", "en", false},
+	} {
+		if validRequest(request{CvLanguage: tc.language, Locale: tc.legacy, Facts: facts}) != tc.want {
+			t.Fatalf("language=%q legacy=%q", tc.language, tc.legacy)
+		}
+	}
+	a := app{client: &http.Client{Transport: roundTrip(func(r *http.Request) (*http.Response, error) {
+		var body struct {
+			Messages []struct {
+				Content string `json:"content"`
+			} `json:"messages"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		var input map[string]any
+		_ = json.Unmarshal([]byte(body.Messages[1].Content), &input)
+		if input["cvLanguage"] != "pt-BR" || input["locale"] != nil || input["uiLocale"] != nil {
+			t.Fatalf("unexpected provider input: %v", input)
+		}
+		if !strings.Contains(body.Messages[0].Content, "independently of the site language") {
+			t.Fatal("missing language policy")
+		}
+		return &http.Response{StatusCode: 500, Body: io.NopCloser(strings.NewReader(""))}, nil
+	})}}
+	_, _ = a.call(t.Context(), "sk-test", request{Locale: "pt-BR", Facts: facts})
+}

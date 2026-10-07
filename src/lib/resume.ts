@@ -42,6 +42,8 @@ const sectionAliases: Record<string, CvSection> = {
   "projetos selecionados": "projects",
   projetos: "projects",
   formacao: "education",
+  educacao: "education",
+  "competencias tecnicas": "skills",
   certificacoes: "certifications",
   idiomas: "languages",
   "ferramentas e tecnologias": "tools",

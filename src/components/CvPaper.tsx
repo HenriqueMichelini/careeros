@@ -1,6 +1,7 @@
 import { CSSProperties, ReactNode, Ref } from "react"
 
 interface Props {
+  language?: string
   label: string
   fontSize?: number
   scale: number
@@ -14,6 +15,7 @@ interface Props {
 
 export default function CvPaper({
   label,
+  language,
   fontSize = 14,
   scale,
   overflows,
@@ -25,6 +27,7 @@ export default function CvPaper({
 }: Props) {
   return (
     <article
+      lang={language}
       aria-label={label}
       className={`cv-paper relative mx-auto w-[210mm] border border-[var(--color-border)] bg-[var(--color-card)] shadow-sm ${className}`}
       style={{ zoom: scale }}

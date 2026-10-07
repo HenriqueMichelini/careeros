@@ -24,6 +24,7 @@ const (
 
 type profile = profilevalidation.Profile
 type request struct {
+	CvLanguage     string                            `json:"cvLanguage,omitempty"`
 	Profile        profile                           `json:"repository"`
 	JobPosting     string                            `json:"jobPosting"`
 	Confirmed      []qualification                   `json:"confirmedQualifications"`
@@ -133,6 +134,13 @@ func (a app) call(parent context.Context, key string, in request) (result, strin
 		structured, _ = json.Marshal(qualificationFacts(*in.Qualifications))
 	}
 	prompt := "You are an expert career coach and professional writer. Generate highly personalized application materials from the candidate's full professional profile and this job posting. Draw specifically on real experience, skills, projects, education, certifications, and languages; tailor every sentence to the role; mirror the posting's tone; and never invent employers, dates, proficiency, duration, examples, outcomes, or other facts. The resume must be clean Markdown with these exact level-two headings in this order when supported by Profile facts: Professional Summary, Technical Skills, Professional Experience, Education, Certifications, Languages. Omit any unsupported section. Put tools and competencies under Technical Skills and relevant projects under Professional Experience; do not add separate project or tools sections. Use level-three headings for experience, project, and education entries and bullets for supporting details. Keep the resume concise enough for one A4 page, aiming for roughly 400 words or fewer; prioritize the most relevant verified evidence without inventing facts. Do not add a name or contact header because the client supplies it from saved Profile facts. Do not use sample values or placeholders. The cover letter must be specific and under 400 words including the signature the application will append. Return coverLetter as an object with exactly greeting, body, and closing. greeting is a single-line salutation to the hiring team. body contains only tailored prose paragraphs, each line ending in sentence punctuation. closing is exactly one of: Sincerely,; Kind regards,; Best regards,; Atenciosamente,; Cordialmente,. Do not include any candidate name, signature, identity placeholder, or contact detail in any part; the application appends the saved Profile name locally. Never include a closing or signature inside body. Provide 5-6 useful application answers in Markdown. Qualifications listed below were explicitly confirmed for this application only. Use them as relevant, but if no candidate context is supplied, mention only the qualification and do not imply a specific achievement or work history. Do not add confirmed qualifications to the saved profile. Return only JSON with exactly these fields: jobTitle, company, jobSummary, resume, applicationAnswers (non-empty strings), and coverLetter (the object described above).\nPROFILE:\n" + string(repo) + "\nSTRUCTURED PROFILE QUALIFICATIONS:\n" + string(structured) + "\nJOB POSTING:\n" + in.JobPosting + "\nUSER-CONFIRMED QUALIFICATIONS FOR THIS DRAFT ONLY:\n" + string(quals)
+	if in.CvLanguage != "" {
+		languagePolicy := "Write all generated prose in English."
+		if in.CvLanguage == "pt-BR" {
+			languagePolicy = "Write all generated prose in Brazilian Portuguese. Use these exact resume headings, in order when supported: Resumo Profissional, Competências Técnicas, Experiência Profissional, Educação, Certificações, Idiomas. This overrides the English heading names below."
+		}
+		prompt = "CV language: " + in.CvLanguage + ". " + languagePolicy + " The CV language is independent of the site and job posting languages. Preserve proper names and factual meaning.\n" + prompt
+	}
 	body, _ := json.Marshal(map[string]any{"model": model, "reasoning_effort": "none", "max_completion_tokens": 8000, "response_format": map[string]string{"type": "json_object"}, "messages": []any{map[string]string{"role": "user", "content": prompt}}})
 	ctx, cancel, resp, err := openaihttp.Post(parent, a.client, timeout, key, body)
 	defer cancel()
@@ -239,7 +247,18 @@ func exactFields(raw json.RawMessage, expected ...string) bool {
 	return true
 }
 func completeInputShape(raw map[string]json.RawMessage) bool {
-	if len(raw) != 3 && len(raw) != 4 {
+	for key := range raw {
+		if key != "repository" && key != "jobPosting" && key != "confirmedQualifications" && key != "qualifications" && key != "cvLanguage" {
+			return false
+		}
+	}
+	if language, ok := raw["cvLanguage"]; ok {
+		var value string
+		if json.Unmarshal(language, &value) != nil || (value != "en" && value != "pt-BR") {
+			return false
+		}
+	}
+	if len(raw) < 3 || len(raw) > 5 {
 		return false
 	}
 	for _, key := range []string{"repository", "jobPosting", "confirmedQualifications"} {
@@ -247,7 +266,7 @@ func completeInputShape(raw map[string]json.RawMessage) bool {
 			return false
 		}
 	}
-	if len(raw) == 4 && (raw["qualifications"] == nil || !profilevalidation.CompleteQualifications(raw["qualifications"])) {
+	if qualifications, ok := raw["qualifications"]; ok && !profilevalidation.CompleteQualifications(qualifications) {
 		return false
 	}
 	if !jsonString(raw["jobPosting"]) {

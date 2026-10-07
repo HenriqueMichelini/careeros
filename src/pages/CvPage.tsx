@@ -11,6 +11,7 @@ import {
 } from "../lib/cvGeneration"
 import CvDensityControl from "../components/CvDensityControl"
 import CvFontSizeControl from "../components/CvFontSizeControl"
+import { translate } from "../lib/i18n"
 import LanguageSelector from "../components/LanguageSelector"
 import { useCvPreferences } from "../lib/cvPreferences"
 import CvPaper from "../components/CvPaper"
@@ -93,6 +94,8 @@ export default function CvPage() {
       return null
     }
   })
+  const documentLanguage = curated?.cvLanguage ?? state.cvLanguage
+  const cvT: typeof t = (key, values) => translate(documentLanguage, key, values)
   const repo = curated?.repository ?? state.repository
   const { education, certifications, languages } = cvQualifications(repo)
   const previewSlotRef = useRef<HTMLDivElement>(null)
@@ -121,7 +124,7 @@ export default function CvPage() {
     state.repository,
     choices,
     curated,
-    state.locale,
+    state.cvLanguage,
     state.apiKey,
     preferences.density,
   ])
@@ -157,7 +160,7 @@ export default function CvPage() {
     try {
       const result = await generateCv(
         liveFacts,
-        state.locale,
+        state.cvLanguage,
         state.apiKey,
         abort.signal,
         preferences.density,
@@ -188,7 +191,7 @@ export default function CvPage() {
       state.repository,
       liveFacts,
       pending,
-      state.locale,
+      state.cvLanguage,
       preferences.density,
     )
     // Preserve the valid previous document if storage cannot accept its replacement.
@@ -273,7 +276,7 @@ export default function CvPage() {
       setSaveError(true)
     }
   }, [choices, curated])
-  useEffect(() => setExportOverflow(false), [choices, repo, state.locale])
+  useEffect(() => setExportOverflow(false), [choices, repo, state.cvLanguage])
   const skills = useMemo(() => lines(repo.skills), [repo.skills])
   const competencies = useMemo(
     () => lines(repo.competencies),
@@ -621,7 +624,7 @@ export default function CvPage() {
     observer.observe(content)
     measure()
     return () => observer.disconnect()
-  }, [choices, state.locale, repo, paperScale, preferences.fontSize])
+  }, [choices, state.cvLanguage, repo, paperScale, preferences.fontSize])
 
   return (
     <div className="cv-page mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -646,11 +649,12 @@ export default function CvPage() {
           className="cv-preview-slot order-2 min-w-0 lg:sticky lg:top-20 lg:order-1 lg:self-start"
         >
           <CvPaper
+            language={documentLanguage}
             fontSize={preferences.fontSize}
-            label={t("cv.documentPreview")}
+            label={cvT("cv.documentPreview")}
             scale={paperScale}
             overflows={overflows}
-            pageEndLabel={t("cv.pageOneEnds")}
+            pageEndLabel={cvT("cv.pageOneEnds")}
             boundaryRef={boundaryRef}
             contentRef={contentRef}
           >
@@ -660,7 +664,7 @@ export default function CvPage() {
                   data-cv-sample="true"
                   className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-muted-fg)]"
                 >
-                  {t("common.sample")}
+                  {cvT("common.sample")}
                 </p>
               )}
               <h2
@@ -669,7 +673,7 @@ export default function CvPage() {
                 }
                 className="break-words text-5xl font-bold uppercase leading-none tracking-tight [font-family:var(--font-display)]"
               >
-                {repo.fullName.trim() || (curated ? "" : t("cv.sampleName"))}
+                {repo.fullName.trim() || (curated ? "" : cvT("cv.sampleName"))}
               </h2>
               {visible("contact") &&
                 contact.some((item) => selectedEntry("contact", item.id)) && (
@@ -694,7 +698,7 @@ export default function CvPage() {
             {visible("summary") && (summary.trim() || !curated) && (
               <Section
                 id="summary"
-                title={t("cv.professionalProfile")}
+                title={cvT("cv.professionalProfile")}
                 sample={!summary.trim()}
               >
                 <p className="whitespace-pre-wrap break-words text-[13px] leading-6">
@@ -702,9 +706,9 @@ export default function CvPage() {
                     (choices.summary === null && !repo.careerGoals.trim() && (
                       <>
                         <span className="text-[10px] uppercase tracking-widest text-[var(--color-muted-fg)]">
-                          {t("common.sample")} ·{" "}
+                          {cvT("common.sample")} ·{" "}
                         </span>
-                        {t("cv.sampleProfile")}
+                        {cvT("cv.sampleProfile")}
                       </>
                     ))}
                 </p>
@@ -713,7 +717,7 @@ export default function CvPage() {
             {(technicalSkills.length > 0 || sampleTechnicalSkills) && (
               <Section
                 id="skills"
-                title={t("cv.skillsCompetencies")}
+                title={cvT("cv.skillsCompetencies")}
                 sample={sampleTechnicalSkills}
               >
                 {technicalSkills.length > 0 ? (
@@ -727,9 +731,9 @@ export default function CvPage() {
                 ) : (
                   <p className="text-[12px] leading-5">
                     <span className="text-[10px] uppercase tracking-widest text-[var(--color-muted-fg)]">
-                      {t("common.sample")} ·{" "}
+                      {cvT("common.sample")} ·{" "}
                     </span>
-                    {t("cv.sampleSkills")}
+                    {cvT("cv.sampleSkills")}
                   </p>
                 )}
               </Section>
@@ -737,7 +741,7 @@ export default function CvPage() {
             {showExperience && (
               <Section
                 id="experience"
-                title={t("cv.experience")}
+                title={cvT("cv.experience")}
                 sample={sampleExperience}
               >
                 {visible("experience") && selectedExperience.length > 0 ? (
@@ -762,12 +766,12 @@ export default function CvPage() {
                             item.startDate && (item.endDate || item.current)
                               ? `${item.startDate} — ${
                                   item.current
-                                    ? t("common.present")
+                                    ? cvT("common.present")
                                     : item.endDate
                                 }`
                               : item.startDate ||
                                 (item.current
-                                  ? t("common.present")
+                                  ? cvT("common.present")
                                   : item.endDate),
                             item.location,
                           ]
@@ -792,18 +796,18 @@ export default function CvPage() {
                 ) : sampleExperience ? (
                   <div className="text-[12px] leading-5">
                     <p className="mb-2 text-[10px] uppercase tracking-widest text-[var(--color-muted-fg)]">
-                      {t("common.sampleContent")}
+                      {cvT("common.sampleContent")}
                     </p>
-                    <h4 className="font-semibold">{t("cv.sampleJobTitle")}</h4>
+                    <h4 className="font-semibold">{cvT("cv.sampleJobTitle")}</h4>
                     <p className="mt-1 text-[var(--color-muted-fg)]">
-                      2021 — {t("common.present")}
+                      2021 — {cvT("common.present")}
                     </p>
                     <p className="mt-2">
-                      {t("cv.sampleExperienceDescription")}
+                      {cvT("cv.sampleExperienceDescription")}
                     </p>
                     <ul className="mt-2 list-disc space-y-1 pl-5">
-                      <li>{t("cv.sampleAchievementOne")}</li>
-                      <li>{t("cv.sampleAchievementTwo")}</li>
+                      <li>{cvT("cv.sampleAchievementOne")}</li>
+                      <li>{cvT("cv.sampleAchievementTwo")}</li>
                     </ul>
                   </div>
                 ) : null}
@@ -846,7 +850,7 @@ export default function CvPage() {
             )}
             {visible("education") &&
               education.some((item) => selectedEntry("education", item.id)) && (
-                <Section id="education" title={t("cv.education")}>
+                <Section id="education" title={cvT("cv.education")}>
                   {education
                     .filter((item) => selectedEntry("education", item.id))
                     .map((item) => (
@@ -887,7 +891,7 @@ export default function CvPage() {
               certifications.some((item) =>
                 selectedEntry("certifications", item.id),
               ) && (
-                <Section id="certifications" title={t("cv.certifications")}>
+                <Section id="certifications" title={cvT("cv.certifications")}>
                   {certifications
                     .filter((item) => selectedEntry("certifications", item.id))
                     .map((item) => (
@@ -918,7 +922,7 @@ export default function CvPage() {
               )}
             {visible("languages") &&
               languages.some((item) => selectedEntry("languages", item.id)) && (
-                <Section id="languages" title={t("cv.languages")}>
+                <Section id="languages" title={cvT("cv.languages")}>
                   <ul className="space-y-1 text-[12px] leading-5">
                     {languages
                       .filter((item) => selectedEntry("languages", item.id))
@@ -933,7 +937,7 @@ export default function CvPage() {
                 </Section>
               )}
             {visible("additional") && repo.additionalInfo.trim() && (
-              <Section id="additional" title={t("cv.additional")}>
+              <Section id="additional" title={cvT("cv.additional")}>
                 <p className="whitespace-pre-line break-words text-[12px] leading-5 text-[var(--color-muted-fg)]">
                   {repo.additionalInfo}
                 </p>
@@ -1027,10 +1031,10 @@ export default function CvPage() {
               </div>
               <div>
                 <dt className="mb-2 text-[var(--color-muted-fg)]">
-                  {t("language.label")}
+                  {t("language.cv")}
                 </dt>
                 <dd>
-                  <LanguageSelector />
+                  <LanguageSelector kind="cv" />
                 </dd>
               </div>
             </dl>

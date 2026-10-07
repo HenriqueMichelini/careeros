@@ -1,3 +1,4 @@
+import LanguageSelector from "../components/LanguageSelector"
 import { useEffect, useRef, useState } from "react"
 import { useI18n, useStore } from "../lib/store"
 import {
@@ -102,6 +103,7 @@ export default function HomePage({ setPage }: Props) {
     state.repository,
     state.jobPosting,
     state.apiKey,
+    state.cvLanguage,
   ])
   useEffect(() => {
     setQualification({ state: "pending" })
@@ -175,6 +177,8 @@ export default function HomePage({ setPage }: Props) {
         state.repository,
         jobPosting,
         state.apiKey,
+        [],
+        state.cvLanguage,
       )
       if (id !== requestId.current) return
       setDraft({ state: "complete" })
@@ -216,6 +220,7 @@ export default function HomePage({ setPage }: Props) {
         jobPosting,
         state.apiKey,
         confirmedQualifications,
+        state.cvLanguage,
       )
       if (id !== requestId.current) return
       setDraft({ state: "complete" })
@@ -324,6 +329,10 @@ export default function HomePage({ setPage }: Props) {
 
         {/* Sidebar */}
         <div className="pt-6">
+          <div className="mb-6">
+            <p className="mb-2 text-xs text-[var(--color-muted-fg)]">{t("language.cv")}</p>
+            <LanguageSelector kind="cv" />
+          </div>
           <p
             className="text-xs uppercase tracking-[0.2em] mb-1"
             style={{

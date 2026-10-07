@@ -344,6 +344,7 @@ export default function ResultsPage({ setPage }: Props) {
             </div>
             <div ref={resumePreviewRef}>
               <GeneratedResumePreview
+                cvLanguage={materials.cvLanguage}
                 resume={materials.resume}
                 profile={state.repository}
                 onEditProfile={() => setPage("repository")}

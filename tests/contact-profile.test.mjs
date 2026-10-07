@@ -60,7 +60,10 @@ test("the three AI requests exclude contact facts, and review preserves them", a
       assert.equal(reviewed.updatedRepo[key], repo[key])
     }
     await findProfileGaps(repo, "Engineer", "test-key")
-    await generateMaterials(repo, "Engineer", "test-key")
+    const materials = await generateMaterials(repo, "Engineer", "test-key", [], "pt-BR")
+    assert.equal(materials.cvLanguage, "pt-BR")
+    assert.equal(requests.at(-1).body.cvLanguage, "pt-BR")
+    assert.equal(requests.at(-1).body.uiLocale, undefined)
     assert.deepEqual(requests.map(request => request.url), [
       "/api/profile/review", "/api/qualification-gaps", "/api/application-draft",
     ])

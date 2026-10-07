@@ -66,6 +66,7 @@ export interface ProfessionalRepository {
 }
 
 export interface GeneratedMaterials {
+  cvLanguage?: import("./i18n").Locale
   jobTitle: string
   company: string
   jobSummary: string

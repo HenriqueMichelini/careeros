@@ -26,7 +26,7 @@ export interface CuratedCv {
   repository: ProfessionalRepository
   summary: string
   sources: CvFact[]
-  locale: Locale
+  cvLanguage: Locale
 }
 const substantive = new Set([
   "skills",
@@ -239,7 +239,7 @@ export function createCuratedCv(
   repo: ProfessionalRepository,
   facts: CvFact[],
   result: CvResult,
-  locale: Locale,
+  cvLanguage: Locale,
   density: CvDensity = "balanced",
 ): CuratedCv {
   if (!validateCvResult(result, facts)) throw new Error("invalid_output")
@@ -309,17 +309,21 @@ export function createCuratedCv(
     repository: snapshot,
     summary: result.summary.map((s) => s.text).join(" "),
     sources: selected,
-    locale,
+    cvLanguage,
     density,
   }
 }
 export function parseCuratedCv(raw: string | null): CuratedCv | null {
   try {
-    const value = JSON.parse(raw || "null") as CuratedCv | null
+    const value = JSON.parse(raw || "null") as (CuratedCv & { locale?: Locale }) | null
+    if (value && !value.cvLanguage && value.locale) {
+      value.cvLanguage = value.locale
+      delete value.locale
+    }
     if (
       !value ||
       value.version !== 1 ||
-      !["en", "pt-BR"].includes(value.locale) ||
+      !["en", "pt-BR"].includes(value.cvLanguage) ||
       typeof value.summary !== "string" ||
       !Array.isArray(value.sources) ||
       !value.repository
@@ -413,7 +417,7 @@ export class CvGenerationError extends Error {
 }
 export async function generateCv(
   facts: CvFact[],
-  locale: Locale,
+  cvLanguage: Locale,
   key: string,
   signal: AbortSignal,
   density: CvDensity = "balanced",
@@ -431,7 +435,7 @@ export async function generateCv(
     response = await fetch("/api/cv/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-OpenAI-Api-Key": key },
-      body: JSON.stringify({ facts: outbound, locale, density }),
+      body: JSON.stringify({ facts: outbound, cvLanguage, density }),
       signal: requestSignal,
     })
   } catch (error) {
