@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react"
 import { useI18n, useStore } from "../lib/store"
 import { reviewRepository } from "../lib/ai"
+import { profileReviewFields } from "../lib/profile"
 import { ProfileReviewError } from "../lib/ai"
 import {
   ExperienceEntry,
@@ -474,6 +475,7 @@ export default function RepositoryPage() {
   const [ingestionSnapshot, setIngestionSnapshot] = useState("")
   const [ingestionError, setIngestionError] = useState("")
   const [isIngesting, setIsIngesting] = useState(false)
+  const discardDialog = useRef<HTMLDialogElement>(null)
   const ingestionRequest = useRef(0)
   const ingestionController = useRef<AbortController | null>(null)
   const reviewRequest = useRef(0)
@@ -576,7 +578,7 @@ export default function RepositoryPage() {
   }
 
   async function handleAiReview() {
-    if (activeSection === "profile" || currentReviewContext.current.section !== activeSection || state.isReviewingRepo) return
+    if (!profileReviewFields(activeSection).length || currentReviewContext.current.section !== activeSection || state.isReviewingRepo) return
     if (!state.apiKey) {
       setReviewError(t("repo.setApiKeyFirst"))
       return
@@ -724,7 +726,7 @@ export default function RepositoryPage() {
         </nav>
 
         {/* AI Review is available only within a supported subsection. */}
-        {activeSection !== "profile" && <div
+        {profileReviewFields(activeSection).length > 0 && <div
           className="mt-4 md:mt-10 pt-4 md:pt-6 border-t"
           style={{ borderColor: "var(--color-border)" }}
         >
@@ -741,7 +743,7 @@ export default function RepositoryPage() {
             className="text-xs mb-4 leading-relaxed"
             style={{ color: "var(--color-muted-fg)" }}
           >
-            {t("repo.aiReviewDescription")}
+            {t("repo.aiReviewDescription", { section: t(active.labelKey) })}
           </p>
           <button
             onClick={handleAiReview}
@@ -787,6 +789,20 @@ export default function RepositoryPage() {
           )}
         </div>}
       </aside>
+
+      <dialog
+        ref={discardDialog}
+        aria-labelledby="discard-title"
+        aria-describedby="discard-description"
+        className="m-auto w-[calc(100%_-_2rem)] max-w-md border border-[var(--color-border)] bg-[var(--color-card)] p-6 text-[var(--color-fg)] backdrop:bg-black/50"
+      >
+        <h2 id="discard-title" className="mb-3 text-xl font-bold">{t("repo.discardTitle")}</h2>
+        <p id="discard-description" className="mb-6 text-sm text-[var(--color-muted-fg)]">{t("repo.discardDescription")}</p>
+        <form method="dialog" className="flex flex-wrap justify-end gap-3">
+          <button autoFocus className="border border-[var(--color-border)] px-4 py-2 text-sm">{t("repo.keepEditing")}</button>
+          <button onClick={discardIngestion} className="bg-[var(--color-fg)] px-4 py-2 text-sm text-[var(--color-bg)]">{t("repo.ingestDiscard")}</button>
+        </form>
+      </dialog>
 
       {/* Main content */}
       <div>
@@ -847,7 +863,7 @@ export default function RepositoryPage() {
                   className="px-4 py-2 text-sm disabled:opacity-50" style={{backgroundColor:"var(--color-fg)",color:"var(--color-bg)"}}>
                   {isIngesting ? t("repo.ingestWorking") : t("repo.ingestReview")}
                 </button>
-                <button type="button" onClick={discardIngestion} className="px-4 py-2 text-sm border" style={{borderColor:"var(--color-border)"}}>{t("repo.ingestDiscard")}</button>
+                <button type="button" onClick={() => discardDialog.current?.showModal()} className="px-4 py-2 text-sm border" style={{borderColor:"var(--color-border)"}}>{t("repo.ingestDiscard")}</button>
               </div>
               {ingestionError && <p role="alert" className="text-sm mt-3" style={{color:"var(--color-accent)"}}>{ingestionError}</p>}
             </section>
@@ -892,7 +908,7 @@ export default function RepositoryPage() {
               <div className="flex flex-wrap gap-2">
                 <button type="button" onClick={confirmIngestion} disabled={!ingestionResult.operations.some(op => op.approved)}
                   className="px-4 py-2 text-sm disabled:opacity-50" style={{backgroundColor:"var(--color-fg)",color:"var(--color-bg)"}}>{t("repo.ingestApply")}</button>
-                <button type="button" onClick={discardIngestion} className="px-4 py-2 border text-sm" style={{borderColor:"var(--color-border)"}}>{t("repo.ingestCancel")}</button>
+                <button type="button" onClick={() => discardDialog.current?.showModal()} className="px-4 py-2 border text-sm" style={{borderColor:"var(--color-border)"}}>{t("repo.ingestCancel")}</button>
               </div>
             </section>}
           </div>

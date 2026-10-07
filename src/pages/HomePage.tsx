@@ -383,37 +383,6 @@ export default function HomePage({ setPage }: Props) {
                     : t("home.pasteJobDetails")
               }
             />
-            <StatusRow
-              label={t("home.qualifications")}
-              status={qualification.state}
-              detail={
-                qualification.error
-                  ? failureMessage
-                  : t(
-                      `home.qualificationDetail.${
-                        qualification.state === "ready"
-                          ? "pending"
-                          : qualification.state
-                      }`,
-                    )
-              }
-            />
-            <StatusRow
-              label={t("home.draft")}
-              status={draft.state}
-              detail={
-                draft.error
-                  ? failureMessage
-                  : t(
-                      `home.draftDetail.${
-                        draft.state === "ready" ||
-                        draft.state === "confirmation"
-                          ? "pending"
-                          : draft.state
-                      }`,
-                    )
-              }
-            />
           </div>
           {failureMessage && (
             <p

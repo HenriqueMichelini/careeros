@@ -200,6 +200,19 @@ try {
     assert.equal(await evaluate("document.querySelector('#ingestion-limits')"),null)
     await evaluate(`window.__calls=[]; window.fetch=async(url,options)=>{if(url!='/api/profile/ingest')throw new Error('Unexpected request');window.__calls.push(JSON.parse(options.body));return new Response(${JSON.stringify(JSON.stringify(fixture))},{status:200,headers:{'Content-Type':'application/json'}})}`)
     const review=locale==='en'?'Review suggested changes':'Revisar alterações sugeridas'
+    const discard=locale==='en'?'Discard':'Descartar'
+    const keep=locale==='en'?'Keep editing':'Continuar editando'
+    await fill('Unsaved career notes')
+    await evaluate(`Array.from(document.querySelectorAll('button')).find(el => !el.closest('dialog') && el.textContent.trim() === ${JSON.stringify(discard)}).click()`)
+    await until("document.querySelector('dialog').open")
+    assert.equal(await evaluate("document.activeElement.textContent.trim()"),keep)
+    await evaluate(`document.querySelector('dialog button').click()`)
+    assert.equal(await evaluate("document.querySelector('dialog').open"),false)
+    assert.equal(await evaluate("document.querySelector('#ingestion-text').value"),'Unsaved career notes')
+    await evaluate(`Array.from(document.querySelectorAll('button')).find(el => !el.closest('dialog') && el.textContent.trim() === ${JSON.stringify(discard)}).click()`)
+    await evaluate("document.querySelector('dialog button:last-child').click()")
+    assert.equal(await evaluate("document.querySelector('#ingestion-text').value"),'')
+    assert.equal(await saved(),initial)
     await fill('ação🙂 \n'.repeat(2500)+'x')
     assert.equal(await evaluate(`${byText(review)}.disabled`),true)
     await fill('Ada English\n'+('messy notes; Go; BSc North 2021; Cloud Guild; English fluent.\n'.repeat(300)))
@@ -235,6 +248,19 @@ try {
     await openProfile()
     assert.equal(await evaluate("document.querySelector('#contact-fullName').value"),'Ada Reviewed')
     assert.equal(await evaluate("document.querySelector('#ingestion-text').value"),'')
+    const skills=locale==='en'?'Skills, tools & tech':'Habilidades e tecnologias'
+    const reviewAi=locale==='en'?'Review with AI':'Revisar com IA'
+    await evaluate(`${byText(skills)}.click()`)
+    assert.ok(await evaluate("document.querySelector('aside').textContent").then(text => text.includes((locale==='en'?'Reviews only ':'Revisa apenas ')+skills)))
+    const beforeReview=JSON.parse(await saved())
+    await evaluate(`window.fetch=async(url,options)=>{if(url!='/api/profile/review')throw new Error('Unexpected request');const body=JSON.parse(options.body);window.__reviewSection=body.changedSection;return new Response(JSON.stringify({updatedRepository:{...body.repository,skills:'Reviewed skills',careerGoals:'Unrequested model edit'},summary:'Reviewed skills'}),{status:200,headers:{'Content-Type':'application/json'}})}`)
+    await evaluate(`${byText(reviewAi)}.click()`)
+    await until("JSON.parse(localStorage.getItem('careeros_repo')).skills === 'Reviewed skills'")
+    assert.equal(await evaluate('window.__reviewSection'),'skills')
+    assert.equal(JSON.parse(await saved()).careerGoals,beforeReview.careerGoals)
+    const education=locale==='en'?'Education':'Formação'
+    await evaluate(`${byText(education)}.click()`)
+    assert.equal(await evaluate(`${byText(reviewAi)} !== undefined`),false)
     console.log(`PASS ingestion ${locale} ${width}px ${populated?'populated':'empty'}`)
   }
   console.log('Screenshots:',work)

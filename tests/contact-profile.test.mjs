@@ -44,7 +44,7 @@ test("the three AI requests exclude contact facts, and review preserves them", a
     requests.push({ url, body: JSON.parse(options.body) })
     if (url === "/api/profile/review") return {
       ok: true,
-      json: async () => ({ updatedRepository: { ...oldProfile, skills: "Go, TypeScript" }, summary: "Updated skills" }),
+      json: async () => ({ updatedRepository: { ...oldProfile, careerGoals: "Unexpected model change", skills: "Go, TypeScript" }, summary: "Updated skills" }),
     }
     if (url === "/api/qualification-gaps") return { ok: true, json: async () => ({ gaps: [] }) }
     return { ok: true, json: async () => ({
@@ -55,6 +55,7 @@ test("the three AI requests exclude contact facts, and review preserves them", a
   try {
     const reviewed = await reviewRepository(repo, "Skills", "test-key")
     assert.equal(reviewed.updatedRepo.skills, "Go, TypeScript")
+    assert.equal(reviewed.updatedRepo.careerGoals, repo.careerGoals)
     for (const key of ["fullName", "email", "phone", "location", "professionalLinks"]) {
       assert.equal(reviewed.updatedRepo[key], repo[key])
     }
@@ -89,7 +90,7 @@ test("structured qualifications survive review and reach only the relevant AI re
     return { ok: true, json: async () => ({ jobTitle: "Engineer", company: "Acme", jobSummary: "Role", resume: "Resume", coverLetter: { greeting: "Dear team,", body: "I build systems.", closing: "Sincerely," }, applicationAnswers: "Answers" }) }
   }
   try {
-    const reviewed = await reviewRepository(repo, "Education", "test-key")
+    const reviewed = await reviewRepository(repo, "skills", "test-key")
     assert.deepEqual(cvQualifications(reviewed.updatedRepo), cvQualifications(repo))
     await findProfileGaps(repo, "Engineer", "test-key")
     await generateMaterials(repo, "Engineer", "test-key")
@@ -170,7 +171,7 @@ test("overview review is refused without a request", async () => {
   let requests = 0
   globalThis.fetch = async () => { requests++; throw new Error("unexpected request") }
   try {
-    for (const section of ["profile", "PROFILE", "PERFIL", "overview"]) {
+    for (const section of ["profile", "PROFILE", "PERFIL", "overview", "education", "certifications", "languages"]) {
       await assert.rejects(reviewRepository(withContactFields(oldProfile), section, "synthetic"), { code: "input" })
     }
     assert.equal(requests, 0)

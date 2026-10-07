@@ -5,7 +5,7 @@ import {
   ConfirmedQualification,
 } from './types'
 import { completeCoverLetter } from './cover-letter'
-import { careerProfile, cvQualifications, validQualifications } from './profile'
+import { careerProfile, cvQualifications, validQualifications, profileReviewFields } from './profile'
 
 export class ProfileReviewError extends Error {
   constructor(public readonly code: string) {
@@ -34,7 +34,8 @@ export async function reviewRepository(
   apiKey: string,
   signal?: AbortSignal
 ): Promise<{ updatedRepo: ProfessionalRepository; summary: string }> {
-  if (["profile", "overview", "perfil"].includes(changedSection.trim().toLowerCase())) throw new ProfileReviewError("input")
+  const fields = profileReviewFields(changedSection)
+  if (!fields.length) throw new ProfileReviewError("input")
   if (!validQualifications(repo)) throw new ProfileReviewError('input')
   const response = await fetch('/api/profile/review', {
     method: 'POST',
@@ -65,7 +66,9 @@ export async function reviewRepository(
       !isCompleteReviewRepository(payload.updatedRepository, repo)) {
     throw new ProfileReviewError('invalid_output')
   }
-  return { updatedRepo: { ...repo, ...payload.updatedRepository }, summary: payload.summary }
+  const updated = payload.updatedRepository
+  const patch = Object.fromEntries(fields.map(field => [field, updated[field]]))
+  return { updatedRepo: { ...repo, ...patch }, summary: payload.summary }
 }
 
 function isCompleteReviewRepository(value: unknown, original: ProfessionalRepository): value is ReturnType<typeof careerProfile> {

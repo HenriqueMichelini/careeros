@@ -184,7 +184,7 @@ try {
     await until("document.querySelectorAll('nav button').length === 4")
     await evaluate("document.querySelectorAll('nav button')[0].click()")
     await until(
-      "document.querySelectorAll('[data-checklist-state]').length === 5",
+      "document.querySelectorAll('[data-checklist-state]').length === 3",
     )
   }
   const states = () =>
@@ -226,8 +226,6 @@ try {
         "pending",
         "pending",
         "pending",
-        "pending",
-        "pending",
       ])
       await evaluate(
         `localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_apikey', 'synthetic-test-key'); location.reload()`,
@@ -246,8 +244,6 @@ try {
         "ready",
         "ready",
         "ready",
-        "pending",
-        "pending",
       ])
       assert.equal(
         await evaluate(
@@ -275,8 +271,6 @@ try {
         "ready",
         "ready",
         "ready",
-        "processing",
-        "pending",
       ])
       await respond({
         gaps: [
@@ -291,8 +285,6 @@ try {
         "ready",
         "ready",
         "ready",
-        "confirmation",
-        "pending",
       ])
       await evaluate("document.querySelector('[role=dialog] input').click()")
       await evaluate(
@@ -302,16 +294,12 @@ try {
         "ready",
         "ready",
         "ready",
-        "complete",
-        "processing",
       ])
       await respond({ error: "outage" }, 503)
       assert.deepEqual(await states(), [
         "ready",
         "ready",
         "ready",
-        "complete",
-        "failed",
       ])
       assert.equal(
         await evaluate(
@@ -321,8 +309,8 @@ try {
       )
       await evaluate("document.querySelector('[role=dialog] input').click()")
       assert.equal(
-        (await states())[4],
-        "pending",
+        await evaluate("!!document.querySelector('[role=dialog] [role=alert]')"),
+        false,
         "confirmation edits clear draft failure",
       )
       await evaluate("document.querySelector('[role=dialog] button').click()")
@@ -342,19 +330,19 @@ try {
             code === "key" ? "failed" : "ready",
             code === "input" ? "failed" : "ready",
             code === "input" ? "failed" : "ready",
-            step === "qualification" ? "failed" : "complete",
-            step === "draft" ? "failed" : "pending",
           ])
           assert.equal(
             await evaluate("!!document.querySelector('[role=alert]')"),
             true,
           )
-          assert.equal(
-            await evaluate(
-              "getComputedStyle(document.querySelector('[data-checklist-state=failed] span')).backgroundColor",
-            ),
-            "rgb(177, 27, 50)",
-          )
+          if (code === "key" || code === "input") {
+            assert.equal(
+              await evaluate(
+                "getComputedStyle(document.querySelector('[data-checklist-state=failed] span')).backgroundColor",
+              ),
+              "rgb(177, 27, 50)",
+            )
+          }
         }
       }
       await fill(
@@ -364,15 +352,13 @@ try {
         "ready",
         "ready",
         "ready",
-        "pending",
-        "pending",
       ])
       await generate()
       await evaluate(
         "window.__pending.shift().reject(new DOMException('Synthetic browser timeout', 'TimeoutError'))",
       )
       await until(
-        "document.querySelector('[data-checklist-state=failed]') !== null",
+        "document.querySelector('[role=alert]') !== null",
       )
       await generate()
       await fill(
@@ -381,7 +367,7 @@ try {
       await respond({ gaps: [] })
       assert.deepEqual(
         await states(),
-        ["ready", "ready", "ready", "pending", "pending"],
+        ["ready", "ready", "ready"],
         "stale input response ignored",
       )
       await generate()
@@ -396,14 +382,12 @@ try {
       )
       await evaluate("document.querySelectorAll('nav button')[0].click()")
       await until(
-        "document.querySelectorAll('[data-checklist-state]').length === 5",
+        "document.querySelectorAll('[data-checklist-state]').length === 3",
       )
       assert.deepEqual(await states(), [
         "ready",
         "ready",
         "ready",
-        "pending",
-        "pending",
       ])
       await generate()
       await respond({ gaps: [] })
@@ -411,8 +395,6 @@ try {
         "ready",
         "ready",
         "ready",
-        "complete",
-        "processing",
       ])
       await respond(materials)
       await until(
@@ -420,7 +402,7 @@ try {
       )
       await evaluate("document.querySelectorAll('nav button')[0].click()")
       await until(
-        "document.querySelectorAll('[data-checklist-state]').length === 5",
+        "document.querySelectorAll('[data-checklist-state]').length === 3",
       )
       await generate()
       await respond({ gaps: [] })
@@ -430,7 +412,7 @@ try {
       )
       await evaluate("document.querySelectorAll('nav button')[0].click()")
       await until(
-        "document.querySelectorAll('[data-checklist-state]').length === 5",
+        "document.querySelectorAll('[data-checklist-state]').length === 3",
       )
       const screenshot = await call("Page.captureScreenshot", {
         format: "png",

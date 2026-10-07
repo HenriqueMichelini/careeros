@@ -81,7 +81,12 @@ const collectionFields: Record<string, string[]> = {
   languages: ["name", "proficiency"],
 }
 const targets = [...writableScalars, ...Object.keys(collectionFields)]
-const identityFields = (target: string) => target === "certifications" ? ["name", "issuer"] : requiredFields(target)
+const identityFields = (target: string) =>
+  target === "experience"
+    ? ["company", "title", "startDate", "endDate"]
+    : target === "certifications"
+      ? ["name", "issuer"]
+      : requiredFields(target)
 const requiredFields = (target: string) => target === "experience" ? ["company", "title"] : target === "education" ? ["degree", "institution"] : ["name"]
 export const ingestionInputBytes = (input: string) => new TextEncoder().encode(input).length
 export const ingestionMaxBytes = 30000

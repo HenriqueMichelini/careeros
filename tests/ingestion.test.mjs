@@ -432,3 +432,44 @@ test("same-name certifications from distinct issuers are preserved and exact rep
   assert.equal(next.certifications[1].issuer,"Issuer B")
   assert.throws(()=>applyIngestion(next,JSON.stringify(next),ops),/incomplete/)
 })
+
+test("separate stints at the same employer and title apply without losing the batch", () => {
+  const before = profile()
+  before.experience[0].startDate = "2018-01"
+  before.experience[0].endDate = "2020-12"
+  const snapshot = JSON.stringify(before)
+  const operations = [
+    op(),
+    ...Object.entries({ company: "Acme", title: "Engineer", startDate: "2024-01", endDate: "2025-12" })
+      .map(([field, value]) => op({ target: "experience", entryId: "new:c1", field, value })),
+  ]
+  const next = applyIngestion(before, snapshot, operations)
+  assert.equal(next.skills, "React\nTypeScript")
+  assert.equal(next.experience.length, 2)
+  assert.deepEqual(next.experience[0], before.experience[0])
+  assert.notEqual(next.experience[1].id, before.experience[0].id)
+  assert.equal(next.experience[1].startDate, "2024-01")
+  assert.equal(next.experience[1].endDate, "2025-12")
+  assert.equal(JSON.stringify(before), snapshot)
+  assert.throws(() => applyIngestion(next, JSON.stringify(next), operations), /incomplete/)
+  assert.equal(next.experience.length, 2)
+})
+
+test("Experience duplicate protection distinguishes dates and still rejects matching or undated stints atomically", () => {
+  for (const [startDate, endDate] of [["2018-01", "2020-12"], ["", ""]]) {
+    const before = profile()
+    Object.assign(before.experience[0], { startDate, endDate })
+    const snapshot = JSON.stringify(before)
+    const operations = [
+      op(),
+      ...Object.entries({ company: " ACME ", title: "engineer", startDate, endDate })
+        .map(([field, value]) => op({ target: "experience", entryId: "new:c1", field, value })),
+    ]
+    assert.throws(() => applyIngestion(before, snapshot, operations), /incomplete/)
+    assert.equal(JSON.stringify(before), snapshot)
+    for (const [field, value] of [["startDate", "2024-01"], ["endDate", "2025-12"]]) {
+      const changedPeriod = operations.map(item => item.field === field ? { ...item, value } : item)
+      assert.equal(applyIngestion(before, snapshot, changedPeriod).experience.length, 2)
+    }
+  }
+})
