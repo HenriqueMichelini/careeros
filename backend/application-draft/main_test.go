@@ -24,8 +24,11 @@ type timeoutReader struct{}
 
 func (timeoutReader) Read([]byte) (int, error) { return 0, timeoutReadError{} }
 func draftResponse() string {
-	return `{"choices":[{"message":{"content":"{\"jobTitle\":\"Engineer\",\"company\":\"Example\",\"jobSummary\":\"Build systems\",\"resume\":\"# Resume\",\"coverLetter\":\"Hello\",\"applicationAnswers\":\"Q&A\"}"}}]}`
+	content := `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":{"greeting":"Dear team,","body":"I build systems.","closing":"Sincerely,"},"applicationAnswers":"Q&A"}`
+	encoded, _ := json.Marshal(content)
+	return `{"choices":[{"message":{"content":` + string(encoded) + `}}]}`
 }
+
 func TestProviderUsesOpenAIAndFullPopulatedProfile(t *testing.T) {
 	in := request{JobPosting: "Senior engineer role", Profile: profilevalidation.Profile{CareerGoals: "leadership", Skills: "Go", Competencies: "systems", Tools: "Docker", EmploymentStatus: "employed", CurrentSalary: "salary", DesiredSalary: "target", AdditionalInfo: "extra", Experience: []profilevalidation.Experience{{ID: "id", Company: "company", Title: "engineer", StartDate: "2020", EndDate: "2022", Location: "location", Description: "description", Responsibilities: "responsibilities", Achievements: "achievement"}}, Projects: []profilevalidation.Project{{ID: "project-id", Name: "project", Description: "project detail", Technologies: "Go", URL: "url", Highlights: "highlight"}}}, Confirmed: []qualification{{Kind: "skill", Requirement: "Kubernetes", UserContext: "used it"}}}
 	in.Qualifications = &profilevalidation.Qualifications{Education: []profilevalidation.Education{{ID: "private-education-id", Degree: "BSc", Institution: "Example University"}}}
@@ -275,10 +278,14 @@ func TestIncompleteAndMalformedProviderDraftsAreRejected(t *testing.T) {
 		name    string
 		content string
 	}{
-		{name: "missing field", content: `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":"Hello"}`},
-		{name: "blank field", content: `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":"Hello","applicationAnswers":"  "}`},
-		{name: "unknown field", content: `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":"Hello","applicationAnswers":"Q&A","extra":"value"}`},
-		{name: "trailing data", content: `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":"Hello","applicationAnswers":"Q&A"} trailing`},
+		{name: "punctuated signature", content: `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":{"greeting":"Dear team,","body":"I build systems.\n\nJane Doe, Ph.D.","closing":"Sincerely,"},"applicationAnswers":"Q&A"}`},
+		{name: "missing closing", content: `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":{"greeting":"Dear team,","body":"I build systems."},"applicationAnswers":"Q&A"}`},
+		{name: "unexpected signature", content: `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":{"greeting":"Dear team,","body":"I build systems.","closing":"Sincerely,\nJane Doe"},"applicationAnswers":"Q&A"}`},
+		{name: "signature in body", content: `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":{"greeting":"Dear team,","body":"I build systems.\n\nSincerely,\nJane Doe","closing":"Sincerely,"},"applicationAnswers":"Q&A"}`},
+		{name: "missing field", content: `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":{"greeting":"Dear team,","body":"I build systems.","closing":"Sincerely,"}}`},
+		{name: "blank field", content: `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":{"greeting":"Dear team,","body":"I build systems.","closing":"Sincerely,"},"applicationAnswers":"  "}`},
+		{name: "unknown field", content: `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":{"greeting":"Dear team,","body":"I build systems.","closing":"Sincerely,"},"applicationAnswers":"Q&A","extra":"value"}`},
+		{name: "trailing data", content: `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":{"greeting":"Dear team,","body":"I build systems.","closing":"Sincerely,"},"applicationAnswers":"Q&A"} trailing`},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			calls := 0
@@ -305,4 +312,19 @@ func mustJSONString(t *testing.T, value string) string {
 		t.Fatal(err)
 	}
 	return string(encoded)
+}
+
+func TestProviderAcceptsProseWithEnglishAndPortugueseTransitions(t *testing.T) {
+	for _, body := range []string{"Additionally, I build reliable systems.", "Atualmente, desenvolvo sistemas confiáveis.", "I am AWS certified.", "At Harbor Works, I build reliable systems."} {
+		t.Run(body, func(t *testing.T) {
+			a := app{client: &http.Client{Transport: transportFunc(func(*http.Request) (*http.Response, error) {
+				response := strings.Replace(draftResponse(), "I build systems.", body, 1)
+				return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(response)), Header: make(http.Header)}, nil
+			})}}
+			out, code, err := a.call(t.Context(), "sk-valid", request{JobPosting: "Engineer"})
+			if err != nil || code != "" || out.CoverLetter.Body != body {
+				t.Fatalf("body=%q code=%s err=%v", out.CoverLetter.Body, code, err)
+			}
+		})
+	}
 }

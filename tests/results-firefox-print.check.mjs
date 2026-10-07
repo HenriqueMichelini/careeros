@@ -125,7 +125,7 @@ try {
   })
   await until("!!document.querySelector('header button')")
   const repo = {
-    fullName: "Avery Morgan",
+    fullName: "Érica Müller",
     email: "avery@example.com",
     phone: "",
     location: "",
@@ -156,7 +156,7 @@ try {
   await evaluate("document.querySelector('header button:last-child').click()")
   await until("document.querySelectorAll('nav button').length === 4")
   await evaluate(
-    "window.fetch = async (url) => new Response(JSON.stringify(String(url).includes('qualification-gaps') ? { gaps: [] } : {jobTitle:'Product Lead',company:'Harbor Works',jobSummary:'Lead product work.',resume:'# Avery Morgan\\n\\navery@example.com\\n\\n## Professional Summary\\nProduct leader focused on useful services.\\n\\n## Technical Skills\\n- Research\\n- Figma\\n\\n## Professional Experience\\n### Product Lead · Harbor Works\\n2021 — 2024\\n- Improved onboarding.\\n\\n## Education\\n### BSc Design\\nEast College · 2018\\n\\n## Certifications\\n- Research Certificate\\n\\n## Languages\\n- English: Fluent',coverLetter:'Dear team,\\n\\nI led useful service work.\\n\\nSincerely,\\nAvery Morgan',applicationAnswers:'1. I led a platform.'}), { status: 200, headers: { 'Content-Type': 'application/json' } }); const el = document.querySelector('textarea'); Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(el, 'A long synthetic job posting for a product lead at Harbor Works.'); el.dispatchEvent(new Event('input', { bubbles: true }))",
+    "window.fetch = async (url) => new Response(JSON.stringify(String(url).includes('qualification-gaps') ? { gaps: [] } : {jobTitle:'Product Lead',company:'Harbor Works',jobSummary:'Lead product work.',resume:'# Avery Morgan\\n\\navery@example.com\\n\\n## Professional Summary\\nProduct leader focused on useful services.\\n\\n## Technical Skills\\n- Research\\n- Figma\\n\\n## Professional Experience\\n### Product Lead · Harbor Works\\n2021 — 2024\\n- Improved onboarding.\\n\\n## Education\\n### BSc Design\\nEast College · 2018\\n\\n## Certifications\\n- Research Certificate\\n\\n## Languages\\n- English: Fluent',coverLetter:{greeting:'Dear team,',body:'I led useful service work.',closing:'Sincerely,'},applicationAnswers:'1. I led a platform.'}), { status: 200, headers: { 'Content-Type': 'application/json' } }); const el = document.querySelector('textarea'); Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(el, 'A long synthetic job posting for a product lead at Harbor Works.'); el.dispatchEvent(new Event('input', { bubbles: true }))",
   )
   await until(
     "Array.from(document.querySelectorAll('button')).some(el => /Generate/i.test(el.textContent) && !el.disabled)",
@@ -206,10 +206,10 @@ try {
   const pdfText = execFileSync("pdftotext", ["-raw", output, "-"], {
     encoding: "utf8",
   })
-  assert.match(pdfText, /AVERY MORGAN[\s\S]*PROFESSIONAL SUMMARY/)
+  assert.match(pdfText, /ÉRICA MÜLLER[\s\S]*PROFESSIONAL SUMMARY/)
   assert.match(pdfText, /Additional synthetic accomplishment 12/)
   assert.equal(
-    pdfText.match(/AVERY MORGAN/g)?.length,
+    pdfText.match(/ÉRICA MÜLLER/g)?.length,
     1,
     "the résumé should print only once",
   )
@@ -217,6 +217,63 @@ try {
     pdfText,
     /Powered by Netlify|Generated Application|Cover Letter/i,
   )
+  // The signed letter is the shared source for visible content, copy, and print.
+  await call("browsingContext.setViewport", { context, viewport: { width: 390, height: 844 } })
+  await evaluate("Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'Cover Letter').click()")
+  await until("!!document.querySelector('.results-content pre')")
+  const completed = "Dear team,\n\nI led useful service work.\n\nSincerely,\nÉrica Müller"
+  assert.equal(await evaluate("document.querySelector('.results-content pre').textContent"), completed)
+  assert.equal(await evaluate("document.querySelector('.results-cover-print').textContent"), completed)
+  assert.equal(await evaluate("document.documentElement.scrollWidth <= innerWidth"), true)
+  await evaluate("Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async text => { window.copiedLetter = text } } }); document.querySelector('.results-other-actions button').click()")
+  assert.equal(await evaluate("window.copiedLetter"), completed)
+  rmSync(output)
+  await evaluate("document.querySelector('.results-other-actions button:last-child').click()")
+  for (let attempt = 0; attempt < 100; attempt++) {
+    try { if (readFileSync(output).length > 1000) break } catch {}
+    if (attempt === 99) throw new Error("Signed cover PDF was not created")
+    await pause(100)
+  }
+  const letterText = execFileSync("pdftotext", ["-raw", output, "-"], { encoding: "utf8" })
+  assert.match(letterText, /Dear team,[\s\S]*I led useful service work\.[\s\S]*Sincerely,[\s\S]*Érica Müller/)
+  assert.equal(letterText.match(/Érica Müller/g)?.length, 1)
+  // Fit an unsigned letter just below the page boundary; its signature must block export.
+  const fit = JSON.parse(await evaluate(`JSON.stringify((() => {
+    const cover = document.querySelector('.results-cover-print');
+    const measure = cover.cloneNode(true); measure.classList.add('cv-export-measure'); measure.style.display = 'block';
+    measure.textContent = ${JSON.stringify('Dear team,\n\nI led useful service work.\n\nSincerely,')};
+    document.body.append(measure); const unsigned = measure.getBoundingClientRect().height;
+    const threshold = 297 * 96 / 25.4 - 4; const padding = threshold - unsigned - 2 + parseFloat(getComputedStyle(measure).paddingTop);
+    measure.style.paddingTop = padding + 'px'; const before = measure.getBoundingClientRect().height;
+    measure.textContent = cover.textContent; const after = measure.getBoundingClientRect().height;
+    measure.remove(); cover.style.paddingTop = padding + 'px';
+    window.printCalls = 0; window.print = () => { window.printCalls++ };
+    return { before, after, threshold };
+  })())`))
+  assert.ok(fit.before <= fit.threshold && fit.after > fit.threshold, JSON.stringify(fit))
+  await evaluate("document.querySelector('.results-other-actions button:last-child').click()")
+  await until("!!document.querySelector('[role=alert]')")
+  assert.equal(await evaluate("window.printCalls"), 0)
+  await evaluate("{ const select = document.querySelector('header select'); Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(select, 'pt-BR'); select.dispatchEvent(new Event('change', { bubbles: true })) }")
+  await until("document.body.textContent.includes('Carta de apresentação')")
+  assert.equal(await evaluate("document.querySelector('.results-content pre').textContent"), completed)
+  // A migrated Profile without a name produces an unsigned Portuguese letter and advice.
+  const unnamed = { ...repo }; delete unnamed.fullName
+  await evaluate(`localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(unnamed))})`)
+  await call("browsingContext.navigate", { context, url: `http://127.0.0.1:${port}/`, wait: "complete" })
+  await until("!!document.querySelector('header button')")
+  await evaluate("document.querySelector('header button:last-child').click()")
+  await until("document.querySelectorAll('nav button').length === 4")
+  await evaluate("window.fetch = async url => new Response(JSON.stringify(String(url).includes('qualification-gaps') ? {gaps:[]} : {jobTitle:'Liderança',company:'Harbor Works',jobSummary:'Liderar produto.',resume:'Resume',coverLetter:{greeting:'Prezada equipe,',body:'Minha experiência atende aos requisitos da vaga.',closing:'Atenciosamente,'},applicationAnswers:'Answers'}), {status:200}); const el=document.querySelector('textarea'); Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(el,'Uma vaga de liderança de produto com experiência em pesquisa.'); el.dispatchEvent(new Event('input',{bubbles:true}))")
+  await until("Array.from(document.querySelectorAll('button')).some(el => /Gerar materiais/i.test(el.textContent) && !el.disabled)")
+  await evaluate("Array.from(document.querySelectorAll('button')).find(el => /Gerar materiais/i.test(el.textContent) && !el.disabled).click()")
+  await until("document.body.textContent.includes('Liderança')")
+  await evaluate("Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'Carta de apresentação').click()")
+  await until("!!document.querySelector('.results-content pre')")
+  assert.equal(await evaluate("document.querySelector('.results-content pre').textContent"), "Prezada equipe,\n\nMinha experiência atende aos requisitos da vaga.\n\nAtenciosamente,")
+  assert.equal(await evaluate("document.body.textContent.includes('Adicione seu nome completo ao Perfil')"), true)
+  assert.equal(await evaluate("document.documentElement.scrollWidth <= innerWidth"), true)
+  console.log("Signed cover display, clipboard, PDF, narrow layout, and signature overflow: passed")
   await call("session.end")
 } finally {
   socket?.close()

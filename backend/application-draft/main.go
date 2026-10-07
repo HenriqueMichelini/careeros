@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -34,13 +35,19 @@ type qualification struct {
 	UserContext string `json:"userContext"`
 }
 type result struct {
-	JobTitle           string `json:"jobTitle"`
-	Company            string `json:"company"`
-	JobSummary         string `json:"jobSummary"`
-	Resume             string `json:"resume"`
-	CoverLetter        string `json:"coverLetter"`
-	ApplicationAnswers string `json:"applicationAnswers"`
+	JobTitle           string      `json:"jobTitle"`
+	Company            string      `json:"company"`
+	JobSummary         string      `json:"jobSummary"`
+	Resume             string      `json:"resume"`
+	CoverLetter        coverLetter `json:"coverLetter"`
+	ApplicationAnswers string      `json:"applicationAnswers"`
 }
+type coverLetter struct {
+	Greeting string `json:"greeting"`
+	Body     string `json:"body"`
+	Closing  string `json:"closing"`
+}
+
 type upstream struct {
 	Choices []struct {
 		Message struct {
@@ -125,7 +132,7 @@ func (a app) call(parent context.Context, key string, in request) (result, strin
 	if in.Qualifications != nil {
 		structured, _ = json.Marshal(qualificationFacts(*in.Qualifications))
 	}
-	prompt := "You are an expert career coach and professional writer. Generate highly personalized application materials from the candidate's full professional profile and this job posting. Draw specifically on real experience, skills, projects, education, certifications, and languages; tailor every sentence to the role; mirror the posting's tone; and never invent employers, dates, proficiency, duration, examples, outcomes, or other facts. The resume must be clean Markdown with these exact level-two headings in this order when supported by Profile facts: Professional Summary, Technical Skills, Professional Experience, Education, Certifications, Languages. Omit any unsupported section. Put tools and competencies under Technical Skills and relevant projects under Professional Experience; do not add separate project or tools sections. Use level-three headings for experience, project, and education entries and bullets for supporting details. Keep the resume concise enough for one A4 page, aiming for roughly 400 words or fewer; prioritize the most relevant verified evidence without inventing facts. Do not add a name or contact header because the client supplies it from saved Profile facts. Do not use sample values or placeholders. The cover letter must be specific and under 400 words. Provide 5-6 useful application answers in Markdown. Qualifications listed below were explicitly confirmed for this application only. Use them as relevant, but if no candidate context is supplied, mention only the qualification and do not imply a specific achievement or work history. Do not add confirmed qualifications to the saved profile. Return only JSON with exactly these non-empty string fields: jobTitle, company, jobSummary, resume, coverLetter, applicationAnswers.\nPROFILE:\n" + string(repo) + "\nSTRUCTURED PROFILE QUALIFICATIONS:\n" + string(structured) + "\nJOB POSTING:\n" + in.JobPosting + "\nUSER-CONFIRMED QUALIFICATIONS FOR THIS DRAFT ONLY:\n" + string(quals)
+	prompt := "You are an expert career coach and professional writer. Generate highly personalized application materials from the candidate's full professional profile and this job posting. Draw specifically on real experience, skills, projects, education, certifications, and languages; tailor every sentence to the role; mirror the posting's tone; and never invent employers, dates, proficiency, duration, examples, outcomes, or other facts. The resume must be clean Markdown with these exact level-two headings in this order when supported by Profile facts: Professional Summary, Technical Skills, Professional Experience, Education, Certifications, Languages. Omit any unsupported section. Put tools and competencies under Technical Skills and relevant projects under Professional Experience; do not add separate project or tools sections. Use level-three headings for experience, project, and education entries and bullets for supporting details. Keep the resume concise enough for one A4 page, aiming for roughly 400 words or fewer; prioritize the most relevant verified evidence without inventing facts. Do not add a name or contact header because the client supplies it from saved Profile facts. Do not use sample values or placeholders. The cover letter must be specific and under 400 words including the signature the application will append. Return coverLetter as an object with exactly greeting, body, and closing. greeting is a single-line salutation to the hiring team. body contains only tailored prose paragraphs, each line ending in sentence punctuation. closing is exactly one of: Sincerely,; Kind regards,; Best regards,; Atenciosamente,; Cordialmente,. Do not include any candidate name, signature, identity placeholder, or contact detail in any part; the application appends the saved Profile name locally. Never include a closing or signature inside body. Provide 5-6 useful application answers in Markdown. Qualifications listed below were explicitly confirmed for this application only. Use them as relevant, but if no candidate context is supplied, mention only the qualification and do not imply a specific achievement or work history. Do not add confirmed qualifications to the saved profile. Return only JSON with exactly these fields: jobTitle, company, jobSummary, resume, applicationAnswers (non-empty strings), and coverLetter (the object described above).\nPROFILE:\n" + string(repo) + "\nSTRUCTURED PROFILE QUALIFICATIONS:\n" + string(structured) + "\nJOB POSTING:\n" + in.JobPosting + "\nUSER-CONFIRMED QUALIFICATIONS FOR THIS DRAFT ONLY:\n" + string(quals)
 	body, _ := json.Marshal(map[string]any{"model": model, "reasoning_effort": "none", "max_completion_tokens": 8000, "response_format": map[string]string{"type": "json_object"}, "messages": []any{map[string]string{"role": "user", "content": prompt}}})
 	ctx, cancel, resp, err := openaihttp.Post(parent, a.client, timeout, key, body)
 	defer cancel()
@@ -193,7 +200,30 @@ func qualificationFacts(q profilevalidation.Qualifications) map[string]any {
 	return map[string]any{"education": education, "certifications": certifications, "languages": languages}
 }
 func valid(r result) bool {
-	return strings.TrimSpace(r.JobTitle) != "" && strings.TrimSpace(r.Company) != "" && strings.TrimSpace(r.JobSummary) != "" && strings.TrimSpace(r.Resume) != "" && strings.TrimSpace(r.CoverLetter) != "" && strings.TrimSpace(r.ApplicationAnswers) != ""
+	return strings.TrimSpace(r.JobTitle) != "" && strings.TrimSpace(r.Company) != "" && strings.TrimSpace(r.JobSummary) != "" && strings.TrimSpace(r.Resume) != "" && validCoverLetter(r.CoverLetter) && strings.TrimSpace(r.ApplicationAnswers) != ""
+}
+
+var signatureLine = regexp.MustCompile(`^(?:(?:Dr|Dra|Mr|Ms|Mrs|Sr|Sra)\.?\s+)?\p{Lu}[\p{L}'’.-]*(?:\s+(?:\p{Lu}[\p{L}'’.-]*|da|de|do|dos|das|van|von|der))+(?:,\s*\p{Lu}[\p{L}.'’-]*(?:\s+\p{Lu}[\p{L}.'’-]*)*)?$`)
+
+var introducedIdentity = regexp.MustCompile(`(?:My name is|Meu nome é|Me chamo)\s+`)
+
+// Structured parts keep the model outside the application-owned signature slot.
+func validCoverLetter(c coverLetter) bool {
+	if strings.TrimSpace(c.Greeting) == "" || strings.ContainsAny(strings.TrimSpace(c.Greeting), "\r\n") || strings.TrimSpace(c.Body) == "" || introducedIdentity.MatchString(c.Body) {
+		return false
+	}
+	switch strings.TrimSpace(c.Closing) {
+	case "Sincerely,", "Kind regards,", "Best regards,", "Atenciosamente,", "Cordialmente,":
+	default:
+		return false
+	}
+	for _, line := range strings.Split(strings.TrimSpace(c.Body), "\n") {
+		line = strings.TrimSpace(line)
+		if line != "" && (!strings.ContainsAny(line[len(line)-1:], ".!?") || signatureLine.MatchString(line)) {
+			return false
+		}
+	}
+	return len(strings.Fields(c.Greeting+" "+c.Body+" "+c.Closing)) < 400
 }
 
 func exactFields(raw json.RawMessage, expected ...string) bool {

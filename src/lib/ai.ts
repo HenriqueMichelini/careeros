@@ -4,6 +4,7 @@ import {
   ProfileGap,
   ConfirmedQualification,
 } from './types'
+import { completeCoverLetter } from './cover-letter'
 import { careerProfile, cvQualifications, validQualifications } from './profile'
 
 export class ProfileReviewError extends Error {
@@ -99,11 +100,14 @@ export async function generateMaterials(
   } catch (error) {
     throw new ApplicationDraftError(error instanceof DOMException && error.name === 'TimeoutError' ? 'timeout' : 'outage')
   }
-  const payload = await response.json().catch(() => null) as { error?: unknown } & Partial<GeneratedMaterials> | null
+  const payload = await response.json().catch(() => null) as { error?: unknown; coverLetter?: unknown } & Partial<Omit<GeneratedMaterials, 'coverLetter'>> | null
   const known = new Set(['input', 'key', 'rate_limit', 'outage', 'timeout', 'invalid_output'])
   if (!response.ok) throw new ApplicationDraftError(typeof payload?.error === 'string' && known.has(payload.error) ? payload.error : 'outage')
-  if (!payload || ['jobTitle','company','jobSummary','resume','coverLetter','applicationAnswers'].some((key) => typeof payload[key as keyof GeneratedMaterials] !== 'string' || !(payload[key as keyof GeneratedMaterials] as string).trim())) throw new ApplicationDraftError('invalid_output')
-  return payload as GeneratedMaterials
+  if (!payload || ['jobTitle','company','jobSummary','resume','applicationAnswers'].some((key) => typeof payload[key as keyof GeneratedMaterials] !== 'string' || !(payload[key as keyof GeneratedMaterials] as string).trim())) throw new ApplicationDraftError('invalid_output')
+  const fullName = repo.fullName?.trim() || ''
+  const coverLetter = completeCoverLetter(payload.coverLetter, fullName)
+  if (coverLetter === null) throw new ApplicationDraftError('invalid_output')
+  return { ...payload, coverLetter, coverLetterHasSignature: !!fullName } as GeneratedMaterials
 }
 
 export async function findProfileGaps(

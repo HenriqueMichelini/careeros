@@ -71,6 +71,7 @@ export interface GeneratedMaterials {
   jobSummary: string
   resume: string
   coverLetter: string
+  coverLetterHasSignature?: boolean
   applicationAnswers: string
 }
 

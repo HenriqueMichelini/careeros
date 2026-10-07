@@ -58,7 +58,7 @@ export default function ResultsPage({ setPage }: Props) {
   useEffect(() => {
     return () => printCleanupRef.current?.()
   }, [])
-  useEffect(() => setPdfOverflow(false), [activeTab, materials?.resume])
+  useEffect(() => setPdfOverflow(false), [activeTab, materials?.resume, materials?.coverLetter])
 
   if (!materials) {
     return (
@@ -379,6 +379,9 @@ export default function ResultsPage({ setPage }: Props) {
             {activeTab === "cover" && (
               <div className="results-toolbar-advice mb-4 text-xs leading-relaxed text-[var(--color-muted-fg)]">
                 <p>{t("results.pdfHelp")}</p>
+                {(materials.coverLetterHasSignature === false || (materials.coverLetterHasSignature === undefined && !state.repository.fullName?.trim())) && (
+                  <p className="mt-2">{t("results.coverSignatureMissing")}</p>
+                )}
                 {pdfOverflow && <p role="alert" className="mt-2 text-[var(--color-accent)]">{t("results.coverPdfOverflow")}</p>}
               </div>
             )}
