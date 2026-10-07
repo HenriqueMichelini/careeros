@@ -11,6 +11,7 @@ import {
 } from "../lib/cvGeneration"
 import CvDensityControl from "../components/CvDensityControl"
 import CvFontSizeControl from "../components/CvFontSizeControl"
+import LanguageSelector from "../components/LanguageSelector"
 import { useCvPreferences } from "../lib/cvPreferences"
 import CvPaper from "../components/CvPaper"
 import { useI18n, useStore } from "../lib/store"
@@ -425,6 +426,30 @@ export default function CvPage() {
     (visible("experience") && selectedExperience.length > 0) ||
     (visible("projects") && selectedProjects.length > 0)
   const summary = choices.summary ?? curated?.summary ?? repo.careerGoals
+  const sectionHasContent = (section: CvSection) => {
+    switch (section) {
+      case "contact":
+        return contact.length > 0
+      case "summary":
+        return Boolean(summary.trim())
+      case "skills":
+        return skills.length > 0 || competencies.length > 0
+      case "tools":
+        return tools.length > 0
+      case "experience":
+        return experience.length > 0
+      case "projects":
+        return projects.length > 0
+      case "education":
+        return education.length > 0
+      case "certifications":
+        return certifications.length > 0
+      case "languages":
+        return languages.length > 0
+      case "additional":
+        return Boolean(repo.additionalInfo.trim())
+    }
+  }
   const sectionLabels: Record<CvSection, string> = {
     contact: t("cv.contact"),
     summary: t("cv.professionalProfile"),
@@ -917,41 +942,119 @@ export default function CvPage() {
           </CvPaper>
         </div>
         <aside className="cv-controls order-1 lg:order-2 lg:sticky lg:top-24">
-          <div
-            className="mb-4 border border-[var(--color-border)] bg-[var(--color-card)] p-5"
-            data-cv-generation
-          >
-            <h2 className="mb-2 text-xs font-semibold uppercase">
-              {t("cv.generateTitle")}
-            </h2>
-            <p className="mb-3 text-xs leading-5">{t("cv.generatePolicy")}</p>
-            <CvDensityControl
-              density={preferences.density}
-              onChange={preferences.setDensity}
-              appliedDensity={curated?.density ?? null}
-              saveError={preferences.saveError}
-            />
-            <details className="mb-3 text-xs leading-5">
-              <summary>{t("cv.generatePrivacyTitle")}</summary>
-              <p>{t("cv.generatePrivacy")}</p>
-            </details>
-            {!sufficient && (
-              <p className="mb-3 text-xs">{t("cv.generateInsufficient")}</p>
+          <div className="mb-4 border border-[var(--color-border)] bg-[var(--color-card)] p-5">
+            <button
+              type="button"
+              onClick={exportPdf}
+              className="w-full bg-[var(--color-accent)] px-4 py-3 text-xs font-semibold uppercase tracking-widest text-white transition-opacity hover:opacity-85"
+              style={{ fontFamily: "var(--font-mono)" }}
+            >
+              <svg
+                aria-hidden="true"
+                className="mr-2 inline-block h-4 w-4 align-[-3px]"
+                viewBox="0 0 20 22"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+              >
+                <path d="M4 1.5h8l4 4V19a1.5 1.5 0 0 1-1.5 1.5h-10A1.5 1.5 0 0 1 3 19V3a1.5 1.5 0 0 1 1-1.5Z" />
+                <path d="M12 1.5V6h4M6 15.5h8M6 12.5h8" />
+              </svg>
+              {t("results.savePdf")}
+            </button>
+            {exportOverflow && (
+              <p
+                role="alert"
+                className="mt-3 border-l-2 border-[var(--color-accent)] pl-3 text-xs leading-5"
+              >
+                {t("cv.exportOverflow")}
+              </p>
             )}
+            <button
+              type="button"
+              disabled={!sufficient || !state.apiKey || generation}
+              onClick={startGeneration}
+              className="mt-4 w-full bg-[var(--color-fg)] px-4 py-3 text-xs font-semibold uppercase tracking-widest text-[var(--color-card)] transition-opacity hover:opacity-85 disabled:opacity-50"
+              style={{ fontFamily: "var(--font-mono)" }}
+            >
+              <svg
+                aria-hidden="true"
+                className="mr-2 inline-block h-4 w-4 align-[-3px]"
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+              >
+                <path d="m10 1.8 1.5 4.1 4.2-1.4-1.4 4.2 4 1.3-4 1.5 1.4 4.1-4.2-1.4-1.5 4-1.3-4-4.2 1.4 1.4-4.1-4-1.5 4-1.3-1.4-4.2 4.2 1.4L10 1.8Z" />
+                <path d="M10 7v6M7 10h6" />
+              </svg>
+              {t(generation ? "cv.generating" : "cv.generate")}
+            </button>
+          </div>
+          <div className="mb-4 border border-[var(--color-border)] bg-[var(--color-card)] p-5">
+            <p className="mb-4 text-xs uppercase tracking-[0.2em] text-[var(--color-muted-fg)] [font-family:var(--font-mono)]">
+              {t("cv.previewSettings")}
+            </p>
+            <dl className="space-y-4 text-xs">
+              <div>
+                <dt className="mb-1 text-[var(--color-muted-fg)]">
+                  {t("cv.template")}
+                </dt>
+                <dd>{t("cv.atsCv")}</dd>
+              </div>
+              <div>
+                <dt className="mb-1 text-[var(--color-muted-fg)]">
+                  {t("cv.pageFormat")}
+                </dt>
+                <dd>{t("cv.a4")}</dd>
+              </div>
+              <div>
+                <dt className="mb-1 text-[var(--color-muted-fg)]">
+                  {t("cv.numberOfPages")}
+                </dt>
+                <dd>
+                  {overflows ? 1 + Math.ceil(fit.overflowPercent / 100) : 1}
+                </dd>
+              </div>
+              <div>
+                <dt className="mb-2 text-[var(--color-muted-fg)]">
+                  {t("cv.accentColor")}
+                </dt>
+                <dd className="flex items-center gap-2">
+                  <span className="inline-block h-4 w-4 border border-[var(--color-border)] bg-[var(--color-accent)]" />
+                  {t("cv.red")}
+                </dd>
+              </div>
+              <div>
+                <dt className="mb-2 text-[var(--color-muted-fg)]">
+                  {t("language.label")}
+                </dt>
+                <dd>
+                  <LanguageSelector />
+                </dd>
+              </div>
+            </dl>
+            <div className="mt-4">
+              <CvFontSizeControl
+                fontSize={preferences.fontSize}
+                onChange={preferences.setFontSize}
+                saveError={preferences.saveError}
+              />
+            </div>
+          </div>
+          <CvDensityControl
+            density={preferences.density}
+            onChange={preferences.setDensity}
+            appliedDensity={curated?.density ?? null}
+            saveError={preferences.saveError}
+          >
+            <div data-cv-generation>
             {!state.apiKey && (
               <p className="mb-3 text-xs">{t("cv.generateKey")}</p>
             )}
             {curated && (
               <p className="mb-3 text-xs">{t("cv.generatedSnapshot")}</p>
             )}
-            <button
-              type="button"
-              disabled={!sufficient || !state.apiKey || generation}
-              onClick={startGeneration}
-              className="w-full border border-[var(--color-border)] p-2 text-xs disabled:opacity-50"
-            >
-              {t(generation ? "cv.generating" : "cv.generate")}
-            </button>
             {generation && (
               <p role="status" className="mt-2 text-xs">
                 {t("cv.generateProgress")}
@@ -1029,41 +1132,30 @@ export default function CvPage() {
                 </button>
               </div>
             )}
-          </div>
-          <CvFontSizeControl
-            fontSize={preferences.fontSize}
-            onChange={preferences.setFontSize}
-            saveError={preferences.saveError}
-          />
+            </div>
+          </CvDensityControl>
           <div className="mb-4 border border-[var(--color-border)] bg-[var(--color-card)] p-5">
-            <h2 className="mb-2 text-xs uppercase tracking-[0.2em] [font-family:var(--font-mono)]">
+            <h2 className="mb-4 text-xs uppercase tracking-[0.2em] text-[var(--color-muted-fg)] [font-family:var(--font-mono)]">
               {t("cv.curation")}
             </h2>
             <p className="mb-4 text-xs leading-5 text-[var(--color-muted-fg)]">
               {t("cv.curationIntro")}
             </p>
-            <p className="mb-4 text-xs leading-5 text-[var(--color-muted-fg)]">
-              {t("cv.groupingNote")}
-            </p>
-            <p
-              role="status"
-              className={
-                overflows
-                  ? "mb-4 border-l-2 border-[var(--color-accent)] pl-3 text-xs leading-5"
-                  : "mb-4 text-xs leading-5"
-              }
-            >
-              {overflows
-                ? t("cv.fitAttention", {
-                    section:
-                      fit.section === "header"
-                        ? t("cv.header")
-                        : sectionLabels[(fit.section as CvSection)] ||
-                          t("cv.header"),
-                    percent: fit.overflowPercent,
-                  })
-                : t("cv.fits")}
-            </p>
+            {overflows && (
+              <p
+                role="status"
+                className="mb-4 border-l-2 border-[var(--color-accent)] pl-3 text-xs leading-5"
+              >
+                {t("cv.fitAttention", {
+                  section:
+                    fit.section === "header"
+                      ? t("cv.header")
+                      : sectionLabels[(fit.section as CvSection)] ||
+                        t("cv.header"),
+                  percent: fit.overflowPercent,
+                })}
+              </p>
+            )}
             {saveError && (
               <p
                 role="alert"
@@ -1078,13 +1170,37 @@ export default function CvPage() {
                   key={section}
                   className="border-t border-[var(--color-border)] pt-2"
                 >
-                  <label className="flex gap-2 text-xs font-semibold leading-5">
+                  <label
+                    className={`flex items-center gap-2 text-xs font-semibold leading-5 ${
+                      sectionHasContent(section)
+                        ? ""
+                        : "text-[#D9A300]"
+                    }`}
+                    title={
+                      sectionHasContent(section)
+                        ? undefined
+                        : t("cv.missingContent")
+                    }
+                  >
                     <input
                       type="checkbox"
                       checked={visible(section)}
                       onChange={() => toggle("hiddenSections", section)}
                     />
-                    {sectionLabels[section]}
+                    <span className="flex-1">{sectionLabels[section]}</span>
+                    {!sectionHasContent(section) && (
+                      <svg
+                        aria-hidden="true"
+                        className="h-4 w-4 shrink-0"
+                        viewBox="0 0 20 20"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                      >
+                        <path d="M10 2.5 18 17H2L10 2.5Z" />
+                        <path d="M10 7v4.5M10 14.5h.01" />
+                      </svg>
+                    )}
                   </label>
                   {section === "summary" && visible(section) && (
                     <div className="ml-5 mt-2">
@@ -1240,60 +1356,7 @@ export default function CvPage() {
               {t("cv.cvOnlyNote")}
             </p>
           </div>
-          <div className="mb-4 border border-[var(--color-border)] bg-[var(--color-card)] p-5">
-            <button
-              type="button"
-              onClick={exportPdf}
-              className="w-full bg-[var(--color-fg)] px-4 py-3 text-xs font-semibold uppercase tracking-widest text-[var(--color-card)]"
-            >
-              {t("cv.exportPdf")}
-            </button>
-            <p className="mt-3 text-xs leading-5 text-[var(--color-muted-fg)]">
-              {t("cv.exportHelp")}
-            </p>
-            {exportOverflow && (
-              <p
-                role="alert"
-                className="mt-3 border-l-2 border-[var(--color-accent)] pl-3 text-xs leading-5"
-              >
-                {t("cv.exportOverflow")}
-              </p>
-            )}
-            <p className="mt-3 text-[10px] leading-5 text-[var(--color-muted-fg)]">
-              {t("cv.parserNote")}
-            </p>
-          </div>
-          <div className="border border-[var(--color-border)] bg-[var(--color-card)] p-5">
-            <p className="mb-4 text-xs uppercase tracking-[0.2em] text-[var(--color-muted-fg)] [font-family:var(--font-mono)]">
-              {t("cv.previewSettings")}
-            </p>
-            <dl className="space-y-4 text-xs">
-              <div>
-                <dt className="mb-1 text-[var(--color-muted-fg)]">
-                  {t("cv.template")}
-                </dt>
-                <dd>{t("cv.atsCv")}</dd>
-              </div>
-              <div>
-                <dt className="mb-1 text-[var(--color-muted-fg)]">
-                  {t("cv.pageFormat")}
-                </dt>
-                <dd>{overflows ? t("cv.a4Overflow") : t("cv.a4Pages")}</dd>
-              </div>
-              <div>
-                <dt className="mb-2 text-[var(--color-muted-fg)]">
-                  {t("cv.accentColor")}
-                </dt>
-                <dd className="flex items-center gap-2">
-                  <span className="inline-block h-4 w-4 border border-[var(--color-border)] bg-[var(--color-accent)]" />
-                  {t("cv.red")}
-                </dd>
-              </div>
-            </dl>
-            <p className="mt-4 text-[10px] leading-5 text-[var(--color-muted-fg)]">
-              {t("cv.settingsNote")}
-            </p>
-          </div>
+          {/* Profile Coverage is temporarily hidden while the CV content controls are consolidated.
           <div className="mt-4 border border-[var(--color-border)] p-5">
             <p className="mb-3 text-xs uppercase tracking-[0.2em] text-[var(--color-muted-fg)] [font-family:var(--font-mono)]">
               {t("cv.profileCoverage")}
@@ -1326,6 +1389,7 @@ export default function CvPage() {
               {t("cv.editProfileNote")}
             </p>
           </div>
+          */}
         </aside>
       </div>
     </div>

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 
 export const CV_PREFERENCES_KEY = "careeros_cv_preferences_v1"
 export const CV_FONT_MIN = 12
-export const CV_FONT_DEFAULT = 12
+export const CV_FONT_DEFAULT = 14
 export const CV_FONT_MAX = 16
 
 export function parseCvFontSize(raw: string | null): number {

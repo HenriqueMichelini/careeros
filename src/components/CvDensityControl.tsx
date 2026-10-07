@@ -1,4 +1,4 @@
-import { useId } from "react"
+import { useId, type ReactNode } from "react"
 import { CV_DENSITIES, type CvDensity } from "../lib/cvPreferences"
 import { useI18n } from "../lib/store"
 
@@ -7,22 +7,24 @@ export default function CvDensityControl({
   onChange,
   appliedDensity,
   saveError,
+  children,
 }: {
   density: CvDensity
   onChange: (value: CvDensity) => void
   appliedDensity: CvDensity | null
   saveError: boolean
+  children: ReactNode
 }) {
   const { t } = useI18n()
   const id = useId()
   return (
-    <fieldset
-      className="mb-4 border border-[var(--color-border)] p-3"
+    <div
+      className="mb-4 border border-[var(--color-border)] bg-[var(--color-card)] p-5"
       data-cv-density
+      data-cv-generation
     >
-      <legend className="px-1 text-xs font-semibold">{t("cv.density")}</legend>
-      <p id={`${id}-help`} className="mb-3 text-xs leading-5">
-        {t("cv.densityHelp")}
+      <p className="mb-4 text-xs uppercase tracking-[0.2em] text-[var(--color-muted-fg)] [font-family:var(--font-mono)]">
+        {t("cv.density")}
       </p>
       {CV_DENSITIES.map((value) => (
         <label
@@ -35,7 +37,7 @@ export default function CvDensityControl({
             value={value}
             checked={density === value}
             onChange={() => onChange(value)}
-            aria-describedby={`${id}-${value} ${id}-help`}
+            aria-describedby={`${id}-${value}`}
             className="mt-1"
           />
           <span>
@@ -49,20 +51,12 @@ export default function CvDensityControl({
           </span>
         </label>
       ))}
-      <p role="status" className="text-xs leading-5" data-cv-density-status>
-        {appliedDensity
-          ? t("cv.densityApplied", {
-              density: t(`cv.density.${appliedDensity}`),
-            })
-          : t("cv.densityNoSnapshot")}
-        {(!appliedDensity || density !== appliedDensity) &&
-          ` ${t("cv.densityPending")}`}
-      </p>
       {saveError && (
-        <p role="alert" className="mt-2 text-xs">
+        <p role="alert" className="mb-3 text-xs">
           {t("cv.saveError")}
         </p>
       )}
-    </fieldset>
+      {children}
+    </div>
   )
 }

@@ -14,7 +14,7 @@ interface Props {
 
 export default function CvPaper({
   label,
-  fontSize = 12,
+  fontSize = 14,
   scale,
   overflows,
   pageEndLabel,
