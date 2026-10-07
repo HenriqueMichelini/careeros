@@ -348,6 +348,9 @@ const messages = {
     "cv.titleYourTemplate": "Your Template",
     "cv.intro":
       "Shape the master CV that future application templates can build on. This preview uses your Profile details and sample content where information is missing.",
+    "cv.fontSize": "CV body font size",
+    "cv.fontSizeHelp": "12–16 px (9–12 pt). Body text changes together; headings stay larger and contact details slightly smaller. Applies to this CV and generated résumés, including PDF. Check the A4 fit after each change.",
+    "cv.resetFontSize": "Reset to default ({{size}} px)",
     "cv.documentPreview": "CV document preview",
     "cv.readFullSize": "Read at 100%",
     "cv.fitPage": "Fit page",
@@ -796,6 +799,9 @@ const messages = {
     "cv.titleYourTemplate": "Seu modelo",
     "cv.intro":
       "Prepare seu currículo-base para candidaturas futuras. Esta prévia usa seu Perfil e inclui exemplos quando faltam dados.",
+    "cv.fontSize": "Tamanho da fonte do corpo do CV",
+    "cv.fontSizeHelp": "12–16 px (9–12 pt). O corpo do texto muda junto; títulos ficam maiores e contatos um pouco menores. Aplica-se a este CV e aos currículos gerados, inclusive ao PDF. Confira o ajuste ao A4 após cada mudança.",
+    "cv.resetFontSize": "Restaurar padrão ({{size}} px)",
     "cv.documentPreview": "Prévia do currículo",
     "cv.readFullSize": "Ler em 100%",
     "cv.fitPage": "Ajustar à página",

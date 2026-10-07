@@ -1,4 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
+import CvFontSizeControl from "../components/CvFontSizeControl"
+import { useCvFontSize } from "../lib/cvPreferences"
 import CvPaper from "../components/CvPaper"
 import { useI18n, useStore } from "../lib/store"
 import { cvQualifications } from "../lib/profile"
@@ -68,6 +70,7 @@ function CvLink({ value }: { value: string }) {
 }
 
 export default function CvPage() {
+  const typography = useCvFontSize()
   const { state } = useStore()
   const { t } = useI18n()
   const repo = state.repository
@@ -413,7 +416,7 @@ export default function CvPage() {
     observer.observe(content)
     measure()
     return () => observer.disconnect()
-  }, [choices, state.locale, repo, paperScale])
+  }, [choices, state.locale, repo, paperScale, typography.fontSize])
 
   return (
     <div className="cv-page mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -448,6 +451,7 @@ export default function CvPage() {
             </button>
           )}
           <CvPaper
+            fontSize={typography.fontSize}
             label={t("cv.documentPreview")}
             scale={paperScale}
             overflows={overflows}
@@ -741,6 +745,11 @@ export default function CvPage() {
           </CvPaper>
         </div>
         <aside className="cv-controls order-1 lg:order-2 lg:sticky lg:top-24">
+          <CvFontSizeControl
+            fontSize={typography.fontSize}
+            onChange={typography.setFontSize}
+            saveError={typography.saveError}
+          />
           <div className="mb-4 border border-[var(--color-border)] bg-[var(--color-card)] p-5">
             <h2 className="mb-2 text-xs uppercase tracking-[0.2em] [font-family:var(--font-mono)]">
               {t("cv.curation")}

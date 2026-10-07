@@ -1,7 +1,8 @@
-import { ReactNode, Ref } from "react"
+import { CSSProperties, ReactNode, Ref } from "react"
 
 interface Props {
   label: string
+  fontSize?: number
   scale: number
   overflows: boolean
   pageEndLabel: string
@@ -13,6 +14,7 @@ interface Props {
 
 export default function CvPaper({
   label,
+  fontSize = 12,
   scale,
   overflows,
   pageEndLabel,
@@ -38,7 +40,11 @@ export default function CvPaper({
           </span>
         )}
       </div>
-      <div ref={contentRef} className="cv-paper-content relative px-12 py-11">
+      <div
+        ref={contentRef}
+        className="cv-paper-content relative px-12 py-11"
+        style={{ "--cv-font-size": `${fontSize}px` } as CSSProperties}
+      >
         {children}
       </div>
     </article>

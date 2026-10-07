@@ -1,7 +1,13 @@
 import { Fragment, useLayoutEffect, useMemo, useRef, useState } from "react"
+import CvFontSizeControl from "./CvFontSizeControl"
+import { useCvFontSize } from "../lib/cvPreferences"
 import CvPaper from "./CvPaper"
 import { useI18n } from "../lib/store"
-import { professionalLinkHref, professionalLinkLabel, professionalLinkTarget } from "../lib/cv"
+import {
+  professionalLinkHref,
+  professionalLinkLabel,
+  professionalLinkTarget,
+} from "../lib/cv"
 import { parseResumeHeader, parseResumeMarkdown } from "../lib/resume"
 import { ProfessionalRepository } from "../lib/types"
 
@@ -46,6 +52,7 @@ export default function GeneratedResumePreview({
   profile: ProfessionalRepository
   onEditProfile: () => void
 }) {
+  const typography = useCvFontSize()
   const { t } = useI18n()
   const slotRef = useRef<HTMLDivElement>(null)
   const boundaryRef = useRef<HTMLDivElement>(null)
@@ -55,7 +62,10 @@ export default function GeneratedResumePreview({
   const paperScale = readFullSize ? 1 : fitScale
   const [overflows, setOverflows] = useState(false)
   const parsed = useMemo(() => parseResumeHeader(resume), [resume])
-  const sections = useMemo(() => parseResumeMarkdown(parsed.body), [parsed.body])
+  const sections = useMemo(
+    () => parseResumeMarkdown(parsed.body),
+    [parsed.body],
+  )
   const labels = {
     summary: t("cv.professionalProfile"),
     experience: t("cv.experience"),
@@ -116,10 +126,15 @@ export default function GeneratedResumePreview({
     observer.observe(content)
     measure()
     return () => observer.disconnect()
-  }, [resume, profile, paperScale])
+  }, [resume, profile, paperScale, typography.fontSize])
 
   return (
     <div className="generated-resume-preview">
+      <CvFontSizeControl
+        fontSize={typography.fontSize}
+        onChange={typography.setFontSize}
+        saveError={typography.saveError}
+      />
       <p
         role="status"
         className="mb-4 text-xs leading-5 text-[var(--color-muted-fg)]"
@@ -129,7 +144,11 @@ export default function GeneratedResumePreview({
       {(!name || contacts.length === 0) && (
         <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs leading-5 text-[var(--color-muted-fg)]">
           <span>{t("results.resumeMissingIdentity")}</span>
-          <button type="button" onClick={onEditProfile} className="underline underline-offset-2 text-[var(--color-accent)]">
+          <button
+            type="button"
+            onClick={onEditProfile}
+            className="underline underline-offset-2 text-[var(--color-accent)]"
+          >
             {t("nav.profile")}
           </button>
         </div>
@@ -146,6 +165,7 @@ export default function GeneratedResumePreview({
           </button>
         )}
         <CvPaper
+          fontSize={typography.fontSize}
           label={t("results.resume")}
           className="generated-resume-paper"
           scale={paperScale}
@@ -178,7 +198,7 @@ export default function GeneratedResumePreview({
                             href={href}
                             className="underline underline-offset-2"
                           >
-                          {professionalLinkLabel(item)}
+                            {professionalLinkLabel(item)}
                           </a>
                         ) : (
                           inlineText(item)
