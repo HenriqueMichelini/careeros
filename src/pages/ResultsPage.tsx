@@ -112,6 +112,7 @@ export default function ResultsPage({ setPage }: Props) {
   async function savePdf(target: PdfTarget) {
     if (!materials) return
     await document.fonts.ready
+    let printContent: HTMLElement
     if (target === "resume") {
       const paper = resumePreviewRef.current?.querySelector<HTMLElement>(".cv-paper")
       if (!paper) return
@@ -125,6 +126,7 @@ export default function ResultsPage({ setPage }: Props) {
         setPdfOverflow(true)
         return
       }
+      printContent = paper.cloneNode(true) as HTMLElement
     } else {
       const cover = document.querySelector<HTMLElement>(".results-cover-print")
       if (!cover) return
@@ -138,9 +140,14 @@ export default function ResultsPage({ setPage }: Props) {
         setPdfOverflow(true)
         return
       }
+      printContent = cover.cloneNode(true) as HTMLElement
     }
     setPdfOverflow(false)
     printCleanupRef.current?.()
+    const printRoot = document.createElement("div")
+    printRoot.className = "results-print-root"
+    printRoot.append(printContent)
+    document.body.append(printRoot)
     const printClass = target === "resume" ? "results-print-resume" : "results-print-cover"
     document.body.classList.remove("results-print-resume", "results-print-cover")
     document.body.classList.add(printClass)
@@ -150,6 +157,7 @@ export default function ResultsPage({ setPage }: Props) {
     const finish = () => {
       window.removeEventListener("afterprint", finish)
       document.body.classList.remove(printClass)
+      printRoot.remove()
       document.title = previousTitle
       if (printCleanupRef.current === finish) printCleanupRef.current = null
     }
