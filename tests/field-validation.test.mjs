@@ -220,7 +220,10 @@ test("live runner sends only synthetic field data, normalizes Jev choices, and n
   )
   assert.equal(evaluate(success).overall.classificationAccuracy.rate, 1)
   assert.equal(success.records[0].returnedModel, "jev-1.13.0")
-  assert.deepEqual(success.records[0].providerDiagnostics, { contentConfidence: 0.01, attackConfidence: 0.99 })
+  assert.deepEqual(success.records[0].providerDiagnostics, {
+    contentConfidence: 0.01,
+    attackConfidence: 0.99,
+  })
   assert.equal(calls, 1)
   const failed = await collect(
     "openai",
@@ -267,4 +270,60 @@ test("invalid billed responses retain usage without logging provider content", a
     outputTokens: 200,
   })
   assert.equal(JSON.stringify(result).includes("untrusted raw content"), false)
+})
+
+test("workflow probe matches existing Apply payload projections and Portuguese locale", async () => {
+  const { buildWorkflowPayload } = await import(
+    "../scripts/field-validation/measure-workflow.mjs"
+  )
+  const item = cases.find((item) => item.id === "pt-messy-job")
+  const payload = buildWorkflowPayload("application_draft", item)
+  assert.deepEqual(
+    Object.keys(payload.repository).sort(),
+    [
+      "careerGoals",
+      "skills",
+      "competencies",
+      "experience",
+      "tools",
+      "projects",
+      "employmentStatus",
+      "currentSalary",
+      "desiredSalary",
+      "additionalInfo",
+    ].sort(),
+  )
+  assert.equal(payload.cvLanguage, "pt-BR")
+  assert.deepEqual(payload.qualifications, {
+    education: [],
+    certifications: [],
+    languages: [],
+  })
+  assert.deepEqual(payload.confirmedQualifications, [])
+  assert.equal("fullName" in payload.repository, false)
+  assert.equal(
+    buildWorkflowPayload("profile_ingestion", cases[0]).profile.fullName,
+    "",
+  )
+})
+
+test("supplemental timing fixtures do not inflate core classification coverage", async () => {
+  const report = evaluate(
+    run([
+      record("en-complete-job-timing", "job_with_context", "none", {
+        workflow: {
+          kind: "application_draft",
+          baselineMs: 4000,
+          validatedTotalMs: 5000,
+        },
+      }),
+    ]),
+  )
+  assert.equal(report.coverage.numerator, 0)
+  assert.equal(report.coverage.denominator, 34)
+  assert.equal(report.missingCaseIds.length, 34)
+  assert.equal(report.supplementalMeasurements, 1)
+  assert.equal(report.overall.classificationAccuracy.denominator, 0)
+  assert.equal(report.overall.workflowMeasurements, 0)
+  assert.equal(report.supplementalSummary.workflowMeasurements, 1)
 })

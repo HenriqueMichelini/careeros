@@ -11,6 +11,17 @@ export const cases = JSON.parse(
     "utf8",
   ),
 )
+export const workflowCases = JSON.parse(
+  readFileSync(
+    new URL(
+      "../../docs/evaluations/field-validation-workflow-cases.json",
+      import.meta.url,
+    ),
+    "utf8",
+  ),
+)
+export const lookupCase = (id) =>
+  [...cases, ...workflowCases].find((item) => item.id === id)
 const workflows = {
   profile_ingestion: 55000,
   qualification_gaps: 30000,
@@ -45,7 +56,7 @@ export function evaluate(run) {
     throw new Error("Invalid run metadata")
   const seen = new Set()
   const rows = run.records.map((record) => {
-    const item = cases.find((item) => item.id === record.caseId)
+    const item = lookupCase(record.caseId)
     if (
       !item ||
       seen.has(item.id) ||
@@ -100,8 +111,16 @@ export function evaluate(run) {
     }
     if (record.providerDiagnostics) {
       const diagnostic = record.providerDiagnostics
-      if (![diagnostic.contentConfidence, diagnostic.attackConfidence].every(value => finite(value) && value <= 1)) throw new Error("Invalid provider diagnostics")
-      row.providerDiagnostics = { contentConfidence: diagnostic.contentConfidence, attackConfidence: diagnostic.attackConfidence }
+      if (
+        ![diagnostic.contentConfidence, diagnostic.attackConfidence].every(
+          (value) => finite(value) && value <= 1,
+        )
+      )
+        throw new Error("Invalid provider diagnostics")
+      row.providerDiagnostics = {
+        contentConfidence: diagnostic.contentConfidence,
+        attackConfidence: diagnostic.attackConfidence,
+      }
     }
     if (typeof record.returnedModel === "string")
       row.returnedModel = record.returnedModel
@@ -205,6 +224,12 @@ export function evaluate(run) {
       billedCost: null,
     }
   }
+  const coreRows = rows.filter((row) =>
+    cases.some((item) => item.id === row.caseId),
+  )
+  const supplementalRows = rows.filter((row) =>
+    workflowCases.some((item) => item.id === row.caseId),
+  )
   return {
     version: 1,
     provider: run.provider,
@@ -215,27 +240,29 @@ export function evaluate(run) {
       run.mode === "live"
         ? "operator-supplied live records; provenance requires review"
         : "fixture only; not provider evidence",
-    coverage: rate(rows.length, cases.length),
+    coverage: rate(coreRows.length, cases.length),
+    supplementalMeasurements: supplementalRows.length,
+    supplementalSummary: summarize(supplementalRows),
     missingCaseIds: cases
       .filter((item) => !seen.has(item.id))
       .map((item) => item.id),
-    overall: summarize(rows),
+    overall: summarize(coreRows),
     byLanguage: Object.fromEntries(
       ["en", "pt"].map((language) => [
         language,
-        summarize(rows.filter((row) => row.language === language)),
+        summarize(coreRows.filter((row) => row.language === language)),
       ]),
     ),
     byField: Object.fromEntries(
       ["professional_information", "job_posting"].map((field) => [
         field,
-        summarize(rows.filter((row) => row.field === field)),
+        summarize(coreRows.filter((row) => row.field === field)),
       ]),
     ),
     byCategory: Object.fromEntries(
       [...new Set(cases.map((item) => item.category))].map((category) => [
         category,
-        summarize(rows.filter((row) => row.category === category)),
+        summarize(coreRows.filter((row) => row.category === category)),
       ]),
     ),
     rows,

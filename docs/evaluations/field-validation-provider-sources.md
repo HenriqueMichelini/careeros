@@ -84,4 +84,4 @@ Human setup, addressed to the user: log in at the [TypeSafe console](https://con
 
 ## Decision boundary
 
-No comparative winner, production integration, or switching recommendation is established by these sources. Remaining evidence requires consented/synthetic fixtures, actual provider access and balance, measured outputs and usage, and a reviewed comparison against the agreed quality and operational criteria. Synthetic tests can proceed once the user configures credentials; this source review made no paid calls.
+This source review establishes documentation claims, not measured quality or account configuration. Subsequent authorized synthetic calls and the measured recommendation are recorded in [the live comparison](field-validation-live-results.md). Provider approval remains pending; no source/marketing claim substitutes for those measured decisions or the unresolved drafting limitation.

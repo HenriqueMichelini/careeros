@@ -1,12 +1,12 @@
 # Field-validation evaluation — issue #29
 
-Date: 2026-10-07. Status: **prepared; live comparison and provider approval pending**. Source of behavior: [agreed design](../input-validation.md); [GitHub issue #29](https://github.com/HenriqueMichelini/careeros/issues/29). No production workflow uses this evaluation code. Issues #30–#33 must not start on the basis of fixture tests or documentation claims.
+Date: 2026-10-07. Status: **live comparison recorded; provider approval pending**. Source of behavior: [agreed design](../input-validation.md); [GitHub issue #29](https://github.com/HenriqueMichelini/careeros/issues/29). No production workflow uses this evaluation code. Issues #30–#33 must not start on the basis of fixture tests or documentation claims.
 
 ## Recommendation and approval
 
-**Provisional recommendation: retain OpenAI as the architectural baseline; do not adopt either classifier for production until the live evaluation is reviewed.** OpenAI already owns the application's user-provided key path and downstream generation. Jev is a credible narrow semantic-decision candidate, not a replacement for free-form generation. Without measured routing quality and whole-workflow timing, a cheaper documented token rate or typed output cannot establish a winner.
+**Recommendation: use the existing OpenAI `gpt-6-luna` configuration for classification, subject to user approval.** OpenAI matched 34/34 labeled decisions; Jev matched 26/34 and misrouted every uncertain quoted-attack case. The [live comparison](field-validation-live-results.md) records results, eight successful paired local workflow timings, four baseline-only drafting failures, reference-rate cost estimates and the proposed bounded runtime policy. No integration has begun.
 
-The user identified Jev as TypeSafe AI and authorized the evaluation seams and help configuring credentials. This is authorization to prepare/evaluate synthetic samples, **not approval to adopt Jev in the product**. Provider selection approval is unresolved. After measurement, present this report and ask the user to approve the named provider, model, routing policy and operational budget before dependent integration work begins.
+The user identified Jev as TypeSafe AI and authorized the evaluation seams and help configuring credentials. This is authorization to prepare/evaluate synthetic samples, **not approval to adopt Jev in the product**. Provider selection approval is unresolved. After reviewing the recorded measurements, present this report and ask the user to approve the named provider, model, routing policy and operational budget before dependent integration work begins.
 
 Adopting Jev would change ADR 0001's OpenAI-only decision. It would add a TypeSafe account, a separately owned user key or an explicitly approved shared billing design, TypeSafe credit management, another data recipient, and a privacy disclosure/retention review. OpenAI remains necessary for downstream workflows. No shared secret, backend persistence, automatic fallback, retry, SDK installation or deployment has been added.
 
@@ -23,23 +23,15 @@ The downstream constraints (Java without inferred experience, ignored grocery li
 
 ## Current evidence
 
-| Criterion | OpenAI | Jev |
-| --- | --- | --- |
-| Measured decision/classification accuracy | Unavailable: credentials not configured | Unavailable: credentials not configured |
-| Legitimate rejection / uncertain routing | Unavailable | Unavailable |
-| Classification and complete workflow latency | Unavailable | Unavailable |
-| Actual usage / cost / billing | Unavailable | Unavailable |
-| Documented price, USD per million tokens | $0.10 input / $0.50 output; caching/tier caveats | $0.042 input / free output |
-| Privacy documentation | No training by default; default abuse monitoring retention up to 30 days, exceptions/account controls | No training on Input; US hosting; no fixed default deletion interval established; enterprise ZDR |
-| Architecture impact | Existing user-key provider; new call still adds data processing/cost | Additional account/key/billing/recipient and ADR approval |
+The [live comparison and recommendation](field-validation-live-results.md) supersede the initial unavailable state. Both full-corpus runs completed 34 requests with no operational/shape failures: OpenAI 34/34 correct, Jev 26/34. OpenAI correctly routed 4/4 uncertain cases; Jev treated all four as confirmed attacks. Neither rejected any of the 12 accepted legitimate cases. Privacy claims remain documentation evidence; invoices, organization retention settings, browser/deployment timing and successful drafting-overhead measurements are unavailable.
 
-See [dated sources](field-validation-provider-sources.md) for documentation claims and qualifications. The [machine-readable unavailable report](field-validation-unavailable.json) is generated without any provider invocation:
+The [offline empty report](field-validation-unavailable.json) is retained as a no-input runner example, **not the current evaluation status**. Running the following does not contact a provider and correctly emits null measurements when no records are supplied:
 
 ```sh
 node scripts/field-validation/evaluate.mjs
 ```
 
-No credentials or account settings were inspected and no live provider request was made. Missing measurements are `null`, never 100% accuracy, zero latency or zero spend. Controlled contract/runner tests establish policy and accounting behavior only. Documented prices are not measured workflow costs. The runner deliberately reports billed cost as unknown; derive an estimate from actual usage using the source note's formula and verify caching/tier/account billing before calling it spend.
+Measured usage and reference-rate estimates are distinct from actual billed amounts. The runner reports billed cost as unknown. See the live report for every setup failure, smoke, scored corpus run and workflow attempt, including the private credential-format correction and malformed probe projection that were excluded from classification scores.
 
 ## Contract and routing policy
 
@@ -53,9 +45,9 @@ The adapter returns content sufficiency and attack status independently. Invalid
 4. A job title alone or insufficient relevant information requests missing context.
 5. A professional fact, or job role plus responsibility/qualification, permits downstream validation/review.
 
-These semantic thresholds come from the approved examples, not a fitted numeric confidence cutoff. **No numeric safety threshold is recommended from unavailable measurements.** The first live comparison should score categorical routing directly, review every mismatch, and then run a separate held-out bilingual set before fitting any provider-specific abstention/confidence threshold. Do not tune and claim accuracy on the same examples. A low-confidence choice must not be silently converted into a confirmed attack; ambiguous semantics require rephrasing, while transport/schema failures remain service failures.
+These semantic thresholds come from the approved examples, not a fitted numeric confidence cutoff. **No numeric safety threshold is recommended from this small uncalibrated set.** The live comparison scores categorical routing directly and preserves every mismatch. A separate held-out bilingual set is needed before fitting any provider-specific abstention/confidence threshold. Do not tune and claim accuracy on the same examples. A low-confidence choice must not be silently converted into a confirmed attack; ambiguous semantics require rephrasing, while transport/schema failures remain service failures.
 
-Candidate approval criteria proposed for user review: all six agreed example behaviors must route correctly in both languages; no detected-attack fixture may reach downstream processing; no legitimate applicant requirement may be blocked as an attack; all quoted-attack cases must request rephrasing. Report every error and every failure, not only an average accuracy. Passing this small set is necessary evidence, not a perfect-security guarantee. More paraphrases, option-order tests for Jev, and held-out ordinary inputs are needed before confidence calibration or broad quality claims.
+The live comparison passes the following candidate approval criteria for OpenAI and fails them for Jev: all six agreed example behaviors must route correctly in both languages; no detected-attack fixture may reach downstream processing; no legitimate applicant requirement may be blocked as an attack; all quoted-attack cases must request rephrasing. Report every error and every failure, not only an average accuracy. Passing this small set is necessary evidence, not a perfect-security guarantee. More paraphrases, option-order tests for Jev, and held-out ordinary inputs are needed before confidence calibration or broad quality claims.
 
 All pasted content remains data after acceptance. Schema/domain validation, source provenance, explicit Profile Proposal apply, stale-response handling and deliberate retry remain required. The supporting policy reference for the eventual attack notice belongs to the integration slices; this evaluation does not invent terms.
 
@@ -73,7 +65,7 @@ node scripts/field-validation/evaluate.mjs /tmp/careeros-openai-smoke.json /tmp/
 
 After reviewing smoke access/usage, select corpus IDs explicitly, e.g. `en-fact pt-fact en-short-job pt-short-job en-title-only pt-title-only en-applicant pt-applicant en-quoted-profile pt-quoted-profile en-attack-profile pt-attack-profile`. Each selected ID incurs at most one request in that invocation. Do not put an automatic retry loop around the commands. For a full run, supply all IDs from the corpus once per provider. Keep attempts, failures, run IDs and returned models; report unavailable remaining cases if the run stops. Do not merge distinct runs under a fabricated run ID.
 
-For a complete synchronous measurement, use the existing local Go preview server (default loopback port 8787), then deliberately run one baseline and one validated workflow:
+For a complete synchronous measurement, use the existing local Go preview server (default loopback port 8787), then deliberately run one baseline and one validated workflow (the original posting remains useful for exposing the drafting limit; `en-complete-job-timing` / `pt-complete-job-timing` are separate fully specified timing fixtures):
 
 ```sh
 node scripts/field-validation/measure-workflow.mjs openai en-fact profile_ingestion > /tmp/careeros-openai-ingestion-pair.json
@@ -87,16 +79,15 @@ The probe uses a synthetic Java-only Profile. The OpenAI workflow key is require
 
 Local source establishes two ingestion stages with independent 24-second upstream deadlines (up to 48 seconds before overhead), a 55-second ingestion browser timeout, and 25-second upstream / 30-second browser timeouts for qualification gaps and drafting. Hosting's documented synchronous limit in ADR 0002 is 60 seconds; live host eligibility/revision has not been reverified. Classifier-only speed must not be substituted for complete workflow behavior.
 
-The exploratory 5-second classifier cap is a test parameter, **not a measured production budget recommendation**. Nominal worst-case sums are 53 seconds before ingestion overhead and 30 seconds before other workflow overhead, leaving insufficient demonstrated margin. Integration must use a shared remaining deadline and may need a smaller classifier budget or a redesigned bounded workflow. Do not recommend deployment if measured total workflow time cannot fit the browser and host bounds reliably. Paired latency measurements include overhead rather than adding independently sampled p95s. Record sample counts, cold/warm conditions, response status, failures and actual whole-request durations; a few successful samples do not establish tail reliability.
+The exploratory 5-second classifier cap is the actual trial parameter. The live report proposes a **3-second integration target inside a shared remaining deadline**, based on the observed sample and explicit untested limits; this is not a measured production guarantee. Nominal worst-case sums are 53 seconds before ingestion overhead and 30 seconds before other workflow overhead, leaving insufficient demonstrated margin. Integration must use a shared remaining deadline and may need a smaller classifier budget or a redesigned bounded workflow. Do not recommend deployment if measured total workflow time cannot fit the browser and host bounds reliably. Paired latency measurements include overhead rather than adding independently sampled p95s. Record sample counts, cold/warm conditions, response status, failures and actual whole-request durations; a few successful samples do not establish tail reliability.
 
 ## Remaining gate
 
-1. User configures private funded provider credentials; validate access with deliberate synthetic smoke requests.
-2. Collect both providers' labeled outcomes, usage and latency; review errors by field/language/category and downstream fidelity constraints.
-3. Measure paired whole workflows for both providers, including both ingestion stages and Apply's qualification/draft path. Keep browser/deployment verification distinct from the local HTTP probe.
-4. Update the recommendation from measured evidence, identify exact residual limitations and proposed routing/runtime policy, and obtain the user's provider approval. Record approval here before #30 starts.
+1. User reviews the [measured recommendation](field-validation-live-results.md), categorical policy, proposed shared-deadline/3-second target and residual limits, then approves or changes the selection before #30 starts.
+2. If a successful drafting-overhead measurement is required before approval, resolve the existing baseline `invalid_output` failure first. Do not attribute that failure to classification or silently accept it as a completed generation gate.
+3. Integration and verification retain downstream schema/domain/source validation, maximum-input/load checks, browser/deployment coverage and the unresolved drafting behavior. No new provider/credential/billing/recipient architecture has been approved.
 
-Until those actions are completed, #29 remains open and its dependent integration gate remains unresolved.
+Until approval is recorded, #29 remains open and its dependent integration gate remains unresolved.
 
 ## Local verification
 
@@ -108,6 +99,12 @@ Reviewed the issue-only staged diff against starting commit `9adf00a3545406a160d
 
 **Standards:** no documented violations or correctness/privacy defects. One nonblocking judgment: the workflow timeout map is duplicated in the probe and reporter; both currently agree.
 
-**Spec:** no actionable implementation defects or scope creep. Two incomplete acceptance areas remain: measured provider comparison/whole-workflow routing evidence, and final provider selection approval. These require private credentials, live evaluation, and user review. They are not satisfied by local fixture tests.
+**Spec (initial preparation review):** no actionable implementation defects or scope creep. At that point measured provider comparison and final approval were pending. Live evidence is now captured separately; successful drafting-overhead evidence and provider approval remain unresolved. A follow-up review covers the live artifacts and corrected probe.
 
-Review totals: standards 0 violations / 1 nonblocking smell; spec 0 correctness defects / 2 pending acceptance areas.
+Initial review totals: standards 0 violations / 1 nonblocking smell; spec 0 correctness defects / 2 then-pending acceptance areas.
+
+## Live-evidence follow-up review and checks
+
+The separate standards/specification reviews reproduced the measured counts, token totals, latency percentiles and workflow rows. No documented standards violations, credential disclosure, scope creep or unsupported current measurement claims were found. The reviewer identified that mixed supplemental/core runs could inflate summary accuracy even though coverage was separate. A failing-first regression now verifies separate core and supplemental summaries; the runner has been corrected. Published 34-case results were unaffected.
+
+All 11 focused checks and TypeScript typechecking pass. The final full Node suite is 47/48, with the same unchanged CV font-default expectation failure described above. No app or Go implementation changed in this follow-up. Two acceptance gates remain: the user's provider approval, and whether the unresolved successful drafting-overhead measurement is accepted as a documented evaluation limitation or must be resolved before #29 acceptance.

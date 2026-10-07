@@ -2,7 +2,7 @@ import { createHash } from "node:crypto"
 import { performance } from "node:perf_hooks"
 import { pathToFileURL } from "node:url"
 import { evaluationKey } from "./credentials.mjs"
-import { cases } from "./evaluate.mjs"
+import { cases, workflowCases, lookupCase } from "./evaluate.mjs"
 import { parseFieldSignals } from "./contract.mjs"
 
 const contentCriteria = {
@@ -91,8 +91,19 @@ export function normalizeResponse(provider, field, body) {
       if (content?.type !== "choice" || attack?.type !== "choice")
         throw new Error("Invalid answer type")
       signals = { content: content.choice, attack: attack.choice }
-      if ([content.confidence, attack.confidence].every(value => typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1)) {
-        metadata.providerDiagnostics = { contentConfidence: content.confidence, attackConfidence: attack.confidence }
+      if (
+        [content.confidence, attack.confidence].every(
+          (value) =>
+            typeof value === "number" &&
+            Number.isFinite(value) &&
+            value >= 0 &&
+            value <= 1,
+        )
+      ) {
+        metadata.providerDiagnostics = {
+          contentConfidence: content.confidence,
+          attackConfidence: attack.confidence,
+        }
       }
     } else {
       const choice = body.choices?.[0]
@@ -116,13 +127,13 @@ export async function collect(provider, ids, key, request = fetch) {
     !["openai", "jev"].includes(provider) ||
     !key ||
     !ids.length ||
-    ids.some((id) => !cases.some((item) => item.id === id)) ||
+    ids.some((id) => !lookupCase(id)) ||
     new Set(ids).size !== ids.length
   )
     throw new Error("Provider, credential and unique corpus IDs required")
   const records = []
   for (const id of ids) {
-    const item = cases.find((item) => item.id === id)
+    const item = lookupCase(id)
     const start = performance.now()
     let normalized
     try {
@@ -189,8 +200,15 @@ export async function collect(provider, ids, key, request = fetch) {
     runId: new Date().toISOString(),
     mode: "live",
     classifierDeadlineMs: 5000,
-    corpusHash: createHash("sha256").update(JSON.stringify(cases)).digest("hex"),
-    policyHash: createHash("sha256").update(JSON.stringify({ instructions, contentCriteria, attackCriteria })).digest("hex"),
+    corpusHash: createHash("sha256")
+      .update(JSON.stringify(cases))
+      .digest("hex"),
+    workflowCorpusHash: createHash("sha256")
+      .update(JSON.stringify(workflowCases))
+      .digest("hex"),
+    policyHash: createHash("sha256")
+      .update(JSON.stringify({ instructions, contentCriteria, attackCriteria }))
+      .digest("hex"),
     records,
   }
 }

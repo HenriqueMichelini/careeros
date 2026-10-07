@@ -1,0 +1,116 @@
+[
+  {
+    "purpose": "credential-format setup failure; excluded from classification scores",
+    "run": {
+      "version": 1,
+      "provider": "openai",
+      "model": "gpt-6-luna",
+      "runId": "2026-10-07T22:38:07.016Z",
+      "mode": "live",
+      "classifierDeadlineMs": 5000,
+      "corpusHash": "3c2bc3ea1a22876d5f2fd164891b17671c8a1fb63bccb1f2ccf20b82ce8792d5",
+      "policyHash": "503c816b676efa370e91d16e0cc6287bd86afbc8585726b6c686f2fa71407746",
+      "records": [
+        {
+          "caseId": "en-fact",
+          "classificationMs": 1110.8522859999998,
+          "result": {
+            "kind": "failure",
+            "reason": "key"
+          },
+          "httpStatus": 401
+        }
+      ]
+    }
+  },
+  {
+    "purpose": "credential-format setup failure; excluded from classification scores",
+    "run": {
+      "version": 1,
+      "provider": "jev",
+      "model": "jev-1.13.0",
+      "runId": "2026-10-07T22:38:07.637Z",
+      "mode": "live",
+      "classifierDeadlineMs": 5000,
+      "corpusHash": "3c2bc3ea1a22876d5f2fd164891b17671c8a1fb63bccb1f2ccf20b82ce8792d5",
+      "policyHash": "503c816b676efa370e91d16e0cc6287bd86afbc8585726b6c686f2fa71407746",
+      "records": [
+        {
+          "caseId": "en-fact",
+          "classificationMs": 274.95736,
+          "result": {
+            "kind": "failure",
+            "reason": "key"
+          },
+          "httpStatus": 401
+        }
+      ]
+    }
+  },
+  {
+    "purpose": "correctly parsed credential smoke; excluded from main corpus scores",
+    "run": {
+      "version": 1,
+      "provider": "openai",
+      "model": "gpt-6-luna",
+      "runId": "2026-10-07T22:38:44.765Z",
+      "mode": "live",
+      "classifierDeadlineMs": 5000,
+      "corpusHash": "3c2bc3ea1a22876d5f2fd164891b17671c8a1fb63bccb1f2ccf20b82ce8792d5",
+      "policyHash": "503c816b676efa370e91d16e0cc6287bd86afbc8585726b6c686f2fa71407746",
+      "records": [
+        {
+          "caseId": "en-fact",
+          "classificationMs": 2596.7809970000003,
+          "result": {
+            "kind": "signals",
+            "signals": {
+              "content": "professional_fact",
+              "attack": "none"
+            }
+          },
+          "usage": {
+            "inputTokens": 294,
+            "outputTokens": 16
+          },
+          "returnedModel": "gpt-6-luna"
+        }
+      ]
+    }
+  },
+  {
+    "purpose": "correctly parsed credential smoke; excluded from main corpus scores",
+    "run": {
+      "version": 1,
+      "provider": "jev",
+      "model": "jev-1.13.0",
+      "runId": "2026-10-07T22:38:45.458Z",
+      "mode": "live",
+      "classifierDeadlineMs": 5000,
+      "corpusHash": "3c2bc3ea1a22876d5f2fd164891b17671c8a1fb63bccb1f2ccf20b82ce8792d5",
+      "policyHash": "503c816b676efa370e91d16e0cc6287bd86afbc8585726b6c686f2fa71407746",
+      "records": [
+        {
+          "caseId": "en-fact",
+          "classificationMs": 321.46736000000004,
+          "result": {
+            "kind": "signals",
+            "signals": {
+              "content": "professional_fact",
+              "attack": "none"
+            }
+          },
+          "usage": {
+            "inputTokens": 635,
+            "outputTokens": 97
+          },
+          "returnedModel": "jev-1.13.0",
+          "providerDiagnostics": {
+            "contentConfidence": 0.99,
+            "attackConfidence": 0.85
+          }
+        }
+      ]
+    }
+  }
+]
