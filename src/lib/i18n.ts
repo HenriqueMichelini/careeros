@@ -422,8 +422,9 @@ const messages = {
     "results.resumeOverflow": "This draft extends beyond the first A4 page. All content remains visible below the boundary.",
     "results.resumeMissingIdentity": "Add your name and contact details in Profile to complete the résumé header.",
     "results.savePdf": "Save as PDF",
-    "results.pdfHelp": "In the print dialog, choose Save as PDF and A4 paper.",
+    "results.pdfHelp": "In the print dialog, choose Save as PDF, A4 paper, no margins, and turn off headers and footers.",
     "results.pdfOverflow": "This résumé exceeds one A4 page. Generate a shorter draft before saving it as PDF.",
+    "results.coverPdfOverflow": "This cover letter exceeds one A4 page. Generate a shorter draft before saving it as PDF.",
   },
   "pt-BR": {
     "language.label": "Idioma",
@@ -847,8 +848,9 @@ const messages = {
     "results.resumeOverflow": "Este currículo ultrapassa a primeira página A4. Todo o conteúdo continua visível abaixo do limite.",
     "results.resumeMissingIdentity": "Adicione seu nome e seus dados de contato no Perfil para completar o cabeçalho do currículo.",
     "results.savePdf": "Salvar como PDF",
-    "results.pdfHelp": "Na janela de impressão, escolha Salvar como PDF e papel A4.",
+    "results.pdfHelp": "Na janela de impressão, escolha Salvar como PDF, papel A4, sem margens e desative cabeçalhos e rodapés.",
     "results.pdfOverflow": "Este currículo excede uma página A4. Gere uma versão mais curta antes de salvar em PDF.",
+    "results.coverPdfOverflow": "Esta carta de apresentação excede uma página A4. Gere uma versão mais curta antes de salvar em PDF.",
   },
 } satisfies Record<Locale, Record<string, string>>
 
