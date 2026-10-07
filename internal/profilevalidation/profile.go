@@ -23,16 +23,24 @@ type Project struct {
 }
 
 type Profile struct {
-	CareerGoals      string       `json:"careerGoals"`
-	Skills           string       `json:"skills"`
-	Competencies     string       `json:"competencies"`
-	Experience       []Experience `json:"experience"`
-	Tools            string       `json:"tools"`
-	Projects         []Project    `json:"projects"`
-	EmploymentStatus string       `json:"employmentStatus"`
-	CurrentSalary    string       `json:"currentSalary"`
-	DesiredSalary    string       `json:"desiredSalary"`
-	AdditionalInfo   string       `json:"additionalInfo"`
+	FullName          string          `json:"fullName,omitempty"`
+	Email             string          `json:"email,omitempty"`
+	Phone             string          `json:"phone,omitempty"`
+	Location          string          `json:"location,omitempty"`
+	ProfessionalLinks string          `json:"professionalLinks,omitempty"`
+	Education         []Education     `json:"education,omitempty"`
+	Certifications    []Certification `json:"certifications,omitempty"`
+	Languages         []Language      `json:"languages,omitempty"`
+	CareerGoals       string          `json:"careerGoals"`
+	Skills            string          `json:"skills"`
+	Competencies      string          `json:"competencies"`
+	Experience        []Experience    `json:"experience"`
+	Tools             string          `json:"tools"`
+	Projects          []Project       `json:"projects"`
+	EmploymentStatus  string          `json:"employmentStatus"`
+	CurrentSalary     string          `json:"currentSalary"`
+	DesiredSalary     string          `json:"desiredSalary"`
+	AdditionalInfo    string          `json:"additionalInfo"`
 }
 
 func Valid(profile Profile, maxTextBytes int) bool {

@@ -395,3 +395,87 @@ func TestMetadataLogOmitsContentAndKey(t *testing.T) {
 		t.Fatal(logs.String())
 	}
 }
+
+func TestStructuredRequestDestinationsAndMinimalProjection(t *testing.T) {
+	p := profile()
+	p.FullName = "Ada"
+	p.Email = "SECRET EMAIL"
+	p.Phone = "SECRET PHONE"
+	p.Location = "SECRET HOME"
+	p.ProfessionalLinks = "SECRET LINK"
+	p.Education = []profilevalidation.Education{{ID: "school", Degree: "BSc", Institution: "North", GraduationDate: "2020", Location: "SECRET SCHOOL CITY", Details: "Statistics"}}
+	p.Certifications = []profilevalidation.Certification{{ID: "cert", Name: "Cloud", Issuer: "Guild", CredentialID: "SECRET CREDENTIAL", URL: "SECRET URL", Date: "2020"}}
+	p.Languages = []profilevalidation.Language{{ID: "english", Name: "English", Proficiency: "Intermediate"}}
+	claims := []claim{{ID: "c1", Source: "BSc North 2021", Text: "BSc North 2021", Targets: []string{"education"}}, {ID: "c2", Source: "Cloud Guild", Text: "Cloud Guild", Targets: []string{"certifications"}}, {ID: "c3", Source: "English fluent", Text: "English fluent", Targets: []string{"languages"}}}
+	calls := 0
+	client := &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		calls++
+		if calls == 1 {
+			return completion(string(mustJSON(extraction{Claims: claims}))), nil
+		}
+		var body struct {
+			Messages []struct {
+				Content string `json:"content"`
+			} `json:"messages"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatal(err)
+		}
+		content := body.Messages[0].Content
+		for _, secret := range []string{"SECRET EMAIL", "SECRET PHONE", "SECRET HOME", "SECRET LINK", "SECRET SCHOOL CITY", "SECRET CREDENTIAL", "SECRET URL", "SECRET SALARY", "PRIVATE NOTES"} {
+			if strings.Contains(content, secret) {
+				t.Fatalf("unnecessary private field leaked: %s", secret)
+			}
+		}
+		if !strings.Contains(content, `"graduationDate":"2020"`) || !strings.Contains(content, `"proficiency":"Intermediate"`) {
+			t.Fatal("missing relevant comparison fields")
+		}
+		return completion(`{"operations":[{"claimId":"c1","target":"education","entryId":"school","field":"graduationDate","action":"update","value":"2021","finding":"in_place"},{"claimId":"c2","target":"certifications","entryId":"cert","field":"issuer","action":"update","value":"Guild","finding":"in_place"},{"claimId":"c3","target":"languages","entryId":"english","field":"proficiency","action":"update","value":"Fluent","finding":"in_place"}]}`), nil
+	})}
+	w := send(t, (app{client: client}).handler(), request{Input: "BSc North 2021\nCloud Guild\nEnglish fluent", Profile: p})
+	if w.Code != 200 || calls != 2 {
+		t.Fatalf("status=%d body=%s calls=%d", w.Code, w.Body.String(), calls)
+	}
+	var result result
+	if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil || len(result.Operations) != 3 {
+		t.Fatalf("structured operations: %s", w.Body.String())
+	}
+	contact := projection([]claim{{Targets: []string{"email"}}}, p)
+	if len(contact) != 1 || contact["email"] != "SECRET EMAIL" {
+		t.Fatalf("contact projection must include only requested scalar: %#v", contact)
+	}
+}
+
+func TestUnicodeInputBoundaryAndCompleteStructuredShape(t *testing.T) {
+	p := profile()
+	input := strings.Repeat("ação🙂 \n", 2500)
+	if len(input) != 30000 || !validInput(request{Input: input, Profile: p}) || validInput(request{Input: input + "x", Profile: p}) {
+		t.Fatal("UTF-8 byte boundary differs from client")
+	}
+	var fields map[string]any
+	_ = json.Unmarshal(mustJSON(p), &fields)
+	for _, key := range []string{"fullName", "email", "phone", "location", "professionalLinks"} {
+		fields[key] = ""
+	}
+	for _, key := range []string{"education", "certifications", "languages"} {
+		fields[key] = []any{}
+	}
+	if !completeIngestionProfile(mustJSON(fields)) {
+		t.Fatal("complete empty structured profile rejected")
+	}
+	fields["languages"] = nil
+	if completeIngestionProfile(mustJSON(fields)) {
+		t.Fatal("null structured collection accepted")
+	}
+}
+
+func TestConflictsAndIncompleteStructuredGroupsAreWithheld(t *testing.T) {
+	claims := []claim{{ID: "c1", Source: "English fluent", Targets: []string{"languages"}}, {ID: "c2", Source: "BSc", Targets: []string{"education"}}}
+	client := &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		return completion(`{"operations":[{"claimId":"c1","target":"languages","entryId":"new:c1","field":"name","action":"add","value":"English","finding":"addition"},{"claimId":"c1","target":"languages","entryId":"new:c1","field":"proficiency","action":"add","value":"Fluent","finding":"conflict"},{"claimId":"c2","target":"education","entryId":"new:c2","field":"degree","action":"add","value":"BSc","finding":"addition"}]}`), nil
+	})}
+	ops, unresolved, _, code := (app{client: client}).compare(httptest.NewRequest("POST", "/", nil).Context(), "sk-synthetic", claims, profile())
+	if code != "" || len(ops) != 0 || len(unresolved) != 2 {
+		t.Fatalf("unsafe groups were not withheld: %#v %#v %s", ops, unresolved, code)
+	}
+}

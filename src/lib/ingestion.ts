@@ -1,7 +1,7 @@
-import { ProfessionalRepository, ExperienceEntry, ProjectEntry } from "./types"
-import { careerProfile, emptyContact, validQualifications } from "./profile"
+import { ProfessionalRepository } from "./types"
+import { withContactFields, emptyContact, validQualifications } from "./profile"
 
-export type IngestionTarget = "careerGoals" | "skills" | "competencies" | "experience" | "tools" | "projects" | "employmentStatus" | "currentSalary" | "desiredSalary" | "additionalInfo"
+export type IngestionTarget = "careerGoals" | "skills" | "competencies" | "experience" | "tools" | "projects" | "employmentStatus" | "currentSalary" | "desiredSalary" | "additionalInfo" | "fullName" | "email" | "phone" | "location" | "professionalLinks" | "education" | "certifications" | "languages"
 export interface IngestionClaim {
   id: string
   source: string
@@ -73,6 +73,18 @@ const legacyStatuses = [
 ]
 const profileFields = [...scalarFields, "experience", "projects"]
 const contactFields = Object.keys(emptyContact)
+const writableScalars = [...scalarFields, ...contactFields]
+const collectionFields: Record<string, string[]> = {
+  experience: experienceFields, projects: projectFields,
+  education: ["degree", "institution", "location", "graduationDate", "details"],
+  certifications: ["name", "issuer", "date", "credentialId", "url"],
+  languages: ["name", "proficiency"],
+}
+const targets = [...writableScalars, ...Object.keys(collectionFields)]
+const identityFields = (target: string) => target === "certifications" ? ["name", "issuer"] : requiredFields(target)
+const requiredFields = (target: string) => target === "experience" ? ["company", "title"] : target === "education" ? ["degree", "institution"] : ["name"]
+export const ingestionInputBytes = (input: string) => new TextEncoder().encode(input).length
+export const ingestionMaxBytes = 30000
 export class IngestionError extends Error {
   constructor(public readonly code: string) {
     super(code)
@@ -84,22 +96,14 @@ const keys = (value: Record<string, unknown>, expected: readonly string[]) =>
   Object.keys(value).length === expected.length &&
   expected.every((key) => key in value)
 const string = (value: unknown, max = 2000): value is string =>
-  typeof value === "string" && value.length <= max
+  typeof value === "string" && ingestionInputBytes(value) <= max
 const hasTarget = (
   targets: IngestionTarget[],
   value: unknown,
 ): value is IngestionTarget =>
   typeof value === "string" && targets.includes(value as IngestionTarget)
-const entry = (
-  profile: ProfessionalRepository,
-  target: IngestionTarget,
-  id: string,
-) =>
-  target === "experience"
-    ? profile.experience.find((e) => e.id === id)
-    : target === "projects"
-      ? profile.projects.find((p) => p.id === id)
-      : undefined
+const entry = (profile: ProfessionalRepository, target: IngestionTarget, id: string) =>
+  collectionFields[target] ? (profile[target as keyof ProfessionalRepository] as unknown as {id: string}[] | undefined)?.find(item => item.id === id) : undefined
 const normalizedFact = (value: string) =>
   value
     .trim()
@@ -155,7 +159,14 @@ export function validProfile(profile: ProfessionalRepository): boolean {
       if ("current" in item && typeof item.current !== "boolean") return false
     }
   }
-  return !("education" in profile) || validQualifications(profile)
+  if ("education" in profile) {
+    if (!validQualifications(profile)) return false
+    for (const item of [...profile.education, ...profile.certifications, ...profile.languages]) {
+      if (ids.has(item.id)) return false
+      ids.add(item.id)
+    }
+  }
+  return true
 }
 
 export function validateIngestionResult(
@@ -197,8 +208,8 @@ export function validateIngestionResult(
       !string(item.text, 1000) ||
       !item.text.trim() ||
       !Array.isArray(item.targets) ||
-      item.targets.length > 10 ||
-      item.targets.some((t: unknown) => !profileFields.includes(t as string)) ||
+      item.targets.length > targets.length ||
+      item.targets.some((t: unknown) => !targets.includes(t as string)) ||
       !string(item.question, 500)
     )
       throw new IngestionError("invalid_output")
@@ -235,6 +246,7 @@ export function validateIngestionResult(
       !claim ||
       unresolvedClaimIds.includes(claim.id) ||
       claim.question ||
+      item.finding === "conflict" ||
       !hasTarget(claim.targets, item.target) ||
       !["add", "update", "remove"].includes(item.action as string) ||
       !["addition", "overlap", "conflict", "in_place"].includes(
@@ -243,10 +255,10 @@ export function validateIngestionResult(
     )
       throw new IngestionError("invalid_output")
     if (
-      scalarFields.includes(item.target)
+      writableScalars.includes(item.target)
         ? item.field !== item.target || item.entryId !== ""
         : !(
-            item.target === "experience" ? experienceFields : projectFields
+            collectionFields[item.target] ?? []
           ).includes(item.field as string) ||
           !((item.entryId as string).startsWith("new:")
             ? claims.some(
@@ -289,9 +301,7 @@ export function validateIngestionResult(
     const fields = new Set(group.map(operation => operation.field))
     if (
       !group.some(operation => operation.claimId === anchor) ||
-      (group[0].target === "experience"
-        ? !fields.has("company") || !fields.has("title")
-        : !fields.has("name"))
+      requiredFields(group[0].target).some(field => !fields.has(field))
     )
       throw new IngestionError("invalid_output")
   }
@@ -308,7 +318,7 @@ export async function ingestProfile(
 ): Promise<IngestionResult> {
   if (
     !input.trim() ||
-    new TextEncoder().encode(input).length > 30000 ||
+    ingestionInputBytes(input) > ingestionMaxBytes ||
     !validProfile(profile)
   )
     throw new IngestionError("input")
@@ -320,7 +330,7 @@ export async function ingestProfile(
         "Content-Type": "application/json",
         "X-OpenAI-Api-Key": apiKey,
       },
-      body: JSON.stringify({ input, profile: careerProfile(profile) }),
+      body: JSON.stringify({ input, profile: withContactFields(profile) }),
       cache: "no-store",
       signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(55_000)]) : AbortSignal.timeout(55_000),
     })
@@ -355,7 +365,7 @@ export function beforeValue(
   profile: ProfessionalRepository,
   op: IngestionOperation,
 ): string {
-  if (scalarFields.includes(op.target))
+  if (writableScalars.includes(op.target))
     return profile[(op.target as keyof ProfessionalRepository)] as string
   const found = entry(profile, op.target, op.entryId)
   return found
@@ -372,7 +382,7 @@ export function afterValue(
 
 function fieldResult(before: string, op: IngestionOperation): string {
   if (op.field === "current") return op.action === "remove" ? "false" : op.value
-  if (op.field === "employmentStatus") return op.action === "remove" ? "" : op.value.trim()
+  if (["employmentStatus", ...contactFields.filter(field => field !== "professionalLinks"), "startDate", "endDate", "graduationDate", "date", "proficiency", "credentialId", "url"].includes(op.field)) return op.action === "remove" ? "" : op.value.trim()
   if (op.action === "remove") return ""
   return op.action === "add" && before.trim()
     ? duplicate(before, op.value) ? before : before.trimEnd() + "\n" + op.value.trim()
@@ -395,8 +405,8 @@ export function applyIngestion(
 ): ProfessionalRepository {
   if (JSON.stringify(profile) !== snapshot || !validProfile(profile))
     throw new IngestionError("stale")
-  const next: ProfessionalRepository = structuredClone(profile)
-  const created = new Map<string, ExperienceEntry | ProjectEntry>()
+  const next: ProfessionalRepository = structuredClone(withContactFields(profile))
+  const created = new Map<string, Record<string, unknown>>()
   const approvedOps = ops.filter((o) => o.approved)
   for (const op of approvedOps) {
     const claim: IngestionClaim = {
@@ -414,22 +424,22 @@ export function applyIngestion(
       throw new IngestionError("invalid_output")
     if (op.action === "remove" && op.value !== "") throw new IngestionError("invalid_output")
     if (op.field === "current" && op.action !== "remove" && !["true","false"].includes(op.value)) throw new IngestionError("invalid_output")
-    if (scalarFields.includes(op.target)) {
+    if (writableScalars.includes(op.target)) {
       if (op.field !== op.target || op.entryId)
         throw new IngestionError("invalid_output")
-      const field =
-        op.target as keyof Pick<ProfessionalRepository, "careerGoals" | "skills" | "competencies" | "tools" | "employmentStatus" | "currentSalary" | "desiredSalary" | "additionalInfo">
-      const prior = next[field]
-      next[field] = fieldResult(prior,op)
+      const values = next as unknown as Record<string, string>
+      const field = op.target
+      const prior = values[field]
+      values[field] = fieldResult(prior,op)
       if (
         field === "employmentStatus" &&
-        next[field] &&
-        !statuses.includes(next[field])
+        values[field] &&
+        !statuses.includes(values[field])
       )
         throw new IngestionError("invalid_output")
     } else {
       const fields =
-        op.target === "experience" ? experienceFields : projectFields
+        collectionFields[op.target] ?? []
       if (!fields.includes(op.field) || !op.entryId)
         throw new IngestionError("invalid_output")
       let target = entry(
@@ -452,32 +462,11 @@ export function applyIngestion(
         const groupKey = op.target + "/" + op.entryId
         if (!created.has(groupKey)) {
           const id = crypto.randomUUID()
-          const fresh =
-            op.target === "experience"
-              ? {
-                  id,
-                  company: "",
-                  title: "",
-                  startDate: "",
-                  endDate: "",
-                  current: false,
-                  location: "",
-                  description: "",
-                  responsibilities: "",
-                  achievements: "",
-                } as ExperienceEntry
-              : {
-                  id,
-                  name: "",
-                  description: "",
-                  technologies: "",
-                  url: "",
-                  highlights: "",
-                } as ProjectEntry
+          const fresh: Record<string, unknown> = { id }
+          for (const field of fields) fresh[field] = field === "current" ? false : ""
           created.set(groupKey, fresh)
-          if (op.target === "experience")
-            next.experience.push(fresh as ExperienceEntry)
-          else next.projects.push(fresh as ProjectEntry)
+          const collection = next[op.target as keyof ProfessionalRepository] as unknown as Record<string, unknown>[]
+          collection.push(fresh)
         }
         target = (created.get(groupKey) as unknown as Record<string, unknown>)
       }
@@ -487,39 +476,13 @@ export function applyIngestion(
       target[op.field] = op.field === "current" ? result === "true" : result
     }
   }
-  if (
-    [...created.values()].some((e) =>
-      "company" in e ? !e.company.trim() || !e.title.trim() : !e.name.trim(),
-    ) ||
-    !validProfile(next)
-  )
-    throw new IngestionError("incomplete")
-  const freshExperience = new Set<string>()
-  const freshProjects = new Set<string>()
-  for (const fresh of created.values()) {
-    if ("company" in fresh) {
-      const key = normalizedFact(fresh.company) + "/" + normalizedFact(fresh.title)
-      if (
-        freshExperience.has(key) ||
-        profile.experience.some(
-          (existing) =>
-            normalizedFact(existing.company) + "/" +
-              normalizedFact(existing.title) === key,
-        )
-      )
-        throw new IngestionError("incomplete")
-      freshExperience.add(key)
-    } else {
-      const key = normalizedFact(fresh.name)
-      if (
-        freshProjects.has(key) ||
-        profile.projects.some(
-          existing => normalizedFact(existing.name) === key,
-        )
-      )
-        throw new IngestionError("incomplete")
-      freshProjects.add(key)
-    }
+  for (const [groupKey, fresh] of created) {
+    const target = groupKey.split("/")[0]
+    if (requiredFields(target).some(field => !String(fresh[field]).trim())) throw new IngestionError("incomplete")
+    const identity = (item: Record<string, unknown>) => identityFields(target).map(field => normalizedFact(String(item[field]))).join("/")
+    const collection = next[target as keyof ProfessionalRepository] as unknown as Record<string, unknown>[]
+    if (collection.filter(item => identity(item) === identity(fresh)).length > 1) throw new IngestionError("incomplete")
   }
+  if (!validProfile(next)) throw new IngestionError("incomplete")
   return next
 }

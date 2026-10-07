@@ -8,6 +8,7 @@
     "dev:review-api": "go run ./cmd/profile-review",
     "build": "vite build",
     "test": "node --test tests/*.test.mjs",
+    "test:ingestion-browser": "node tests/ingestion-browser.check.mjs",
     "test:apply-checklist": "node tests/apply-checklist.check.mjs",
     "test:cv-pdf": "node tests/cv-pdf.check.mjs",
     "test:cv-preview": "node tests/cv-shared-preview.check.mjs",
