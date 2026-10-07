@@ -58,8 +58,7 @@ export default function GeneratedResumePreview({
   const boundaryRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const [fitScale, setFitScale] = useState(1)
-  const [readFullSize, setReadFullSize] = useState(false)
-  const paperScale = readFullSize ? 1 : fitScale
+  const paperScale = fitScale
   const [overflows, setOverflows] = useState(false)
   const parsed = useMemo(() => parseResumeHeader(resume), [resume])
   const sections = useMemo(
@@ -154,16 +153,6 @@ export default function GeneratedResumePreview({
         </div>
       )}
       <div ref={slotRef} className="cv-preview-slot min-w-0 overflow-x-auto">
-        {fitScale < 0.99 && (
-          <button
-            type="button"
-            aria-pressed={readFullSize}
-            onClick={() => setReadFullSize((value) => !value)}
-            className="cv-preview-zoom mb-3 border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2 text-xs"
-          >
-            {t(readFullSize ? "cv.fitPage" : "cv.readFullSize")}
-          </button>
-        )}
         <CvPaper
           fontSize={typography.fontSize}
           label={t("results.resume")}

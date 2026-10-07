@@ -722,13 +722,6 @@ export default function RepositoryPage() {
             </button>
           ))}
         </nav>
-        {activeSection !== "profile" && (
-          <button type="button" onClick={() => changeSection("profile")}
-            className="mt-5 w-full border px-3 py-2 text-xs text-left uppercase tracking-wide"
-            style={{borderColor:"var(--color-accent)",color:"var(--color-accent)"}}>
-            {t("repo.quickAdd")}
-          </button>
-        )}
 
         {/* AI Review is available only within a supported subsection. */}
         {activeSection !== "profile" && <div
@@ -844,11 +837,9 @@ export default function RepositoryPage() {
             <section className="p-5 border min-w-0" style={{borderColor:"var(--color-border)"}}>
               <h2 className="text-lg font-bold mb-2">{t("repo.ingestTitle")}</h2>
               <p className="text-sm mb-3">{t("repo.ingestGuide")}</p>
-              <p className="text-sm mb-3" style={{color:"var(--color-muted-fg)"}}>{t("repo.ingestPrivacy")}</p>
-              <p id="ingestion-limits" className="text-xs mb-3">{t("repo.ingestLimits")}</p>
               <label htmlFor="ingestion-text" className="text-sm block mb-2">{t("repo.ingestLabel")}</label>
               <textarea id="ingestion-text" value={ingestionText} onChange={e => changeIngestionText(e.target.value)} rows={9}
-                aria-describedby="ingestion-limits" placeholder={t("repo.ingestPlaceholder")}
+                placeholder={t("repo.ingestPlaceholder")}
                 className="w-full min-w-0 p-3 border text-sm resize-y" style={{backgroundColor:"var(--color-card)",borderColor:"var(--color-border)",color:"var(--color-fg)"}} />
               <p className="text-xs mb-3" style={{color:"var(--color-muted-fg)"}}>{ingestionInputBytes(ingestionText)} / 30000 {t("repo.bytes")}</p>
               <div className="flex flex-wrap gap-2">
@@ -863,7 +854,6 @@ export default function RepositoryPage() {
             {ingestionResult && <section className="space-y-4" aria-label={t("repo.ingestProposals")}>
               <h2 className="text-xl font-bold">{t("repo.ingestProposals")}</h2>
               <p className="text-sm" style={{color:"var(--color-muted-fg)"}}>{t("repo.ingestReviewNote")}</p>
-              <p className="text-xs" role="status">{t("repo.ingestLimits")}</p>
               {(ingestionResult.unverifiedClaimCount > 0 || ingestionResult.unresolvedClaimIds.length > 0 || ingestionResult.unplacedOperationCount > 0) &&
                 <p className="text-sm border p-3" role="status" style={{borderColor:"var(--color-border)"}}>{t("repo.ingestPartialNotice")}</p>}
               {ingestionResult.claims.map(claim => {

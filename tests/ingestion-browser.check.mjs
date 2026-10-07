@@ -197,7 +197,7 @@ try {
     await openProfile()
     const initial=await saved()
     assert.equal(await evaluate("document.querySelector('#ingestion-text').hasAttribute('maxlength')"),false)
-    assert.match(await evaluate("document.querySelector('#ingestion-limits').textContent"),/UTF-8/)
+    assert.equal(await evaluate("document.querySelector('#ingestion-limits')"),null)
     await evaluate(`window.__calls=[]; window.fetch=async(url,options)=>{if(url!='/api/profile/ingest')throw new Error('Unexpected request');window.__calls.push(JSON.parse(options.body));return new Response(${JSON.stringify(JSON.stringify(fixture))},{status:200,headers:{'Content-Type':'application/json'}})}`)
     const review=locale==='en'?'Review suggested changes':'Revisar alterações sugeridas'
     await fill('ação🙂 \n'.repeat(2500)+'x')

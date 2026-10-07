@@ -1,5 +1,5 @@
 import { useId } from "react"
-import { CV_FONT_DEFAULT, CV_FONT_MAX, CV_FONT_MIN } from "../lib/cvPreferences"
+import { CV_FONT_MAX, CV_FONT_MIN } from "../lib/cvPreferences"
 import { useI18n } from "../lib/store"
 
 export default function CvFontSizeControl({
@@ -33,17 +33,10 @@ export default function CvFontSizeControl({
       />
       <p
         id={`${id}-help`}
-        className="mb-2 text-xs leading-5 text-[var(--color-muted-fg)]"
+        className="text-xs leading-5 text-[var(--color-muted-fg)]"
       >
         {t("cv.fontSizeHelp")}
       </p>
-      <button
-        type="button"
-        onClick={() => onChange(CV_FONT_DEFAULT)}
-        className="text-xs underline underline-offset-2"
-      >
-        {t("cv.resetFontSize", { size: CV_FONT_DEFAULT })}
-      </button>
       {saveError && (
         <p role="alert" className="mt-2 text-xs text-[var(--color-accent)]">
           {t("cv.saveError")}

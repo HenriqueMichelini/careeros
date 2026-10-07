@@ -79,7 +79,6 @@ export default function CvPage() {
   const boundaryRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const [previewScale, setPreviewScale] = useState(1)
-  const [readFullSize, setReadFullSize] = useState(false)
   const [choices, setChoices] = useState<CvChoices>(() => {
     try {
       return parseCvChoices(localStorage.getItem(CV_STORAGE_KEY))
@@ -99,7 +98,7 @@ export default function CvPage() {
     return () => document.body.classList.remove("cv-print-ready")
   }, [])
   const overflows = fit.overflows
-  const paperScale = readFullSize ? 1 : previewScale
+  const paperScale = previewScale
   const visible = (section: CvSection) =>
     !choices.hiddenSections.includes(section)
   const selectedEntry = (section: CvSection, id: string) =>
@@ -440,16 +439,6 @@ export default function CvPage() {
           ref={previewSlotRef}
           className="cv-preview-slot order-2 min-w-0 overflow-x-auto lg:order-1"
         >
-          {previewScale < 0.99 && (
-            <button
-              type="button"
-              aria-pressed={readFullSize}
-              onClick={() => setReadFullSize((value) => !value)}
-              className="cv-preview-zoom mb-3 border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2 text-xs"
-            >
-              {t(readFullSize ? "cv.fitPage" : "cv.readFullSize")}
-            </button>
-          )}
           <CvPaper
             fontSize={typography.fontSize}
             label={t("cv.documentPreview")}

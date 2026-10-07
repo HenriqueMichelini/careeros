@@ -362,11 +362,7 @@ try {
     true,
     "A4 preview must scale to the narrow slot",
   )
-  await evaluate("Array.from(document.querySelectorAll('.cv-preview-slot button')).find(el => el.textContent.includes('Read at 100%')).click()")
-  await until("document.querySelector('.cv-paper').getBoundingClientRect().width > document.querySelector('.cv-preview-slot').getBoundingClientRect().width")
-  assert.ok(await evaluate("document.querySelector('.cv-preview-slot').scrollWidth > document.querySelector('.cv-preview-slot').clientWidth"), "full-size reading must remain inside the scrollable preview")
-  assert.ok(await evaluate("document.documentElement.scrollWidth <= innerWidth"), "full-size reading must not scroll the entire page")
-  await evaluate("Array.from(document.querySelectorAll('.cv-preview-slot button')).find(el => el.textContent.includes('Fit page')).click()")
+  assert.equal(await evaluate("document.querySelector('.cv-preview-zoom')"), null)
   await evaluate(
     "{ const select = document.querySelector('select'); select.value = 'pt-BR'; select.dispatchEvent(new Event('change', { bubbles: true })) }",
   )
@@ -392,10 +388,7 @@ try {
     generatedPt,
     "Portuguese headings should match without translating professional text",
   )
-  await evaluate("Array.from(document.querySelectorAll('.cv-preview-slot button')).find(el => el.textContent.includes('Ler em 100%')).click()")
-  await until("document.querySelector('.cv-paper').getBoundingClientRect().width > document.querySelector('.cv-preview-slot').getBoundingClientRect().width")
-  assert.ok(await evaluate("document.documentElement.scrollWidth <= innerWidth"), "full-size CV reading must stay inside its preview")
-  await evaluate("Array.from(document.querySelectorAll('.cv-preview-slot button')).find(el => el.textContent.includes('Ajustar à página')).click()")
+  assert.ok(await evaluate("document.querySelector('.cv-paper').getBoundingClientRect().width <= document.querySelector('.cv-preview-slot').getBoundingClientRect().width + 1"), "CV preview must fit the narrow slot")
   await evaluate(
     "{ const select = document.querySelector('select'); select.value = 'en'; select.dispatchEvent(new Event('change', { bubbles: true })) }",
   )
