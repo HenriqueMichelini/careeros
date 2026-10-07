@@ -10,6 +10,8 @@
   --color-accent: #C8102E;
   --color-accent-fg: #FFFFFF;
   --color-border: #E2E0DB;
+  --color-status-success: #18713B;
+  --color-status-error: #B11B32;
   --color-ring: #C8102E;
 
   --font-display: 'Barlow Condensed', sans-serif;
