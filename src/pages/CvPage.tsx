@@ -643,7 +643,7 @@ export default function CvPage() {
       <div className="cv-page-grid grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_330px]">
         <div
           ref={previewSlotRef}
-          className="cv-preview-slot order-2 min-w-0 overflow-x-auto lg:order-1"
+          className="cv-preview-slot order-2 min-w-0 lg:sticky lg:top-20 lg:order-1 lg:self-start"
         >
           <CvPaper
             fontSize={preferences.fontSize}
@@ -941,7 +941,7 @@ export default function CvPage() {
             )}
           </CvPaper>
         </div>
-        <aside className="cv-controls order-1 lg:order-2 lg:sticky lg:top-24">
+        <aside className="cv-controls order-1 lg:order-2">
           <div className="mb-4 border border-[var(--color-border)] bg-[var(--color-card)] p-5">
             <button
               type="button"
