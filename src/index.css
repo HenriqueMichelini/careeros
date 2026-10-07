@@ -46,6 +46,12 @@ html {
 
 .results-cover-print {
   display: none;
+  box-sizing: border-box;
+  width: 210mm;
+  padding: 20mm 22mm;
+  font: 11pt/1.5 Arial, sans-serif;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .cv-export-measure {
@@ -70,6 +76,10 @@ html {
 }
 
 @media print {
+  body.results-print-resume > :not(#root),
+  body.results-print-cover > :not(#root) {
+    display: none !important;
+  }
   body.results-print-resume,
   body.results-print-cover,
   body.results-print-resume .app-shell,
@@ -119,7 +129,7 @@ html {
   body.results-print-resume .cv-paper {
     page: cv-export;
     width: 210mm !important;
-    height: 297mm !important;
+    height: auto !important;
     min-height: 0 !important;
     aspect-ratio: auto !important;
     margin: 0 !important;
@@ -134,16 +144,9 @@ html {
   }
   body.results-print-cover .results-cover-print {
     display: block !important;
-    box-sizing: border-box;
     page: cv-export;
-    width: 210mm;
-    min-height: 297mm;
-    padding: 20mm 22mm;
     color: #111;
     background: #fff;
-    font: 11pt/1.5 Arial, sans-serif;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
   }
   body.cv-print-ready,
   body.cv-print-ready #root,

@@ -104,13 +104,7 @@ export default function ResultsPage({ setPage }: Props) {
   }
 
   function handleCopy() {
-    const text =
-      activeTab === "resume"
-        ? (resumePreviewRef.current?.querySelector<HTMLElement>(
-            ".cv-paper-content",
-          )?.innerText ?? materials!.resume)
-        : tabContent[activeTab]
-    copyToClipboard(text)
+    copyToClipboard(tabContent[activeTab])
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -126,6 +120,19 @@ export default function ResultsPage({ setPage }: Props) {
       measure.style.zoom = "1"
       document.body.append(measure)
       const height = measure.querySelector<HTMLElement>(".cv-paper-content")?.getBoundingClientRect().height ?? 0
+      measure.remove()
+      if (height > A4_HEIGHT_PX - 4) {
+        setPdfOverflow(true)
+        return
+      }
+    } else {
+      const cover = document.querySelector<HTMLElement>(".results-cover-print")
+      if (!cover) return
+      const measure = cover.cloneNode(true) as HTMLElement
+      measure.classList.add("cv-export-measure")
+      measure.style.display = "block"
+      document.body.append(measure)
+      const height = measure.getBoundingClientRect().height
       measure.remove()
       if (height > A4_HEIGHT_PX - 4) {
         setPdfOverflow(true)
@@ -187,17 +194,6 @@ export default function ResultsPage({ setPage }: Props) {
         </div>
 
         <div className="flex flex-wrap gap-3 sm:pt-4">
-          <button
-            onClick={handleCopy}
-            className="text-xs uppercase tracking-[0.15em] px-4 py-2.5 border transition-colors"
-            style={{
-              fontFamily: "var(--font-mono)",
-              borderColor: "var(--color-border)",
-              color: copied ? "var(--color-accent)" : "var(--color-muted-fg)",
-            }}
-          >
-            {copied ? t("common.copied") : t("common.copy")}
-          </button>
           <button
             onClick={() => setPage("home")}
             className="text-xs uppercase tracking-[0.15em] px-4 py-2.5 transition-opacity hover:opacity-75"
@@ -322,13 +318,13 @@ export default function ResultsPage({ setPage }: Props) {
             <div className="results-resume-actions flex flex-wrap justify-end gap-3 mb-4">
               <button
                 onClick={() => savePdf("resume")}
-                className="text-xs uppercase tracking-widest px-3 py-1.5 transition-colors"
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  border: "1px solid var(--color-border)",
-                  color: "var(--color-muted-fg)",
-                }}
+                className="inline-flex items-center gap-2 bg-[var(--color-accent)] px-3 py-1.5 text-xs uppercase tracking-widest text-white transition-opacity hover:opacity-85"
+                style={{ fontFamily: "var(--font-mono)" }}
               >
+                <svg aria-hidden="true" width="15" height="16" viewBox="0 0 20 22" fill="none" stroke="currentColor" strokeWidth="1.7">
+                  <path d="M4 1.5h8l4 4V19a1.5 1.5 0 0 1-1.5 1.5h-10A1.5 1.5 0 0 1 3 19V3a1.5 1.5 0 0 1 1-1.5Z" />
+                  <path d="M12 1.5V6h4M6 15.5h8M6 12.5h8" />
+                </svg>
                 {t("results.savePdf")}
               </button>
             </div>
@@ -347,27 +343,26 @@ export default function ResultsPage({ setPage }: Props) {
             <div className="results-other-actions flex flex-wrap justify-end gap-3 mb-4">
               <button
                 onClick={handleCopy}
-                className="text-xs uppercase tracking-widest px-3 py-1.5 transition-colors"
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  border: "1px solid var(--color-border)",
-                  color: copied
-                    ? "var(--color-accent)"
-                    : "var(--color-muted-fg)",
-                }}
+                className="bg-[var(--color-fg)] px-3 py-1.5 text-xs uppercase tracking-widest text-white transition-opacity hover:opacity-85"
+                style={{ fontFamily: "var(--font-mono)" }}
               >
                 {copied ? t("common.copied") : t("common.copyText")}
               </button>
               {activeTab === "cover" && (
                 <button
                   onClick={() => savePdf("cover")}
-                  className="text-xs uppercase tracking-widest px-3 py-1.5 transition-colors"
-                  style={{ fontFamily: "var(--font-mono)", border: "1px solid var(--color-border)", color: "var(--color-muted-fg)" }}
+                  className="inline-flex items-center gap-2 bg-[var(--color-accent)] px-3 py-1.5 text-xs uppercase tracking-widest text-white transition-opacity hover:opacity-85"
+                  style={{ fontFamily: "var(--font-mono)" }}
                 >
+                  <svg aria-hidden="true" width="15" height="16" viewBox="0 0 20 22" fill="none" stroke="currentColor" strokeWidth="1.7">
+                    <path d="M4 1.5h8l4 4V19a1.5 1.5 0 0 1-1.5 1.5h-10A1.5 1.5 0 0 1 3 19V3a1.5 1.5 0 0 1 1-1.5Z" />
+                    <path d="M12 1.5V6h4M6 15.5h8M6 12.5h8" />
+                  </svg>
                   {t("results.savePdf")}
                 </button>
               )}
             </div>
+            {activeTab === "cover" && pdfOverflow && <p role="alert" className="mb-4 text-xs text-[var(--color-accent)]">{t("results.coverPdfOverflow")}</p>}
             {activeTab === "cover" && <p className="results-pdf-help mb-4 text-xs text-[var(--color-muted-fg)]">{t("results.pdfHelp")}</p>}
             <MarkdownContent content={tabContent[activeTab]} />
           </div>
