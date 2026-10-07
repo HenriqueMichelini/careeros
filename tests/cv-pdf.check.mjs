@@ -415,7 +415,9 @@ try {
     await until(
       "document.querySelector('.cv-font-controls input')?.value === '16'",
     )
-    await evaluate("document.querySelector('.cv-font-controls button').click()")
+    await evaluate("document.querySelector('.cv-font-controls input').focus()")
+    await call("Input.dispatchKeyEvent", { type: "keyDown", key: "Home", code: "Home" })
+    await call("Input.dispatchKeyEvent", { type: "keyUp", key: "Home", code: "Home" })
     await until(
       "document.querySelector('.cv-font-controls input').value === '12'",
     )

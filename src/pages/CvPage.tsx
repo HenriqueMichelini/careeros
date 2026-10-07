@@ -1,4 +1,14 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
+import {
+  CURATED_CV_KEY,
+  cvFacts,
+  createCuratedCv,
+  parseCuratedCv,
+  generateCv,
+  CvGenerationError,
+  type CvResult,
+  type CuratedCv,
+} from "../lib/cvGeneration"
 import CvFontSizeControl from "../components/CvFontSizeControl"
 import { useCvFontSize } from "../lib/cvPreferences"
 import CvPaper from "../components/CvPaper"
@@ -12,6 +22,7 @@ import {
   cvSections,
   entryKey,
   parseCvChoices,
+  emptyCvChoices,
   professionalLinkHref,
   professionalLinkLabel,
   professionalLinkTarget,
@@ -73,7 +84,14 @@ export default function CvPage() {
   const typography = useCvFontSize()
   const { state } = useStore()
   const { t } = useI18n()
-  const repo = state.repository
+  const [curated, setCurated] = useState<CuratedCv | null>(() => {
+    try {
+      return parseCuratedCv(localStorage.getItem(CURATED_CV_KEY))
+    } catch {
+      return null
+    }
+  })
+  const repo = curated?.repository ?? state.repository
   const { education, certifications, languages } = cvQualifications(repo)
   const previewSlotRef = useRef<HTMLDivElement>(null)
   const boundaryRef = useRef<HTMLDivElement>(null)
@@ -81,11 +99,123 @@ export default function CvPage() {
   const [previewScale, setPreviewScale] = useState(1)
   const [choices, setChoices] = useState<CvChoices>(() => {
     try {
-      return parseCvChoices(localStorage.getItem(CV_STORAGE_KEY))
+      return parseCvChoices(
+        curated?.choices
+          ? JSON.stringify(curated.choices)
+          : localStorage.getItem(CV_STORAGE_KEY),
+      )
     } catch {
       return parseCvChoices(null)
     }
   })
+  const [generation, setGeneration] = useState(false)
+  const [generationError, setGenerationError] = useState("")
+  const [pending, setPending] = useState<CvResult | null>(null)
+  const pendingRevision = useRef("")
+  const controller = useRef<AbortController | null>(null)
+  const requestId = useRef(0)
+  const liveFacts = useMemo(() => cvFacts(state.repository), [state.repository])
+  const revision = JSON.stringify([
+    state.repository,
+    choices,
+    curated,
+    state.locale,
+    state.apiKey,
+  ])
+  const revisionRef = useRef(revision)
+  revisionRef.current = revision
+  useEffect(() => {
+    controller.current?.abort()
+    requestId.current++
+    setGeneration(false)
+    setPending(null)
+  }, [revision])
+  useEffect(
+    () => () => {
+      controller.current?.abort()
+      requestId.current++
+    },
+    [],
+  )
+  const cancelGeneration = () => {
+    controller.current?.abort()
+    requestId.current++
+    setGeneration(false)
+    setPending(null)
+  }
+  const startGeneration = async () => {
+    cancelGeneration()
+    const id = ++requestId.current
+    const sourceRevision = revisionRef.current
+    const abort = new AbortController()
+    controller.current = abort
+    setGeneration(true)
+    setGenerationError("")
+    try {
+      const result = await generateCv(
+        liveFacts,
+        state.locale,
+        state.apiKey,
+        abort.signal,
+      )
+      if (
+        id === requestId.current &&
+        sourceRevision === revisionRef.current &&
+        !abort.signal.aborted
+      ) {
+        pendingRevision.current = sourceRevision
+        setPending(result)
+      }
+    } catch (error) {
+      if (id === requestId.current && !abort.signal.aborted)
+        setGenerationError(
+          error instanceof CvGenerationError ? error.code : "outage",
+        )
+    } finally {
+      if (id === requestId.current) setGeneration(false)
+    }
+  }
+  const acceptGeneration = () => {
+    if (!pending || pendingRevision.current !== revisionRef.current) {
+      setPending(null)
+      return
+    }
+    const saved = createCuratedCv(
+      state.repository,
+      liveFacts,
+      pending,
+      state.locale,
+    )
+    // Preserve the valid previous document if storage cannot accept its replacement.
+    const nextChoices = { ...emptyCvChoices(), summary: saved.summary }
+    try {
+      localStorage.setItem(
+        CURATED_CV_KEY,
+        JSON.stringify({ ...saved, choices: nextChoices }),
+      )
+      setCurated(saved)
+      setChoices(nextChoices)
+      setPending(null)
+      setGenerationError("")
+    } catch {
+      setGenerationError("save")
+    }
+  }
+  const sufficient = liveFacts.some((f) =>
+    [
+      "skills",
+      "competencies",
+      "tools",
+      "description",
+      "responsibilities",
+      "achievements",
+      "highlights",
+      "degree",
+      "details",
+      "name",
+      "proficiency",
+    ].includes(f.field),
+  )
   const [fit, setFit] = useState({
     overflows: false,
     section: "",
@@ -121,12 +251,23 @@ export default function CvPage() {
     }))
   useEffect(() => {
     try {
-      localStorage.setItem(CV_STORAGE_KEY, JSON.stringify(choices))
+      if (curated) {
+        localStorage.setItem(
+          CURATED_CV_KEY,
+          JSON.stringify({ ...curated, choices }),
+        )
+        // Compatibility mirror is secondary; the atomic document is authoritative.
+        try {
+          localStorage.setItem(CV_STORAGE_KEY, JSON.stringify(choices))
+        } catch {
+          /* primary document saved */
+        }
+      } else localStorage.setItem(CV_STORAGE_KEY, JSON.stringify(choices))
       setSaveError(false)
     } catch {
       setSaveError(true)
     }
-  }, [choices])
+  }, [choices, curated])
   useEffect(() => setExportOverflow(false), [choices, repo, state.locale])
   const skills = useMemo(() => lines(repo.skills), [repo.skills])
   const competencies = useMemo(
@@ -201,10 +342,28 @@ export default function CvPage() {
       const key = bulletKey(section, id, field, index, line)
       return { key, source: line, text: choices.bulletWording[key] ?? line }
     })
+  const selectedWording = (
+    section: CvSection,
+    id: string,
+    field: string,
+    source: string,
+  ) =>
+    bulletLines(section, id, field, source)
+      .filter((b) => selectedBullet(b.key))
+      .map((b) => b.text)
+      .join("\n")
   const selectedExperience = experience
     .filter((item) => selectedEntry("experience", item.id))
     .map((item) => ({
-      item,
+      item: {
+        ...item,
+        description: selectedWording(
+          "experience",
+          item.id,
+          "description",
+          item.description,
+        ),
+      },
       bullets: [
         ...bulletLines(
           "experience",
@@ -223,7 +382,21 @@ export default function CvPage() {
   const selectedProjects = projects
     .filter((item) => selectedEntry("projects", item.id))
     .map((project) => ({
-      project,
+      project: {
+        ...project,
+        description: selectedWording(
+          "projects",
+          project.id,
+          "description",
+          project.description,
+        ),
+        technologies: selectedWording(
+          "projects",
+          project.id,
+          "technologies",
+          project.technologies,
+        ),
+      },
       bullets: bulletLines(
         "projects",
         project.id,
@@ -236,14 +409,14 @@ export default function CvPage() {
     ...(visible("tools") ? selectedTools : []),
   ]
   const sampleTechnicalSkills =
-    visible("skills") && !skills.length && !competencies.length && !tools.length
+    !curated && visible("skills") && !skills.length && !competencies.length && !tools.length
   const sampleExperience =
-    visible("experience") && !experience.length && !projects.length
+    !curated && visible("experience") && !experience.length && !projects.length
   const showExperience =
     sampleExperience ||
     (visible("experience") && selectedExperience.length > 0) ||
     (visible("projects") && selectedProjects.length > 0)
-  const summary = choices.summary ?? repo.careerGoals
+  const summary = choices.summary ?? curated?.summary ?? repo.careerGoals
   const sectionLabels: Record<CvSection, string> = {
     contact: t("cv.contact"),
     summary: t("cv.professionalProfile"),
@@ -353,7 +526,7 @@ export default function CvPage() {
                       })
                     }
                   >
-                    {t("cv.resetToProfile")}
+                    {t(curated ? "cv.resetToSnapshot" : "cv.resetToProfile")}
                   </button>
                 )}
               </div>
@@ -449,7 +622,7 @@ export default function CvPage() {
             contentRef={contentRef}
           >
             <header className="mb-7 border-b-2 border-[var(--color-accent)] pb-6">
-              {!repo.fullName.trim() && (
+              {!curated && !repo.fullName.trim() && (
                 <p
                   data-cv-sample="true"
                   className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-muted-fg)]"
@@ -458,10 +631,10 @@ export default function CvPage() {
                 </p>
               )}
               <h2
-                data-cv-sample={!repo.fullName.trim() || undefined}
+                data-cv-sample={(!curated && !repo.fullName.trim()) || undefined}
                 className="break-words text-5xl font-bold uppercase leading-none tracking-tight [font-family:var(--font-display)]"
               >
-                {repo.fullName.trim() || t("cv.sampleName")}
+                {repo.fullName.trim() || (curated ? "" : t("cv.sampleName"))}
               </h2>
               {visible("contact") &&
                 contact.some((item) => selectedEntry("contact", item.id)) && (
@@ -483,7 +656,7 @@ export default function CvPage() {
                   </ul>
                 )}
             </header>
-            {visible("summary") && (
+            {visible("summary") && (summary.trim() || !curated) && (
               <Section
                 id="summary"
                 title={t("cv.professionalProfile")}
@@ -734,6 +907,113 @@ export default function CvPage() {
           </CvPaper>
         </div>
         <aside className="cv-controls order-1 lg:order-2 lg:sticky lg:top-24">
+          <div
+            className="mb-4 border border-[var(--color-border)] bg-[var(--color-card)] p-5"
+            data-cv-generation
+          >
+            <h2 className="mb-2 text-xs font-semibold uppercase">
+              {t("cv.generateTitle")}
+            </h2>
+            <p className="mb-3 text-xs leading-5">{t("cv.generatePolicy")}</p>
+            <details className="mb-3 text-xs leading-5">
+              <summary>{t("cv.generatePrivacyTitle")}</summary>
+              <p>{t("cv.generatePrivacy")}</p>
+            </details>
+            {!sufficient && (
+              <p className="mb-3 text-xs">{t("cv.generateInsufficient")}</p>
+            )}
+            {!state.apiKey && (
+              <p className="mb-3 text-xs">{t("cv.generateKey")}</p>
+            )}
+            {curated && (
+              <p className="mb-3 text-xs">{t("cv.generatedSnapshot")}</p>
+            )}
+            <button
+              type="button"
+              disabled={!sufficient || !state.apiKey || generation}
+              onClick={startGeneration}
+              className="w-full border border-[var(--color-border)] p-2 text-xs disabled:opacity-50"
+            >
+              {t(generation ? "cv.generating" : "cv.generate")}
+            </button>
+            {generation && (
+              <p role="status" className="mt-2 text-xs">
+                {t("cv.generateProgress")}
+              </p>
+            )}
+            {(generation || pending) && (
+              <button
+                type="button"
+                onClick={cancelGeneration}
+                className="mt-2 text-xs underline"
+              >
+                {t("cv.generateCancel")}
+              </button>
+            )}
+            {generationError && (
+              <p role="alert" className="mt-3 text-xs">
+                {t(
+                  ({
+                    input: "cv.generateErrorInput",
+                    key: "cv.generateKey",
+                    rate_limit: "cv.generateErrorRate",
+                    timeout: "cv.generateErrorTimeout",
+                    invalid_output: "cv.generateErrorOutput",
+                    save: "cv.saveError",
+                  } as const)[(generationError as "input")] ||
+                    "cv.generateErrorOutage",
+                )}
+              </p>
+            )}
+            {pending && (
+              <div className="mt-4 border-t border-[var(--color-border)] pt-3">
+                <p className="mb-2 text-xs font-semibold">
+                  {t("cv.generateReview")}
+                </p>
+                <p className="mb-3 text-xs leading-5" data-generated-summary>
+                  {pending.summary.map((s) => s.text).join(" ")}
+                </p>
+                <details className="mb-3 text-xs leading-5">
+                  <summary>
+                    {t("cv.generateSources", {
+                      count: pending.selected.length,
+                    })}
+                  </summary>
+                  <ul className="list-disc pl-4">
+                    {liveFacts
+                      .filter((f) => pending.selected.includes(f.id))
+                      .map((f) => (
+                        <li key={f.id}>
+                          {sectionLabels[(f.section as CvSection)]}: {f.text}
+                          {pending.wording?.[f.id] && (
+                            <p className="mt-1 font-semibold">
+                              {t("cv.proposedWording")}: {pending.wording[f.id]}
+                            </p>
+                          )}
+                          {pending.summary
+                            .filter((s) => s.sourceId === f.id)
+                            .map((s, index) => (
+                              <p key={index} className="mt-1 font-semibold">
+                                {t("cv.professionalProfile")}: {s.text}
+                              </p>
+                            ))}
+                        </li>
+                      ))}
+                  </ul>
+                </details>
+                <p className="mb-3 text-xs leading-5">
+                  {t("cv.generateReplaceNote")}
+                </p>
+                <button
+                  type="button"
+                  onClick={acceptGeneration}
+                  className="w-full bg-[var(--color-accent)] p-2 text-xs text-white"
+                >
+                  {t("cv.generateAccept")}
+                </button>
+              </div>
+            )}
+          </div>
           <CvFontSizeControl
             fontSize={typography.fontSize}
             onChange={typography.setFontSize}
@@ -821,7 +1101,11 @@ export default function CvPage() {
                             }))
                           }
                         >
-                          {t("cv.resetToProfile")}
+                          {t(
+                            curated
+                              ? "cv.resetToSnapshot"
+                              : "cv.resetToProfile",
+                          )}
                         </button>
                       )}
                     </div>
@@ -865,6 +1149,12 @@ export default function CvPage() {
                           ...bulletLines(
                             section,
                             item.id,
+                            "description",
+                            item.description,
+                          ),
+                          ...bulletLines(
+                            section,
+                            item.id,
                             "responsibilities",
                             item.responsibilities,
                           ),
@@ -884,12 +1174,26 @@ export default function CvPage() {
                         section,
                         item.id,
                         item.name || t("cv.selectedProjects"),
-                        bulletLines(
-                          section,
-                          item.id,
-                          "highlights",
-                          item.highlights,
-                        ),
+                        [
+                          ...bulletLines(
+                            section,
+                            item.id,
+                            "description",
+                            item.description,
+                          ),
+                          ...bulletLines(
+                            section,
+                            item.id,
+                            "technologies",
+                            item.technologies,
+                          ),
+                          ...bulletLines(
+                            section,
+                            item.id,
+                            "highlights",
+                            item.highlights,
+                          ),
+                        ],
                       ),
                     )}
                   {visible(section) &&

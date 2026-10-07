@@ -14,7 +14,8 @@
     "test:cv-preview": "node tests/cv-shared-preview.check.mjs",
     "test:results-firefox-pdf": "node tests/results-firefox-print.check.mjs",
     "preview": "vite preview",
-    "format": "oxfmt"
+    "format": "oxfmt",
+    "test:cv-generation": "node tests/cv-generation-browser.check.mjs"
   },
   "dependencies": {
     "react": "^19.0.0",
