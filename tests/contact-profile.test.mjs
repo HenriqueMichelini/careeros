@@ -164,3 +164,15 @@ test("model signatures and incomplete structures fail safely rather than duplica
     }
   } finally { globalThis.fetch = originalFetch }
 })
+
+test("overview review is refused without a request", async () => {
+  const originalFetch = globalThis.fetch
+  let requests = 0
+  globalThis.fetch = async () => { requests++; throw new Error("unexpected request") }
+  try {
+    for (const section of ["profile", "PROFILE", "PERFIL", "overview"]) {
+      await assert.rejects(reviewRepository(withContactFields(oldProfile), section, "synthetic"), { code: "input" })
+    }
+    assert.equal(requests, 0)
+  } finally { globalThis.fetch = originalFetch }
+})

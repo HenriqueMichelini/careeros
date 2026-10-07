@@ -31,8 +31,10 @@ export class ApplicationDraftError extends Error {
 export async function reviewRepository(
   repo: ProfessionalRepository,
   changedSection: string,
-  apiKey: string
+  apiKey: string,
+  signal?: AbortSignal
 ): Promise<{ updatedRepo: ProfessionalRepository; summary: string }> {
+  if (["profile", "overview", "perfil"].includes(changedSection.trim().toLowerCase())) throw new ProfileReviewError("input")
   if (!validQualifications(repo)) throw new ProfileReviewError('input')
   const response = await fetch('/api/profile/review', {
     method: 'POST',
@@ -41,7 +43,7 @@ export async function reviewRepository(
       'X-OpenAI-Api-Key': apiKey,
     },
     body: JSON.stringify({ repository: careerProfile(repo), changedSection }),
-    signal: AbortSignal.timeout(30_000),
+    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30_000)]) : AbortSignal.timeout(30_000),
   }).catch((error: unknown) => {
     if (error instanceof DOMException && error.name === 'TimeoutError') {
       throw new ProfileReviewError('timeout')

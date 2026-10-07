@@ -453,9 +453,27 @@ export default function RepositoryPage() {
   const [isIngesting, setIsIngesting] = useState(false)
   const ingestionRequest = useRef(0)
   const ingestionController = useRef<AbortController | null>(null)
+  const reviewRequest = useRef(0)
+  const reviewController = useRef<AbortController | null>(null)
   const repo = state.repository
+  const currentReviewContext = useRef({ section: activeSection, repo })
+  currentReviewContext.current = { section: activeSection, repo }
 
-  useEffect(() => () => ingestionController.current?.abort(), [])
+  useEffect(() => () => {
+    ingestionController.current?.abort()
+    reviewRequest.current += 1
+    reviewController.current?.abort()
+    dispatch({ type: "SET_REVIEWING", payload: false })
+  }, [dispatch])
+
+  function changeSection(section: Section) {
+    reviewRequest.current += 1
+    reviewController.current?.abort()
+    currentReviewContext.current.section = section
+    dispatch({ type: "SET_REVIEWING", payload: false })
+    setReviewError("")
+    setActiveSection(section)
+  }
 
   const updateRepo = useCallback(
     (patch: Partial<ProfessionalRepository>) =>
@@ -535,23 +553,30 @@ export default function RepositoryPage() {
   }
 
   async function handleAiReview() {
+    if (activeSection === "profile" || currentReviewContext.current.section !== activeSection || state.isReviewingRepo) return
     if (!state.apiKey) {
       setReviewError(t("repo.setApiKeyFirst"))
       return
     }
     setReviewError("")
+    const requestId = ++reviewRequest.current
+    const controller = new AbortController()
+    reviewController.current = controller
+    const isCurrent = () => reviewRequest.current === requestId &&
+      currentReviewContext.current.section === activeSection && currentReviewContext.current.repo === repo
     dispatch({ type: "SET_REVIEWING", payload: true })
     try {
-      const section = SECTIONS.find((s) => s.id === activeSection)
-      const sectionLabel = section ? t(section.labelKey) : activeSection
       const { updatedRepo, summary } = await reviewRepository(
         repo,
-        sectionLabel,
+        activeSection,
         state.apiKey,
+        controller.signal,
       )
+      if (!isCurrent()) return
       dispatch({ type: "SET_REPO", payload: updatedRepo })
       dispatch({ type: "SET_REVIEW_SUMMARY", payload: summary })
     } catch (e: any) {
+      if (!isCurrent()) return
       const errorKey = e instanceof ProfileReviewError
         ? ({
             input: "repo.reviewErrorInput",
@@ -564,7 +589,7 @@ export default function RepositoryPage() {
         : undefined
       setReviewError(errorKey ? t(errorKey) : t("repo.reviewFailed"))
     } finally {
-      dispatch({ type: "SET_REVIEWING", payload: false })
+      if (reviewRequest.current === requestId) dispatch({ type: "SET_REVIEWING", payload: false })
     }
   }
 
@@ -647,7 +672,7 @@ export default function RepositoryPage() {
           {SECTIONS.map(({ id, labelKey }) => (
             <button
               key={id}
-              onClick={() => setActiveSection(id)}
+              onClick={() => changeSection(id)}
               className={`w-full text-left px-2 md:px-3 py-2.5 text-xs md:text-sm transition-colors block ${
                 id === "profile"
                   ? "font-semibold tracking-[0.12em] mb-2 border"
@@ -675,15 +700,15 @@ export default function RepositoryPage() {
           ))}
         </nav>
         {activeSection !== "profile" && (
-          <button type="button" onClick={() => setActiveSection("profile")}
+          <button type="button" onClick={() => changeSection("profile")}
             className="mt-5 w-full border px-3 py-2 text-xs text-left uppercase tracking-wide"
             style={{borderColor:"var(--color-accent)",color:"var(--color-accent)"}}>
             {t("repo.quickAdd")}
           </button>
         )}
 
-        {/* AI Review */}
-        <div
+        {/* AI Review is available only within a supported subsection. */}
+        {activeSection !== "profile" && <div
           className="mt-4 md:mt-10 pt-4 md:pt-6 border-t"
           style={{ borderColor: "var(--color-border)" }}
         >
@@ -744,7 +769,7 @@ export default function RepositoryPage() {
               {t("repo.last")}: {state.lastReviewSummary}
             </p>
           )}
-        </div>
+        </div>}
       </aside>
 
       {/* Main content */}

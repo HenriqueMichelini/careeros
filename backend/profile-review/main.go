@@ -137,7 +137,12 @@ func (a app) review(w http.ResponseWriter, r *http.Request) {
 }
 
 func validRequest(in reviewRequest) bool {
-	if strings.TrimSpace(in.ChangedSection) == "" || len(in.ChangedSection) > 200 {
+	// Stable section IDs are used by the current UI. Retain supported labels
+	// from older English/Portuguese clients, while excluding the overview.
+	switch strings.ToLower(strings.TrimSpace(in.ChangedSection)) {
+	case "goals", "skills", "experience", "projects", "education", "certifications", "languages", "compensation", "other",
+		"career goals", "skills, tools & tech", "objetivos de carreira", "habilidades e tecnologias", "experiência", "projetos", "formação", "certificações", "idiomas", "remuneração", "outros":
+	default:
 		return false
 	}
 	return profilevalidation.Valid(in.Repository, maxProfileText)

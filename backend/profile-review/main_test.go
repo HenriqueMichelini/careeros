@@ -264,3 +264,22 @@ func TestHandlerMapsSimulatedProviderTimeout(t *testing.T) {
 		t.Fatalf("simulated timeout took %s, want between %s and 1s", measured, simulatedDeadline)
 	}
 }
+
+func TestOverviewReviewIsRejectedBeforeProviderCall(t *testing.T) {
+	for _, section := range []string{"profile", "PROFILE", "PERFIL", "overview", "Visão geral", "unknown"} {
+		t.Run(section, func(t *testing.T) {
+			calls := 0
+			a := app{client: &http.Client{Transport: transportFunc(func(*http.Request) (*http.Response, error) { calls++; return nil, nil })}}
+			input := sampleRequest()
+			input.ChangedSection = section
+			body, _ := json.Marshal(input)
+			request := httptest.NewRequest(http.MethodPost, "/api/profile/review", strings.NewReader(string(body)))
+			request.Header.Set("X-OpenAI-Api-Key", "sk-synthetic")
+			response := httptest.NewRecorder()
+			a.handler().ServeHTTP(response, request)
+			if response.Code != http.StatusBadRequest || calls != 0 {
+				t.Fatalf("status=%d provider calls=%d", response.Code, calls)
+			}
+		})
+	}
+}
