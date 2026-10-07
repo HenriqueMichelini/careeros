@@ -1,6 +1,6 @@
 # Field-validation live comparison — 2026-10-07
 
-Issue [#29](https://github.com/HenriqueMichelini/careeros/issues/29). **Recommendation: use the existing OpenAI `gpt-6-luna` configuration for field classification; do not adopt Jev for this behavior with the evaluated rubric. User approval is pending.** No production integration, provider switching, deployment or issue closure is included.
+Issue [#29](https://github.com/HenriqueMichelini/careeros/issues/29). **First-round recommendation: OpenAI `gpt-6-luna` for the evaluated rubric. Final selection is deferred at the user's request while documentation-guided Jev improvements are explored.** No production integration, provider switching, deployment or issue closure is included.
 
 ## Measured routing
 
@@ -53,9 +53,9 @@ The two complete-job timing fixtures are supplemental, not part of the 34-case a
 
 The app handlers discard upstream usage. Whole-workflow billed cost and downstream token usage are therefore unavailable, even for HTTP 200 pairs; only classifier usage is captured. A successful ingestion pair makes two baseline and two validated upstream calls plus one classification call. Those invocations add real work despite the low classifier-only cost.
 
-## Routing and budget recommendation
+## First-round routing and budget recommendation
 
-Recommend OpenAI with the typed v1 [field-decision contract](../../src/lib/fieldDecision.ts) and the measured semantic rubric:
+The first-round results supported OpenAI with the typed v1 [field-decision contract](../../src/lib/fieldDecision.ts) and the measured semantic rubric:
 
 1. Detected override attempt → reject the whole submission, including useful facts.
 2. Uncertain/quoted attack wording → require rephrasing and revalidation, without claiming a confirmed violation.
@@ -87,8 +87,10 @@ node scripts/field-validation/evaluate.mjs \
 
 This command reproduces decision counts, mismatches, token totals and timing summaries **without credentials or new provider calls**. Raw records contain only IDs, enum signals, sanitized usage/confidence/model metadata and durations. Credential files and values are absent from the repository.
 
-## Approval requested
+## Decision deferred for Jev exploration
 
-Approve OpenAI `gpt-6-luna` with reasoning `none`, this categorical routing policy and the proposed shared-deadline/3-second classification target as the baseline for #30. This approval does **not** accept the unresolved Application Draft output failure, assert deployment verification, or authorize replacing existing user-key ownership. The incomplete drafting measurement is an explicit residual limit that must be addressed during downstream verification.
+The user requested a deeper reading of TypeSafe's introduction and referenced documentation before deciding. The [Jev improvement research](jev-improvement-research.md) identifies an adapter weakness: both Choice questions used the same generic instructions, while question IDs are not sent to the model. Their different criteria still supplied guidance, so the original results remain evidence for that configuration; they do not establish the best achievable Jev behavior.
 
-Until the user approves or changes this recommendation, #29 remains open and #30 must not start. If the user requires a successful drafting-overhead measurement before approving #29, resolve that baseline failure first and keep the gate open.
+Explore explicit per-question instructions and structured category boundaries first, then a bounded atomic-question variant with code-owned composition. Preserve the original measurements, retain complete probability distributions in new experiments, and use separate calibration/held-out examples before claiming a threshold or accuracy improvement. These improvements are proposed, not measured.
+
+No provider, new integration budget or architecture has been approved. #29 remains open and #30 must not start. Any later provider decision must include the routing policy, operational budget and residual limits, including whether successful drafting-overhead evidence is required before #29 acceptance.
