@@ -23,7 +23,18 @@ export function parseCvFontSize(raw: string | null): number {
   }
 }
 
-export function useCvFontSize() {
+export const CV_DENSITIES = ["compact", "balanced", "detailed"] as const
+export type CvDensity = typeof CV_DENSITIES[number]
+export function parseCvDensity(raw: string | null): CvDensity {
+  try {
+    const value = JSON.parse(raw || "null")
+    return CV_DENSITIES.includes(value?.density) ? value.density : "balanced"
+  } catch {
+    return "balanced"
+  }
+}
+
+export function useCvPreferences() {
   const [fontSize, setFontSize] = useState(() => {
     try {
       return parseCvFontSize(localStorage.getItem(CV_PREFERENCES_KEY))
@@ -31,14 +42,24 @@ export function useCvFontSize() {
       return CV_FONT_DEFAULT
     }
   })
+  const [density, setDensity] = useState<CvDensity>(() => {
+    try {
+      return parseCvDensity(localStorage.getItem(CV_PREFERENCES_KEY))
+    } catch {
+      return "balanced"
+    }
+  })
   const [saveError, setSaveError] = useState(false)
   useEffect(() => {
     try {
-      localStorage.setItem(CV_PREFERENCES_KEY, JSON.stringify({ fontSize }))
+      localStorage.setItem(
+        CV_PREFERENCES_KEY,
+        JSON.stringify({ fontSize, density }),
+      )
       setSaveError(false)
     } catch {
       setSaveError(true)
     }
-  }, [fontSize])
-  return { fontSize, setFontSize, saveError }
+  }, [fontSize, density])
+  return { fontSize, setFontSize, density, setDensity, saveError }
 }

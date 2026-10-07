@@ -119,14 +119,73 @@ test("accepted CV is an independent snapshot with factual identity and explicit 
 
 test("supporting paraphrases condense source facts while protected metadata and originals stay intact", () => {
   const repo = structuredClone(profile)
-  repo.experience[0].description = "Designed customer services. Designed services for customers. Used research to improve services by 20%."
+  repo.experience[0].description =
+    "Designed customer services. Designed services for customers. Used research to improve services by 20%."
   const facts = cvFacts(repo)
-  const source = facts.find(f => f.field === "description")
-  const title = facts.find(f => f.field === "title")
-  const result = {summary:[{sourceId:source.id,text:"Designed customer services using research."}],selected:[title.id,source.id],wording:{[source.id]:"Improved customer services by 20% using research."}}
-  assert.ok(validateCvResult(result,facts))
-  const cv = createCuratedCv(repo,facts,result,"en")
-  assert.equal(cv.repository.experience[0].description,"Improved customer services by 20% using research.")
-  assert.ok(cv.sources.find(f=>f.id===source.id).text.includes("Designed services for customers."))
-  assert.ok(!validateCvResult({...result,wording:{[title.id]:"CEO"}},facts))
+  const source = facts.find((f) => f.field === "description")
+  const title = facts.find((f) => f.field === "title")
+  const result = {
+    summary: [
+      {
+        sourceId: source.id,
+        text: "Designed customer services using research.",
+      },
+    ],
+    selected: [title.id, source.id],
+    wording: {
+      [source.id]: "Improved customer services by 20% using research.",
+    },
+  }
+  assert.ok(validateCvResult(result, facts))
+  const cv = createCuratedCv(repo, facts, result, "en")
+  assert.equal(
+    cv.repository.experience[0].description,
+    "Improved customer services by 20% using research.",
+  )
+  assert.ok(
+    cv.sources
+      .find((f) => f.id === source.id)
+      .text.includes("Designed services for customers."),
+  )
+  assert.ok(
+    !validateCvResult({ ...result, wording: { [title.id]: "CEO" } }, facts),
+  )
+})
+
+test("requested density travels with facts and locale; accepted density survives reload with legacy default", async () => {
+  const { generateCv } = await import(path)
+  const repo = structuredClone(profile)
+  const facts = cvFacts(repo)
+  const source = facts.find((f) => f.field === "achievements")
+  const response = {
+    summary: [{ sourceId: source.id, text: source.text }],
+    selected: [source.id],
+  }
+  const original = structuredClone(repo)
+  const originalFetch = globalThis.fetch
+  try {
+    for (const density of ["compact", "balanced", "detailed"]) {
+      let outbound
+      globalThis.fetch = async (_, options) => {
+        outbound = JSON.parse(options.body)
+        return new Response(JSON.stringify(response))
+      }
+      const result = await generateCv(
+        facts,
+        "pt-BR",
+        "sk-test",
+        new AbortController().signal,
+        density,
+      )
+      assert.equal(outbound.density, density)
+      assert.equal(outbound.locale, "pt-BR")
+      const saved = createCuratedCv(repo, facts, result, "pt-BR", density)
+      assert.equal(parseCuratedCv(JSON.stringify(saved)).density, density)
+      delete saved.density
+      assert.equal(parseCuratedCv(JSON.stringify(saved)).density, "balanced")
+    }
+    assert.deepEqual(repo, original)
+  } finally {
+    globalThis.fetch = originalFetch
+  }
 })

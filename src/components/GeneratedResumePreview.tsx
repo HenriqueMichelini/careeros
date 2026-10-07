@@ -1,6 +1,6 @@
 import { Fragment, useLayoutEffect, useMemo, useRef, useState } from "react"
 import CvFontSizeControl from "./CvFontSizeControl"
-import { useCvFontSize } from "../lib/cvPreferences"
+import { useCvPreferences } from "../lib/cvPreferences"
 import CvPaper from "./CvPaper"
 import { useI18n } from "../lib/store"
 import {
@@ -52,7 +52,7 @@ export default function GeneratedResumePreview({
   profile: ProfessionalRepository
   onEditProfile: () => void
 }) {
-  const typography = useCvFontSize()
+  const typography = useCvPreferences()
   const { t } = useI18n()
   const slotRef = useRef<HTMLDivElement>(null)
   const boundaryRef = useRef<HTMLDivElement>(null)

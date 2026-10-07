@@ -24,8 +24,9 @@ type fact struct {
 	Text    string `json:"text"`
 }
 type request struct {
-	Locale string `json:"locale"`
-	Facts  []fact `json:"facts"`
+	Locale  string `json:"locale"`
+	Density string `json:"density"`
+	Facts   []fact `json:"facts"`
 }
 type excerpt struct {
 	SourceID string `json:"sourceId"`
@@ -73,6 +74,9 @@ func substantive(field string) bool {
 	return false
 }
 func validRequest(in request) bool {
+	if in.Density != "" && in.Density != "compact" && in.Density != "balanced" && in.Density != "detailed" {
+		return false
+	}
 	if (in.Locale != "en" && in.Locale != "pt-BR") || len(in.Facts) == 0 || len(in.Facts) > 500 {
 		return false
 	}
@@ -178,6 +182,9 @@ func (a app) generate(w http.ResponseWriter, r *http.Request) {
 		fail(w, 400, "input")
 		return
 	}
+	if in.Density == "" {
+		in.Density = "balanced"
+	}
 	out, code := a.call(r.Context(), key, in)
 	if code != "" {
 		status := 502
@@ -203,10 +210,17 @@ Selected is the ranked ordered set of facts to include. Select entry anchors and
 Use the requested locale for generated prose; keep source proper names and original qualifications unchanged. Target one readable A4 page, without including nearly every fact by default. Never claim word count proves page fit. No tools, alternative model or custom workflow.
 `
 
+// Density changes evidence selection and prose compression, never typography or truncation.
+var densityPolicy = map[string]string{
+	"compact":  "Density compact: Emphasize only the strongest distinct evidence of trajectory and impact. Prefer fewer relevant entries and supporting bullets; omit routine duties and peripheral projects. Write a tight summary and aggressively consolidate repeated wording without losing factual meaning. Keep complementary qualifications when material. For sparse sources keep useful evidence rather than padding or forcing omissions.",
+	"balanced": "Density balanced: Balance representative experience, strongest outcomes, distinct projects and complementary qualifications. Use a concise summary and selective supporting bullets; consolidate overlap while retaining enough context to understand the work. This is the default one-page target.",
+	"detailed": "Density detailed: Include more relevant supporting evidence across experience, distinct projects and qualifications than compact or balanced. Retain useful context and additional nonredundant achievements and responsibilities, with an organized concise summary and prose. Do not add filler or repeat evidence to create volume. Still target one A4 page, but detailed content may overflow and require user revision; never promise fit or truncate facts.",
+}
+
 func (a app) call(parent context.Context, key string, in request) (result, string) {
 	var empty result
 	data, _ := json.Marshal(in)
-	body, _ := json.Marshal(map[string]any{"model": "gpt-6-luna", "reasoning_effort": "none", "max_completion_tokens": 4000, "response_format": map[string]string{"type": "json_object"}, "messages": []any{map[string]string{"role": "system", "content": policy}, map[string]string{"role": "user", "content": string(data)}}})
+	body, _ := json.Marshal(map[string]any{"model": "gpt-6-luna", "reasoning_effort": "none", "max_completion_tokens": 4000, "response_format": map[string]string{"type": "json_object"}, "messages": []any{map[string]string{"role": "system", "content": policy + densityPolicy[in.Density]}, map[string]string{"role": "user", "content": string(data)}}})
 	ctx, cancel, response, err := openaihttp.Post(parent, a.client, deadline, key, body)
 	defer cancel()
 	timeout := func(err error) bool {

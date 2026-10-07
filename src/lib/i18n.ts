@@ -5,6 +5,22 @@ export type TranslationValue = string | number
 
 const messages = {
   en: {
+    "cv.density": "Content density",
+    "cv.densityHelp":
+      "Choose how much evidence to include and how tightly to summarize it. Font size is independent. Every mode targets one A4 page; check actual page fit after accepting.",
+    "cv.density.compact": "Compact",
+    "cv.density.balanced": "Balanced",
+    "cv.density.detailed": "Detailed",
+    "cv.density.compactHelp":
+      "Strongest evidence, fewer supporting details and tighter summaries.",
+    "cv.density.balancedHelp":
+      "Representative experience and complementary evidence with concise context.",
+    "cv.density.detailedHelp":
+      "More useful supporting evidence; may overflow one page and need revision.",
+    "cv.densityApplied": "Current saved CV density: {{density}}.",
+    "cv.densityNoSnapshot": "Current preview has no generated density.",
+    "cv.densityPending":
+      "Pending setting: generate and accept a proposal to apply it. Current content and edits stay until you choose replacement.",
     "cv.proposedWording": "Proposed wording",
     "cv.resetToSnapshot": "Reset to saved CV source",
     "cv.generateTitle": "General-purpose CV",
@@ -460,6 +476,22 @@ const messages = {
     "results.coverPdfOverflow": "This cover letter exceeds one A4 page. Generate a shorter draft before saving it as PDF.",
   },
   "pt-BR": {
+    "cv.density": "Densidade do conteúdo",
+    "cv.densityHelp":
+      "Escolha quanto incluir e quanto resumir as evidências. O tamanho da fonte é independente. Todos os modos visam uma página A4; confira o ajuste real depois de aceitar.",
+    "cv.density.compact": "Compacto",
+    "cv.density.balanced": "Equilibrado",
+    "cv.density.detailed": "Detalhado",
+    "cv.density.compactHelp":
+      "Evidências mais fortes, menos detalhes de apoio e resumos mais enxutos.",
+    "cv.density.balancedHelp":
+      "Experiência representativa e evidências complementares com contexto conciso.",
+    "cv.density.detailedHelp":
+      "Mais evidências úteis de apoio; pode exceder uma página e precisar de revisão.",
+    "cv.densityApplied": "Densidade do CV salvo: {{density}}.",
+    "cv.densityNoSnapshot": "A prévia atual não tem densidade gerada.",
+    "cv.densityPending":
+      "Configuração pendente: gere e aceite uma proposta para aplicar. Conteúdo e edições atuais ficam até você escolher substituí-los.",
     "cv.proposedWording": "Texto proposto",
     "cv.resetToSnapshot": "Restaurar fonte salva do CV",
     "cv.generateTitle": "Currículo geral",

@@ -1,5 +1,6 @@
 import type { ProfessionalRepository } from "./types"
 import type { Locale } from "./i18n"
+import type { CvDensity } from "./cvPreferences"
 import type { CvChoices } from "./cv"
 
 export const CURATED_CV_KEY = "careeros_curated_cv_v1"
@@ -20,6 +21,7 @@ export interface CvResult {
 }
 export interface CuratedCv {
   version: 1
+  density?: CvDensity
   choices?: CvChoices
   repository: ProfessionalRepository
   summary: string
@@ -238,6 +240,7 @@ export function createCuratedCv(
   facts: CvFact[],
   result: CvResult,
   locale: Locale,
+  density: CvDensity = "balanced",
 ): CuratedCv {
   if (!validateCvResult(result, facts)) throw new Error("invalid_output")
   const selected = result.selected.map((id) => facts.find((f) => f.id === id)!)
@@ -307,6 +310,7 @@ export function createCuratedCv(
     summary: result.summary.map((s) => s.text).join(" "),
     sources: selected,
     locale,
+    density,
   }
 }
 export function parseCuratedCv(raw: string | null): CuratedCv | null {
@@ -392,6 +396,11 @@ export function parseCuratedCv(raw: string | null): CuratedCv | null {
       )
     )
       return null
+    value.density = ["compact", "balanced", "detailed"].includes(
+      value.density || "",
+    )
+      ? value.density
+      : "balanced"
     return value
   } catch {
     return null
@@ -407,6 +416,7 @@ export async function generateCv(
   locale: Locale,
   key: string,
   signal: AbortSignal,
+  density: CvDensity = "balanced",
 ): Promise<CvResult> {
   let response: Response
   const requestSignal = AbortSignal.any([signal, AbortSignal.timeout(30_000)])
@@ -421,7 +431,7 @@ export async function generateCv(
     response = await fetch("/api/cv/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-OpenAI-Api-Key": key },
-      body: JSON.stringify({ facts: outbound, locale }),
+      body: JSON.stringify({ facts: outbound, locale, density }),
       signal: requestSignal,
     })
   } catch (error) {

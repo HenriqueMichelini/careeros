@@ -9,8 +9,9 @@ import {
   type CvResult,
   type CuratedCv,
 } from "../lib/cvGeneration"
+import CvDensityControl from "../components/CvDensityControl"
 import CvFontSizeControl from "../components/CvFontSizeControl"
-import { useCvFontSize } from "../lib/cvPreferences"
+import { useCvPreferences } from "../lib/cvPreferences"
 import CvPaper from "../components/CvPaper"
 import { useI18n, useStore } from "../lib/store"
 import { cvQualifications } from "../lib/profile"
@@ -81,7 +82,7 @@ function CvLink({ value }: { value: string }) {
 }
 
 export default function CvPage() {
-  const typography = useCvFontSize()
+  const preferences = useCvPreferences()
   const { state } = useStore()
   const { t } = useI18n()
   const [curated, setCurated] = useState<CuratedCv | null>(() => {
@@ -121,6 +122,7 @@ export default function CvPage() {
     curated,
     state.locale,
     state.apiKey,
+    preferences.density,
   ])
   const revisionRef = useRef(revision)
   revisionRef.current = revision
@@ -157,6 +159,7 @@ export default function CvPage() {
         state.locale,
         state.apiKey,
         abort.signal,
+        preferences.density,
       )
       if (
         id === requestId.current &&
@@ -185,6 +188,7 @@ export default function CvPage() {
       liveFacts,
       pending,
       state.locale,
+      preferences.density,
     )
     // Preserve the valid previous document if storage cannot accept its replacement.
     const nextChoices = { ...emptyCvChoices(), summary: saved.summary }
@@ -409,7 +413,11 @@ export default function CvPage() {
     ...(visible("tools") ? selectedTools : []),
   ]
   const sampleTechnicalSkills =
-    !curated && visible("skills") && !skills.length && !competencies.length && !tools.length
+    !curated &&
+    visible("skills") &&
+    !skills.length &&
+    !competencies.length &&
+    !tools.length
   const sampleExperience =
     !curated && visible("experience") && !experience.length && !projects.length
   const showExperience =
@@ -588,7 +596,7 @@ export default function CvPage() {
     observer.observe(content)
     measure()
     return () => observer.disconnect()
-  }, [choices, state.locale, repo, paperScale, typography.fontSize])
+  }, [choices, state.locale, repo, paperScale, preferences.fontSize])
 
   return (
     <div className="cv-page mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -613,7 +621,7 @@ export default function CvPage() {
           className="cv-preview-slot order-2 min-w-0 overflow-x-auto lg:order-1"
         >
           <CvPaper
-            fontSize={typography.fontSize}
+            fontSize={preferences.fontSize}
             label={t("cv.documentPreview")}
             scale={paperScale}
             overflows={overflows}
@@ -631,7 +639,9 @@ export default function CvPage() {
                 </p>
               )}
               <h2
-                data-cv-sample={(!curated && !repo.fullName.trim()) || undefined}
+                data-cv-sample={
+                  (!curated && !repo.fullName.trim()) || undefined
+                }
                 className="break-words text-5xl font-bold uppercase leading-none tracking-tight [font-family:var(--font-display)]"
               >
                 {repo.fullName.trim() || (curated ? "" : t("cv.sampleName"))}
@@ -915,6 +925,12 @@ export default function CvPage() {
               {t("cv.generateTitle")}
             </h2>
             <p className="mb-3 text-xs leading-5">{t("cv.generatePolicy")}</p>
+            <CvDensityControl
+              density={preferences.density}
+              onChange={preferences.setDensity}
+              appliedDensity={curated?.density ?? null}
+              saveError={preferences.saveError}
+            />
             <details className="mb-3 text-xs leading-5">
               <summary>{t("cv.generatePrivacyTitle")}</summary>
               <p>{t("cv.generatePrivacy")}</p>
@@ -1015,9 +1031,9 @@ export default function CvPage() {
             )}
           </div>
           <CvFontSizeControl
-            fontSize={typography.fontSize}
-            onChange={typography.setFontSize}
-            saveError={typography.saveError}
+            fontSize={preferences.fontSize}
+            onChange={preferences.setFontSize}
+            saveError={preferences.saveError}
           />
           <div className="mb-4 border border-[var(--color-border)] bg-[var(--color-card)] p-5">
             <h2 className="mb-2 text-xs uppercase tracking-[0.2em] [font-family:var(--font-mono)]">

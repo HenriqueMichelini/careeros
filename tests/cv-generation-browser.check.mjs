@@ -597,10 +597,269 @@ try {
   console.log(
     "Heavy 19-role source: later impact selected with complementary project, duplicates omitted, source intact; cancelled response ignored; actual oversized selected content surfaces overflow",
   )
-  await openCv({...blank,education:fixtures[0].repo.education},'en')
-  await evaluate(`window.fetch=async(url,options)=>{const facts=JSON.parse(options.body).facts;const degree=facts.find(f=>f.field==='degree');return new Response(JSON.stringify({summary:[{sourceId:degree.id,text:'Education includes a BSc Design.'}],selected:facts.map(f=>f.id)}),{status:200})}`)
-  await click('Generate from Profile');await until("!!document.querySelector('[data-generated-summary]')");await click('Accept and replace CV');await until("!!localStorage.getItem('careeros_curated_cv_v1')")
-  assert.equal(await evaluate("document.querySelectorAll('.cv-paper-content [data-cv-sample]').length"),0,'sparse generated CV must not introduce sample experience, skills or name')
+  // Same source in each mode: controlled fixture responses establish propagation,
+  // accepted volume, fit, editing and persistence; they do not establish provider quality.
+  for (const fixture of fixtures) {
+    for (const [size, profile] of [
+      ["short", fixture.repo],
+      ["heavy", { ...heavy, fullName: fixture.repo.fullName }],
+    ]) {
+      await openCv(profile, fixture.locale)
+      const originalProfile = await evaluate(
+        "localStorage.getItem('careeros_repo')",
+      )
+      const lengths = []
+      const generate =
+        fixture.locale === "en"
+          ? "Generate from Profile"
+          : "Gerar a partir do Perfil"
+      const accept =
+        fixture.locale === "en"
+          ? "Accept and replace CV"
+          : "Aceitar e substituir CV"
+      await evaluate(`window.__calls=0;window.fetch=async(url,options)=>{
+        window.__calls++;window.__outbound=JSON.parse(options.body);
+        const {facts,density}=window.__outbound;
+        const source=facts.find(f=>f.field==='description');
+        const primary=facts.filter(f=>f.entryId===source.entryId);
+        const anchors=['title','company','startDate','endDate','current'];
+        const selected=density==='compact' ? primary.filter(f=>anchors.includes(f.field)||f.field==='description') :
+          density==='balanced' ? facts.filter(f=>f.entryId===source.entryId || f.section==='skills') : facts;
+        return new Response(JSON.stringify({summary:[{sourceId:source.id,text:source.text}],selected:selected.map(f=>f.id)}),{status:200})
+      }`)
+      for (const density of ["compact", "balanced", "detailed"]) {
+        const before = await evaluate(
+          "document.querySelector('.cv-paper-content').textContent",
+        )
+        const calls = await evaluate("window.__calls")
+        await evaluate(
+          `document.querySelector('[data-cv-density] input[value="${density}"]').click()`,
+        )
+        await pause(50)
+        assert.equal(
+          await evaluate("window.__calls"),
+          calls,
+          "density selection makes no request",
+        )
+        assert.equal(
+          await evaluate(
+            "document.querySelector('.cv-paper-content').textContent",
+          ),
+          before,
+          "selection preserves current content",
+        )
+        if (density !== "compact")
+          assert.ok(
+            await evaluate(
+              "document.querySelector('[data-cv-density-status]').textContent.includes('Pending') || document.querySelector('[data-cv-density-status]').textContent.includes('pendente')",
+            ),
+          )
+        await click(generate)
+        await until("!!document.querySelector('[data-generated-summary]')")
+        assert.equal(await evaluate("window.__outbound.density"), density)
+        await click(accept)
+        await until(
+          `JSON.parse(localStorage.getItem('careeros_curated_cv_v1')).density==='${density}'`,
+        )
+        const text = await evaluate(
+          "document.querySelector('.cv-paper-content').textContent",
+        )
+        lengths.push(text.length)
+        assert.equal(
+          await evaluate("localStorage.getItem('careeros_repo')"),
+          originalProfile,
+        )
+        await call("Emulation.setDeviceMetricsOverride", {
+          width: 390,
+          height: 844,
+          deviceScaleFactor: 1,
+          mobile: false,
+        })
+        await pause(50)
+        assert.ok(
+          await evaluate("document.documentElement.scrollWidth<=innerWidth"),
+        )
+        assert.equal(
+          await evaluate(
+            "document.querySelectorAll('[data-cv-density] input').length",
+          ),
+          3,
+        )
+        await call("Page.captureScreenshot", {
+          format: "png",
+          captureBeyondViewport: true,
+        }).then((r) =>
+          writeFileSync(
+            join(work, `${fixture.locale}-${size}-${density}-390.png`),
+            Buffer.from(r.data, "base64"),
+          ),
+        )
+        await call("Emulation.setDeviceMetricsOverride", {
+          width: 1440,
+          height: 1000,
+          deviceScaleFactor: 1,
+          mobile: false,
+        })
+        await pause(50)
+        await call("Page.captureScreenshot", {
+          format: "png",
+          captureBeyondViewport: true,
+        }).then((r) =>
+          writeFileSync(
+            join(work, `${fixture.locale}-${size}-${density}-desktop.png`),
+            Buffer.from(r.data, "base64"),
+          ),
+        )
+        const overflow = await evaluate(
+          "Array.from(document.querySelectorAll('.cv-controls [role=status]')).some(e=>e.textContent.includes('extends about') || e.textContent.includes('continua por cerca'))",
+        )
+        if (size === "heavy" && density === "detailed") {
+          await evaluate("window.__prints=0;window.print=()=>window.__prints++")
+          await click(
+            fixture.locale === "en" ? "Export A4 PDF" : "Exportar PDF A4",
+          )
+          await pause(50)
+          assert.equal(
+            await evaluate("window.__prints"),
+            0,
+            "ordinary app export blocks overflowing content",
+          )
+        }
+        // Direct CDP printing intentionally bypasses the app's overflow gate for inspection.
+        const pdf = await call("Page.printToPDF", {
+          printBackground: true,
+          preferCSSPageSize: true,
+        })
+        const pdfPath = join(work, `${fixture.locale}-${size}-${density}.pdf`)
+        writeFileSync(pdfPath, Buffer.from(pdf.data, "base64"))
+        const info = execFileSync("pdfinfo", [pdfPath], { encoding: "utf8" })
+        const pages = Number(info.match(/Pages:\s+(\d+)/)[1])
+        assert.match(info, /Page size:[^\n]+\(A4\)/)
+        const pdfText = execFileSync("pdftotext", ["-raw", pdfPath, "-"], {
+          encoding: "utf8",
+        })
+        assert.ok(
+          pdfText.toLowerCase().includes(profile.fullName.toLowerCase()),
+        )
+        if (size === "short") assert.equal(pages, 1)
+        if (size === "heavy" && density === "detailed") {
+          assert.ok(pages > 1)
+          assert.ok(overflow, "detailed overflow is visible")
+        }
+        console.log(
+          `${fixture.locale}/${size}/${density}: ${text.length} preview chars, ${pages} A4 pages, overflow=${overflow}`,
+        )
+      }
+      assert.ok(
+        lengths[0] < lengths[1] && lengths[1] < lengths[2],
+        `distinct content volumes: ${lengths}`,
+      )
+      // Font changes preserve density; density changes preserve font and manual edits.
+      await evaluate(
+        `{const el=document.querySelector('input[type=range]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,'15');el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}))}`,
+      )
+      await editSummary("Manual wording stays until explicit replacement.")
+      await pause(50)
+      const edited = await evaluate("localStorage.getItem('careeros_cv_v1')")
+      const saved = await evaluate(
+        "localStorage.getItem('careeros_curated_cv_v1')",
+      )
+      await evaluate(
+        `document.querySelector('[data-cv-density] input[value=compact]').click()`,
+      )
+      assert.equal(
+        await evaluate("localStorage.getItem('careeros_cv_v1')"),
+        edited,
+      )
+      assert.equal(
+        await evaluate(
+          "JSON.parse(localStorage.getItem('careeros_cv_preferences_v1')).fontSize",
+        ),
+        15,
+      )
+      await click(generate)
+      await until("!!document.querySelector('[data-generated-summary]')")
+      await evaluate(
+        `document.querySelector('[data-cv-density] input[value=balanced]').click()`,
+      )
+      await until("!document.querySelector('[data-generated-summary]')")
+      assert.equal(
+        await evaluate("localStorage.getItem('careeros_curated_cv_v1')"),
+        saved,
+      )
+      const calls = await evaluate("window.__calls")
+      await evaluate(
+        `window.fetch=async()=>{window.__calls++;return new Response(JSON.stringify({error:'rate_limit'}),{status:429})}`,
+      )
+      await click(generate)
+      await until(
+        "!!document.querySelector('[data-cv-generation] [role=alert]')",
+      )
+      await pause(100)
+      assert.equal(
+        await evaluate("window.__calls"),
+        calls + 1,
+        "no automatic retry",
+      )
+      await click(generate)
+      await pause(50)
+      assert.equal(
+        await evaluate("window.__calls"),
+        calls + 2,
+        "deliberate retry",
+      )
+      await evaluate("document.querySelectorAll('nav button')[0].click()")
+      await evaluate("document.querySelectorAll('nav button')[2].click()")
+      await until("!!document.querySelector('.cv-paper-content')")
+      assert.equal(
+        await evaluate(
+          "document.querySelector('[data-cv-density] input:checked').value",
+        ),
+        "balanced",
+      )
+      await evaluate("location.reload()")
+      await until("!!document.querySelector('header button')")
+      await evaluate(
+        "document.querySelector('header button:last-child').click()",
+      )
+      await until("document.querySelectorAll('nav button').length===4")
+      await evaluate("document.querySelectorAll('nav button')[2].click()")
+      await until("!!document.querySelector('.cv-paper-content')")
+      assert.equal(
+        await evaluate(
+          "document.querySelector('[data-cv-density] input:checked').value",
+        ),
+        "balanced",
+      )
+      assert.equal(
+        await evaluate("document.querySelector('input[type=range]').value"),
+        "15",
+      )
+      assert.equal(
+        await evaluate("document.querySelector('textarea').value"),
+        "Manual wording stays until explicit replacement.",
+      )
+      assert.equal(
+        await evaluate("localStorage.getItem('careeros_repo')"),
+        originalProfile,
+      )
+    }
+  }
+  await openCv({ ...blank, education: fixtures[0].repo.education }, "en")
+  await evaluate(
+    `window.fetch=async(url,options)=>{const facts=JSON.parse(options.body).facts;const degree=facts.find(f=>f.field==='degree');return new Response(JSON.stringify({summary:[{sourceId:degree.id,text:'Education includes a BSc Design.'}],selected:facts.map(f=>f.id)}),{status:200})}`,
+  )
+  await click("Generate from Profile")
+  await until("!!document.querySelector('[data-generated-summary]')")
+  await click("Accept and replace CV")
+  await until("!!localStorage.getItem('careeros_curated_cv_v1')")
+  assert.equal(
+    await evaluate(
+      "document.querySelectorAll('.cv-paper-content [data-cv-sample]').length",
+    ),
+    0,
+    "sparse generated CV must not introduce sample experience, skills or name",
+  )
   await openCv(blank, "en")
   assert.ok(
     await evaluate(

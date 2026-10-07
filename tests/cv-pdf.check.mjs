@@ -459,7 +459,7 @@ try {
       `{ const el = document.querySelector('.cv-font-controls input'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, '${size}'); el.dispatchEvent(new Event('input', { bubbles: true })) }`,
     )
     await until(
-      "document.querySelector('[role=status]')?.textContent.includes('extends about')",
+      "Array.from(document.querySelectorAll('[role=status]')).some(e=>e.textContent.includes('extends about'))",
     )
     assert.ok(
       await evaluate("document.documentElement.scrollWidth <= innerWidth"),

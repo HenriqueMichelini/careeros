@@ -112,3 +112,47 @@ func TestGroundedParaphraseAndConsolidation(t *testing.T) {
 		t.Fatal("metadata wording accepted")
 	}
 }
+
+func TestDensityRequestPolicy(t *testing.T) {
+	for _, density := range []string{"", "compact", "balanced", "detailed", "invalid"} {
+		calls := 0
+		a := app{client: &http.Client{Transport: roundTrip(func(r *http.Request) (*http.Response, error) {
+			calls++
+			var body struct {
+				Messages []struct {
+					Content string `json:"content"`
+				} `json:"messages"`
+			}
+			json.NewDecoder(r.Body).Decode(&body)
+			var input map[string]any
+			json.Unmarshal([]byte(body.Messages[1].Content), &input)
+			want := density
+			if want == "" {
+				want = "balanced"
+			}
+			if input["density"] != want {
+				t.Fatalf("density %v, want %s", input["density"], want)
+			}
+			if !strings.Contains(body.Messages[0].Content, "Density "+want+":") {
+				t.Fatal("missing chosen density policy")
+			}
+			return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(`{"choices":[{"message":{"content":"{\"summary\":[{\"sourceId\":\"f0\",\"text\":\"Research\"}],\"selected\":[\"f0\"]}"}}]}`))}, nil
+		})}}
+		input := map[string]any{"locale": "en", "facts": []fact{{ID: "f0", Section: "skills", Field: "skills", Text: "Research"}}}
+		if density != "" {
+			input["density"] = density
+		}
+		raw, _ := json.Marshal(input)
+		r := httptest.NewRequest("POST", "/api/cv/generate", strings.NewReader(string(raw)))
+		r.Header.Set("X-OpenAI-Api-Key", "sk-test")
+		w := httptest.NewRecorder()
+		a.handler().ServeHTTP(w, r)
+		wantStatus, wantCalls := 200, 1
+		if density == "invalid" {
+			wantStatus, wantCalls = 400, 0
+		}
+		if w.Code != wantStatus || calls != wantCalls {
+			t.Fatalf("%s: status %d, calls %d", density, w.Code, calls)
+		}
+	}
+}
