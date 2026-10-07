@@ -1,0 +1,106 @@
+{
+  "version": 1,
+  "mode": "live",
+  "provider": "jev",
+  "variant": "atomic",
+  "model": "jev-1.13.0",
+  "runId": "2026-10-07T23:07:15.153Z",
+  "classifierDeadlineMs": 5000,
+  "reverse": false,
+  "band": [
+    0.2,
+    0.8
+  ],
+  "corpusHash": "53c8243c31a872a99cce9439fdca007c39a53b3b29f6694f83eadafa5169209d",
+  "questionHash": "bde631dcb4461d9e6fb6dd1a81fb305f3d7aba2f8f65bace7d8eabf93f9e7e00",
+  "records": [
+    {
+      "caseId": "en-fact",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 886,
+        "outputTokens": 87
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.97
+        },
+        "fact": {
+          "type": "noul",
+          "noul": 0.92
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.95
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 311.334501
+    },
+    {
+      "caseId": "pt-quoted-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1124,
+        "outputTokens": 120
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.48
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "role": {
+          "type": "noul",
+          "noul": 0.82
+        },
+        "duty": {
+          "type": "noul",
+          "noul": 0.2
+        },
+        "qualification": {
+          "type": "noul",
+          "noul": 0.67
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.89
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "uncertain"
+        }
+      },
+      "classificationMs": 238.05757099999994
+    }
+  ],
+  "split": "smoke",
+  "planHash": "c3c3e66c56ec74e0fecdf13d12bdf0b266376ccb973267490d440f0d1ffddac3"
+}

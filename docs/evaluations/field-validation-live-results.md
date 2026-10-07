@@ -1,6 +1,6 @@
 # Field-validation live comparison — 2026-10-07
 
-Issue [#29](https://github.com/HenriqueMichelini/careeros/issues/29). **First-round recommendation: OpenAI `gpt-6-luna` for the evaluated rubric. Final selection is deferred at the user's request while documentation-guided Jev improvements are explored.** No production integration, provider switching, deployment or issue closure is included.
+Issue [#29](https://github.com/HenriqueMichelini/careeros/issues/29). **Historical first-round recommendation: OpenAI `gpt-6-luna` for the evaluated rubric. Superseded by the [documentation-guided follow-up](field-validation-followup-results.md), which recommends revised Jev Choice pending user approval.** No production integration, provider switching, deployment or issue closure is included.
 
 ## Measured routing
 
@@ -94,3 +94,5 @@ The user requested a deeper reading of TypeSafe's introduction and referenced do
 Explore explicit per-question instructions and structured category boundaries first, then a bounded atomic-question variant with code-owned composition. Preserve the original measurements, retain complete probability distributions in new experiments, and use separate calibration/held-out examples before claiming a threshold or accuracy improvement. These improvements are proposed, not measured.
 
 No provider, new integration budget or architecture has been approved. #29 remains open and #30 must not start. Any later provider decision must include the routing policy, operational budget and residual limits, including whether successful drafting-overhead evidence is required before #29 acceptance.
+
+The user subsequently authorized billable follow-up tests. Their [completed results](field-validation-followup-results.md) preserve this first-round evidence and provide the current recommendation; provider/architecture approval remains pending.

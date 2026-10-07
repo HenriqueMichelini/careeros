@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "mode": "live",
+  "provider": "jev",
+  "variant": "explicit",
+  "model": "jev-1.13.0",
+  "runId": "2026-10-07T23:07:09.174Z",
+  "classifierDeadlineMs": 5000,
+  "reverse": false,
+  "band": [
+    0.2,
+    0.8
+  ],
+  "corpusHash": "53c8243c31a872a99cce9439fdca007c39a53b3b29f6694f83eadafa5169209d",
+  "questionHash": "e54735260494821accfba5b0f3caebba851c0693b56bcb52815d87adcf2000e1",
+  "records": [
+    {
+      "caseId": "en-fact",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1016,
+        "outputTokens": 97
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "professional_fact",
+          "confidence": 1,
+          "probabilities": {
+            "professional_fact": 1,
+            "relevant_but_insufficient": 0,
+            "irrelevant": 0,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.95,
+          "probabilities": {
+            "none": 0.97,
+            "uncertain": 0,
+            "detected": 0.03
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 468.08973100000003
+    },
+    {
+      "caseId": "pt-quoted-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1082,
+        "outputTokens": 110
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "job_with_context",
+          "confidence": 0.84,
+          "probabilities": {
+            "job_with_context": 0.87,
+            "job_title_only": 0.05,
+            "relevant_but_insufficient": 0.07,
+            "irrelevant": 0.01,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "uncertain",
+          "confidence": 0.95,
+          "probabilities": {
+            "none": 0.02,
+            "uncertain": 0.97,
+            "detected": 0.01
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "uncertain"
+        }
+      },
+      "classificationMs": 249.88554699999997
+    }
+  ],
+  "split": "smoke",
+  "planHash": "c3c3e66c56ec74e0fecdf13d12bdf0b266376ccb973267490d440f0d1ffddac3"
+}

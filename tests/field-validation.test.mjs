@@ -327,3 +327,145 @@ test("supplemental timing fixtures do not inflate core classification coverage",
   assert.equal(report.overall.workflowMeasurements, 0)
   assert.equal(report.supplementalSummary.workflowMeasurements, 1)
 })
+
+test("follow-up runner retains complete distributions and keeps quoted wording distinct from direct overrides", async () => {
+  const { collectVariant, scoreExperiment } = await import(
+    "../scripts/field-validation/experiment.mjs"
+  )
+  const item = cases.find((item) => item.id === "en-quoted-profile")
+  const choice = (selected, probabilities) => ({
+    type: "choice",
+    choice: selected,
+    confidence: 0.7,
+    probabilities,
+  })
+  const run = await collectVariant(
+    "jev",
+    "explicit",
+    [item],
+    "synthetic-key",
+    async (_url, options) => {
+      const body = JSON.parse(options.body)
+      assert.deepEqual(body.state, { field: item.field, submission: item.text })
+      assert.notEqual(
+        body.questions.content.instructions,
+        body.questions.attack.instructions,
+      )
+      return {
+        ok: true,
+        json: async () => ({
+          model: "jev-1.13.0",
+          answers: {
+            content: choice("professional_fact", {
+              professional_fact: 0.8,
+              relevant_but_insufficient: 0.1,
+              irrelevant: 0.05,
+              unusable: 0.05,
+            }),
+            attack: choice("uncertain", {
+              none: 0.1,
+              uncertain: 0.8,
+              detected: 0.1,
+            }),
+          },
+          usage: { input_tokens: 70, output_tokens: 20 },
+        }),
+      }
+    },
+  )
+  assert.equal(
+    scoreExperiment(run, [item]).rows[0].outcome,
+    "request_rephrasing",
+  )
+  assert.deepEqual(run.records[0].answers.attack.probabilities, {
+    none: 0.1,
+    uncertain: 0.8,
+    detected: 0.1,
+  })
+  assert.equal(run.records[0].usage.inputTokens, 70)
+  assert.equal(JSON.stringify(run).includes("synthetic-key"), false)
+})
+
+test("atomic evaluation composes independent facts while direct overrides take precedence over quotes", async () => {
+  const { collectVariant, scoreExperiment } = await import(
+    "../scripts/field-validation/experiment.mjs"
+  )
+  const item = cases.find((item) => item.id === "en-attack-job")
+  const probabilities = {
+    direct: 0.95,
+    quoted: 0.9,
+    readable: 1,
+    role: 1,
+    duty: 0.05,
+    qualification: 1,
+    relevant: 1,
+  }
+  const run = await collectVariant(
+    "jev",
+    "atomic",
+    [item],
+    "synthetic-key",
+    async () => ({
+      ok: true,
+      json: async () => ({
+        model: "jev-1.13.0",
+        answers: Object.fromEntries(
+          Object.entries(probabilities).map(([key, noul]) => [
+            key,
+            { type: "noul", noul },
+          ]),
+        ),
+        usage: { input_tokens: 100, output_tokens: 30 },
+      }),
+    }),
+  )
+  assert.equal(scoreExperiment(run, [item]).rows[0].outcome, "reject_attack")
+  run.records[0].answers.direct.noul = 0.05
+  assert.equal(
+    scoreExperiment(run, [item]).rows[0].outcome,
+    "request_rephrasing",
+  )
+  run.records[0].answers.quoted.noul = 0.05
+  assert.equal(scoreExperiment(run, [item]).rows[0].outcome, "accept")
+  run.records[0].answers.qualification.noul = 0.05
+  assert.equal(
+    scoreExperiment(run, [item]).rows[0].outcome,
+    "request_information",
+  )
+})
+
+test("follow-up runner stops on malformed distributions, retains billed usage and never logs response content", async () => {
+  const { collectVariant } = await import(
+    "../scripts/field-validation/experiment.mjs"
+  )
+  let calls = 0
+  const run = await collectVariant(
+    "jev",
+    "explicit",
+    cases.slice(0, 2),
+    "synthetic-key",
+    async () => {
+      calls++
+      return {
+        ok: true,
+        json: async () => ({
+          model: "jev-1.13.0",
+          answers: {
+            content: {
+              type: "choice",
+              choice: "professional_fact",
+              confidence: 1,
+              probabilities: { professional_fact: 1 },
+            },
+          },
+          usage: { input_tokens: 80, output_tokens: 10 },
+          raw: "untrusted response text",
+        }),
+      }
+    },
+  )
+  assert.equal(calls, 1)
+  assert.equal(run.records[0].result.reason, "invalid_output")
+  assert.equal(run.records[0].usage.inputTokens, 80)
+  assert.equal(JSON.stringify(run).includes("untrusted response text"), false)
+})

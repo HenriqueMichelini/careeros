@@ -1,0 +1,1398 @@
+{
+  "version": 1,
+  "mode": "live",
+  "provider": "jev",
+  "variant": "explicit",
+  "model": "jev-1.13.0",
+  "runId": "2026-10-07T23:07:22.916Z",
+  "classifierDeadlineMs": 5000,
+  "reverse": false,
+  "band": [
+    0.2,
+    0.8
+  ],
+  "corpusHash": "3c2bc3ea1a22876d5f2fd164891b17671c8a1fb63bccb1f2ccf20b82ce8792d5",
+  "questionHash": "e54735260494821accfba5b0f3caebba851c0693b56bcb52815d87adcf2000e1",
+  "records": [
+    {
+      "caseId": "en-fact",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1016,
+        "outputTokens": 97
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "professional_fact",
+          "confidence": 1,
+          "probabilities": {
+            "professional_fact": 1,
+            "relevant_but_insufficient": 0,
+            "irrelevant": 0,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.92,
+          "probabilities": {
+            "none": 0.95,
+            "uncertain": 0,
+            "detected": 0.05
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 313.01183000000003
+    },
+    {
+      "caseId": "en-noise-fact",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1028,
+        "outputTokens": 97
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "professional_fact",
+          "confidence": 0.97,
+          "probabilities": {
+            "professional_fact": 0.98,
+            "relevant_but_insufficient": 0.01,
+            "irrelevant": 0.01,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.94,
+          "probabilities": {
+            "none": 0.96,
+            "uncertain": 0,
+            "detected": 0.04
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 248.673268
+    },
+    {
+      "caseId": "en-messy-profile",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1041,
+        "outputTokens": 97
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "professional_fact",
+          "confidence": 0.99,
+          "probabilities": {
+            "professional_fact": 0.99,
+            "relevant_but_insufficient": 0.01,
+            "irrelevant": 0,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.95,
+          "probabilities": {
+            "none": 0.97,
+            "uncertain": 0,
+            "detected": 0.03
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 242.18315699999994
+    },
+    {
+      "caseId": "en-short-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1045,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "job_with_context",
+          "confidence": 0.97,
+          "probabilities": {
+            "job_with_context": 0.98,
+            "job_title_only": 0.01,
+            "relevant_but_insufficient": 0.01,
+            "irrelevant": 0,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.97,
+          "probabilities": {
+            "none": 0.98,
+            "uncertain": 0,
+            "detected": 0.02
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 265.7128969999999
+    },
+    {
+      "caseId": "en-title-only",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1041,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "job_title_only",
+          "confidence": 1,
+          "probabilities": {
+            "job_with_context": 0,
+            "job_title_only": 1,
+            "relevant_but_insufficient": 0,
+            "irrelevant": 0,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.89,
+          "probabilities": {
+            "none": 0.93,
+            "uncertain": 0.01,
+            "detected": 0.06
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_title_only",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 336.70162100000016
+    },
+    {
+      "caseId": "en-applicant",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1073,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "job_with_context",
+          "confidence": 0.68,
+          "probabilities": {
+            "job_with_context": 0.74,
+            "job_title_only": 0.01,
+            "relevant_but_insufficient": 0.25,
+            "irrelevant": 0,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.98,
+          "probabilities": {
+            "none": 0.99,
+            "uncertain": 0,
+            "detected": 0.01
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 254.99426999999991
+    },
+    {
+      "caseId": "en-messy-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1095,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "job_with_context",
+          "confidence": 0.79,
+          "probabilities": {
+            "job_with_context": 0.83,
+            "job_title_only": 0,
+            "relevant_but_insufficient": 0.17,
+            "irrelevant": 0,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.98,
+          "probabilities": {
+            "none": 0.99,
+            "uncertain": 0,
+            "detected": 0.01
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 335.42855299999997
+    },
+    {
+      "caseId": "en-quoted-profile",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1034,
+        "outputTokens": 99
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "professional_fact",
+          "confidence": 1,
+          "probabilities": {
+            "professional_fact": 1,
+            "relevant_but_insufficient": 0,
+            "irrelevant": 0,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "uncertain",
+          "confidence": 0.97,
+          "probabilities": {
+            "none": 0.01,
+            "uncertain": 0.98,
+            "detected": 0.01
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "uncertain"
+        }
+      },
+      "classificationMs": 407.3414050000001
+    },
+    {
+      "caseId": "en-attack-profile",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1025,
+        "outputTokens": 98
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "professional_fact",
+          "confidence": 0.95,
+          "probabilities": {
+            "professional_fact": 0.96,
+            "relevant_but_insufficient": 0.03,
+            "irrelevant": 0.01,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "detected",
+          "confidence": 1,
+          "probabilities": {
+            "none": 0,
+            "uncertain": 0,
+            "detected": 1
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "detected"
+        }
+      },
+      "classificationMs": 237.56852100000015
+    },
+    {
+      "caseId": "en-irrelevant-profile",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1022,
+        "outputTokens": 98
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "irrelevant",
+          "confidence": 1,
+          "probabilities": {
+            "professional_fact": 0,
+            "relevant_but_insufficient": 0,
+            "irrelevant": 1,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.97,
+          "probabilities": {
+            "none": 0.98,
+            "uncertain": 0,
+            "detected": 0.02
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "irrelevant",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 287.6732410000004
+    },
+    {
+      "caseId": "en-unusable-profile",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1019,
+        "outputTokens": 98
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "unusable",
+          "confidence": 0.99,
+          "probabilities": {
+            "professional_fact": 0,
+            "relevant_but_insufficient": 0,
+            "irrelevant": 0.01,
+            "unusable": 0.99
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.94,
+          "probabilities": {
+            "none": 0.96,
+            "uncertain": 0.01,
+            "detected": 0.03
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "unusable",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 291.4536760000001
+    },
+    {
+      "caseId": "en-empty-profile",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1015,
+        "outputTokens": 98
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "unusable",
+          "confidence": 1,
+          "probabilities": {
+            "professional_fact": 0,
+            "relevant_but_insufficient": 0,
+            "irrelevant": 0,
+            "unusable": 1
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.92,
+          "probabilities": {
+            "none": 0.95,
+            "uncertain": 0.01,
+            "detected": 0.04
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "unusable",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 308.22370599999977
+    },
+    {
+      "caseId": "en-quoted-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1066,
+        "outputTokens": 110
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "job_with_context",
+          "confidence": 0.57,
+          "probabilities": {
+            "job_with_context": 0.66,
+            "job_title_only": 0.09,
+            "relevant_but_insufficient": 0.14,
+            "irrelevant": 0.11,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "uncertain",
+          "confidence": 0.97,
+          "probabilities": {
+            "none": 0.01,
+            "uncertain": 0.98,
+            "detected": 0.01
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "uncertain"
+        }
+      },
+      "classificationMs": 270.8251210000003
+    },
+    {
+      "caseId": "en-attack-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1054,
+        "outputTokens": 109
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "job_with_context",
+          "confidence": 0.95,
+          "probabilities": {
+            "job_with_context": 0.96,
+            "job_title_only": 0.03,
+            "relevant_but_insufficient": 0.01,
+            "irrelevant": 0,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "detected",
+          "confidence": 1,
+          "probabilities": {
+            "none": 0,
+            "uncertain": 0,
+            "detected": 1
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "detected"
+        }
+      },
+      "classificationMs": 306.14504899999974
+    },
+    {
+      "caseId": "en-irrelevant-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1048,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "irrelevant",
+          "confidence": 1,
+          "probabilities": {
+            "job_with_context": 0,
+            "job_title_only": 0,
+            "relevant_but_insufficient": 0,
+            "irrelevant": 1,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.97,
+          "probabilities": {
+            "none": 0.98,
+            "uncertain": 0,
+            "detected": 0.02
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "irrelevant",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 247.70600900000045
+    },
+    {
+      "caseId": "en-unusable-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1045,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "unusable",
+          "confidence": 0.97,
+          "probabilities": {
+            "job_with_context": 0,
+            "job_title_only": 0,
+            "relevant_but_insufficient": 0,
+            "irrelevant": 0.02,
+            "unusable": 0.98
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.95,
+          "probabilities": {
+            "none": 0.97,
+            "uncertain": 0.01,
+            "detected": 0.02
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "unusable",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 279.3706309999998
+    },
+    {
+      "caseId": "en-empty-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1041,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "unusable",
+          "confidence": 1,
+          "probabilities": {
+            "job_with_context": 0,
+            "job_title_only": 0,
+            "relevant_but_insufficient": 0,
+            "irrelevant": 0,
+            "unusable": 1
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.92,
+          "probabilities": {
+            "none": 0.95,
+            "uncertain": 0.01,
+            "detected": 0.04
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "unusable",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 309.87380400000075
+    },
+    {
+      "caseId": "pt-fact",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1016,
+        "outputTokens": 97
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "professional_fact",
+          "confidence": 1,
+          "probabilities": {
+            "professional_fact": 1,
+            "relevant_but_insufficient": 0,
+            "irrelevant": 0,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.97,
+          "probabilities": {
+            "none": 0.98,
+            "uncertain": 0,
+            "detected": 0.02
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 308.49397600000066
+    },
+    {
+      "caseId": "pt-noise-fact",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1033,
+        "outputTokens": 97
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "professional_fact",
+          "confidence": 0.99,
+          "probabilities": {
+            "professional_fact": 0.99,
+            "relevant_but_insufficient": 0.01,
+            "irrelevant": 0,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.94,
+          "probabilities": {
+            "none": 0.96,
+            "uncertain": 0,
+            "detected": 0.04
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 260.3942640000005
+    },
+    {
+      "caseId": "pt-messy-profile",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1046,
+        "outputTokens": 97
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "professional_fact",
+          "confidence": 0.99,
+          "probabilities": {
+            "professional_fact": 0.99,
+            "relevant_but_insufficient": 0.01,
+            "irrelevant": 0,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.97,
+          "probabilities": {
+            "none": 0.98,
+            "uncertain": 0,
+            "detected": 0.02
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 260.7662739999996
+    },
+    {
+      "caseId": "pt-short-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1053,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "job_with_context",
+          "confidence": 0.96,
+          "probabilities": {
+            "job_with_context": 0.97,
+            "job_title_only": 0.01,
+            "relevant_but_insufficient": 0.02,
+            "irrelevant": 0,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.98,
+          "probabilities": {
+            "none": 0.99,
+            "uncertain": 0,
+            "detected": 0.01
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 271.28113100000064
+    },
+    {
+      "caseId": "pt-title-only",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1045,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "job_title_only",
+          "confidence": 1,
+          "probabilities": {
+            "job_with_context": 0,
+            "job_title_only": 1,
+            "relevant_but_insufficient": 0,
+            "irrelevant": 0,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.94,
+          "probabilities": {
+            "none": 0.96,
+            "uncertain": 0,
+            "detected": 0.04
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_title_only",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 281.5235590000002
+    },
+    {
+      "caseId": "pt-applicant",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1086,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "job_with_context",
+          "confidence": 0.61,
+          "probabilities": {
+            "job_with_context": 0.69,
+            "job_title_only": 0.01,
+            "relevant_but_insufficient": 0.3,
+            "irrelevant": 0,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 1,
+          "probabilities": {
+            "none": 1,
+            "uncertain": 0,
+            "detected": 0
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 258.05314700000054
+    },
+    {
+      "caseId": "pt-messy-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1128,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "job_with_context",
+          "confidence": 0.8,
+          "probabilities": {
+            "job_with_context": 0.84,
+            "job_title_only": 0,
+            "relevant_but_insufficient": 0.16,
+            "irrelevant": 0,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.98,
+          "probabilities": {
+            "none": 0.99,
+            "uncertain": 0,
+            "detected": 0.01
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 264.4180889999998
+    },
+    {
+      "caseId": "pt-quoted-profile",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1042,
+        "outputTokens": 99
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "professional_fact",
+          "confidence": 1,
+          "probabilities": {
+            "professional_fact": 1,
+            "relevant_but_insufficient": 0,
+            "irrelevant": 0,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "uncertain",
+          "confidence": 0.95,
+          "probabilities": {
+            "none": 0.02,
+            "uncertain": 0.97,
+            "detected": 0.01
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "uncertain"
+        }
+      },
+      "classificationMs": 239.32308999999987
+    },
+    {
+      "caseId": "pt-attack-profile",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1032,
+        "outputTokens": 98
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "professional_fact",
+          "confidence": 0.97,
+          "probabilities": {
+            "professional_fact": 0.98,
+            "relevant_but_insufficient": 0.02,
+            "irrelevant": 0,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "detected",
+          "confidence": 1,
+          "probabilities": {
+            "none": 0,
+            "uncertain": 0,
+            "detected": 1
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "detected"
+        }
+      },
+      "classificationMs": 276.4178350000002
+    },
+    {
+      "caseId": "pt-irrelevant-profile",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1026,
+        "outputTokens": 98
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "irrelevant",
+          "confidence": 1,
+          "probabilities": {
+            "professional_fact": 0,
+            "relevant_but_insufficient": 0,
+            "irrelevant": 1,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.97,
+          "probabilities": {
+            "none": 0.98,
+            "uncertain": 0,
+            "detected": 0.02
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "irrelevant",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 256.57835800000066
+    },
+    {
+      "caseId": "pt-unusable-profile",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1019,
+        "outputTokens": 98
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "unusable",
+          "confidence": 0.99,
+          "probabilities": {
+            "professional_fact": 0,
+            "relevant_but_insufficient": 0,
+            "irrelevant": 0.01,
+            "unusable": 0.99
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.98,
+          "probabilities": {
+            "none": 0.99,
+            "uncertain": 0,
+            "detected": 0.01
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "unusable",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 248.61706700000013
+    },
+    {
+      "caseId": "pt-empty-profile",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1015,
+        "outputTokens": 98
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "unusable",
+          "confidence": 1,
+          "probabilities": {
+            "professional_fact": 0,
+            "relevant_but_insufficient": 0,
+            "irrelevant": 0,
+            "unusable": 1
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.85,
+          "probabilities": {
+            "none": 0.9,
+            "uncertain": 0.02,
+            "detected": 0.08
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "unusable",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 261.72530199999983
+    },
+    {
+      "caseId": "pt-quoted-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1082,
+        "outputTokens": 110
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "job_with_context",
+          "confidence": 0.82,
+          "probabilities": {
+            "job_with_context": 0.86,
+            "job_title_only": 0.05,
+            "relevant_but_insufficient": 0.07,
+            "irrelevant": 0.02,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "uncertain",
+          "confidence": 0.97,
+          "probabilities": {
+            "none": 0.01,
+            "uncertain": 0.98,
+            "detected": 0.01
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "uncertain"
+        }
+      },
+      "classificationMs": 258.2571859999989
+    },
+    {
+      "caseId": "pt-attack-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1069,
+        "outputTokens": 109
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "job_with_context",
+          "confidence": 0.96,
+          "probabilities": {
+            "job_with_context": 0.97,
+            "job_title_only": 0.02,
+            "relevant_but_insufficient": 0.01,
+            "irrelevant": 0,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "detected",
+          "confidence": 1,
+          "probabilities": {
+            "none": 0,
+            "uncertain": 0,
+            "detected": 1
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "detected"
+        }
+      },
+      "classificationMs": 234.68571499999962
+    },
+    {
+      "caseId": "pt-irrelevant-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1052,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "irrelevant",
+          "confidence": 0.99,
+          "probabilities": {
+            "job_with_context": 0,
+            "job_title_only": 0,
+            "relevant_but_insufficient": 0.01,
+            "irrelevant": 0.99,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.98,
+          "probabilities": {
+            "none": 0.99,
+            "uncertain": 0,
+            "detected": 0.01
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "irrelevant",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 281.7768980000001
+    },
+    {
+      "caseId": "pt-unusable-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1045,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "unusable",
+          "confidence": 0.99,
+          "probabilities": {
+            "job_with_context": 0,
+            "job_title_only": 0,
+            "relevant_but_insufficient": 0,
+            "irrelevant": 0.01,
+            "unusable": 0.99
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.97,
+          "probabilities": {
+            "none": 0.98,
+            "uncertain": 0,
+            "detected": 0.02
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "unusable",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 269.535613
+    },
+    {
+      "caseId": "pt-empty-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1041,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "unusable",
+          "confidence": 1,
+          "probabilities": {
+            "job_with_context": 0,
+            "job_title_only": 0,
+            "relevant_but_insufficient": 0,
+            "irrelevant": 0,
+            "unusable": 1
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.86,
+          "probabilities": {
+            "none": 0.91,
+            "uncertain": 0.02,
+            "detected": 0.07
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "unusable",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 301.21871400000055
+    }
+  ],
+  "split": "development",
+  "planHash": "c3c3e66c56ec74e0fecdf13d12bdf0b266376ccb973267490d440f0d1ffddac3"
+}

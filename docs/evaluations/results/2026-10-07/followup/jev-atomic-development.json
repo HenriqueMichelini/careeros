@@ -1,0 +1,1490 @@
+{
+  "version": 1,
+  "mode": "live",
+  "provider": "jev",
+  "variant": "atomic",
+  "model": "jev-1.13.0",
+  "runId": "2026-10-07T23:07:39.074Z",
+  "classifierDeadlineMs": 5000,
+  "reverse": false,
+  "band": [
+    0.2,
+    0.8
+  ],
+  "corpusHash": "3c2bc3ea1a22876d5f2fd164891b17671c8a1fb63bccb1f2ccf20b82ce8792d5",
+  "questionHash": "bde631dcb4461d9e6fb6dd1a81fb305f3d7aba2f8f65bace7d8eabf93f9e7e00",
+  "records": [
+    {
+      "caseId": "en-fact",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 886,
+        "outputTokens": 87
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.97
+        },
+        "fact": {
+          "type": "noul",
+          "noul": 0.92
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.95
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 402.90717099999995
+    },
+    {
+      "caseId": "en-noise-fact",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 898,
+        "outputTokens": 87
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.04
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.97
+        },
+        "fact": {
+          "type": "noul",
+          "noul": 0.87
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.61
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 304.31338100000005
+    },
+    {
+      "caseId": "en-messy-profile",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 911,
+        "outputTokens": 87
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.04
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.96
+        },
+        "fact": {
+          "type": "noul",
+          "noul": 0.73
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.78
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 579.896676
+    },
+    {
+      "caseId": "en-short-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1087,
+        "outputTokens": 120
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "role": {
+          "type": "noul",
+          "noul": 0.92
+        },
+        "duty": {
+          "type": "noul",
+          "noul": 0.15
+        },
+        "qualification": {
+          "type": "noul",
+          "noul": 0.87
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.97
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 288.6982190000001
+    },
+    {
+      "caseId": "en-title-only",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1083,
+        "outputTokens": 120
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.97
+        },
+        "role": {
+          "type": "noul",
+          "noul": 0.91
+        },
+        "duty": {
+          "type": "noul",
+          "noul": 0.14
+        },
+        "qualification": {
+          "type": "noul",
+          "noul": 0.08
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.92
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_title_only",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 287.5845109999998
+    },
+    {
+      "caseId": "en-applicant",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1115,
+        "outputTokens": 120
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.04
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.97
+        },
+        "role": {
+          "type": "noul",
+          "noul": 0.88
+        },
+        "duty": {
+          "type": "noul",
+          "noul": 0.9
+        },
+        "qualification": {
+          "type": "noul",
+          "noul": 0.3
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.95
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 266.41251699999975
+    },
+    {
+      "caseId": "en-messy-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1137,
+        "outputTokens": 120
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.05
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "role": {
+          "type": "noul",
+          "noul": 0.93
+        },
+        "duty": {
+          "type": "noul",
+          "noul": 0.92
+        },
+        "qualification": {
+          "type": "noul",
+          "noul": 0.81
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.97
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 366.3560749999997
+    },
+    {
+      "caseId": "en-quoted-profile",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 904,
+        "outputTokens": 87
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.25
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "fact": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.95
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "uncertain"
+        }
+      },
+      "classificationMs": 250.7088050000002
+    },
+    {
+      "caseId": "en-attack-profile",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 895,
+        "outputTokens": 87
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.49
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.95
+        },
+        "fact": {
+          "type": "noul",
+          "noul": 0.79
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.65
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "detected"
+        }
+      },
+      "classificationMs": 253.1610230000001
+    },
+    {
+      "caseId": "en-irrelevant-profile",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 892,
+        "outputTokens": 87
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.92
+        },
+        "fact": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.03
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "irrelevant",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 269.46621300000015
+    },
+    {
+      "caseId": "en-unusable-profile",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 889,
+        "outputTokens": 87
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.05
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.06
+        },
+        "fact": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.02
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "unusable",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 301.45236399999976
+    },
+    {
+      "caseId": "en-empty-profile",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 885,
+        "outputTokens": 87
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.04
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.05
+        },
+        "fact": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.03
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "unusable",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 264.26276899999993
+    },
+    {
+      "caseId": "en-quoted-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1108,
+        "outputTokens": 120
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.38
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "role": {
+          "type": "noul",
+          "noul": 0.76
+        },
+        "duty": {
+          "type": "noul",
+          "noul": 0.09
+        },
+        "qualification": {
+          "type": "noul",
+          "noul": 0.13
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.85
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_title_only",
+          "attack": "uncertain"
+        }
+      },
+      "classificationMs": 256.79273900000044
+    },
+    {
+      "caseId": "en-attack-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1096,
+        "outputTokens": 120
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.34
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "role": {
+          "type": "noul",
+          "noul": 0.86
+        },
+        "duty": {
+          "type": "noul",
+          "noul": 0.42
+        },
+        "qualification": {
+          "type": "noul",
+          "noul": 0.86
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.94
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "detected"
+        }
+      },
+      "classificationMs": 290.4073979999994
+    },
+    {
+      "caseId": "en-irrelevant-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1090,
+        "outputTokens": 120
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.95
+        },
+        "role": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "duty": {
+          "type": "noul",
+          "noul": 0.05
+        },
+        "qualification": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.04
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "irrelevant",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 285.91300299999966
+    },
+    {
+      "caseId": "en-unusable-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1087,
+        "outputTokens": 120
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.04
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.06
+        },
+        "role": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "duty": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "qualification": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.03
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "unusable",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 287.97955
+    },
+    {
+      "caseId": "en-empty-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1083,
+        "outputTokens": 120
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.04
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.04
+        },
+        "role": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "duty": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "qualification": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.04
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "unusable",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 250.07740599999943
+    },
+    {
+      "caseId": "pt-fact",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 886,
+        "outputTokens": 87
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "fact": {
+          "type": "noul",
+          "noul": 0.93
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.96
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 267.52337500000067
+    },
+    {
+      "caseId": "pt-noise-fact",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 903,
+        "outputTokens": 87
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.97
+        },
+        "fact": {
+          "type": "noul",
+          "noul": 0.89
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.69
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 271.41741999999977
+    },
+    {
+      "caseId": "pt-messy-profile",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 916,
+        "outputTokens": 87
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.04
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.97
+        },
+        "fact": {
+          "type": "noul",
+          "noul": 0.78
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.74
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 256.35572799999954
+    },
+    {
+      "caseId": "pt-short-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1095,
+        "outputTokens": 120
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "role": {
+          "type": "noul",
+          "noul": 0.93
+        },
+        "duty": {
+          "type": "noul",
+          "noul": 0.24
+        },
+        "qualification": {
+          "type": "noul",
+          "noul": 0.86
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.96
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 286.5316920000005
+    },
+    {
+      "caseId": "pt-title-only",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1087,
+        "outputTokens": 120
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "role": {
+          "type": "noul",
+          "noul": 0.91
+        },
+        "duty": {
+          "type": "noul",
+          "noul": 0.11
+        },
+        "qualification": {
+          "type": "noul",
+          "noul": 0.08
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.94
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_title_only",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 272.2907899999991
+    },
+    {
+      "caseId": "pt-applicant",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1128,
+        "outputTokens": 120
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.04
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "role": {
+          "type": "noul",
+          "noul": 0.91
+        },
+        "duty": {
+          "type": "noul",
+          "noul": 0.89
+        },
+        "qualification": {
+          "type": "noul",
+          "noul": 0.3
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.96
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 296.06726100000014
+    },
+    {
+      "caseId": "pt-messy-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1170,
+        "outputTokens": 120
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.05
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "role": {
+          "type": "noul",
+          "noul": 0.94
+        },
+        "duty": {
+          "type": "noul",
+          "noul": 0.92
+        },
+        "qualification": {
+          "type": "noul",
+          "noul": 0.8
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.97
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 281.54246800000055
+    },
+    {
+      "caseId": "pt-quoted-profile",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 912,
+        "outputTokens": 87
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.44
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "fact": {
+          "type": "noul",
+          "noul": 0.97
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.93
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "uncertain"
+        }
+      },
+      "classificationMs": 297.35254799999984
+    },
+    {
+      "caseId": "pt-attack-profile",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 902,
+        "outputTokens": 87
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.45
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.97
+        },
+        "fact": {
+          "type": "noul",
+          "noul": 0.83
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.79
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "detected"
+        }
+      },
+      "classificationMs": 288.5431899999994
+    },
+    {
+      "caseId": "pt-irrelevant-profile",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 896,
+        "outputTokens": 87
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.96
+        },
+        "fact": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.03
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "irrelevant",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 274.863526000001
+    },
+    {
+      "caseId": "pt-unusable-profile",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 889,
+        "outputTokens": 87
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.04
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.06
+        },
+        "fact": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.03
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "unusable",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 280.500809000001
+    },
+    {
+      "caseId": "pt-empty-profile",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 885,
+        "outputTokens": 87
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.04
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.05
+        },
+        "fact": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.04
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "unusable",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 242.6767349999991
+    },
+    {
+      "caseId": "pt-quoted-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1124,
+        "outputTokens": 120
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.48
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "role": {
+          "type": "noul",
+          "noul": 0.83
+        },
+        "duty": {
+          "type": "noul",
+          "noul": 0.18
+        },
+        "qualification": {
+          "type": "noul",
+          "noul": 0.7
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.91
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "uncertain"
+        }
+      },
+      "classificationMs": 266.54439699999966
+    },
+    {
+      "caseId": "pt-attack-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1111,
+        "outputTokens": 120
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.46
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "role": {
+          "type": "noul",
+          "noul": 0.9
+        },
+        "duty": {
+          "type": "noul",
+          "noul": 0.46
+        },
+        "qualification": {
+          "type": "noul",
+          "noul": 0.87
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.92
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "detected"
+        }
+      },
+      "classificationMs": 306.7881670000006
+    },
+    {
+      "caseId": "pt-irrelevant-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1094,
+        "outputTokens": 120
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.97
+        },
+        "role": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "duty": {
+          "type": "noul",
+          "noul": 0.05
+        },
+        "qualification": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.03
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "irrelevant",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 259.0930349999999
+    },
+    {
+      "caseId": "pt-unusable-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1087,
+        "outputTokens": 120
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.05
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.06
+        },
+        "role": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "duty": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "qualification": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.02
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "unusable",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 268.02925400000095
+    },
+    {
+      "caseId": "pt-empty-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1083,
+        "outputTokens": 120
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "direct": {
+          "type": "noul",
+          "noul": 0.04
+        },
+        "quoted": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "readable": {
+          "type": "noul",
+          "noul": 0.04
+        },
+        "role": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "duty": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "qualification": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "relevant": {
+          "type": "noul",
+          "noul": 0.04
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "unusable",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 307.2468370000006
+    }
+  ],
+  "split": "development",
+  "planHash": "c3c3e66c56ec74e0fecdf13d12bdf0b266376ccb973267490d440f0d1ffddac3"
+}

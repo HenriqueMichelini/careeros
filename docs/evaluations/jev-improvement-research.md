@@ -2,6 +2,8 @@
 
 Issue [#29](https://github.com/HenriqueMichelini/careeros/issues/29). This is documentation research and a proposed experiment, not a new provider result. The user requested that the final provider decision remain open while Jev improvements are explored. No credentials were read, paid API calls made, production behavior changed, or issue closed for this note.
 
+The user subsequently authorized billable testing. See the [completed documentation-guided follow-up](field-validation-followup-results.md) for measurements and the current recommendation; the hypotheses below preserve the pre-experiment reasoning.
+
 ## What the previous experiment establishes
 
 The [live comparison](field-validation-live-results.md) records 26/34 correct Jev routing decisions versus 34/34 for OpenAI on one compact bilingual synthetic set. Jev's errors were concentrated in two groups: all four quoted-override examples were rejected instead of requesting rephrasing, and all four unreadable examples were categorized as irrelevant instead of unusable. It accepted all 12 legitimate sufficient-content cases, blocked all four direct mixed-content overrides, and had no transport or shape failures in that set. Its measured classification p50/p95 was 271/368 ms versus 895/1,412 ms for OpenAI. These observations remain valid for the original configuration.
@@ -61,7 +63,7 @@ This proposed mapping must retain the public [field-decision contract](../../src
 
 Semantic ambiguity and model uncertainty are different. Quoted override wording is a known input condition that the agreed policy sends to rephrasing. A low numeric confidence value alone establishes neither quoted wording nor malicious intent. If an uncertain attack assessment pauses processing, its explanation must describe inability to validate the text, not accuse the user of a confirmed attack. Do not introduce a universal confidence-to-attack conversion.
 
-The existing contract has no general content-confidence abstention outcome. Do not silently reuse `uncertain` attack semantics for unrelated content uncertainty or call it a confirmed attack. The experiment must either use explicit categorical content answers with tested boundaries, or document an approved contract extension for content clarification before introducing numeric content gates. This note proposes no extension.
+The existing contract has no general content-confidence abstention outcome. Do not silently reuse `uncertain` attack semantics for unrelated content uncertainty or call it a confirmed attack. Numeric uncertainty must not silently create a new content-clarification outcome. The follow-up uses categorical content in B and fixed binary best-answer decoding in C; C's content decoding is exploratory and does not add an abstention outcome. An explicit general content-confidence abstention would require an approved contract extension. This note proposes no extension.
 
 Avoid averaging attack probability with content quality: useful facts must never cancel an override. Do not filter irrelevant-looking spans out of the attack scan. Any large-input chunking must preserve whole-submission coverage and combine signals conservatively; evaluating whole text and chunks is a separate unmeasured design.
 

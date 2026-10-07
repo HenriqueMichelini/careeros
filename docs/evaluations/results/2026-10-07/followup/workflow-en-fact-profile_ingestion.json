@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "mode": "live",
+  "provider": "jev",
+  "variant": "explicit",
+  "model": "jev-1.13.0",
+  "runId": "2026-10-07T23:11:46.518Z",
+  "classifierDeadlineMs": 5000,
+  "reverse": false,
+  "band": [
+    0.2,
+    0.8
+  ],
+  "corpusHash": "479d7332b0fbdca7eb83a4073afe3c395e481c8c47907e36df29fa4361abfd26",
+  "questionHash": "e54735260494821accfba5b0f3caebba851c0693b56bcb52815d87adcf2000e1",
+  "records": [
+    {
+      "caseId": "en-fact",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1016,
+        "outputTokens": 97
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "professional_fact",
+          "confidence": 1,
+          "probabilities": {
+            "professional_fact": 1,
+            "relevant_but_insufficient": 0,
+            "irrelevant": 0,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.95,
+          "probabilities": {
+            "none": 0.97,
+            "uncertain": 0,
+            "detected": 0.03
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 305.280025,
+      "workflow": {
+        "kind": "profile_ingestion",
+        "baselineMs": 5775.293409,
+        "validatedTotalMs": 4785.056224
+      },
+      "workflowAttempt": {
+        "kind": "profile_ingestion",
+        "baseline": {
+          "status": 200,
+          "ok": true
+        },
+        "validated": {
+          "status": 200,
+          "ok": true
+        },
+        "baselineMs": 5775.293409,
+        "validatedTotalMs": 4785.056224
+      }
+    }
+  ],
+  "measurementScope": "local HTTP probe with browser-equivalent deadline; not live UI or deployment"
+}

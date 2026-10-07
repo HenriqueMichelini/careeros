@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "mode": "live",
+  "provider": "jev",
+  "variant": "explicit",
+  "model": "jev-1.13.0",
+  "runId": "2026-10-07T23:12:01.639Z",
+  "classifierDeadlineMs": 5000,
+  "reverse": false,
+  "band": [
+    0.2,
+    0.8
+  ],
+  "corpusHash": "a26ee7caa2ae5d1f1db92a15f4b4bcac261a51f3b48180e89d065eb24f4e4cf5",
+  "questionHash": "e54735260494821accfba5b0f3caebba851c0693b56bcb52815d87adcf2000e1",
+  "records": [
+    {
+      "caseId": "pt-short-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1053,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "job_with_context",
+          "confidence": 0.97,
+          "probabilities": {
+            "job_with_context": 0.98,
+            "job_title_only": 0.01,
+            "relevant_but_insufficient": 0.01,
+            "irrelevant": 0,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.98,
+          "probabilities": {
+            "none": 0.99,
+            "uncertain": 0,
+            "detected": 0.01
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 285.67633,
+      "workflow": {
+        "kind": "qualification_gaps",
+        "baselineMs": 1497.6136110000002,
+        "validatedTotalMs": 1242.5191550000002
+      },
+      "workflowAttempt": {
+        "kind": "qualification_gaps",
+        "baseline": {
+          "status": 200,
+          "ok": true
+        },
+        "validated": {
+          "status": 200,
+          "ok": true
+        },
+        "baselineMs": 1497.6136110000002,
+        "validatedTotalMs": 1242.5191550000002
+      }
+    }
+  ],
+  "measurementScope": "local HTTP probe with browser-equivalent deadline; not live UI or deployment"
+}

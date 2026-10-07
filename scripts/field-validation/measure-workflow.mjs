@@ -2,6 +2,7 @@
 import { pathToFileURL } from "node:url"
 import { performance } from "node:perf_hooks"
 import { collect } from "./collect.mjs"
+import { collectVariant } from "./experiment.mjs"
 import { lookupCase } from "./evaluate.mjs"
 import { decideField, careerProfile, cvQualifications } from "./contract.mjs"
 import { evaluationKey } from "./credentials.mjs"
@@ -43,10 +44,12 @@ export function buildWorkflowPayload(kind, item) {
 }
 
 async function main() {
-  const [provider, caseId, kind, origin = "http://127.0.0.1:8787"] =
+  const [provider, caseId, kind, origin = "http://127.0.0.1:8787", variant] =
     process.argv.slice(2)
   if (!["openai", "jev"].includes(provider))
     throw new Error("Select openai or jev explicitly")
+  if (variant && !["explicit", "atomic"].includes(variant))
+    throw new Error("Select a frozen evaluation variant")
   const item = lookupCase(caseId)
   const configs = {
     profile_ingestion: { path: "/api/profile/ingest", bound: 55000 },
@@ -100,11 +103,13 @@ async function main() {
   const baselineMs = performance.now() - baselineStart
   if (!baseline.ok) {
     process.stdout.write(
-      `${JSON.stringify({ provider, caseId, kind, baseline, baselineMs, comparison: "unavailable: baseline failed" }, null, 2)}\n`,
+      `${JSON.stringify({ provider, variant, caseId, kind, baseline, baselineMs, comparison: "unavailable: baseline failed" }, null, 2)}\n`,
     )
   } else {
     const start = performance.now()
-    const run = await collect(provider, [caseId], providerKey)
+    const run = variant
+      ? await collectVariant(provider, variant, [item], providerKey)
+      : await collect(provider, [caseId], providerKey)
     const record = run.records[0]
     const decision = decideField(item.field, record.result)
     const validated =
