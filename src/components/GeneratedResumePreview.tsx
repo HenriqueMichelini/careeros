@@ -1,7 +1,7 @@
 import { Fragment, useLayoutEffect, useMemo, useRef, useState } from "react"
 import CvPaper from "./CvPaper"
 import { useI18n } from "../lib/store"
-import { professionalLinkHref } from "../lib/cv"
+import { professionalLinkHref, professionalLinkLabel, professionalLinkTarget } from "../lib/cv"
 import { parseResumeHeader, parseResumeMarkdown } from "../lib/resume"
 import { ProfessionalRepository } from "../lib/types"
 
@@ -15,7 +15,7 @@ function plainText(value: string) {
 }
 
 function inlineText(value: string) {
-  const links = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g
+  const links = /\[([^\]]+)\]\(([^\s)]+)\)/g
   const parts: React.ReactNode[] = []
   let from = 0
   for (const match of value.matchAll(links)) {
@@ -164,9 +164,10 @@ export default function GeneratedResumePreview({
               {contacts.length > 0 && (
                 <ul className="mt-2 flex flex-wrap gap-x-1.5 text-[10px] leading-4 text-[var(--color-muted-fg)] [font-family:var(--font-mono)]">
                   {contacts.map((item, index) => {
+                    const target = professionalLinkTarget(item)
                     const href = item.includes("@")
                       ? null
-                      : professionalLinkHref(item)
+                      : professionalLinkHref(target)
                     return (
                       <li
                         key={`${index}-${item}`}
@@ -177,7 +178,7 @@ export default function GeneratedResumePreview({
                             href={href}
                             className="underline underline-offset-2"
                           >
-                            {item}
+                          {professionalLinkLabel(item)}
                           </a>
                         ) : (
                           inlineText(item)

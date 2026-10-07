@@ -181,7 +181,7 @@ const messages = {
     "repo.phone": "Phone",
     "repo.contactLocation": "Location",
     "repo.professionalLinks": "Professional links",
-    "repo.professionalLinksHint": "One link per line",
+    "repo.professionalLinksHint": "One link per line. Use [label](site.com) to show a custom label.",
     "repo.section.goals": "Career Goals",
     "repo.section.goalsDesc": "Ambitions, target roles, long-term vision",
     "repo.section.skills": "Skills, tools & tech",
@@ -605,7 +605,7 @@ const messages = {
     "repo.phone": "Telefone",
     "repo.contactLocation": "Localização",
     "repo.professionalLinks": "Links profissionais",
-    "repo.professionalLinksHint": "Um link por linha",
+    "repo.professionalLinksHint": "Um link por linha. Use [texto](site.com) para mostrar um nome personalizado.",
     "repo.section.goals": "Objetivos de carreira",
     "repo.section.goalsDesc":
       "Ambições, cargos desejados e visão de longo prazo",

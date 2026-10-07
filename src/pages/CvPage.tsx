@@ -11,6 +11,8 @@ import {
   entryKey,
   parseCvChoices,
   professionalLinkHref,
+  professionalLinkLabel,
+  professionalLinkTarget,
 } from "../lib/cv"
 
 function lines(value: string, splitCommas = true) {
@@ -55,10 +57,10 @@ function Section({
 }
 
 function CvLink({ value }: { value: string }) {
-  const href = professionalLinkHref(value)
+  const href = professionalLinkHref(professionalLinkTarget(value))
   return href ? (
     <a href={href} className="underline underline-offset-2">
-      {value}
+      {professionalLinkLabel(value)}
     </a>
   ) : (
     value
