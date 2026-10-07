@@ -323,7 +323,8 @@ export default function ResultsPage({ setPage }: Props) {
           </div>
         ) : activeTab === "resume" ? (
           <div>
-            <div className="results-resume-actions flex flex-wrap justify-end gap-3 mb-4">
+            <div className="results-toolbar min-h-24 mb-4 flex flex-col items-end justify-start gap-3 sm:min-h-24">
+              <div className="results-resume-actions flex flex-wrap justify-end gap-3">
               <button
                 onClick={() => savePdf("resume")}
                 className="inline-flex items-center gap-2 bg-[var(--color-accent)] px-3 py-1.5 text-xs uppercase tracking-widest text-white transition-opacity hover:opacity-85"
@@ -335,9 +336,16 @@ export default function ResultsPage({ setPage }: Props) {
                 </svg>
                 {t("results.savePdf")}
               </button>
+              </div>
+              <div className="results-toolbar-advice w-full text-xs leading-relaxed text-[var(--color-muted-fg)]">
+                <p className="results-pdf-help">{t("results.pdfHelp")}</p>
+                {pdfOverflow ? (
+                  <p role="alert" className="mt-2 text-[var(--color-accent)]">{t("results.pdfOverflow")}</p>
+                ) : (
+                  <p className="mt-2">This draft fits on one A4 page.</p>
+                )}
+              </div>
             </div>
-            {pdfOverflow && <p role="alert" className="mb-4 text-xs text-[var(--color-accent)]">{t("results.pdfOverflow")}</p>}
-            <p className="results-pdf-help mb-4 text-xs text-[var(--color-muted-fg)]">{t("results.pdfHelp")}</p>
             <div ref={resumePreviewRef}>
               <GeneratedResumePreview
                 resume={materials.resume}
@@ -348,7 +356,8 @@ export default function ResultsPage({ setPage }: Props) {
           </div>
         ) : (
           <div>
-            <div className="results-other-actions flex flex-wrap justify-end gap-3 mb-4">
+            <div className="results-toolbar min-h-24 mb-4 flex flex-col items-end justify-start gap-3 sm:min-h-24">
+            <div className="results-other-actions flex flex-wrap justify-end gap-3">
               <button
                 onClick={handleCopy}
                 className="bg-[var(--color-fg)] px-3 py-1.5 text-xs uppercase tracking-widest text-white transition-opacity hover:opacity-85"
@@ -370,8 +379,11 @@ export default function ResultsPage({ setPage }: Props) {
                 </button>
               )}
             </div>
-            {activeTab === "cover" && pdfOverflow && <p role="alert" className="mb-4 text-xs text-[var(--color-accent)]">{t("results.coverPdfOverflow")}</p>}
-            {activeTab === "cover" && <p className="results-pdf-help mb-4 text-xs text-[var(--color-muted-fg)]">{t("results.pdfHelp")}</p>}
+            <div className="results-toolbar-advice w-full text-xs leading-relaxed text-[var(--color-muted-fg)]">
+              {activeTab === "cover" && pdfOverflow && <p role="alert" className="text-[var(--color-accent)]">{t("results.coverPdfOverflow")}</p>}
+              {activeTab === "cover" && <p className={pdfOverflow ? "mt-2" : ""}>{t("results.pdfHelp")}</p>}
+            </div>
+            </div>
             <MarkdownContent content={tabContent[activeTab]} />
           </div>
         )}
