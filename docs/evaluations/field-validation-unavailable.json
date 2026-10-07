@@ -1,0 +1,22 @@
+[
+  {
+    "provider": "openai",
+    "status": "unavailable",
+    "measuredCases": 0,
+    "totalCases": 34,
+    "accuracy": null,
+    "latencyMs": null,
+    "cost": null,
+    "workflowLatencyMs": null
+  },
+  {
+    "provider": "jev",
+    "status": "unavailable",
+    "measuredCases": 0,
+    "totalCases": 34,
+    "accuracy": null,
+    "latencyMs": null,
+    "cost": null,
+    "workflowLatencyMs": null
+  }
+]

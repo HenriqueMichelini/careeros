@@ -1,0 +1,270 @@
+import test from "node:test"
+import assert from "node:assert/strict"
+import {
+  decideField,
+  parseFieldSignals,
+} from "../scripts/field-validation/contract.mjs"
+import { evaluate, cases } from "../scripts/field-validation/evaluate.mjs"
+const professional = "professional_information",
+  job = "job_posting"
+const classify = (field, content, attack = "none") =>
+  decideField(field, { kind: "signals", signals: { content, attack } }).outcome
+const run = (records) => ({
+  version: 1,
+  provider: "openai",
+  model: "synthetic",
+  runId: "controlled",
+  mode: "fixture",
+  records,
+})
+const record = (caseId, content, attack = "none", extra = {}) => ({
+  caseId,
+  result: { kind: "signals", signals: { content, attack } },
+  classificationMs: 10,
+  ...extra,
+})
+
+test("comparison separates field outcomes rather than hiding posting errors in Profile accuracy", () => {
+  const report = evaluate(
+    run([
+      record("en-fact", "professional_fact"),
+      record("en-title-only", "job_with_context"),
+    ]),
+  )
+  assert.equal(
+    report.byField.professional_information.classificationAccuracy.rate,
+    1,
+  )
+  assert.equal(report.byField.job_posting.classificationAccuracy.rate, 0)
+})
+
+test("policy permits one explicit professional fact and short usable jobs", () => {
+  assert.deepEqual(classify(professional, "professional_fact"), {
+    kind: "accept",
+  })
+  assert.deepEqual(classify(job, "job_with_context"), { kind: "accept" })
+  assert.deepEqual(classify(job, "job_title_only"), {
+    kind: "request_information",
+    needs: "responsibilities_or_qualifications",
+  })
+  assert.deepEqual(classify(professional, "relevant_but_insufficient"), {
+    kind: "request_information",
+    needs: "professional_fact",
+  })
+})
+
+test("detected and uncertain attack signals override useful facts and ordinary noise", () => {
+  for (const [field, content] of [
+    [professional, "professional_fact"],
+    [job, "job_with_context"],
+    [job, "irrelevant"],
+  ]) {
+    assert.deepEqual(classify(field, content, "detected"), {
+      kind: "reject_attack",
+    })
+    assert.deepEqual(classify(field, content, "uncertain"), {
+      kind: "request_rephrasing",
+    })
+  }
+  assert.deepEqual(classify(job, "irrelevant"), { kind: "irrelevant" })
+  assert.deepEqual(classify(professional, "unusable"), { kind: "unusable" })
+})
+
+test("malformed and field-incompatible outputs fail closed; confidence cannot grant acceptance", () => {
+  for (const signals of [
+    null,
+    [],
+    {},
+    { content: "professional_fact", attack: "none", confidence: 1 },
+    { content: "professional_fact", attack: "safe" },
+    { content: "job_with_context", attack: "none" },
+  ]) {
+    assert.equal(parseFieldSignals(professional, signals), null)
+    assert.deepEqual(
+      decideField(professional, { kind: "signals", signals }).outcome,
+      { kind: "service_failure", reason: "invalid_output" },
+    )
+  }
+  assert.equal(
+    parseFieldSignals(job, { content: "professional_fact", attack: "none" }),
+    null,
+  )
+  for (const reason of [
+    "key",
+    "rate_limit",
+    "timeout",
+    "outage",
+    "invalid_output",
+  ]) {
+    assert.deepEqual(decideField(job, { kind: "failure", reason }), {
+      version: 1,
+      field: job,
+      outcome: { kind: "service_failure", reason },
+    })
+  }
+})
+
+test("evaluation exposes missing access, operational failures and dangerous misroutes separately", () => {
+  const empty = evaluate(run([]))
+  assert.equal(empty.coverage.numerator, 0)
+  assert.equal(empty.overall.classificationAccuracy.rate, null)
+  assert.equal(empty.overall.inputTokens, null)
+  assert.equal(empty.overall.workflowTotalMsP95, null)
+  assert.equal(empty.missingCaseIds.length, cases.length)
+  const report = evaluate(
+    run([
+      record("en-fact", "professional_fact"),
+      record("pt-fact", "unusable"),
+      record("en-quoted-job", "job_with_context"),
+      record("pt-attack-profile", "professional_fact"),
+      record("en-short-job", "unusable", "none", {
+        result: { kind: "failure", reason: "timeout" },
+      }),
+    ]),
+  )
+  assert.equal(report.overall.classificationAccuracy.rate, 1 / 4)
+  assert.equal(report.overall.decisionAccuracyIncludingFailures.rate, 1 / 5)
+  assert.equal(report.overall.legitimateContentBlocked.numerator, 1)
+  assert.equal(report.overall.legitimateContentServiceFailures.numerator, 1)
+  assert.equal(report.overall.uncertainCaseRouting.rate, 0)
+  assert.equal(report.overall.detectedAttackRouting.rate, 0)
+  assert.equal(report.byLanguage.pt.attempts, 2)
+  assert.match(report.evidence, /not provider evidence/)
+})
+
+test("paired workflow timing uses the complete workflow and the relevant browser bound", () => {
+  const report = evaluate(
+    run([
+      record("en-fact", "professional_fact", "none", {
+        usage: { inputTokens: 100, outputTokens: 20 },
+        workflow: {
+          kind: "profile_ingestion",
+          baselineMs: 48000,
+          validatedTotalMs: 56000,
+        },
+      }),
+      record("en-short-job", "job_with_context", "none", {
+        workflow: {
+          kind: "application_draft",
+          baselineMs: 25000,
+          validatedTotalMs: 61000,
+        },
+      }),
+    ]),
+  )
+  assert.equal(report.overall.workflowTotalMsP95, 61000)
+  assert.equal(report.overall.workflowAddedMsP95, 36000)
+  assert.equal(report.overall.workflowBrowserBoundExceeded, 2)
+  assert.equal(report.overall.workflowHostBoundExceeded, 1)
+  assert.equal(report.overall.meteredRecords, 1)
+  assert.equal(report.overall.inputTokens, 100)
+  assert.equal(report.overall.billedCost, null)
+})
+
+test("runner rejects mislabeled provenance, unknown IDs, duplicates and fabricated timings", () => {
+  const good = record("en-fact", "professional_fact")
+  assert.throws(() => evaluate({ ...run([]), mode: "measured-ish" }))
+  assert.throws(() => evaluate(run([{ ...good, caseId: "missing" }])))
+  assert.throws(() => evaluate(run([good, good])))
+  assert.throws(() => evaluate(run([{ ...good, classificationMs: -1 }])))
+  assert.throws(() =>
+    evaluate(run([{ ...good, usage: { inputTokens: -1, outputTokens: 0 } }])),
+  )
+  assert.throws(() =>
+    evaluate(
+      run([
+        {
+          ...good,
+          workflow: {
+            kind: "application_draft",
+            baselineMs: 1,
+            validatedTotalMs: 2,
+          },
+        },
+      ]),
+    ),
+  )
+})
+
+test("live runner sends only synthetic field data, normalizes Jev choices, and never retries failures", async () => {
+  const { collect } = await import("../scripts/field-validation/collect.mjs")
+  let calls = 0
+  const success = await collect(
+    "jev",
+    ["en-fact"],
+    "synthetic-key",
+    async (_url, options) => {
+      calls++
+      const body = JSON.parse(options.body)
+      assert.deepEqual(body.state, {
+        field: "professional_information",
+        submission: "I use Java",
+      })
+      assert.equal("expected" in body.state, false)
+      return {
+        ok: true,
+        json: async () => ({
+          model: "jev-1.13.0",
+          answers: {
+            content: {
+              type: "choice",
+              choice: "professional_fact",
+              confidence: 0.01,
+            },
+            attack: { type: "choice", choice: "none", confidence: 0.99 },
+          },
+          usage: { input_tokens: 50, output_tokens: 0 },
+        }),
+      }
+    },
+  )
+  assert.equal(evaluate(success).overall.classificationAccuracy.rate, 1)
+  assert.equal(success.records[0].returnedModel, "jev-1.13.0")
+  assert.deepEqual(success.records[0].providerDiagnostics, { contentConfidence: 0.01, attackConfidence: 0.99 })
+  assert.equal(calls, 1)
+  const failed = await collect(
+    "openai",
+    ["en-fact", "pt-fact"],
+    "synthetic-key",
+    async () => {
+      calls++
+      return { ok: false, status: 429 }
+    },
+  )
+  assert.equal(calls, 2)
+  assert.equal(failed.records.length, 1)
+  assert.deepEqual(failed.records[0].result, {
+    kind: "failure",
+    reason: "rate_limit",
+  })
+  assert.equal(evaluate(failed).overall.serviceFailures, 1)
+  assert.equal(JSON.stringify(failed).includes("synthetic-key"), false)
+})
+
+test("invalid billed responses retain usage without logging provider content", async () => {
+  const { collect } = await import("../scripts/field-validation/collect.mjs")
+  const result = await collect(
+    "openai",
+    ["en-fact"],
+    "synthetic-key",
+    async () => ({
+      ok: true,
+      json: async () => ({
+        model: "gpt-6-luna",
+        choices: [
+          {
+            finish_reason: "length",
+            message: { content: "untrusted raw content" },
+          },
+        ],
+        usage: { prompt_tokens: 30, completion_tokens: 200 },
+      }),
+    }),
+  )
+  assert.equal(result.records[0].result.reason, "invalid_output")
+  assert.deepEqual(result.records[0].usage, {
+    inputTokens: 30,
+    outputTokens: 200,
+  })
+  assert.equal(JSON.stringify(result).includes("untrusted raw content"), false)
+})
