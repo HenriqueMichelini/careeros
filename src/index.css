@@ -44,6 +44,10 @@ html {
   padding: 27px 36px;
 }
 
+.results-cover-print {
+  display: none;
+}
+
 .cv-export-measure {
   position: fixed !important;
   top: 0;
@@ -66,6 +70,81 @@ html {
 }
 
 @media print {
+  body.results-print-resume,
+  body.results-print-cover,
+  body.results-print-resume .app-shell,
+  body.results-print-cover .app-shell,
+  body.results-print-resume .app-main,
+  body.results-print-cover .app-main {
+    display: block !important;
+    width: 210mm !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+  body.results-print-resume .app-header,
+  body.results-print-cover .app-header,
+  body.results-print-resume .results-page-header,
+  body.results-print-cover .results-page-header,
+  body.results-print-resume .results-tabs,
+  body.results-print-cover .results-tabs,
+  body.results-print-resume .results-resume-actions,
+  body.results-print-resume .results-pdf-help,
+  body.results-print-resume .generated-resume-preview > :not(.cv-preview-slot),
+  body.results-print-resume .cv-preview-zoom,
+  body.results-print-resume .cv-page-boundary,
+  body.results-print-cover .results-content {
+    display: none !important;
+  }
+  body.results-print-resume .results-page,
+  body.results-print-cover .results-page {
+    display: block !important;
+    width: 210mm !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  body.results-print-resume .results-content,
+  body.results-print-resume .cv-preview-slot {
+    display: block !important;
+    width: 210mm !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+  }
+  body.results-print-resume .cv-paper {
+    page: cv-export;
+    width: 210mm !important;
+    height: 297mm !important;
+    min-height: 0 !important;
+    aspect-ratio: auto !important;
+    margin: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    zoom: 1 !important;
+  }
+  body.results-print-resume .cv-paper,
+  body.results-print-resume .cv-paper * {
+    font-family: Arial, sans-serif !important;
+    letter-spacing: normal !important;
+  }
+  body.results-print-cover .results-cover-print {
+    display: block !important;
+    box-sizing: border-box;
+    page: cv-export;
+    width: 210mm;
+    min-height: 297mm;
+    padding: 20mm 22mm;
+    color: #111;
+    background: #fff;
+    font: 11pt/1.5 Arial, sans-serif;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
   body.cv-print-ready,
   body.cv-print-ready #root,
   body.cv-print-ready .app-shell,

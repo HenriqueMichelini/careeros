@@ -2,6 +2,7 @@
 // Uses synthetic API responses; no provider request is made.
 import assert from "node:assert/strict"
 import { spawn } from "node:child_process"
+import { execFileSync } from "node:child_process"
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
@@ -83,7 +84,7 @@ const materials = {
   jobSummary: "Lead product work.",
   resume:
     "# Avery Morgan\n\navery@example.com | https://example.com/avery\n\n## Professional Experience\n### Product Lead · Harbor Works\n2021 — 2024\n- Improved onboarding.\n\n## Projects\n### Service Atlas\n- Improved task completion.\n\n## Languages\n- English: Fluent\n\n## Technical Skills\n- Research\n- Product strategy\n\n## Tools & Technology\n- Figma\n\n## Education\n### BSc Design\nEast College · 2018\n\n## Certifications\n- Research Certificate\n\n## Professional Summary\nProduct leader focused on useful services. Built my_variable service.",
-  coverLetter: "Dear team,",
+  coverLetter: "Dear team,\n\nI led useful service work at Harbor Works.\n\nSincerely,\nAvery Morgan",
   applicationAnswers: "1. I led a platform.",
 }
 const vite = spawn(
@@ -269,6 +270,34 @@ try {
     await evaluate("document.querySelector('.cv-paper-content').textContent.includes('my_variable')"),
     "Markdown rendering must preserve literal professional text",
   )
+  await evaluate("window.print = () => { window.__printCalled = true }")
+  const originalTitle = await evaluate("document.title")
+  assert.equal(await evaluate("document.querySelectorAll('.results-resume-actions button').length"), 1, "résumé should offer PDF instead of copy text")
+  await evaluate("document.querySelector('.results-resume-actions button').click()")
+  await until("window.__printCalled === true && document.body.classList.contains('results-print-resume')")
+  const resumePdf = join(work, "results-resume.pdf")
+  writeFileSync(resumePdf, Buffer.from((await call("Page.printToPDF", { printBackground: true, preferCSSPageSize: true })).data, "base64"))
+  assert.match(execFileSync("pdfinfo", [resumePdf], { encoding: "utf8" }), /Pages:\s+1\b[\s\S]*Page size:\s+59[45]\.\d+ x 841\.\d+ pts \(A4\)/)
+  const resumePdfText = execFileSync("pdftotext", ["-raw", resumePdf, "-"], { encoding: "utf8" })
+  assert.match(resumePdfText, /Avery Morgan/i)
+  assert.match(resumePdfText, /Professional Summary/i)
+  assert.doesNotMatch(resumePdfText, /Generated Application|Cover Letter|Application Q&A/i)
+  await evaluate("window.dispatchEvent(new Event('afterprint')); window.__printCalled = false")
+  assert.equal(await evaluate("document.title"), originalTitle, "PDF export should restore the page title")
+  await evaluate("Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'Cover Letter').click()")
+  await until("document.querySelector('.results-other-actions')?.textContent.includes('Save as PDF')")
+  assert.equal(await evaluate("document.querySelectorAll('.results-other-actions button').length"), 2, "cover letter should offer copy and PDF")
+  await evaluate("Array.from(document.querySelectorAll('.results-other-actions button')).find(el => el.textContent.includes('PDF')).click()")
+  await until("window.__printCalled === true && document.body.classList.contains('results-print-cover')")
+  const coverPdf = join(work, "results-cover.pdf")
+  writeFileSync(coverPdf, Buffer.from((await call("Page.printToPDF", { printBackground: true, preferCSSPageSize: true })).data, "base64"))
+  assert.match(execFileSync("pdfinfo", [coverPdf], { encoding: "utf8" }), /Pages:\s+1\b[\s\S]*Page size:\s+59[45]\.\d+ x 841\.\d+ pts \(A4\)/)
+  const coverPdfText = execFileSync("pdftotext", ["-raw", coverPdf, "-"], { encoding: "utf8" })
+  assert.match(coverPdfText, /Dear team,[\s\S]*I led useful service work[\s\S]*Sincerely,/)
+  assert.doesNotMatch(coverPdfText, /Professional Summary|Generated Application|Application Q&A/i)
+  await evaluate("window.dispatchEvent(new Event('afterprint')); window.__printCalled = false")
+  await evaluate("Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'Résumé').click()")
+  await until("!!document.querySelector('.cv-paper-content')")
   if (process.env.CV_PREVIEW_KEEP) {
     const shot = await call("Page.captureScreenshot", {
       format: "png",
@@ -396,6 +425,9 @@ try {
   await evaluate("Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'Résumé').click()")
   await until("document.querySelector('[role=status]')?.textContent.includes('extends beyond')")
   assert.ok(await evaluate("document.querySelector('.cv-paper-content').textContent.includes('END-MARKER')"), "overflow must not hide generated text")
+  await evaluate("window.__printCalled = false; document.querySelector('.results-resume-actions button').click()")
+  await until("document.querySelector('[role=alert]')?.textContent.includes('exceeds one A4 page')")
+  assert.equal(await evaluate("window.__printCalled"), false, "overflowing résumé should not open a misleading PDF export")
   assert.ok(await evaluate("document.body.textContent.includes('Add your name and contact details in Profile')"), "a draft without identity should direct the user to Profile")
   await evaluate("Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'Profile').click()")
   await until("!!document.querySelector('aside nav')")
