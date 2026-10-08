@@ -419,6 +419,13 @@ export function scoreExperiment(run, corpus, band = run.band) {
             ),
           }
     const outcome = decideField(item.field, result).outcome.kind
+    if (
+      record.usage &&
+      ![record.usage.inputTokens, record.usage.outputTokens].every(
+        (value) => Number.isInteger(value) && value >= 0,
+      )
+    )
+      throw new Error("Invalid token usage")
     return {
       caseId: item.id,
       language: item.language,
@@ -437,6 +444,12 @@ export function scoreExperiment(run, corpus, band = run.band) {
           Math.ceil(rows.length * fraction) - 1
         ]
       : null
+  const metered = rows.filter((row) => row.usage)
+  const measuredTokenSubtotal = {
+    inputTokens: metered.reduce((sum, row) => sum + row.usage.inputTokens, 0),
+    outputTokens: metered.reduce((sum, row) => sum + row.usage.outputTokens, 0),
+  }
+  const completeUsage = rows.length > 0 && metered.length === rows.length
   return {
     provider: run.provider,
     variant: run.variant,
@@ -461,15 +474,10 @@ export function scoreExperiment(run, corpus, band = run.band) {
     ).length,
     p50: p(0.5),
     p95: p(0.95),
-    inputTokens: rows.reduce(
-      (sum, row) => sum + (row.usage?.inputTokens ?? 0),
-      0,
-    ),
-    outputTokens: rows.reduce(
-      (sum, row) => sum + (row.usage?.outputTokens ?? 0),
-      0,
-    ),
-    metered: rows.filter((row) => row.usage).length,
+    inputTokens: completeUsage ? measuredTokenSubtotal.inputTokens : null,
+    outputTokens: completeUsage ? measuredTokenSubtotal.outputTokens : null,
+    measuredTokenSubtotal,
+    metered: metered.length,
     missingCaseIds: corpus
       .filter((item) => !seen.has(item.id))
       .map((item) => item.id),

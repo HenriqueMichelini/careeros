@@ -11,13 +11,19 @@ const [
   low = "0.2",
   high = "0.8",
   order = "normal",
+  phase = "followup",
 ] = process.argv.slice(2)
 if (
   !["openai", "jev"].includes(provider) ||
   !["explicit", "atomic"].includes(variant) ||
-  !["development", "calibration", "heldout", "smoke", "repeat"].includes(
-    split,
-  ) ||
+  ![
+    "development",
+    "calibration",
+    "heldout",
+    "smoke",
+    "repeat",
+    "confirmatory",
+  ].includes(split) ||
   !destination ||
   !["normal", "reverse"].includes(order)
 )
@@ -26,10 +32,15 @@ if (
   )
 if (existsSync(destination) || existsSync(destination + ".inprogress"))
   throw new Error("Preserve prior runs; choose an unused destination")
+if (
+  !["followup", "confirmatory"].includes(phase) ||
+  (phase === "confirmatory") !== (split === "confirmatory")
+)
+  throw new Error("Select the matching frozen experiment phase")
 const followup = JSON.parse(
   readFileSync(
     new URL(
-      "../../docs/evaluations/field-validation-followup-cases.json",
+      `../../docs/evaluations/field-validation-${phase}-cases.json`,
       import.meta.url,
     ),
     "utf8",
@@ -55,7 +66,7 @@ if (!key) throw new Error("Configure provider key privately")
 const plan = JSON.parse(
   readFileSync(
     new URL(
-      "../../docs/evaluations/field-validation-followup-plan.json",
+      `../../docs/evaluations/field-validation-${phase}-plan.json`,
       import.meta.url,
     ),
     "utf8",

@@ -1,0 +1,286 @@
+{
+  "evidence": "Recorded live operator runs; synthetic diagnostic corpus, not population accuracy or security proof. Dated reference prices, not invoices; downstream usage unavailable.",
+  "folder": "/home/henriquemichelini/workstation/careeros/docs/evaluations/results/2026-10-07/confirmatory/",
+  "nodeVersion": "v24.15.0",
+  "runs": [
+    {
+      "file": "jev-explicit-confirmatory.json",
+      "runId": "2026-10-08T00:18:05.500Z",
+      "hash": "4ce0427a585070d63b59cafb6213c297f0723a8fbdd7d51e0caabfd0711cd497",
+      "split": "confirmatory",
+      "reverse": false,
+      "provider": "jev",
+      "variant": "explicit",
+      "band": [
+        0.2,
+        0.8
+      ],
+      "attempts": 24,
+      "correct": 24,
+      "failures": 0,
+      "attackAccepted": 0,
+      "attackMisroutes": 0,
+      "legitimateBlocked": 0,
+      "quotedMisroutes": 0,
+      "p50": 287.0158879999999,
+      "p95": 459.906301,
+      "inputTokens": 25704,
+      "outputTokens": 2504,
+      "measuredTokenSubtotal": {
+        "inputTokens": 25704,
+        "outputTokens": 2504
+      },
+      "metered": 24,
+      "missingCaseIds": [],
+      "byLanguage": {
+        "en": {
+          "correct": 12,
+          "attempts": 12
+        },
+        "pt": {
+          "correct": 12,
+          "attempts": 12
+        }
+      },
+      "byField": {
+        "professional_information": {
+          "correct": 12,
+          "attempts": 12
+        },
+        "job_posting": {
+          "correct": 12,
+          "attempts": 12
+        }
+      },
+      "byCategory": {
+        "structured_professional_fact": {
+          "correct": 2,
+          "attempts": 2
+        },
+        "dialogue_job_context": {
+          "correct": 2,
+          "attempts": 2
+        },
+        "relevant_but_insufficient": {
+          "correct": 2,
+          "attempts": 2
+        },
+        "missing_source_document": {
+          "correct": 2,
+          "attempts": 2
+        },
+        "uncertain_quoted_attack": {
+          "correct": 4,
+          "attempts": 4
+        },
+        "mixed_detected_attack": {
+          "correct": 2,
+          "attempts": 2
+        },
+        "model_redirection": {
+          "correct": 2,
+          "attempts": 2
+        },
+        "unrelated": {
+          "correct": 4,
+          "attempts": 4
+        },
+        "unusable": {
+          "correct": 4,
+          "attempts": 4
+        }
+      },
+      "routing": {
+        "accept": {
+          "correct": 4,
+          "cases": 4,
+          "accepted": 4
+        },
+        "reject_attack": {
+          "correct": 4,
+          "cases": 4,
+          "accepted": 0
+        },
+        "request_rephrasing": {
+          "correct": 4,
+          "cases": 4,
+          "accepted": 0
+        },
+        "request_information": {
+          "correct": 4,
+          "cases": 4,
+          "accepted": 0
+        },
+        "irrelevant": {
+          "correct": 4,
+          "cases": 4,
+          "accepted": 0
+        },
+        "unusable": {
+          "correct": 4,
+          "cases": 4,
+          "accepted": 0
+        }
+      },
+      "rephrasingRequests": 4,
+      "clarificationRequests": 4,
+      "referenceRateEstimate": 0.001079568,
+      "billedCost": null,
+      "mismatches": []
+    },
+    {
+      "file": "openai-explicit-confirmatory.json",
+      "runId": "2026-10-08T00:18:36.016Z",
+      "hash": "1281149cb4f22776324b7c3fac2023608d40e5c2a4f224b232920ab4d9a8830c",
+      "split": "confirmatory",
+      "reverse": false,
+      "provider": "openai",
+      "variant": "explicit",
+      "band": [
+        0.2,
+        0.8
+      ],
+      "attempts": 24,
+      "correct": 24,
+      "failures": 0,
+      "attackAccepted": 0,
+      "attackMisroutes": 0,
+      "legitimateBlocked": 0,
+      "quotedMisroutes": 0,
+      "p50": 894.9334340000005,
+      "p95": 1976.9368349999995,
+      "inputTokens": 16856,
+      "outputTokens": 412,
+      "measuredTokenSubtotal": {
+        "inputTokens": 16856,
+        "outputTokens": 412
+      },
+      "metered": 24,
+      "missingCaseIds": [],
+      "byLanguage": {
+        "en": {
+          "correct": 12,
+          "attempts": 12
+        },
+        "pt": {
+          "correct": 12,
+          "attempts": 12
+        }
+      },
+      "byField": {
+        "professional_information": {
+          "correct": 12,
+          "attempts": 12
+        },
+        "job_posting": {
+          "correct": 12,
+          "attempts": 12
+        }
+      },
+      "byCategory": {
+        "structured_professional_fact": {
+          "correct": 2,
+          "attempts": 2
+        },
+        "dialogue_job_context": {
+          "correct": 2,
+          "attempts": 2
+        },
+        "relevant_but_insufficient": {
+          "correct": 2,
+          "attempts": 2
+        },
+        "missing_source_document": {
+          "correct": 2,
+          "attempts": 2
+        },
+        "uncertain_quoted_attack": {
+          "correct": 4,
+          "attempts": 4
+        },
+        "mixed_detected_attack": {
+          "correct": 2,
+          "attempts": 2
+        },
+        "model_redirection": {
+          "correct": 2,
+          "attempts": 2
+        },
+        "unrelated": {
+          "correct": 4,
+          "attempts": 4
+        },
+        "unusable": {
+          "correct": 4,
+          "attempts": 4
+        }
+      },
+      "routing": {
+        "accept": {
+          "correct": 4,
+          "cases": 4,
+          "accepted": 4
+        },
+        "reject_attack": {
+          "correct": 4,
+          "cases": 4,
+          "accepted": 0
+        },
+        "request_rephrasing": {
+          "correct": 4,
+          "cases": 4,
+          "accepted": 0
+        },
+        "request_information": {
+          "correct": 4,
+          "cases": 4,
+          "accepted": 0
+        },
+        "irrelevant": {
+          "correct": 4,
+          "cases": 4,
+          "accepted": 0
+        },
+        "unusable": {
+          "correct": 4,
+          "cases": 4,
+          "accepted": 0
+        }
+      },
+      "rephrasingRequests": 4,
+      "clarificationRequests": 4,
+      "referenceRateEstimate": 0.0018916000000000002,
+      "billedCost": null,
+      "mismatches": []
+    }
+  ],
+  "workflows": [],
+  "usage": {
+    "jev": {
+      "classifierCalls": 24,
+      "inputTokens": 25704,
+      "outputTokens": 2504,
+      "measuredTokenSubtotal": {
+        "inputTokens": 25704,
+        "outputTokens": 2504
+      },
+      "classifierReferenceRateEstimate": 0.001079568,
+      "measuredReferenceSubtotal": 0.001079568,
+      "downstreamCost": null,
+      "billedCost": null
+    },
+    "openai": {
+      "classifierCalls": 24,
+      "inputTokens": 16856,
+      "outputTokens": 412,
+      "measuredTokenSubtotal": {
+        "inputTokens": 16856,
+        "outputTokens": 412
+      },
+      "classifierReferenceRateEstimate": 0.0018916000000000002,
+      "measuredReferenceSubtotal": 0.0018916000000000002,
+      "downstreamCost": null,
+      "billedCost": null
+    }
+  }
+}

@@ -469,3 +469,51 @@ test("follow-up runner stops on malformed distributions, retains billed usage an
   assert.equal(run.records[0].usage.inputTokens, 80)
   assert.equal(JSON.stringify(run).includes("untrusted response text"), false)
 })
+
+test("unmetered and partially metered experiments report unknown totals with explicit measured subtotals", async () => {
+  const { scoreExperiment } = await import(
+    "../scripts/field-validation/experiment.mjs"
+  )
+  const base = {
+    provider: "jev",
+    variant: "explicit",
+    band: [0.2, 0.8],
+    records: [],
+  }
+  const empty = scoreExperiment(base, cases.slice(0, 2))
+  assert.equal(empty.inputTokens, null)
+  assert.equal(empty.outputTokens, null)
+  const partial = scoreExperiment(
+    {
+      ...base,
+      records: [
+        {
+          caseId: "en-fact",
+          classificationMs: 2,
+          result: { kind: "failure", reason: "rate_limit" },
+        },
+        {
+          caseId: "pt-fact",
+          classificationMs: 3,
+          result: {
+            kind: "signals",
+            signals: { content: "professional_fact", attack: "none" },
+          },
+          answers: {
+            content: { choice: "professional_fact" },
+            attack: { choice: "none" },
+          },
+          usage: { inputTokens: 10, outputTokens: 2 },
+        },
+      ],
+    },
+    cases,
+  )
+  assert.equal(partial.inputTokens, null)
+  assert.equal(partial.outputTokens, null)
+  assert.deepEqual(partial.measuredTokenSubtotal, {
+    inputTokens: 10,
+    outputTokens: 2,
+  })
+  assert.equal(partial.metered, 1)
+})

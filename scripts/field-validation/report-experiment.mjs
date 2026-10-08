@@ -3,14 +3,17 @@ import { readFileSync, readdirSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 import { cases } from "./evaluate.mjs"
 import { hash, scoreExperiment } from "./experiment.mjs"
+const phase = process.argv[2] ?? "followup"
+if (!["followup", "confirmatory"].includes(phase))
+  throw new Error("Select followup or confirmatory report")
 const folder = new URL(
-  "../../docs/evaluations/results/2026-10-07/followup/",
+  `../../docs/evaluations/results/2026-10-07/${phase}/`,
   import.meta.url,
 )
 const followup = JSON.parse(
   readFileSync(
     new URL(
-      "../../docs/evaluations/field-validation-followup-cases.json",
+      `../../docs/evaluations/field-validation-${phase}-cases.json`,
       import.meta.url,
     ),
     "utf8",
@@ -61,9 +64,11 @@ const runs = files.map((name) => {
     }
   }
   const referenceRateEstimate =
-    run.provider === "jev"
-      ? (report.inputTokens * 0.042) / 1e6
-      : (report.inputTokens * 0.1 + report.outputTokens * 0.5) / 1e6
+    report.inputTokens === null || report.outputTokens === null
+      ? null
+      : run.provider === "jev"
+        ? (report.inputTokens * 0.042) / 1e6
+        : (report.inputTokens * 0.1 + report.outputTokens * 0.5) / 1e6
   const { rows, ...summary } = report
   return {
     file: name,
@@ -119,22 +124,43 @@ const workflows = readdirSync(folder)
 const usage = (provider) => {
   const included = runs.filter((run) => run.provider === provider)
   const probes =
-    provider === "jev" ? workflows.filter((workflow) => workflow.usage) : []
-  return {
-    classifierCalls:
-      included.reduce((sum, run) => sum + run.attempts, 0) + probes.length,
+    provider === "jev" ? workflows.filter((workflow) => workflow.result) : []
+  const meteredProbes = probes.filter((workflow) => workflow.usage)
+  const classifierCalls =
+    included.reduce((sum, run) => sum + run.attempts, 0) + probes.length
+  const measuredTokenSubtotal = {
     inputTokens:
-      included.reduce((sum, run) => sum + run.inputTokens, 0) +
-      probes.reduce((sum, run) => sum + run.usage.inputTokens, 0),
-    outputTokens:
-      included.reduce((sum, run) => sum + run.outputTokens, 0) +
-      probes.reduce((sum, run) => sum + run.usage.outputTokens, 0),
-    classifierReferenceRateEstimate:
-      included.reduce((sum, run) => sum + run.referenceRateEstimate, 0) +
-      probes.reduce(
-        (sum, run) => sum + (run.usage.inputTokens * 0.042) / 1e6,
+      included.reduce(
+        (sum, run) => sum + run.measuredTokenSubtotal.inputTokens,
         0,
-      ),
+      ) + meteredProbes.reduce((sum, run) => sum + run.usage.inputTokens, 0),
+    outputTokens:
+      included.reduce(
+        (sum, run) => sum + run.measuredTokenSubtotal.outputTokens,
+        0,
+      ) + meteredProbes.reduce((sum, run) => sum + run.usage.outputTokens, 0),
+  }
+  const complete =
+    classifierCalls > 0 &&
+    included.every(
+      (run) => run.inputTokens !== null && run.outputTokens !== null,
+    ) &&
+    probes.length === meteredProbes.length
+  const measuredReferenceSubtotal =
+    provider === "jev"
+      ? (measuredTokenSubtotal.inputTokens * 0.042) / 1e6
+      : (measuredTokenSubtotal.inputTokens * 0.1 +
+          measuredTokenSubtotal.outputTokens * 0.5) /
+        1e6
+  return {
+    classifierCalls,
+    inputTokens: complete ? measuredTokenSubtotal.inputTokens : null,
+    outputTokens: complete ? measuredTokenSubtotal.outputTokens : null,
+    measuredTokenSubtotal,
+    classifierReferenceRateEstimate: complete
+      ? measuredReferenceSubtotal
+      : null,
+    measuredReferenceSubtotal,
     downstreamCost: null,
     billedCost: null,
   }

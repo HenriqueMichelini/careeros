@@ -2,6 +2,8 @@
 
 Issue [#29](https://github.com/HenriqueMichelini/careeros/issues/29). **Recommendation: select pinned `jev-1.13.0` with the explicit two-Choice rubric for field classification, subject to the user's provider/architecture approval.** Keep OpenAI for existing generation. This changes the first-round recommendation because the redesigned Jev rubric matched the fresh labeled cases while retaining a measured latency advantage. Approval to run billable synthetic tests does not approve product adoption or start #30.
 
+A [fresh-presentation confirmation](field-validation-confirmatory-results.md) follows the review findings below, using unchanged questions and a separately reviewed/frozen cohort.
+
 ## Experiment design and provenance
 
 The user authorized billable testing after the [documentation research](jev-improvement-research.md). An independent research agent authored [64 new labeled cases](field-validation-followup-cases.json): 24 calibration and 40 held-out; each split balances English/Portuguese and the two fields and covers all six semantic outcomes. Portuguese examples were independently written. Named group IDs do not cross splits. Review subsequently found that two held-out mismatch examples (`hold-en-disconnected-degree`, `hold-pt-detached-personal-skill`) reuse the calibration construction in `cal-pt-unrelated-qualification` despite different group IDs. Thus this cohort is output-blind, but not fully separated by semantic template; preserve its counts and do not claim template-independent generalization. These are hand-authored diagnostic cases, not a random population sample or exhaustive adversarial benchmark.
@@ -81,9 +83,9 @@ The user's billable-test authorization is recorded, but **provider/architecture 
 node scripts/field-validation/report-experiment.mjs
 ```
 
-This regenerates the [summary](results/2026-10-07/followup/summary.json) from the 13 classifier-run files and four workflow-run files. It prints per-language/field/category counts, each mismatch, usage, reference estimates, timings and run hashes without credentials or new provider calls. The original runner and first-round records remain unchanged.
+This regenerates the [corrected-schema summary](results/2026-10-07/followup/summary-v2.json); the [original summary](results/2026-10-07/followup/summary.json) is preserved separately. It reads from the 13 classifier-run files and four workflow-run files. It prints per-language/field/category counts, each mismatch, usage, reference estimates, timings and run hashes without credentials or new provider calls. The original runner and first-round records remain unchanged.
 
-Live commands require deliberately supplied process-local keys via the existing `evaluationKey` mechanism. For example, `node scripts/field-validation/run-experiment.mjs jev explicit heldout /tmp/new-jev-explicit-heldout.json` would incur new charges and evaluate a now-seen set; it must not be labeled a new blind holdout. Existing destinations are refused, failures stop the invocation, and plan/runner/corpus hashes are checked before calls. The temporary local credential loader was outside the repository and emitted no secrets.
+The executed source is preserved in checkpoint `5b1f5eb`; the reporting correction changes its source hash, so original-plan live commands now refuse the current source. Replaying that frozen experiment requires its source checkpoint and explicit authorization for new calls. Live commands require deliberately supplied process-local keys via the existing `evaluationKey` mechanism. At source checkpoint `5b1f5eb`, for example, `node scripts/field-validation/run-experiment.mjs jev explicit heldout /tmp/new-jev-explicit-heldout.json` would incur new charges and evaluate a now-seen set; it must not be labeled a new blind holdout. Existing destinations are refused, failures stop the invocation, and plan/runner/corpus hashes are checked before calls. The temporary local credential loader was outside the repository and emitted no secrets.
 
 ## Initial follow-up review
 
@@ -94,3 +96,5 @@ Live commands require deliberately supplied process-local keys via the existing 
 Local checks: all 14 focused tests and TypeScript typechecking pass. Full Node suite: 50/51; unchanged `tests/cv-preferences.test.mjs:41` expects 12 while unchanged `src/lib/cvPreferences.ts` returns 14. Neither file differs from the experiment's starting commit.
 
 This checkpoint preserves the exact executed runner source for provenance; review corrections and confirmatory measurements follow separately.
+
+The reporting P2 finding is resolved by a failing-first regression and independent Standards re-review: missing complete totals/costs are null and measured subtotals are explicit. The original measurements are unchanged. The template-overlap finding is disclosed, and the separately reviewed confirmation supplies additional evidence without filtering or relabeling these results.
