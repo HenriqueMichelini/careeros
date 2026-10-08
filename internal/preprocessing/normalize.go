@@ -29,18 +29,29 @@ type Source struct {
 	original, text, id string
 	field              fieldvalidation.Field
 	mapping            []Mapping
+	version            string
+	segments           []Segment
 }
 
 func (s Source) Original() string             { return s.original }
 func (s Source) Text() string                 { return s.text }
 func (s Source) ID() string                   { return s.id }
 func (s Source) Field() fieldvalidation.Field { return s.field }
-func (s Source) Version() string              { return RulesVersion }
-func (s Source) Mappings() []Mapping          { return append([]Mapping(nil), s.mapping...) }
+func (s Source) Version() string {
+	if s.version != "" {
+		return s.version
+	}
+	return RulesVersion
+}
+func (s Source) Mappings() []Mapping { return append([]Mapping(nil), s.mapping...) }
 
 // Normalize accepts decoded UTF-8, not encoded transport bytes. Field is an
 // identity namespace only. There are no configurable rules in version 1.
 func Normalize(original string, field fieldvalidation.Field) (Source, error) {
+	return normalizeProtected(original, field, literalBytes(original))
+}
+
+func normalizeProtected(original string, field fieldvalidation.Field, protected []bool) (Source, error) {
 	if !utf8.ValidString(original) {
 		return Source{}, errors.New("source is not valid UTF-8")
 	}
@@ -52,7 +63,6 @@ func Normalize(original string, field fieldvalidation.Field) (Source, error) {
 	digest := sha256.Sum256(identity)
 	s.id = hex.EncodeToString(digest[:])
 	var out strings.Builder
-	protected := literalBytes(original)
 	add := func(start, end int, value string) {
 		n := out.Len()
 		out.WriteString(value)

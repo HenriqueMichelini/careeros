@@ -58,3 +58,46 @@ Run focused tests with `GOCACHE=/tmp/careeros-go-cache go test ./internal/prepro
 Golden, invariant and fuzz-seed tests cover Unicode, literal protection, exact
 excerpts, repeat identity, invalid ranges, immutability, and current 30,000 and
 30,720 byte limits. This package does not impose a replacement input limit.
+
+## Structural preparation (issue #57)
+
+`Prepare(decodedOriginal, field)` returns the same immutable `Source` contract
+plus defensive-copy `Segments()`, under `structure-v1`. Its identity includes
+both normalization and structure versions, the field, and the complete original.
+`Normalize` retains its independent `normalization-v1` behavior.
+
+Segments cover each physical line, including its line ending, in order. Explicit
+blank lines delimit paragraphs; adjacent text lines are retained individually,
+without sentence splitting. Every byte belongs to one segment, including blank
+lines, separators and unknown text. Each segment has a source-scoped occurrence
+ID, syntactic kind, normalized range, exact original ranges, indentation columns,
+ATX heading level and an optional earlier parent ID. Headings attach by explicit
+level, list items by marker indentation, and indented continuations by list
+content columns. Blank lines retain list context; dedented content ends it.
+These references describe syntax, never a career category or semantic ownership.
+
+Recognized syntax: ATX headings (`#` through `######` followed by whitespace or
+end of line), unordered markers (`-`, `+`, `*`), up-to-nine-digit numbered markers
+with `.` or `)`, quotations beginning with `>`, repeated `-`, `*` or `_` separators,
+backtick/tilde fences and indented literal blocks. Leading tabs advance to the
+next four-column stop. Pipe/tab alignment and two or more internal multi-space
+gaps conservatively protect table-like material. Capitalization, section names,
+Setext-looking lines and unfamiliar syntax remain text. This is deliberately a
+small lexical representation, not a complete Markdown parser.
+
+The cleanup allowlist contains only internal horizontal separator runs in
+prose/list text: ordinary spaces and NBSP can become one ordinary space outside
+literal/token guards. Leading indentation, marker spacing, trailing whitespace
+(including Markdown hard breaks), protected values, quotation/literal/table
+alignment and uncertain cases remain unchanged. Literal, quotation and aligned
+blocks are protected before NFC/line-ending normalization as well. No characters
+are dropped: collapsed runs map as indivisible groups to their entire original
+range. All original regions remain recoverable, including every repeated line.
+Preparation is deterministic and normalized text is idempotent.
+
+Golden cases and mapping/segment coverage invariants exercise nested/mixed lists,
+repeated headings, wrapping, CRLF, tabs/NBSP, inline/fenced/indented literals,
+alignment, bilingual prose and one-line Java/AWS inputs. `FuzzPreparedCoverage`
+checks determinism, idempotence, UTF-8 boundaries and complete original coverage.
+No handler integration, provider call, semantic classification, acceptance,
+filtering, persisted source or Profile mutation is introduced by this API.
