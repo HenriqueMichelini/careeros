@@ -14,6 +14,6 @@ Integration must disclose the additional recipient and TypeSafe key/credit requi
 
 Generation workflows continue to use OpenAI. Issue #29's local evaluation is complete after the [user-authorized drafting fix and successful EN/PT timing pairs](../evaluations/field-validation-draft-fixed-results.md).
 
-The [#30 implementation](../profile-field-validation.md) applies the approved Jev classifier before professional-information extraction/comparison, with a 3-second classifier deadline inside a shared 52-second workflow bound. It provides browser-local TypeSafe key settings, recipient/credit/privacy disclosure, typed feedback and input-use terms. Job Posting integration remains separate.
+The [#30 implementation](../profile-field-validation.md) applies the approved Jev classifier before professional-information extraction/comparison, with a 3-second classifier deadline inside a shared 52-second workflow bound. It provides browser-local TypeSafe key settings, recipient/credit/privacy disclosure, typed feedback and input-use terms. The #31 implementation also gates qualification-gap checking and Application Draft generation on Job Posting validation. #32 preserves unknown title/company metadata. [Combined verification](../evaluations/field-validation-integration-results.md) records local evidence and the unresolved single-fact proposal outcome.
 
 Local handler/browser checks do not establish live integration latency, production load reliability or deployment status. Maximum-input provider performance and load still require release verification.

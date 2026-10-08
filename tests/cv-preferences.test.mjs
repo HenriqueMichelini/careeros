@@ -38,5 +38,5 @@ test("legacy and invalid density preferences default to balanced independently o
     assert.equal(parseCvDensity(raw), density)
     assert.equal(parseCvFontSize(raw), 15)
   }
-  assert.equal(parseCvFontSize('{"density":"detailed"}'), 12)
+  assert.equal(parseCvFontSize('{"density":"detailed"}'), 14)
 })

@@ -317,7 +317,7 @@ const messages = {
     "repo.ingestErrorTruncated": "This paste produced more proposed changes than the review could return. Try smaller portions. Your saved profile was not changed.",
     "repo.ingestErrorInvalidOutput": "We couldn't safely prepare changes from this text. Try a smaller portion. Your saved profile was not changed.",
     "repo.ingestPartialNotice": "Some information could not be verified or placed safely. It was left out of the proposed changes. Review what is shown and add the missing details separately.",
-    "repo.ingestUnresolvedClaim": "This claim needs clarification: its destination or a conflicting value could not be resolved safely. Clarify the source and process it again, or edit your Profile manually.",
+    "repo.ingestUnresolvedClaim": "No safe change was produced for this fact. Clarify the source and process it again, or edit your Profile manually.",
     "repo.ingestPreviewField": "Show complete field preview",
     "repo.last": "Last",
     "repo.profileIntro":
@@ -814,7 +814,7 @@ const messages = {
     "repo.ingestErrorTruncated": "Este texto gerou mais alterações propostas do que a revisão conseguiu retornar. Tente dividir em partes menores. Seu perfil salvo não foi alterado.",
     "repo.ingestErrorInvalidOutput": "Não foi possível preparar alterações seguras a partir deste texto. Tente uma parte menor. Seu perfil salvo não foi alterado.",
     "repo.ingestPartialNotice": "Algumas informações não puderam ser verificadas ou alocadas com segurança e ficaram fora das alterações propostas. Revise o que aparece e adicione os detalhes ausentes separadamente.",
-    "repo.ingestUnresolvedClaim": "Esta afirmação precisa de esclarecimento: não foi possível resolver seu destino ou um valor conflitante com segurança. Esclareça a fonte e processe novamente ou edite seu Perfil manualmente.",
+    "repo.ingestUnresolvedClaim": "Não foi possível propor uma alteração segura para este fato. Esclareça a fonte e processe novamente ou edite seu Perfil manualmente.",
     "repo.ingestPreviewField": "Mostrar prévia completa do campo",
     "repo.last": "Última revisão",
     "repo.profileIntro":

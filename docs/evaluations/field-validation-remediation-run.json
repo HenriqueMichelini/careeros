@@ -1,0 +1,29 @@
+{
+  "scope": "exact production payloads, live HTTP provider calls, offline handler replay; no deployed or live-handler timing",
+  "calls": [
+    {
+      "call": 1,
+      "host": "api.typesafe.ai",
+      "status": 401,
+      "providerHttpMs": 234,
+      "payloadHash": "c0a4109b753d0e5dd44c29e9e38018018d535766904014d1b3dd6d20f680d67d"
+    }
+  ],
+  "counts": {
+    "api.typesafe.ai": 1,
+    "api.openai.com": 0
+  },
+  "date": "2026-10-08",
+  "timezone": "America/Sao_Paulo",
+  "baseRevision": "8f2a01aebff40807ddaa51f2f7ec5763f7a61ad4",
+  "workingTreeCorrection": true,
+  "fixtureSha256": "ae379cf3df700ef40050e6d7f12acef06945c3846d722a81bc2649dcafab9589",
+  "ingestionSourceSha256": "f7ec3f66aad15500aa26958af4994dad22aea7f9894c8c4179b9248d63458a7e",
+  "authorizedBudget": {
+    "typesafe": 8,
+    "openai": 14
+  },
+  "stoppedBecause": "HTTP 401 on first classifier call; no retry; fresh authorization required",
+  "proposalQuality": "not evaluated",
+  "deployment": "not evaluated"
+}

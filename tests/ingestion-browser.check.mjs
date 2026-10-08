@@ -254,6 +254,16 @@ try {
       }
       assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth'))
     }
+    // An omitted new claim must display recovery, never the possible-duplicate message.
+    const omitted = {...proposal,operations:[],unresolvedClaimIds:['c1']}
+    await fill(text+' omitted')
+    await evaluate(`window.fetch=async()=>new Response(${JSON.stringify(JSON.stringify(omitted))},{status:200})`)
+    await evaluate(`${byText(review)}.click()`)
+    await until("document.querySelectorAll('article').length === 1")
+    const omittedText = await evaluate("document.querySelector('article').textContent")
+    assert.match(omittedText,locale==='en'?/No safe change was produced/:/Não foi possível propor uma alteração segura/)
+    assert.doesNotMatch(omittedText,locale==='en'?/may already be/:/talvez já esteja/)
+    assert.equal(await saved(),initial)
     // Real Tab/Enter and text input exercise revision and deliberate retry.
     await keyboardFill(quoted)
     await evaluate(`window.__keyboardCalls=0; window.fetch=async()=>{window.__keyboardCalls++; const body=window.__keyboardCalls===1?{decision:{version:1,field:'professional_information',outcome:{kind:'request_rephrasing'}}}:window.__keyboardCalls===2?{decision:{version:1,field:'professional_information',outcome:{kind:'service_failure',reason:'timeout'}}}:${JSON.stringify(proposal)};return new Response(JSON.stringify(body),{status:window.__keyboardCalls===2?504:200})}`)
