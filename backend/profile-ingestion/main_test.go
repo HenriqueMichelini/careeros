@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"professional-information-repo/internal/fieldvalidation"
+	"professional-information-repo/internal/preprocessing"
 	"professional-information-repo/internal/profilevalidation"
 )
 
@@ -49,7 +51,7 @@ func TestLargePasteUsesStrictSchemasAndEnoughOutputBudget(t *testing.T) {
 			if !contains(body.ResponseFormat.JSONSchema.Schema.Required, "claims") {
 				t.Fatal("missing claims requirement")
 			}
-			return completion(`{"claims":[{"id":"c1","source":"Worked with Java and PostgreSQL.","text":"Used Java and PostgreSQL","targets":["skills"],"question":""}]}`), nil
+			return completion(`{"claims":[{"id":"c1","source":"Worked with Java and PostgreSQL.","segmentId":"` + preparedTestSource(t, input).Segments()[0].ID + `","text":"Used Java and PostgreSQL","targets":["skills"],"question":""}]}`), nil
 		}
 		if !contains(body.ResponseFormat.JSONSchema.Schema.Required, "operations") {
 			t.Fatal("missing operations requirement")
@@ -77,7 +79,7 @@ func TestWrappedSourceIsMappedToExactInputExcerpt(t *testing.T) {
 	client := &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
 		return completion(`{"claims":[{"id":"c1","source":"Worked with Java and PostgreSQL.","text":"Used Java and PostgreSQL","targets":["skills"],"question":""}]}`), nil
 	})}
-	claims, skipped, code := (app{client: withAcceptedField(client)}).extract(httptest.NewRequest("POST", "/", nil).Context(), "sk-test", "Worked with Java\nand PostgreSQL.")
+	claims, skipped, code := (app{client: withAcceptedField(client)}).extract(httptest.NewRequest("POST", "/", nil).Context(), "sk-test", preparedTestSource(t, "Worked with Java\nand PostgreSQL."))
 	if code != "" || skipped != 0 || len(claims) != 1 || claims[0].Source != "Worked with Java\nand PostgreSQL." {
 		t.Fatalf("code %s claims %#v", code, claims)
 	}
@@ -91,7 +93,7 @@ func TestExtractionRejectionLogsOnlyReason(t *testing.T) {
 	client := &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
 		return completion(`{"claims":[{"id":"c1","source":"INVENTED SECRET","text":"SECRET FACT","targets":["skills"],"question":""}]}`), nil
 	})}
-	_, skipped, code := (app{client: withAcceptedField(client)}).extract(httptest.NewRequest("POST", "/", nil).Context(), "sk-test", "Used Java")
+	_, skipped, code := (app{client: withAcceptedField(client)}).extract(httptest.NewRequest("POST", "/", nil).Context(), "sk-test", preparedTestSource(t, "Used Java"))
 	if code != "" || skipped != 1 || !strings.Contains(logs.String(), "reason=source") || strings.Contains(logs.String(), "INVENTED SECRET") || strings.Contains(logs.String(), "sk-test") {
 		t.Fatal("extraction rejection must identify a safe reason without content or key")
 	}
@@ -241,7 +243,7 @@ func TestUnverifiableSourceDoesNotHideOtherClaims(t *testing.T) {
 	client := &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
 		return completion(`{"claims":[{"id":"c1","source":"Used Go","text":"Used Go","targets":["skills"],"question":""},{"id":"c2","source":"Invented source","text":"Invented","targets":["skills"],"question":""}]}`), nil
 	})}
-	claims, skipped, code := (app{client: withAcceptedField(client)}).extract(httptest.NewRequest("POST", "/", nil).Context(), "sk-test", "Used Go")
+	claims, skipped, code := (app{client: withAcceptedField(client)}).extract(httptest.NewRequest("POST", "/", nil).Context(), "sk-test", preparedTestSource(t, "Used Go"))
 	if code != "" || len(claims) != 1 || claims[0].ID != "c1" || skipped != 1 {
 		t.Fatalf("claims %#v skipped %d code %s", claims, skipped, code)
 	}
@@ -489,4 +491,13 @@ func withAcceptedField(client *http.Client) *http.Client {
 		}
 		return client.Transport.RoundTrip(r)
 	})}
+}
+
+func preparedTestSource(t *testing.T, input string) preprocessing.Source {
+	t.Helper()
+	s, err := preprocessing.Prepare(input, fieldvalidation.ProfessionalInformation)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return s
 }

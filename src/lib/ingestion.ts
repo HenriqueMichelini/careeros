@@ -3,7 +3,17 @@ import { ProfessionalRepository } from "./types"
 import { withContactFields, emptyContact, validQualifications } from "./profile"
 
 export type IngestionTarget = "careerGoals" | "skills" | "competencies" | "experience" | "tools" | "projects" | "employmentStatus" | "currentSalary" | "desiredSalary" | "additionalInfo" | "fullName" | "email" | "phone" | "location" | "professionalLinks" | "education" | "certifications" | "languages"
+export interface IngestionSourceReference {
+  version: 1
+  sourceId: string
+  preparationVersion: "structure-v1"
+  segmentId: string
+  occurrenceId: string
+  originalStart: number
+  originalEnd: number
+}
 export interface IngestionClaim {
+  sourceReference?: IngestionSourceReference
   id: string
   source: string
   text: string
@@ -175,6 +185,28 @@ export function validProfile(profile: ProfessionalRepository): boolean {
   return true
 }
 
+// Ranges are UTF-8 bytes, not JavaScript UTF-16 indices. Fatal decoding rejects
+// references that split a character. The source excerpt stays in original form.
+function validSourceReference(value: unknown, input: string, excerpt: string): boolean {
+  if (!record(value) || !keys(value, ["version", "sourceId", "preparationVersion", "segmentId", "occurrenceId", "originalStart", "originalEnd"]) ||
+      value.version !== 1 || value.preparationVersion !== "structure-v1" ||
+      [value.sourceId, value.segmentId, value.occurrenceId].some(id => typeof id !== "string" || !/^[a-f0-9]{64}$/.test(id)) ||
+      !Number.isInteger(value.originalStart) || !Number.isInteger(value.originalEnd)) return false
+  const start = value.originalStart as number, end = value.originalEnd as number
+  const bytes = new TextEncoder().encode(input)
+  if (start < 0 || end <= start || end > bytes.length) return false
+  try { return new TextDecoder("utf-8", {fatal:true}).decode(bytes.slice(start,end)) === excerpt } catch { return false }
+}
+
+async function sourceIdentity(input: string): Promise<string> {
+  // Match Go encoding/json's HTML and line-separator escaping for the pinned
+  // shared Source identity namespace, including the complete original paste.
+  const identity = JSON.stringify(["normalization-v1", "structure-v1", "professional_information", input])
+    .replace(/[<>&\u2028\u2029]/g, c => "\\u" + c.charCodeAt(0).toString(16).padStart(4,"0"))
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(identity))
+  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2,"0")).join("")
+}
+
 export function validateIngestionResult(
   raw: unknown,
   input: string,
@@ -204,13 +236,15 @@ export function validateIngestionResult(
   for (const item of raw.claims) {
     if (
       !record(item) ||
-      !keys(item, ["id", "source", "text", "targets", "question"]) ||
+      !(keys(item, ["id", "source", "text", "targets", "question"]) ||
+        keys(item, ["id", "source", "text", "targets", "question", "sourceReference"])) ||
       !string(item.id, 40) ||
       !item.id ||
       ids.has(item.id) ||
       !string(item.source, 1000) ||
       !item.source ||
       !input.includes(item.source) ||
+      ("sourceReference" in item && !validSourceReference(item.sourceReference, input, item.source)) ||
       !string(item.text, 1000) ||
       !item.text.trim() ||
       !Array.isArray(item.targets) ||
@@ -368,13 +402,21 @@ export async function ingestProfile(
           "timeout",
           "truncated",
           "invalid_output",
+          "preparation",
+          "capacity",
         ].includes(raw.error)
         ? raw.error
         : "outage",
     )
   if (!decision || !record(raw)) throw new IngestionError("invalid_output")
   const { decision: _decision, ...proposals } = raw
-  return validateIngestionResult(proposals, input, profile)
+  const result = validateIngestionResult(proposals, input, profile)
+  if (result.claims.some(claim => claim.sourceReference)) {
+    const expected = await sourceIdentity(input)
+    if (result.claims.some(claim => claim.sourceReference && claim.sourceReference.sourceId !== expected))
+      throw new IngestionError("invalid_output")
+  }
+  return result
 }
 
 export function beforeValue(

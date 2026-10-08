@@ -477,3 +477,32 @@ test("Experience duplicate protection distinguishes dates and still rejects matc
     }
   }
 })
+
+test("original source references use UTF-8 byte ranges and reject invalid evidence", () => {
+  const input = "é\r\nFirst TypeScript\r\nSecond TypeScript"
+  const sourceReference = {version:1,sourceId:'a'.repeat(64),preparationVersion:'structure-v1',segmentId:'b'.repeat(64),occurrenceId:'c'.repeat(64),originalStart:29,originalEnd:39}
+  const raw = review({claims:[claim({sourceReference})],operations:[]})
+  assert.equal(validateIngestionResult(raw,input,profile()).claims[0].sourceReference.originalStart,29)
+  for (const patch of [{version:2},{originalStart:1},{originalEnd:999},{originalStart:8},{segmentId:'invalid'},{extra:true}]) {
+    assert.throws(()=>validateIngestionResult({...raw,claims:[claim({sourceReference:{...sourceReference,...patch}})]},input,profile()))
+  }
+})
+
+test("ingestion binds traceable evidence to the complete raw submission", async () => {
+  const {createHash} = await import('node:crypto')
+  const input = 'I  use Java\r\n<&>\u2028'
+  const sourceId = createHash('sha256').update('["normalization-v1","structure-v1","professional_information","I  use Java\\r\\n\\u003c\\u0026\\u003e\\u2028"]').digest('hex')
+  const sourceReference = {version:1,sourceId,preparationVersion:'structure-v1',segmentId:'b'.repeat(64),occurrenceId:'c'.repeat(64),originalStart:0,originalEnd:11}
+  const payload = {decision:{version:1,field:'professional_information',outcome:{kind:'accept'}},...review({claims:[claim({source:'I  use Java',text:'Java',sourceReference})],operations:[]})}
+  const originalFetch = globalThis.fetch
+  try {
+    globalThis.fetch = async (_url, options) => {
+      assert.equal(JSON.parse(options.body).input,input)
+      return new Response(JSON.stringify(payload),{status:200})
+    }
+    assert.equal((await ingestProfile(input,profile(),'sk-test')).claims[0].source,input.slice(0,11))
+    // The excerpt is still exact, but a different complete paste invalidates its identity.
+    globalThis.fetch = async()=>new Response(JSON.stringify(payload),{status:200})
+    await assert.rejects(ingestProfile(input+' changed',profile(),'sk-test'),{code:'invalid_output'})
+  } finally { globalThis.fetch = originalFetch }
+})

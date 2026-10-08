@@ -111,7 +111,7 @@
           "claims": [
             {
               "id": "c1",
-              "source": "I use Java",
+              "source": "I use Java. I use Java.",
               "text": "Java",
               "targets": [
                 "skills"
@@ -2197,7 +2197,7 @@
           "claims": [
             {
               "id": "c1",
-              "source": "Eu uso Java",
+              "source": "Eu uso Java. Eu uso Java.",
               "text": "Java",
               "targets": [
                 "skills"
