@@ -155,7 +155,7 @@ func TestSyntheticDraftOutboundBodyUsesApprovedProfileAndConfirmation(t *testing
 		var topLevel map[string]json.RawMessage
 		if json.Unmarshal(body, &payload) != nil || json.Unmarshal(body, &topLevel) != nil ||
 			len(topLevel) != 5 || payload.Model != model || payload.ReasoningEffort != "none" ||
-			payload.MaxTokens != 8000 || payload.ResponseFormat.Type != "json_object" ||
+			payload.MaxTokens != 8000 || payload.ResponseFormat.Type != "json_schema" ||
 			len(payload.Messages) != 1 || payload.Messages[0].Role != "user" {
 			t.Fatal("bad provider body")
 		}

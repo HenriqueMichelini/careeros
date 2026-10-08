@@ -141,7 +141,7 @@ func (a app) call(parent context.Context, key string, in request) (result, strin
 		}
 		prompt = "CV language: " + in.CvLanguage + ". " + languagePolicy + " The CV language is independent of the site and job posting languages. Preserve proper names and factual meaning.\n" + prompt
 	}
-	body, _ := json.Marshal(map[string]any{"model": model, "reasoning_effort": "none", "max_completion_tokens": 8000, "response_format": map[string]string{"type": "json_object"}, "messages": []any{map[string]string{"role": "user", "content": prompt}}})
+	body, _ := json.Marshal(map[string]any{"model": model, "reasoning_effort": "none", "max_completion_tokens": 8000, "response_format": applicationDraftResponseFormat(), "messages": []any{map[string]string{"role": "user", "content": prompt}}})
 	ctx, cancel, resp, err := openaihttp.Post(parent, a.client, timeout, key, body)
 	defer cancel()
 	if err != nil {
@@ -183,6 +183,40 @@ func (a app) call(parent context.Context, key string, in request) (result, strin
 	}
 	return empty, "", nil
 }
+
+// Constrain provider output to the public draft shape before local validation.
+func applicationDraftResponseFormat() map[string]any {
+	return map[string]any{
+		"type": "json_schema",
+		"json_schema": map[string]any{
+			"name":   "application_draft",
+			"strict": true,
+			"schema": map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"jobTitle":           map[string]string{"type": "string"},
+					"company":            map[string]string{"type": "string"},
+					"jobSummary":         map[string]string{"type": "string"},
+					"resume":             map[string]string{"type": "string"},
+					"applicationAnswers": map[string]string{"type": "string"},
+					"coverLetter": map[string]any{
+						"type": "object",
+						"properties": map[string]any{
+							"greeting": map[string]string{"type": "string"},
+							"body":     map[string]string{"type": "string"},
+							"closing":  map[string]any{"type": "string", "enum": []string{"Sincerely,", "Kind regards,", "Best regards,", "Atenciosamente,", "Cordialmente,"}},
+						},
+						"required":             []string{"greeting", "body", "closing"},
+						"additionalProperties": false,
+					},
+				},
+				"required":             []string{"jobTitle", "company", "jobSummary", "resume", "applicationAnswers", "coverLetter"},
+				"additionalProperties": false,
+			},
+		},
+	}
+}
+
 func qualificationFacts(q profilevalidation.Qualifications) map[string]any {
 	education := make([]map[string]string, 0, len(q.Education))
 	for _, e := range q.Education {
