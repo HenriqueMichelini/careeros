@@ -1,5 +1,57 @@
 # Baseline recorded on 2026-10-08
 
+## Final measurement revision (v2)
+
+The required independent review found two implementation gaps in v1: whole-draft
+keyword scoring could hide invented claims, and the initial source/fixture
+versions were not recoverable. Both were fixed and independently re-reviewed at
+`d0d974c`: Standards 0 findings; Spec 0 remaining findings. The initial two Spec
+findings are resolved, not omitted from the review history.
+
+`cases.v2.json` and `controlled.v2.json` now cover 34 cases: 28 acceptance cases
+and six deliberately invalid EN/PT draft negative controls. Every acceptance
+case has zero curated forbidden-addition hits. Twenty-six acceptance cases
+match every label; the two capacity cases expose the same ten missing labels
+each. The six negative controls detect all injected unsupported-management,
+requirement-as-candidate-skill and transferred-metric failures. A negative control
+is successful only when its injected defect is reported, never when its output
+passes factual acceptance.
+
+Application Draft units now have separate source-grounded, full-clause labels
+for metadata, Job Summary, resume, cover letter and answers. Salutations are
+checked too. Each unsupported candidate retains its field, text and location.
+Source-normalized content plus owner constraints distinguish Acme's 20% metric
+from Atlas's Python project. Optional source-supported explanations do not
+increase the required-coverage denominator. See the README for conservative
+clause-segmentation and paraphrase limits.
+
+`live.replay.v2.json` reassesses exactly the existing eight live attempts offline;
+no ninth provider workflow ran. It references each original report by hash and
+records committed scorer/corpus revision `d0d974c`. The original scores and
+responses are preserved. Both CV attempts still have HTTP 502 and zero
+completeness. EN draft label precision is 15/16 with all seven required atoms
+covered; PT draft is 14/16 with six of seven required atoms covered. The PT
+answers omit explicit candidate Java evidence (`answers-java`), which was hidden
+by v1's whole-material keyword check.
+
+Three remaining unmatched prose clauses are conservative unsupported-claim
+candidates, not confirmed inventions: the EN cover letter says the source lacks
+AWS/projects/history details; the PT Job Summary says the posting lacks
+company/location/additional requirements; the PT cover letter declines to claim
+AWS expertise. The agent-assisted source inspection below supports those
+absence statements. They remain visible in the machine report for human
+adjudication; no label was broadened after replay to erase them. Zero curated
+forbidden additions is a finite-set observation, not a universal guarantee.
+
+`history/manifest.json` resolves the historical v1 version-tag collision using
+exact fixture/adapter/scorer snapshots or retained git source objects. Every
+recorded hash was independently verified. Current v2 has its own fixture version.
+All Go and JavaScript tests and TypeScript checks pass after the fixes; the
+production Vite build also passed with the same untouched frontend sources.
+No generation prompt, model, setting or application behavior was tuned.
+
+## Original v1 observations (retained)
+
 Issue #34 establishes measurement before behavior changes. No workflow prompt,
 model or provider-selection setting changed. The user authorized up to eight
 synthetic workflow attempts using their local OpenAI and TypeSafe credentials.
