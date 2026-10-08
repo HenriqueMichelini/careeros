@@ -1,6 +1,6 @@
 # Jev fresh-presentation confirmation — 2026-10-07 (São Paulo)
 
-Issue [#29](https://github.com/HenriqueMichelini/careeros/issues/29). This supplements the [first follow-up](field-validation-followup-results.md); it preserves all prior records and their disclosed template overlap. It evaluates the previously selected explicit two-Choice rubric, with no new tuning. Provider/architecture approval remains pending.
+Issue [#29](https://github.com/HenriqueMichelini/careeros/issues/29). This supplements the [first follow-up](field-validation-followup-results.md); it preserves all prior records and their disclosed template overlap. It evaluates the previously selected explicit two-Choice rubric, with no new tuning. Henrique subsequently approved the documented Jev provider/architecture proposal on 2026-10-07; successful drafting-overhead evidence remains unresolved.
 
 ## Design and pre-call review
 
@@ -44,9 +44,9 @@ The plan's `questionHash` hashes a field-keyed object; each run's `questionHash`
 
 ## Approval boundary
 
-The proposed classification provider is Jev `jev-1.13.0`, explicit Choice, retaining OpenAI for generation. The [adoption proposal](field-validation-followup-results.md#proposed-adoption-and-approval-gate) specifies categorical routing, a proposed 3-second classifier target inside shared existing workflow deadlines, user-owned TypeSafe keys/credits, added TypeSafe disclosure/recipient and retention uncertainty. Its numeric `band` metadata is unused by Choice; no generic confidence-to-attack conversion is proposed.
+The approved classification provider is Jev `jev-1.13.0`, explicit Choice, retaining OpenAI for generation. The [adoption proposal](field-validation-followup-results.md#proposed-adoption-and-approval-gate) specifies categorical routing, a proposed 3-second classifier target inside shared existing workflow deadlines, user-owned TypeSafe keys/credits, added TypeSafe disclosure/recipient and retention uncertainty. Its numeric `band` metadata is unused by Choice; no generic confidence-to-attack conversion is proposed.
 
-Successful Application Draft overhead remains unavailable because of four earlier baseline `invalid_output` failures; it was not retried in this confirmation. Local ingestion/gaps evidence does not resolve that gate or establish deployed timing. The user must decide whether to accept this documented evaluation limitation before #29 acceptance or resolve it first. No integration, deployment, issue closure or #30 work has begun.
+Successful Application Draft overhead remains unavailable. Two subsequent diagnostic calls reproduced the baseline failure and identified an `applicationAnswers` array/string contract mismatch in the second response; see [diagnosis](field-validation-draft-diagnostic.md). These calls are outside the frozen classifier experiment. Local ingestion/gaps evidence does not resolve this gate or establish deployed timing. The user must decide whether to fix and measure the drafting workflow before #29 acceptance or accept the documented limitation. Provider approval is recorded in the [evaluation decision](field-validation.md) and [ADR 0001](../adr/0001-stateless-user-key-backend.md). No integration, deployment, issue closure or #30 work has begun.
 
 ## Offline reproduction and checks
 
@@ -66,3 +66,7 @@ All 15 focused decision/evaluation checks and TypeScript typechecking pass. The 
 **Spec:** no new actionable findings. The earlier overlap is disclosed, all fresh labels were reviewed before calls, and source/corpus/questions remain frozen. No production integration, post-result tuning or unsupported generalization claim was found. Drafting measurement and provider/architecture approval remain the two acceptance decisions.
 
 Final review totals: Standards 0 hard findings / 1 nonblocking smell; Spec 0 new findings / 2 pending acceptance gates.
+
+## Subsequent human decision
+
+Henrique approved the documented Jev proposal on 2026-10-07: pinned explicit Choice classification, user-owned TypeSafe keys/credits, the additional data recipient and an ADR update, while retaining OpenAI for generation. The earlier final-review acceptance gates above describe their state at review time. Only the drafting measurement decision remains pending; its [subsequent diagnosis](field-validation-draft-diagnostic.md) is separate from the frozen classifier experiment.

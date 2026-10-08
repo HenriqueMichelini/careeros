@@ -1,6 +1,6 @@
 # Jev documentation-guided follow-up — 2026-10-07
 
-Issue [#29](https://github.com/HenriqueMichelini/careeros/issues/29). **Recommendation: select pinned `jev-1.13.0` with the explicit two-Choice rubric for field classification, subject to the user's provider/architecture approval.** Keep OpenAI for existing generation. This changes the first-round recommendation because the redesigned Jev rubric matched the fresh labeled cases while retaining a measured latency advantage. Approval to run billable synthetic tests does not approve product adoption or start #30.
+Issue [#29](https://github.com/HenriqueMichelini/careeros/issues/29). **Recommendation: select pinned `jev-1.13.0` with the explicit two-Choice rubric for field classification, subsequently approved by Henrique on 2026-10-07.** Keep OpenAI for existing generation. This changes the first-round recommendation because the redesigned Jev rubric matched the fresh labeled cases while retaining a measured latency advantage. Approval to run billable synthetic tests does not approve product adoption or start #30.
 
 A [fresh-presentation confirmation](field-validation-confirmatory-results.md) follows the review findings below, using unchanged questions and a separately reviewed/frozen cohort.
 
@@ -98,3 +98,7 @@ Local checks: all 14 focused tests and TypeScript typechecking pass. Full Node s
 This checkpoint preserves the exact executed runner source for provenance; review corrections and confirmatory measurements follow separately.
 
 The reporting P2 finding is resolved by a failing-first regression and independent Standards re-review: missing complete totals/costs are null and measured subtotals are explicit. The original measurements are unchanged. The template-overlap finding is disclosed, and the separately reviewed confirmation supplies additional evidence without filtering or relabeling these results.
+
+## Subsequent approval and drafting diagnosis
+
+Henrique explicitly approved the documented Jev provider/architecture proposal, retaining OpenAI for generation; [ADR 0001](../adr/0001-stateless-user-key-backend.md) records the amendment. References to pending approval in the original review above describe their state at that time. The [drafting diagnosis](field-validation-draft-diagnostic.md) isolated an array/string output-contract mismatch in one subsequent baseline response. Fixing and measuring that workflow, or accepting the documented measurement gap, remains the pending human decision.
