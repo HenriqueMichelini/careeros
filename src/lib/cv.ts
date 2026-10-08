@@ -62,6 +62,20 @@ export function professionalLinkHref(value: string): string | null {
   }
 }
 
+export function professionalLinkLabel(value: string): string {
+  const match = value.trim().match(/^\[([^\]]+)\]\(([^\s)]+)\)$/)
+  return match ? match[1] : value.trim()
+}
+
+export function professionalLinkTarget(value: string): string {
+  const match = value.trim().match(/^\[([^\]]+)\]\(([^\s)]+)\)$/)
+  return match ? match[2] : value.trim()
+}
+
+export function professionalLinkHrefForValue(value: string): string | null {
+  return professionalLinkHref(professionalLinkTarget(value))
+}
+
 export function parseCvChoices(raw: string | null): CvChoices {
   if (!raw) return emptyCvChoices()
   try {

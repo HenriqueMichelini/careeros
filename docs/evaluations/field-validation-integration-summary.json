@@ -1,0 +1,381 @@
+{
+  "evidence": "local production handlers / live providers; not deployed or browser evidence",
+  "attempted": 36,
+  "classified": 36,
+  "correct": 36,
+  "classificationAccuracy": 1,
+  "coverage": 1,
+  "missingIds": [],
+  "serviceFailures": 0,
+  "falseRejections": 0,
+  "uncertainCases": 4,
+  "uncertainCorrect": 4,
+  "attacks": 4,
+  "attacksBlocked": 4,
+  "p50Ms": 253,
+  "p95Ms": 303,
+  "maxMs": 446,
+  "workflows": [
+    {
+      "id": "en-professional_information-short",
+      "path": "/api/profile/ingest",
+      "status": 200,
+      "durationMs": 3978,
+      "noStore": true
+    },
+    {
+      "id": "pt-professional_information-short",
+      "path": "/api/profile/ingest",
+      "status": 200,
+      "durationMs": 2821,
+      "noStore": true
+    },
+    {
+      "id": "en-job_posting-short",
+      "path": "/api/qualification-gaps",
+      "status": 200,
+      "durationMs": 2057,
+      "noStore": true
+    },
+    {
+      "id": "en-job_posting-short",
+      "path": "/api/application-draft",
+      "status": 200,
+      "durationMs": 2727,
+      "noStore": true
+    },
+    {
+      "id": "pt-job_posting-short",
+      "path": "/api/qualification-gaps",
+      "status": 200,
+      "durationMs": 2167,
+      "noStore": true
+    }
+  ],
+  "rows": [
+    {
+      "id": "en-professional_information-normal",
+      "field": "professional_information",
+      "language": "en",
+      "expected": "accept",
+      "outcome": "accept",
+      "correct": true,
+      "durationMs": 303
+    },
+    {
+      "id": "pt-professional_information-normal",
+      "field": "professional_information",
+      "language": "pt",
+      "expected": "accept",
+      "outcome": "accept",
+      "correct": true,
+      "durationMs": 244
+    },
+    {
+      "id": "en-professional_information-short",
+      "field": "professional_information",
+      "language": "en",
+      "expected": "accept",
+      "outcome": "accept",
+      "correct": true,
+      "durationMs": 260
+    },
+    {
+      "id": "pt-professional_information-short",
+      "field": "professional_information",
+      "language": "pt",
+      "expected": "accept",
+      "outcome": "accept",
+      "correct": true,
+      "durationMs": 246
+    },
+    {
+      "id": "en-professional_information-noisy",
+      "field": "professional_information",
+      "language": "en",
+      "expected": "accept",
+      "outcome": "accept",
+      "correct": true,
+      "durationMs": 250
+    },
+    {
+      "id": "pt-professional_information-noisy",
+      "field": "professional_information",
+      "language": "pt",
+      "expected": "accept",
+      "outcome": "accept",
+      "correct": true,
+      "durationMs": 268
+    },
+    {
+      "id": "en-professional_information-repetitive",
+      "field": "professional_information",
+      "language": "en",
+      "expected": "accept",
+      "outcome": "accept",
+      "correct": true,
+      "durationMs": 242
+    },
+    {
+      "id": "pt-professional_information-repetitive",
+      "field": "professional_information",
+      "language": "pt",
+      "expected": "accept",
+      "outcome": "accept",
+      "correct": true,
+      "durationMs": 240
+    },
+    {
+      "id": "en-professional_information-insufficient",
+      "field": "professional_information",
+      "language": "en",
+      "expected": "request_information",
+      "outcome": "request_information",
+      "correct": true,
+      "durationMs": 259
+    },
+    {
+      "id": "pt-professional_information-insufficient",
+      "field": "professional_information",
+      "language": "pt",
+      "expected": "request_information",
+      "outcome": "request_information",
+      "correct": true,
+      "durationMs": 243
+    },
+    {
+      "id": "en-professional_information-irrelevant",
+      "field": "professional_information",
+      "language": "en",
+      "expected": "irrelevant",
+      "outcome": "irrelevant",
+      "correct": true,
+      "durationMs": 446
+    },
+    {
+      "id": "pt-professional_information-irrelevant",
+      "field": "professional_information",
+      "language": "pt",
+      "expected": "irrelevant",
+      "outcome": "irrelevant",
+      "correct": true,
+      "durationMs": 263
+    },
+    {
+      "id": "en-professional_information-unusable",
+      "field": "professional_information",
+      "language": "en",
+      "expected": "unusable",
+      "outcome": "unusable",
+      "correct": true,
+      "durationMs": 295
+    },
+    {
+      "id": "pt-professional_information-unusable",
+      "field": "professional_information",
+      "language": "pt",
+      "expected": "unusable",
+      "outcome": "unusable",
+      "correct": true,
+      "durationMs": 258
+    },
+    {
+      "id": "en-professional_information-attack",
+      "field": "professional_information",
+      "language": "en",
+      "expected": "reject_attack",
+      "outcome": "reject_attack",
+      "correct": true,
+      "durationMs": 249
+    },
+    {
+      "id": "pt-professional_information-attack",
+      "field": "professional_information",
+      "language": "pt",
+      "expected": "reject_attack",
+      "outcome": "reject_attack",
+      "correct": true,
+      "durationMs": 228
+    },
+    {
+      "id": "en-professional_information-uncertain",
+      "field": "professional_information",
+      "language": "en",
+      "expected": "request_rephrasing",
+      "outcome": "request_rephrasing",
+      "correct": true,
+      "durationMs": 250
+    },
+    {
+      "id": "pt-professional_information-uncertain",
+      "field": "professional_information",
+      "language": "pt",
+      "expected": "request_rephrasing",
+      "outcome": "request_rephrasing",
+      "correct": true,
+      "durationMs": 293
+    },
+    {
+      "id": "en-job_posting-normal",
+      "field": "job_posting",
+      "language": "en",
+      "expected": "accept",
+      "outcome": "accept",
+      "correct": true,
+      "durationMs": 253
+    },
+    {
+      "id": "pt-job_posting-normal",
+      "field": "job_posting",
+      "language": "pt",
+      "expected": "accept",
+      "outcome": "accept",
+      "correct": true,
+      "durationMs": 250
+    },
+    {
+      "id": "en-job_posting-short",
+      "field": "job_posting",
+      "language": "en",
+      "expected": "accept",
+      "outcome": "accept",
+      "correct": true,
+      "durationMs": 265
+    },
+    {
+      "id": "pt-job_posting-short",
+      "field": "job_posting",
+      "language": "pt",
+      "expected": "accept",
+      "outcome": "accept",
+      "correct": true,
+      "durationMs": 277
+    },
+    {
+      "id": "en-job_posting-noisy",
+      "field": "job_posting",
+      "language": "en",
+      "expected": "accept",
+      "outcome": "accept",
+      "correct": true,
+      "durationMs": 244
+    },
+    {
+      "id": "pt-job_posting-noisy",
+      "field": "job_posting",
+      "language": "pt",
+      "expected": "accept",
+      "outcome": "accept",
+      "correct": true,
+      "durationMs": 246
+    },
+    {
+      "id": "en-job_posting-repetitive",
+      "field": "job_posting",
+      "language": "en",
+      "expected": "accept",
+      "outcome": "accept",
+      "correct": true,
+      "durationMs": 257
+    },
+    {
+      "id": "pt-job_posting-repetitive",
+      "field": "job_posting",
+      "language": "pt",
+      "expected": "accept",
+      "outcome": "accept",
+      "correct": true,
+      "durationMs": 240
+    },
+    {
+      "id": "en-job_posting-insufficient",
+      "field": "job_posting",
+      "language": "en",
+      "expected": "request_information",
+      "outcome": "request_information",
+      "correct": true,
+      "durationMs": 241
+    },
+    {
+      "id": "pt-job_posting-insufficient",
+      "field": "job_posting",
+      "language": "pt",
+      "expected": "request_information",
+      "outcome": "request_information",
+      "correct": true,
+      "durationMs": 249
+    },
+    {
+      "id": "en-job_posting-irrelevant",
+      "field": "job_posting",
+      "language": "en",
+      "expected": "irrelevant",
+      "outcome": "irrelevant",
+      "correct": true,
+      "durationMs": 300
+    },
+    {
+      "id": "pt-job_posting-irrelevant",
+      "field": "job_posting",
+      "language": "pt",
+      "expected": "irrelevant",
+      "outcome": "irrelevant",
+      "correct": true,
+      "durationMs": 256
+    },
+    {
+      "id": "en-job_posting-unusable",
+      "field": "job_posting",
+      "language": "en",
+      "expected": "unusable",
+      "outcome": "unusable",
+      "correct": true,
+      "durationMs": 256
+    },
+    {
+      "id": "pt-job_posting-unusable",
+      "field": "job_posting",
+      "language": "pt",
+      "expected": "unusable",
+      "outcome": "unusable",
+      "correct": true,
+      "durationMs": 236
+    },
+    {
+      "id": "en-job_posting-attack",
+      "field": "job_posting",
+      "language": "en",
+      "expected": "reject_attack",
+      "outcome": "reject_attack",
+      "correct": true,
+      "durationMs": 272
+    },
+    {
+      "id": "pt-job_posting-attack",
+      "field": "job_posting",
+      "language": "pt",
+      "expected": "reject_attack",
+      "outcome": "reject_attack",
+      "correct": true,
+      "durationMs": 277
+    },
+    {
+      "id": "en-job_posting-uncertain",
+      "field": "job_posting",
+      "language": "en",
+      "expected": "request_rephrasing",
+      "outcome": "request_rephrasing",
+      "correct": true,
+      "durationMs": 264
+    },
+    {
+      "id": "pt-job_posting-uncertain",
+      "field": "job_posting",
+      "language": "pt",
+      "expected": "request_rephrasing",
+      "outcome": "request_rephrasing",
+      "correct": true,
+      "durationMs": 241
+    }
+  ]
+}

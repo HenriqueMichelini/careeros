@@ -6,11 +6,11 @@ import { join } from "node:path"
 import ts from "typescript"
 
 const temp = mkdtempSync(join(tmpdir(), "careeros-contact-"))
-for (const name of ["profile", "ai"]) {
+for (const name of ["profile", "cover-letter", "fieldDecision", "ai"]) {
   const source = readFileSync(new URL(`../src/lib/${name}.ts`, import.meta.url), "utf8")
   const compiled = ts.transpileModule(source, {
     compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
-  }).outputText.replace(/from ['"]\.\/profile['"]/g, 'from "./profile.mjs"')
+  }).outputText.replace(/from ['"]\.\/fieldDecision['"]/g, 'from "./fieldDecision.mjs"').replace(/from ['"]\.\/cover-letter['"]/g, 'from "./cover-letter.mjs"').replace(/from ['"]\.\/profile['"]/g, 'from "./profile.mjs"')
   writeFileSync(join(temp, `${name}.mjs`), compiled)
 }
 const { withContactFields, careerProfile, cvQualifications, validQualifications } = await import(join(temp, "profile.mjs"))
@@ -44,22 +44,26 @@ test("the three AI requests exclude contact facts, and review preserves them", a
     requests.push({ url, body: JSON.parse(options.body) })
     if (url === "/api/profile/review") return {
       ok: true,
-      json: async () => ({ updatedRepository: { ...oldProfile, skills: "Go, TypeScript" }, summary: "Updated skills" }),
+      json: async () => ({ updatedRepository: { ...oldProfile, careerGoals: "Unexpected model change", skills: "Go, TypeScript" }, summary: "Updated skills" }),
     }
     if (url === "/api/qualification-gaps") return { ok: true, json: async () => ({ gaps: [] }) }
     return { ok: true, json: async () => ({
       jobTitle: "Engineer", company: "Acme", jobSummary: "Role", resume: "Resume",
-      coverLetter: "Letter", applicationAnswers: "Answers",
+      coverLetter: { greeting: "Dear team,", body: "I build systems.", closing: "Sincerely," }, applicationAnswers: "Answers",
     }) }
   }
   try {
     const reviewed = await reviewRepository(repo, "Skills", "test-key")
     assert.equal(reviewed.updatedRepo.skills, "Go, TypeScript")
+    assert.equal(reviewed.updatedRepo.careerGoals, repo.careerGoals)
     for (const key of ["fullName", "email", "phone", "location", "professionalLinks"]) {
       assert.equal(reviewed.updatedRepo[key], repo[key])
     }
     await findProfileGaps(repo, "Engineer", "test-key")
-    await generateMaterials(repo, "Engineer", "test-key")
+    const materials = await generateMaterials(repo, "Engineer", "test-key", [], "pt-BR")
+    assert.equal(materials.cvLanguage, "pt-BR")
+    assert.equal(requests.at(-1).body.cvLanguage, "pt-BR")
+    assert.equal(requests.at(-1).body.uiLocale, undefined)
     assert.deepEqual(requests.map(request => request.url), [
       "/api/profile/review", "/api/qualification-gaps", "/api/application-draft",
     ])
@@ -86,10 +90,10 @@ test("structured qualifications survive review and reach only the relevant AI re
     requests.push({ url, body: JSON.parse(options.body) })
     if (url === "/api/profile/review") return { ok: true, json: async () => ({ updatedRepository: oldProfile, summary: "Reviewed" }) }
     if (url === "/api/qualification-gaps") return { ok: true, json: async () => ({ gaps: [] }) }
-    return { ok: true, json: async () => ({ jobTitle: "Engineer", company: "Acme", jobSummary: "Role", resume: "Resume", coverLetter: "Letter", applicationAnswers: "Answers" }) }
+    return { ok: true, json: async () => ({ jobTitle: "Engineer", company: "Acme", jobSummary: "Role", resume: "Resume", coverLetter: { greeting: "Dear team,", body: "I build systems.", closing: "Sincerely," }, applicationAnswers: "Answers" }) }
   }
   try {
-    const reviewed = await reviewRepository(repo, "Education", "test-key")
+    const reviewed = await reviewRepository(repo, "skills", "test-key")
     assert.deepEqual(cvQualifications(reviewed.updatedRepo), cvQualifications(repo))
     await findProfileGaps(repo, "Engineer", "test-key")
     await generateMaterials(repo, "Engineer", "test-key")
@@ -110,4 +114,69 @@ test("qualification validation matches request limits", () => {
   repo.languages.pop()
   repo.languages[0] = language("l0", "é".repeat(1001))
   assert.equal(validQualifications(repo), false)
+})
+
+test("new draft signatures use the trimmed saved name exactly once, with no identity sent to AI", async () => {
+  const originalFetch = globalThis.fetch
+  const parts = { greeting: "Prezada equipe,", body: "Minha experiência com Go atende aos requisitos da vaga.", closing: "Atenciosamente," }
+  let requestBody
+  globalThis.fetch = async (_url, options) => {
+    requestBody = options.body
+    return { ok: true, json: async () => ({ jobTitle: "Engenheiro", company: "Acme", jobSummary: "Vaga", resume: "Resume", coverLetter: parts, applicationAnswers: "Answers" }) }
+  }
+  try {
+    const named = await generateMaterials({ ...withContactFields(oldProfile), fullName: "  João Gonçalves  " }, "Go", "test-key")
+    assert.equal(named.coverLetter, "Prezada equipe,\n\nMinha experiência com Go atende aos requisitos da vaga.\n\nAtenciosamente,\nJoão Gonçalves")
+    assert.equal(named.coverLetterHasSignature, true)
+    assert.equal(requestBody.includes("João"), false)
+    for (const repo of [{ ...withContactFields(oldProfile), fullName: undefined }, { ...withContactFields(oldProfile), fullName: "  " }]) {
+      const unnamed = await generateMaterials(repo, "Go", "test-key")
+      assert.equal(unnamed.coverLetter, "Prezada equipe,\n\nMinha experiência com Go atende aos requisitos da vaga.\n\nAtenciosamente,")
+      assert.equal(unnamed.coverLetterHasSignature, false)
+    }
+    parts.greeting = "Dear team,"
+    parts.body = "I build reliable Go systems."
+    parts.closing = "Sincerely,"
+    const english = await generateMaterials({ ...withContactFields(oldProfile), fullName: "Érica Müller" }, "Go", "test-key")
+    assert.equal(english.coverLetter, "Dear team,\n\nI build reliable Go systems.\n\nSincerely,\nÉrica Müller")
+    for (const body of ["Additionally, I build reliable systems.", "Atualmente, desenvolvo sistemas confiáveis.", "I am AWS certified.", "At Harbor Works, I build reliable systems."]) {
+      parts.body = body
+      const draft = await generateMaterials({ ...withContactFields(oldProfile), fullName: "Érica Müller" }, "Go", "test-key")
+      assert.equal(draft.coverLetter, `Dear team,\n\n${body}\n\nSincerely,\nÉrica Müller`)
+    }
+  } finally { globalThis.fetch = originalFetch }
+})
+
+test("model signatures and incomplete structures fail safely rather than duplicating or inventing identity", async () => {
+  const originalFetch = globalThis.fetch
+  try {
+    for (const coverLetter of [
+      "Dear team,\nI build systems.\nSincerely,\nJane Doe",
+      { greeting: "Dear team,", body: "I build systems." },
+      { greeting: "Dear team,", body: "I build systems.", closing: "Sincerely,\nJane Doe" },
+      { greeting: "Dear team,", body: "I build systems.\n\nJane Doe", closing: "Sincerely," },
+      { greeting: "Dear team,", body: "I build systems.\n\nJane Doe, Ph.D.", closing: "Sincerely," },
+      { greeting: "Dear team,", body: "I build systems.\n\nDr. João da Silva, Engenheiro.", closing: "Sincerely," },
+      { greeting: "Dear team,", body: "My name is Jane Doe.", closing: "Sincerely," },
+      { greeting: "Dear team,", body: "Minha experiência com Go é sólida. João Gonçalves.", closing: "Sincerely," },
+      { greeting: "Dear team,", body: "I build systems.", closing: "Sincerely,", signature: "Jane Doe" },
+    ]) {
+      globalThis.fetch = async () => ({ ok: true, json: async () => ({ jobTitle: "Engineer", company: "Acme", jobSummary: "Role", resume: "Resume", coverLetter, applicationAnswers: "Answers" }) })
+      for (const fullName of coverLetter.body?.includes("João Gonçalves") ? ["João Gonçalves"] : ["João Gonçalves", ""]) {
+        await assert.rejects(generateMaterials({ ...withContactFields(oldProfile), fullName }, "Go", "test-key"), error => error.code === "invalid_output")
+      }
+    }
+  } finally { globalThis.fetch = originalFetch }
+})
+
+test("overview review is refused without a request", async () => {
+  const originalFetch = globalThis.fetch
+  let requests = 0
+  globalThis.fetch = async () => { requests++; throw new Error("unexpected request") }
+  try {
+    for (const section of ["profile", "PROFILE", "PERFIL", "overview", "education", "certifications", "languages"]) {
+      await assert.rejects(reviewRepository(withContactFields(oldProfile), section, "synthetic"), { code: "input" })
+    }
+    assert.equal(requests, 0)
+  } finally { globalThis.fetch = originalFetch }
 })

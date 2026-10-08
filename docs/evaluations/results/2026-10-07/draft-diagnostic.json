@@ -1,0 +1,97 @@
+{
+  "recordedDate": "2026-10-07",
+  "timezone": "America/Sao_Paulo",
+  "purpose": "Diagnose baseline Application Draft invalid_output; not successful live workflow timing",
+  "fixture": "en-complete-job-timing",
+  "productionSourceCommit": "f0a74c5",
+  "sourceHashes": {
+    "backend/application-draft/main.go": "a70f00da7dfc8608b6194137cf5a9587f5cbdc53ce5a2802d2af8b38b1675777",
+    "internal/openaihttp/post.go": "033c9358405d4fee5cce96f6e9177bcd9919ec459dd0c808d7e53929170245e5"
+  },
+  "payloadHash": "83b4bcaaa9dba6e69b4bf0d3b44a2cd2b78513cbf1f42e849453d392a3b0404a",
+  "networkCalls": 2,
+  "automaticRetries": 0,
+  "generatedResponsePersisted": false,
+  "probes": [
+    {
+      "bodyNonempty": true,
+      "choiceCount": 1,
+      "closingAllowed": true,
+      "contentJsonValid": true,
+      "coverFieldCount": 3,
+      "coverObjectValid": true,
+      "coverWords": 73,
+      "durationMs": 3937.129,
+      "fieldCount": 6,
+      "finishReason": "stop",
+      "greetingValid": true,
+      "handlerStatus": 502,
+      "introducedIdentity": false,
+      "invalidPunctuationLines": 0,
+      "nonempty": {
+        "applicationAnswers": false,
+        "company": true,
+        "jobSummary": true,
+        "jobTitle": true,
+        "resume": true
+      },
+      "probe": "draft-validation-diagnostic",
+      "signatureLines": 0,
+      "synthetic": true,
+      "upstreamJsonValid": true,
+      "upstreamStatus": 200,
+      "usage": {
+        "prompt_tokens": 563,
+        "completion_tokens": 350,
+        "total_tokens": 913
+      }
+    },
+    {
+      "applicationAnswersType": "array",
+      "bodyNonempty": true,
+      "choiceCount": 1,
+      "closingAllowed": true,
+      "contentJsonValid": true,
+      "coverFieldCount": 3,
+      "coverObjectValid": true,
+      "coverWords": 75,
+      "durationMs": 3182.778,
+      "fieldCount": 6,
+      "finishReason": "stop",
+      "greetingValid": true,
+      "handlerStatus": 502,
+      "introducedIdentity": false,
+      "invalidPunctuationLines": 0,
+      "nonempty": {
+        "applicationAnswers": false,
+        "company": true,
+        "jobSummary": true,
+        "jobTitle": true,
+        "resume": true
+      },
+      "offlineReplayAnswerStringOnlyStatus": 200,
+      "probe": "draft-validation-diagnostic",
+      "signatureLines": 0,
+      "synthetic": true,
+      "upstreamJsonValid": true,
+      "upstreamStatus": 200,
+      "usage": {
+        "prompt_tokens": 563,
+        "completion_tokens": 265,
+        "total_tokens": 828
+      }
+    }
+  ],
+  "measuredTokenTotals": {
+    "prompt_tokens": 1126,
+    "completion_tokens": 615,
+    "total_tokens": 1741
+  },
+  "actualBilledAmount": null,
+  "limitations": [
+    "First probe did not inspect applicationAnswers JSON type.",
+    "Offline replay replaced only applicationAnswers with a synthetic diagnostic string; it is not generated material or a successful live workflow.",
+    "No result establishes the cause of the four earlier baseline failures.",
+    "No production code changed."
+  ]
+}

@@ -31,7 +31,7 @@ func TestReviewValidOutputUsesSingleProviderCallAndPreservesProfileShape(t *test
 			t.Fatal("provider key was not forwarded")
 		}
 		body, _ := io.ReadAll(r.Body)
-		if !strings.Contains(string(body), model) || !strings.Contains(string(body), `"reasoning_effort":"none"`) || strings.Contains(string(body), "thinking") {
+		if !strings.Contains(string(body), model) || !strings.Contains(string(body), `"reasoning_effort":"none"`) || !strings.Contains(string(body), "only in these fields: skills, competencies, tools") || strings.Contains(string(body), "thinking") {
 			t.Fatal("unexpected model settings")
 		}
 		return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(validProviderResponse())), Header: make(http.Header)}, nil
@@ -68,6 +68,9 @@ func TestSuccessfulHandlerResponseIsNotCached(t *testing.T) {
 	var result reviewResult
 	if err := json.Unmarshal(response.Body.Bytes(), &result); err != nil || !validResult(result, sampleRequest().Repository) {
 		t.Fatalf("invalid review result: err=%v result=%+v", err, result)
+	}
+	if result.UpdatedRepository.CareerGoals != sampleRequest().Repository.CareerGoals || result.UpdatedRepository.Skills != "Go" {
+		t.Fatalf("section review changed unrelated fields or lost the skill edit: %+v", result.UpdatedRepository)
 	}
 	if calls != 1 {
 		t.Fatalf("provider calls=%d, want 1", calls)
@@ -262,5 +265,24 @@ func TestHandlerMapsSimulatedProviderTimeout(t *testing.T) {
 	}
 	if measured < simulatedDeadline || measured > time.Second {
 		t.Fatalf("simulated timeout took %s, want between %s and 1s", measured, simulatedDeadline)
+	}
+}
+
+func TestOverviewReviewIsRejectedBeforeProviderCall(t *testing.T) {
+	for _, section := range []string{"profile", "PROFILE", "PERFIL", "overview", "Visão geral", "unknown", "education", "certifications", "languages"} {
+		t.Run(section, func(t *testing.T) {
+			calls := 0
+			a := app{client: &http.Client{Transport: transportFunc(func(*http.Request) (*http.Response, error) { calls++; return nil, nil })}}
+			input := sampleRequest()
+			input.ChangedSection = section
+			body, _ := json.Marshal(input)
+			request := httptest.NewRequest(http.MethodPost, "/api/profile/review", strings.NewReader(string(body)))
+			request.Header.Set("X-OpenAI-Api-Key", "sk-synthetic")
+			response := httptest.NewRecorder()
+			a.handler().ServeHTTP(response, request)
+			if response.Code != http.StatusBadRequest || calls != 0 {
+				t.Fatalf("status=%d provider calls=%d", response.Code, calls)
+			}
+		})
 	}
 }

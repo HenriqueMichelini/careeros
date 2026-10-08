@@ -14,7 +14,11 @@ const compiled = ts.transpileModule(
       verbatimModuleSyntax: false,
     },
   },
-).outputText.replace(/from ['"]\.\/profile['"]/g, `from "./careeros-profile-${process.pid}.mjs"`)
+).outputText.replace(/from ['"]\.\/fieldDecision['"]/g, `from "./careeros-field-${process.pid}.mjs"`).replace(/from ['"]\.\/profile['"]/g, `from "./careeros-profile-${process.pid}.mjs"`)
+writeFileSync(join(tmpdir(), `careeros-field-${process.pid}.mjs`), ts.transpileModule(
+ readFileSync(new URL("../src/lib/fieldDecision.ts", import.meta.url), "utf8"),
+ {compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}},
+).outputText)
 const profileCompiled = ts.transpileModule(
   readFileSync(new URL("../src/lib/profile.ts", import.meta.url), "utf8"),
   { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } },
@@ -336,7 +340,7 @@ test("legacy saved employment status is preserved by Quick Add", () => {
   assert.equal(applyIngestion(before,JSON.stringify(before),[op()]).employmentStatus,"Employed — Full-time")
 })
 
-test("Quick Add preserves contact facts and excludes them from its AI request", async () => {
+test("Quick Add supplies the complete Profile for server-side minimal comparison projection", async () => {
   const before = {
     ...profile(), fullName: "Ada Lovelace", email: "ada@example.test",
     phone: "+1 555 0100", location: "London", professionalLinks: "example.test/ada",
@@ -349,12 +353,127 @@ test("Quick Add preserves contact facts and excludes them from its AI request", 
   let body
   globalThis.fetch = async (_url, options) => {
     body = JSON.parse(options.body)
-    return { ok: true, json: async () => review({ claims: [], operations: [] }) }
+    return { ok: true, json: async () => ({decision:{version:1,field:"professional_information",outcome:{kind:"accept"}},...review({ claims: [], operations: [] })}) }
   }
   try {
     await ingestProfile("TypeScript", before, "test-key")
-    assert.deepEqual(body.profile, profile())
+    assert.deepEqual(body.profile, { ...before, education: [], certifications: [], languages: [] })
   } finally {
     globalThis.fetch = originalFetch
+  }
+})
+
+test("structured destinations are reviewed, edited and applied atomically with stable identities", () => {
+  const before = { ...profile(), fullName: "Ada", email: "old@example.test", phone: "", location: "", professionalLinks: "",
+    education: [{id:"school",degree:"BSc",institution:"North",location:"",graduationDate:"2020",details:"Existing detail"}],
+    certifications: [], languages: [{id:"english",name:"English",proficiency:"Intermediate"}] }
+  const claims = [claim({targets:["email","education","certifications","languages"]})]
+  const operations = [
+    op({target:"email",field:"email",action:"update",value:"new@example.test"}),
+    op({target:"education",entryId:"school",field:"graduationDate",action:"update",value:"2021"}),
+    op({target:"certifications",entryId:"new:c1",field:"name",value:"Cloud Certificate"}),
+    op({target:"certifications",entryId:"new:c1",field:"issuer",value:"Cloud Guild"}),
+    op({target:"languages",entryId:"english",field:"proficiency",action:"update",value:"Fluent"}),
+  ]
+  const raw = review({claims, operations: operations.map(({approved,...operation})=>operation)})
+  const result = validateIngestionResult(raw,"TypeScript",before)
+  assert.ok(result.operations.every(operation=>!operation.approved))
+  assert.deepEqual(applyIngestion(before,JSON.stringify(before),result.operations),before)
+  const approved = result.operations.map(operation=>({...operation,approved:true}))
+  approved[4].value="Advanced"
+  const next=applyIngestion(before,JSON.stringify(before),approved)
+  assert.equal(next.email,"new@example.test")
+  assert.equal(next.education[0].graduationDate,"2021")
+  assert.equal(next.education[0].details,"Existing detail")
+  assert.equal(next.education[0].id,"school")
+  assert.equal(next.languages[0].proficiency,"Advanced")
+  assert.equal(next.languages[0].id,"english")
+  assert.equal(next.certifications[0].name,"Cloud Certificate")
+  assert.equal(before.email,"old@example.test")
+  assert.throws(()=>applyIngestion(next,JSON.stringify(next),approved),/incomplete/)
+  assert.throws(()=>applyIngestion(before,JSON.stringify(before),[...approved,op({target:"languages",entryId:"new:c1",field:"proficiency",value:"Native"})]),/incomplete/)
+  assert.equal(before.certifications.length,0)
+  assert.throws(()=>validateIngestionResult({...raw, operations:[{...raw.operations[0],finding:"conflict"}]},"TypeScript",before),/invalid_output/)
+})
+
+test("new education and languages require reviewed identities and repeat pastes do not duplicate entries", () => {
+  const before={...profile(),fullName:"",email:"",phone:"",location:"",professionalLinks:"",education:[],certifications:[],languages:[]}
+  const operations=[op({target:"education",entryId:"new:c1",field:"degree",value:"MSc"}),op({target:"education",entryId:"new:c1",field:"institution",value:"South"}),op({target:"languages",entryId:"new:c1",field:"name",value:"Portuguese"}),op({target:"languages",entryId:"new:c1",field:"proficiency",value:"Native"})]
+  const next=applyIngestion(before,JSON.stringify(before),operations)
+  assert.equal(next.education[0].degree,"MSc")
+  assert.equal(next.languages[0].name,"Portuguese")
+  assert.throws(()=>applyIngestion(next,JSON.stringify(next),operations),/incomplete/)
+  assert.equal(next.education.length,1)
+})
+
+test("client accepts exactly 30,000 UTF-8 bytes and rejects oversized mixed Unicode without a request", async () => {
+  const originalFetch=globalThis.fetch
+  let calls=0
+  globalThis.fetch=async()=>{calls++;return {ok:true,json:async()=>({decision:{version:1,field:"professional_information",outcome:{kind:"accept"}},...review({claims:[],operations:[]})})}}
+  try {
+    const input="ação🙂 \n".repeat(2500) // 12 bytes per line
+    assert.equal(new TextEncoder().encode(input).length,30000)
+    await ingestProfile(input,profile(),"sk-synthetic")
+    assert.equal(calls,1)
+    await assert.rejects(ingestProfile(input+"x",profile(),"sk-synthetic"),/input/)
+    assert.equal(calls,1)
+  } finally {globalThis.fetch=originalFetch}
+})
+
+test("professional link additions preserve existing and multiple approved links", () => {
+  const before={...profile(),fullName:"",email:"",phone:"",location:"",professionalLinks:"https://linkedin.test/ada",education:[],certifications:[],languages:[]}
+  const ops=[op({target:"professionalLinks",field:"professionalLinks",value:"https://github.test/ada"}),op({target:"professionalLinks",field:"professionalLinks",value:"https://portfolio.test/ada"}),op({target:"professionalLinks",field:"professionalLinks",value:"https://github.test/ada"})]
+  assert.equal(applyIngestion(before,JSON.stringify(before),ops).professionalLinks,"https://linkedin.test/ada\nhttps://github.test/ada\nhttps://portfolio.test/ada")
+  assert.equal(applyIngestion(before,JSON.stringify(before),[{...ops[0],action:"update"}]).professionalLinks,"https://github.test/ada")
+})
+
+test("same-name certifications from distinct issuers are preserved and exact repeats are rejected", () => {
+  const before={...profile(),fullName:"",email:"",phone:"",location:"",professionalLinks:"",education:[],certifications:[{id:"a",name:"Cloud Fundamentals",issuer:"Issuer A",date:"",credentialId:"",url:""}],languages:[]}
+  const ops=[op({target:"certifications",entryId:"new:c1",field:"name",value:"Cloud Fundamentals"}),op({target:"certifications",entryId:"new:c1",field:"issuer",value:"Issuer B"})]
+  const next=applyIngestion(before,JSON.stringify(before),ops)
+  assert.equal(next.certifications.length,2)
+  assert.equal(next.certifications[0].id,"a")
+  assert.equal(next.certifications[1].issuer,"Issuer B")
+  assert.throws(()=>applyIngestion(next,JSON.stringify(next),ops),/incomplete/)
+})
+
+test("separate stints at the same employer and title apply without losing the batch", () => {
+  const before = profile()
+  before.experience[0].startDate = "2018-01"
+  before.experience[0].endDate = "2020-12"
+  const snapshot = JSON.stringify(before)
+  const operations = [
+    op(),
+    ...Object.entries({ company: "Acme", title: "Engineer", startDate: "2024-01", endDate: "2025-12" })
+      .map(([field, value]) => op({ target: "experience", entryId: "new:c1", field, value })),
+  ]
+  const next = applyIngestion(before, snapshot, operations)
+  assert.equal(next.skills, "React\nTypeScript")
+  assert.equal(next.experience.length, 2)
+  assert.deepEqual(next.experience[0], before.experience[0])
+  assert.notEqual(next.experience[1].id, before.experience[0].id)
+  assert.equal(next.experience[1].startDate, "2024-01")
+  assert.equal(next.experience[1].endDate, "2025-12")
+  assert.equal(JSON.stringify(before), snapshot)
+  assert.throws(() => applyIngestion(next, JSON.stringify(next), operations), /incomplete/)
+  assert.equal(next.experience.length, 2)
+})
+
+test("Experience duplicate protection distinguishes dates and still rejects matching or undated stints atomically", () => {
+  for (const [startDate, endDate] of [["2018-01", "2020-12"], ["", ""]]) {
+    const before = profile()
+    Object.assign(before.experience[0], { startDate, endDate })
+    const snapshot = JSON.stringify(before)
+    const operations = [
+      op(),
+      ...Object.entries({ company: " ACME ", title: "engineer", startDate, endDate })
+        .map(([field, value]) => op({ target: "experience", entryId: "new:c1", field, value })),
+    ]
+    assert.throws(() => applyIngestion(before, snapshot, operations), /incomplete/)
+    assert.equal(JSON.stringify(before), snapshot)
+    for (const [field, value] of [["startDate", "2024-01"], ["endDate", "2025-12"]]) {
+      const changedPeriod = operations.map(item => item.field === field ? { ...item, value } : item)
+      assert.equal(applyIngestion(before, snapshot, changedPeriod).experience.length, 2)
+    }
   }
 })

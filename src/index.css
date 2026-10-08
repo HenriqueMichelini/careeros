@@ -10,6 +10,8 @@
   --color-accent: #C8102E;
   --color-accent-fg: #FFFFFF;
   --color-border: #E2E0DB;
+  --color-status-success: #18713B;
+  --color-status-error: #B11B32;
   --color-ring: #C8102E;
 
   --font-display: 'Barlow Condensed', sans-serif;
@@ -40,8 +42,36 @@ html {
   border-bottom: 2px dashed var(--color-accent);
 }
 
+/* Document typography is shared by screen, fit measurement, and print clones.
+   Body: selected size; section/entry headings: +1px; contact: -1px;
+   name: 2.6 times body. Line height grows with the text, never by zoom. */
+.cv-paper-content {
+  font-size: var(--cv-font-size, 12px);
+}
+.cv-paper-content, .cv-paper-content * {
+  font-family: Arial, sans-serif;
+  letter-spacing: normal;
+}
+.cv-paper-content :is(p, ul, ol, div) {
+  font-size: inherit;
+  line-height: 1.5;
+}
+.cv-paper-content :is(h3, h4) {
+  font-size: calc(var(--cv-font-size, 12px) + 1px);
+  line-height: 1.3;
+}
+.cv-paper-content header h2 {
+  font-size: calc(var(--cv-font-size, 12px) * 2.6);
+}
+.cv-paper-content header ul {
+  font-size: calc(var(--cv-font-size, 12px) - 1px);
+}
+
 .generated-resume-paper .cv-paper-content {
   padding: 27px 36px;
+}
+.generated-resume-paper .cv-paper-content :is(p, ul, ol, div) {
+  line-height: 1.4;
 }
 
 .results-cover-print {
@@ -137,7 +167,7 @@ html {
   body.cv-print-ready .app-header,
   body.cv-print-ready .cv-page-header,
   body.cv-print-ready .cv-controls,
-  body.cv-print-ready .cv-preview-zoom,
+  body.cv-print-ready .cv-font-controls,
   body.cv-print-ready .cv-page-boundary,
   body.cv-print-ready [data-cv-sample] {
     display: none !important;

@@ -11,6 +11,7 @@ import { ProfessionalRepository, GeneratedMaterials } from "./types"
 import { emptyContact, withContactFields } from "./profile"
 import {
   getInitialLocale,
+  isLocale,
   Locale,
   translate,
   TranslationKey,
@@ -35,9 +36,11 @@ const defaultRepo: ProfessionalRepository = {
 }
 
 interface AppState {
-  locale: Locale
+  uiLocale: Locale
+  cvLanguage: Locale
   repository: ProfessionalRepository
   generatedMaterials: GeneratedMaterials | null
+  typesafeKey: string
   apiKey: string
   isReviewingRepo: boolean
   isGenerating: boolean
@@ -45,28 +48,50 @@ interface AppState {
   jobPosting: string
 }
 
-type Action = { type: "SET_LOCALE"; payload: Locale } | {
+type Action = {
+  type: "SET_TYPESAFE_KEY"
+  payload: string
+} | {
+  type: "SET_CV_LANGUAGE"
+  payload: Locale
+} | {
+  type: "SET_UI_LOCALE"
+  payload: Locale
+} | {
   type: "SET_REPO"
   payload: ProfessionalRepository
-} | { type: "SET_MATERIALS"; payload: GeneratedMaterials } | {
+} | {
+  type: "SET_MATERIALS"
+  payload: GeneratedMaterials
+} | {
   type: "SET_API_KEY"
   payload: string
-} | { type: "SET_REVIEWING"; payload: boolean } | {
+} | {
+  type: "SET_REVIEWING"
+  payload: boolean
+} | {
   type: "SET_GENERATING"
   payload: boolean
-} | { type: "SET_REVIEW_SUMMARY"; payload: string } | {
+} | {
+  type: "SET_REVIEW_SUMMARY"
+  payload: string
+} | {
   type: "SET_JOB_POSTING"
   payload: string
 }
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
-    case "SET_LOCALE":
-      return { ...state, locale: action.payload }
+    case "SET_UI_LOCALE":
+      return { ...state, uiLocale: action.payload }
+    case "SET_CV_LANGUAGE":
+      return { ...state, cvLanguage: action.payload }
     case "SET_REPO":
       return { ...state, repository: action.payload }
     case "SET_MATERIALS":
       return { ...state, generatedMaterials: action.payload }
+    case "SET_TYPESAFE_KEY":
+      return { ...state, typesafeKey: action.payload }
     case "SET_API_KEY":
       return { ...state, apiKey: action.payload }
     case "SET_REVIEWING":
@@ -91,17 +116,36 @@ function loadRepo(): ProfessionalRepository {
   }
 }
 
+function loadCvLanguage(): Locale {
+  try {
+    const saved = localStorage.getItem("careeros_cv_language")
+    if (isLocale(saved)) return saved
+    const document = JSON.parse(
+      localStorage.getItem("careeros_curated_cv_v1") || "null",
+    )
+    const previous = document?.cvLanguage ?? document?.locale
+    if (isLocale(previous)) return previous
+  } catch {
+    /* Use the initial site language for a new CV preference. */
+  }
+  return getInitialLocale()
+}
+
 const StoreContext = createContext<{
   state: AppState
   dispatch: React.Dispatch<Action>
 } | null>(null)
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const lastPersistedRepo = useRef<string | null>(localStorage.getItem("careeros_repo"))
+  const lastPersistedRepo = useRef<string | null>(
+    localStorage.getItem("careeros_repo"),
+  )
   const [state, dispatch] = useReducer(reducer, {
-    locale: getInitialLocale(),
+    uiLocale: getInitialLocale(),
+    cvLanguage: loadCvLanguage(),
     repository: loadRepo(),
     generatedMaterials: null,
+    typesafeKey: localStorage.getItem("careeros_typesafe_key") || "",
     apiKey: localStorage.getItem("careeros_apikey") || "",
     isReviewingRepo: false,
     isGenerating: false,
@@ -111,7 +155,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const serialized = JSON.stringify(state.repository)
-    if (lastPersistedRepo.current === null && serialized === JSON.stringify(defaultRepo)) return
+    if (
+      lastPersistedRepo.current === null &&
+      serialized === JSON.stringify(defaultRepo)
+    )
+      return
     if (lastPersistedRepo.current !== serialized) {
       localStorage.setItem("careeros_repo", serialized)
       lastPersistedRepo.current = serialized
@@ -119,13 +167,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [state.repository])
 
   useEffect(() => {
+    if (state.typesafeKey) localStorage.setItem("careeros_typesafe_key", state.typesafeKey)
+    else localStorage.removeItem("careeros_typesafe_key")
+  }, [state.typesafeKey])
+
+  useEffect(() => {
     if (state.apiKey) localStorage.setItem("careeros_apikey", state.apiKey)
   }, [state.apiKey])
 
   useEffect(() => {
-    localStorage.setItem("careeros_locale", state.locale)
-    document.documentElement.lang = state.locale
-  }, [state.locale])
+    localStorage.setItem("careeros_locale", state.uiLocale)
+    document.documentElement.lang = state.uiLocale
+  }, [state.uiLocale])
+
+  useEffect(() => {
+    localStorage.setItem("careeros_cv_language", state.cvLanguage)
+  }, [state.cvLanguage])
 
   return (
     <StoreContext.Provider value={{ state, dispatch }}>
@@ -144,13 +201,13 @@ export function useI18n() {
   const { state, dispatch } = useStore()
   const t = useCallback(
     (key: TranslationKey, values?: Record<string, TranslationValue>) =>
-      translate(state.locale, key, values),
-    [state.locale],
+      translate(state.uiLocale, key, values),
+    [state.uiLocale],
   )
-  const setLocale = useCallback(
-    (locale: Locale) => dispatch({ type: "SET_LOCALE", payload: locale }),
+  const setUiLocale = useCallback(
+    (locale: Locale) => dispatch({ type: "SET_UI_LOCALE", payload: locale }),
     [dispatch],
   )
 
-  return { locale: state.locale, setLocale, t }
+  return { uiLocale: state.uiLocale, setUiLocale, t }
 }

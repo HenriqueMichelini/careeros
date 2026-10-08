@@ -1,6 +1,8 @@
+import { type FieldDecision } from "../lib/fieldDecision"
 import { useState, useCallback, useEffect, useRef } from "react"
 import { useI18n, useStore } from "../lib/store"
 import { reviewRepository } from "../lib/ai"
+import { profileReviewFields } from "../lib/profile"
 import { ProfileReviewError } from "../lib/ai"
 import {
   ExperienceEntry,
@@ -11,7 +13,7 @@ import {
   ProfessionalRepository,
 } from "../lib/types"
 import { TranslationKey } from "../lib/i18n"
-import { previewValues, applyIngestion, ingestProfile, IngestionError, IngestionOperation, IngestionResult } from "../lib/ingestion"
+import { ingestionInputBytes, ingestionMaxBytes, previewValues, applyIngestion, ingestProfile, IngestionError, IngestionOperation, IngestionResult } from "../lib/ingestion"
 
 type Section = "profile" | "goals" | "skills" | "experience" | "projects" | "education" | "certifications" | "languages" | "compensation" | "other"
 
@@ -59,6 +61,29 @@ const SECTIONS: {
     descKey: "repo.section.otherDesc",
   },
 ]
+
+const destinationKeys: Record<string, TranslationKey> = {
+  education: "repo.section.education", certifications: "repo.section.certifications", languages: "repo.section.languages",
+  experience: "repo.section.experience", projects: "repo.section.projects", careerGoals: "repo.careerGoals",
+  skills: "repo.skills", competencies: "repo.competencies", tools: "repo.tools", additionalInfo: "repo.additionalInfo",
+  employmentStatus: "repo.employmentStatus", currentSalary: "repo.currentCompensation", desiredSalary: "repo.desiredCompensation",
+  fullName: "repo.fullName", email: "repo.email", phone: "repo.phone", location: "repo.location", professionalLinks: "repo.professionalLinks",
+}
+function operationFieldKey(op: IngestionOperation): TranslationKey {
+  const prefix = {education: "education.", certifications: "certification.", languages: "language."}[op.target as string]
+  if (prefix) return ("repo." + prefix + op.field) as TranslationKey
+  if (op.field === "current") return "common.current"
+  return destinationKeys[op.field] || ("repo." + ({title:"jobTitle", name:"projectName", technologies:"technologiesUsed"}[op.field] || op.field)) as TranslationKey
+}
+
+function operationEntryLabel(repo: ProfessionalRepository, operations: IngestionOperation[], op: IngestionOperation): string {
+  if (!op.entryId) return ""
+  const fields = op.target === "experience" ? ["company", "title"] : op.target === "education" ? ["degree", "institution"] : op.target === "certifications" ? ["name", "issuer"] : ["name"]
+  if (op.entryId.startsWith("new:")) return fields.map(field => operations.find(item => item.target === op.target && item.entryId === op.entryId && item.field === field)?.value || "").filter(Boolean).join(" / ")
+  const items = repo[op.target as keyof ProfessionalRepository] as unknown as Record<string, unknown>[]
+  const item = items.find(item => item.id === op.entryId)
+  return item ? fields.map(field => String(item[field] || "")).filter(Boolean).join(" / ") : ""
+}
 
 const EMPLOYMENT_STATUS_OPTIONS = [
   { value: "employed-full-time", key: "repo.status.employedFullTime" },
@@ -450,12 +475,33 @@ export default function RepositoryPage() {
   const [ingestionResult, setIngestionResult] = useState<IngestionResult | null>(null)
   const [ingestionSnapshot, setIngestionSnapshot] = useState("")
   const [ingestionError, setIngestionError] = useState("")
+  const [ingestionDecision, setIngestionDecision] = useState<FieldDecision | null>(null)
+  const [revisionRequiredFor, setRevisionRequiredFor] = useState<string | null>(null)
   const [isIngesting, setIsIngesting] = useState(false)
+  const discardDialog = useRef<HTMLDialogElement>(null)
   const ingestionRequest = useRef(0)
   const ingestionController = useRef<AbortController | null>(null)
+  const reviewRequest = useRef(0)
+  const reviewController = useRef<AbortController | null>(null)
   const repo = state.repository
+  const currentReviewContext = useRef({ section: activeSection, repo })
+  currentReviewContext.current = { section: activeSection, repo }
 
-  useEffect(() => () => ingestionController.current?.abort(), [])
+  useEffect(() => () => {
+    ingestionController.current?.abort()
+    reviewRequest.current += 1
+    reviewController.current?.abort()
+    dispatch({ type: "SET_REVIEWING", payload: false })
+  }, [dispatch])
+
+  function changeSection(section: Section) {
+    reviewRequest.current += 1
+    reviewController.current?.abort()
+    currentReviewContext.current.section = section
+    dispatch({ type: "SET_REVIEWING", payload: false })
+    setReviewError("")
+    setActiveSection(section)
+  }
 
   const updateRepo = useCallback(
     (patch: Partial<ProfessionalRepository>) =>
@@ -467,10 +513,12 @@ export default function RepositoryPage() {
     ingestionRequest.current += 1
     ingestionController.current?.abort()
     setIsIngesting(false)
+    setRevisionRequiredFor(null)
     setIngestionText("")
     setIngestionResult(null)
     setIngestionSnapshot("")
     setIngestionError("")
+    setIngestionDecision(null)
   }
 
   function changeIngestionText(value: string) {
@@ -480,24 +528,34 @@ export default function RepositoryPage() {
     setIngestionText(value)
     setIngestionResult(null)
     setIngestionError("")
+    setIngestionDecision(null)
   }
 
   async function handleIngestion() {
+    if (revisionRequiredFor !== null && ingestionText.trim() === revisionRequiredFor) return
     setIngestionError("")
+    setIngestionDecision(null)
     setIngestionResult(null)
     if (!state.apiKey) { setIngestionError(t("repo.setApiKeyFirst")); return }
+    if (!state.typesafeKey.trim()) { setIngestionError(t("field.typesafeMissing")); return }
     const requestId = ++ingestionRequest.current
     const controller = new AbortController()
     ingestionController.current = controller
     setIsIngesting(true)
     const snapshot = JSON.stringify(repo)
     try {
-      const proposals = await ingestProfile(ingestionText, repo, state.apiKey, controller.signal)
+      const proposals = await ingestProfile(ingestionText, repo, state.apiKey, controller.signal, state.typesafeKey)
       if (ingestionRequest.current !== requestId) return
       setIngestionSnapshot(snapshot)
       setIngestionResult(proposals)
     } catch (error) {
       if (ingestionRequest.current !== requestId) return
+      if (error instanceof IngestionError && error.decision) {
+        const outcome = error.decision.outcome
+        if (outcome.kind === "request_rephrasing") setRevisionRequiredFor(ingestionText.trim())
+        setIngestionDecision(error.decision)
+        return
+      }
       const code = error instanceof IngestionError ? error.code : "outage"
       const lookup = {
         input:"repo.ingestErrorInput", key:"repo.reviewErrorKey", rate_limit:"repo.reviewErrorRateLimit",
@@ -507,6 +565,11 @@ export default function RepositoryPage() {
       setIngestionError(t(lookup[code as keyof typeof lookup] || "repo.reviewFailed"))
     } finally { if (ingestionRequest.current === requestId) setIsIngesting(false) }
   }
+
+  const fieldOutcome = ingestionDecision?.outcome
+  const ingestionFeedback = fieldOutcome
+    ? t((fieldOutcome.kind === "service_failure" ? `field.failure.${fieldOutcome.reason}` : `field.${fieldOutcome.kind}`) as TranslationKey)
+    : ingestionError || (revisionRequiredFor !== null && ingestionText.trim() === revisionRequiredFor ? t("field.request_rephrasing") : "")
 
   function editOperation(index: number, patch: Partial<IngestionOperation>) {
     setIngestionResult(previous => previous && ({
@@ -535,23 +598,30 @@ export default function RepositoryPage() {
   }
 
   async function handleAiReview() {
+    if (!profileReviewFields(activeSection).length || currentReviewContext.current.section !== activeSection || state.isReviewingRepo) return
     if (!state.apiKey) {
       setReviewError(t("repo.setApiKeyFirst"))
       return
     }
     setReviewError("")
+    const requestId = ++reviewRequest.current
+    const controller = new AbortController()
+    reviewController.current = controller
+    const isCurrent = () => reviewRequest.current === requestId &&
+      currentReviewContext.current.section === activeSection && currentReviewContext.current.repo === repo
     dispatch({ type: "SET_REVIEWING", payload: true })
     try {
-      const section = SECTIONS.find((s) => s.id === activeSection)
-      const sectionLabel = section ? t(section.labelKey) : activeSection
       const { updatedRepo, summary } = await reviewRepository(
         repo,
-        sectionLabel,
+        activeSection,
         state.apiKey,
+        controller.signal,
       )
+      if (!isCurrent()) return
       dispatch({ type: "SET_REPO", payload: updatedRepo })
       dispatch({ type: "SET_REVIEW_SUMMARY", payload: summary })
     } catch (e: any) {
+      if (!isCurrent()) return
       const errorKey = e instanceof ProfileReviewError
         ? ({
             input: "repo.reviewErrorInput",
@@ -564,7 +634,7 @@ export default function RepositoryPage() {
         : undefined
       setReviewError(errorKey ? t(errorKey) : t("repo.reviewFailed"))
     } finally {
-      dispatch({ type: "SET_REVIEWING", payload: false })
+      if (reviewRequest.current === requestId) dispatch({ type: "SET_REVIEWING", payload: false })
     }
   }
 
@@ -647,7 +717,7 @@ export default function RepositoryPage() {
           {SECTIONS.map(({ id, labelKey }) => (
             <button
               key={id}
-              onClick={() => setActiveSection(id)}
+              onClick={() => changeSection(id)}
               className={`w-full text-left px-2 md:px-3 py-2.5 text-xs md:text-sm transition-colors block ${
                 id === "profile"
                   ? "font-semibold tracking-[0.12em] mb-2 border"
@@ -674,16 +744,9 @@ export default function RepositoryPage() {
             </button>
           ))}
         </nav>
-        {activeSection !== "profile" && (
-          <button type="button" onClick={() => setActiveSection("profile")}
-            className="mt-5 w-full border px-3 py-2 text-xs text-left uppercase tracking-wide"
-            style={{borderColor:"var(--color-accent)",color:"var(--color-accent)"}}>
-            {t("repo.quickAdd")}
-          </button>
-        )}
 
-        {/* AI Review */}
-        <div
+        {/* AI Review is available only within a supported subsection. */}
+        {profileReviewFields(activeSection).length > 0 && <div
           className="mt-4 md:mt-10 pt-4 md:pt-6 border-t"
           style={{ borderColor: "var(--color-border)" }}
         >
@@ -700,7 +763,7 @@ export default function RepositoryPage() {
             className="text-xs mb-4 leading-relaxed"
             style={{ color: "var(--color-muted-fg)" }}
           >
-            {t("repo.aiReviewDescription")}
+            {t("repo.aiReviewDescription", { section: t(active.labelKey) })}
           </p>
           <button
             onClick={handleAiReview}
@@ -744,8 +807,22 @@ export default function RepositoryPage() {
               {t("repo.last")}: {state.lastReviewSummary}
             </p>
           )}
-        </div>
+        </div>}
       </aside>
+
+      <dialog
+        ref={discardDialog}
+        aria-labelledby="discard-title"
+        aria-describedby="discard-description"
+        className="m-auto w-[calc(100%_-_2rem)] max-w-md border border-[var(--color-border)] bg-[var(--color-card)] p-6 text-[var(--color-fg)] backdrop:bg-black/50"
+      >
+        <h2 id="discard-title" className="mb-3 text-xl font-bold">{t("repo.discardTitle")}</h2>
+        <p id="discard-description" className="mb-6 text-sm text-[var(--color-muted-fg)]">{t("repo.discardDescription")}</p>
+        <form method="dialog" className="flex flex-wrap justify-end gap-3">
+          <button autoFocus className="border border-[var(--color-border)] px-4 py-2 text-sm">{t("repo.keepEditing")}</button>
+          <button onClick={discardIngestion} className="bg-[var(--color-fg)] px-4 py-2 text-sm text-[var(--color-bg)]">{t("repo.ingestDiscard")}</button>
+        </form>
+      </dialog>
 
       {/* Main content */}
       <div>
@@ -795,20 +872,33 @@ export default function RepositoryPage() {
             </section>
             <section className="p-5 border min-w-0" style={{borderColor:"var(--color-border)"}}>
               <h2 className="text-lg font-bold mb-2">{t("repo.ingestTitle")}</h2>
-              <p className="text-sm mb-3" style={{color:"var(--color-muted-fg)"}}>{t("repo.ingestPrivacy")}</p>
+              <p className="text-sm mb-3">{t("repo.ingestGuide")}</p>
+              <details className="text-sm mb-3">
+                <summary className="cursor-pointer">{t("field.settings")}</summary>
+                <label htmlFor="typesafe-key" className="block mt-2">{t("field.typesafeKey")}</label>
+                <input id="typesafe-key" type="password" autoComplete="off" value={state.typesafeKey}
+                  onChange={e => dispatch({type:"SET_TYPESAFE_KEY",payload:e.target.value})}
+                  className="w-full min-w-0 p-2 border mt-1" style={{backgroundColor:"var(--color-card)",borderColor:"var(--color-border)"}} />
+                <p className="mt-2">{t("field.disclosure")}</p>
+              </details>
+              <details id="input-use-rule" className="text-sm mb-3">
+                <summary className="cursor-pointer">{t("field.ruleTitle")}</summary>
+                <p className="mt-2">{t("field.rule")}</p>
+              </details>
               <label htmlFor="ingestion-text" className="text-sm block mb-2">{t("repo.ingestLabel")}</label>
               <textarea id="ingestion-text" value={ingestionText} onChange={e => changeIngestionText(e.target.value)} rows={9}
-                maxLength={30000} placeholder={t("repo.ingestPlaceholder")}
+                aria-describedby={ingestionFeedback ? "ingestion-feedback" : undefined} aria-busy={isIngesting} placeholder={t("repo.ingestPlaceholder")}
                 className="w-full min-w-0 p-3 border text-sm resize-y" style={{backgroundColor:"var(--color-card)",borderColor:"var(--color-border)",color:"var(--color-fg)"}} />
-              <p className="text-xs mb-3" style={{color:"var(--color-muted-fg)"}}>{new TextEncoder().encode(ingestionText).length} / 30000 {t("repo.bytes")}</p>
+              <p className="text-xs mb-3" style={{color:"var(--color-muted-fg)"}}>{ingestionInputBytes(ingestionText)} / 30000 {t("repo.bytes")}</p>
               <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={handleIngestion} disabled={isIngesting || !ingestionText.trim()}
+                <button type="button" onClick={handleIngestion} disabled={isIngesting || (revisionRequiredFor !== null && ingestionText.trim() === revisionRequiredFor) || !ingestionText.trim() || ingestionInputBytes(ingestionText) > ingestionMaxBytes}
                   className="px-4 py-2 text-sm disabled:opacity-50" style={{backgroundColor:"var(--color-fg)",color:"var(--color-bg)"}}>
                   {isIngesting ? t("repo.ingestWorking") : t("repo.ingestReview")}
                 </button>
-                <button type="button" onClick={discardIngestion} className="px-4 py-2 text-sm border" style={{borderColor:"var(--color-border)"}}>{t("repo.ingestDiscard")}</button>
+                <button type="button" onClick={() => discardDialog.current?.showModal()} className="px-4 py-2 text-sm border" style={{borderColor:"var(--color-border)"}}>{t("repo.ingestDiscard")}</button>
               </div>
-              {ingestionError && <p role="alert" className="text-sm mt-3" style={{color:"var(--color-accent)"}}>{ingestionError}</p>}
+              {isIngesting && <p role="status" className="text-sm mt-3">{t("field.working")}</p>}
+              {ingestionFeedback && <p id="ingestion-feedback" role="alert" className="text-sm mt-3" style={{color:"var(--color-accent)"}}>{ingestionFeedback} {fieldOutcome?.kind === "reject_attack" && <a href="#input-use-rule" onClick={() => { const rule = document.querySelector<HTMLDetailsElement>("#input-use-rule"); if (rule) rule.open = true }} className="underline">{t("field.ruleTitle")}</a>}</p>}
             </section>
             {ingestionResult && <section className="space-y-4" aria-label={t("repo.ingestProposals")}>
               <h2 className="text-xl font-bold">{t("repo.ingestProposals")}</h2>
@@ -832,7 +922,7 @@ export default function RepositoryPage() {
                     {indexed.map(({op,index}) => <div key={index} className="mt-3 p-3 border min-w-0" style={{borderColor:"var(--color-border)"}}>
                       <label className="flex items-start gap-2 text-sm break-words">
                         <input type="checkbox" checked={op.approved} onChange={e => editOperation(index,{approved:e.target.checked})} />
-                        {t(("repo.ingestAction."+op.action) as TranslationKey)} · {op.target}{op.entryId ? " / "+op.entryId : ""} · {op.field} · {t(("repo.ingestFinding."+op.finding) as TranslationKey)}
+                        {t(("repo.ingestAction."+op.action) as TranslationKey)} · {t(destinationKeys[op.target])}{op.entryId && " / " + operationEntryLabel(repo, ingestionResult.operations, op)} · {t(operationFieldKey(op))} · {t(("repo.ingestFinding."+op.finding) as TranslationKey)}
                       </label>
                       <label className="text-xs block mt-2">{t("repo.ingestAfter")}
                         <textarea value={op.value} onChange={e => editOperation(index,{value:e.target.value})} rows={2}
@@ -851,7 +941,7 @@ export default function RepositoryPage() {
               <div className="flex flex-wrap gap-2">
                 <button type="button" onClick={confirmIngestion} disabled={!ingestionResult.operations.some(op => op.approved)}
                   className="px-4 py-2 text-sm disabled:opacity-50" style={{backgroundColor:"var(--color-fg)",color:"var(--color-bg)"}}>{t("repo.ingestApply")}</button>
-                <button type="button" onClick={discardIngestion} className="px-4 py-2 border text-sm" style={{borderColor:"var(--color-border)"}}>{t("repo.ingestCancel")}</button>
+                <button type="button" onClick={() => discardDialog.current?.showModal()} className="px-4 py-2 border text-sm" style={{borderColor:"var(--color-border)"}}>{t("repo.ingestCancel")}</button>
               </div>
             </section>}
           </div>

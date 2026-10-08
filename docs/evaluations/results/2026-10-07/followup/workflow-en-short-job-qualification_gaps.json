@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "mode": "live",
+  "provider": "jev",
+  "variant": "explicit",
+  "model": "jev-1.13.0",
+  "runId": "2026-10-07T23:11:58.628Z",
+  "classifierDeadlineMs": 5000,
+  "reverse": false,
+  "band": [
+    0.2,
+    0.8
+  ],
+  "corpusHash": "dbaab09483c54658f6c95acdc04e7b3f55866eba8d5cdcfc225d781042044278",
+  "questionHash": "e54735260494821accfba5b0f3caebba851c0693b56bcb52815d87adcf2000e1",
+  "records": [
+    {
+      "caseId": "en-short-job",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1045,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "job_with_context",
+          "confidence": 0.97,
+          "probabilities": {
+            "job_with_context": 0.98,
+            "job_title_only": 0.01,
+            "relevant_but_insufficient": 0.01,
+            "irrelevant": 0,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.95,
+          "probabilities": {
+            "none": 0.97,
+            "uncertain": 0,
+            "detected": 0.03
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 297.98191499999984,
+      "workflow": {
+        "kind": "qualification_gaps",
+        "baselineMs": 927.5000109999999,
+        "validatedTotalMs": 1160.564925
+      },
+      "workflowAttempt": {
+        "kind": "qualification_gaps",
+        "baseline": {
+          "status": 200,
+          "ok": true
+        },
+        "validated": {
+          "status": 200,
+          "ok": true
+        },
+        "baselineMs": 927.5000109999999,
+        "validatedTotalMs": 1160.564925
+      }
+    }
+  ],
+  "measurementScope": "local HTTP probe with browser-equivalent deadline; not live UI or deployment"
+}

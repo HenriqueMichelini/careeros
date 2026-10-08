@@ -1,4 +1,19 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
+import {
+  CURATED_CV_KEY,
+  cvFacts,
+  createCuratedCv,
+  parseCuratedCv,
+  generateCv,
+  CvGenerationError,
+  type CvResult,
+  type CuratedCv,
+} from "../lib/cvGeneration"
+import CvDensityControl from "../components/CvDensityControl"
+import CvFontSizeControl from "../components/CvFontSizeControl"
+import { translate } from "../lib/i18n"
+import LanguageSelector from "../components/LanguageSelector"
+import { useCvPreferences } from "../lib/cvPreferences"
 import CvPaper from "../components/CvPaper"
 import { useI18n, useStore } from "../lib/store"
 import { cvQualifications } from "../lib/profile"
@@ -10,7 +25,10 @@ import {
   cvSections,
   entryKey,
   parseCvChoices,
+  emptyCvChoices,
   professionalLinkHref,
+  professionalLinkLabel,
+  professionalLinkTarget,
 } from "../lib/cv"
 
 function lines(value: string, splitCommas = true) {
@@ -55,10 +73,10 @@ function Section({
 }
 
 function CvLink({ value }: { value: string }) {
-  const href = professionalLinkHref(value)
+  const href = professionalLinkHref(professionalLinkTarget(value))
   return href ? (
     <a href={href} className="underline underline-offset-2">
-      {value}
+      {professionalLinkLabel(value)}
     </a>
   ) : (
     value
@@ -66,22 +84,146 @@ function CvLink({ value }: { value: string }) {
 }
 
 export default function CvPage() {
+  const preferences = useCvPreferences()
   const { state } = useStore()
   const { t } = useI18n()
-  const repo = state.repository
+  const [curated, setCurated] = useState<CuratedCv | null>(() => {
+    try {
+      return parseCuratedCv(localStorage.getItem(CURATED_CV_KEY))
+    } catch {
+      return null
+    }
+  })
+  const documentLanguage = curated?.cvLanguage ?? state.cvLanguage
+  const cvT: typeof t = (key, values) => translate(documentLanguage, key, values)
+  const repo = curated?.repository ?? state.repository
   const { education, certifications, languages } = cvQualifications(repo)
   const previewSlotRef = useRef<HTMLDivElement>(null)
   const boundaryRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const [previewScale, setPreviewScale] = useState(1)
-  const [readFullSize, setReadFullSize] = useState(false)
   const [choices, setChoices] = useState<CvChoices>(() => {
     try {
-      return parseCvChoices(localStorage.getItem(CV_STORAGE_KEY))
+      return parseCvChoices(
+        curated?.choices
+          ? JSON.stringify(curated.choices)
+          : localStorage.getItem(CV_STORAGE_KEY),
+      )
     } catch {
       return parseCvChoices(null)
     }
   })
+  const [generation, setGeneration] = useState(false)
+  const [generationError, setGenerationError] = useState("")
+  const [pending, setPending] = useState<CvResult | null>(null)
+  const pendingRevision = useRef("")
+  const controller = useRef<AbortController | null>(null)
+  const requestId = useRef(0)
+  const liveFacts = useMemo(() => cvFacts(state.repository), [state.repository])
+  const revision = JSON.stringify([
+    state.repository,
+    choices,
+    curated,
+    state.cvLanguage,
+    state.apiKey,
+    preferences.density,
+  ])
+  const revisionRef = useRef(revision)
+  revisionRef.current = revision
+  useEffect(() => {
+    controller.current?.abort()
+    requestId.current++
+    setGeneration(false)
+    setPending(null)
+  }, [revision])
+  useEffect(
+    () => () => {
+      controller.current?.abort()
+      requestId.current++
+    },
+    [],
+  )
+  const cancelGeneration = () => {
+    controller.current?.abort()
+    requestId.current++
+    setGeneration(false)
+    setPending(null)
+  }
+  const startGeneration = async () => {
+    cancelGeneration()
+    const id = ++requestId.current
+    const sourceRevision = revisionRef.current
+    const abort = new AbortController()
+    controller.current = abort
+    setGeneration(true)
+    setGenerationError("")
+    try {
+      const result = await generateCv(
+        liveFacts,
+        state.cvLanguage,
+        state.apiKey,
+        abort.signal,
+        preferences.density,
+      )
+      if (
+        id === requestId.current &&
+        sourceRevision === revisionRef.current &&
+        !abort.signal.aborted
+      ) {
+        pendingRevision.current = sourceRevision
+        setPending(result)
+      }
+    } catch (error) {
+      if (id === requestId.current && !abort.signal.aborted)
+        setGenerationError(
+          error instanceof CvGenerationError ? error.code : "outage",
+        )
+    } finally {
+      if (id === requestId.current) setGeneration(false)
+    }
+  }
+  const acceptGeneration = () => {
+    if (!pending || pendingRevision.current !== revisionRef.current) {
+      setPending(null)
+      return
+    }
+    const saved = createCuratedCv(
+      state.repository,
+      liveFacts,
+      pending,
+      state.cvLanguage,
+      preferences.density,
+    )
+    // Preserve the valid previous document if storage cannot accept its replacement.
+    const nextChoices = { ...emptyCvChoices(), summary: saved.summary }
+    try {
+      localStorage.setItem(
+        CURATED_CV_KEY,
+        JSON.stringify({ ...saved, choices: nextChoices }),
+      )
+      setCurated(saved)
+      setChoices(nextChoices)
+      setPending(null)
+      setGenerationError("")
+    } catch {
+      setGenerationError("save")
+    }
+  }
+  const sufficient = liveFacts.some((f) =>
+    [
+      "skills",
+      "competencies",
+      "tools",
+      "description",
+      "responsibilities",
+      "achievements",
+      "highlights",
+      "degree",
+      "details",
+      "name",
+      "proficiency",
+    ].includes(f.field),
+  )
   const [fit, setFit] = useState({
     overflows: false,
     section: "",
@@ -94,7 +236,7 @@ export default function CvPage() {
     return () => document.body.classList.remove("cv-print-ready")
   }, [])
   const overflows = fit.overflows
-  const paperScale = readFullSize ? 1 : previewScale
+  const paperScale = previewScale
   const visible = (section: CvSection) =>
     !choices.hiddenSections.includes(section)
   const selectedEntry = (section: CvSection, id: string) =>
@@ -117,13 +259,24 @@ export default function CvPage() {
     }))
   useEffect(() => {
     try {
-      localStorage.setItem(CV_STORAGE_KEY, JSON.stringify(choices))
+      if (curated) {
+        localStorage.setItem(
+          CURATED_CV_KEY,
+          JSON.stringify({ ...curated, choices }),
+        )
+        // Compatibility mirror is secondary; the atomic document is authoritative.
+        try {
+          localStorage.setItem(CV_STORAGE_KEY, JSON.stringify(choices))
+        } catch {
+          /* primary document saved */
+        }
+      } else localStorage.setItem(CV_STORAGE_KEY, JSON.stringify(choices))
       setSaveError(false)
     } catch {
       setSaveError(true)
     }
-  }, [choices])
-  useEffect(() => setExportOverflow(false), [choices, repo, state.locale])
+  }, [choices, curated])
+  useEffect(() => setExportOverflow(false), [choices, repo, state.cvLanguage])
   const skills = useMemo(() => lines(repo.skills), [repo.skills])
   const competencies = useMemo(
     () => lines(repo.competencies),
@@ -197,10 +350,28 @@ export default function CvPage() {
       const key = bulletKey(section, id, field, index, line)
       return { key, source: line, text: choices.bulletWording[key] ?? line }
     })
+  const selectedWording = (
+    section: CvSection,
+    id: string,
+    field: string,
+    source: string,
+  ) =>
+    bulletLines(section, id, field, source)
+      .filter((b) => selectedBullet(b.key))
+      .map((b) => b.text)
+      .join("\n")
   const selectedExperience = experience
     .filter((item) => selectedEntry("experience", item.id))
     .map((item) => ({
-      item,
+      item: {
+        ...item,
+        description: selectedWording(
+          "experience",
+          item.id,
+          "description",
+          item.description,
+        ),
+      },
       bullets: [
         ...bulletLines(
           "experience",
@@ -219,7 +390,21 @@ export default function CvPage() {
   const selectedProjects = projects
     .filter((item) => selectedEntry("projects", item.id))
     .map((project) => ({
-      project,
+      project: {
+        ...project,
+        description: selectedWording(
+          "projects",
+          project.id,
+          "description",
+          project.description,
+        ),
+        technologies: selectedWording(
+          "projects",
+          project.id,
+          "technologies",
+          project.technologies,
+        ),
+      },
       bullets: bulletLines(
         "projects",
         project.id,
@@ -232,14 +417,42 @@ export default function CvPage() {
     ...(visible("tools") ? selectedTools : []),
   ]
   const sampleTechnicalSkills =
-    visible("skills") && !skills.length && !competencies.length && !tools.length
+    !curated &&
+    visible("skills") &&
+    !skills.length &&
+    !competencies.length &&
+    !tools.length
   const sampleExperience =
-    visible("experience") && !experience.length && !projects.length
+    !curated && visible("experience") && !experience.length && !projects.length
   const showExperience =
     sampleExperience ||
     (visible("experience") && selectedExperience.length > 0) ||
     (visible("projects") && selectedProjects.length > 0)
-  const summary = choices.summary ?? repo.careerGoals
+  const summary = choices.summary ?? curated?.summary ?? repo.careerGoals
+  const sectionHasContent = (section: CvSection) => {
+    switch (section) {
+      case "contact":
+        return contact.length > 0
+      case "summary":
+        return Boolean(summary.trim())
+      case "skills":
+        return skills.length > 0 || competencies.length > 0
+      case "tools":
+        return tools.length > 0
+      case "experience":
+        return experience.length > 0
+      case "projects":
+        return projects.length > 0
+      case "education":
+        return education.length > 0
+      case "certifications":
+        return certifications.length > 0
+      case "languages":
+        return languages.length > 0
+      case "additional":
+        return Boolean(repo.additionalInfo.trim())
+    }
+  }
   const sectionLabels: Record<CvSection, string> = {
     contact: t("cv.contact"),
     summary: t("cv.professionalProfile"),
@@ -349,7 +562,7 @@ export default function CvPage() {
                       })
                     }
                   >
-                    {t("cv.resetToProfile")}
+                    {t(curated ? "cv.resetToSnapshot" : "cv.resetToProfile")}
                   </button>
                 )}
               </div>
@@ -411,7 +624,7 @@ export default function CvPage() {
     observer.observe(content)
     measure()
     return () => observer.disconnect()
-  }, [choices, state.locale, repo, paperScale])
+  }, [choices, state.cvLanguage, repo, paperScale, preferences.fontSize])
 
   return (
     <div className="cv-page mx-auto max-w-6xl px-4 py-10 sm:px-6">
@@ -433,40 +646,34 @@ export default function CvPage() {
       <div className="cv-page-grid grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_330px]">
         <div
           ref={previewSlotRef}
-          className="cv-preview-slot order-2 min-w-0 overflow-x-auto lg:order-1"
+          className="cv-preview-slot order-2 min-w-0 lg:sticky lg:top-20 lg:order-1 lg:self-start"
         >
-          {previewScale < 0.99 && (
-            <button
-              type="button"
-              aria-pressed={readFullSize}
-              onClick={() => setReadFullSize((value) => !value)}
-              className="cv-preview-zoom mb-3 border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2 text-xs"
-            >
-              {t(readFullSize ? "cv.fitPage" : "cv.readFullSize")}
-            </button>
-          )}
           <CvPaper
-            label={t("cv.documentPreview")}
+            language={documentLanguage}
+            fontSize={preferences.fontSize}
+            label={cvT("cv.documentPreview")}
             scale={paperScale}
             overflows={overflows}
-            pageEndLabel={t("cv.pageOneEnds")}
+            pageEndLabel={cvT("cv.pageOneEnds")}
             boundaryRef={boundaryRef}
             contentRef={contentRef}
           >
             <header className="mb-7 border-b-2 border-[var(--color-accent)] pb-6">
-              {!repo.fullName.trim() && (
+              {!curated && !repo.fullName.trim() && (
                 <p
                   data-cv-sample="true"
                   className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-muted-fg)]"
                 >
-                  {t("common.sample")}
+                  {cvT("common.sample")}
                 </p>
               )}
               <h2
-                data-cv-sample={!repo.fullName.trim() || undefined}
+                data-cv-sample={
+                  (!curated && !repo.fullName.trim()) || undefined
+                }
                 className="break-words text-5xl font-bold uppercase leading-none tracking-tight [font-family:var(--font-display)]"
               >
-                {repo.fullName.trim() || t("cv.sampleName")}
+                {repo.fullName.trim() || (curated ? "" : cvT("cv.sampleName"))}
               </h2>
               {visible("contact") &&
                 contact.some((item) => selectedEntry("contact", item.id)) && (
@@ -488,10 +695,10 @@ export default function CvPage() {
                   </ul>
                 )}
             </header>
-            {visible("summary") && (
+            {visible("summary") && (summary.trim() || !curated) && (
               <Section
                 id="summary"
-                title={t("cv.professionalProfile")}
+                title={cvT("cv.professionalProfile")}
                 sample={!summary.trim()}
               >
                 <p className="whitespace-pre-wrap break-words text-[13px] leading-6">
@@ -499,9 +706,9 @@ export default function CvPage() {
                     (choices.summary === null && !repo.careerGoals.trim() && (
                       <>
                         <span className="text-[10px] uppercase tracking-widest text-[var(--color-muted-fg)]">
-                          {t("common.sample")} ·{" "}
+                          {cvT("common.sample")} ·{" "}
                         </span>
-                        {t("cv.sampleProfile")}
+                        {cvT("cv.sampleProfile")}
                       </>
                     ))}
                 </p>
@@ -510,7 +717,7 @@ export default function CvPage() {
             {(technicalSkills.length > 0 || sampleTechnicalSkills) && (
               <Section
                 id="skills"
-                title={t("cv.skillsCompetencies")}
+                title={cvT("cv.skillsCompetencies")}
                 sample={sampleTechnicalSkills}
               >
                 {technicalSkills.length > 0 ? (
@@ -524,9 +731,9 @@ export default function CvPage() {
                 ) : (
                   <p className="text-[12px] leading-5">
                     <span className="text-[10px] uppercase tracking-widest text-[var(--color-muted-fg)]">
-                      {t("common.sample")} ·{" "}
+                      {cvT("common.sample")} ·{" "}
                     </span>
-                    {t("cv.sampleSkills")}
+                    {cvT("cv.sampleSkills")}
                   </p>
                 )}
               </Section>
@@ -534,7 +741,7 @@ export default function CvPage() {
             {showExperience && (
               <Section
                 id="experience"
-                title={t("cv.experience")}
+                title={cvT("cv.experience")}
                 sample={sampleExperience}
               >
                 {visible("experience") && selectedExperience.length > 0 ? (
@@ -559,12 +766,12 @@ export default function CvPage() {
                             item.startDate && (item.endDate || item.current)
                               ? `${item.startDate} — ${
                                   item.current
-                                    ? t("common.present")
+                                    ? cvT("common.present")
                                     : item.endDate
                                 }`
                               : item.startDate ||
                                 (item.current
-                                  ? t("common.present")
+                                  ? cvT("common.present")
                                   : item.endDate),
                             item.location,
                           ]
@@ -589,18 +796,18 @@ export default function CvPage() {
                 ) : sampleExperience ? (
                   <div className="text-[12px] leading-5">
                     <p className="mb-2 text-[10px] uppercase tracking-widest text-[var(--color-muted-fg)]">
-                      {t("common.sampleContent")}
+                      {cvT("common.sampleContent")}
                     </p>
-                    <h4 className="font-semibold">{t("cv.sampleJobTitle")}</h4>
+                    <h4 className="font-semibold">{cvT("cv.sampleJobTitle")}</h4>
                     <p className="mt-1 text-[var(--color-muted-fg)]">
-                      2021 — {t("common.present")}
+                      2021 — {cvT("common.present")}
                     </p>
                     <p className="mt-2">
-                      {t("cv.sampleExperienceDescription")}
+                      {cvT("cv.sampleExperienceDescription")}
                     </p>
                     <ul className="mt-2 list-disc space-y-1 pl-5">
-                      <li>{t("cv.sampleAchievementOne")}</li>
-                      <li>{t("cv.sampleAchievementTwo")}</li>
+                      <li>{cvT("cv.sampleAchievementOne")}</li>
+                      <li>{cvT("cv.sampleAchievementTwo")}</li>
                     </ul>
                   </div>
                 ) : null}
@@ -643,7 +850,7 @@ export default function CvPage() {
             )}
             {visible("education") &&
               education.some((item) => selectedEntry("education", item.id)) && (
-                <Section id="education" title={t("cv.education")}>
+                <Section id="education" title={cvT("cv.education")}>
                   {education
                     .filter((item) => selectedEntry("education", item.id))
                     .map((item) => (
@@ -684,7 +891,7 @@ export default function CvPage() {
               certifications.some((item) =>
                 selectedEntry("certifications", item.id),
               ) && (
-                <Section id="certifications" title={t("cv.certifications")}>
+                <Section id="certifications" title={cvT("cv.certifications")}>
                   {certifications
                     .filter((item) => selectedEntry("certifications", item.id))
                     .map((item) => (
@@ -715,7 +922,7 @@ export default function CvPage() {
               )}
             {visible("languages") &&
               languages.some((item) => selectedEntry("languages", item.id)) && (
-                <Section id="languages" title={t("cv.languages")}>
+                <Section id="languages" title={cvT("cv.languages")}>
                   <ul className="space-y-1 text-[12px] leading-5">
                     {languages
                       .filter((item) => selectedEntry("languages", item.id))
@@ -730,7 +937,7 @@ export default function CvPage() {
                 </Section>
               )}
             {visible("additional") && repo.additionalInfo.trim() && (
-              <Section id="additional" title={t("cv.additional")}>
+              <Section id="additional" title={cvT("cv.additional")}>
                 <p className="whitespace-pre-line break-words text-[12px] leading-5 text-[var(--color-muted-fg)]">
                   {repo.additionalInfo}
                 </p>
@@ -738,36 +945,221 @@ export default function CvPage() {
             )}
           </CvPaper>
         </div>
-        <aside className="cv-controls order-1 lg:order-2 lg:sticky lg:top-24">
+        <aside className="cv-controls order-1 lg:order-2">
           <div className="mb-4 border border-[var(--color-border)] bg-[var(--color-card)] p-5">
-            <h2 className="mb-2 text-xs uppercase tracking-[0.2em] [font-family:var(--font-mono)]">
+            <button
+              type="button"
+              onClick={exportPdf}
+              className="w-full bg-[var(--color-accent)] px-4 py-3 text-xs font-semibold uppercase tracking-widest text-white transition-opacity hover:opacity-85"
+              style={{ fontFamily: "var(--font-mono)" }}
+            >
+              <svg
+                aria-hidden="true"
+                className="mr-2 inline-block h-4 w-4 align-[-3px]"
+                viewBox="0 0 20 22"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+              >
+                <path d="M4 1.5h8l4 4V19a1.5 1.5 0 0 1-1.5 1.5h-10A1.5 1.5 0 0 1 3 19V3a1.5 1.5 0 0 1 1-1.5Z" />
+                <path d="M12 1.5V6h4M6 15.5h8M6 12.5h8" />
+              </svg>
+              {t("results.savePdf")}
+            </button>
+            {exportOverflow && (
+              <p
+                role="alert"
+                className="mt-3 border-l-2 border-[var(--color-accent)] pl-3 text-xs leading-5"
+              >
+                {t("cv.exportOverflow")}
+              </p>
+            )}
+            <button
+              type="button"
+              disabled={!sufficient || !state.apiKey || generation}
+              onClick={startGeneration}
+              className="mt-4 w-full bg-[var(--color-fg)] px-4 py-3 text-xs font-semibold uppercase tracking-widest text-[var(--color-card)] transition-opacity hover:opacity-85 disabled:opacity-50"
+              style={{ fontFamily: "var(--font-mono)" }}
+            >
+              <svg
+                aria-hidden="true"
+                className="mr-2 inline-block h-4 w-4 align-[-3px]"
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+              >
+                <path d="m10 1.8 1.5 4.1 4.2-1.4-1.4 4.2 4 1.3-4 1.5 1.4 4.1-4.2-1.4-1.5 4-1.3-4-4.2 1.4 1.4-4.1-4-1.5 4-1.3-1.4-4.2 4.2 1.4L10 1.8Z" />
+                <path d="M10 7v6M7 10h6" />
+              </svg>
+              {t(generation ? "cv.generating" : "cv.generate")}
+            </button>
+          </div>
+          <div className="mb-4 border border-[var(--color-border)] bg-[var(--color-card)] p-5">
+            <p className="mb-4 text-xs uppercase tracking-[0.2em] text-[var(--color-muted-fg)] [font-family:var(--font-mono)]">
+              {t("cv.previewSettings")}
+            </p>
+            <dl className="space-y-4 text-xs">
+              <div>
+                <dt className="mb-1 text-[var(--color-muted-fg)]">
+                  {t("cv.template")}
+                </dt>
+                <dd>{t("cv.atsCv")}</dd>
+              </div>
+              <div>
+                <dt className="mb-1 text-[var(--color-muted-fg)]">
+                  {t("cv.pageFormat")}
+                </dt>
+                <dd>{t("cv.a4")}</dd>
+              </div>
+              <div>
+                <dt className="mb-1 text-[var(--color-muted-fg)]">
+                  {t("cv.numberOfPages")}
+                </dt>
+                <dd>
+                  {overflows ? 1 + Math.ceil(fit.overflowPercent / 100) : 1}
+                </dd>
+              </div>
+              <div>
+                <dt className="mb-2 text-[var(--color-muted-fg)]">
+                  {t("cv.accentColor")}
+                </dt>
+                <dd className="flex items-center gap-2">
+                  <span className="inline-block h-4 w-4 border border-[var(--color-border)] bg-[var(--color-accent)]" />
+                  {t("cv.red")}
+                </dd>
+              </div>
+              <div>
+                <dt className="mb-2 text-[var(--color-muted-fg)]">
+                  {t("language.cv")}
+                </dt>
+                <dd>
+                  <LanguageSelector kind="cv" />
+                </dd>
+              </div>
+            </dl>
+            <div className="mt-4">
+              <CvFontSizeControl
+                fontSize={preferences.fontSize}
+                onChange={preferences.setFontSize}
+                saveError={preferences.saveError}
+              />
+            </div>
+          </div>
+          <CvDensityControl
+            density={preferences.density}
+            onChange={preferences.setDensity}
+            appliedDensity={curated?.density ?? null}
+            saveError={preferences.saveError}
+          >
+            <div data-cv-generation>
+            {!state.apiKey && (
+              <p className="mb-3 text-xs">{t("cv.generateKey")}</p>
+            )}
+            {curated && (
+              <p className="mb-3 text-xs">{t("cv.generatedSnapshot")}</p>
+            )}
+            {generation && (
+              <p role="status" className="mt-2 text-xs">
+                {t("cv.generateProgress")}
+              </p>
+            )}
+            {(generation || pending) && (
+              <button
+                type="button"
+                onClick={cancelGeneration}
+                className="mt-2 text-xs underline"
+              >
+                {t("cv.generateCancel")}
+              </button>
+            )}
+            {generationError && (
+              <p role="alert" className="mt-3 text-xs">
+                {t(
+                  ({
+                    input: "cv.generateErrorInput",
+                    key: "cv.generateKey",
+                    rate_limit: "cv.generateErrorRate",
+                    timeout: "cv.generateErrorTimeout",
+                    invalid_output: "cv.generateErrorOutput",
+                    save: "cv.saveError",
+                  } as const)[(generationError as "input")] ||
+                    "cv.generateErrorOutage",
+                )}
+              </p>
+            )}
+            {pending && (
+              <div className="mt-4 border-t border-[var(--color-border)] pt-3">
+                <p className="mb-2 text-xs font-semibold">
+                  {t("cv.generateReview")}
+                </p>
+                <p className="mb-3 text-xs leading-5" data-generated-summary>
+                  {pending.summary.map((s) => s.text).join(" ")}
+                </p>
+                <details className="mb-3 text-xs leading-5">
+                  <summary>
+                    {t("cv.generateSources", {
+                      count: pending.selected.length,
+                    })}
+                  </summary>
+                  <ul className="list-disc pl-4">
+                    {liveFacts
+                      .filter((f) => pending.selected.includes(f.id))
+                      .map((f) => (
+                        <li key={f.id}>
+                          {sectionLabels[(f.section as CvSection)]}: {f.text}
+                          {pending.wording?.[f.id] && (
+                            <p className="mt-1 font-semibold">
+                              {t("cv.proposedWording")}: {pending.wording[f.id]}
+                            </p>
+                          )}
+                          {pending.summary
+                            .filter((s) => s.sourceId === f.id)
+                            .map((s, index) => (
+                              <p key={index} className="mt-1 font-semibold">
+                                {t("cv.professionalProfile")}: {s.text}
+                              </p>
+                            ))}
+                        </li>
+                      ))}
+                  </ul>
+                </details>
+                <p className="mb-3 text-xs leading-5">
+                  {t("cv.generateReplaceNote")}
+                </p>
+                <button
+                  type="button"
+                  onClick={acceptGeneration}
+                  className="w-full bg-[var(--color-accent)] p-2 text-xs text-white"
+                >
+                  {t("cv.generateAccept")}
+                </button>
+              </div>
+            )}
+            </div>
+          </CvDensityControl>
+          <div className="mb-4 border border-[var(--color-border)] bg-[var(--color-card)] p-5">
+            <h2 className="mb-4 text-xs uppercase tracking-[0.2em] text-[var(--color-muted-fg)] [font-family:var(--font-mono)]">
               {t("cv.curation")}
             </h2>
             <p className="mb-4 text-xs leading-5 text-[var(--color-muted-fg)]">
               {t("cv.curationIntro")}
             </p>
-            <p className="mb-4 text-xs leading-5 text-[var(--color-muted-fg)]">
-              {t("cv.groupingNote")}
-            </p>
-            <p
-              role="status"
-              className={
-                overflows
-                  ? "mb-4 border-l-2 border-[var(--color-accent)] pl-3 text-xs leading-5"
-                  : "mb-4 text-xs leading-5"
-              }
-            >
-              {overflows
-                ? t("cv.fitAttention", {
-                    section:
-                      fit.section === "header"
-                        ? t("cv.header")
-                        : sectionLabels[(fit.section as CvSection)] ||
-                          t("cv.header"),
-                    percent: fit.overflowPercent,
-                  })
-                : t("cv.fits")}
-            </p>
+            {overflows && (
+              <p
+                role="status"
+                className="mb-4 border-l-2 border-[var(--color-accent)] pl-3 text-xs leading-5"
+              >
+                {t("cv.fitAttention", {
+                  section:
+                    fit.section === "header"
+                      ? t("cv.header")
+                      : sectionLabels[(fit.section as CvSection)] ||
+                        t("cv.header"),
+                  percent: fit.overflowPercent,
+                })}
+              </p>
+            )}
             {saveError && (
               <p
                 role="alert"
@@ -782,13 +1174,37 @@ export default function CvPage() {
                   key={section}
                   className="border-t border-[var(--color-border)] pt-2"
                 >
-                  <label className="flex gap-2 text-xs font-semibold leading-5">
+                  <label
+                    className={`flex items-center gap-2 text-xs font-semibold leading-5 ${
+                      sectionHasContent(section)
+                        ? ""
+                        : "text-[#D9A300]"
+                    }`}
+                    title={
+                      sectionHasContent(section)
+                        ? undefined
+                        : t("cv.missingContent")
+                    }
+                  >
                     <input
                       type="checkbox"
                       checked={visible(section)}
                       onChange={() => toggle("hiddenSections", section)}
                     />
-                    {sectionLabels[section]}
+                    <span className="flex-1">{sectionLabels[section]}</span>
+                    {!sectionHasContent(section) && (
+                      <svg
+                        aria-hidden="true"
+                        className="h-4 w-4 shrink-0"
+                        viewBox="0 0 20 20"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                      >
+                        <path d="M10 2.5 18 17H2L10 2.5Z" />
+                        <path d="M10 7v4.5M10 14.5h.01" />
+                      </svg>
+                    )}
                   </label>
                   {section === "summary" && visible(section) && (
                     <div className="ml-5 mt-2">
@@ -821,7 +1237,11 @@ export default function CvPage() {
                             }))
                           }
                         >
-                          {t("cv.resetToProfile")}
+                          {t(
+                            curated
+                              ? "cv.resetToSnapshot"
+                              : "cv.resetToProfile",
+                          )}
                         </button>
                       )}
                     </div>
@@ -865,6 +1285,12 @@ export default function CvPage() {
                           ...bulletLines(
                             section,
                             item.id,
+                            "description",
+                            item.description,
+                          ),
+                          ...bulletLines(
+                            section,
+                            item.id,
                             "responsibilities",
                             item.responsibilities,
                           ),
@@ -884,12 +1310,26 @@ export default function CvPage() {
                         section,
                         item.id,
                         item.name || t("cv.selectedProjects"),
-                        bulletLines(
-                          section,
-                          item.id,
-                          "highlights",
-                          item.highlights,
-                        ),
+                        [
+                          ...bulletLines(
+                            section,
+                            item.id,
+                            "description",
+                            item.description,
+                          ),
+                          ...bulletLines(
+                            section,
+                            item.id,
+                            "technologies",
+                            item.technologies,
+                          ),
+                          ...bulletLines(
+                            section,
+                            item.id,
+                            "highlights",
+                            item.highlights,
+                          ),
+                        ],
                       ),
                     )}
                   {visible(section) &&
@@ -920,60 +1360,7 @@ export default function CvPage() {
               {t("cv.cvOnlyNote")}
             </p>
           </div>
-          <div className="mb-4 border border-[var(--color-border)] bg-[var(--color-card)] p-5">
-            <button
-              type="button"
-              onClick={exportPdf}
-              className="w-full bg-[var(--color-fg)] px-4 py-3 text-xs font-semibold uppercase tracking-widest text-[var(--color-card)]"
-            >
-              {t("cv.exportPdf")}
-            </button>
-            <p className="mt-3 text-xs leading-5 text-[var(--color-muted-fg)]">
-              {t("cv.exportHelp")}
-            </p>
-            {exportOverflow && (
-              <p
-                role="alert"
-                className="mt-3 border-l-2 border-[var(--color-accent)] pl-3 text-xs leading-5"
-              >
-                {t("cv.exportOverflow")}
-              </p>
-            )}
-            <p className="mt-3 text-[10px] leading-5 text-[var(--color-muted-fg)]">
-              {t("cv.parserNote")}
-            </p>
-          </div>
-          <div className="border border-[var(--color-border)] bg-[var(--color-card)] p-5">
-            <p className="mb-4 text-xs uppercase tracking-[0.2em] text-[var(--color-muted-fg)] [font-family:var(--font-mono)]">
-              {t("cv.previewSettings")}
-            </p>
-            <dl className="space-y-4 text-xs">
-              <div>
-                <dt className="mb-1 text-[var(--color-muted-fg)]">
-                  {t("cv.template")}
-                </dt>
-                <dd>{t("cv.atsCv")}</dd>
-              </div>
-              <div>
-                <dt className="mb-1 text-[var(--color-muted-fg)]">
-                  {t("cv.pageFormat")}
-                </dt>
-                <dd>{overflows ? t("cv.a4Overflow") : t("cv.a4Pages")}</dd>
-              </div>
-              <div>
-                <dt className="mb-2 text-[var(--color-muted-fg)]">
-                  {t("cv.accentColor")}
-                </dt>
-                <dd className="flex items-center gap-2">
-                  <span className="inline-block h-4 w-4 border border-[var(--color-border)] bg-[var(--color-accent)]" />
-                  {t("cv.red")}
-                </dd>
-              </div>
-            </dl>
-            <p className="mt-4 text-[10px] leading-5 text-[var(--color-muted-fg)]">
-              {t("cv.settingsNote")}
-            </p>
-          </div>
+          {/* Profile Coverage is temporarily hidden while the CV content controls are consolidated.
           <div className="mt-4 border border-[var(--color-border)] p-5">
             <p className="mb-3 text-xs uppercase tracking-[0.2em] text-[var(--color-muted-fg)] [font-family:var(--font-mono)]">
               {t("cv.profileCoverage")}
@@ -1006,6 +1393,7 @@ export default function CvPage() {
               {t("cv.editProfileNote")}
             </p>
           </div>
+          */}
         </aside>
       </div>
     </div>

@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "mode": "live",
+  "provider": "jev",
+  "variant": "explicit",
+  "model": "jev-1.13.0",
+  "runId": "2026-10-08T00:35:28.019Z",
+  "classifierDeadlineMs": 5000,
+  "reverse": false,
+  "band": [
+    0.2,
+    0.8
+  ],
+  "corpusHash": "81702e1354d4c5878ba00c9744fddf5467d167403de01c02c3202f0b18623fa4",
+  "questionHash": "e54735260494821accfba5b0f3caebba851c0693b56bcb52815d87adcf2000e1",
+  "records": [
+    {
+      "caseId": "en-complete-job-timing",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1086,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "job_with_context",
+          "confidence": 0.99,
+          "probabilities": {
+            "job_with_context": 0.99,
+            "job_title_only": 0,
+            "relevant_but_insufficient": 0.01,
+            "irrelevant": 0,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.95,
+          "probabilities": {
+            "none": 0.97,
+            "uncertain": 0,
+            "detected": 0.03
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 488.9577770000001,
+      "workflow": {
+        "kind": "application_draft",
+        "baselineMs": 3109.166101,
+        "validatedTotalMs": 3396.464769
+      },
+      "workflowAttempt": {
+        "kind": "application_draft",
+        "baseline": {
+          "status": 200,
+          "ok": true
+        },
+        "validated": {
+          "status": 200,
+          "ok": true
+        },
+        "baselineMs": 3109.166101,
+        "validatedTotalMs": 3396.464769
+      }
+    }
+  ],
+  "measurementScope": "local HTTP probe with browser-equivalent deadline; not live UI or deployment"
+}

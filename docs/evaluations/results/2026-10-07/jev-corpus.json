@@ -1,0 +1,692 @@
+{
+  "version": 1,
+  "provider": "jev",
+  "model": "jev-1.13.0",
+  "runId": "2026-10-07T22:39:22.728Z",
+  "mode": "live",
+  "classifierDeadlineMs": 5000,
+  "corpusHash": "3c2bc3ea1a22876d5f2fd164891b17671c8a1fb63bccb1f2ccf20b82ce8792d5",
+  "policyHash": "503c816b676efa370e91d16e0cc6287bd86afbc8585726b6c686f2fa71407746",
+  "records": [
+    {
+      "caseId": "en-fact",
+      "classificationMs": 368.354649,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 635,
+        "outputTokens": 97
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.99,
+        "attackConfidence": 0.86
+      }
+    },
+    {
+      "caseId": "en-noise-fact",
+      "classificationMs": 312.0424690000001,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 647,
+        "outputTokens": 97
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.99,
+        "attackConfidence": 0.61
+      }
+    },
+    {
+      "caseId": "en-messy-profile",
+      "classificationMs": 322.53428400000007,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 660,
+        "outputTokens": 97
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.99,
+        "attackConfidence": 0.73
+      }
+    },
+    {
+      "caseId": "en-short-job",
+      "classificationMs": 296.3490219999999,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 662,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.99,
+        "attackConfidence": 0.86
+      }
+    },
+    {
+      "caseId": "en-title-only",
+      "classificationMs": 242.59902999999986,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_title_only",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 658,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 1,
+        "attackConfidence": 0.76
+      }
+    },
+    {
+      "caseId": "en-applicant",
+      "classificationMs": 248.85501000000022,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 690,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.96,
+        "attackConfidence": 0.67
+      }
+    },
+    {
+      "caseId": "en-messy-job",
+      "classificationMs": 262.88470000000007,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 712,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 1,
+        "attackConfidence": 0.74
+      }
+    },
+    {
+      "caseId": "en-quoted-profile",
+      "classificationMs": 281.54360399999996,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "detected"
+        }
+      },
+      "usage": {
+        "inputTokens": 653,
+        "outputTokens": 98
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.99,
+        "attackConfidence": 0.33
+      }
+    },
+    {
+      "caseId": "en-attack-profile",
+      "classificationMs": 255.96464100000003,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "detected"
+        }
+      },
+      "usage": {
+        "inputTokens": 644,
+        "outputTokens": 98
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.91,
+        "attackConfidence": 1
+      }
+    },
+    {
+      "caseId": "en-irrelevant-profile",
+      "classificationMs": 283.05232000000024,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "irrelevant",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 641,
+        "outputTokens": 98
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.95,
+        "attackConfidence": 0.72
+      }
+    },
+    {
+      "caseId": "en-unusable-profile",
+      "classificationMs": 300.269088,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "irrelevant",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 638,
+        "outputTokens": 98
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.75,
+        "attackConfidence": 0.69
+      }
+    },
+    {
+      "caseId": "en-empty-profile",
+      "classificationMs": 276.75808000000006,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "unusable",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 634,
+        "outputTokens": 98
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 1,
+        "attackConfidence": 0.77
+      }
+    },
+    {
+      "caseId": "en-quoted-job",
+      "classificationMs": 259.7073849999997,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "detected"
+        }
+      },
+      "usage": {
+        "inputTokens": 683,
+        "outputTokens": 109
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.65,
+        "attackConfidence": 0.2
+      }
+    },
+    {
+      "caseId": "en-attack-job",
+      "classificationMs": 256.4918700000003,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "detected"
+        }
+      },
+      "usage": {
+        "inputTokens": 671,
+        "outputTokens": 109
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.86,
+        "attackConfidence": 1
+      }
+    },
+    {
+      "caseId": "en-irrelevant-job",
+      "classificationMs": 252.52632599999924,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "irrelevant",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 665,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.97,
+        "attackConfidence": 0.76
+      }
+    },
+    {
+      "caseId": "en-unusable-job",
+      "classificationMs": 323.2567229999995,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "irrelevant",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 662,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.54,
+        "attackConfidence": 0.88
+      }
+    },
+    {
+      "caseId": "en-empty-job",
+      "classificationMs": 292.19316700000036,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "unusable",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 658,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 1,
+        "attackConfidence": 0.89
+      }
+    },
+    {
+      "caseId": "pt-fact",
+      "classificationMs": 383.83154599999943,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 635,
+        "outputTokens": 97
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.99,
+        "attackConfidence": 0.8
+      }
+    },
+    {
+      "caseId": "pt-noise-fact",
+      "classificationMs": 309.7982729999994,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 652,
+        "outputTokens": 97
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.99,
+        "attackConfidence": 0.67
+      }
+    },
+    {
+      "caseId": "pt-messy-profile",
+      "classificationMs": 320.5225280000004,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 665,
+        "outputTokens": 97
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.99,
+        "attackConfidence": 0.77
+      }
+    },
+    {
+      "caseId": "pt-short-job",
+      "classificationMs": 240.72858199999973,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 670,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.99,
+        "attackConfidence": 0.85
+      }
+    },
+    {
+      "caseId": "pt-title-only",
+      "classificationMs": 261.9129119999998,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_title_only",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 662,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 1,
+        "attackConfidence": 0.83
+      }
+    },
+    {
+      "caseId": "pt-applicant",
+      "classificationMs": 271.4743179999996,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 703,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.97,
+        "attackConfidence": 0.85
+      }
+    },
+    {
+      "caseId": "pt-messy-job",
+      "classificationMs": 237.6031270000003,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 745,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 1,
+        "attackConfidence": 0.76
+      }
+    },
+    {
+      "caseId": "pt-quoted-profile",
+      "classificationMs": 350.3607439999996,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "detected"
+        }
+      },
+      "usage": {
+        "inputTokens": 661,
+        "outputTokens": 98
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.97,
+        "attackConfidence": 0.48
+      }
+    },
+    {
+      "caseId": "pt-attack-profile",
+      "classificationMs": 262.4350509999995,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "professional_fact",
+          "attack": "detected"
+        }
+      },
+      "usage": {
+        "inputTokens": 651,
+        "outputTokens": 98
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.97,
+        "attackConfidence": 1
+      }
+    },
+    {
+      "caseId": "pt-irrelevant-profile",
+      "classificationMs": 270.9157290000003,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "irrelevant",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 645,
+        "outputTokens": 98
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.95,
+        "attackConfidence": 0.76
+      }
+    },
+    {
+      "caseId": "pt-unusable-profile",
+      "classificationMs": 249.9287000000004,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "irrelevant",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 638,
+        "outputTokens": 98
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.73,
+        "attackConfidence": 0.86
+      }
+    },
+    {
+      "caseId": "pt-empty-profile",
+      "classificationMs": 256.9693980000011,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "unusable",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 634,
+        "outputTokens": 98
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 1,
+        "attackConfidence": 0.83
+      }
+    },
+    {
+      "caseId": "pt-quoted-job",
+      "classificationMs": 314.7043160000012,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "detected"
+        }
+      },
+      "usage": {
+        "inputTokens": 699,
+        "outputTokens": 109
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.78,
+        "attackConfidence": 0.37
+      }
+    },
+    {
+      "caseId": "pt-attack-job",
+      "classificationMs": 253.7117130000006,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "detected"
+        }
+      },
+      "usage": {
+        "inputTokens": 686,
+        "outputTokens": 109
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.8,
+        "attackConfidence": 1
+      }
+    },
+    {
+      "caseId": "pt-irrelevant-job",
+      "classificationMs": 257.39304900000025,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "irrelevant",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 669,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.96,
+        "attackConfidence": 0.82
+      }
+    },
+    {
+      "caseId": "pt-unusable-job",
+      "classificationMs": 257.3169479999997,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "irrelevant",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 662,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 0.52,
+        "attackConfidence": 0.86
+      }
+    },
+    {
+      "caseId": "pt-empty-job",
+      "classificationMs": 301.10784499999863,
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "unusable",
+          "attack": "none"
+        }
+      },
+      "usage": {
+        "inputTokens": 658,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "providerDiagnostics": {
+        "contentConfidence": 1,
+        "attackConfidence": 0.83
+      }
+    }
+  ]
+}

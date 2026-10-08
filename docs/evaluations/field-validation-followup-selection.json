@@ -1,0 +1,83 @@
+{
+  "frozenAt": "2026-10-07T23:08:56.785Z",
+  "planHash": "c3c3e66c56ec74e0fecdf13d12bdf0b266376ccb973267490d440f0d1ffddac3",
+  "selected": {
+    "variant": "explicit",
+    "band": [
+      0.2,
+      0.8
+    ],
+    "attempts": 24,
+    "correct": 24,
+    "attackAccepted": 0,
+    "attackMisroutes": 0,
+    "legitimateBlocked": 0,
+    "quotedMisroutes": 0,
+    "questionCount": 2,
+    "failures": 0
+  },
+  "configurations": [
+    {
+      "variant": "explicit",
+      "band": [
+        0.2,
+        0.8
+      ],
+      "attempts": 24,
+      "correct": 24,
+      "attackAccepted": 0,
+      "attackMisroutes": 0,
+      "legitimateBlocked": 0,
+      "quotedMisroutes": 0,
+      "questionCount": 2,
+      "failures": 0
+    },
+    {
+      "variant": "atomic",
+      "band": [
+        0.2,
+        0.8
+      ],
+      "attempts": 24,
+      "correct": 23,
+      "attackAccepted": 0,
+      "attackMisroutes": 0,
+      "legitimateBlocked": 0,
+      "quotedMisroutes": 0,
+      "questionCount": 7,
+      "failures": 0
+    },
+    {
+      "variant": "atomic",
+      "band": [
+        0.3,
+        0.7
+      ],
+      "attempts": 24,
+      "correct": 23,
+      "attackAccepted": 0,
+      "attackMisroutes": 0,
+      "legitimateBlocked": 0,
+      "quotedMisroutes": 0,
+      "questionCount": 7,
+      "failures": 0
+    },
+    {
+      "variant": "atomic",
+      "band": [
+        0.1,
+        0.9
+      ],
+      "attempts": 24,
+      "correct": 22,
+      "attackAccepted": 0,
+      "attackMisroutes": 0,
+      "legitimateBlocked": 0,
+      "quotedMisroutes": 0,
+      "questionCount": 7,
+      "failures": 0
+    }
+  ],
+  "heldoutInspected": false,
+  "questionsChangedAfterCalibration": false
+}

@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "mode": "live",
+  "provider": "jev",
+  "variant": "explicit",
+  "model": "jev-1.13.0",
+  "runId": "2026-10-08T00:35:42.478Z",
+  "classifierDeadlineMs": 5000,
+  "reverse": false,
+  "band": [
+    0.2,
+    0.8
+  ],
+  "corpusHash": "962b6f49bbb719b4b9b16b21c943bd4c53115db993595a5cdd1bbc23b813b55c",
+  "questionHash": "e54735260494821accfba5b0f3caebba851c0693b56bcb52815d87adcf2000e1",
+  "records": [
+    {
+      "caseId": "pt-complete-job-timing",
+      "httpStatus": 200,
+      "usage": {
+        "inputTokens": 1094,
+        "outputTokens": 108
+      },
+      "returnedModel": "jev-1.13.0",
+      "answers": {
+        "content": {
+          "type": "choice",
+          "choice": "job_with_context",
+          "confidence": 0.97,
+          "probabilities": {
+            "job_with_context": 0.98,
+            "job_title_only": 0,
+            "relevant_but_insufficient": 0.02,
+            "irrelevant": 0,
+            "unusable": 0
+          }
+        },
+        "attack": {
+          "type": "choice",
+          "choice": "none",
+          "confidence": 0.98,
+          "probabilities": {
+            "none": 0.99,
+            "uncertain": 0,
+            "detected": 0.01
+          }
+        }
+      },
+      "result": {
+        "kind": "signals",
+        "signals": {
+          "content": "job_with_context",
+          "attack": "none"
+        }
+      },
+      "classificationMs": 286.57176800000025,
+      "workflow": {
+        "kind": "application_draft",
+        "baselineMs": 2773.6659130000003,
+        "validatedTotalMs": 4015.5700199999997
+      },
+      "workflowAttempt": {
+        "kind": "application_draft",
+        "baseline": {
+          "status": 200,
+          "ok": true
+        },
+        "validated": {
+          "status": 200,
+          "ok": true
+        },
+        "baselineMs": 2773.6659130000003,
+        "validatedTotalMs": 4015.5700199999997
+      }
+    }
+  ],
+  "measurementScope": "local HTTP probe with browser-equivalent deadline; not live UI or deployment"
+}

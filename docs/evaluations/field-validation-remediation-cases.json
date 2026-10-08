@@ -1,0 +1,214 @@
+[
+  {
+    "id": "en-java",
+    "path": "/api/profile/ingest",
+    "body": {
+      "input": "I use Java",
+      "profile": {
+        "careerGoals": "",
+        "skills": "",
+        "competencies": "",
+        "tools": "",
+        "employmentStatus": "",
+        "currentSalary": "",
+        "desiredSalary": "",
+        "additionalInfo": "",
+        "fullName": "",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "professionalLinks": "",
+        "experience": [],
+        "projects": [],
+        "education": [],
+        "certifications": [],
+        "languages": []
+      }
+    },
+    "expected": "One editable Java skill addition; no invented facts; no unresolved claims"
+  },
+  {
+    "id": "pt-java",
+    "path": "/api/profile/ingest",
+    "body": {
+      "input": "Eu uso Java",
+      "profile": {
+        "careerGoals": "",
+        "skills": "",
+        "competencies": "",
+        "tools": "",
+        "employmentStatus": "",
+        "currentSalary": "",
+        "desiredSalary": "",
+        "additionalInfo": "",
+        "fullName": "",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "professionalLinks": "",
+        "experience": [],
+        "projects": [],
+        "education": [],
+        "certifications": [],
+        "languages": []
+      }
+    },
+    "expected": "One editable Java skill addition; no invented facts; no unresolved claims"
+  },
+  {
+    "id": "en-noisy",
+    "path": "/api/profile/ingest",
+    "body": {
+      "input": "Shopping: bread, apples. I use Java. Weekend: walking.",
+      "profile": {
+        "careerGoals": "",
+        "skills": "React",
+        "competencies": "",
+        "tools": "",
+        "employmentStatus": "",
+        "currentSalary": "",
+        "desiredSalary": "",
+        "additionalInfo": "",
+        "fullName": "",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "professionalLinks": "",
+        "experience": [],
+        "projects": [],
+        "education": [],
+        "certifications": [],
+        "languages": []
+      }
+    },
+    "expected": "One editable Java skill addition; no invented facts; no unresolved claims"
+  },
+  {
+    "id": "pt-noisy",
+    "path": "/api/profile/ingest",
+    "body": {
+      "input": "Compras: pão, maçãs. Eu uso Java. Fim de semana: caminhada.",
+      "profile": {
+        "careerGoals": "",
+        "skills": "React",
+        "competencies": "",
+        "tools": "",
+        "employmentStatus": "",
+        "currentSalary": "",
+        "desiredSalary": "",
+        "additionalInfo": "",
+        "fullName": "",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "professionalLinks": "",
+        "experience": [],
+        "projects": [],
+        "education": [],
+        "certifications": [],
+        "languages": []
+      }
+    },
+    "expected": "One editable Java skill addition; no invented facts; no unresolved claims"
+  },
+  {
+    "id": "en-duplicate",
+    "path": "/api/profile/ingest",
+    "body": {
+      "input": "I use Java",
+      "profile": {
+        "careerGoals": "",
+        "skills": "Java",
+        "competencies": "",
+        "tools": "",
+        "employmentStatus": "",
+        "currentSalary": "",
+        "desiredSalary": "",
+        "additionalInfo": "",
+        "fullName": "",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "professionalLinks": "",
+        "experience": [],
+        "projects": [],
+        "education": [],
+        "certifications": [],
+        "languages": []
+      }
+    },
+    "expected": "No duplicate addition"
+  },
+  {
+    "id": "en-large",
+    "path": "/api/profile/ingest",
+    "body": {
+      "input": "Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. Weekend plans: walking in the park. I use Java.",
+      "profile": {
+        "careerGoals": "",
+        "skills": "React",
+        "competencies": "",
+        "tools": "",
+        "employmentStatus": "",
+        "currentSalary": "",
+        "desiredSalary": "",
+        "additionalInfo": "",
+        "fullName": "",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "professionalLinks": "",
+        "experience": [],
+        "projects": [],
+        "education": [],
+        "certifications": [],
+        "languages": []
+      }
+    },
+    "expected": "One editable Java skill addition; no invented facts; no unresolved claims"
+  },
+  {
+    "id": "pt-short",
+    "path": "/api/application-draft",
+    "body": {
+      "jobPosting": "Precisamos de alguém para desenvolver APIs em Java.",
+      "repository": {
+        "careerGoals": "",
+        "skills": "Java",
+        "competencies": "",
+        "tools": "",
+        "employmentStatus": "",
+        "currentSalary": "",
+        "desiredSalary": "",
+        "additionalInfo": "",
+        "experience": [],
+        "projects": []
+      },
+      "confirmedQualifications": [],
+      "cvLanguage": "pt-BR"
+    },
+    "expected": "Preserve unknown title/company for short posting; no fabricated Profile qualifications or answers"
+  },
+  {
+    "id": "en-complete",
+    "path": "/api/application-draft",
+    "body": {
+      "jobPosting": "Aster Labs is hiring a Java Developer. Develop Java APIs, write tests, and maintain PostgreSQL integrations. Requirements: Java and PostgreSQL. Supply a CV and a short cover letter.",
+      "repository": {
+        "careerGoals": "",
+        "skills": "Java",
+        "competencies": "",
+        "tools": "",
+        "employmentStatus": "",
+        "currentSalary": "",
+        "desiredSalary": "",
+        "additionalInfo": "",
+        "experience": [],
+        "projects": []
+      },
+      "confirmedQualifications": [],
+      "cvLanguage": "en"
+    },
+    "expected": "Preserve unknown title/company for short posting; no fabricated Profile qualifications or answers"
+  }
+]

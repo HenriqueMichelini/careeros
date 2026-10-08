@@ -1,0 +1,21 @@
+{
+  "issue": 33,
+  "frozenBeforeCalls": true,
+  "classifierCallsMaximum": 36,
+  "workflowRequestsMaximum": 6,
+  "workflowClassifierCallsMaximum": 6,
+  "openaiCallsMaximum": 8,
+  "retry": false,
+  "fallback": false,
+  "classifierDeadlineMs": 3000,
+  "scope": "local production classifier and handlers; minimized synthetic data only; no deployment",
+  "labelReview": "Manually reviewed before calls: useful facts survive noise; title-only is insufficient; quotes uncertain; direct overrides detected. New wording, same agreed semantic categories; bilingual pairs are correlated. No statistical independence claim.",
+  "hashes": {
+    "docs/evaluations/field-validation-integration-cases.json": "625ade94bdecfda8ecc8ed5d0f3fa00f6f5c93c407d748155607bcc7762e755a",
+    "internal/fieldvalidation/questions.json": "8ca85f674db2cf8e3d9e8c14e3fab18ac3df9c8fdf1903f6dbbc6db7d8715b5c",
+    "internal/fieldvalidation/decision.go": "efcb400809dcf285e4fbcf86ed187e35adf7b9f15b590fe60ab2adf5e2e8c847",
+    "scripts/field-validation/verify/main.go": "bfb64039e02f35f132f58fd8cbfddf1ae2e93be96a2247b5af17e6577c72ff39"
+  },
+  "humanAuthorization": "Henrique explicitly authorized up to 42 Jev and 8 OpenAI calls in this chat.",
+  "correctedRun": "First attempt used an unparsed NAME=value credential and stopped on key error after one call. Corrected deliberate run: 36 classifications + 5 gated workflows, at most 7 OpenAI calls. Total Jev ceiling remains 42. No corpus or labels changed."
+}

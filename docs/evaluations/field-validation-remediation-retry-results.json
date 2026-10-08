@@ -1,0 +1,248 @@
+{
+  "scope": "exact production payloads, live HTTP provider calls, offline handler replay; no deployed or live-handler timing",
+  "calls": [
+    {
+      "call": 1,
+      "host": "api.typesafe.ai",
+      "status": 200,
+      "providerHttpMs": 313,
+      "payloadHash": "c0a4109b753d0e5dd44c29e9e38018018d535766904014d1b3dd6d20f680d67d"
+    },
+    {
+      "call": 2,
+      "host": "api.openai.com",
+      "status": 200,
+      "providerHttpMs": 3235,
+      "payloadHash": "f9969a42e407152bcb8284d4f3ad4e7b5e18daf49c68591174f76c3a399368ea"
+    },
+    {
+      "call": 3,
+      "host": "api.openai.com",
+      "status": 200,
+      "providerHttpMs": 2634,
+      "payloadHash": "1b9c69e51c8fae4242eacdcf994e3af90d699312d676d935d79a5e8c6bf75e00"
+    },
+    {
+      "call": 4,
+      "host": "api.typesafe.ai",
+      "status": 200,
+      "providerHttpMs": 247,
+      "payloadHash": "69027a66e4a8be2d61a3545cb9703259908276002bcc25eb76e5dcc9c7da6aac"
+    },
+    {
+      "call": 5,
+      "host": "api.openai.com",
+      "status": 200,
+      "providerHttpMs": 11202,
+      "payloadHash": "25e85f5aa6ee4465149bf93ffff140e1362e49bbaa92358c87832dd02fdfa1af"
+    },
+    {
+      "call": 6,
+      "host": "api.openai.com",
+      "status": 200,
+      "providerHttpMs": 3093,
+      "payloadHash": "75a3af43344b451978a2c6a8e5cd8dffb418a1655535c129c650d2a0b2738b2c"
+    },
+    {
+      "call": 7,
+      "host": "api.typesafe.ai",
+      "status": 200,
+      "providerHttpMs": 269,
+      "payloadHash": "5b2a80660bbd0384539176b1109275dae3965c6713ae3930048d0c86fb8f5652"
+    },
+    {
+      "call": 8,
+      "host": "api.openai.com",
+      "status": 200,
+      "providerHttpMs": 3162,
+      "payloadHash": "650a57c0a4c5f8604f17f18d5d08014a7a13035f77db4b3a937c5290392fd1d1"
+    },
+    {
+      "call": 9,
+      "host": "api.openai.com",
+      "status": 200,
+      "providerHttpMs": 3098,
+      "payloadHash": "4552a4a5cbe8fa31269b295ed84c64682cee45a74eb67125adfa7d3623687124"
+    },
+    {
+      "call": 10,
+      "host": "api.typesafe.ai",
+      "status": 200,
+      "providerHttpMs": 240,
+      "payloadHash": "e75304db69a88e9d220e26243dc7060519b06bedd71962d64442f955d61dc5c9"
+    },
+    {
+      "call": 11,
+      "host": "api.openai.com",
+      "status": 200,
+      "providerHttpMs": 2929,
+      "payloadHash": "72d54d5246cf8924952156a31a395daed558abb3fd044d42eb2a805591c618f1"
+    },
+    {
+      "call": 12,
+      "host": "api.openai.com",
+      "status": 200,
+      "providerHttpMs": 3683,
+      "payloadHash": "8322395e60aaece41809f3b43caa19ef075635df1c6b19035b0c307a8cdbfa64"
+    },
+    {
+      "call": 13,
+      "host": "api.typesafe.ai",
+      "status": 200,
+      "providerHttpMs": 275,
+      "payloadHash": "c0a4109b753d0e5dd44c29e9e38018018d535766904014d1b3dd6d20f680d67d"
+    },
+    {
+      "call": 14,
+      "host": "api.openai.com",
+      "status": 200,
+      "providerHttpMs": 1879,
+      "payloadHash": "f9969a42e407152bcb8284d4f3ad4e7b5e18daf49c68591174f76c3a399368ea"
+    },
+    {
+      "call": 15,
+      "host": "api.openai.com",
+      "status": 200,
+      "providerHttpMs": 3618,
+      "payloadHash": "2fa5ee82555e5af417c9aa048f11d7156350e9ebe1887c3aea5f736d3cbe21c2"
+    },
+    {
+      "call": 16,
+      "host": "api.typesafe.ai",
+      "status": 200,
+      "providerHttpMs": 323,
+      "payloadHash": "220084ee590b5eeee790d22ec3a94025f4e55d76d0ed562f80d5032f85d46022"
+    },
+    {
+      "call": 17,
+      "host": "api.openai.com",
+      "status": 200,
+      "providerHttpMs": 1911,
+      "payloadHash": "f61aedc913cfafca2121f0150b3270ade683db31236adb236ce647348eb1fd37"
+    },
+    {
+      "call": 18,
+      "host": "api.openai.com",
+      "status": 200,
+      "providerHttpMs": 6614,
+      "payloadHash": "4552a4a5cbe8fa31269b295ed84c64682cee45a74eb67125adfa7d3623687124"
+    },
+    {
+      "call": 19,
+      "host": "api.typesafe.ai",
+      "status": 200,
+      "providerHttpMs": 320,
+      "payloadHash": "a79b9d4d7a4ae64451ece9701ca80d39b1a7b3e62b8ac1f79ac3520529af9f7d"
+    },
+    {
+      "call": 20,
+      "host": "api.openai.com",
+      "status": 200,
+      "providerHttpMs": 3115,
+      "payloadHash": "7fc78c0da3f163c5d4ae0f63a480378b4b3a69e6e7e5ff9608d92cbff0174e96"
+    },
+    {
+      "call": 21,
+      "host": "api.typesafe.ai",
+      "status": 200,
+      "providerHttpMs": 281,
+      "payloadHash": "a729a71c71cdfd813801d4b7cc8fc7e69407ddf9086775dae13d34ff8f432837"
+    },
+    {
+      "call": 22,
+      "host": "api.openai.com",
+      "status": 200,
+      "providerHttpMs": 3151,
+      "payloadHash": "7328a1ab3bb8f12a38a601d64371ed5f4c3b19e7ee5546b5e922386186178d2b"
+    }
+  ],
+  "counts": {
+    "api.typesafe.ai": 8,
+    "api.openai.com": 14
+  },
+  "date": "2026-10-08",
+  "models": {
+    "typesafe": "jev-1.13.0",
+    "openai": "gpt-6-luna"
+  },
+  "reasoningEffort": "none",
+  "credentialLoader": "parsed environment assignment values without evaluating file contents",
+  "authorization": "User explicitly authorized same-credential retry, branch integration and deployment verification.",
+  "fixtureSha256": "f3c2c407ef4bca9415ca0efa59c12f8e2e73ec53ae3b97d4d0de41509c62c7d9",
+  "ingestionSourceSha256": "c517bfd89c68d2abfe3fd9b3a641f9489196b6afa607df1385750f5868f09be1",
+  "integratedMainRevision": "fc91b12a3a622ea467acbf07f417ac48451b5917",
+  "continuousLiveHandlerTiming": "unavailable",
+  "deploymentEvidence": "pending",
+  "results": [
+    {
+      "id": "en-java",
+      "handlerReplayStatus": 200,
+      "noStore": true,
+      "factualOutcome": "pass",
+      "javaSkillAdditionCount": 1,
+      "unresolvedClaimCount": 0,
+      "unverifiedClaimCount": 0
+    },
+    {
+      "id": "pt-java",
+      "handlerReplayStatus": 200,
+      "noStore": true,
+      "factualOutcome": "pass",
+      "javaSkillAdditionCount": 1,
+      "unresolvedClaimCount": 0,
+      "unverifiedClaimCount": 0
+    },
+    {
+      "id": "en-noisy",
+      "handlerReplayStatus": 200,
+      "noStore": true,
+      "factualOutcome": "pass",
+      "javaSkillAdditionCount": 1,
+      "unresolvedClaimCount": 0,
+      "unverifiedClaimCount": 0
+    },
+    {
+      "id": "pt-noisy",
+      "handlerReplayStatus": 200,
+      "noStore": true,
+      "factualOutcome": "pass",
+      "javaSkillAdditionCount": 1,
+      "unresolvedClaimCount": 0,
+      "unverifiedClaimCount": 0
+    },
+    {
+      "id": "en-duplicate",
+      "handlerReplayStatus": 200,
+      "noStore": true,
+      "factualOutcome": "pass",
+      "javaSkillAdditionCount": 0,
+      "unresolvedClaimCount": 0,
+      "unverifiedClaimCount": 0
+    },
+    {
+      "id": "en-large",
+      "handlerReplayStatus": 200,
+      "noStore": true,
+      "factualOutcome": "pass",
+      "javaSkillAdditionCount": 1,
+      "unresolvedClaimCount": 0,
+      "unverifiedClaimCount": 0
+    },
+    {
+      "id": "pt-short",
+      "handlerReplayStatus": 200,
+      "noStore": true,
+      "factualOutcome": "pass",
+      "metadataOutcome": "unknown fields remain null",
+      "qualificationFidelity": "only supplied Java skill claimed"
+    },
+    {
+      "id": "en-complete",
+      "handlerReplayStatus": 200,
+      "noStore": true,
+      "factualOutcome": "pass",
+      "metadataOutcome": "stated title and employer preserved",
+      "qualificationFidelity": "only supplied Java skill claimed"
+    }
+  ]
+}

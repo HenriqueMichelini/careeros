@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-07",
+  "timezone": "America/Sao_Paulo",
+  "backendCommit": "18d45da",
+  "scope": "local loopback paired HTTP probes; synthetic data; not browser, deployment or production tail evidence",
+  "sourceHashes": {
+    "backend/application-draft/main.go": "eeec61eb3c2102d5262735bc1765a54b16191967f09e67ff46cf01e244829db7",
+    "internal/openaihttp/post.go": "033c9358405d4fee5cce96f6e9177bcd9919ec459dd0c808d7e53929170245e5",
+    "scripts/field-validation/measure-workflow.mjs": "b1e6411b86dd9a47fc2df6c0bcd839c23cf9e117c742bc82e00f8c08d6cae580",
+    "scripts/field-validation/experiment.mjs": "9729943cf0064062411b963841ea9d57ab7bb32aef91cb7e8e72809102dfc395",
+    "docs/evaluations/results/2026-10-07/draft-fixed/measurement-server.go.txt": "35249c4e6189542f938a6e6a19887d57e8cdda709718c10b665ea9e9bb0dd1f3"
+  },
+  "rows": [
+    {
+      "language": "en",
+      "baselineMs": 3109.166101,
+      "validatedTotalMs": 3396.464769,
+      "pairedDifferenceMs": 287.29866800000036,
+      "classifierMs": 488.9577770000001,
+      "deadlineMs": 30000,
+      "success": true
+    },
+    {
+      "language": "pt",
+      "baselineMs": 2773.6659130000003,
+      "validatedTotalMs": 4015.5700199999997,
+      "pairedDifferenceMs": 1241.9041069999994,
+      "classifierMs": 286.57176800000025,
+      "deadlineMs": 30000,
+      "success": true
+    }
+  ],
+  "usage": {
+    "openai": {
+      "generationCalls": 4,
+      "inputTokens": 2808,
+      "outputTokens": 961,
+      "cachedInputTokens": 0,
+      "referenceRateEstimate": 0.0007613,
+      "billedCost": null
+    },
+    "jev": {
+      "classificationCalls": 2,
+      "inputTokens": 2180,
+      "outputTokens": 216,
+      "referenceRateEstimate": 9.156e-05,
+      "billedCost": null
+    }
+  },
+  "automaticRetries": 0,
+  "failures": 0,
+  "generatedProsePersisted": false,
+  "sourceReviewScope": "automated in-memory spot checks only; no full semantic fidelity review",
+  "combinedReferenceRateEstimate": 0.00085286
+}

@@ -64,3 +64,15 @@ export function careerProfile(repo: ProfessionalRepository) {
     additionalInfo: repo.additionalInfo,
   }
 }
+
+export function profileReviewFields(section: string): (keyof ReturnType<typeof careerProfile>)[] {
+  switch (section.trim().toLowerCase()) {
+    case "goals": case "career goals": case "objetivos de carreira": return ["careerGoals"]
+    case "skills": case "skills, tools & tech": case "habilidades e tecnologias": return ["skills", "competencies", "tools"]
+    case "experience": case "experiência": return ["experience"]
+    case "projects": case "projetos": return ["projects"]
+    case "compensation": case "remuneração": return ["employmentStatus", "currentSalary", "desiredSalary"]
+    case "other": case "outros": return ["additionalInfo"]
+    default: return []
+  }
+}

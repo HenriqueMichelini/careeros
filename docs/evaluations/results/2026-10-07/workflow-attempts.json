@@ -1,0 +1,464 @@
+[
+  {
+    "provider": "openai",
+    "caseId": "en-messy-job",
+    "kind": "qualification_gaps",
+    "baseline": {
+      "status": 400,
+      "ok": false
+    },
+    "baselineMs": 35.47262899999998,
+    "comparison": "unavailable: malformed harness projection; corrected before live timing",
+    "purpose": "harness_payload_setup_failure"
+  },
+  {
+    "provider": "jev",
+    "caseId": "en-messy-job",
+    "kind": "qualification_gaps",
+    "baseline": {
+      "status": 400,
+      "ok": false
+    },
+    "baselineMs": 34.79724999999996,
+    "comparison": "unavailable: malformed harness projection; corrected before live timing",
+    "purpose": "harness_payload_setup_failure"
+  },
+  {
+    "provider": "jev",
+    "caseId": "en-complete-job-timing",
+    "kind": "application_draft",
+    "baseline": {
+      "status": 502,
+      "ok": false
+    },
+    "baselineMs": 3280.731722,
+    "comparison": "unavailable: baseline failed"
+  },
+  {
+    "version": 1,
+    "provider": "jev",
+    "model": "jev-1.13.0",
+    "runId": "2026-10-07T22:40:30.768Z",
+    "mode": "live",
+    "classifierDeadlineMs": 5000,
+    "corpusHash": "3c2bc3ea1a22876d5f2fd164891b17671c8a1fb63bccb1f2ccf20b82ce8792d5",
+    "policyHash": "503c816b676efa370e91d16e0cc6287bd86afbc8585726b6c686f2fa71407746",
+    "records": [
+      {
+        "caseId": "en-fact",
+        "classificationMs": 340.47462700000005,
+        "result": {
+          "kind": "signals",
+          "signals": {
+            "content": "professional_fact",
+            "attack": "none"
+          }
+        },
+        "usage": {
+          "inputTokens": 635,
+          "outputTokens": 97
+        },
+        "returnedModel": "jev-1.13.0",
+        "providerDiagnostics": {
+          "contentConfidence": 1,
+          "attackConfidence": 0.88
+        },
+        "workflow": {
+          "kind": "profile_ingestion",
+          "baselineMs": 1925.3353669999997,
+          "validatedTotalMs": 3038.069159
+        },
+        "workflowAttempt": {
+          "kind": "profile_ingestion",
+          "baseline": {
+            "status": 200,
+            "ok": true
+          },
+          "validated": {
+            "status": 200,
+            "ok": true
+          },
+          "baselineMs": 1925.3353669999997,
+          "validatedTotalMs": 3038.069159
+        }
+      }
+    ],
+    "measurementScope": "local HTTP probe with browser-equivalent deadline; not live UI or deployment"
+  },
+  {
+    "provider": "jev",
+    "caseId": "en-messy-job",
+    "kind": "application_draft",
+    "baseline": {
+      "status": 502,
+      "ok": false
+    },
+    "baselineMs": 2804.084279,
+    "comparison": "unavailable: baseline failed"
+  },
+  {
+    "version": 1,
+    "provider": "jev",
+    "model": "jev-1.13.0",
+    "runId": "2026-10-07T22:41:51.255Z",
+    "mode": "live",
+    "classifierDeadlineMs": 5000,
+    "corpusHash": "3c2bc3ea1a22876d5f2fd164891b17671c8a1fb63bccb1f2ccf20b82ce8792d5",
+    "policyHash": "503c816b676efa370e91d16e0cc6287bd86afbc8585726b6c686f2fa71407746",
+    "records": [
+      {
+        "caseId": "en-messy-job",
+        "classificationMs": 371.449513,
+        "result": {
+          "kind": "signals",
+          "signals": {
+            "content": "job_with_context",
+            "attack": "none"
+          }
+        },
+        "usage": {
+          "inputTokens": 712,
+          "outputTokens": 108
+        },
+        "returnedModel": "jev-1.13.0",
+        "providerDiagnostics": {
+          "contentConfidence": 1,
+          "attackConfidence": 0.72
+        },
+        "workflow": {
+          "kind": "qualification_gaps",
+          "baselineMs": 1133.197021,
+          "validatedTotalMs": 1685.562574
+        },
+        "workflowAttempt": {
+          "kind": "qualification_gaps",
+          "baseline": {
+            "status": 200,
+            "ok": true
+          },
+          "validated": {
+            "status": 200,
+            "ok": true
+          },
+          "baselineMs": 1133.197021,
+          "validatedTotalMs": 1685.562574
+        }
+      }
+    ],
+    "measurementScope": "local HTTP probe with browser-equivalent deadline; not live UI or deployment"
+  },
+  {
+    "version": 1,
+    "provider": "jev",
+    "model": "jev-1.13.0",
+    "runId": "2026-10-07T22:42:47.200Z",
+    "mode": "live",
+    "classifierDeadlineMs": 5000,
+    "corpusHash": "3c2bc3ea1a22876d5f2fd164891b17671c8a1fb63bccb1f2ccf20b82ce8792d5",
+    "policyHash": "503c816b676efa370e91d16e0cc6287bd86afbc8585726b6c686f2fa71407746",
+    "records": [
+      {
+        "caseId": "pt-fact",
+        "classificationMs": 273.7984209999995,
+        "result": {
+          "kind": "signals",
+          "signals": {
+            "content": "professional_fact",
+            "attack": "none"
+          }
+        },
+        "usage": {
+          "inputTokens": 635,
+          "outputTokens": 97
+        },
+        "returnedModel": "jev-1.13.0",
+        "providerDiagnostics": {
+          "contentConfidence": 1,
+          "attackConfidence": 0.83
+        },
+        "workflow": {
+          "kind": "profile_ingestion",
+          "baselineMs": 4935.411252,
+          "validatedTotalMs": 3247.871389000001
+        },
+        "workflowAttempt": {
+          "kind": "profile_ingestion",
+          "baseline": {
+            "status": 200,
+            "ok": true
+          },
+          "validated": {
+            "status": 200,
+            "ok": true
+          },
+          "baselineMs": 4935.411252,
+          "validatedTotalMs": 3247.871389000001
+        }
+      }
+    ],
+    "measurementScope": "local HTTP probe with browser-equivalent deadline; not live UI or deployment"
+  },
+  {
+    "version": 1,
+    "provider": "jev",
+    "model": "jev-1.13.0",
+    "runId": "2026-10-07T22:43:48.185Z",
+    "mode": "live",
+    "classifierDeadlineMs": 5000,
+    "corpusHash": "3c2bc3ea1a22876d5f2fd164891b17671c8a1fb63bccb1f2ccf20b82ce8792d5",
+    "workflowCorpusHash": "7ce4aa34ab71b51aa9fa32dc431ee9542cbcba25efa9e88a163c6bbe9d0ab568",
+    "policyHash": "503c816b676efa370e91d16e0cc6287bd86afbc8585726b6c686f2fa71407746",
+    "records": [
+      {
+        "caseId": "pt-messy-job",
+        "classificationMs": 321.667833,
+        "result": {
+          "kind": "signals",
+          "signals": {
+            "content": "job_with_context",
+            "attack": "none"
+          }
+        },
+        "usage": {
+          "inputTokens": 745,
+          "outputTokens": 108
+        },
+        "returnedModel": "jev-1.13.0",
+        "providerDiagnostics": {
+          "contentConfidence": 1,
+          "attackConfidence": 0.76
+        },
+        "workflow": {
+          "kind": "qualification_gaps",
+          "baselineMs": 2302.339191,
+          "validatedTotalMs": 1942.6823009999998
+        },
+        "workflowAttempt": {
+          "kind": "qualification_gaps",
+          "baseline": {
+            "status": 200,
+            "ok": true
+          },
+          "validated": {
+            "status": 200,
+            "ok": true
+          },
+          "baselineMs": 2302.339191,
+          "validatedTotalMs": 1942.6823009999998
+        }
+      }
+    ],
+    "measurementScope": "local HTTP probe with browser-equivalent deadline; not live UI or deployment"
+  },
+  {
+    "provider": "openai",
+    "caseId": "en-complete-job-timing",
+    "kind": "application_draft",
+    "baseline": {
+      "status": 502,
+      "ok": false
+    },
+    "baselineMs": 2915.046131,
+    "comparison": "unavailable: baseline failed"
+  },
+  {
+    "version": 1,
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "runId": "2026-10-07T22:40:29.487Z",
+    "mode": "live",
+    "classifierDeadlineMs": 5000,
+    "corpusHash": "3c2bc3ea1a22876d5f2fd164891b17671c8a1fb63bccb1f2ccf20b82ce8792d5",
+    "policyHash": "503c816b676efa370e91d16e0cc6287bd86afbc8585726b6c686f2fa71407746",
+    "records": [
+      {
+        "caseId": "en-fact",
+        "classificationMs": 1040.9620059999997,
+        "result": {
+          "kind": "signals",
+          "signals": {
+            "content": "professional_fact",
+            "attack": "none"
+          }
+        },
+        "usage": {
+          "inputTokens": 294,
+          "outputTokens": 16
+        },
+        "returnedModel": "gpt-6-luna",
+        "workflow": {
+          "kind": "profile_ingestion",
+          "baselineMs": 2454.806932,
+          "validatedTotalMs": 3216.8058300000002
+        },
+        "workflowAttempt": {
+          "kind": "profile_ingestion",
+          "baseline": {
+            "status": 200,
+            "ok": true
+          },
+          "validated": {
+            "status": 200,
+            "ok": true
+          },
+          "baselineMs": 2454.806932,
+          "validatedTotalMs": 3216.8058300000002
+        }
+      }
+    ],
+    "measurementScope": "local HTTP probe with browser-equivalent deadline; not live UI or deployment"
+  },
+  {
+    "provider": "openai",
+    "caseId": "en-messy-job",
+    "kind": "application_draft",
+    "baseline": {
+      "status": 502,
+      "ok": false
+    },
+    "baselineMs": 3218.048221,
+    "comparison": "unavailable: baseline failed"
+  },
+  {
+    "version": 1,
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "runId": "2026-10-07T22:41:49.554Z",
+    "mode": "live",
+    "classifierDeadlineMs": 5000,
+    "corpusHash": "3c2bc3ea1a22876d5f2fd164891b17671c8a1fb63bccb1f2ccf20b82ce8792d5",
+    "policyHash": "503c816b676efa370e91d16e0cc6287bd86afbc8585726b6c686f2fa71407746",
+    "records": [
+      {
+        "caseId": "en-messy-job",
+        "classificationMs": 1082.3303660000001,
+        "result": {
+          "kind": "signals",
+          "signals": {
+            "content": "job_with_context",
+            "attack": "none"
+          }
+        },
+        "usage": {
+          "inputTokens": 351,
+          "outputTokens": 17
+        },
+        "returnedModel": "gpt-6-luna",
+        "workflow": {
+          "kind": "qualification_gaps",
+          "baselineMs": 1202.746651,
+          "validatedTotalMs": 2099.3905050000003
+        },
+        "workflowAttempt": {
+          "kind": "qualification_gaps",
+          "baseline": {
+            "status": 200,
+            "ok": true
+          },
+          "validated": {
+            "status": 200,
+            "ok": true
+          },
+          "baselineMs": 1202.746651,
+          "validatedTotalMs": 2099.3905050000003
+        }
+      }
+    ],
+    "measurementScope": "local HTTP probe with browser-equivalent deadline; not live UI or deployment"
+  },
+  {
+    "version": 1,
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "runId": "2026-10-07T22:42:45.093Z",
+    "mode": "live",
+    "classifierDeadlineMs": 5000,
+    "corpusHash": "3c2bc3ea1a22876d5f2fd164891b17671c8a1fb63bccb1f2ccf20b82ce8792d5",
+    "policyHash": "503c816b676efa370e91d16e0cc6287bd86afbc8585726b6c686f2fa71407746",
+    "records": [
+      {
+        "caseId": "pt-fact",
+        "classificationMs": 909.1811790000002,
+        "result": {
+          "kind": "signals",
+          "signals": {
+            "content": "professional_fact",
+            "attack": "none"
+          }
+        },
+        "usage": {
+          "inputTokens": 294,
+          "outputTokens": 16
+        },
+        "returnedModel": "gpt-6-luna",
+        "workflow": {
+          "kind": "profile_ingestion",
+          "baselineMs": 5433.550305,
+          "validatedTotalMs": 4272.810562999999
+        },
+        "workflowAttempt": {
+          "kind": "profile_ingestion",
+          "baseline": {
+            "status": 200,
+            "ok": true
+          },
+          "validated": {
+            "status": 200,
+            "ok": true
+          },
+          "baselineMs": 5433.550305,
+          "validatedTotalMs": 4272.810562999999
+        }
+      }
+    ],
+    "measurementScope": "local HTTP probe with browser-equivalent deadline; not live UI or deployment"
+  },
+  {
+    "version": 1,
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "runId": "2026-10-07T22:43:45.056Z",
+    "mode": "live",
+    "classifierDeadlineMs": 5000,
+    "corpusHash": "3c2bc3ea1a22876d5f2fd164891b17671c8a1fb63bccb1f2ccf20b82ce8792d5",
+    "workflowCorpusHash": "7ce4aa34ab71b51aa9fa32dc431ee9542cbcba25efa9e88a163c6bbe9d0ab568",
+    "policyHash": "503c816b676efa370e91d16e0cc6287bd86afbc8585726b6c686f2fa71407746",
+    "records": [
+      {
+        "caseId": "pt-messy-job",
+        "classificationMs": 927.403853,
+        "result": {
+          "kind": "signals",
+          "signals": {
+            "content": "job_with_context",
+            "attack": "none"
+          }
+        },
+        "usage": {
+          "inputTokens": 364,
+          "outputTokens": 17
+        },
+        "returnedModel": "gpt-6-luna",
+        "workflow": {
+          "kind": "qualification_gaps",
+          "baselineMs": 1478.8035699999998,
+          "validatedTotalMs": 2999.96602
+        },
+        "workflowAttempt": {
+          "kind": "qualification_gaps",
+          "baseline": {
+            "status": 200,
+            "ok": true
+          },
+          "validated": {
+            "status": 200,
+            "ok": true
+          },
+          "baselineMs": 1478.8035699999998,
+          "validatedTotalMs": 2999.96602
+        }
+      }
+    ],
+    "measurementScope": "local HTTP probe with browser-equivalent deadline; not live UI or deployment"
+  }
+]

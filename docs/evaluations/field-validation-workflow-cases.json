@@ -1,0 +1,20 @@
+[
+  {
+    "id": "en-complete-job-timing",
+    "field": "job_posting",
+    "language": "en",
+    "category": "supplemental_workflow_timing",
+    "text": "Example Labs (fictional employer) is hiring a Java Developer. Responsibilities: build and maintain Java APIs. Qualifications: Java and AWS. Applicants should send a PDF CV and a short cover letter describing their Java experience.",
+    "expected": "accept",
+    "constraints": ["Synthetic timing fixture with explicitly supplied employer and role; no personal facts."]
+  },
+  {
+    "id": "pt-complete-job-timing",
+    "field": "job_posting",
+    "language": "pt",
+    "category": "supplemental_workflow_timing",
+    "text": "Example Labs (empresa fictícia) contrata Desenvolvedor Java. Responsabilidades: desenvolver e manter APIs Java. Requisitos: Java e AWS. Envie currículo em PDF e uma carta de apresentação curta descrevendo sua experiência com Java.",
+    "expected": "accept",
+    "constraints": ["Synthetic timing fixture with explicitly supplied employer and role; no personal facts."]
+  }
+]

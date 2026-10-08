@@ -6,6 +6,11 @@
   directory = "netlify/functions"
 
 [[redirects]]
+  from = "/api/cv/generate"
+  to = "/.netlify/functions/cv-generation"
+  status = 200
+
+[[redirects]]
   from = "/api/profile/ingest"
   to = "/.netlify/functions/profile-ingestion"
   status = 200

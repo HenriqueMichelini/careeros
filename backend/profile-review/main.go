@@ -132,21 +132,67 @@ func (a app) review(w http.ResponseWriter, r *http.Request) {
 		writeError(w, status, outcome)
 		return
 	}
+	result.UpdatedRepository = scopedRepository(input.Repository, result.UpdatedRepository, reviewFields(input.ChangedSection))
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	_ = json.NewEncoder(w).Encode(result)
 }
 
-func validRequest(in reviewRequest) bool {
-	if strings.TrimSpace(in.ChangedSection) == "" || len(in.ChangedSection) > 200 {
-		return false
+func reviewFields(section string) []string {
+	switch strings.ToLower(strings.TrimSpace(section)) {
+	case "goals", "career goals", "objetivos de carreira":
+		return []string{"careerGoals"}
+	case "skills", "skills, tools & tech", "habilidades e tecnologias":
+		return []string{"skills", "competencies", "tools"}
+	case "experience", "experiência":
+		return []string{"experience"}
+	case "projects", "projetos":
+		return []string{"projects"}
+	case "compensation", "remuneração":
+		return []string{"employmentStatus", "currentSalary", "desiredSalary"}
+	case "other", "outros":
+		return []string{"additionalInfo"}
+	default:
+		return nil
 	}
-	return profilevalidation.Valid(in.Repository, maxProfileText)
+}
+
+func validRequest(in reviewRequest) bool {
+	return len(reviewFields(in.ChangedSection)) > 0 && profilevalidation.Valid(in.Repository, maxProfileText)
+}
+
+// Preserve every field outside the section the user chose, even if the model edits it.
+func scopedRepository(original, updated repository, fields []string) repository {
+	for _, field := range fields {
+		switch field {
+		case "careerGoals":
+			original.CareerGoals = updated.CareerGoals
+		case "skills":
+			original.Skills = updated.Skills
+		case "competencies":
+			original.Competencies = updated.Competencies
+		case "tools":
+			original.Tools = updated.Tools
+		case "experience":
+			original.Experience = updated.Experience
+		case "projects":
+			original.Projects = updated.Projects
+		case "employmentStatus":
+			original.EmploymentStatus = updated.EmploymentStatus
+		case "currentSalary":
+			original.CurrentSalary = updated.CurrentSalary
+		case "desiredSalary":
+			original.DesiredSalary = updated.DesiredSalary
+		case "additionalInfo":
+			original.AdditionalInfo = updated.AdditionalInfo
+		}
+	}
+	return original
 }
 
 func (a app) callProvider(parent context.Context, key string, input reviewRequest) (reviewResult, string, error) {
 	var empty reviewResult
 	repoJSON, _ := json.Marshal(input.Repository)
-	prompt := "You are an expert career coach reviewing a professional profile. The user updated the section: " + input.ChangedSection + ".\n\nProfile JSON:\n" + string(repoJSON) + "\n\nImprove clarity, grammar, and professional tone throughout; preserve all facts, numbers, names, dates, and structure. Never invent facts. Return only JSON with this exact shape: {\"updatedRepository\":<complete profile object with every original field>,\"summary\":\"brief description\"}. Include every field and every list entry."
+	prompt := "You are an expert career coach reviewing a professional profile. The user updated the section: " + input.ChangedSection + ".\n\nProfile JSON:\n" + string(repoJSON) + "\n\nImprove clarity, grammar, and professional tone only in these fields: " + strings.Join(reviewFields(input.ChangedSection), ", ") + ". Leave every other field unchanged; preserve all facts, numbers, names, dates, and structure. Never invent facts. Return only JSON with this exact shape: {\"updatedRepository\":<complete profile object with every original field>,\"summary\":\"brief description\"}. Include every field and every list entry."
 	body, _ := json.Marshal(map[string]any{"model": model, "reasoning_effort": "none", "max_completion_tokens": 5000, "response_format": map[string]string{"type": "json_object"}, "messages": []any{map[string]string{"role": "user", "content": prompt}}})
 	ctx, cancel, resp, err := openaihttp.Post(parent, a.client, reviewTimeout, key, body)
 	defer cancel()

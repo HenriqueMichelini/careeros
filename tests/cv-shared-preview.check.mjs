@@ -84,7 +84,7 @@ const materials = {
   jobSummary: "Lead product work.",
   resume:
     "# Avery Morgan\n\navery@example.com | https://example.com/avery\n\n## Professional Experience\n### Product Lead · Harbor Works\n2021 — 2024\n- Improved onboarding.\n\n## Projects\n### Service Atlas\n- Improved task completion.\n\n## Languages\n- English: Fluent\n\n## Technical Skills\n- Research\n- Product strategy\n\n## Tools & Technology\n- Figma\n\n## Education\n### BSc Design\nEast College · 2018\n\n## Certifications\n- Research Certificate\n\n## Professional Summary\nProduct leader focused on useful services. Built my_variable service.",
-  coverLetter: "Dear team,\n\nI led useful service work at Harbor Works.\n\nSincerely,\nAvery Morgan",
+  coverLetter: { greeting: "Dear team,", body: "I led useful service work at Harbor Works.", closing: "Sincerely," },
   applicationAnswers: "1. I led a platform.",
 }
 const vite = spawn(
@@ -270,6 +270,8 @@ try {
     await evaluate("document.querySelector('.cv-paper-content').textContent.includes('my_variable')"),
     "Markdown rendering must preserve literal professional text",
   )
+  await evaluate("{ const el = document.querySelector('.cv-font-controls input'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, '16'); el.dispatchEvent(new Event('input', { bubbles: true })) }")
+  await until("getComputedStyle(document.querySelector('.cv-paper-content p')).fontSize === '16px'")
   await evaluate("window.print = () => { window.__printCalled = true }")
   const originalTitle = await evaluate("document.title")
   assert.equal(await evaluate("document.querySelectorAll('.results-page-header button').length"), 1, "New Application should be the only header action")
@@ -280,6 +282,7 @@ try {
   await evaluate("document.querySelector('.results-resume-actions button').click()")
   await until("window.__printCalled === true && document.body.classList.contains('results-print-resume')")
   assert.equal(await evaluate("document.querySelectorAll('.results-print-root > .cv-paper').length"), 1, "PDF export should print a standalone résumé")
+  assert.equal(await evaluate("getComputedStyle(document.querySelector('.results-print-root .cv-paper-content p')).fontSize"), "16px", "print clone preserves selected type")
   const resumePdf = join(work, "results-resume.pdf")
   writeFileSync(resumePdf, Buffer.from((await call("Page.printToPDF", { printBackground: true, preferCSSPageSize: true })).data, "base64"))
   assert.match(execFileSync("pdfinfo", [resumePdf], { encoding: "utf8" }), /Pages:\s+1\b[\s\S]*Page size:\s+59[45]\.\d+ x 841\.\d+ pts \(A4\)/)
@@ -315,7 +318,7 @@ try {
   await evaluate("Array.from(document.querySelectorAll('.results-other-actions button')).find(el => el.textContent.includes('PDF')).click()")
   await until("document.querySelector('[role=alert]')?.textContent.includes('cover letter exceeds one A4 page')")
   assert.equal(await evaluate("window.__printCalled"), false, "overflowing cover letter should not open a two-page export")
-  await evaluate(`document.querySelector('.results-cover-print').textContent = ${JSON.stringify(materials.coverLetter)}`)
+  await evaluate(`document.querySelector('.results-cover-print').textContent = ${JSON.stringify("Dear team,\n\nI led useful service work at Harbor Works.\n\nSincerely,")}`)
   await evaluate("document.querySelector('#nl-badge-frame')?.remove()")
   await evaluate("Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'Résumé').click()")
   await until("!!document.querySelector('.cv-paper-content')")
@@ -359,11 +362,7 @@ try {
     true,
     "A4 preview must scale to the narrow slot",
   )
-  await evaluate("Array.from(document.querySelectorAll('.cv-preview-slot button')).find(el => el.textContent.includes('Read at 100%')).click()")
-  await until("document.querySelector('.cv-paper').getBoundingClientRect().width > document.querySelector('.cv-preview-slot').getBoundingClientRect().width")
-  assert.ok(await evaluate("document.querySelector('.cv-preview-slot').scrollWidth > document.querySelector('.cv-preview-slot').clientWidth"), "full-size reading must remain inside the scrollable preview")
-  assert.ok(await evaluate("document.documentElement.scrollWidth <= innerWidth"), "full-size reading must not scroll the entire page")
-  await evaluate("Array.from(document.querySelectorAll('.cv-preview-slot button')).find(el => el.textContent.includes('Fit page')).click()")
+  assert.equal(await evaluate("document.querySelector('.cv-preview-zoom')"), null)
   await evaluate(
     "{ const select = document.querySelector('select'); select.value = 'pt-BR'; select.dispatchEvent(new Event('change', { bubbles: true })) }",
   )
@@ -389,16 +388,15 @@ try {
     generatedPt,
     "Portuguese headings should match without translating professional text",
   )
-  await evaluate("Array.from(document.querySelectorAll('.cv-preview-slot button')).find(el => el.textContent.includes('Ler em 100%')).click()")
-  await until("document.querySelector('.cv-paper').getBoundingClientRect().width > document.querySelector('.cv-preview-slot').getBoundingClientRect().width")
-  assert.ok(await evaluate("document.documentElement.scrollWidth <= innerWidth"), "full-size CV reading must stay inside its preview")
-  await evaluate("Array.from(document.querySelectorAll('.cv-preview-slot button')).find(el => el.textContent.includes('Ajustar à página')).click()")
+  assert.ok(await evaluate("document.querySelector('.cv-paper').getBoundingClientRect().width <= document.querySelector('.cv-preview-slot').getBoundingClientRect().width + 1"), "CV preview must fit the narrow slot")
   await evaluate(
     "{ const select = document.querySelector('select'); select.value = 'en'; select.dispatchEvent(new Event('change', { bubbles: true })) }",
   )
   await until("document.querySelector('nav button')?.textContent.trim() === 'Apply'")
   await evaluate("document.querySelectorAll('nav button')[0].click()")
   await until("!!document.querySelector('textarea')")
+  // Reset the shared preference before the density fixture mounts a new preview.
+  await evaluate("localStorage.setItem('careeros_cv_preferences_v1', JSON.stringify({fontSize: 12}))")
   const denseMaterials = {
     ...materials,
     resume: [

@@ -8,9 +8,10 @@ import (
 	"time"
 
 	applicationdraft "professional-information-repo/backend/application-draft"
+	cvgeneration "professional-information-repo/backend/cv-generation"
+	profileingestion "professional-information-repo/backend/profile-ingestion"
 	profilereview "professional-information-repo/backend/profile-review"
 	qualificationgaps "professional-information-repo/backend/qualification-gaps"
-	profileingestion "professional-information-repo/backend/profile-ingestion"
 )
 
 func main() {
@@ -21,6 +22,10 @@ func main() {
 	server := &http.Server{
 		Addr: ":" + port,
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/cv/generate" {
+				cvgeneration.NewHandler().ServeHTTP(w, r)
+				return
+			}
 			if r.URL.Path == "/api/profile/ingest" {
 				profileingestion.NewHandler().ServeHTTP(w, r)
 				return

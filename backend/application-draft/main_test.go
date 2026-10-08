@@ -6,13 +6,19 @@ import (
 	"net/http"
 	"net/http/httptest"
 	profilevalidation "professional-information-repo/internal/profilevalidation"
+	"professional-information-repo/internal/testsupport"
 	"strings"
 	"testing"
 )
 
 type transportFunc func(*http.Request) (*http.Response, error)
 
-func (f transportFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+func (f transportFunc) RoundTrip(r *http.Request) (*http.Response, error) {
+	if r.URL.Host == "api.typesafe.ai" {
+		return testsupport.AcceptedJob(), nil
+	}
+	return f(r)
+}
 
 type timeoutReadError struct{}
 
@@ -24,8 +30,11 @@ type timeoutReader struct{}
 
 func (timeoutReader) Read([]byte) (int, error) { return 0, timeoutReadError{} }
 func draftResponse() string {
-	return `{"choices":[{"message":{"content":"{\"jobTitle\":\"Engineer\",\"company\":\"Example\",\"jobSummary\":\"Build systems\",\"resume\":\"# Resume\",\"coverLetter\":\"Hello\",\"applicationAnswers\":\"Q&A\"}"}}]}`
+	content := `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":{"greeting":"Dear team,","body":"I build systems.","closing":"Sincerely,"},"applicationAnswers":"Q&A"}`
+	encoded, _ := json.Marshal(content)
+	return `{"choices":[{"message":{"content":` + string(encoded) + `}}]}`
 }
+
 func TestProviderUsesOpenAIAndFullPopulatedProfile(t *testing.T) {
 	in := request{JobPosting: "Senior engineer role", Profile: profilevalidation.Profile{CareerGoals: "leadership", Skills: "Go", Competencies: "systems", Tools: "Docker", EmploymentStatus: "employed", CurrentSalary: "salary", DesiredSalary: "target", AdditionalInfo: "extra", Experience: []profilevalidation.Experience{{ID: "id", Company: "company", Title: "engineer", StartDate: "2020", EndDate: "2022", Location: "location", Description: "description", Responsibilities: "responsibilities", Achievements: "achievement"}}, Projects: []profilevalidation.Project{{ID: "project-id", Name: "project", Description: "project detail", Technologies: "Go", URL: "url", Highlights: "highlight"}}}, Confirmed: []qualification{{Kind: "skill", Requirement: "Kubernetes", UserContext: "used it"}}}
 	in.Qualifications = &profilevalidation.Qualifications{Education: []profilevalidation.Education{{ID: "private-education-id", Degree: "BSc", Institution: "Example University"}}}
@@ -100,7 +109,7 @@ func TestQualificationFactsOmitLocalIDs(t *testing.T) {
 }
 
 func TestValidRejectsIncompleteDraft(t *testing.T) {
-	if valid(result{JobTitle: "Engineer", Company: "Example"}) {
+	if valid(result{}) {
 		t.Fatal("incomplete result accepted")
 	}
 }
@@ -114,6 +123,7 @@ func TestRateLimitMapsWithoutRetryAndDoesNotCache(t *testing.T) {
 	body := `{"repository":{"careerGoals":"","skills":"Go","competencies":"","experience":[],"tools":"Docker","projects":[],"employmentStatus":"","currentSalary":"","desiredSalary":"","additionalInfo":""},"jobPosting":"Engineer","confirmedQualifications":[]}`
 	r := httptest.NewRequest(http.MethodPost, "/api/application-draft", strings.NewReader(body))
 	r.Header.Set("X-OpenAI-Api-Key", "sk-valid")
+	r.Header.Set("X-TypeSafe-Api-Key", "synthetic")
 	w := httptest.NewRecorder()
 	a.handler().ServeHTTP(w, r)
 	if w.Code != http.StatusTooManyRequests || calls != 1 || w.Header().Get("Cache-Control") != "no-store" || !strings.Contains(w.Body.String(), `"error":"rate_limit"`) {
@@ -152,7 +162,7 @@ func TestSyntheticDraftOutboundBodyUsesApprovedProfileAndConfirmation(t *testing
 		var topLevel map[string]json.RawMessage
 		if json.Unmarshal(body, &payload) != nil || json.Unmarshal(body, &topLevel) != nil ||
 			len(topLevel) != 5 || payload.Model != model || payload.ReasoningEffort != "none" ||
-			payload.MaxTokens != 8000 || payload.ResponseFormat.Type != "json_object" ||
+			payload.MaxTokens != 8000 || payload.ResponseFormat.Type != "json_schema" ||
 			len(payload.Messages) != 1 || payload.Messages[0].Role != "user" {
 			t.Fatal("bad provider body")
 		}
@@ -172,6 +182,7 @@ func TestSyntheticDraftOutboundBodyUsesApprovedProfileAndConfirmation(t *testing
 	body := `{"repository":{"careerGoals":"Lead data projects","skills":"SQL, dashboard design","competencies":"Clear communication","experience":[{"id":"synthetic-1","company":"Northstar Analytics","title":"Data Analyst","startDate":"Jan 2022","endDate":"Jun 2024","current":false,"location":"","description":"Built dashboards","responsibilities":"Translated reporting needs","achievements":"Reduced report preparation time"}],"tools":"","projects":[],"employmentStatus":"employed-full-time","currentSalary":"","desiredSalary":"","additionalInfo":""},"jobPosting":"QUALIFICATION ONLY SYNTHETIC POSTING","confirmedQualifications":[{"kind":"skill","requirement":"Kubernetes","userContext":"Confirmed for this role only"}]}`
 	r := httptest.NewRequest(http.MethodPost, "/api/application-draft", strings.NewReader(body))
 	r.Header.Set("X-OpenAI-Api-Key", "sk-valid")
+	r.Header.Set("X-TypeSafe-Api-Key", "synthetic")
 	w := httptest.NewRecorder()
 	a.handler().ServeHTTP(w, r)
 	if w.Code != http.StatusOK || calls != 1 || !strings.Contains(w.Body.String(), `"jobTitle":"Engineer"`) {
@@ -199,6 +210,7 @@ func TestInvalidInputAndTrailingJSONRejectedBeforeProvider(t *testing.T) {
 	} {
 		r := httptest.NewRequest(http.MethodPost, "/api/application-draft", strings.NewReader(body))
 		r.Header.Set("X-OpenAI-Api-Key", "sk-valid")
+		r.Header.Set("X-TypeSafe-Api-Key", "synthetic")
 		w := httptest.NewRecorder()
 		a.handler().ServeHTTP(w, r)
 		if w.Code != http.StatusBadRequest || !strings.Contains(w.Body.String(), `"error":"input"`) {
@@ -221,6 +233,7 @@ func TestInputLimitsRejectedBeforeProvider(t *testing.T) {
 	for _, body := range []string{profileTooLong, postingTooLong, qualificationTooLong, tooManyQualifications, strings.Repeat(" ", maxRequestBytes) + validBody} {
 		r := httptest.NewRequest(http.MethodPost, "/api/application-draft", strings.NewReader(body))
 		r.Header.Set("X-OpenAI-Api-Key", "sk-valid")
+		r.Header.Set("X-TypeSafe-Api-Key", "synthetic")
 		w := httptest.NewRecorder()
 		a.handler().ServeHTTP(w, r)
 		if w.Code != http.StatusBadRequest || !strings.Contains(w.Body.String(), `"error":"input"`) {
@@ -239,6 +252,7 @@ func TestTimeoutDuringProviderBodyReadMapsToTimeout(t *testing.T) {
 	body := `{"repository":{"careerGoals":"","skills":"Go","competencies":"","experience":[],"tools":"Docker","projects":[],"employmentStatus":"","currentSalary":"","desiredSalary":"","additionalInfo":""},"jobPosting":"Engineer","confirmedQualifications":[]}`
 	r := httptest.NewRequest(http.MethodPost, "/api/application-draft", strings.NewReader(body))
 	r.Header.Set("X-OpenAI-Api-Key", "sk-valid")
+	r.Header.Set("X-TypeSafe-Api-Key", "synthetic")
 	w := httptest.NewRecorder()
 	a.handler().ServeHTTP(w, r)
 	if w.Code != http.StatusGatewayTimeout || !strings.Contains(w.Body.String(), `"error":"timeout"`) {
@@ -261,6 +275,7 @@ func TestProviderKeyAndOutageErrorsAreCategorized(t *testing.T) {
 			body := `{"repository":{"careerGoals":"","skills":"Go","competencies":"","experience":[],"tools":"Docker","projects":[],"employmentStatus":"","currentSalary":"","desiredSalary":"","additionalInfo":""},"jobPosting":"Engineer","confirmedQualifications":[]}`
 			r := httptest.NewRequest(http.MethodPost, "/api/application-draft", strings.NewReader(body))
 			r.Header.Set("X-OpenAI-Api-Key", "sk-valid")
+			r.Header.Set("X-TypeSafe-Api-Key", "synthetic")
 			w := httptest.NewRecorder()
 			a.handler().ServeHTTP(w, r)
 			if w.Code != tc.httpStatus || calls != 1 || !strings.Contains(w.Body.String(), `"error":"`+tc.want+`"`) {
@@ -275,10 +290,14 @@ func TestIncompleteAndMalformedProviderDraftsAreRejected(t *testing.T) {
 		name    string
 		content string
 	}{
-		{name: "missing field", content: `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":"Hello"}`},
-		{name: "blank field", content: `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":"Hello","applicationAnswers":"  "}`},
-		{name: "unknown field", content: `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":"Hello","applicationAnswers":"Q&A","extra":"value"}`},
-		{name: "trailing data", content: `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":"Hello","applicationAnswers":"Q&A"} trailing`},
+		{name: "punctuated signature", content: `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":{"greeting":"Dear team,","body":"I build systems.\n\nJane Doe, Ph.D.","closing":"Sincerely,"},"applicationAnswers":"Q&A"}`},
+		{name: "missing closing", content: `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":{"greeting":"Dear team,","body":"I build systems."},"applicationAnswers":"Q&A"}`},
+		{name: "unexpected signature", content: `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":{"greeting":"Dear team,","body":"I build systems.","closing":"Sincerely,\nJane Doe"},"applicationAnswers":"Q&A"}`},
+		{name: "signature in body", content: `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":{"greeting":"Dear team,","body":"I build systems.\n\nSincerely,\nJane Doe","closing":"Sincerely,"},"applicationAnswers":"Q&A"}`},
+		{name: "missing field", content: `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":{"greeting":"Dear team,","body":"I build systems.","closing":"Sincerely,"}}`},
+		{name: "blank field", content: `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":{"greeting":"Dear team,","body":"I build systems.","closing":"Sincerely,"},"applicationAnswers":"  "}`},
+		{name: "unknown field", content: `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":{"greeting":"Dear team,","body":"I build systems.","closing":"Sincerely,"},"applicationAnswers":"Q&A","extra":"value"}`},
+		{name: "trailing data", content: `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":{"greeting":"Dear team,","body":"I build systems.","closing":"Sincerely,"},"applicationAnswers":"Q&A"} trailing`},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			calls := 0
@@ -289,6 +308,7 @@ func TestIncompleteAndMalformedProviderDraftsAreRejected(t *testing.T) {
 			body := `{"repository":{"careerGoals":"","skills":"Go","competencies":"","experience":[],"tools":"Docker","projects":[],"employmentStatus":"","currentSalary":"","desiredSalary":"","additionalInfo":""},"jobPosting":"Engineer","confirmedQualifications":[]}`
 			r := httptest.NewRequest(http.MethodPost, "/api/application-draft", strings.NewReader(body))
 			r.Header.Set("X-OpenAI-Api-Key", "sk-valid")
+			r.Header.Set("X-TypeSafe-Api-Key", "synthetic")
 			w := httptest.NewRecorder()
 			a.handler().ServeHTTP(w, r)
 			if w.Code != http.StatusBadGateway || calls != 1 || !strings.Contains(w.Body.String(), `"error":"invalid_output"`) {
@@ -305,4 +325,60 @@ func mustJSONString(t *testing.T, value string) string {
 		t.Fatal(err)
 	}
 	return string(encoded)
+}
+
+func TestProviderAcceptsProseWithEnglishAndPortugueseTransitions(t *testing.T) {
+	for _, body := range []string{"Additionally, I build reliable systems.", "Atualmente, desenvolvo sistemas confiáveis.", "I am AWS certified.", "At Harbor Works, I build reliable systems."} {
+		t.Run(body, func(t *testing.T) {
+			a := app{client: &http.Client{Transport: transportFunc(func(*http.Request) (*http.Response, error) {
+				response := strings.Replace(draftResponse(), "I build systems.", body, 1)
+				return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(response)), Header: make(http.Header)}, nil
+			})}}
+			out, code, err := a.call(t.Context(), "sk-valid", request{JobPosting: "Engineer"})
+			if err != nil || code != "" || out.CoverLetter.Body != body {
+				t.Fatalf("body=%q code=%s err=%v", out.CoverLetter.Body, code, err)
+			}
+		})
+	}
+}
+
+func TestCvLanguageControlsApplicationProse(t *testing.T) {
+	for _, language := range []string{"en", "pt-BR"} {
+		a := app{client: &http.Client{Transport: transportFunc(func(r *http.Request) (*http.Response, error) {
+			var body struct {
+				Messages []struct {
+					Content string `json:"content"`
+				} `json:"messages"`
+			}
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			prompt := body.Messages[0].Content
+			if !strings.Contains(prompt, "CV language: "+language) || !strings.Contains(prompt, "independent of the site and job posting languages") {
+				t.Fatal("missing explicit language policy")
+			}
+			if language == "pt-BR" && !strings.Contains(prompt, "Resumo Profissional, Competências Técnicas, Experiência Profissional") {
+				t.Fatal("missing Portuguese headings")
+			}
+			return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(draftResponse()))}, nil
+		})}}
+		_, code, err := a.call(t.Context(), "sk-test", request{CvLanguage: language})
+		if err != nil || code != "" {
+			t.Fatal(code, err)
+		}
+	}
+	body := `{"repository":{"careerGoals":"","skills":"Go","competencies":"","experience":[],"tools":"Docker","projects":[],"employmentStatus":"","currentSalary":"","desiredSalary":"","additionalInfo":""},"jobPosting":"Engineer","confirmedQualifications":[]}`
+	for _, tc := range []struct {
+		language string
+		want     bool
+	}{{`"en"`, true}, {`"pt-BR"`, true}, {`"fr"`, false}, {`null`, false}, {`42`, false}, {`""`, false}} {
+		var raw map[string]json.RawMessage
+		_ = json.Unmarshal([]byte(body), &raw)
+		raw["cvLanguage"] = json.RawMessage(tc.language)
+		if completeInputShape(raw) != tc.want {
+			t.Fatalf("cvLanguage=%s", tc.language)
+		}
+		raw["uiLocale"] = json.RawMessage(`"en"`)
+		if completeInputShape(raw) {
+			t.Fatal("site language accepted as generation input")
+		}
+	}
 }

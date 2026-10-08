@@ -1,0 +1,63 @@
+{
+  "type": "json_schema",
+  "json_schema": {
+    "name": "application_draft",
+    "strict": true,
+    "schema": {
+      "type": "object",
+      "properties": {
+        "jobTitle": {
+          "type": "string"
+        },
+        "company": {
+          "type": "string"
+        },
+        "jobSummary": {
+          "type": "string"
+        },
+        "resume": {
+          "type": "string"
+        },
+        "applicationAnswers": {
+          "type": "string"
+        },
+        "coverLetter": {
+          "type": "object",
+          "properties": {
+            "greeting": {
+              "type": "string"
+            },
+            "body": {
+              "type": "string"
+            },
+            "closing": {
+              "type": "string",
+              "enum": [
+                "Sincerely,",
+                "Kind regards,",
+                "Best regards,",
+                "Atenciosamente,",
+                "Cordialmente,"
+              ]
+            }
+          },
+          "required": [
+            "greeting",
+            "body",
+            "closing"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "jobTitle",
+        "company",
+        "jobSummary",
+        "resume",
+        "applicationAnswers",
+        "coverLetter"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

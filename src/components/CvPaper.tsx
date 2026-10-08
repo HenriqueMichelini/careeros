@@ -1,7 +1,9 @@
-import { ReactNode, Ref } from "react"
+import { CSSProperties, ReactNode, Ref } from "react"
 
 interface Props {
+  language?: string
   label: string
+  fontSize?: number
   scale: number
   overflows: boolean
   pageEndLabel: string
@@ -13,6 +15,8 @@ interface Props {
 
 export default function CvPaper({
   label,
+  language,
+  fontSize = 14,
   scale,
   overflows,
   pageEndLabel,
@@ -23,6 +27,7 @@ export default function CvPaper({
 }: Props) {
   return (
     <article
+      lang={language}
       aria-label={label}
       className={`cv-paper relative mx-auto w-[210mm] border border-[var(--color-border)] bg-[var(--color-card)] shadow-sm ${className}`}
       style={{ zoom: scale }}
@@ -38,7 +43,11 @@ export default function CvPaper({
           </span>
         )}
       </div>
-      <div ref={contentRef} className="cv-paper-content relative px-12 py-11">
+      <div
+        ref={contentRef}
+        className="cv-paper-content relative px-12 py-11"
+        style={{ "--cv-font-size": `${fontSize}px` } as CSSProperties}
+      >
         {children}
       </div>
     </article>
