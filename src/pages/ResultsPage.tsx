@@ -250,7 +250,7 @@ export default function ResultsPage({ setPage }: Props) {
       >
         {activeTab === "summary" ? (
           <div>
-            <div className="grid grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
               <div
                 className="p-5"
                 style={{ border: "1px solid var(--color-border)" }}
@@ -265,7 +265,7 @@ export default function ResultsPage({ setPage }: Props) {
                   {t("results.role")}
                 </p>
                 <p className="text-sm font-medium">
-                  {materials.jobTitle || "—"}
+                  {materials.jobTitle || t("results.notProvided")}
                 </p>
               </div>
               <div
@@ -282,7 +282,7 @@ export default function ResultsPage({ setPage }: Props) {
                   {t("results.company")}
                 </p>
                 <p className="text-sm font-medium">
-                  {materials.company || "—"}
+                  {materials.company || t("results.notProvided")}
                 </p>
               </div>
               <div

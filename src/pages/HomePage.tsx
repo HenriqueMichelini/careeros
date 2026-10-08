@@ -331,6 +331,7 @@ export default function HomePage({ setPage }: Props) {
             onFocus={(e) => (e.target.style.borderColor = "var(--color-fg)")}
             onBlur={(e) => (e.target.style.borderColor = "var(--color-border)")}
           />
+          <p className="mt-2 text-xs text-[var(--color-muted-fg)]">{t("home.postingLimit")}</p>
           <details className="mt-3 text-xs">
             <summary className="cursor-pointer">{t("field.settings")}</summary>
             <label htmlFor="job-typesafe-key" className="block mt-2">{t("field.typesafeKey")}</label>

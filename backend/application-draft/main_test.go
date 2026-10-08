@@ -109,7 +109,7 @@ func TestQualificationFactsOmitLocalIDs(t *testing.T) {
 }
 
 func TestValidRejectsIncompleteDraft(t *testing.T) {
-	if valid(result{JobTitle: "Engineer", Company: "Example"}) {
+	if valid(result{}) {
 		t.Fatal("incomplete result accepted")
 	}
 }

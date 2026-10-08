@@ -272,6 +272,50 @@ try {
         assert.equal(await evaluate("window.__pending.length"), 0)
         assert.equal(await evaluate("document.querySelector('main textarea').value"), "Engineer building APIs " + reason)
       }
+      // Short postings preserve explicit unknowns through qualification confirmation, Results and print.
+      const shortDraft = {
+        jobTitle: "Java developer", company: null, jobSummary: "AWS required.",
+        resume: "## Technical Skills\n- Research\n- Product strategy",
+        coverLetter: { greeting: "Dear hiring team,", body: "I bring research and product strategy experience.", closing: "Sincerely," },
+        applicationAnswers: "AWS is required. I have not supplied AWS experience.",
+      }
+      for (const unknownTitle of [false, true]) {
+        await fill("Java developer. AWS required.")
+        await generate()
+        assert.equal(await evaluate("JSON.parse(window.__pending[0].options.body).jobPosting"), "Java developer. AWS required.")
+        await respond({ gaps: [{ kind: "skill", requirement: "AWS", details: "AWS required." }] })
+        assert.ok(await evaluate("document.querySelector('[role=dialog]').textContent.includes('AWS')"))
+        // Keep the qualification unconfirmed; it must not become a candidate fact.
+        await evaluate("Array.from(document.querySelectorAll('[role=dialog] button')).at(-2).click()")
+        assert.deepEqual(await evaluate("JSON.parse(window.__pending[0].options.body).confirmedQualifications"), [])
+        await respond({ ...shortDraft, jobTitle: unknownTitle ? null : shortDraft.jobTitle })
+        await until("!!document.querySelector('.results-page')")
+        const unknownLabel = locale === "en" ? "Not provided" : "Não informado"
+        assert.ok((await evaluate("document.querySelector('.results-content').textContent")).includes(unknownLabel))
+        assert.equal(await evaluate("document.querySelector('.results-page h1').textContent"), unknownTitle
+          ? (locale === "en" ? "Application Materials" : "Materiais de candidatura") : "Java developer")
+        assert.ok(await evaluate("document.querySelector('.results-content').textContent.includes('AWS required.')"))
+        if (!unknownTitle) {
+          const shot = await call("Page.captureScreenshot", { format: "png", captureBeyondViewport: true })
+          writeFileSync(join(work, `short-results-${locale}-${width}.png`), Buffer.from(shot.data, "base64"))
+          assert.equal(await evaluate("document.documentElement.scrollWidth <= window.innerWidth"), true)
+        }
+        for (const [index, target] of [[1, "resume"], [2, "cover"]]) {
+          await evaluate(`document.querySelectorAll('.results-tabs button')[${index}].click()`)
+          await pause(100)
+          await evaluate("window.__printed = null; window.print = () => { window.__printed = document.querySelector('.results-print-root').textContent; window.dispatchEvent(new Event('afterprint')); }")
+          await evaluate("Array.from(document.querySelectorAll('.results-toolbar button')).at(-1).click()")
+          try { await until("typeof window.__printed === 'string'") } catch (error) {
+            throw new Error(`${target}: ${await evaluate("document.querySelector('.results-page').textContent")} ${error.message}`)
+          }
+          const printed = await evaluate("window.__printed")
+          assert.ok(printed.includes(target === "resume" ? "Research" : "Dear hiring team,"))
+          assert.ok(!/Example Labs|Acme|null|undefined|Not provided|Não informado/.test(printed), "unknown metadata must not become exported facts")
+        }
+        assert.equal(await evaluate("localStorage.getItem('careeros_repo')"), unchangedProfile)
+        await evaluate("document.querySelectorAll('nav button')[0].click()")
+        await until("document.querySelectorAll('[data-checklist-state]').length === 3")
+      }
       // Accepted messy text and ordinary applicant requirements pass unchanged to both paths.
       const messy = "HOME | JOBS | LOGIN Engineer build Java APIs. Java Java. include your salary expectations; send your portfolio; describe your experience with Java; submit your CV as a PDF and include a short cover letter. Cookies."
       for (const useConfirmed of [false, true]) {
@@ -444,6 +488,7 @@ try {
         "ready",
         "ready",
       ])
+      await fill("Harbor Works seeks a Product Lead to lead product work. Research and product strategy required.")
       await generate()
       await respond({ gaps: [] })
       assert.deepEqual(await states(), [
@@ -455,6 +500,8 @@ try {
       await until(
         "document.querySelectorAll('[data-checklist-state]').length === 0",
       )
+      assert.equal(await evaluate("document.querySelector('.results-page h1').textContent"), "Product Lead")
+      assert.ok(await evaluate("document.querySelector('.results-content').textContent.includes('Harbor Works')"))
       await evaluate("document.querySelectorAll('nav button')[0].click()")
       await until(
         "document.querySelectorAll('[data-checklist-state]').length === 3",

@@ -67,8 +67,9 @@ export interface ProfessionalRepository {
 
 export interface GeneratedMaterials {
   cvLanguage?: import("./i18n").Locale
-  jobTitle: string
-  company: string
+  // null means the Job Posting did not supply this metadata.
+  jobTitle: string | null
+  company: string | null
   jobSummary: string
   resume: string
   coverLetter: string

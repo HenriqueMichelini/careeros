@@ -127,7 +127,11 @@ export async function generateMaterials(
   checkJobDecision(payload)
   const known = new Set(['input', 'key', 'rate_limit', 'outage', 'timeout', 'invalid_output'])
   if (!response.ok) throw new ApplicationDraftError(typeof payload?.error === 'string' && known.has(payload.error) ? payload.error : 'outage')
-  if (!payload || ['jobTitle','company','jobSummary','resume','applicationAnswers'].some((key) => typeof payload[key as keyof GeneratedMaterials] !== 'string' || !(payload[key as keyof GeneratedMaterials] as string).trim())) throw new ApplicationDraftError('invalid_output')
+  if (!payload || ['jobSummary','resume','applicationAnswers'].some((key) => typeof payload[key as keyof GeneratedMaterials] !== 'string' || !(payload[key as keyof GeneratedMaterials] as string).trim())) throw new ApplicationDraftError('invalid_output')
+  if (['jobTitle', 'company'].some(key => {
+    const value = payload[key as 'jobTitle' | 'company']
+    return value !== null && (typeof value !== 'string' || !value.trim())
+  })) throw new ApplicationDraftError('invalid_output')
   const fullName = repo.fullName?.trim() || ''
   const coverLetter = completeCoverLetter(payload.coverLetter, fullName)
   if (coverLetter === null) throw new ApplicationDraftError('invalid_output')

@@ -75,6 +75,7 @@ const messages = {
     "home.jobPostingPlaceholder":
       "Paste the full job description, URL, or any text about the role you're applying to. Include requirements, responsibilities, company info — the more detail, the better the tailoring.",
     "home.characterCount": "{{count}} characters",
+    "home.postingLimit": "Job Posting limit: 30,720 UTF-8 bytes.",
     "home.checklist": "Checklist",
     "home.status.pending": "Action needed",
     "home.status.ready": "Ready",
@@ -484,6 +485,7 @@ const messages = {
     "results.applicationQa": "Application Q&A",
     "results.role": "Role",
     "results.company": "Company",
+    "results.notProvided": "Not provided",
     "results.materials": "Materials",
     "results.materialsList": "Résumé + Cover Letter + Q&A",
     "results.roleSummary": "Role Summary",
@@ -566,6 +568,7 @@ const messages = {
     "home.jobPostingPlaceholder":
       "Cole a descrição completa da vaga, a URL ou qualquer texto sobre a oportunidade. Inclua requisitos, responsabilidades e informações sobre a empresa — quanto mais detalhes, melhor será a personalização.",
     "home.characterCount": "{{count}} caracteres",
+    "home.postingLimit": "Limite da vaga: 30.720 bytes UTF-8.",
     "home.checklist": "Checklist",
     "home.status.pending": "Ação necessária",
     "home.status.ready": "Pronto",
@@ -979,6 +982,7 @@ const messages = {
     "results.applicationQa": "Perguntas e respostas",
     "results.role": "Cargo",
     "results.company": "Empresa",
+    "results.notProvided": "Não informado",
     "results.materials": "Materiais",
     "results.materialsList": "Currículo + Carta de apresentação + P&R",
     "results.roleSummary": "Resumo da vaga",
