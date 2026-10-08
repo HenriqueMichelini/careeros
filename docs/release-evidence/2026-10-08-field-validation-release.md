@@ -2,7 +2,7 @@
 
 ## Current verdict
 
-**Published Function checks pass; milestone acceptance remains pending the browser evidence boundary.** The corrected implementation and local synthetic checks pass, and PR [#53](https://github.com/HenriqueMichelini/careeros/pull/53) is merged. The published public origin passed three provider-backed Function workflows; this does not establish the protected-preview browser-to-provider path.
+**Published Function checks and the subsequent protected-preview live browser check pass.** The corrected implementation and local synthetic checks pass, and PR [#53](https://github.com/HenriqueMichelini/careeros/pull/53) is merged. The published public origin passed three provider-backed Function workflows. A [subsequent authenticated browser run](2026-10-08-field-validation-browser.md) establishes the protected-preview Apply path through providers to rendered Results.
 
 ## Identified revisions
 
@@ -56,6 +56,6 @@ Successful executions were logged at 2026-10-08T15:27:05Z, 15:27:08Z and 15:27:1
 
 The [local remediation record](../evaluations/field-validation-remediation.md) and [successful local call metadata](../evaluations/field-validation-remediation-retry-results.json) establish eight TypeSafe plus fourteen OpenAI calls and production-handler replay for the approved synthetic fixtures. This release adds live public-origin Function/provider behavior and host runtime evidence. The original Java omission and absent published integration findings are corrected at the identified release revision.
 
-Outstanding: a successful browser → Function → providers → visible-result exercise on the protected preview and/or an explicitly accepted narrower release evidence boundary, followed by the final acceptance reassessment. The preview needs a supported authenticated credential-entry path; Team protection remains intact. Source-controlled browser suites continue to establish controlled EN/PT proposal lifecycle and Apply behavior. Direct HTTPS success and separate frontend inspection are explicitly distinct from a live end-to-end browser result.
+The formerly outstanding browser → Function → providers → visible-result exercise passed after direct user credential entry and an explicitly authorized retry. See the [browser evidence](2026-10-08-field-validation-browser.md) and [acceptance reassessment](../evaluations/milestone-1-remediation-reassessment.md). Team protection remains intact. Source-controlled browser suites continue to establish controlled EN/PT proposal lifecycle and Apply behavior. Direct HTTPS success and separate frontend inspection are explicitly distinct from a live end-to-end browser result.
 
 Maximum-size behavior, production concurrency, cold-start characterization, upstream failure recovery, and exported-PDF visual validation remain outside this small bounded run. No broader performance or PDF-success claim is made. Issue/milestone closure was not performed.

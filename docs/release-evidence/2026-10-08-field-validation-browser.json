@@ -1,0 +1,62 @@
+{
+  "date": "2026-10-08",
+  "origin": "https://deploy-preview-53--beamish-bavarois-333d03.netlify.app",
+  "deployId": "6ac7b3173bbd67000870baef",
+  "revision": "0c7dbbcb5d8ffbc4dc7eb5fabcce42ffe254b11b",
+  "result": "pass",
+  "authorization": "user-entered corrected preview keys and explicit deliberate retry; at most 2 TypeSafe and 2 OpenAI calls",
+  "workflowRequests": 2,
+  "expectedSuccessfulPathProviderCalls": {
+    "typesafe": 2,
+    "openai": 2
+  },
+  "automaticRetries": 0,
+  "visibleResults": {
+    "unknownTitleAndCompanyPreserved": true,
+    "portugueseOutput": true,
+    "resumeContainsOnlyApprovedJavaSkill": true,
+    "noInventedExperience": true,
+    "fiveApplicationAnswers": true,
+    "savedSyntheticProfileUnchangedAfterGenerationAndReload": true
+  },
+  "scope": "live authenticated browser to Go Functions to providers to rendered Results; synthetic Java Profile and approved PT short posting",
+  "results": [
+    {
+      "workflow": "qualification-gaps",
+      "status": 200,
+      "outcome": "ok",
+      "handlerMs": 2647,
+      "netlifyInvocationMs": 2651.33,
+      "invocationId": "3a698a52",
+      "loggedAt": "2026-10-08T15:46:50Z",
+      "memoryMB": 37,
+      "functionLogPrivacy": "pass"
+    },
+    {
+      "workflow": "application-draft",
+      "status": 200,
+      "outcome": "ok",
+      "handlerMs": 4175,
+      "netlifyInvocationMs": 4178.31,
+      "invocationId": "7ce82ea5",
+      "loggedAt": "2026-10-08T15:46:54Z",
+      "memoryMB": 37,
+      "functionLogPrivacy": "pass"
+    }
+  ],
+  "unavailable": [
+    "browser network duration",
+    "browser response cache headers",
+    "full HTTP request IDs",
+    "provider-only timing"
+  ],
+  "priorAttempt": {
+    "status": 401,
+    "outcome": "key",
+    "handlerMs": 0,
+    "netlifyInvocationMs": 2.54,
+    "invocationId": "da70e25b",
+    "loggedAt": "2026-10-08T15:44:26Z",
+    "providerCalls": 0
+  }
+}

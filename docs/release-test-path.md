@@ -1,6 +1,6 @@
 # Backend v1 release-test path
 
-**Current field-validation release evidence (2026-10-08):** [identified published revision and bounded Function checks](release-evidence/2026-10-08-field-validation-release.md). The older PR #2 and October 4 rows below are historical snapshots. The October 8 user explicitly authorized existing-vault-key transfer for that bounded synthetic run; this does not grant continuing or unrelated credential use. Protected-preview live browser evidence remains pending.
+**Current field-validation release evidence (2026-10-08):** [identified published revision and bounded Function checks](release-evidence/2026-10-08-field-validation-release.md). The older PR #2 and October 4 rows below are historical snapshots. The October 8 user explicitly authorized existing-vault-key transfer for that bounded synthetic run; this does not grant continuing or unrelated credential use. The [protected-preview live browser follow-up](release-evidence/2026-10-08-field-validation-browser.md) subsequently passed under explicit retry authorization.
 
 The release environments are the [Netlify PR #2 preview](https://deploy-preview-2--beamish-bavarois-333d03.netlify.app/) and the [published Netlify app](https://beamish-bavarois-333d03.netlify.app/). Figma Make and the local Vite server are development environments, not release evidence. Repeat the revision and reachability checks after a new deploy; this snapshot is dated 2026-10-04.
 
