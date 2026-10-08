@@ -101,3 +101,40 @@ alignment, bilingual prose and one-line Java/AWS inputs. `FuzzPreparedCoverage`
 checks determinism, idempotence, UTF-8 boundaries and complete original coverage.
 No handler integration, provider call, semantic classification, acceptance,
 filtering, persisted source or Profile mutation is introduced by this API.
+
+## Repetition annotations (issue #58)
+
+`Source.Repetitions()` returns transient, defensive-copy groups over `Prepare`'s
+complete physical-line segments. `Normalize` alone has no segments or groups.
+`RepetitionVersion` pins `repetition-v1/normalization-v1/structure-v1`.
+
+- `exact_original` compares the complete original bytes of each segment.
+- `formatting_equivalent` compares the complete prepared segment bytes using
+  only the guarded NFC, line-ending and whitespace rules above. It is emitted
+  only when at least two originals differ. It includes every occurrence, so an
+  exact subgroup can also appear within a formatting group.
+
+Markers, indentation, punctuation, case, protected values, hard breaks and line
+endings participate in comparison. A final line without an ending is distinct
+from a line with one; no extra trimming or sentence splitting is performed.
+Blank lines and separators can repeat too. Context is retained, not used as a
+semantic equality test: identical wording under different headings/list parents
+still has separately addressable occurrences. Each occurrence includes its
+segment ID, normalized and exact original ranges, kind, parent ID, indentation
+and heading level. Parent chains remain available through `Segments()`.
+
+Two string-keyed indexes compare full strings after Go's internal hash lookup,
+so hash collisions cannot establish equality. Work and index storage are bounded
+by source bytes and segment count, with no all-pairs fuzzy matching. Exact groups
+precede formatting groups; groups within each class and their occurrences follow
+source order. Group IDs include the complete submission identity, comparison
+version/type and first occurrence ID. They are not stable career-fact/entity IDs.
+Calling the accessor never changes source identity, text, segments or mappings.
+
+Annotations do not remove, coalesce, reorder, summarize or hide any content.
+They confer no Jev acceptance, saved-Profile duplicate disposition or permission
+to merge employers, roles, dates or projects. Future preparation/integration must
+retain every occurrence; #40 and #41 own semantic matching and fact accounting.
+Golden tests verify exact/format variants, bilingual negation, changed dates and
+metrics, distinct technologies, repeated headings/boilerplate and parent context,
+literal guards, source recovery, defensive copies and both current byte limits.
