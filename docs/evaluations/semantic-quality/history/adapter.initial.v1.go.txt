@@ -28,29 +28,24 @@ type Call struct {
 	PromptHash          string `json:"promptHash"`
 	SchemaHash          string `json:"schemaHash"`
 	RequestHash         string `json:"requestHash"`
-	Status              int    `json:"status"`
-	ReturnedModel       string `json:"returnedModel,omitempty"`
 }
 type RunResult struct {
-	ID              string            `json:"id"`
-	Task            string            `json:"task"`
-	Split           string            `json:"split"`
-	Language        string            `json:"language"`
-	Mode            string            `json:"mode"`
-	Role            string            `json:"role"`
-	Status          int               `json:"status"`
-	NoStore         bool              `json:"noStore"`
-	Calls           []Call            `json:"calls"`
-	Output          json.RawMessage   `json:"output"`
-	ProviderOutputs []json.RawMessage `json:"providerOutputs,omitempty"`
-	Score           Result            `json:"score"`
+	ID       string          `json:"id"`
+	Task     string          `json:"task"`
+	Split    string          `json:"split"`
+	Language string          `json:"language"`
+	Mode     string          `json:"mode"`
+	Status   int             `json:"status"`
+	NoStore  bool            `json:"noStore"`
+	Calls    []Call          `json:"calls"`
+	Output   json.RawMessage `json:"output"`
+	Score    Result          `json:"score"`
 }
 type transport struct {
 	mode      string
 	responses []json.RawMessage
 	calls     []Call
 	index     int
-	outputs   []json.RawMessage
 }
 
 func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -76,30 +71,7 @@ func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 	t.calls = append(t.calls, call)
 	if t.mode == "live" {
-		resp, err := http.DefaultTransport.RoundTrip(req)
-		if err != nil {
-			return nil, err
-		}
-		t.calls[len(t.calls)-1].Status = resp.StatusCode
-		if resp.StatusCode == 200 && host == "api.openai.com" {
-			body, err := io.ReadAll(io.LimitReader(resp.Body, (1<<20)+1))
-			resp.Body.Close()
-			if err != nil {
-				return nil, err
-			}
-			resp.Body = io.NopCloser(bytes.NewReader(body))
-			var envelope struct {
-				Model   string          `json:"model"`
-				Choices json.RawMessage `json:"choices"`
-			}
-			if json.Unmarshal(body, &envelope) == nil {
-				t.calls[len(t.calls)-1].ReturnedModel = envelope.Model
-				if len(envelope.Choices) > 0 {
-					t.outputs = append(t.outputs, envelope.Choices)
-				}
-			}
-		}
-		return resp, nil
+		return http.DefaultTransport.RoundTrip(req)
 	}
 	var response any
 	if host == "api.typesafe.ai" {
@@ -131,14 +103,13 @@ func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		t.index++
 	}
 	encoded, _ := json.Marshal(response)
-	t.calls[len(t.calls)-1].Status = 200
 	return &http.Response{StatusCode: 200, Header: http.Header{"Content-Type": []string{"application/json"}}, Body: io.NopCloser(bytes.NewReader(encoded))}, nil
 }
 
 // Run invokes the same public HTTP contracts used by the application. Controlled
 // responses exercise parsing, grounding and filtering; they measure no model.
 func Run(c Case, mode, openAIKey, typeSafeKey string) (RunResult, error) {
-	result := RunResult{ID: c.ID, Task: c.Task, Split: c.Split, Language: c.Language, Mode: mode, Role: c.Role}
+	result := RunResult{ID: c.ID, Task: c.Task, Split: c.Split, Language: c.Language, Mode: mode}
 	if mode != "controlled" && mode != "live" {
 		return result, fmt.Errorf("unknown evidence mode")
 	}
@@ -177,21 +148,14 @@ func Run(c Case, mode, openAIKey, typeSafeKey string) (RunResult, error) {
 	result.Status = rec.Code
 	result.NoStore = rec.Header().Get("Cache-Control") == "no-store"
 	result.Calls = t.calls
-	result.ProviderOutputs = t.outputs
 	result.Output = append(json.RawMessage{}, rec.Body.Bytes()...)
-	return Assess(c, result)
-}
-
-// Assess scores a saved production response without invoking any provider. The
-// original calls/output remain evidence; only derived scores are recalculated.
-func Assess(c Case, result RunResult) (RunResult, error) {
 	score, err := Score(c, result.Output)
 	if err != nil {
 		return result, err
 	}
 	result.Score = score
-	if result.Status != 200 {
-		result.Score.Failures = append(result.Score.Failures, fmt.Sprintf("HTTP %d", result.Status))
+	if rec.Code != 200 {
+		result.Score.Failures = append(result.Score.Failures, fmt.Sprintf("HTTP %d", rec.Code))
 	}
 	var output map[string]any
 	json.Unmarshal(result.Output, &output)

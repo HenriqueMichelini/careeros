@@ -26,15 +26,9 @@ type report struct {
 	Commit         string            `json:"commit"`
 	FixtureVersion string            `json:"fixtureVersion"`
 	FixtureHash    string            `json:"fixtureHash"`
-	FixturePath    string            `json:"fixturePath"`
-	DerivedFrom    []evidenceRef     `json:"derivedFrom,omitempty"`
 	SourceHashes   map[string]string `json:"sourceHashes"`
 	Scope          string            `json:"scope"`
 	Runs           []eval.RunResult  `json:"runs"`
-}
-type evidenceRef struct {
-	Path string `json:"path"`
-	Hash string `json:"hash"`
 }
 
 func credential(path, name string) (string, error) {
@@ -66,8 +60,7 @@ func main() {
 func run() error {
 	mode := flag.String("mode", "controlled", "controlled or live")
 	live := flag.Bool("authorize-live", false, "explicit authorization for provider costs")
-	fixtures := flag.String("fixtures", "docs/evaluations/semantic-quality/cases.v2.json", "frozen synthetic corpus")
-	replay := flag.String("replay", "", "comma-separated saved reports to rescore offline; never calls providers")
+	fixtures := flag.String("fixtures", "docs/evaluations/semantic-quality/cases.v1.json", "frozen synthetic corpus")
 	split := flag.String("split", "development", "development or heldout; all requires controlled mode")
 	ids := flag.String("ids", "", "explicit comma-separated fixture IDs (overrides split)")
 	limit := flag.Int("limit", 8, "maximum live workflows; 1 through 8")
@@ -80,9 +73,6 @@ func run() error {
 	}
 	if *output == "" {
 		return fmt.Errorf("new --output path required")
-	}
-	if *replay != "" && (*mode == "live" || *live || *openAIPath != "" || *typeSafePath != "") {
-		return fmt.Errorf("offline replay cannot authorize live inference or read credentials")
 	}
 	if *mode == "live" && (!*live || *limit < 1 || *limit > 8 || (*split == "all" && *ids == "")) {
 		return fmt.Errorf("live requires --authorize-live, a limit of 1 through 8 and explicit split or IDs")
@@ -102,30 +92,6 @@ func run() error {
 		return err
 	}
 	wanted := map[string]bool{}
-	saved := map[string]eval.RunResult{}
-	origins := []evidenceRef{}
-	if *replay != "" {
-		for _, path := range strings.Split(*replay, ",") {
-			bytes, e := os.ReadFile(strings.TrimSpace(path))
-			if e != nil {
-				return e
-			}
-			var original report
-			if e = json.Unmarshal(bytes, &original); e != nil {
-				return e
-			}
-			if original.Mode != "live" {
-				return fmt.Errorf("replay requires original live evidence")
-			}
-			origins = append(origins, evidenceRef{Path: strings.TrimSpace(path), Hash: eval.Hash(bytes)})
-			for _, run := range original.Runs {
-				if _, exists := saved[run.ID]; exists {
-					return fmt.Errorf("duplicate original case %s", run.ID)
-				}
-				saved[run.ID] = run
-			}
-		}
-	}
 	if *ids != "" {
 		for _, id := range strings.Split(*ids, ",") {
 			wanted[strings.TrimSpace(id)] = true
@@ -133,13 +99,6 @@ func run() error {
 	}
 	selected := []eval.Case{}
 	for _, c := range data.Cases {
-		if *replay != "" {
-			if prior, ok := saved[c.ID]; !ok {
-				continue
-			} else if prior.Task != c.Task {
-				return fmt.Errorf("replay task mismatch for %s", c.ID)
-			}
-		}
 		if (len(wanted) > 0 && wanted[c.ID]) || (len(wanted) == 0 && (*split == "all" || c.Split == *split)) {
 			selected = append(selected, c)
 		}
@@ -169,12 +128,8 @@ func run() error {
 		}
 	}
 	commit, _ := exec.Command("git", "rev-parse", "HEAD").Output()
-	r := report{Version: "semantic-quality-report-v2", Mode: *mode, Started: time.Now().UTC().Format(time.RFC3339), Commit: strings.TrimSpace(string(commit)), FixtureVersion: data.Version, FixtureHash: eval.Hash(raw), FixturePath: *fixtures, DerivedFrom: origins, SourceHashes: map[string]string{}, Scope: "local production HTTP handlers; synthetic inputs; no browser, deployment or universal factual guarantee", Runs: []eval.RunResult{}}
-	if *replay != "" {
-		r.Mode = "replay"
-		r.Scope = "offline rescoring of saved live responses; no new inference; original provider configuration/source hashes remain in derivedFrom reports"
-	}
-	for _, path := range []string{"backend/profile-ingestion/main.go", "backend/qualification-gaps/main.go", "backend/cv-generation/main.go", "backend/application-draft/main.go", "internal/fieldvalidation/decision.go", "internal/fieldvalidation/questions.json", "internal/semanticeval/score.go", "internal/semanticeval/adapter.go", "scripts/semantic-quality/main.go"} {
+	r := report{Version: "semantic-quality-report-v1", Mode: *mode, Started: time.Now().UTC().Format(time.RFC3339), Commit: strings.TrimSpace(string(commit)), FixtureVersion: data.Version, FixtureHash: eval.Hash(raw), SourceHashes: map[string]string{}, Scope: "local production HTTP handlers; synthetic inputs; no browser, deployment or universal factual guarantee", Runs: []eval.RunResult{}}
+	for _, path := range []string{"backend/profile-ingestion/main.go", "backend/qualification-gaps/main.go", "backend/cv-generation/main.go", "backend/application-draft/main.go", "internal/fieldvalidation/decision.go", "internal/fieldvalidation/questions.json", "internal/semanticeval/score.go", "internal/semanticeval/adapter.go"} {
 		source, e := os.ReadFile(filepath.Clean(path))
 		if e != nil {
 			return e
@@ -197,16 +152,7 @@ func run() error {
 	}
 	failed := 0
 	for _, c := range selected {
-		var result eval.RunResult
-		var e error
-		if *replay != "" {
-			result = saved[c.ID]
-			result.Mode = "replay"
-			result.Role = c.Role
-			result, e = eval.Assess(c, result)
-		} else {
-			result, e = eval.Run(c, *mode, openAIKey, typeSafeKey)
-		}
+		result, e := eval.Run(c, *mode, openAIKey, typeSafeKey)
 		if e != nil {
 			return fmt.Errorf("fixture %s failed to evaluate: %w", c.ID, e)
 		}
@@ -214,7 +160,7 @@ func run() error {
 		if err = save(); err != nil {
 			return err
 		}
-		fmt.Printf("%s %s HTTP=%d precision=%.3f completeness=%.3f forbidden=%d failures=%d\n", r.Mode, c.ID, result.Status, result.Score.Precision, result.Score.Completeness, result.Score.ForbiddenAdditions, len(result.Score.Failures))
+		fmt.Printf("%s %s HTTP=%d precision=%.3f completeness=%.3f forbidden=%d failures=%d\n", *mode, c.ID, result.Status, result.Score.Precision, result.Score.Completeness, result.Score.ForbiddenAdditions, len(result.Score.Failures))
 		if len(result.Score.Failures) > 0 {
 			failed++
 		}

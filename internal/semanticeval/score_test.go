@@ -3,6 +3,7 @@ package semanticeval
 import (
 	"encoding/json"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -22,8 +23,34 @@ func TestScoreSeparatesMissingFactsFromUnsupportedAndWrongRelationships(t *testi
 	}
 }
 
+func TestDraftScoresInventedClaimsBeyondSupportedKeywords(t *testing.T) {
+	c := Case{Task: "application_draft", Gold: []Atom{
+		{ID: "java", Group: "draft", Match: map[string]string{"field": "^coverLetter$", "text": "^I use Java$"}},
+	}}
+	score, err := Score(c, json.RawMessage(`{"coverLetter":{"body":"I use Java. I managed ten engineers."}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if score.Observed != 2 || score.Matched != 1 || score.Precision != .5 || len(score.Unmatched) != 1 {
+		t.Fatalf("invented management disappeared: %+v", score)
+	}
+}
+
+func TestDraftDoesNotTransferOutcomeBetweenEntities(t *testing.T) {
+	c := Case{Task: "application_draft", Entities: []string{"Acme", "Atlas"}, Gold: []Atom{
+		{ID: "metric-owner", Group: "draft", Source: "Profile.experience[e1].achievements", Match: map[string]string{"field": "^resume$", "content": "^At \\{entity\\} I reduced latency by 20%$", "owner": "^Acme$"}},
+	}}
+	score, err := Score(c, json.RawMessage(`{"resume":"At Atlas I reduced latency by 20%."}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if score.RelationshipErrors != 1 || score.Matched != 0 || len(score.Missing) != 1 {
+		t.Fatalf("transferred metric: %+v", score)
+	}
+}
+
 func TestCorpusPreservesCapacityOmissionsAndControlledContracts(t *testing.T) {
-	raw, err := os.ReadFile("../../docs/evaluations/semantic-quality/cases.v1.json")
+	raw, err := os.ReadFile("../../docs/evaluations/semantic-quality/cases.v2.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,10 +69,28 @@ func TestCorpusPreservesCapacityOmissionsAndControlledContracts(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if result.Status != 200 || !result.NoStore || result.Score.ForbiddenAdditions != 0 {
+			if result.Status != 200 || !result.NoStore || (c.Role != "negative_control" && result.Score.ForbiddenAdditions != 0) {
 				t.Fatalf("contract regression: %+v", result)
 			}
-			if c.ID == "en-capacity-35" || c.ID == "pt-capacity-35" {
+			if c.Role == "negative_control" {
+				for _, expected := range c.ExpectedFailures {
+					found := false
+					for _, failure := range result.Score.Failures {
+						if strings.Contains(failure, expected) {
+							found = true
+						}
+					}
+					if !found {
+						t.Fatalf("missed adversarial failure %q: %+v", expected, result.Score)
+					}
+				}
+				if strings.Contains(c.ID, "transferred-metric") && result.Score.RelationshipErrors != 1 {
+					t.Fatalf("did not detect transferred metric: %+v", result.Score)
+				}
+				if (strings.Contains(c.ID, "invented-management") || strings.Contains(c.ID, "requirement-as-skill")) && result.Score.UnsupportedCandidates != 1 {
+					t.Fatalf("did not count unsupported claim: %+v", result.Score)
+				}
+			} else if c.ID == "en-capacity-35" || c.ID == "pt-capacity-35" {
 				if len(result.Score.Missing) != 10 || result.Score.Matched != 60 || result.Score.Expected != 70 {
 					t.Fatalf("hid capacity loss: %+v", result.Score)
 				}
@@ -73,5 +118,40 @@ func TestControlledAdapterExercisesProductionCvGrounding(t *testing.T) {
 	}
 	if run.Status != 502 || string(run.Output) != "{\"error\":\"invalid_output\"}\n" || len(run.Calls) != 1 || run.Calls[0].Model == "" || run.Calls[0].SchemaHash == "" {
 		t.Fatalf("did not preserve production grounding: %+v", run)
+	}
+}
+
+func TestOriginalBaselineInputsAreRecoverableByHash(t *testing.T) {
+	root := "../../docs/evaluations/semantic-quality/"
+	raw, err := os.ReadFile(root + "live.initial.v1.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var report struct {
+		FixtureHash  string            `json:"fixtureHash"`
+		SourceHashes map[string]string `json:"sourceHashes"`
+	}
+	if err = json.Unmarshal(raw, &report); err != nil {
+		t.Fatal(err)
+	}
+	for file, expected := range map[string]string{"history/cases.initial.v1.json": report.FixtureHash, "history/adapter.initial.v1.go.txt": report.SourceHashes["internal/semanticeval/adapter.go"], "history/score.v1.go.txt": report.SourceHashes["internal/semanticeval/score.go"]} {
+		contents, err := os.ReadFile(root + file)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if Hash(contents) != expected {
+			t.Fatalf("original evidence snapshot drifted: %s", file)
+		}
+	}
+}
+
+func TestOfflineAssessmentDoesNotEraseARejectedWorkflow(t *testing.T) {
+	c := Case{Gold: []Atom{{ID: "metric", Group: "summary", Match: map[string]string{"text": "20%"}}}}
+	result, err := Assess(c, RunResult{Mode: "replay", Status: 502, NoStore: true, Output: json.RawMessage(`{"error":"invalid_output"}`)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Status != 502 || result.Score.Completeness != 0 || len(result.Score.Failures) != 2 {
+		t.Fatalf("replay erased failure: %+v", result)
 	}
 }

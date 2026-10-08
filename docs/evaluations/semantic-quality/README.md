@@ -7,7 +7,7 @@ models, routing, source filters or Profile apply behavior.
 
 ## Frozen labels and evidence boundaries
 
-`cases.v1.json` contains 26 synthetic EN/PT cases with stable IDs, task labels,
+`cases.v2.json` contains 34 synthetic EN/PT cases with stable IDs, task labels,
 development/heldout splits, exact application requests, independently authored
 controlled provider responses, gold expectations and forbidden additions.
 `sourceId` links reused cases to issue #29's field-validation corpus. Its
@@ -21,7 +21,12 @@ No production prompt or settings were tuned in this ticket. Some held-out PT
 cases are translated counterparts; this small bilingual set is not an
 independent population sample. Add independent unseen cases before drawing
 generalization conclusions. Increment the fixture version when changing labels,
-source facts or splits. Keep original run artifacts when correcting a label.
+source facts or splits. Keep original run artifacts when correcting a label. Historical reports used
+the same v1 version tag for initial and corrected gold. This mistake is preserved
+rather than rewriting evidence: `history/manifest.json` maps each original report
+to exact, hash-verified fixture/scorer/adapter snapshots or retained git source
+objects. `cases.v1.json` is the corrected legacy fixture; the original is archived
+as `history/cases.initial.v1.json`. Current labels use version v2.
 
 Gold atoms explicitly specify facts and structured destinations, action/finding
 constraints where applicable, source IDs and entity IDs. Negation/aspirations,
@@ -42,14 +47,27 @@ failures and missing expectations, so an error is never a passing case.
 
 Extraction claims and proposal operations are separate atoms; gap atoms measure
 requirement coverage; CV selection and cited summaries measure source coverage.
-Application Draft uses one conjunctive material-level label over metadata,
-Job Summary, resume, cover letter and answers. Its label precision is therefore
-not sentence-level factual precision. Audit each generated factual sentence
-against the source Profile, confirmed qualifications and Job Posting using the
-review worksheet below. Preserve unsupported claims and relationship errors
-individually, with their output location and source evidence.
+Application Draft scores metadata and prose clauses separately by material
+field, including the salutation. Anchored full-clause labels cite the Profile
+fact, Job Posting requirement, or explicit absence that supports each unit.
+Candidate Java support and employer AWS requirements are separate labels;
+entity-normalized content plus owner labels detect a metric transferred from
+Acme to Atlas. The English/Portuguese relationship cases exercise those links
+across resume and cover letter. Six negative controls inject invented management,
+AWS-as-candidate-experience, or transferred metrics and must fail the relevant
+labels. They are deliberately invalid output controls, not acceptance cases.
 
-An unmatched unit is an **unsupported-claim candidate**, not an established
+Optional source-supported explanations may be absent without reducing coverage.
+`matched / observed` includes recognized optional units; `covered / expected`
+counts only required atoms. Unknown units have their actual field, text and
+location recorded in `unmatchedUnits`. `unsupportedClaimCandidates` excludes
+known duplicate and relationship failures. These are conservative label counts,
+not human-adjudicated hallucination counts. The finite clause segmenter may split
+abbreviations or conjunctions awkwardly, and a complex paraphrase may be left
+unmatched. Use the worksheet for source-grounded adjudication; never silently
+pass an extra clause because another clause contains a supported keyword.
+
+An otherwise unexplained unmatched unit is an **unsupported-claim candidate**, not an established
 hallucination: a valid paraphrase can miss a narrow label. Relationship errors
 mean a content match failed another labeled constraint (such as owner,
 destination or source ID); inspect the output before assigning a semantic cause.
@@ -92,7 +110,7 @@ GOCACHE=/tmp/careeros-go-cache go run ./scripts/semantic-quality \
 
 Credential files contain `OPENAI_API_KEY=value` / `TYPESAFE_API_KEY=value`.
 Values are parsed process-locally. No environment key triggers a run implicitly.
-Eight **workflow** attempts can mean up to 18 provider calls (ingestion needs
+Eight **workflow** attempts can mean up to 24 provider calls (ingestion needs
 classification, extraction and comparison). There are no automatic retries or
 fallbacks. A non-200 live workflow stops the run and preserves partial evidence;
 unattempted IDs remain pending. A further invocation is a deliberate run within
@@ -127,3 +145,22 @@ Agent-assisted inspection is recorded as such; it does not impersonate human
 adjudication. Human review remains explicitly pending when needed. Issue #35
 owns reusable usage/outcome measurements and #50 owns later configuration
 comparisons; this baseline makes neither a provider-selection nor tuning claim.
+
+## Offline reassessment
+
+Recalculate the stronger v2 labels over the original eight provider attempts,
+without reading credentials or making network calls:
+
+```sh
+GOCACHE=/tmp/careeros-go-cache go run ./scripts/semantic-quality \
+  --split all \
+  --replay docs/evaluations/semantic-quality/live.initial.v1.json,docs/evaluations/semantic-quality/live.remaining.v1.json,docs/evaluations/semantic-quality/live.final.v1.json \
+  --output /tmp/semantic-replay-v2.json
+```
+
+Replay refuses live authorization and credential arguments. It records the
+original report paths/hashes in `derivedFrom`, preserves the saved responses and
+provider-call metadata, and recalculates only scores. Replayed calls are old
+evidence, not new provider requests. Original reports retain their inference
+source versions. Reassessed labels are post-hoc measurement improvements, not a
+fresh held-out inference run. Existing prompts/models/settings remain untouched.
