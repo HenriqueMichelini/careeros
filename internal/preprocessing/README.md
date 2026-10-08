@@ -138,3 +138,79 @@ retain every occurrence; #40 and #41 own semantic matching and fact accounting.
 Golden tests verify exact/format variants, bilingual negation, changed dates and
 metrics, distinct technologies, repeated headings/boilerplate and parent context,
 literal guards, source recovery, defensive copies and both current byte limits.
+
+## Bounded preparation and portion planning (issue #59)
+
+`LimitsFor(field)` exposes the existing compatibility limits, with no increase:
+
+| Field | Complete decoded original | Encoded incoming HTTP body |
+| --- | ---: | ---: |
+| Professional information | 30,000 bytes | 163,840 bytes (160 KiB) |
+| Job Posting | 30,720 bytes (30 KiB) | 131,072 bytes (128 KiB) |
+
+`CheckRequestBodySize(field, measuredBodyBytes)` checks the actual encoded body,
+including envelope/escaping. Callers retain bounded body readers and schema and
+field-specific validation. Run transport checks before decoding, and
+`PrepareBounded(original, field)` before normalization. The latter returns the
+complete immutable original, its measured size, and either a `ready` prepared
+`Source` with measured prepared size, or `insufficient_capacity` with the entire
+original range unprocessed. Raw oversize never becomes admissible through cleanup
+or repetition. A zero prepared size on raw rejection means preparation did not
+run. Low-level `Prepare` remains available; `Source.Plan` independently rejects
+sources exceeding the same raw caps.
+
+`Source.Plan(Budget, PayloadEncoder)` is pure mechanical planning under
+`portions-v1`. Its budget requires positive prepared-text bytes, provider-payload
+bytes and maximum portion count. The caller supplies a **pure serializer** of the
+actual final provider request, including all known prompt, saved Profile/job
+context, envelope fields, source references and JSON escaping. The planner measures
+those serialized bytes for each candidate; a text budget alone cannot establish
+payload capacity. The serializer may run many times and must never perform I/O
+or invoke AI. Errors propagate. Count budgets in UTF-8 bytes, never exact tokens;
+this API provides no token estimate or provider context-window guarantee.
+
+`Plan.Status == Ready` means the **whole single prepared view** fits both budgets.
+Only in that case does the plan contain one complete view suitable for current
+bounded workflows (subject to whole-original Jev acceptance). A smaller capacity
+returns `InsufficientCapacity` even if `Plan.Complete` is true and multiple
+portions mechanically cover the source. `Complete` measures original coverage,
+never semantic extraction completeness, safety, or authorization. `SourceID`,
+preparation version and planning version remain available for #41's coverage and
+claim disposition ledger; semantic continuation remains its responsibility.
+
+Planning preserves source order and prefers complete wrapped paragraphs, list
+items/continuations, and runs of literal/table/quotation lines. On overflow it
+falls back to original mapping boundaries in splittable prose/continuations.
+UTF-8 characters and normalization groups remain indivisible, as do guarded
+URL/email/code spans, protected blocks, heading lines and list-item wrapper
+lines. This is a conservative syntactic policy, not a promise of optimal packing.
+A protected block or required ancestor wrapper that cannot fit produces an
+explicit `indivisible_or_context_capacity` result and the remaining original
+ranges. Portion count exhaustion returns `portion_count`; no first-N success is
+reported. Each portion covers at least one new mapping group, so both count and
+storage are bounded by source size and the declared limits.
+
+Each `Portion.View` carries its exact covered normalized/original ranges and
+text. External syntactic ancestors appear outermost first in `Context`, with
+`Role: "context"`, segment IDs, text and exact ranges. These ranges explicitly
+overlap earlier source coverage and are **not** newly covered content; repeated
+context bytes count against both text and serialized payload budgets. The
+non-context original ranges of portions followed by `Unprocessed` partition the
+complete original without omissions or overlaps. Repetition annotations never
+shrink that accounting. All failure paths retain the original for correction or
+later deliberate continuation.
+
+Integration handoff for #60/#61: keep strict transport/schema/raw checks first;
+Jev must classify the complete `Preparation.Original` once per protected route
+attempt under existing bounds. Only whole-source acceptance permits downstream
+AI. If Jev cannot classify the whole original, report that limitation; never
+classify selected portions. Use a complete single prepared view only when its
+caller-owned payload fits. This library neither gates acceptance nor calls any
+provider; it introduces no fan-out, batching, retry, continuation UI, partial
+success, storage or Profile mutation. Current handlers remain unchanged in this
+slice. #41 owns execution/continuation and cross-portion semantic reconciliation.
+
+Public-API tests verify exact raw/body/payload boundaries, multibyte crossings,
+normalization expansion, indivisible groups/blocks, repeated heading/list context,
+every repetition, many short segments, count failures and exact complete original
+coverage. `FuzzBoundedPlanCoverage` also checks determinism and byte budgets.

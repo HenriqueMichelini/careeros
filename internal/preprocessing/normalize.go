@@ -84,8 +84,16 @@ func normalizeProtected(original string, field fieldvalidation.Field, protected 
 			pos = end
 			continue
 		}
+		// A line ending cannot compose with a following combining mark. Keep
+		// it separate so structural line boundaries never bisect an expanded
+		// normalization group (for example LF followed by U+0344).
+		if original[pos] == '\n' {
+			add(pos, pos+1, "\n")
+			pos++
+			continue
+		}
 		end := pos
-		for end < len(original) && original[end] != '\r' && !protected[end] {
+		for end < len(original) && original[end] != '\r' && original[end] != '\n' && !protected[end] {
 			end++
 		}
 		for start := pos; start < end; {
