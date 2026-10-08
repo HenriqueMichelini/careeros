@@ -28,3 +28,18 @@ These were two deliberate diagnostic calls, without automatic retries, using the
 ## Concrete next step
 
 The existing prompt requests nonempty strings, but JSON mode alone did not enforce that contract in these probes. A follow-up fix should enforce the declared output shape, retain downstream validation and add a regression at the public handler seam. Successful EN/PT baseline and Jev-prefixed workflow timings should then use unmodified live output. This production fix and new test seam await the user's direction. Henrique has approved the Jev provider/architecture proposal, recorded in [ADR 0001](../adr/0001-stateless-user-key-backend.md); that approval does not resolve the drafting measurement gap.
+
+## Prepared fix proposal — not applied
+
+Official documentation checked on 2026-10-07 lists structured output support for the fixed [GPT-6 Luna model](https://developers.openai.com/api/docs/models/gpt-6-luna). The [Structured Outputs guide](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=chat) describes Chat Completions `json_schema` with strict adherence, required properties and `additionalProperties: false` for every object. These are documentation claims; this proposed schema has not been sent to the provider.
+
+The [concrete proposed response format](application-draft-response-format-proposal.json) declares exactly the backend's six fields, with `applicationAnswers` as a string, the three cover-letter fields as strings and the existing allowed closings as an enum. Both objects forbid extra properties and require every declared field. It replaces the existing outbound `json_object` response format; the requested model, reasoning effort, token cap, prompt, user-owned key, call count, timeout and public response contract would stay the same. Backend nonempty, cover-letter and domain checks remain necessary; schema adherence does not establish factual correctness or promise generation success.
+
+If Henrique selects the pending fix-and-measure option, the bounded work is:
+
+1. At the public `NewHandler()` HTTP seam, add a failing-first contract regression that inspects the outbound strict schema through a fake transport. Verify success for the supported string contract and continued rejection of an array-valued `applicationAnswers`, without weakening validation or adding a retry.
+2. Apply the response-format change, run the focused Go handler tests and required checks, and independently review the patch.
+3. Deliberately run one paired baseline / Jev-prefixed draft probe in each language using the existing fully specified synthetic timing fixtures. This is at most four OpenAI generation calls and two Jev classification calls if both pairs complete. Stop each pair on baseline failure or unsuccessful classification; no automatic retries. Record actual whole-request durations and preserve all failed attempts.
+4. Inspect successful output in memory for completeness and source fidelity without persisting generated prose. Do not count a schema-conforming response alone as successful generation or extrapolate two timings into production tail reliability.
+
+The public-handler regression seam and production change remain pending the user's second answer. No new provider calls or production changes were made to prepare this proposal. Issue #29's workflow-runtime criterion remains partial until the measurement succeeds or Henrique explicitly accepts the limitation.
