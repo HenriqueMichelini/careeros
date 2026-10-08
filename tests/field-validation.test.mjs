@@ -517,3 +517,20 @@ test("unmetered and partially metered experiments report unknown totals with exp
   })
   assert.equal(partial.metered, 1)
 })
+
+test("production integration summary keeps missing and failed evidence out of accuracy", async () => {
+  const { summarizeIntegration } = await import("../scripts/field-validation/report-integration.mjs")
+  const corpus = [
+    {id:"accepted", expected:"accept"},
+    {id:"quoted", expected:"request_rephrasing"},
+  ]
+  const report = summarizeIntegration({records:[
+    {id:"accepted",decision:{outcome:{kind:"service_failure",reason:"key"}},durationMs:10},
+  ],workflows:[]},corpus)
+  assert.equal(report.correct,0)
+  assert.equal(report.classified,0)
+  assert.equal(report.classificationAccuracy,null)
+  assert.deepEqual(report.missingIds,["quoted"])
+  assert.equal(report.coverage,0.5)
+  assert.throws(()=>summarizeIntegration({records:[{id:"other"}]},corpus))
+})

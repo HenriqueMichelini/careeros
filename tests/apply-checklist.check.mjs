@@ -1,3 +1,4 @@
+import { keyboardFlow } from "./keyboard-flow.mjs"
 // Browser regression for the Apply checklist and workflow transitions.
 // Uses synthetic API responses; no provider request is made.
 import assert from "node:assert/strict"
@@ -159,7 +160,7 @@ try {
       returnByValue: true,
       awaitPromise: true,
     })
-    if (result.exceptionDetails) throw new Error(result.exceptionDetails.text)
+    if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text)
     return result.result.value
   }
   const until = async (expression) => {
@@ -197,10 +198,13 @@ try {
     )
     await pause(50)
   }
-  const generate = () =>
-    evaluate(
+  const generate = async () => {
+    await until("!!document.querySelector('main textarea') && !!document.querySelector('main [data-checklist-state]')")
+    return evaluate(
       "document.querySelector('main [data-checklist-state]').parentElement.parentElement.querySelector('button').click()",
     )
+  }
+  const {keyboardFill, keyboardSubmit} = keyboardFlow({call, evaluate, pause, selector:'main textarea'})
   const respond = async (body, status = 200) => {
     await evaluate(
       `window.__pending.shift().resolve(new Response(${JSON.stringify(JSON.stringify(body))}, { status: ${status}, headers: { 'Content-Type': 'application/json' } }))`,
@@ -272,6 +276,21 @@ try {
         assert.equal(await evaluate("window.__pending.length"), 0)
         assert.equal(await evaluate("document.querySelector('main textarea').value"), "Engineer building APIs " + reason)
       }
+      // Keyboard correction and a deliberate service-failure retry, no automatic call.
+      const submitTarget = "document.querySelector('main [data-checklist-state]').parentElement.parentElement.querySelector('button')"
+      await keyboardFill('Security engineer documents quoted override examples.')
+      await keyboardSubmit(submitTarget)
+      await respond(decision('request_rephrasing'))
+      await keyboardFill('Java developer. AWS required.')
+      await keyboardSubmit(submitTarget)
+      await respond(decision('service_failure', {reason:'timeout'}),504)
+      await pause(200)
+      assert.equal(await evaluate('window.__pending.length'),0)
+      assert.equal(await evaluate("document.querySelector('main textarea').value"),'Java developer. AWS required.')
+      await keyboardSubmit(submitTarget)
+      assert.equal(await evaluate('window.__pending.length'),1)
+      await respond(decision('request_information', {needs:'responsibilities_or_qualifications'}))
+      assert.equal(await evaluate("localStorage.getItem('careeros_repo')"),unchangedProfile)
       // Short postings preserve explicit unknowns through qualification confirmation, Results and print.
       const shortDraft = {
         jobTitle: "Java developer", company: null, jobSummary: "AWS required.",

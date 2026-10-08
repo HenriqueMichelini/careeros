@@ -1,3 +1,4 @@
+import { keyboardFlow } from "./keyboard-flow.mjs"
 // Browser regression for raw professional-information review and explicit apply.
 // Uses synthetic API responses; no provider request is made.
 import assert from "node:assert/strict"
@@ -150,7 +151,7 @@ try {
       returnByValue: true,
       awaitPromise: true,
     })
-    if (result.exceptionDetails) throw new Error(result.exceptionDetails.text)
+    if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text)
     return result.result.value
   }
   const until = async (expression) => {
@@ -182,6 +183,7 @@ try {
   }
   const saved = () => evaluate("localStorage.getItem('careeros_repo')")
   const byText = text => `Array.from(document.querySelectorAll('button')).find(el=>el.textContent.trim()===${JSON.stringify(text)})`
+  const {keyboardFill, keyboardSubmit} = keyboardFlow({call, evaluate, pause, selector:'#ingestion-text'})
   const fixture = {
     decision: {version:1,field:"professional_information",outcome:{kind:"accept"}},
     claims: [{id:'c1',source:'Ada',text:'Professional facts supplied by Ada',targets:['fullName','email','phone','location','professionalLinks','education','certifications','languages','experience','projects','skills'],question:''},
@@ -252,6 +254,21 @@ try {
       }
       assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth'))
     }
+    // Real Tab/Enter and text input exercise revision and deliberate retry.
+    await keyboardFill(quoted)
+    await evaluate(`window.__keyboardCalls=0; window.fetch=async()=>{window.__keyboardCalls++; const body=window.__keyboardCalls===1?{decision:{version:1,field:'professional_information',outcome:{kind:'request_rephrasing'}}}:window.__keyboardCalls===2?{decision:{version:1,field:'professional_information',outcome:{kind:'service_failure',reason:'timeout'}}}:${JSON.stringify(proposal)};return new Response(JSON.stringify(body),{status:window.__keyboardCalls===2?504:200})}`)
+    await keyboardSubmit(byText(review))
+    await until("!!document.querySelector('[role=alert]')")
+    await keyboardFill(text+'; corrected professional fact.')
+    await keyboardSubmit(byText(review))
+    await until("window.__keyboardCalls===2 && !!document.querySelector('[role=alert]')")
+    await pause(200)
+    assert.equal(await evaluate("window.__keyboardCalls"),2)
+    assert.equal(await evaluate("document.querySelector('#ingestion-text').value"),text+'; corrected professional fact.')
+    await keyboardSubmit(byText(review))
+    await until("document.querySelectorAll('article').length === 1")
+    assert.equal(await evaluate("window.__keyboardCalls"),3)
+    assert.equal(await saved(),initial)
     // Hold a response: loading keeps text/Profile intact; editing cancels stale proposals.
     await fill(text)
     await evaluate(`window.fetch=async()=>new Promise(resolve=>window.__finish=()=>resolve(new Response(${JSON.stringify(JSON.stringify(proposal))},{status:200})))`)
