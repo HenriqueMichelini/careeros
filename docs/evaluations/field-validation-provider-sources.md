@@ -39,8 +39,10 @@ The following is source evidence from the current checkout; it does not establis
 | Profile review | JSON mode | 5,000 | 25 seconds | 64 KiB |
 | Profile ingestion, each stage | Strict JSON Schema | 6,000 | 24 seconds | 160 KiB for the whole request |
 | Qualification gaps | JSON mode | 1,200 | 25 seconds | 128 KiB |
-| Application draft | JSON mode | 8,000 | 25 seconds | 128 KiB |
+| Application draft | Strict JSON Schema after `18d45da` | 8,000 | 25 seconds | 128 KiB |
 | CV generation | JSON mode | 4,000 | 25 seconds | 128 KiB |
+
+Application Draft was JSON mode at the initial source inspection; the [subsequent user-authorized fix and measurement](field-validation-draft-fixed-results.md) changed only its output format.
 
 Sources: [profile review](../../backend/profile-review/main.go), [profile ingestion](../../backend/profile-ingestion/main.go), [qualification gaps](../../backend/qualification-gaps/main.go), [application draft](../../backend/application-draft/main.go), [CV generation](../../backend/cv-generation/main.go).
 

@@ -70,3 +70,7 @@ Final review totals: Standards 0 hard findings / 1 nonblocking smell; Spec 0 new
 ## Subsequent human decision
 
 Henrique approved the documented Jev proposal on 2026-10-07: pinned explicit Choice classification, user-owned TypeSafe keys/credits, the additional data recipient and an ADR update, while retaining OpenAI for generation. The earlier final-review acceptance gates above describe their state at review time. Only the drafting measurement decision remains pending; its [subsequent diagnosis](field-validation-draft-diagnostic.md) is separate from the frozen classifier experiment.
+
+## Subsequent drafting gate closure
+
+Henrique selected fix-and-measure. The [strict-schema fix and successful EN/PT paired measurements](field-validation-draft-fixed-results.md) now resolve the earlier drafting evaluation gap. Pending fix/seam/measurement statements above describe the historical state when those records were written. The provider proposal remains approved; no dependent integration or deployment is claimed.

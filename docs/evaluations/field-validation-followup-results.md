@@ -102,3 +102,7 @@ The reporting P2 finding is resolved by a failing-first regression and independe
 ## Subsequent approval and drafting diagnosis
 
 Henrique explicitly approved the documented Jev provider/architecture proposal, retaining OpenAI for generation; [ADR 0001](../adr/0001-stateless-user-key-backend.md) records the amendment. References to pending approval in the original review above describe their state at that time. The [drafting diagnosis](field-validation-draft-diagnostic.md) isolated an array/string output-contract mismatch in one subsequent baseline response. Fixing and measuring that workflow, or accepting the documented measurement gap, remains the pending human decision.
+
+## Subsequent drafting gate closure
+
+Henrique selected fix-and-measure. The [strict-schema fix and successful EN/PT paired measurements](field-validation-draft-fixed-results.md) now resolve the earlier drafting evaluation gap. Pending fix/seam/measurement statements above describe the historical state when those records were written. The provider proposal remains approved; no dependent integration or deployment is claimed.

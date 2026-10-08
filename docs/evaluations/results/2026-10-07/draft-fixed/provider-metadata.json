@@ -1,0 +1,142 @@
+[
+  {
+    "call": 1,
+    "choiceCount": 1,
+    "contentJsonValid": true,
+    "fieldCount": 6,
+    "finishedNormally": true,
+    "language": "en",
+    "nonemptyStrings": {
+      "applicationAnswers": true,
+      "company": true,
+      "jobSummary": true,
+      "jobTitle": true,
+      "resume": true
+    },
+    "numericYearsClaim": false,
+    "providerRoundTripAndInspectionMs": 3075.554,
+    "refusalPresent": false,
+    "requestHash": "7d43ac0d9014487a1c57e31a2f1f6d04ade6c83eb38303575e27bb34c18ce1d5",
+    "responseReadFailure": false,
+    "resumeExperienceOrEducationHeading": false,
+    "resumeMentionsJava": true,
+    "returnedRequestedModel": true,
+    "serviceTier": "default",
+    "sourceReviewScope": "automated in-memory spot checks only; not full semantic fidelity review",
+    "status": 200,
+    "upstreamJsonValid": true,
+    "usage": {
+      "prompt_tokens": 677,
+      "completion_tokens": 213,
+      "total_tokens": 890,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    }
+  },
+  {
+    "call": 2,
+    "choiceCount": 1,
+    "contentJsonValid": true,
+    "fieldCount": 6,
+    "finishedNormally": true,
+    "language": "en",
+    "nonemptyStrings": {
+      "applicationAnswers": true,
+      "company": true,
+      "jobSummary": true,
+      "jobTitle": true,
+      "resume": true
+    },
+    "numericYearsClaim": false,
+    "providerRoundTripAndInspectionMs": 2904.349,
+    "refusalPresent": false,
+    "requestHash": "7d43ac0d9014487a1c57e31a2f1f6d04ade6c83eb38303575e27bb34c18ce1d5",
+    "responseReadFailure": false,
+    "resumeExperienceOrEducationHeading": false,
+    "resumeMentionsJava": true,
+    "returnedRequestedModel": true,
+    "serviceTier": "default",
+    "sourceReviewScope": "automated in-memory spot checks only; not full semantic fidelity review",
+    "status": 200,
+    "upstreamJsonValid": true,
+    "usage": {
+      "prompt_tokens": 677,
+      "completion_tokens": 230,
+      "total_tokens": 907,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    }
+  },
+  {
+    "call": 3,
+    "choiceCount": 1,
+    "contentJsonValid": true,
+    "fieldCount": 6,
+    "finishedNormally": true,
+    "language": "pt",
+    "nonemptyStrings": {
+      "applicationAnswers": true,
+      "company": true,
+      "jobSummary": true,
+      "jobTitle": true,
+      "resume": true
+    },
+    "numericYearsClaim": false,
+    "providerRoundTripAndInspectionMs": 2742.572,
+    "refusalPresent": false,
+    "requestHash": "07dffb25abca377782972001021049db74bd531c70206f14485d8696a12d2bbb",
+    "responseReadFailure": false,
+    "resumeExperienceOrEducationHeading": false,
+    "resumeMentionsJava": true,
+    "returnedRequestedModel": true,
+    "serviceTier": "default",
+    "sourceReviewScope": "automated in-memory spot checks only; not full semantic fidelity review",
+    "status": 200,
+    "upstreamJsonValid": true,
+    "usage": {
+      "prompt_tokens": 727,
+      "completion_tokens": 248,
+      "total_tokens": 975,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    }
+  },
+  {
+    "call": 4,
+    "choiceCount": 1,
+    "contentJsonValid": true,
+    "fieldCount": 6,
+    "finishedNormally": true,
+    "language": "pt",
+    "nonemptyStrings": {
+      "applicationAnswers": true,
+      "company": true,
+      "jobSummary": true,
+      "jobTitle": true,
+      "resume": true
+    },
+    "numericYearsClaim": false,
+    "providerRoundTripAndInspectionMs": 3725.909,
+    "refusalPresent": false,
+    "requestHash": "07dffb25abca377782972001021049db74bd531c70206f14485d8696a12d2bbb",
+    "responseReadFailure": false,
+    "resumeExperienceOrEducationHeading": false,
+    "resumeMentionsJava": true,
+    "returnedRequestedModel": true,
+    "serviceTier": "default",
+    "sourceReviewScope": "automated in-memory spot checks only; not full semantic fidelity review",
+    "status": 200,
+    "upstreamJsonValid": true,
+    "usage": {
+      "prompt_tokens": 727,
+      "completion_tokens": 270,
+      "total_tokens": 997,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    }
+  }
+]

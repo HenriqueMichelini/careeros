@@ -1,6 +1,6 @@
 # Field-validation evaluation — issue #29
 
-Date: 2026-10-07. Status: **documentation-guided live follow-up and fresh confirmation complete; Jev Choice approved; drafting measurement decision pending**. Source of behavior: [agreed design](../input-validation.md); [GitHub issue #29](https://github.com/HenriqueMichelini/careeros/issues/29). No production workflow uses this evaluation code. Issues #30–#33 must not start on the basis of fixture tests or documentation claims.
+Date: 2026-10-07. Status: **evaluation complete; Jev Choice approved; successful EN/PT drafting measurements recorded**. Source of behavior: [agreed design](../input-validation.md); [GitHub issue #29](https://github.com/HenriqueMichelini/careeros/issues/29). No production workflow uses this evaluation code. Issues #30–#33 must not start on the basis of fixture tests or documentation claims.
 
 ## Provider decision and exploration
 
@@ -8,7 +8,7 @@ Date: 2026-10-07. Status: **documentation-guided live follow-up and fresh confir
 
 The first round favored OpenAI (34/34 versus initial Jev 26/34). The user requested deeper documentation research and then authorized billable follow-up tests. We froze two candidate question sets, independently authored calibration/held-out cases and selected explicit Choice on calibration before held-out inspection. Original records remain unchanged; the [research note](jev-improvement-research.md), [frozen plan](field-validation-followup-plan.json), [selection](field-validation-followup-selection.json) and [new results](field-validation-followup-results.md) distinguish proposed, calibration and held-out evidence. The initial 260-call follow-up and separate 48-call confirmation completed without operational failures, alongside four successful local paired workflow probes. The offline reporter's missing-usage handling was corrected with a failing-first regression; original fully metered totals are unchanged.
 
-Billable-test authorization and provider approval are separate records; both have now been supplied. Successful Application Draft overhead remains unavailable. Two subsequent [diagnostic calls](field-validation-draft-diagnostic.md) reproduced a failure and isolated an array/string mismatch in `applicationAnswers` in one response. The user has been asked whether to fix and measure the workflow at the public handler seam before #29 acceptance or accept the documented limitation. That answer is pending.
+Billable-test authorization and provider approval are separate records; both have now been supplied. Two subsequent [diagnostic calls](field-validation-draft-diagnostic.md) isolated an array/string mismatch in `applicationAnswers` in one response. Henrique selected fix-and-measure at the public handler seam. The [strict-schema fix and EN/PT measurements](field-validation-draft-fixed-results.md) now supply successful drafting-overhead evidence: baseline / Jev-prefixed totals were 3,109 / 3,396 ms in EN and 2,774 / 4,016 ms in PT.
 
 The approved amendment to [ADR 0001](../adr/0001-stateless-user-key-backend.md) changes its OpenAI-only classification decision. The integration will require a TypeSafe account, user-owned key/credits and disclosure of the additional data recipient and documented retention uncertainty. OpenAI remains necessary for downstream workflows. No shared secret, backend persistence, automatic fallback, retry, SDK installation or deployment has been added.
 
@@ -28,7 +28,7 @@ The downstream constraints (Java without inferred experience, ignored grocery li
 
 ## Current evidence
 
-The [first-round live comparison](field-validation-live-results.md) superseded the initial unavailable state; its recommendation is now superseded by the [documentation-guided follow-up](field-validation-followup-results.md). Both full-corpus runs completed 34 requests with no operational/shape failures: OpenAI 34/34 correct, Jev 26/34. OpenAI correctly routed 4/4 uncertain cases; Jev treated all four as confirmed attacks. Neither rejected any of the 12 accepted legitimate cases. Privacy claims remain documentation evidence; invoices, organization retention settings, browser/deployment timing and successful drafting-overhead measurements are unavailable.
+The [first-round live comparison](field-validation-live-results.md) superseded the initial unavailable state; its recommendation is now superseded by the [documentation-guided follow-up](field-validation-followup-results.md). Both full-corpus runs completed 34 requests with no operational/shape failures: OpenAI 34/34 correct, Jev 26/34. OpenAI correctly routed 4/4 uncertain cases; Jev treated all four as confirmed attacks. Neither rejected any of the 12 accepted legitimate cases. Privacy claims remain documentation evidence; invoices, organization retention settings and browser/deployment timing are unavailable. Successful local drafting measurements are now recorded in the [fix follow-up](field-validation-draft-fixed-results.md).
 
 The [offline empty report](field-validation-unavailable.json) is retained as a no-input runner example, **not the current evaluation status**. Running the following does not contact a provider and correctly emits null measurements when no records are supplied:
 
@@ -86,13 +86,14 @@ Local source establishes two ingestion stages with independent 24-second upstrea
 
 The exploratory 5-second classifier cap is the actual trial parameter. The live report proposes a **3-second integration target inside a shared remaining deadline**, based on the observed sample and explicit untested limits; this is not a measured production guarantee. Nominal worst-case sums are 53 seconds before ingestion overhead and 30 seconds before other workflow overhead, leaving insufficient demonstrated margin. Integration must use a shared remaining deadline and may need a smaller classifier budget or a redesigned bounded workflow. Do not recommend deployment if measured total workflow time cannot fit the browser and host bounds reliably. Paired latency measurements include overhead rather than adding independently sampled p95s. Record sample counts, cold/warm conditions, response status, failures and actual whole-request durations; a few successful samples do not establish tail reliability.
 
-## Remaining gate
+## Evaluation acceptance and remaining integration work
 
-1. Provider approval is recorded: Henrique selected the documented Jev proposal, and ADR 0001 has been amended. The approved architecture is not deployed behavior.
-2. Successful drafting-overhead measurement remains unavailable. The [diagnosed baseline contract mismatch](field-validation-draft-diagnostic.md) requires a fix and live measurement, or explicit acceptance of this evaluation limitation. The user's answer is pending; do not count offline replay as a successful live draft.
-3. Later integration and verification retain downstream schema/domain/source validation, maximum-input/load checks and browser/deployment coverage. The proposed 3-second classifier budget is an integration target within shared remaining deadlines, not a production latency guarantee.
+1. Henrique approved the documented Jev proposal, including user-owned TypeSafe keys/credits, additional recipient and ADR amendment, retaining OpenAI generation.
+2. Henrique selected the drafting fix and EN/PT measurement. Commit `18d45da` enforces the existing output contract; both live pairs succeeded within the 30-second probe deadline. The [results](field-validation-draft-fixed-results.md) resolve the previously unavailable drafting measurement.
+3. The typed contract, labeled provider comparison, routing policy, privacy/cost bounds and all three local workflow contexts are recorded. Issue #29's local evaluation deliverables are complete; the GitHub issue is not closed by this local record.
+4. Later integration still requires shared remaining deadlines, the proposed 3-second classifier setting, downstream schema/domain/source validation, maximum-input/load checks and browser/deployment coverage. Evaluation success does not establish those properties.
 
-Issue #29 remains open until the drafting measurement decision and its required work are complete. Dependent integration has not started.
+Dependent integration, GitHub publication and deployment have not begun.
 
 ## Local verification
 
@@ -119,3 +120,7 @@ All 11 focused checks and TypeScript typechecking pass. The final full Node suit
 The [follow-up](field-validation-followup-results.md) and [fresh confirmation](field-validation-confirmatory-results.md) supply the current recommendation. Independent reviews found and resolved missing-usage reporting, disclosed the first follow-up's template overlap, and reviewed all fresh labels before confirmation calls. Final Standards review has 0 hard findings / 1 nonblocking selection-duplication smell; Spec has 0 new findings. Both offline summaries reproduce their committed records exactly.
 
 Current checks: 15 focused checks and TypeScript typechecking pass; final full Node suite is 51/52, with the same unchanged font-default expectation described above. No new app/Go build or deployed/browser claim is made. Provider/architecture approval was subsequently supplied and recorded above; acceptance or resolution of unavailable successful drafting-overhead evidence remains pending before #29 acceptance/#30 integration.
+
+## Drafting gate closure
+
+The [user-authorized strict-schema fix and EN/PT measurements](field-validation-draft-fixed-results.md) supersede earlier pending drafting-gate statements in this report and its historical reviews. Both paired runs succeeded. Current Go tests and TypeScript checks pass; the Node suite retains the same unchanged 51/52 font-default failure. No production Jev integration or deployment is claimed.

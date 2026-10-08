@@ -43,3 +43,7 @@ If Henrique selects the pending fix-and-measure option, the bounded work is:
 4. Inspect successful output in memory for completeness and source fidelity without persisting generated prose. Do not count a schema-conforming response alone as successful generation or extrapolate two timings into production tail reliability.
 
 The public-handler regression seam and production change remain pending the user's second answer. No new provider calls or production changes were made to prepare this proposal. Issue #29's workflow-runtime criterion remains partial until the measurement succeeds or Henrique explicitly accepts the limitation.
+
+## Subsequent drafting gate closure
+
+Henrique selected fix-and-measure. The [strict-schema fix and successful EN/PT paired measurements](field-validation-draft-fixed-results.md) now resolve the earlier drafting evaluation gap. Pending fix/seam/measurement statements above describe the historical state when those records were written. The provider proposal remains approved; no dependent integration or deployment is claimed.
