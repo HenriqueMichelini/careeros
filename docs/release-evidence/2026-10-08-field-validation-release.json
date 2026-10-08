@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-08",
+  "origin": "https://beamish-bavarois-333d03.netlify.app",
+  "deployId": "6ac7b3c38bc6d40008084b95",
+  "revision": "31371b4f8739a46b2983de27411855153eabe478",
+  "scope": "direct HTTPS Function/provider checks; separate browser frontend inspection; not live browser end-to-end",
+  "workflowAttempts": 4,
+  "successfulWorkflowRequests": 3,
+  "expectedSuccessfulPathProviderCalls": {
+    "typesafe": 3,
+    "openai": 4
+  },
+  "automaticRetries": 0,
+  "autoPublishing": "locked",
+  "results": [
+    {
+      "case": "en-java",
+      "status": 200,
+      "clientHttpMs": 5102,
+      "cacheControl": "no-store",
+      "cacheStatus": "\"Netlify Durable\"; fwd=bypass",
+      "requestId": "01M4E1ZZ8ZQ1FBKMMEAWAD2XJG",
+      "payloadHash": "8d44c411117dc5a42eeb454af93c803ea70209029824a50057b970758c01d047",
+      "preflight": "pass",
+      "handlerMs": 4142,
+      "netlifyInvocationMs": 4145.76,
+      "invocationId": "d8f847b6",
+      "memoryMB": 38,
+      "providerMs": null,
+      "browserMs": null,
+      "functionLogPrivacy": "pass",
+      "fidelity": "pass"
+    },
+    {
+      "case": "pt-short-gaps",
+      "status": 200,
+      "clientHttpMs": 2400,
+      "cacheControl": "no-store",
+      "cacheStatus": "\"Netlify Durable\"; fwd=bypass",
+      "requestId": "01M4E2048C65TXVCVYX430VFJV",
+      "payloadHash": "db86bd75f2d53602a06b3a6a6211390d18162b556a5dd669fc83d7835046b9c6",
+      "preflight": "pass",
+      "handlerMs": 1558,
+      "netlifyInvocationMs": 1561.15,
+      "invocationId": "906c26d3",
+      "memoryMB": 37,
+      "providerMs": null,
+      "browserMs": null,
+      "functionLogPrivacy": "pass",
+      "fidelity": "pass"
+    },
+    {
+      "case": "pt-short",
+      "status": 200,
+      "clientHttpMs": 3750,
+      "cacheControl": "no-store",
+      "cacheStatus": "\"Netlify Durable\"; fwd=bypass",
+      "requestId": "01M4E206KFWNS11R19HXC7BJFA",
+      "payloadHash": "8ca9a5ddf736afbd59423a9505b9efc325fb2599a5ad3a7ecc9db835ecc36b6e",
+      "preflight": "pass",
+      "handlerMs": 2904,
+      "netlifyInvocationMs": 2907.43,
+      "invocationId": "ccf1b9b6",
+      "memoryMB": 37,
+      "providerMs": null,
+      "browserMs": null,
+      "functionLogPrivacy": "pass",
+      "fidelity": "pass"
+    }
+  ]
+}
