@@ -1,8 +1,11 @@
+import type { FieldDecision } from "../lib/fieldDecision"
+import type { TranslationKey } from "../lib/i18n"
 import LanguageSelector from "../components/LanguageSelector"
 import { useEffect, useRef, useState } from "react"
 import { useI18n, useStore } from "../lib/store"
 import {
   ApplicationDraftError,
+  JobPostingValidationError,
   findProfileGaps,
   generateMaterials,
   QualificationGapsError,
@@ -98,14 +101,18 @@ export default function HomePage({ setPage }: Props) {
     state: "pending",
   })
   const [draft, setDraft] = useState<RequestStep>({ state: "pending" })
+  const [jobDecision, setJobDecision] = useState<FieldDecision | null>(null)
+  const [revisionRequiredFor, setRevisionRequiredFor] = useState<{ text: string; kind: "request_rephrasing" | "reject_attack" } | null>(null)
   const requestId = useRef(0)
   const inputs = JSON.stringify([
     state.repository,
     state.jobPosting,
     state.apiKey,
+    state.typesafeKey,
     state.cvLanguage,
   ])
   useEffect(() => {
+    setJobDecision(null)
     setQualification({ state: "pending" })
     setDraft({ state: "pending" })
     setShowGapPrompt(false)
@@ -116,13 +123,27 @@ export default function HomePage({ setPage }: Props) {
   }, [inputs, dispatch])
   const isCheckingRequirements = qualification.state === "processing"
   const failure = qualification.error || draft.error
-  const failureMessage = qualification.error
+  const jobOutcome = jobDecision?.outcome || (revisionRequiredFor?.text === state.jobPosting.trim() ? { kind: revisionRequiredFor.kind } : null)
+  const validationMessage = jobOutcome
+    ? t((jobOutcome.kind === "service_failure" ? `field.failure.${jobOutcome.reason}` : `jobField.${jobOutcome.kind}`) as TranslationKey)
+    : ""
+  const failureMessage = validationMessage || (qualification.error
     ? t(gapErrorTranslationKeys[qualification.error])
     : draft.error
       ? t(draftErrorTranslationKeys[draft.error])
-      : ""
+      : "")
 
   function recordFailure(error: unknown, step: "qualification" | "draft") {
+    if (error instanceof JobPostingValidationError) {
+      setJobDecision(error.decision)
+      if (error.decision.outcome.kind === "request_rephrasing" || error.decision.outcome.kind === "reject_attack") {
+        setRevisionRequiredFor({ text: state.jobPosting.trim(), kind: error.decision.outcome.kind })
+      }
+      setShowGapPrompt(false)
+      setQualification({ state: "pending" })
+      setDraft({ state: "pending" })
+      return
+    }
     const code =
       error instanceof QualificationGapsError ||
       error instanceof ApplicationDraftError
@@ -144,12 +165,14 @@ export default function HomePage({ setPage }: Props) {
     state.repository.experience.length ||
     state.repository.skills
   )
-  const hasPosting = jobPosting.trim().length > 30
+  const hasPosting = jobPosting.trim().length > 0
   const canGenerate =
-    hasRepo && hasPosting && !!state.apiKey && !state.isGenerating
+    hasRepo && hasPosting && !!state.apiKey && !!state.typesafeKey.trim() &&
+    jobPosting.trim() !== revisionRequiredFor?.text && !state.isGenerating
 
   async function handleGenerate() {
     if (!canGenerate) return
+    setJobDecision(null)
     const id = ++requestId.current
     dispatch({ type: "SET_GENERATING", payload: true })
     setQualification({ state: "processing" })
@@ -160,6 +183,7 @@ export default function HomePage({ setPage }: Props) {
         state.repository,
         jobPosting,
         state.apiKey,
+        state.typesafeKey,
       )
       if (id !== requestId.current) return
       if (gaps.length > 0) {
@@ -179,6 +203,7 @@ export default function HomePage({ setPage }: Props) {
         state.apiKey,
         [],
         state.cvLanguage,
+        state.typesafeKey,
       )
       if (id !== requestId.current) return
       setDraft({ state: "complete" })
@@ -210,6 +235,7 @@ export default function HomePage({ setPage }: Props) {
           )
         : []
 
+    setJobDecision(null)
     const id = ++requestId.current
     setQualification({ state: "complete" })
     setDraft({ state: "processing" })
@@ -221,6 +247,7 @@ export default function HomePage({ setPage }: Props) {
         state.apiKey,
         confirmedQualifications,
         state.cvLanguage,
+        state.typesafeKey,
       )
       if (id !== requestId.current) return
       setDraft({ state: "complete" })
@@ -304,6 +331,19 @@ export default function HomePage({ setPage }: Props) {
             onFocus={(e) => (e.target.style.borderColor = "var(--color-fg)")}
             onBlur={(e) => (e.target.style.borderColor = "var(--color-border)")}
           />
+          <details className="mt-3 text-xs">
+            <summary className="cursor-pointer">{t("field.settings")}</summary>
+            <label htmlFor="job-typesafe-key" className="block mt-2">{t("field.typesafeKey")}</label>
+            <input id="job-typesafe-key" type="password" autoComplete="off" value={state.typesafeKey}
+              onChange={event => dispatch({ type: "SET_TYPESAFE_KEY", payload: event.target.value })}
+              className="w-full p-2 border border-[var(--color-border)] bg-[var(--color-card)]" />
+            <p className="mt-2">{t("jobField.disclosure")}</p>
+          </details>
+          <details id="job-input-use-rule" className="mt-3 text-xs">
+            <summary className="cursor-pointer">{t("field.ruleTitle")}</summary>
+            <p className="mt-2">{t("field.rule")}</p>
+          </details>
+          {!state.typesafeKey.trim() && <p className="mt-2 text-xs">{t("jobField.typesafeMissing")}</p>}
           <div
             className="flex justify-between items-center mt-2 text-xs"
             style={{
@@ -399,7 +439,7 @@ export default function HomePage({ setPage }: Props) {
               className="text-sm mb-4 break-words"
               style={{ color: "var(--color-status-error)" }}
             >
-              {failureMessage}
+              {failureMessage} {jobOutcome?.kind === "reject_attack" && <a href="#job-input-use-rule" className="underline" onClick={() => { const rule = document.querySelector<HTMLDetailsElement>("#job-input-use-rule"); if (rule) rule.open = true }}>{t("field.ruleTitle")}</a>}
             </p>
           )}
 

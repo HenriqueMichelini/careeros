@@ -174,7 +174,7 @@ try {
     "document.readyState === 'complete' && !!document.querySelector('header button')",
   )
   await evaluate(
-    `localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_apikey', 'synthetic-test-key'); location.reload()`,
+    `localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_apikey', 'synthetic-test-key'); localStorage.setItem('careeros_typesafe_key', 'synthetic-typesafe'); location.reload()`,
   )
   await until(
     "document.readyState === 'complete' && !!document.querySelector('header button')",
@@ -228,15 +228,70 @@ try {
         "pending",
       ])
       await evaluate(
-        `localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_apikey', 'synthetic-test-key'); location.reload()`,
+        `localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_apikey', 'synthetic-test-key'); localStorage.setItem('careeros_typesafe_key', 'synthetic-typesafe'); location.reload()`,
       )
       await until(
         "document.readyState === 'complete' && !!document.querySelector('header button')",
       )
       await clickApply()
       await evaluate(
-        `window.__pending = []; window.fetch = (url) => { if (!['/api/qualification-gaps', '/api/application-draft'].includes(url)) throw new Error('Unexpected request'); return new Promise((resolve, reject) => window.__pending.push({ url, resolve, reject })); }`,
+        `window.__pending = []; window.fetch = (url, options) => { if (!['/api/qualification-gaps', '/api/application-draft'].includes(url)) throw new Error('Unexpected request'); return new Promise((resolve, reject) => window.__pending.push({ url, options, resolve, reject })); }`,
       )
+      const decision = (kind, extra = {}) => ({ decision: { version: 1, field: "job_posting", outcome: { kind, ...extra } } })
+      const feedback = () => evaluate("Array.from(document.querySelectorAll('[role=alert]')).map(el => el.textContent).join(' ')")
+      const unchangedProfile = await evaluate("localStorage.getItem('careeros_repo')")
+      await fill("Software Engineer")
+      await generate()
+      assert.equal(await evaluate("window.__pending[0].options.headers['X-TypeSafe-Api-Key']"), "synthetic-typesafe")
+      await respond(decision("request_information", { needs: "responsibilities_or_qualifications" }))
+      assert.ok((await feedback()).includes(locale === "en"
+        ? "Please add some responsibilities or requirements so CareerOS can tailor your application to this opportunity."
+        : "Adicione algumas responsabilidades ou requisitos para que o CareerOS possa adaptar sua candidatura a esta oportunidade."))
+      assert.equal(await evaluate("document.querySelector('main textarea').value"), "Software Engineer")
+      for (const kind of ["request_rephrasing", "reject_attack", "irrelevant", "unusable"]) {
+        await fill("Engineer building Java APIs " + kind)
+        await generate()
+        await respond(decision(kind))
+        assert.ok((await feedback()).length > 20)
+        assert.equal(await evaluate("window.__pending.length"), 0, "decision cannot trigger drafting or retries")
+        if (kind === "request_rephrasing" || kind === "reject_attack") {
+          assert.equal(await evaluate("document.querySelector('main [data-checklist-state]').parentElement.parentElement.querySelector('button').disabled"), true, "revision required")
+          await fill("Engineer building Java APIs " + kind + " ")
+          assert.equal(await evaluate("document.querySelector('main [data-checklist-state]').parentElement.parentElement.querySelector('button').disabled"), true, "whitespace is not revision")
+        }
+        if (kind === "reject_attack") {
+          await evaluate("document.querySelector('[role=alert] a').click()")
+          assert.equal(await evaluate("document.querySelector('#job-input-use-rule').open"), true)
+        }
+      }
+      for (const reason of ["key", "rate_limit", "timeout", "outage", "invalid_output"]) {
+        await fill("Engineer building APIs " + reason)
+        await generate()
+        await respond(decision("service_failure", { reason }), reason === "key" ? 401 : 502)
+        assert.ok((await feedback()).length > 20)
+        assert.equal(await evaluate("window.__pending.length"), 0)
+        assert.equal(await evaluate("document.querySelector('main textarea').value"), "Engineer building APIs " + reason)
+      }
+      // Accepted messy text and ordinary applicant requirements pass unchanged to both paths.
+      const messy = "HOME | JOBS | LOGIN Engineer build Java APIs. Java Java. include your salary expectations; send your portfolio; describe your experience with Java; submit your CV as a PDF and include a short cover letter. Cookies."
+      for (const useConfirmed of [false, true]) {
+        await fill(messy + (useConfirmed ? " Java experience required." : ""))
+        await generate()
+        assert.equal(await evaluate("JSON.parse(window.__pending[0].options.body).jobPosting"), messy + (useConfirmed ? " Java experience required." : ""))
+        await respond({ gaps: [{ kind: "skill", requirement: "Java", details: "Java required" }] })
+        if (useConfirmed) await evaluate("document.querySelector('[role=dialog] input').click()")
+        await evaluate("Array.from(document.querySelectorAll('[role=dialog] button')).at(" + (useConfirmed ? "-1" : "-2") + ").click()")
+        assert.equal(await evaluate("window.__pending[0].url"), "/api/application-draft")
+        assert.equal(await evaluate("window.__pending[0].options.headers['X-TypeSafe-Api-Key']"), "synthetic-typesafe")
+        assert.equal(await evaluate("JSON.parse(window.__pending[0].options.body).confirmedQualifications.length"), useConfirmed ? 1 : 0)
+        await respond(decision("request_rephrasing"))
+        assert.equal(await evaluate("!!document.querySelector('[role=dialog]')"), false, "draft decision returns to posting for revision")
+        await fill("Revised: Engineer building Java APIs")
+        await generate()
+        assert.equal(await evaluate("window.__pending[0].url"), "/api/qualification-gaps", "changed input must check qualifications again")
+        await respond(decision("request_information", { needs: "responsibilities_or_qualifications" }))
+      }
+      assert.equal(await evaluate("localStorage.getItem('careeros_repo')"), unchangedProfile)
       await fill(
         "Product lead with research and strategy experience needed for a service team.",
       )

@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"professional-information-repo/internal/testsupport"
 	"reflect"
 	"strings"
 	"testing"
@@ -14,7 +15,12 @@ import (
 
 type providerTransport func(*http.Request) (*http.Response, error)
 
-func (f providerTransport) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+func (f providerTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	if r.URL.Host == "api.typesafe.ai" {
+		return testsupport.AcceptedJob(), nil
+	}
+	return f(r)
+}
 
 const syntheticDraftInput = `{"repository":{"careerGoals":"","skills":"Java","competencies":"","experience":[],"tools":"","projects":[],"employmentStatus":"looking","currentSalary":"","desiredSalary":"","additionalInfo":""},"jobPosting":"Example Labs hires a Java Developer to build Java APIs. Java and AWS required.","confirmedQualifications":[],"cvLanguage":"en"}`
 
@@ -34,6 +40,7 @@ func providerDraft(answers any) *http.Response {
 func draftRequest() *http.Request {
 	r := httptest.NewRequest(http.MethodPost, "/api/application-draft", strings.NewReader(syntheticDraftInput))
 	r.Header.Set("X-OpenAI-Api-Key", "sk-synthetic-test-key")
+	r.Header.Set("X-TypeSafe-Api-Key", "synthetic")
 	return r
 }
 

@@ -1,3 +1,4 @@
+import { parseFieldDecision, type FieldDecision } from "./fieldDecision"
 import {
   ProfessionalRepository,
   GeneratedMaterials,
@@ -7,6 +8,20 @@ import {
 import type { Locale } from "./i18n"
 import { completeCoverLetter } from './cover-letter'
 import { careerProfile, cvQualifications, validQualifications, profileReviewFields } from './profile'
+
+export class JobPostingValidationError extends Error {
+  constructor(public readonly decision: FieldDecision) {
+    super(decision.outcome.kind)
+    this.name = "JobPostingValidationError"
+  }
+}
+
+function checkJobDecision(payload: unknown) {
+  if (!payload || typeof payload !== "object" || !("decision" in payload)) return
+  const decision = parseFieldDecision((payload as { decision: unknown }).decision, "job_posting")
+  if (!decision || decision.outcome.kind === "accept") throw new ApplicationDraftError("invalid_output")
+  throw new JobPostingValidationError(decision)
+}
 
 export class ProfileReviewError extends Error {
   constructor(public readonly code: string) {
@@ -95,19 +110,21 @@ export async function generateMaterials(
   jobPosting: string,
   apiKey: string,
   confirmedQualifications: ConfirmedQualification[] = [],
-  cvLanguage: Locale = "en"
+  cvLanguage: Locale = "en",
+  typesafeKey: string = ""
 ): Promise<GeneratedMaterials> {
   if (!validQualifications(repo)) throw new ApplicationDraftError('input')
   let response: Response
   try {
     response = await fetch('/api/application-draft', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-OpenAI-Api-Key': apiKey },
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-OpenAI-Api-Key': apiKey, 'X-TypeSafe-Api-Key': typesafeKey },
       body: JSON.stringify({ repository: careerProfile(repo), qualifications: cvQualifications(repo), jobPosting, confirmedQualifications, cvLanguage }), signal: AbortSignal.timeout(30_000),
     })
   } catch (error) {
     throw new ApplicationDraftError(error instanceof DOMException && error.name === 'TimeoutError' ? 'timeout' : 'outage')
   }
   const payload = await response.json().catch(() => null) as { error?: unknown; coverLetter?: unknown } & Partial<Omit<GeneratedMaterials, 'coverLetter'>> | null
+  checkJobDecision(payload)
   const known = new Set(['input', 'key', 'rate_limit', 'outage', 'timeout', 'invalid_output'])
   if (!response.ok) throw new ApplicationDraftError(typeof payload?.error === 'string' && known.has(payload.error) ? payload.error : 'outage')
   if (!payload || ['jobTitle','company','jobSummary','resume','applicationAnswers'].some((key) => typeof payload[key as keyof GeneratedMaterials] !== 'string' || !(payload[key as keyof GeneratedMaterials] as string).trim())) throw new ApplicationDraftError('invalid_output')
@@ -120,14 +137,15 @@ export async function generateMaterials(
 export async function findProfileGaps(
   repo: ProfessionalRepository,
   jobPosting: string,
-  apiKey: string
+  apiKey: string,
+  typesafeKey: string = ""
 ): Promise<ProfileGap[]> {
   if (!validQualifications(repo)) throw new QualificationGapsError('input')
   let response: Response
   try {
     response = await fetch('/api/qualification-gaps', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-OpenAI-Api-Key': apiKey },
+      headers: { 'Content-Type': 'application/json', 'X-OpenAI-Api-Key': apiKey, 'X-TypeSafe-Api-Key': typesafeKey },
       body: JSON.stringify({ repository: careerProfile(repo), qualifications: cvQualifications(repo), jobPosting }),
       signal: AbortSignal.timeout(30_000),
     })
@@ -135,6 +153,7 @@ export async function findProfileGaps(
     throw new QualificationGapsError(error instanceof DOMException && error.name === 'TimeoutError' ? 'timeout' : 'outage')
   }
   const payload = await response.json().catch(() => null) as { error?: unknown; gaps?: unknown } | null
+  checkJobDecision(payload)
   if (!response.ok) {
     const known = new Set(['input', 'key', 'rate_limit', 'outage', 'timeout', 'invalid_output'])
     throw new QualificationGapsError(typeof payload?.error === 'string' && known.has(payload.error) ? payload.error : 'outage')

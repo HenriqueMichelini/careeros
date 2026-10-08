@@ -6,13 +6,19 @@ import (
 	"net/http"
 	"net/http/httptest"
 	profilevalidation "professional-information-repo/internal/profilevalidation"
+	"professional-information-repo/internal/testsupport"
 	"strings"
 	"testing"
 )
 
 type transportFunc func(*http.Request) (*http.Response, error)
 
-func (f transportFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+func (f transportFunc) RoundTrip(r *http.Request) (*http.Response, error) {
+	if r.URL.Host == "api.typesafe.ai" {
+		return testsupport.AcceptedJob(), nil
+	}
+	return f(r)
+}
 
 type timeoutReadError struct{}
 
@@ -117,6 +123,7 @@ func TestRateLimitMapsWithoutRetryAndDoesNotCache(t *testing.T) {
 	body := `{"repository":{"careerGoals":"","skills":"Go","competencies":"","experience":[],"tools":"Docker","projects":[],"employmentStatus":"","currentSalary":"","desiredSalary":"","additionalInfo":""},"jobPosting":"Engineer","confirmedQualifications":[]}`
 	r := httptest.NewRequest(http.MethodPost, "/api/application-draft", strings.NewReader(body))
 	r.Header.Set("X-OpenAI-Api-Key", "sk-valid")
+	r.Header.Set("X-TypeSafe-Api-Key", "synthetic")
 	w := httptest.NewRecorder()
 	a.handler().ServeHTTP(w, r)
 	if w.Code != http.StatusTooManyRequests || calls != 1 || w.Header().Get("Cache-Control") != "no-store" || !strings.Contains(w.Body.String(), `"error":"rate_limit"`) {
@@ -175,6 +182,7 @@ func TestSyntheticDraftOutboundBodyUsesApprovedProfileAndConfirmation(t *testing
 	body := `{"repository":{"careerGoals":"Lead data projects","skills":"SQL, dashboard design","competencies":"Clear communication","experience":[{"id":"synthetic-1","company":"Northstar Analytics","title":"Data Analyst","startDate":"Jan 2022","endDate":"Jun 2024","current":false,"location":"","description":"Built dashboards","responsibilities":"Translated reporting needs","achievements":"Reduced report preparation time"}],"tools":"","projects":[],"employmentStatus":"employed-full-time","currentSalary":"","desiredSalary":"","additionalInfo":""},"jobPosting":"QUALIFICATION ONLY SYNTHETIC POSTING","confirmedQualifications":[{"kind":"skill","requirement":"Kubernetes","userContext":"Confirmed for this role only"}]}`
 	r := httptest.NewRequest(http.MethodPost, "/api/application-draft", strings.NewReader(body))
 	r.Header.Set("X-OpenAI-Api-Key", "sk-valid")
+	r.Header.Set("X-TypeSafe-Api-Key", "synthetic")
 	w := httptest.NewRecorder()
 	a.handler().ServeHTTP(w, r)
 	if w.Code != http.StatusOK || calls != 1 || !strings.Contains(w.Body.String(), `"jobTitle":"Engineer"`) {
@@ -202,6 +210,7 @@ func TestInvalidInputAndTrailingJSONRejectedBeforeProvider(t *testing.T) {
 	} {
 		r := httptest.NewRequest(http.MethodPost, "/api/application-draft", strings.NewReader(body))
 		r.Header.Set("X-OpenAI-Api-Key", "sk-valid")
+		r.Header.Set("X-TypeSafe-Api-Key", "synthetic")
 		w := httptest.NewRecorder()
 		a.handler().ServeHTTP(w, r)
 		if w.Code != http.StatusBadRequest || !strings.Contains(w.Body.String(), `"error":"input"`) {
@@ -224,6 +233,7 @@ func TestInputLimitsRejectedBeforeProvider(t *testing.T) {
 	for _, body := range []string{profileTooLong, postingTooLong, qualificationTooLong, tooManyQualifications, strings.Repeat(" ", maxRequestBytes) + validBody} {
 		r := httptest.NewRequest(http.MethodPost, "/api/application-draft", strings.NewReader(body))
 		r.Header.Set("X-OpenAI-Api-Key", "sk-valid")
+		r.Header.Set("X-TypeSafe-Api-Key", "synthetic")
 		w := httptest.NewRecorder()
 		a.handler().ServeHTTP(w, r)
 		if w.Code != http.StatusBadRequest || !strings.Contains(w.Body.String(), `"error":"input"`) {
@@ -242,6 +252,7 @@ func TestTimeoutDuringProviderBodyReadMapsToTimeout(t *testing.T) {
 	body := `{"repository":{"careerGoals":"","skills":"Go","competencies":"","experience":[],"tools":"Docker","projects":[],"employmentStatus":"","currentSalary":"","desiredSalary":"","additionalInfo":""},"jobPosting":"Engineer","confirmedQualifications":[]}`
 	r := httptest.NewRequest(http.MethodPost, "/api/application-draft", strings.NewReader(body))
 	r.Header.Set("X-OpenAI-Api-Key", "sk-valid")
+	r.Header.Set("X-TypeSafe-Api-Key", "synthetic")
 	w := httptest.NewRecorder()
 	a.handler().ServeHTTP(w, r)
 	if w.Code != http.StatusGatewayTimeout || !strings.Contains(w.Body.String(), `"error":"timeout"`) {
@@ -264,6 +275,7 @@ func TestProviderKeyAndOutageErrorsAreCategorized(t *testing.T) {
 			body := `{"repository":{"careerGoals":"","skills":"Go","competencies":"","experience":[],"tools":"Docker","projects":[],"employmentStatus":"","currentSalary":"","desiredSalary":"","additionalInfo":""},"jobPosting":"Engineer","confirmedQualifications":[]}`
 			r := httptest.NewRequest(http.MethodPost, "/api/application-draft", strings.NewReader(body))
 			r.Header.Set("X-OpenAI-Api-Key", "sk-valid")
+			r.Header.Set("X-TypeSafe-Api-Key", "synthetic")
 			w := httptest.NewRecorder()
 			a.handler().ServeHTTP(w, r)
 			if w.Code != tc.httpStatus || calls != 1 || !strings.Contains(w.Body.String(), `"error":"`+tc.want+`"`) {
@@ -296,6 +308,7 @@ func TestIncompleteAndMalformedProviderDraftsAreRejected(t *testing.T) {
 			body := `{"repository":{"careerGoals":"","skills":"Go","competencies":"","experience":[],"tools":"Docker","projects":[],"employmentStatus":"","currentSalary":"","desiredSalary":"","additionalInfo":""},"jobPosting":"Engineer","confirmedQualifications":[]}`
 			r := httptest.NewRequest(http.MethodPost, "/api/application-draft", strings.NewReader(body))
 			r.Header.Set("X-OpenAI-Api-Key", "sk-valid")
+			r.Header.Set("X-TypeSafe-Api-Key", "synthetic")
 			w := httptest.NewRecorder()
 			a.handler().ServeHTTP(w, r)
 			if w.Code != http.StatusBadGateway || calls != 1 || !strings.Contains(w.Body.String(), `"error":"invalid_output"`) {

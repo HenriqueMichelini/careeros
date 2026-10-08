@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"professional-information-repo/internal/testsupport"
 	"strings"
 	"testing"
 	"time"
@@ -16,7 +17,12 @@ import (
 
 type transportFunc func(*http.Request) (*http.Response, error)
 
-func (f transportFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+func (f transportFunc) RoundTrip(r *http.Request) (*http.Response, error) {
+	if r.URL.Host == "api.typesafe.ai" {
+		return testsupport.AcceptedJob(), nil
+	}
+	return f(r)
+}
 
 func sampleRequest() gapRequest {
 	return gapRequest{JobPosting: "Senior engineer required. Must know distributed systems and Go.", Repository: repository{
@@ -142,6 +148,7 @@ func TestHandlerKeepsFullBrowserContractAndReturnsGapsWithoutCaching(t *testing.
 	body, _ := json.Marshal(sampleRequest())
 	req := httptest.NewRequest("POST", "/api/qualification-gaps", strings.NewReader(string(body)))
 	req.Header.Set("X-OpenAI-Api-Key", "sk-valid")
+	req.Header.Set("X-TypeSafe-Api-Key", "synthetic")
 	w := httptest.NewRecorder()
 	a.handler().ServeHTTP(w, req)
 	if w.Code != 200 || w.Header().Get("Cache-Control") != "no-store" || calls != 1 {
@@ -158,6 +165,7 @@ func TestIncompleteFullProfileRejectedBeforeProvider(t *testing.T) {
 	a := app{client: &http.Client{Transport: transportFunc(func(*http.Request) (*http.Response, error) { calls++; return nil, nil })}}
 	request := httptest.NewRequest("POST", "/api/qualification-gaps", strings.NewReader(`{"jobPosting":"A sufficiently long posting","repository":{}}`))
 	request.Header.Set("X-OpenAI-Api-Key", "sk-valid")
+	request.Header.Set("X-TypeSafe-Api-Key", "synthetic")
 	response := httptest.NewRecorder()
 	a.handler().ServeHTTP(response, request)
 	if response.Code != 400 || calls != 0 || !strings.Contains(response.Body.String(), `"error":"input"`) {
@@ -212,6 +220,7 @@ func TestTimeoutWhileReadingProviderResponseBody(t *testing.T) {
 	body, _ := json.Marshal(sampleRequest())
 	req := httptest.NewRequest(http.MethodPost, "/api/qualification-gaps", strings.NewReader(string(body))).WithContext(ctx)
 	req.Header.Set("X-OpenAI-Api-Key", "sk-valid")
+	req.Header.Set("X-TypeSafe-Api-Key", "synthetic")
 	response := httptest.NewRecorder()
 	a.handler().ServeHTTP(response, req)
 	if response.Code != http.StatusGatewayTimeout || !strings.Contains(response.Body.String(), `"error":"timeout"`) {

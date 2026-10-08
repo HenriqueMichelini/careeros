@@ -163,3 +163,26 @@ func Classify(parent context.Context, client *http.Client, key string, field Fie
 	}
 	return Decide(field, out.Answers["content"].Choice, out.Answers["attack"].Choice)
 }
+
+// WriteRejection presents the shared server decision. Zero means processing may continue.
+func WriteRejection(w http.ResponseWriter, decision Decision) int {
+	if decision.Outcome.Kind == "accept" {
+		return 0
+	}
+	status := http.StatusOK
+	if decision.Outcome.Kind == "service_failure" {
+		status = http.StatusBadGateway
+		switch decision.Outcome.Reason {
+		case "key":
+			status = http.StatusUnauthorized
+		case "rate_limit":
+			status = http.StatusTooManyRequests
+		case "timeout":
+			status = http.StatusGatewayTimeout
+		}
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(map[string]any{"decision": decision})
+	return status
+}
