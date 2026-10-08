@@ -87,7 +87,7 @@ From the repository root (Go 1.24):
 
 ```sh
 GOCACHE=/tmp/careeros-go-cache go test ./internal/semanticeval
-GOCACHE=/tmp/careeros-go-cache go run ./scripts/semantic-quality \
+GOCACHE=/tmp/careeros-go-cache go run -buildvcs=true ./scripts/semantic-quality \
   --split all --output /tmp/semantic-controlled.json
 ```
 
@@ -100,7 +100,7 @@ authorization headers. Keep real Profile data out of this corpus.
 Only after explicit authorization, run a chosen split or ID list:
 
 ```sh
-GOCACHE=/tmp/careeros-go-cache go run ./scripts/semantic-quality \
+GOCACHE=/tmp/careeros-go-cache go run -buildvcs=true ./scripts/semantic-quality \
   --mode live --authorize-live --limit 8 \
   --ids en-fact,pt-fact,en-short-job,pt-short-job,en-cv-metric,pt-cv-metric,en-draft-sparse,pt-draft-sparse \
   --openai-key-file /private/path/openai-assignment \
@@ -118,7 +118,7 @@ the user's authorized budget, never an invisible retry. Success exit status
 means the baseline was saved, not that semantic acceptance passed. Inspect each
 run's `score.failures`, `status` and `humanReview` fields.
 
-Every report includes timestamp, mode, git base commit, exact fixture hash and
+Every report includes timestamp, mode, compiler-recorded git base commit, exact fixture hash and
 version, workflow/scorer/adapter source hashes, and each outbound model,
 reasoning setting, output-token bound, request/prompt/schema hash. Prompt hashes
 include synthetic dynamic content; source hashes identify the actual production
@@ -152,7 +152,7 @@ Recalculate the stronger v2 labels over the original eight provider attempts,
 without reading credentials or making network calls:
 
 ```sh
-GOCACHE=/tmp/careeros-go-cache go run ./scripts/semantic-quality \
+GOCACHE=/tmp/careeros-go-cache go run -buildvcs=true ./scripts/semantic-quality \
   --split all \
   --replay docs/evaluations/semantic-quality/live.initial.v1.json,docs/evaluations/semantic-quality/live.remaining.v1.json,docs/evaluations/semantic-quality/live.final.v1.json \
   --output /tmp/semantic-replay-v2.json
@@ -164,3 +164,5 @@ provider-call metadata, and recalculates only scores. Replayed calls are old
 evidence, not new provider requests. Original reports retain their inference
 source versions. Reassessed labels are post-hoc measurement improvements, not a
 fresh held-out inference run. Existing prompts/models/settings remain untouched.
+
+Revision metadata comes from Go build information, without invoking a command through `PATH`. Use `-buildvcs=true` as shown above. A binary built without VCS metadata records `unknown` explicitly; source and fixture hashes are still recorded.

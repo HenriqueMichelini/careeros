@@ -53,9 +53,12 @@ type transport struct {
 	outputs   []json.RawMessage
 }
 
+const openAIHost = "api.openai.com"
+const typeSafeHost = "api.typesafe.ai"
+
 func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	host := req.URL.Host
-	if host != "api.openai.com" && host != "api.typesafe.ai" {
+	if host != openAIHost && host != typeSafeHost {
 		return nil, fmt.Errorf("unexpected provider host")
 	}
 	raw, err := io.ReadAll(req.Body)
@@ -67,62 +70,59 @@ func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if err = json.Unmarshal(raw, &body); err != nil {
 		return nil, err
 	}
-	digest := func(v any) string { b, _ := json.Marshal(v); return Hash(b) }
+	t.calls = append(t.calls, providerCall(host, raw, body))
+	if t.mode == "live" {
+		return t.liveResponse(req, host)
+	}
+	return t.controlledResponse(host, body)
+}
+func providerCall(host string, raw []byte, body map[string]any) Call {
+	digest := func(value any) string { encoded, _ := json.Marshal(value); return Hash(encoded) }
 	model, _ := body["model"].(string)
 	call := Call{Provider: host, Model: model, Reasoning: body["reasoning_effort"], MaxCompletionTokens: body["max_completion_tokens"], PromptHash: digest(body["messages"]), SchemaHash: digest(body["response_format"]), RequestHash: Hash(raw)}
-	if host == "api.typesafe.ai" {
+	if host == typeSafeHost {
 		call.PromptHash = digest(body["questions"])
-		call.SchemaHash = digest(body["questions"])
+		call.SchemaHash = call.PromptHash
 	}
-	t.calls = append(t.calls, call)
-	if t.mode == "live" {
-		resp, err := http.DefaultTransport.RoundTrip(req)
-		if err != nil {
+	return call
+}
+func (t *transport) liveResponse(req *http.Request, host string) (*http.Response, error) {
+	response, err := http.DefaultTransport.RoundTrip(req)
+	if err != nil {
+		return nil, err
+	}
+	t.calls[len(t.calls)-1].Status = response.StatusCode
+	if response.StatusCode == http.StatusOK && host == openAIHost {
+		if err = t.captureCompletion(response); err != nil {
 			return nil, err
 		}
-		t.calls[len(t.calls)-1].Status = resp.StatusCode
-		if resp.StatusCode == 200 && host == "api.openai.com" {
-			body, err := io.ReadAll(io.LimitReader(resp.Body, (1<<20)+1))
-			resp.Body.Close()
-			if err != nil {
-				return nil, err
-			}
-			resp.Body = io.NopCloser(bytes.NewReader(body))
-			var envelope struct {
-				Model   string          `json:"model"`
-				Choices json.RawMessage `json:"choices"`
-			}
-			if json.Unmarshal(body, &envelope) == nil {
-				t.calls[len(t.calls)-1].ReturnedModel = envelope.Model
-				if len(envelope.Choices) > 0 {
-					t.outputs = append(t.outputs, envelope.Choices)
-				}
-			}
-		}
-		return resp, nil
 	}
+	return response, nil
+}
+func (t *transport) captureCompletion(response *http.Response) error {
+	body, err := io.ReadAll(io.LimitReader(response.Body, (1<<20)+1))
+	response.Body.Close()
+	if err != nil {
+		return err
+	}
+	response.Body = io.NopCloser(bytes.NewReader(body))
+	var envelope struct {
+		Model   string          `json:"model"`
+		Choices json.RawMessage `json:"choices"`
+	}
+	if json.Unmarshal(body, &envelope) != nil {
+		return nil
+	}
+	t.calls[len(t.calls)-1].ReturnedModel = envelope.Model
+	if len(envelope.Choices) > 0 {
+		t.outputs = append(t.outputs, envelope.Choices)
+	}
+	return nil
+}
+func (t *transport) controlledResponse(host string, body map[string]any) (*http.Response, error) {
 	var response any
-	if host == "api.typesafe.ai" {
-		questions := body["questions"].(map[string]any)
-		state := body["state"].(map[string]any)
-		content := "professional_fact"
-		if state["field"] == "job_posting" {
-			content = "job_with_context"
-		}
-		answers := map[string]any{}
-		for key, v := range questions {
-			chosen := "none"
-			if key == "content" {
-				chosen = content
-			}
-			probabilities := map[string]float64{}
-			for option := range v.(map[string]any)["criteria"].(map[string]any) {
-				probabilities[option] = 0
-			}
-			probabilities[chosen] = 1
-			answers[key] = map[string]any{"type": "choice", "choice": chosen, "confidence": 1, "probabilities": probabilities}
-		}
-		response = map[string]any{"model": fieldvalidation.Model, "answers": answers}
+	if host == typeSafeHost {
+		response = controlledDecision(body)
 	} else {
 		if t.index >= len(t.responses) {
 			return nil, fmt.Errorf("controlled response sequence exhausted")
@@ -131,8 +131,30 @@ func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		t.index++
 	}
 	encoded, _ := json.Marshal(response)
-	t.calls[len(t.calls)-1].Status = 200
-	return &http.Response{StatusCode: 200, Header: http.Header{"Content-Type": []string{"application/json"}}, Body: io.NopCloser(bytes.NewReader(encoded))}, nil
+	t.calls[len(t.calls)-1].Status = http.StatusOK
+	return &http.Response{StatusCode: http.StatusOK, Header: http.Header{"Content-Type": []string{"application/json"}}, Body: io.NopCloser(bytes.NewReader(encoded))}, nil
+}
+func controlledDecision(body map[string]any) any {
+	questions := body["questions"].(map[string]any)
+	state := body["state"].(map[string]any)
+	content := "professional_fact"
+	if state["field"] == "job_posting" {
+		content = "job_with_context"
+	}
+	answers := map[string]any{}
+	for key, value := range questions {
+		chosen := "none"
+		if key == "content" {
+			chosen = content
+		}
+		probabilities := map[string]float64{}
+		for option := range value.(map[string]any)["criteria"].(map[string]any) {
+			probabilities[option] = 0
+		}
+		probabilities[chosen] = 1
+		answers[key] = map[string]any{"type": "choice", "choice": chosen, "confidence": 1, "probabilities": probabilities}
+	}
+	return map[string]any{"model": fieldvalidation.Model, "answers": answers}
 }
 
 // Run invokes the same public HTTP contracts used by the application. Controlled

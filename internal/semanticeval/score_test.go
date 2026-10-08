@@ -57,47 +57,66 @@ func TestCorpusPreservesCapacityOmissionsAndControlledContracts(t *testing.T) {
 	var corpus struct {
 		Cases []Case `json:"cases"`
 	}
-	if err := json.Unmarshal(raw, &corpus); err != nil {
+	if err = json.Unmarshal(raw, &corpus); err != nil {
 		t.Fatal(err)
 	}
-	if err := Validate(corpus.Cases); err != nil {
+	if err = Validate(corpus.Cases); err != nil {
 		t.Fatal(err)
 	}
 	for _, c := range corpus.Cases {
-		t.Run(c.ID, func(t *testing.T) {
-			result, err := Run(c, "controlled", "", "")
-			if err != nil {
-				t.Fatal(err)
-			}
-			if result.Status != 200 || !result.NoStore || (c.Role != "negative_control" && result.Score.ForbiddenAdditions != 0) {
-				t.Fatalf("contract regression: %+v", result)
-			}
-			if c.Role == "negative_control" {
-				for _, expected := range c.ExpectedFailures {
-					found := false
-					for _, failure := range result.Score.Failures {
-						if strings.Contains(failure, expected) {
-							found = true
-						}
-					}
-					if !found {
-						t.Fatalf("missed adversarial failure %q: %+v", expected, result.Score)
-					}
-				}
-				if strings.Contains(c.ID, "transferred-metric") && result.Score.RelationshipErrors != 1 {
-					t.Fatalf("did not detect transferred metric: %+v", result.Score)
-				}
-				if (strings.Contains(c.ID, "invented-management") || strings.Contains(c.ID, "requirement-as-skill")) && result.Score.UnsupportedCandidates != 1 {
-					t.Fatalf("did not count unsupported claim: %+v", result.Score)
-				}
-			} else if c.ID == "en-capacity-35" || c.ID == "pt-capacity-35" {
-				if len(result.Score.Missing) != 10 || result.Score.Matched != 60 || result.Score.Expected != 70 {
-					t.Fatalf("hid capacity loss: %+v", result.Score)
-				}
-			} else if len(result.Score.Failures) != 0 {
-				t.Fatalf("curated control regression: %+v", result.Score)
-			}
-		})
+		t.Run(c.ID, func(t *testing.T) { assertControlledCase(t, c) })
+	}
+}
+func assertControlledCase(t *testing.T, c Case) {
+	t.Helper()
+	result, err := Run(c, "controlled", "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Status != 200 || !result.NoStore {
+		t.Fatalf("contract regression: %+v", result)
+	}
+	if c.Role == "negative_control" {
+		assertNegativeControl(t, c, result.Score)
+		return
+	}
+	if result.Score.ForbiddenAdditions != 0 {
+		t.Fatalf("forbidden addition: %+v", result.Score)
+	}
+	if c.ID == "en-capacity-35" || c.ID == "pt-capacity-35" {
+		assertCapacityLoss(t, result.Score)
+		return
+	}
+	if len(result.Score.Failures) != 0 {
+		t.Fatalf("curated control regression: %+v", result.Score)
+	}
+}
+func assertNegativeControl(t *testing.T, c Case, score Result) {
+	t.Helper()
+	for _, expected := range c.ExpectedFailures {
+		if !hasFailure(score.Failures, expected) {
+			t.Fatalf("missed adversarial failure %q: %+v", expected, score)
+		}
+	}
+	if strings.Contains(c.ID, "transferred-metric") && score.RelationshipErrors != 1 {
+		t.Fatalf("did not detect transferred metric: %+v", score)
+	}
+	if (strings.Contains(c.ID, "invented-management") || strings.Contains(c.ID, "requirement-as-skill")) && score.UnsupportedCandidates != 1 {
+		t.Fatalf("did not count unsupported claim: %+v", score)
+	}
+}
+func hasFailure(failures []string, expected string) bool {
+	for _, failure := range failures {
+		if strings.Contains(failure, expected) {
+			return true
+		}
+	}
+	return false
+}
+func assertCapacityLoss(t *testing.T, score Result) {
+	t.Helper()
+	if len(score.Missing) != 10 || score.Matched != 60 || score.Expected != 70 {
+		t.Fatalf("hid capacity loss: %+v", score)
 	}
 }
 
@@ -153,5 +172,23 @@ func TestOfflineAssessmentDoesNotEraseARejectedWorkflow(t *testing.T) {
 	}
 	if result.Status != 502 || result.Score.Completeness != 0 || len(result.Score.Failures) != 2 {
 		t.Fatalf("replay erased failure: %+v", result)
+	}
+}
+
+func TestInvalidGoldIsRejectedBeforeEvaluation(t *testing.T) {
+	c := Case{ID: "invalid-label", Task: "profile_ingestion", Language: "en", Split: "development", Request: json.RawMessage(`{}`), Notes: "Synthetic validation control", Gold: []Atom{{ID: "java", Group: "claims", Match: map[string]string{"text": "["}}}}
+	if err := Validate([]Case{c}); err == nil {
+		t.Fatal("invalid gold could reach provider evaluation")
+	}
+}
+
+func TestIdenticalRequestsCannotLeakIntoHeldoutSplit(t *testing.T) {
+	c := Case{ID: "development", Task: "cv_generation", Language: "en", Split: "development", Request: json.RawMessage(`{"facts":[],"cvLanguage":"en"}`), Notes: "Split integrity control", Gold: []Atom{{ID: "source", Group: "selected", Match: map[string]string{"text": "f0"}}}}
+	heldout := c
+	heldout.ID = "heldout"
+	heldout.Split = "heldout"
+	heldout.Request = json.RawMessage(`{"cvLanguage":"en", "facts":[]}`)
+	if err := Validate([]Case{c, heldout}); err == nil {
+		t.Fatal("identical request appears on both sides of split")
 	}
 }
