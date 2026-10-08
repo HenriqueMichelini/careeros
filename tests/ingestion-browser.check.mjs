@@ -2,6 +2,7 @@ import { keyboardFlow } from "./keyboard-flow.mjs"
 // Browser regression for raw professional-information review and explicit apply.
 // Uses synthetic API responses; no provider request is made.
 import assert from "node:assert/strict"
+import { createHash } from "node:crypto"
 import { spawn } from "node:child_process"
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
@@ -311,6 +312,44 @@ try {
       await until("!!document.querySelector('[role=alert]')")
       assert.equal(await evaluate("document.querySelectorAll('article').length"),0)
       assert.equal(await saved(),initial)
+    }
+    // Prepared-source references render the exact original occurrence; changing
+    // raw whitespace invalidates an in-flight proposal even when preparation agrees.
+    const traceText = '# First\nI  use Java\n# Second\nI   use Java'
+    const excerpt = 'I   use Java'
+    const identity = JSON.stringify(['normalization-v1','structure-v1','professional_information',traceText])
+    const sourceReference = {version:1,sourceId:createHash('sha256').update(identity).digest('hex'),preparationVersion:'structure-v1',segmentId:'b'.repeat(64),occurrenceId:'c'.repeat(64),originalStart:Buffer.from(traceText).lastIndexOf(excerpt),originalEnd:Buffer.byteLength(traceText)}
+    const traceProposal = {...proposal,claims:[{...proposal.claims[0],source:excerpt,sourceReference}]}
+    await fill(traceText)
+    await evaluate(`window.fetch=async(url,options)=>{window.__raw=JSON.parse(options.body).input;return new Response(${JSON.stringify(JSON.stringify(traceProposal))},{status:200})}`)
+    await evaluate(`${byText(review)}.click()`)
+    await until("document.querySelectorAll('article').length === 1")
+    assert.equal(await evaluate('window.__raw'),traceText)
+    assert.equal(await evaluate("document.querySelector('#ingestion-text').value"),traceText)
+    assert.ok((await evaluate("document.querySelector('article').textContent")).includes(excerpt))
+    assert.equal(await evaluate("getComputedStyle(document.querySelector('article p:nth-child(2)')).whiteSpace"),'pre-wrap')
+    assert.equal(await saved(),initial)
+    const traceScreen=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:true})
+    writeFileSync(join(work,`source-review-${locale}-${width}.png`),Buffer.from(traceScreen.data,'base64'))
+    await fill(traceText)
+    await evaluate(`window.fetch=async()=>new Promise(resolve=>window.__finish=()=>resolve(new Response(${JSON.stringify(JSON.stringify(traceProposal))},{status:200})))`)
+    await evaluate(`${byText(review)}.click()`)
+    await until("document.querySelector('#ingestion-text').getAttribute('aria-busy') === 'true'")
+    await fill(traceText.replace('I   use','I  use'))
+    await evaluate('window.__finish()')
+    await pause(80)
+    assert.equal(await evaluate("document.querySelectorAll('article').length"),0)
+    assert.equal(await saved(),initial)
+    for (const code of ['capacity','preparation']) {
+      await fill(traceText)
+      await evaluate(`window.fetch=async()=>new Response(JSON.stringify({error:${JSON.stringify(code)}}),{status:502})`)
+      await evaluate(`${byText(review)}.click()`)
+      await until("!!document.querySelector('[role=alert]')")
+      const feedback = await evaluate("document.querySelector('[role=alert]').textContent")
+      assert.match(feedback,locale==='en'?/smaller portion/:/parte menor/)
+      assert.equal(await evaluate("document.querySelector('#ingestion-text').value"),traceText)
+      assert.equal(await saved(),initial)
+      assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth'))
     }
     console.log(`PASS field decisions ${locale} ${width}px`)
   }
