@@ -104,19 +104,10 @@ func Prepare(original string, field fieldvalidation.Field) (Source, error) {
 	}
 	s.text, s.mapping = out.String(), mapping
 	lines = scanStructure(s.text)
-	type ancestor struct{ index, depth int }
+	type ancestor struct{ index, depth, listIndex int }
 	var headings, lists []ancestor
 	for _, line := range lines {
 		parent := ""
-		if line.kind == Heading {
-			lists = nil
-			for len(headings) > 0 && headings[len(headings)-1].depth >= line.level {
-				headings = headings[:len(headings)-1]
-			}
-		}
-		if len(headings) > 0 {
-			parent = s.segments[headings[len(headings)-1].index].ID
-		}
 		if line.kind == ListItem {
 			for len(lists) > 0 && lists[len(lists)-1].depth > line.indent {
 				lists = lists[:len(lists)-1]
@@ -129,8 +120,36 @@ func Prepare(original string, field fieldvalidation.Field) (Source, error) {
 				line.kind = ListContinuation
 			}
 		}
-		if len(lists) > 0 && line.kind != Heading {
-			parent = s.segments[lists[len(lists)-1].index].ID
+		for len(headings) > 0 && headings[len(headings)-1].listIndex >= 0 {
+			active := false
+			for _, list := range lists {
+				if list.index == headings[len(headings)-1].listIndex {
+					active = true
+					break
+				}
+			}
+			if active {
+				break
+			}
+			headings = headings[:len(headings)-1]
+		}
+		if line.kind == Heading {
+			scope := -1
+			if len(lists) > 0 {
+				scope = lists[len(lists)-1].index
+			}
+			for len(headings) > 0 && headings[len(headings)-1].listIndex == scope && headings[len(headings)-1].depth >= line.level {
+				headings = headings[:len(headings)-1]
+			}
+		}
+		if len(headings) > 0 {
+			parent = s.segments[headings[len(headings)-1].index].ID
+		}
+		if len(lists) > 0 {
+			activeList := lists[len(lists)-1].index
+			if len(headings) == 0 || headings[len(headings)-1].listIndex != activeList {
+				parent = s.segments[activeList].ID
+			}
 		}
 		r := Range{line.start, line.end}
 		id, err := s.RangeID(r)
@@ -144,13 +163,14 @@ func Prepare(original string, field fieldvalidation.Field) (Source, error) {
 		s.segments = append(s.segments, Segment{id, line.kind, r, originalRanges, parent, line.indent, line.level})
 		index := len(s.segments) - 1
 		if line.kind == Heading {
-			headings = append(headings, ancestor{index, line.level})
+			scope := -1
+			if len(lists) > 0 {
+				scope = lists[len(lists)-1].index
+			}
+			headings = append(headings, ancestor{index, line.level, scope})
 		}
 		if line.kind == ListItem {
-			lists = append(lists, ancestor{index, line.contentColumn})
-		}
-		if line.kind == Separator {
-			lists = nil
+			lists = append(lists, ancestor{index, line.contentColumn, -1})
 		}
 	}
 	return s, nil
@@ -197,6 +217,7 @@ func scanStructure(text string) []syntaxLine {
 	var lines []syntaxLine
 	var fence byte
 	fenceSize := 0
+	protected := literalBytes(text)
 	for pos := 0; pos < len(text); {
 		end := lineEnd(text, pos)
 		bodyEnd := end
@@ -221,6 +242,8 @@ func scanStructure(text string) []syntaxLine {
 			line.fenced = true
 			fence = body[0]
 			fenceSize = markerRun(body, 0, fence)
+		case content < bodyEnd && content > 0 && protected[content] && protected[content-1]:
+			line.kind = Literal
 		case strings.TrimSpace(body) == "":
 			line.kind = Blank
 		case line.indent >= 4:
@@ -245,9 +268,28 @@ func scanStructure(text string) []syntaxLine {
 	// Explicit list indentation makes continuation syntax recognizable; otherwise
 	// four-column indentation remains literal. A blank line retains attachment.
 	var listColumns []int
+	var nestedFence byte
+	nestedFenceSize := 0
 	for i := range lines {
 		l := &lines[i]
-		if l.kind == ListItem || (l.kind == Literal && !l.fenced && listMarker.MatchString(text[l.content:l.bodyEnd]) && len(listColumns) > 0) {
+		body := text[l.content:l.bodyEnd]
+		if nestedFence != 0 {
+			l.kind = Literal
+			l.fenced = true
+			run := markerRun(body, 0, nestedFence)
+			if run >= nestedFenceSize && strings.TrimSpace(body[run:]) == "" {
+				nestedFence = 0
+			}
+			continue
+		}
+		if len(listColumns) > 0 && l.indent >= listColumns[len(listColumns)-1] && l.indent < listColumns[len(listColumns)-1]+4 && len(body) >= 3 && (body[0] == '`' || body[0] == '~') && markerRun(body, 0, body[0]) >= 3 && !l.fenced {
+			nestedFence = body[0]
+			nestedFenceSize = markerRun(body, 0, nestedFence)
+			l.kind = Literal
+			l.fenced = true
+			continue
+		}
+		if l.kind == ListItem || (l.kind == Literal && !l.fenced && listMarker.MatchString(text[l.content:l.bodyEnd]) && len(listColumns) > 0 && l.indent < listColumns[len(listColumns)-1]+4) {
 			l.kind = ListItem
 			marker := listMarker.FindString(text[l.content:l.bodyEnd])
 			l.contentColumn = l.indent + columns(marker)

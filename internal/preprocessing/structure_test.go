@@ -26,6 +26,10 @@ func TestStructuralGoldenCases(t *testing.T) {
 		{"tabs and empty", "\tcode\r\n\u00a0\r\n", "\tcode\r\n\u00a0\n", []p.Kind{p.Literal, p.Blank}, []int{-1, -1}},
 		{"literal Unicode", "    Joa\u0303o  x\r\n| e\u0301 | x |\r\n", "    Joa\u0303o  x\r\n| e\u0301 | x |\r\n", []p.Kind{p.Literal, p.Table}, []int{-1, -1}},
 		{"list with literal", "- Java\n  ```\n  x  y\n  ```\n", "- Java\n  ```\n  x  y\n  ```\n", []p.Kind{p.ListItem, p.Literal, p.Literal, p.Literal}, []int{-1, 0, 0, 0}},
+		{"nested literal", "- A\n  - B\n    ```\r\n    x  y\r\n    ```\r\n", "- A\n  - B\n    ```\r\n    x  y\r\n    ```\r\n", []p.Kind{p.ListItem, p.ListItem, p.Literal, p.Literal, p.Literal}, []int{-1, 0, 1, 1, 1}},
+		{"heading in list", "- parent\n  ## child\n  wrapped\n- sibling\nplain\n", "- parent\n  ## child\n  wrapped\n- sibling\nplain\n", []p.Kind{p.ListItem, p.Heading, p.ListContinuation, p.ListItem, p.Text}, []int{-1, 0, 1, -1, -1}},
+		{"deep literal", "- parent\n      - literal  value\n", "- parent\n      - literal  value\n", []p.Kind{p.ListItem, p.Literal}, []int{-1, 0}},
+		{"nested headings in list", "# Outer\n- parent\n  ## child\n  ### grandchild\n  wrapped\n- sibling\nplain\n", "# Outer\n- parent\n  ## child\n  ### grandchild\n  wrapped\n- sibling\nplain\n", []p.Kind{p.Heading, p.ListItem, p.Heading, p.Heading, p.ListContinuation, p.ListItem, p.Text}, []int{-1, 0, 1, 2, 3, 0, 0}},
 		{"empty", "", "", nil, nil},
 	}
 	for _, tc := range cases {
