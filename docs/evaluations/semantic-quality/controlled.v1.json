@@ -1,0 +1,3001 @@
+{
+  "version": "semantic-quality-report-v1",
+  "mode": "controlled",
+  "started": "2026-10-08T16:30:39Z",
+  "commit": "ce08bce02d8b060d8aaa42be82c6d8454d8868e9",
+  "fixtureVersion": "semantic-quality-v1",
+  "fixtureHash": "99f0a4f9c0f02b72d49b96e8aeaa1018add8fedd87af097d9aa10d28ca84a188",
+  "sourceHashes": {
+    "backend/application-draft/main.go": "2914fb20e57e248028c048d25c88b29365665950b54ad2550a9d5aeb992b3a70",
+    "backend/cv-generation/main.go": "3bcb90a043219c586172aac830e47c9d451d4b206fd3da07e9a7e8d0a8bdd160",
+    "backend/profile-ingestion/main.go": "61ef23b5d405a1936402ea82013644bd2d9ac3669839c754d47404767976951d",
+    "backend/qualification-gaps/main.go": "d5c4394bdca8ecdbcebe7d9ced765ddec9d3b322026f86c27d946e2b21f6e7c2",
+    "internal/fieldvalidation/decision.go": "efcb400809dcf285e4fbcf86ed187e35adf7b9f15b590fe60ab2adf5e2e8c847",
+    "internal/fieldvalidation/questions.json": "8ca85f674db2cf8e3d9e8c14e3fab18ac3df9c8fdf1903f6dbbc6db7d8715b5c",
+    "internal/semanticeval/adapter.go": "be8263536a85cd9c89ad779e90dd916daf895bcaa68b72ca56a08999e5ff2236",
+    "internal/semanticeval/score.go": "2017d8fe72175a44259bb2b6e9bac6a829e0c3fce183143cbfa60f6e3fa83a57"
+  },
+  "scope": "local production HTTP handlers; synthetic inputs; no browser, deployment or universal factual guarantee",
+  "runs": [
+    {
+      "id": "en-fact",
+      "task": "profile_ingestion",
+      "split": "development",
+      "language": "en",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "schemaHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "requestHash": "c0a4109b753d0e5dd44c29e9e38018018d535766904014d1b3dd6d20f680d67d",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "e4f7ec7d49c7653b895798d417bf958b2b419cf9b7967fd8aaf39d07ad9c14cd",
+          "schemaHash": "7ac7ae4cd89692ed7f06a02f1cf759e09d95b07698b32f8ae0c9a791e18ec4e0",
+          "requestHash": "f9969a42e407152bcb8284d4f3ad4e7b5e18daf49c68591174f76c3a399368ea",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "130a8b1368bea54e07c6171487bc28628e13a3f269a81a9324b07a4dd815f36b",
+          "schemaHash": "961416a4ffd469fb139d7bf3ebc207f235dde5905d4737ba0f884be8234b5911",
+          "requestHash": "9e3379d027fc4221daa7a1a5d118acddca1b0d3ed021414ad540919c6859adfb",
+          "status": 200
+        }
+      ],
+      "output": {
+        "decision": {
+          "version": 1,
+          "field": "professional_information",
+          "outcome": {
+            "kind": "accept"
+          }
+        },
+        "claims": [
+          {
+            "id": "c1",
+            "source": "I use Java",
+            "text": "Java",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          }
+        ],
+        "operations": [
+          {
+            "claimId": "c1",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Java",
+            "finding": "addition"
+          }
+        ],
+        "unverifiedClaimCount": 0,
+        "unresolvedClaimIds": [],
+        "unplacedOperationCount": 0
+      },
+      "score": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "en-messy-profile",
+      "task": "profile_ingestion",
+      "split": "development",
+      "language": "en",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "schemaHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "requestHash": "e7ee04d407ee515d1733dc47207b4ca467decca52130c772111583579702d51e",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "8e8cb49e9ca71f1df66a1449372813df12ba2f5482aaa0c5c47be975c2bf58df",
+          "schemaHash": "7ac7ae4cd89692ed7f06a02f1cf759e09d95b07698b32f8ae0c9a791e18ec4e0",
+          "requestHash": "117e754959f73822b0808be9b72a4586afe274e4e2360fd88aacdc7cb1d490e0",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "130a8b1368bea54e07c6171487bc28628e13a3f269a81a9324b07a4dd815f36b",
+          "schemaHash": "961416a4ffd469fb139d7bf3ebc207f235dde5905d4737ba0f884be8234b5911",
+          "requestHash": "9e3379d027fc4221daa7a1a5d118acddca1b0d3ed021414ad540919c6859adfb",
+          "status": 200
+        }
+      ],
+      "output": {
+        "decision": {
+          "version": 1,
+          "field": "professional_information",
+          "outcome": {
+            "kind": "accept"
+          }
+        },
+        "claims": [
+          {
+            "id": "c1",
+            "source": "I use Java",
+            "text": "Java",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          }
+        ],
+        "operations": [
+          {
+            "claimId": "c1",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Java",
+            "finding": "addition"
+          }
+        ],
+        "unverifiedClaimCount": 0,
+        "unresolvedClaimIds": [],
+        "unplacedOperationCount": 0
+      },
+      "score": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "en-negation-aspiration",
+      "task": "profile_ingestion",
+      "split": "heldout",
+      "language": "en",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "schemaHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "requestHash": "3f5e7bcf013d2d3fa722092cfc93bb4d3e00fd431ca1f76e20c3aa4f0e000260",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "7537322cd5d284e4edc2eef1d7f4967715d75e9e01313aa8327bdbc8f006e22e",
+          "schemaHash": "7ac7ae4cd89692ed7f06a02f1cf759e09d95b07698b32f8ae0c9a791e18ec4e0",
+          "requestHash": "349ae638b8ff201a7fbdd8382148c64fd641d3db167c31bfc79c6403320bd47a",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "a317d5040ddfd9dd34838d62b4078cee3c9182f480c38e3453f2729221c1d044",
+          "schemaHash": "961416a4ffd469fb139d7bf3ebc207f235dde5905d4737ba0f884be8234b5911",
+          "requestHash": "f01a9c2918c9491f3e5ad0adf6d588228dd4501fec6cc282f4f734cf43fa3ff5",
+          "status": 200
+        }
+      ],
+      "output": {
+        "decision": {
+          "version": 1,
+          "field": "professional_information",
+          "outcome": {
+            "kind": "accept"
+          }
+        },
+        "claims": [
+          {
+            "id": "c1",
+            "source": "I do not know AWS. I want to learn Python.",
+            "text": "I do not know AWS. I want to learn Python.",
+            "targets": [
+              "careerGoals"
+            ],
+            "question": ""
+          }
+        ],
+        "operations": [
+          {
+            "claimId": "c1",
+            "target": "careerGoals",
+            "entryId": "",
+            "field": "careerGoals",
+            "action": "add",
+            "value": "I do not know AWS. I want to learn Python.",
+            "finding": "addition"
+          }
+        ],
+        "unverifiedClaimCount": 0,
+        "unresolvedClaimIds": [],
+        "unplacedOperationCount": 0
+      },
+      "score": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "en-ambiguous-date",
+      "task": "profile_ingestion",
+      "split": "heldout",
+      "language": "en",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "schemaHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "requestHash": "11fb3263f49a028a018f4e97ba1de5655f7edc4fad14854aef61869dd58a3a84",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "7910f9017ad9908162ef978c25c3676c8506b5e976bc36e1fe43204b9149d5ce",
+          "schemaHash": "7ac7ae4cd89692ed7f06a02f1cf759e09d95b07698b32f8ae0c9a791e18ec4e0",
+          "requestHash": "aee370b7982d7c26ade9acce043817b8bec715193918291a9f2fc5ce3ee2de8f",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "615435314e3dfd195a825971293b5ab6ecb8b903f1ebefd6093c7b80858ddfc1",
+          "schemaHash": "961416a4ffd469fb139d7bf3ebc207f235dde5905d4737ba0f884be8234b5911",
+          "requestHash": "c75d0e1a4e21998bf36b1459ed01872fb378643418e5402ab1d0fb9dc4683a2d",
+          "status": 200
+        }
+      ],
+      "output": {
+        "decision": {
+          "version": 1,
+          "field": "professional_information",
+          "outcome": {
+            "kind": "accept"
+          }
+        },
+        "claims": [
+          {
+            "id": "c1",
+            "source": "Alex worked with Sam. They built an API around 2020.",
+            "text": "Alex worked with Sam. They built an API around 2020.",
+            "targets": [],
+            "question": "Who built the API and when?"
+          }
+        ],
+        "operations": [],
+        "unverifiedClaimCount": 0,
+        "unresolvedClaimIds": [],
+        "unplacedOperationCount": 0
+      },
+      "score": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "en-existing-duplicate",
+      "task": "profile_ingestion",
+      "split": "development",
+      "language": "en",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "schemaHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "requestHash": "c0a4109b753d0e5dd44c29e9e38018018d535766904014d1b3dd6d20f680d67d",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "e4f7ec7d49c7653b895798d417bf958b2b419cf9b7967fd8aaf39d07ad9c14cd",
+          "schemaHash": "7ac7ae4cd89692ed7f06a02f1cf759e09d95b07698b32f8ae0c9a791e18ec4e0",
+          "requestHash": "f9969a42e407152bcb8284d4f3ad4e7b5e18daf49c68591174f76c3a399368ea",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "f887263d748b745206fce8efc2e763db28287f19c103633f8999349a380e3e6e",
+          "schemaHash": "961416a4ffd469fb139d7bf3ebc207f235dde5905d4737ba0f884be8234b5911",
+          "requestHash": "228fb2773fec53d6ff864ebda569f7b820044f490674604e14783416eb7e2071",
+          "status": 200
+        }
+      ],
+      "output": {
+        "decision": {
+          "version": 1,
+          "field": "professional_information",
+          "outcome": {
+            "kind": "accept"
+          }
+        },
+        "claims": [
+          {
+            "id": "c1",
+            "source": "I use Java",
+            "text": "Java",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          }
+        ],
+        "operations": [],
+        "unverifiedClaimCount": 0,
+        "unresolvedClaimIds": [],
+        "unplacedOperationCount": 0
+      },
+      "score": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "en-proficiency-conflict",
+      "task": "profile_ingestion",
+      "split": "heldout",
+      "language": "en",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "schemaHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "requestHash": "544776501188c54b095742ac5cf51715add728d058014e81f3af4bda59657e5f",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "bf4273434a2586bf84b2727148931dfe70f6b23614b718fff368787aca7fb651",
+          "schemaHash": "7ac7ae4cd89692ed7f06a02f1cf759e09d95b07698b32f8ae0c9a791e18ec4e0",
+          "requestHash": "7dc43dadd90ebc75f378869958d5744d78528479045a3c4b0285e19308132d30",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "95dc2ffe0a962c6b9726efe733c04cd30263d59327dc466d460428b4d887748f",
+          "schemaHash": "8e76e9fc82bd91e41d2a189e975c3cd2c470334b94302a570e7e9ed5c435693a",
+          "requestHash": "bee018d97d6b21217588a3cc9e736990c49e23511b88424c70a2bffaab002eef",
+          "status": 200
+        }
+      ],
+      "output": {
+        "decision": {
+          "version": 1,
+          "field": "professional_information",
+          "outcome": {
+            "kind": "accept"
+          }
+        },
+        "claims": [
+          {
+            "id": "c1",
+            "source": "My English is advanced.",
+            "text": "My English is advanced.",
+            "targets": [
+              "languages"
+            ],
+            "question": ""
+          }
+        ],
+        "operations": [],
+        "unverifiedClaimCount": 0,
+        "unresolvedClaimIds": [
+          "c1"
+        ],
+        "unplacedOperationCount": 0
+      },
+      "score": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "en-roles-projects",
+      "task": "profile_ingestion",
+      "split": "heldout",
+      "language": "en",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "schemaHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "requestHash": "750b77fe7fb7b9fe2849d38c1ec317fea629a3765ca69dbd8218b3746045f010",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "3ab613b7b67a2b6bbcafea6c2d463e78d47846242adea6e9ff636a1230d87ffb",
+          "schemaHash": "7ac7ae4cd89692ed7f06a02f1cf759e09d95b07698b32f8ae0c9a791e18ec4e0",
+          "requestHash": "a0836c0156c529032b9334b2f0106067b1c5d7ae9060417d8539c37f4971fa29",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "fc49cadc41adb1a8ed11443c416c6b9d71760dee870fe2e48f58db735e1659dd",
+          "schemaHash": "fabb71750cfed6a1987bf67bad309ec12091d0cca13355ef656505e6b92b479e",
+          "requestHash": "64a98cee14ce97523a286a714a97dfcaa269336a27706fc8b1f16be5dad59229",
+          "status": 200
+        }
+      ],
+      "output": {
+        "decision": {
+          "version": 1,
+          "field": "professional_information",
+          "outcome": {
+            "kind": "accept"
+          }
+        },
+        "claims": [
+          {
+            "id": "c1",
+            "source": "At Acme I reduced latency by 20%.",
+            "text": "At Acme I reduced latency by 20%.",
+            "targets": [
+              "experience"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c2",
+            "source": "For Atlas I used Python.",
+            "text": "For Atlas I used Python.",
+            "targets": [
+              "projects"
+            ],
+            "question": ""
+          }
+        ],
+        "operations": [
+          {
+            "claimId": "c1",
+            "target": "experience",
+            "entryId": "e1",
+            "field": "achievements",
+            "action": "add",
+            "value": "At Acme I reduced latency by 20%.",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c2",
+            "target": "projects",
+            "entryId": "p1",
+            "field": "technologies",
+            "action": "add",
+            "value": "Python",
+            "finding": "addition"
+          }
+        ],
+        "unverifiedClaimCount": 0,
+        "unresolvedClaimIds": [],
+        "unplacedOperationCount": 0
+      },
+      "score": {
+        "expected": 4,
+        "observed": 4,
+        "matched": 4,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "en-capacity-35",
+      "task": "profile_ingestion",
+      "split": "heldout",
+      "language": "en",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "schemaHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "requestHash": "a8b2c3c9d1a74ce21626b408bf2ca372dc601998a201ef73ff4cff2d93e4d2cf",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "fabd5eb7fb3acb44aa3b5e6b20870943a8437ef95a592bcaac771d657dd003e2",
+          "schemaHash": "7ac7ae4cd89692ed7f06a02f1cf759e09d95b07698b32f8ae0c9a791e18ec4e0",
+          "requestHash": "32e9befa307a78673203113816786fd20006ba2b1af51100043f60eaa52af22d",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "a5be4cc80d923f5c1957bf0a7b3561b76be0c8d065b96d861361f99440b1202c",
+          "schemaHash": "961416a4ffd469fb139d7bf3ebc207f235dde5905d4737ba0f884be8234b5911",
+          "requestHash": "6bf2052b6359ca2cfbcf8985cc67ce07838c9bb116dae34cff8ed1a292c33618",
+          "status": 200
+        }
+      ],
+      "output": {
+        "decision": {
+          "version": 1,
+          "field": "professional_information",
+          "outcome": {
+            "kind": "accept"
+          }
+        },
+        "claims": [
+          {
+            "id": "c0",
+            "source": "I use Tool00.",
+            "text": "Tool00",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c1",
+            "source": "I use Tool01.",
+            "text": "Tool01",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c2",
+            "source": "I use Tool02.",
+            "text": "Tool02",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c3",
+            "source": "I use Tool03.",
+            "text": "Tool03",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c4",
+            "source": "I use Tool04.",
+            "text": "Tool04",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c5",
+            "source": "I use Tool05.",
+            "text": "Tool05",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c6",
+            "source": "I use Tool06.",
+            "text": "Tool06",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c7",
+            "source": "I use Tool07.",
+            "text": "Tool07",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c8",
+            "source": "I use Tool08.",
+            "text": "Tool08",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c9",
+            "source": "I use Tool09.",
+            "text": "Tool09",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c10",
+            "source": "I use Tool10.",
+            "text": "Tool10",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c11",
+            "source": "I use Tool11.",
+            "text": "Tool11",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c12",
+            "source": "I use Tool12.",
+            "text": "Tool12",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c13",
+            "source": "I use Tool13.",
+            "text": "Tool13",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c14",
+            "source": "I use Tool14.",
+            "text": "Tool14",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c15",
+            "source": "I use Tool15.",
+            "text": "Tool15",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c16",
+            "source": "I use Tool16.",
+            "text": "Tool16",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c17",
+            "source": "I use Tool17.",
+            "text": "Tool17",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c18",
+            "source": "I use Tool18.",
+            "text": "Tool18",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c19",
+            "source": "I use Tool19.",
+            "text": "Tool19",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c20",
+            "source": "I use Tool20.",
+            "text": "Tool20",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c21",
+            "source": "I use Tool21.",
+            "text": "Tool21",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c22",
+            "source": "I use Tool22.",
+            "text": "Tool22",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c23",
+            "source": "I use Tool23.",
+            "text": "Tool23",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c24",
+            "source": "I use Tool24.",
+            "text": "Tool24",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c25",
+            "source": "I use Tool25.",
+            "text": "Tool25",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c26",
+            "source": "I use Tool26.",
+            "text": "Tool26",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c27",
+            "source": "I use Tool27.",
+            "text": "Tool27",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c28",
+            "source": "I use Tool28.",
+            "text": "Tool28",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c29",
+            "source": "I use Tool29.",
+            "text": "Tool29",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          }
+        ],
+        "operations": [
+          {
+            "claimId": "c0",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool00",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c1",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool01",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c2",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool02",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c3",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool03",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c4",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool04",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c5",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool05",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c6",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool06",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c7",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool07",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c8",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool08",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c9",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool09",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c10",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool10",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c11",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool11",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c12",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool12",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c13",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool13",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c14",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool14",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c15",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool15",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c16",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool16",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c17",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool17",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c18",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool18",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c19",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool19",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c20",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool20",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c21",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool21",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c22",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool22",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c23",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool23",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c24",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool24",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c25",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool25",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c26",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool26",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c27",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool27",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c28",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool28",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c29",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool29",
+            "finding": "addition"
+          }
+        ],
+        "unverifiedClaimCount": 0,
+        "unresolvedClaimIds": [],
+        "unplacedOperationCount": 0
+      },
+      "score": {
+        "expected": 70,
+        "observed": 60,
+        "matched": 60,
+        "labelPrecision": 1,
+        "completeness": 0.8571428571428571,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [
+          "fact-30",
+          "destination-30",
+          "fact-31",
+          "destination-31",
+          "fact-32",
+          "destination-32",
+          "fact-33",
+          "destination-33",
+          "fact-34",
+          "destination-34"
+        ],
+        "unmatched": [],
+        "failures": [
+          "missing: fact-30",
+          "missing: destination-30",
+          "missing: fact-31",
+          "missing: destination-31",
+          "missing: fact-32",
+          "missing: destination-32",
+          "missing: fact-33",
+          "missing: destination-33",
+          "missing: fact-34",
+          "missing: destination-34"
+        ],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "en-short-job",
+      "task": "qualification_gaps",
+      "split": "development",
+      "language": "en",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "schemaHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "requestHash": "68780feaa4067002c06a95a44906f8eb5cab73902c91b8e6715bd65644b36caf",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 1200,
+          "promptHash": "d425afa8acbd53d7d319a21b879ea5ae58f0256e245421ad39d638bf8bc7c858",
+          "schemaHash": "376bde7986cc2f8fd182f04e745c607933760bea7c306ea6e8e992b7f70be25a",
+          "requestHash": "a859c8b1e03492c570a76444693bd8050011251d2eba836e4c7da05d7008096b",
+          "status": 200
+        }
+      ],
+      "output": {
+        "gaps": [
+          {
+            "kind": "skill",
+            "requirement": "AWS",
+            "details": "AWS required."
+          }
+        ]
+      },
+      "score": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "en-messy-job",
+      "task": "qualification_gaps",
+      "split": "heldout",
+      "language": "en",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "schemaHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "requestHash": "38ae841cbf79868650494aa4cf9d22f37a0d1e832a67564376ac94c4c0f9d6a3",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 1200,
+          "promptHash": "e325c93c9051b1c55b8f96b75676a866e2ee011d438ca17f315d2900e084b5f6",
+          "schemaHash": "376bde7986cc2f8fd182f04e745c607933760bea7c306ea6e8e992b7f70be25a",
+          "requestHash": "b198761014324c9645cf13232e8a2184ddedccbc70b17adaac3529d18e997155",
+          "status": 200
+        }
+      ],
+      "output": {
+        "gaps": [
+          {
+            "kind": "skill",
+            "requirement": "AWS",
+            "details": "AWS required."
+          }
+        ]
+      },
+      "score": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "en-cv-metric",
+      "task": "cv_generation",
+      "split": "development",
+      "language": "en",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 4000,
+          "promptHash": "02cd71417eaf17f06c7514cc897594d0d543b0dbc7579cd2255f96b44c3af0e9",
+          "schemaHash": "376bde7986cc2f8fd182f04e745c607933760bea7c306ea6e8e992b7f70be25a",
+          "requestHash": "e8e5a1d1570ba9a05d634f13cc6d5b4810674025218a210fc3fc072bdeef3ca9",
+          "status": 200
+        }
+      ],
+      "output": {
+        "summary": [
+          {
+            "sourceId": "f0",
+            "text": "Reduced latency by 20%."
+          }
+        ],
+        "selected": [
+          "f0"
+        ]
+      },
+      "score": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "en-cv-negation",
+      "task": "cv_generation",
+      "split": "heldout",
+      "language": "en",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 4000,
+          "promptHash": "12b80715e751ebda00f80bcccc84c1f2ded78a182366aa87208eee58f30fa14b",
+          "schemaHash": "376bde7986cc2f8fd182f04e745c607933760bea7c306ea6e8e992b7f70be25a",
+          "requestHash": "f7943595004abf854d92d4242d33594d5e5c4f12dc636b820321b7796e5e126a",
+          "status": 200
+        }
+      ],
+      "output": {
+        "summary": [
+          {
+            "sourceId": "f0",
+            "text": "Did not lead the migration; supported testing."
+          }
+        ],
+        "selected": [
+          "f0"
+        ]
+      },
+      "score": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "en-draft-sparse",
+      "task": "application_draft",
+      "split": "development",
+      "language": "en",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "schemaHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "requestHash": "68780feaa4067002c06a95a44906f8eb5cab73902c91b8e6715bd65644b36caf",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 8000,
+          "promptHash": "e7a246734e53e35023795d9db98985a0a53bec873282e590c6252072328cdefd",
+          "schemaHash": "4dd8bba15c3674c9869a7076621efb13f446cbe77c24a9dc42ec3eb9134e8b5f",
+          "requestHash": "2ef87861b3708b7cada211fd0d323af0e72377844f77711d703a302047286af4",
+          "status": 200
+        }
+      ],
+      "output": {
+        "jobTitle": "Java developer",
+        "company": null,
+        "jobSummary": "Java developer. AWS required.",
+        "resume": "## Technical Skills\nJava",
+        "coverLetter": {
+          "greeting": "Dear hiring team,",
+          "body": "I use Java.",
+          "closing": "Sincerely,"
+        },
+        "applicationAnswers": "I use Java."
+      },
+      "score": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "pt-fact",
+      "task": "profile_ingestion",
+      "split": "heldout",
+      "language": "pt-BR",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "schemaHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "requestHash": "69027a66e4a8be2d61a3545cb9703259908276002bcc25eb76e5dcc9c7da6aac",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "28e8227891edea1831a2991c2c77e232ed1511ddfff9c4572c37160737abcbc5",
+          "schemaHash": "7ac7ae4cd89692ed7f06a02f1cf759e09d95b07698b32f8ae0c9a791e18ec4e0",
+          "requestHash": "25e85f5aa6ee4465149bf93ffff140e1362e49bbaa92358c87832dd02fdfa1af",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "c3bff7575ffec7fbec985b26af693dd35864e3a215e264453b34f64aa7b4ddd5",
+          "schemaHash": "961416a4ffd469fb139d7bf3ebc207f235dde5905d4737ba0f884be8234b5911",
+          "requestHash": "e67d5d34832ae464671af101339b1e4690fbc7dff86a8b2eefd3b8d1a9324e00",
+          "status": 200
+        }
+      ],
+      "output": {
+        "decision": {
+          "version": 1,
+          "field": "professional_information",
+          "outcome": {
+            "kind": "accept"
+          }
+        },
+        "claims": [
+          {
+            "id": "c1",
+            "source": "Eu uso Java",
+            "text": "Java",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          }
+        ],
+        "operations": [
+          {
+            "claimId": "c1",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Java",
+            "finding": "addition"
+          }
+        ],
+        "unverifiedClaimCount": 0,
+        "unresolvedClaimIds": [],
+        "unplacedOperationCount": 0
+      },
+      "score": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "pt-messy-profile",
+      "task": "profile_ingestion",
+      "split": "development",
+      "language": "pt-BR",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "schemaHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "requestHash": "d6bbc087b780481e4c5553b1f69504d31a6c5e5cdc133935b754dbb4d6c05f47",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "47fa45213b54274f1f3806d07f327591d8043dadb3083e6aec9dea44610a8aed",
+          "schemaHash": "7ac7ae4cd89692ed7f06a02f1cf759e09d95b07698b32f8ae0c9a791e18ec4e0",
+          "requestHash": "c6efccf1fdae905f751b3e1f40a1869b94579a0ffee1d317c5695a4e6ecc6cf7",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "c3bff7575ffec7fbec985b26af693dd35864e3a215e264453b34f64aa7b4ddd5",
+          "schemaHash": "961416a4ffd469fb139d7bf3ebc207f235dde5905d4737ba0f884be8234b5911",
+          "requestHash": "e67d5d34832ae464671af101339b1e4690fbc7dff86a8b2eefd3b8d1a9324e00",
+          "status": 200
+        }
+      ],
+      "output": {
+        "decision": {
+          "version": 1,
+          "field": "professional_information",
+          "outcome": {
+            "kind": "accept"
+          }
+        },
+        "claims": [
+          {
+            "id": "c1",
+            "source": "Eu uso Java",
+            "text": "Java",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          }
+        ],
+        "operations": [
+          {
+            "claimId": "c1",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Java",
+            "finding": "addition"
+          }
+        ],
+        "unverifiedClaimCount": 0,
+        "unresolvedClaimIds": [],
+        "unplacedOperationCount": 0
+      },
+      "score": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "pt-negation-aspiration",
+      "task": "profile_ingestion",
+      "split": "heldout",
+      "language": "pt-BR",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "schemaHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "requestHash": "e5fbab9ededf655c3d07c49d7700be21888848feab166da4c84f1205f4578c49",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "a4eb39ddd925c17e6b723f5d79dd94b31f5d170593874db9758a83fbf26e83a8",
+          "schemaHash": "7ac7ae4cd89692ed7f06a02f1cf759e09d95b07698b32f8ae0c9a791e18ec4e0",
+          "requestHash": "52b3d443260a20551451d54618366235f8078107195e05f2ebc453521ca441a9",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "ce2bdd5fd9d46a428c2890cada2bea36da16532d46bd840c727ef7a35f7ea547",
+          "schemaHash": "961416a4ffd469fb139d7bf3ebc207f235dde5905d4737ba0f884be8234b5911",
+          "requestHash": "7a7be8269306e1e1a94de27f8c6e6c1bae2a32c33b263e84e0ff9f36642ff636",
+          "status": 200
+        }
+      ],
+      "output": {
+        "decision": {
+          "version": 1,
+          "field": "professional_information",
+          "outcome": {
+            "kind": "accept"
+          }
+        },
+        "claims": [
+          {
+            "id": "c1",
+            "source": "Não conheço AWS. Quero aprender Python.",
+            "text": "Não conheço AWS. Quero aprender Python.",
+            "targets": [
+              "careerGoals"
+            ],
+            "question": ""
+          }
+        ],
+        "operations": [
+          {
+            "claimId": "c1",
+            "target": "careerGoals",
+            "entryId": "",
+            "field": "careerGoals",
+            "action": "add",
+            "value": "Não conheço AWS. Quero aprender Python.",
+            "finding": "addition"
+          }
+        ],
+        "unverifiedClaimCount": 0,
+        "unresolvedClaimIds": [],
+        "unplacedOperationCount": 0
+      },
+      "score": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "pt-ambiguous-date",
+      "task": "profile_ingestion",
+      "split": "heldout",
+      "language": "pt-BR",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "schemaHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "requestHash": "7d045605c6456d35fdbf966ab0438deb98ca3fbd0da80bacc753fdf0bc8359f0",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "17f539205dcc2dd892c3e8f1da608aed326be5c60c8fcc107fae62979145e40e",
+          "schemaHash": "7ac7ae4cd89692ed7f06a02f1cf759e09d95b07698b32f8ae0c9a791e18ec4e0",
+          "requestHash": "1e03fdf0d2104af1e98b972fd5e6b1c6715f021cdb783ffcbafabebb4910ab6f",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "7fd2ef7a83b2564819be99fe8198998a4220b2f5b57eb36a2e323255e67bf469",
+          "schemaHash": "961416a4ffd469fb139d7bf3ebc207f235dde5905d4737ba0f884be8234b5911",
+          "requestHash": "4fa5e35560ad40e9aeb32ee0d43030fe8734081289086d308a86e229fbaddf93",
+          "status": 200
+        }
+      ],
+      "output": {
+        "decision": {
+          "version": 1,
+          "field": "professional_information",
+          "outcome": {
+            "kind": "accept"
+          }
+        },
+        "claims": [
+          {
+            "id": "c1",
+            "source": "Alex trabalhou com Sam. Eles criaram uma API por volta de 2020.",
+            "text": "Alex trabalhou com Sam. Eles criaram uma API por volta de 2020.",
+            "targets": [],
+            "question": "Who built the API and when?"
+          }
+        ],
+        "operations": [],
+        "unverifiedClaimCount": 0,
+        "unresolvedClaimIds": [],
+        "unplacedOperationCount": 0
+      },
+      "score": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "pt-existing-duplicate",
+      "task": "profile_ingestion",
+      "split": "development",
+      "language": "pt-BR",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "schemaHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "requestHash": "69027a66e4a8be2d61a3545cb9703259908276002bcc25eb76e5dcc9c7da6aac",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "28e8227891edea1831a2991c2c77e232ed1511ddfff9c4572c37160737abcbc5",
+          "schemaHash": "7ac7ae4cd89692ed7f06a02f1cf759e09d95b07698b32f8ae0c9a791e18ec4e0",
+          "requestHash": "25e85f5aa6ee4465149bf93ffff140e1362e49bbaa92358c87832dd02fdfa1af",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "4ea974d040ea624d82cfaeaeb711e7a4f66afa35f01c69034471bfe17ee48c49",
+          "schemaHash": "961416a4ffd469fb139d7bf3ebc207f235dde5905d4737ba0f884be8234b5911",
+          "requestHash": "39f75e57c956f549503655cca3560622245f531162b7cae4ccfec0028ce4cf22",
+          "status": 200
+        }
+      ],
+      "output": {
+        "decision": {
+          "version": 1,
+          "field": "professional_information",
+          "outcome": {
+            "kind": "accept"
+          }
+        },
+        "claims": [
+          {
+            "id": "c1",
+            "source": "Eu uso Java",
+            "text": "Java",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          }
+        ],
+        "operations": [],
+        "unverifiedClaimCount": 0,
+        "unresolvedClaimIds": [],
+        "unplacedOperationCount": 0
+      },
+      "score": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "pt-proficiency-conflict",
+      "task": "profile_ingestion",
+      "split": "heldout",
+      "language": "pt-BR",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "schemaHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "requestHash": "cb672193c2d866b4dab71c0a218c5a0084bf9bcb77703cd6969bb29c5cd3a188",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "bf914f554108072086798d2b71a5cab5467f9872a54d157828c2c870c2bfeee3",
+          "schemaHash": "7ac7ae4cd89692ed7f06a02f1cf759e09d95b07698b32f8ae0c9a791e18ec4e0",
+          "requestHash": "771c5424e5dfe8a8f1d4ae26a1e6a8a21cc9a448feb521da6ad1bff60c131395",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "a2f87de8a1a53ecc763b66f66b12c735fb8716dd8736017c8c8c76235aeedffa",
+          "schemaHash": "8e76e9fc82bd91e41d2a189e975c3cd2c470334b94302a570e7e9ed5c435693a",
+          "requestHash": "9272e521d8ff0a3b1c55b7b36e6e807438ffef4d2c36605781153c310235a9aa",
+          "status": 200
+        }
+      ],
+      "output": {
+        "decision": {
+          "version": 1,
+          "field": "professional_information",
+          "outcome": {
+            "kind": "accept"
+          }
+        },
+        "claims": [
+          {
+            "id": "c1",
+            "source": "Meu inglês é avançado.",
+            "text": "Meu inglês é avançado.",
+            "targets": [
+              "languages"
+            ],
+            "question": ""
+          }
+        ],
+        "operations": [],
+        "unverifiedClaimCount": 0,
+        "unresolvedClaimIds": [
+          "c1"
+        ],
+        "unplacedOperationCount": 0
+      },
+      "score": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "pt-roles-projects",
+      "task": "profile_ingestion",
+      "split": "heldout",
+      "language": "pt-BR",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "schemaHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "requestHash": "b6c2ae02e7f5b83f7008d4963f6d51fc1dca959c3efc43b73ce03a71ca908945",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "655646167601e8c8806f49c9f80c7869640a1ea12a7d71e8281505cb9b1f5853",
+          "schemaHash": "7ac7ae4cd89692ed7f06a02f1cf759e09d95b07698b32f8ae0c9a791e18ec4e0",
+          "requestHash": "53aa71dcc01256c7a31a16ba7d214b8594f3068c33807282f5c7a93217c619cc",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "3cebe297a488ddd8821845f6506ec15f243f17d9b6a0fca169c885ade2f22e98",
+          "schemaHash": "fabb71750cfed6a1987bf67bad309ec12091d0cca13355ef656505e6b92b479e",
+          "requestHash": "587ca7deb1b1ad1ba9fb9014b1a48f691c1451fff61ac71e95881de7a5b8f2f1",
+          "status": 200
+        }
+      ],
+      "output": {
+        "decision": {
+          "version": 1,
+          "field": "professional_information",
+          "outcome": {
+            "kind": "accept"
+          }
+        },
+        "claims": [
+          {
+            "id": "c1",
+            "source": "Na Acme reduzi a latência em 20%.",
+            "text": "Na Acme reduzi a latência em 20%.",
+            "targets": [
+              "experience"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c2",
+            "source": "No Atlas usei Python.",
+            "text": "No Atlas usei Python.",
+            "targets": [
+              "projects"
+            ],
+            "question": ""
+          }
+        ],
+        "operations": [
+          {
+            "claimId": "c1",
+            "target": "experience",
+            "entryId": "e1",
+            "field": "achievements",
+            "action": "add",
+            "value": "Na Acme reduzi a latência em 20%.",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c2",
+            "target": "projects",
+            "entryId": "p1",
+            "field": "technologies",
+            "action": "add",
+            "value": "Python",
+            "finding": "addition"
+          }
+        ],
+        "unverifiedClaimCount": 0,
+        "unresolvedClaimIds": [],
+        "unplacedOperationCount": 0
+      },
+      "score": {
+        "expected": 4,
+        "observed": 4,
+        "matched": 4,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "pt-capacity-35",
+      "task": "profile_ingestion",
+      "split": "heldout",
+      "language": "pt-BR",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "schemaHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "requestHash": "cf0d1154fbb4e9ffafadfed4e98c7596ff9a02c73dca4e24eb9636d1218d1ec7",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "e1117ca51883e494cb2b6c7638e29f393ea0d276864fd14f48403303bf9be506",
+          "schemaHash": "7ac7ae4cd89692ed7f06a02f1cf759e09d95b07698b32f8ae0c9a791e18ec4e0",
+          "requestHash": "8568919fa89e15316cea6f95fe152a4cb41586a2e7cf04d97831e4466163dd65",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "9bd08b0ae9fac4f1137b4a22b78171487c6c930b55c81443d28e54aebf6c729b",
+          "schemaHash": "961416a4ffd469fb139d7bf3ebc207f235dde5905d4737ba0f884be8234b5911",
+          "requestHash": "d7bf2450576d92981e9125715eb12e8733084d1cb9c1a6a5e3b4dfa39634a728",
+          "status": 200
+        }
+      ],
+      "output": {
+        "decision": {
+          "version": 1,
+          "field": "professional_information",
+          "outcome": {
+            "kind": "accept"
+          }
+        },
+        "claims": [
+          {
+            "id": "c0",
+            "source": "Eu uso Tool00.",
+            "text": "Tool00",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c1",
+            "source": "Eu uso Tool01.",
+            "text": "Tool01",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c2",
+            "source": "Eu uso Tool02.",
+            "text": "Tool02",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c3",
+            "source": "Eu uso Tool03.",
+            "text": "Tool03",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c4",
+            "source": "Eu uso Tool04.",
+            "text": "Tool04",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c5",
+            "source": "Eu uso Tool05.",
+            "text": "Tool05",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c6",
+            "source": "Eu uso Tool06.",
+            "text": "Tool06",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c7",
+            "source": "Eu uso Tool07.",
+            "text": "Tool07",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c8",
+            "source": "Eu uso Tool08.",
+            "text": "Tool08",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c9",
+            "source": "Eu uso Tool09.",
+            "text": "Tool09",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c10",
+            "source": "Eu uso Tool10.",
+            "text": "Tool10",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c11",
+            "source": "Eu uso Tool11.",
+            "text": "Tool11",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c12",
+            "source": "Eu uso Tool12.",
+            "text": "Tool12",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c13",
+            "source": "Eu uso Tool13.",
+            "text": "Tool13",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c14",
+            "source": "Eu uso Tool14.",
+            "text": "Tool14",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c15",
+            "source": "Eu uso Tool15.",
+            "text": "Tool15",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c16",
+            "source": "Eu uso Tool16.",
+            "text": "Tool16",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c17",
+            "source": "Eu uso Tool17.",
+            "text": "Tool17",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c18",
+            "source": "Eu uso Tool18.",
+            "text": "Tool18",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c19",
+            "source": "Eu uso Tool19.",
+            "text": "Tool19",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c20",
+            "source": "Eu uso Tool20.",
+            "text": "Tool20",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c21",
+            "source": "Eu uso Tool21.",
+            "text": "Tool21",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c22",
+            "source": "Eu uso Tool22.",
+            "text": "Tool22",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c23",
+            "source": "Eu uso Tool23.",
+            "text": "Tool23",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c24",
+            "source": "Eu uso Tool24.",
+            "text": "Tool24",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c25",
+            "source": "Eu uso Tool25.",
+            "text": "Tool25",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c26",
+            "source": "Eu uso Tool26.",
+            "text": "Tool26",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c27",
+            "source": "Eu uso Tool27.",
+            "text": "Tool27",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c28",
+            "source": "Eu uso Tool28.",
+            "text": "Tool28",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          },
+          {
+            "id": "c29",
+            "source": "Eu uso Tool29.",
+            "text": "Tool29",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          }
+        ],
+        "operations": [
+          {
+            "claimId": "c0",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool00",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c1",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool01",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c2",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool02",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c3",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool03",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c4",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool04",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c5",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool05",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c6",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool06",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c7",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool07",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c8",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool08",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c9",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool09",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c10",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool10",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c11",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool11",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c12",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool12",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c13",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool13",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c14",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool14",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c15",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool15",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c16",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool16",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c17",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool17",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c18",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool18",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c19",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool19",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c20",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool20",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c21",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool21",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c22",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool22",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c23",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool23",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c24",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool24",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c25",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool25",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c26",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool26",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c27",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool27",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c28",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool28",
+            "finding": "addition"
+          },
+          {
+            "claimId": "c29",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Tool29",
+            "finding": "addition"
+          }
+        ],
+        "unverifiedClaimCount": 0,
+        "unresolvedClaimIds": [],
+        "unplacedOperationCount": 0
+      },
+      "score": {
+        "expected": 70,
+        "observed": 60,
+        "matched": 60,
+        "labelPrecision": 1,
+        "completeness": 0.8571428571428571,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [
+          "fact-30",
+          "destination-30",
+          "fact-31",
+          "destination-31",
+          "fact-32",
+          "destination-32",
+          "fact-33",
+          "destination-33",
+          "fact-34",
+          "destination-34"
+        ],
+        "unmatched": [],
+        "failures": [
+          "missing: fact-30",
+          "missing: destination-30",
+          "missing: fact-31",
+          "missing: destination-31",
+          "missing: fact-32",
+          "missing: destination-32",
+          "missing: fact-33",
+          "missing: destination-33",
+          "missing: fact-34",
+          "missing: destination-34"
+        ],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "pt-short-job",
+      "task": "qualification_gaps",
+      "split": "heldout",
+      "language": "pt-BR",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "schemaHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "requestHash": "dcc645e33c192407ca43410e778b134253bfa9597c878f05ad9737cc6a473f02",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 1200,
+          "promptHash": "c562a884be953e9bc3fb41bf09afa11f7f710d41d2e074692160942a259dce56",
+          "schemaHash": "376bde7986cc2f8fd182f04e745c607933760bea7c306ea6e8e992b7f70be25a",
+          "requestHash": "18a80d509367bb98765657169004a2c4886c917626d8ae734f2e7115ff250159",
+          "status": 200
+        }
+      ],
+      "output": {
+        "gaps": [
+          {
+            "kind": "skill",
+            "requirement": "AWS",
+            "details": "AWS obrigatório."
+          }
+        ]
+      },
+      "score": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "pt-messy-job",
+      "task": "qualification_gaps",
+      "split": "heldout",
+      "language": "pt-BR",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "schemaHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "requestHash": "f0d56a2d671695f43bea04fdf26721b579a58dc34a2539d93572d0d35966998e",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 1200,
+          "promptHash": "d46b75f763bfa1b0b20f9577595a60edb0fbdeaf939a24b3e7609fbbb1016205",
+          "schemaHash": "376bde7986cc2f8fd182f04e745c607933760bea7c306ea6e8e992b7f70be25a",
+          "requestHash": "3097e03391629bc3ccd1b042525e4303d2f55adc8818a7b78e4f4d01a70fc1e2",
+          "status": 200
+        }
+      ],
+      "output": {
+        "gaps": [
+          {
+            "kind": "skill",
+            "requirement": "AWS",
+            "details": "AWS obrigatório."
+          }
+        ]
+      },
+      "score": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "pt-cv-metric",
+      "task": "cv_generation",
+      "split": "heldout",
+      "language": "pt-BR",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 4000,
+          "promptHash": "7b628b31614ec87ee620c8e8fe27d61f9c4f3adc60e92171526e0d961c065d7e",
+          "schemaHash": "376bde7986cc2f8fd182f04e745c607933760bea7c306ea6e8e992b7f70be25a",
+          "requestHash": "1c9dfb8c97e594fbaca895b9e66a35384f78037a91161bcb6a76a96ccf0ddc0d",
+          "status": 200
+        }
+      ],
+      "output": {
+        "summary": [
+          {
+            "sourceId": "f0",
+            "text": "Reduzi a latência em 20%."
+          }
+        ],
+        "selected": [
+          "f0"
+        ]
+      },
+      "score": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "pt-cv-negation",
+      "task": "cv_generation",
+      "split": "heldout",
+      "language": "pt-BR",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 4000,
+          "promptHash": "d2655370d1579a086b46658bb886417e1f069c7c4970dae7fdca004a944027fc",
+          "schemaHash": "376bde7986cc2f8fd182f04e745c607933760bea7c306ea6e8e992b7f70be25a",
+          "requestHash": "d1d91fad76721ae5d2d33c1434d6301027aff25f9050ec118766c593a532d53e",
+          "status": 200
+        }
+      ],
+      "output": {
+        "summary": [
+          {
+            "sourceId": "f0",
+            "text": "Não liderei a migração; apoiei os testes."
+          }
+        ],
+        "selected": [
+          "f0"
+        ]
+      },
+      "score": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "pt-draft-sparse",
+      "task": "application_draft",
+      "split": "heldout",
+      "language": "pt-BR",
+      "mode": "controlled",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "schemaHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "requestHash": "dcc645e33c192407ca43410e778b134253bfa9597c878f05ad9737cc6a473f02",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 8000,
+          "promptHash": "3678e878ca28ed8f7f01cb5629f68fbf360f841ff606748a50f560206e4af1d0",
+          "schemaHash": "4dd8bba15c3674c9869a7076621efb13f446cbe77c24a9dc42ec3eb9134e8b5f",
+          "requestHash": "90621bbca0092d5ab9c574e83a6325ab720db3427119244495277ea3e08967b3",
+          "status": 200
+        }
+      ],
+      "output": {
+        "jobTitle": "Desenvolvedor Java",
+        "company": null,
+        "jobSummary": "Desenvolvedor Java. AWS obrigatório.",
+        "resume": "## Technical Skills\nJava",
+        "coverLetter": {
+          "greeting": "Prezada equipe de contratação,",
+          "body": "Eu uso Java.",
+          "closing": "Atenciosamente,"
+        },
+        "applicationAnswers": "Eu uso Java."
+      },
+      "score": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    }
+  ]
+}

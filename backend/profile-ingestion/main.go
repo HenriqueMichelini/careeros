@@ -69,6 +69,13 @@ var statuses = map[string]bool{"employed-full-time": true, "employed-part-time":
 var legacyStatuses = map[string]bool{"Employed": true, "Employed — Full-time": true, "Employed — Part-time": true, "Employed — Contract": true, "Freelance / Self-employed": true, "Actively looking for work": true, "Open to opportunities (not actively searching)": true, "Unemployed": true, "Student": true}
 
 func NewHandler() http.Handler { return (app{client: &http.Client{Timeout: timeout}}).handler() }
+
+// NewHandlerWithClient uses the production workflow with an explicit provider
+// transport, allowing local evaluation without changing process-wide networking.
+func NewHandlerWithClient(client *http.Client) http.Handler {
+	return (app{client: client}).handler()
+}
+
 func (a app) handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/profile/ingest", a.ingest)

@@ -92,6 +92,13 @@ func isTimeout(err error) bool {
 }
 
 func NewHandler() http.Handler { return (app{client: &http.Client{Timeout: gapTimeout}}).handler() }
+
+// NewHandlerWithClient uses the production workflow with an explicit provider
+// transport, allowing local evaluation without changing process-wide networking.
+func NewHandlerWithClient(client *http.Client) http.Handler {
+	return (app{client: client}).handler()
+}
+
 func (a app) handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/qualification-gaps", a.check)

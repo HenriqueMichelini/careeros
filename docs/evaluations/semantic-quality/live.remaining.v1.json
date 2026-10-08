@@ -1,0 +1,336 @@
+{
+  "version": "semantic-quality-report-v1",
+  "mode": "live",
+  "started": "2026-10-08T16:30:54Z",
+  "commit": "ce08bce02d8b060d8aaa42be82c6d8454d8868e9",
+  "fixtureVersion": "semantic-quality-v1",
+  "fixtureHash": "99f0a4f9c0f02b72d49b96e8aeaa1018add8fedd87af097d9aa10d28ca84a188",
+  "sourceHashes": {
+    "backend/application-draft/main.go": "2914fb20e57e248028c048d25c88b29365665950b54ad2550a9d5aeb992b3a70",
+    "backend/cv-generation/main.go": "3bcb90a043219c586172aac830e47c9d451d4b206fd3da07e9a7e8d0a8bdd160",
+    "backend/profile-ingestion/main.go": "61ef23b5d405a1936402ea82013644bd2d9ac3669839c754d47404767976951d",
+    "backend/qualification-gaps/main.go": "d5c4394bdca8ecdbcebe7d9ced765ddec9d3b322026f86c27d946e2b21f6e7c2",
+    "internal/fieldvalidation/decision.go": "efcb400809dcf285e4fbcf86ed187e35adf7b9f15b590fe60ab2adf5e2e8c847",
+    "internal/fieldvalidation/questions.json": "8ca85f674db2cf8e3d9e8c14e3fab18ac3df9c8fdf1903f6dbbc6db7d8715b5c",
+    "internal/semanticeval/adapter.go": "be8263536a85cd9c89ad779e90dd916daf895bcaa68b72ca56a08999e5ff2236",
+    "internal/semanticeval/score.go": "2017d8fe72175a44259bb2b6e9bac6a829e0c3fce183143cbfa60f6e3fa83a57"
+  },
+  "scope": "local production HTTP handlers; synthetic inputs; no browser, deployment or universal factual guarantee",
+  "runs": [
+    {
+      "id": "en-draft-sparse",
+      "task": "application_draft",
+      "split": "development",
+      "language": "en",
+      "mode": "live",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "schemaHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "requestHash": "68780feaa4067002c06a95a44906f8eb5cab73902c91b8e6715bd65644b36caf",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 8000,
+          "promptHash": "e7a246734e53e35023795d9db98985a0a53bec873282e590c6252072328cdefd",
+          "schemaHash": "4dd8bba15c3674c9869a7076621efb13f446cbe77c24a9dc42ec3eb9134e8b5f",
+          "requestHash": "2ef87861b3708b7cada211fd0d323af0e72377844f77711d703a302047286af4",
+          "status": 200,
+          "returnedModel": "gpt-6-luna"
+        }
+      ],
+      "output": {
+        "jobTitle": "Java Developer",
+        "company": null,
+        "jobSummary": "Seeking a Java developer; AWS is required.",
+        "resume": "## Technical Skills\n- Java",
+        "coverLetter": {
+          "greeting": "Dear Hiring Team,",
+          "body": "I am interested in the Java Developer opportunity. Java is listed among my skills, and I understand that AWS is required for the role. My supplied profile does not include further details about my AWS experience, projects, or work history, so I cannot claim specific experience in those areas.",
+          "closing": "Kind regards,"
+        },
+        "applicationAnswers": "- **Java experience:** Java is listed among my skills.\n- **AWS experience:** Not provided.\n- **Relevant projects:** Not provided.\n- **Education:** Not provided.\n- **Certifications:** Not provided.\n- **Languages:** Not provided."
+      },
+      "providerOutputs": [
+        [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"applicationAnswers\":\"- **Java experience:** Java is listed among my skills.\\n- **AWS experience:** Not provided.\\n- **Relevant projects:** Not provided.\\n- **Education:** Not provided.\\n- **Certifications:** Not provided.\\n- **Languages:** Not provided.\",\"company\":null,\"coverLetter\":{\"body\":\"I am interested in the Java Developer opportunity. Java is listed among my skills, and I understand that AWS is required for the role. My supplied profile does not include further details about my AWS experience, projects, or work history, so I cannot claim specific experience in those areas.\",\"closing\":\"Kind regards,\",\"greeting\":\"Dear Hiring Team,\"},\"jobSummary\":\"Seeking a Java developer; AWS is required.\",\"jobTitle\":\"Java Developer\",\"resume\":\"## Technical Skills\\n- Java\"}",
+              "refusal": null,
+              "annotations": []
+            },
+            "finish_reason": "stop"
+          }
+        ]
+      ],
+      "score": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "pt-fact",
+      "task": "profile_ingestion",
+      "split": "heldout",
+      "language": "pt-BR",
+      "mode": "live",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "schemaHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "requestHash": "69027a66e4a8be2d61a3545cb9703259908276002bcc25eb76e5dcc9c7da6aac",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "28e8227891edea1831a2991c2c77e232ed1511ddfff9c4572c37160737abcbc5",
+          "schemaHash": "7ac7ae4cd89692ed7f06a02f1cf759e09d95b07698b32f8ae0c9a791e18ec4e0",
+          "requestHash": "25e85f5aa6ee4465149bf93ffff140e1362e49bbaa92358c87832dd02fdfa1af",
+          "status": 200,
+          "returnedModel": "gpt-6-luna"
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "f6a525b6e1d4e81365190e911c098e8bb939b9b0c538f3cd2a27d19e1344f012",
+          "schemaHash": "961416a4ffd469fb139d7bf3ebc207f235dde5905d4737ba0f884be8234b5911",
+          "requestHash": "75a3af43344b451978a2c6a8e5cd8dffb418a1655535c129c650d2a0b2738b2c",
+          "status": 200,
+          "returnedModel": "gpt-6-luna"
+        }
+      ],
+      "output": {
+        "decision": {
+          "version": 1,
+          "field": "professional_information",
+          "outcome": {
+            "kind": "accept"
+          }
+        },
+        "claims": [
+          {
+            "id": "c1",
+            "source": "Eu uso Java",
+            "text": "Uses Java.",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          }
+        ],
+        "operations": [
+          {
+            "claimId": "c1",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Java",
+            "finding": "addition"
+          }
+        ],
+        "unverifiedClaimCount": 0,
+        "unresolvedClaimIds": [],
+        "unplacedOperationCount": 0
+      },
+      "providerOutputs": [
+        [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"claims\":[{\"id\":\"c1\",\"question\":\"\",\"source\":\"Eu uso Java\",\"targets\":[\"skills\"],\"text\":\"Uses Java.\"}]}",
+              "refusal": null,
+              "annotations": []
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"operations\":[{\"action\":\"add\",\"claimId\":\"c1\",\"entryId\":\"\",\"field\":\"skills\",\"finding\":\"addition\",\"target\":\"skills\",\"value\":\"Java\"}]}",
+              "refusal": null,
+              "annotations": []
+            },
+            "finish_reason": "stop"
+          }
+        ]
+      ],
+      "score": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "pt-short-job",
+      "task": "qualification_gaps",
+      "split": "heldout",
+      "language": "pt-BR",
+      "mode": "live",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "schemaHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "requestHash": "dcc645e33c192407ca43410e778b134253bfa9597c878f05ad9737cc6a473f02",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 1200,
+          "promptHash": "c562a884be953e9bc3fb41bf09afa11f7f710d41d2e074692160942a259dce56",
+          "schemaHash": "376bde7986cc2f8fd182f04e745c607933760bea7c306ea6e8e992b7f70be25a",
+          "requestHash": "18a80d509367bb98765657169004a2c4886c917626d8ae734f2e7115ff250159",
+          "status": 200,
+          "returnedModel": "gpt-6-luna"
+        }
+      ],
+      "output": {
+        "gaps": [
+          {
+            "kind": "skill",
+            "requirement": "AWS",
+            "details": "AWS is mandatory for the Java Developer role."
+          }
+        ]
+      },
+      "providerOutputs": [
+        [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"gaps\":[{\"kind\":\"skill\",\"requirement\":\"AWS\",\"details\":\"AWS is mandatory for the Java Developer role.\"}]}",
+              "refusal": null,
+              "annotations": []
+            },
+            "finish_reason": "stop"
+          }
+        ]
+      ],
+      "score": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "pt-cv-metric",
+      "task": "cv_generation",
+      "split": "heldout",
+      "language": "pt-BR",
+      "mode": "live",
+      "status": 502,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 4000,
+          "promptHash": "7b628b31614ec87ee620c8e8fe27d61f9c4f3adc60e92171526e0d961c065d7e",
+          "schemaHash": "376bde7986cc2f8fd182f04e745c607933760bea7c306ea6e8e992b7f70be25a",
+          "requestHash": "1c9dfb8c97e594fbaca895b9e66a35384f78037a91161bcb6a76a96ccf0ddc0d",
+          "status": 200,
+          "returnedModel": "gpt-6-luna"
+        }
+      ],
+      "output": {
+        "error": "invalid_output"
+      },
+      "providerOutputs": [
+        [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"summary\":[],\"selected\":[\"f0\"],\"wording\":{\"f0\":\"Reduzi a latência em 20%.\"}}",
+              "refusal": null,
+              "annotations": []
+            },
+            "finish_reason": "stop"
+          }
+        ]
+      ],
+      "score": {
+        "expected": 2,
+        "observed": 0,
+        "matched": 0,
+        "labelPrecision": 1,
+        "completeness": 0,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [
+          "metric-support",
+          "selected-source"
+        ],
+        "unmatched": [],
+        "failures": [
+          "missing: metric-support",
+          "missing: selected-source",
+          "HTTP 502"
+        ],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    }
+  ]
+}

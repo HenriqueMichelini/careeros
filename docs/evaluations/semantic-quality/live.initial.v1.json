@@ -1,0 +1,208 @@
+{
+  "version": "semantic-quality-report-v1",
+  "mode": "live",
+  "started": "2026-10-08T16:22:19Z",
+  "commit": "ce08bce02d8b060d8aaa42be82c6d8454d8868e9",
+  "fixtureVersion": "semantic-quality-v1",
+  "fixtureHash": "480c03fa24a7f79c12038435a0e6be33b31c45a513fbae57e6406f33a81e0382",
+  "sourceHashes": {
+    "backend/application-draft/main.go": "2914fb20e57e248028c048d25c88b29365665950b54ad2550a9d5aeb992b3a70",
+    "backend/cv-generation/main.go": "3bcb90a043219c586172aac830e47c9d451d4b206fd3da07e9a7e8d0a8bdd160",
+    "backend/profile-ingestion/main.go": "61ef23b5d405a1936402ea82013644bd2d9ac3669839c754d47404767976951d",
+    "backend/qualification-gaps/main.go": "d5c4394bdca8ecdbcebe7d9ced765ddec9d3b322026f86c27d946e2b21f6e7c2",
+    "internal/fieldvalidation/decision.go": "efcb400809dcf285e4fbcf86ed187e35adf7b9f15b590fe60ab2adf5e2e8c847",
+    "internal/fieldvalidation/questions.json": "8ca85f674db2cf8e3d9e8c14e3fab18ac3df9c8fdf1903f6dbbc6db7d8715b5c",
+    "internal/semanticeval/adapter.go": "251e15407488d88d58cce6dadb9f455e832ede5b7cd5a0c5cbed5efb14240592",
+    "internal/semanticeval/score.go": "2017d8fe72175a44259bb2b6e9bac6a829e0c3fce183143cbfa60f6e3fa83a57"
+  },
+  "scope": "local production HTTP handlers; synthetic inputs; no browser, deployment or universal factual guarantee",
+  "runs": [
+    {
+      "id": "en-fact",
+      "task": "profile_ingestion",
+      "split": "development",
+      "language": "en",
+      "mode": "live",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "schemaHash": "3f9bf649e21747fba524fdb0e7e9c586fd3804ee7c084ab6cb70ba7e6cb5df20",
+          "requestHash": "c0a4109b753d0e5dd44c29e9e38018018d535766904014d1b3dd6d20f680d67d"
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "e4f7ec7d49c7653b895798d417bf958b2b419cf9b7967fd8aaf39d07ad9c14cd",
+          "schemaHash": "7ac7ae4cd89692ed7f06a02f1cf759e09d95b07698b32f8ae0c9a791e18ec4e0",
+          "requestHash": "f9969a42e407152bcb8284d4f3ad4e7b5e18daf49c68591174f76c3a399368ea"
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 6000,
+          "promptHash": "839b0375dbdd643f00352b59bdc71755a9e4d5cf1eb5fe263a2b73df07e7f03d",
+          "schemaHash": "961416a4ffd469fb139d7bf3ebc207f235dde5905d4737ba0f884be8234b5911",
+          "requestHash": "1b9c69e51c8fae4242eacdcf994e3af90d699312d676d935d79a5e8c6bf75e00"
+        }
+      ],
+      "output": {
+        "decision": {
+          "version": 1,
+          "field": "professional_information",
+          "outcome": {
+            "kind": "accept"
+          }
+        },
+        "claims": [
+          {
+            "id": "c1",
+            "source": "I use Java",
+            "text": "Uses Java.",
+            "targets": [
+              "skills"
+            ],
+            "question": ""
+          }
+        ],
+        "operations": [
+          {
+            "claimId": "c1",
+            "target": "skills",
+            "entryId": "",
+            "field": "skills",
+            "action": "add",
+            "value": "Java",
+            "finding": "addition"
+          }
+        ],
+        "unverifiedClaimCount": 0,
+        "unresolvedClaimIds": [],
+        "unplacedOperationCount": 0
+      },
+      "score": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 1,
+        "labelPrecision": 0.5,
+        "completeness": 0.5,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [
+          "java-fact"
+        ],
+        "unmatched": [
+          "claims[0]"
+        ],
+        "failures": [
+          "missing: java-fact",
+          "unmatched: claims[0]"
+        ],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "en-short-job",
+      "task": "qualification_gaps",
+      "split": "development",
+      "language": "en",
+      "mode": "live",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "schemaHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "requestHash": "68780feaa4067002c06a95a44906f8eb5cab73902c91b8e6715bd65644b36caf"
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 1200,
+          "promptHash": "d425afa8acbd53d7d319a21b879ea5ae58f0256e245421ad39d638bf8bc7c858",
+          "schemaHash": "376bde7986cc2f8fd182f04e745c607933760bea7c306ea6e8e992b7f70be25a",
+          "requestHash": "a859c8b1e03492c570a76444693bd8050011251d2eba836e4c7da05d7008096b"
+        }
+      ],
+      "output": {
+        "gaps": [
+          {
+            "kind": "skill",
+            "requirement": "AWS",
+            "details": "The posting requires AWS."
+          }
+        ]
+      },
+      "score": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    },
+    {
+      "id": "en-cv-metric",
+      "task": "cv_generation",
+      "split": "development",
+      "language": "en",
+      "mode": "live",
+      "status": 502,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 4000,
+          "promptHash": "02cd71417eaf17f06c7514cc897594d0d543b0dbc7579cd2255f96b44c3af0e9",
+          "schemaHash": "376bde7986cc2f8fd182f04e745c607933760bea7c306ea6e8e992b7f70be25a",
+          "requestHash": "e8e5a1d1570ba9a05d634f13cc6d5b4810674025218a210fc3fc072bdeef3ca9"
+        }
+      ],
+      "output": {
+        "error": "invalid_output"
+      },
+      "score": {
+        "expected": 2,
+        "observed": 0,
+        "matched": 0,
+        "labelPrecision": 1,
+        "completeness": 0,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [
+          "metric-support",
+          "selected-source"
+        ],
+        "unmatched": [],
+        "failures": [
+          "missing: metric-support",
+          "missing: selected-source",
+          "HTTP 502"
+        ],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    }
+  ]
+}
