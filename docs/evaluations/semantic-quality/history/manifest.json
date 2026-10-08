@@ -1,0 +1,170 @@
+{
+  "version": "semantic-quality-history-v1",
+  "note": "Original v1 tag collision is preserved honestly; exact report hashes distinguish initial and corrected labels. v2 has a new fixture version. Snapshots reconstructed from recorded edits were accepted only after exact SHA-256 comparison. Git refs identify retained committed source bytes.",
+  "reports": [
+    {
+      "report": "live.initial.v1.json",
+      "fixtureSnapshot": "history/cases.initial.v1.json",
+      "fixtureHash": "480c03fa24a7f79c12038435a0e6be33b31c45a513fbae57e6406f33a81e0382",
+      "recordedFixtureVersion": "semantic-quality-v1",
+      "sourceSnapshots": {
+        "backend/application-draft/main.go": {
+          "sha256": "2914fb20e57e248028c048d25c88b29365665950b54ad2550a9d5aeb992b3a70",
+          "snapshot": "git:4f0ae0d:backend/application-draft/main.go"
+        },
+        "backend/cv-generation/main.go": {
+          "sha256": "3bcb90a043219c586172aac830e47c9d451d4b206fd3da07e9a7e8d0a8bdd160",
+          "snapshot": "git:4f0ae0d:backend/cv-generation/main.go"
+        },
+        "backend/profile-ingestion/main.go": {
+          "sha256": "61ef23b5d405a1936402ea82013644bd2d9ac3669839c754d47404767976951d",
+          "snapshot": "git:4f0ae0d:backend/profile-ingestion/main.go"
+        },
+        "backend/qualification-gaps/main.go": {
+          "sha256": "d5c4394bdca8ecdbcebe7d9ced765ddec9d3b322026f86c27d946e2b21f6e7c2",
+          "snapshot": "git:4f0ae0d:backend/qualification-gaps/main.go"
+        },
+        "internal/fieldvalidation/decision.go": {
+          "sha256": "efcb400809dcf285e4fbcf86ed187e35adf7b9f15b590fe60ab2adf5e2e8c847",
+          "snapshot": "git:4f0ae0d:internal/fieldvalidation/decision.go"
+        },
+        "internal/fieldvalidation/questions.json": {
+          "sha256": "8ca85f674db2cf8e3d9e8c14e3fab18ac3df9c8fdf1903f6dbbc6db7d8715b5c",
+          "snapshot": "git:4f0ae0d:internal/fieldvalidation/questions.json"
+        },
+        "internal/semanticeval/adapter.go": {
+          "sha256": "251e15407488d88d58cce6dadb9f455e832ede5b7cd5a0c5cbed5efb14240592",
+          "snapshot": "history/adapter.initial.v1.go.txt"
+        },
+        "internal/semanticeval/score.go": {
+          "sha256": "2017d8fe72175a44259bb2b6e9bac6a829e0c3fce183143cbfa60f6e3fa83a57",
+          "snapshot": "history/score.v1.go.txt"
+        }
+      },
+      "runnerSnapshot": "history/runner.v1.go.txt"
+    },
+    {
+      "report": "live.remaining.v1.json",
+      "fixtureSnapshot": "cases.v1.json",
+      "fixtureHash": "99f0a4f9c0f02b72d49b96e8aeaa1018add8fedd87af097d9aa10d28ca84a188",
+      "recordedFixtureVersion": "semantic-quality-v1",
+      "sourceSnapshots": {
+        "backend/application-draft/main.go": {
+          "sha256": "2914fb20e57e248028c048d25c88b29365665950b54ad2550a9d5aeb992b3a70",
+          "snapshot": "git:4f0ae0d:backend/application-draft/main.go"
+        },
+        "backend/cv-generation/main.go": {
+          "sha256": "3bcb90a043219c586172aac830e47c9d451d4b206fd3da07e9a7e8d0a8bdd160",
+          "snapshot": "git:4f0ae0d:backend/cv-generation/main.go"
+        },
+        "backend/profile-ingestion/main.go": {
+          "sha256": "61ef23b5d405a1936402ea82013644bd2d9ac3669839c754d47404767976951d",
+          "snapshot": "git:4f0ae0d:backend/profile-ingestion/main.go"
+        },
+        "backend/qualification-gaps/main.go": {
+          "sha256": "d5c4394bdca8ecdbcebe7d9ced765ddec9d3b322026f86c27d946e2b21f6e7c2",
+          "snapshot": "git:4f0ae0d:backend/qualification-gaps/main.go"
+        },
+        "internal/fieldvalidation/decision.go": {
+          "sha256": "efcb400809dcf285e4fbcf86ed187e35adf7b9f15b590fe60ab2adf5e2e8c847",
+          "snapshot": "git:4f0ae0d:internal/fieldvalidation/decision.go"
+        },
+        "internal/fieldvalidation/questions.json": {
+          "sha256": "8ca85f674db2cf8e3d9e8c14e3fab18ac3df9c8fdf1903f6dbbc6db7d8715b5c",
+          "snapshot": "git:4f0ae0d:internal/fieldvalidation/questions.json"
+        },
+        "internal/semanticeval/adapter.go": {
+          "sha256": "be8263536a85cd9c89ad779e90dd916daf895bcaa68b72ca56a08999e5ff2236",
+          "snapshot": "git:4f0ae0d:internal/semanticeval/adapter.go"
+        },
+        "internal/semanticeval/score.go": {
+          "sha256": "2017d8fe72175a44259bb2b6e9bac6a829e0c3fce183143cbfa60f6e3fa83a57",
+          "snapshot": "history/score.v1.go.txt"
+        }
+      },
+      "runnerSnapshot": "history/runner.v1.go.txt"
+    },
+    {
+      "report": "live.final.v1.json",
+      "fixtureSnapshot": "cases.v1.json",
+      "fixtureHash": "99f0a4f9c0f02b72d49b96e8aeaa1018add8fedd87af097d9aa10d28ca84a188",
+      "recordedFixtureVersion": "semantic-quality-v1",
+      "sourceSnapshots": {
+        "backend/application-draft/main.go": {
+          "sha256": "2914fb20e57e248028c048d25c88b29365665950b54ad2550a9d5aeb992b3a70",
+          "snapshot": "git:4f0ae0d:backend/application-draft/main.go"
+        },
+        "backend/cv-generation/main.go": {
+          "sha256": "3bcb90a043219c586172aac830e47c9d451d4b206fd3da07e9a7e8d0a8bdd160",
+          "snapshot": "git:4f0ae0d:backend/cv-generation/main.go"
+        },
+        "backend/profile-ingestion/main.go": {
+          "sha256": "61ef23b5d405a1936402ea82013644bd2d9ac3669839c754d47404767976951d",
+          "snapshot": "git:4f0ae0d:backend/profile-ingestion/main.go"
+        },
+        "backend/qualification-gaps/main.go": {
+          "sha256": "d5c4394bdca8ecdbcebe7d9ced765ddec9d3b322026f86c27d946e2b21f6e7c2",
+          "snapshot": "git:4f0ae0d:backend/qualification-gaps/main.go"
+        },
+        "internal/fieldvalidation/decision.go": {
+          "sha256": "efcb400809dcf285e4fbcf86ed187e35adf7b9f15b590fe60ab2adf5e2e8c847",
+          "snapshot": "git:4f0ae0d:internal/fieldvalidation/decision.go"
+        },
+        "internal/fieldvalidation/questions.json": {
+          "sha256": "8ca85f674db2cf8e3d9e8c14e3fab18ac3df9c8fdf1903f6dbbc6db7d8715b5c",
+          "snapshot": "git:4f0ae0d:internal/fieldvalidation/questions.json"
+        },
+        "internal/semanticeval/adapter.go": {
+          "sha256": "be8263536a85cd9c89ad779e90dd916daf895bcaa68b72ca56a08999e5ff2236",
+          "snapshot": "git:4f0ae0d:internal/semanticeval/adapter.go"
+        },
+        "internal/semanticeval/score.go": {
+          "sha256": "2017d8fe72175a44259bb2b6e9bac6a829e0c3fce183143cbfa60f6e3fa83a57",
+          "snapshot": "history/score.v1.go.txt"
+        }
+      },
+      "runnerSnapshot": "history/runner.v1.go.txt"
+    },
+    {
+      "report": "controlled.v1.json",
+      "fixtureSnapshot": "cases.v1.json",
+      "fixtureHash": "99f0a4f9c0f02b72d49b96e8aeaa1018add8fedd87af097d9aa10d28ca84a188",
+      "recordedFixtureVersion": "semantic-quality-v1",
+      "sourceSnapshots": {
+        "backend/application-draft/main.go": {
+          "sha256": "2914fb20e57e248028c048d25c88b29365665950b54ad2550a9d5aeb992b3a70",
+          "snapshot": "git:4f0ae0d:backend/application-draft/main.go"
+        },
+        "backend/cv-generation/main.go": {
+          "sha256": "3bcb90a043219c586172aac830e47c9d451d4b206fd3da07e9a7e8d0a8bdd160",
+          "snapshot": "git:4f0ae0d:backend/cv-generation/main.go"
+        },
+        "backend/profile-ingestion/main.go": {
+          "sha256": "61ef23b5d405a1936402ea82013644bd2d9ac3669839c754d47404767976951d",
+          "snapshot": "git:4f0ae0d:backend/profile-ingestion/main.go"
+        },
+        "backend/qualification-gaps/main.go": {
+          "sha256": "d5c4394bdca8ecdbcebe7d9ced765ddec9d3b322026f86c27d946e2b21f6e7c2",
+          "snapshot": "git:4f0ae0d:backend/qualification-gaps/main.go"
+        },
+        "internal/fieldvalidation/decision.go": {
+          "sha256": "efcb400809dcf285e4fbcf86ed187e35adf7b9f15b590fe60ab2adf5e2e8c847",
+          "snapshot": "git:4f0ae0d:internal/fieldvalidation/decision.go"
+        },
+        "internal/fieldvalidation/questions.json": {
+          "sha256": "8ca85f674db2cf8e3d9e8c14e3fab18ac3df9c8fdf1903f6dbbc6db7d8715b5c",
+          "snapshot": "git:4f0ae0d:internal/fieldvalidation/questions.json"
+        },
+        "internal/semanticeval/adapter.go": {
+          "sha256": "be8263536a85cd9c89ad779e90dd916daf895bcaa68b72ca56a08999e5ff2236",
+          "snapshot": "git:4f0ae0d:internal/semanticeval/adapter.go"
+        },
+        "internal/semanticeval/score.go": {
+          "sha256": "2017d8fe72175a44259bb2b6e9bac6a829e0c3fce183143cbfa60f6e3fa83a57",
+          "snapshot": "history/score.v1.go.txt"
+        }
+      },
+      "runnerSnapshot": "history/runner.v1.go.txt"
+    }
+  ]
+}

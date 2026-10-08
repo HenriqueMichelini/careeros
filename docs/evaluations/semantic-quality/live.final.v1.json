@@ -1,0 +1,92 @@
+{
+  "version": "semantic-quality-report-v1",
+  "mode": "live",
+  "started": "2026-10-08T16:31:26Z",
+  "commit": "ce08bce02d8b060d8aaa42be82c6d8454d8868e9",
+  "fixtureVersion": "semantic-quality-v1",
+  "fixtureHash": "99f0a4f9c0f02b72d49b96e8aeaa1018add8fedd87af097d9aa10d28ca84a188",
+  "sourceHashes": {
+    "backend/application-draft/main.go": "2914fb20e57e248028c048d25c88b29365665950b54ad2550a9d5aeb992b3a70",
+    "backend/cv-generation/main.go": "3bcb90a043219c586172aac830e47c9d451d4b206fd3da07e9a7e8d0a8bdd160",
+    "backend/profile-ingestion/main.go": "61ef23b5d405a1936402ea82013644bd2d9ac3669839c754d47404767976951d",
+    "backend/qualification-gaps/main.go": "d5c4394bdca8ecdbcebe7d9ced765ddec9d3b322026f86c27d946e2b21f6e7c2",
+    "internal/fieldvalidation/decision.go": "efcb400809dcf285e4fbcf86ed187e35adf7b9f15b590fe60ab2adf5e2e8c847",
+    "internal/fieldvalidation/questions.json": "8ca85f674db2cf8e3d9e8c14e3fab18ac3df9c8fdf1903f6dbbc6db7d8715b5c",
+    "internal/semanticeval/adapter.go": "be8263536a85cd9c89ad779e90dd916daf895bcaa68b72ca56a08999e5ff2236",
+    "internal/semanticeval/score.go": "2017d8fe72175a44259bb2b6e9bac6a829e0c3fce183143cbfa60f6e3fa83a57"
+  },
+  "scope": "local production HTTP handlers; synthetic inputs; no browser, deployment or universal factual guarantee",
+  "runs": [
+    {
+      "id": "pt-draft-sparse",
+      "task": "application_draft",
+      "split": "heldout",
+      "language": "pt-BR",
+      "mode": "live",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "schemaHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "requestHash": "dcc645e33c192407ca43410e778b134253bfa9597c878f05ad9737cc6a473f02",
+          "status": 200
+        },
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 8000,
+          "promptHash": "3678e878ca28ed8f7f01cb5629f68fbf360f841ff606748a50f560206e4af1d0",
+          "schemaHash": "4dd8bba15c3674c9869a7076621efb13f446cbe77c24a9dc42ec3eb9134e8b5f",
+          "requestHash": "90621bbca0092d5ab9c574e83a6325ab720db3427119244495277ea3e08967b3",
+          "status": 200,
+          "returnedModel": "gpt-6-luna"
+        }
+      ],
+      "output": {
+        "jobTitle": "Desenvolvedor Java",
+        "company": null,
+        "jobSummary": "Oportunidade para Desenvolvedor Java, com AWS indicada como requisito obrigatório. A publicação não informa empresa, localização, responsabilidades adicionais ou outros requisitos.",
+        "resume": "## Competências Técnicas\n- Java",
+        "coverLetter": {
+          "greeting": "À equipe de contratação,",
+          "body": "Tenho conhecimento em Java e interesse na oportunidade de Desenvolvedor Java. A descrição informa AWS como requisito obrigatório; não há informações disponíveis sobre minhas qualificações nessa tecnologia, por isso não afirmo experiência ou domínio.",
+          "closing": "Atenciosamente,"
+        },
+        "applicationAnswers": "1. **Vaga:** Desenvolvedor Java.\n2. **Requisito técnico informado:** AWS é obrigatório.\n3. **Experiência profissional:** Não informada.\n4. **Formação acadêmica:** Não informada.\n5. **Certificações:** Não informadas."
+      },
+      "providerOutputs": [
+        [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\n  \"applicationAnswers\": \"1. **Vaga:** Desenvolvedor Java.\\n2. **Requisito técnico informado:** AWS é obrigatório.\\n3. **Experiência profissional:** Não informada.\\n4. **Formação acadêmica:** Não informada.\\n5. **Certificações:** Não informadas.\",\n  \"company\": null,\n  \"coverLetter\": {\n    \"body\": \"Tenho conhecimento em Java e interesse na oportunidade de Desenvolvedor Java. A descrição informa AWS como requisito obrigatório; não há informações disponíveis sobre minhas qualificações nessa tecnologia, por isso não afirmo experiência ou domínio.\",\n    \"closing\": \"Atenciosamente,\",\n    \"greeting\": \"À equipe de contratação,\"\n  },\n  \"jobSummary\": \"Oportunidade para Desenvolvedor Java, com AWS indicada como requisito obrigatório. A publicação não informa empresa, localização, responsabilidades adicionais ou outros requisitos.\",\n  \"jobTitle\": \"Desenvolvedor Java\",\n  \"resume\": \"## Competências Técnicas\\n- Java\"\n}",
+              "refusal": null,
+              "annotations": []
+            },
+            "finish_reason": "stop"
+          }
+        ]
+      ],
+      "score": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "failures": [],
+        "humanReview": "pending: prose support and unmatched units"
+      }
+    }
+  ]
+}

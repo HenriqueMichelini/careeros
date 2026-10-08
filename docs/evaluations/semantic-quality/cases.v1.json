@@ -1,0 +1,3925 @@
+{
+  "version": "semantic-quality-v1",
+  "cases": [
+    {
+      "id": "en-fact",
+      "task": "profile_ingestion",
+      "language": "en",
+      "split": "development",
+      "tags": [
+        "typical",
+        "sparse"
+      ],
+      "request": {
+        "input": "I use Java",
+        "profile": {
+          "careerGoals": "",
+          "skills": "",
+          "competencies": "",
+          "tools": "",
+          "employmentStatus": "",
+          "currentSalary": "",
+          "desiredSalary": "",
+          "additionalInfo": "",
+          "experience": [],
+          "projects": []
+        }
+      },
+      "provider": [
+        {
+          "claims": [
+            {
+              "id": "c1",
+              "source": "I use Java",
+              "text": "Java",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            }
+          ]
+        },
+        {
+          "operations": [
+            {
+              "claimId": "c1",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Java",
+              "finding": "addition"
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "java-fact",
+          "group": "claims",
+          "match": {
+            "text": "^(?:Java|Uses Java\\.|Usa Java\\.|Utiliza Java\\.|Uso Java\\.)$",
+            "targets": "skills",
+            "question": "^$"
+          }
+        },
+        {
+          "id": "java-destination",
+          "group": "operations",
+          "match": {
+            "value": "^Java$",
+            "target": "^skills$",
+            "field": "^skills$",
+            "action": "^add$"
+          }
+        }
+      ],
+      "forbidden": [
+        "(?i)expert|especialista|senior|sênior",
+        "\"(?:value|text)\"\\s*:\\s*\"[^\\\"]*\\b[0-9]+\\b"
+      ],
+      "notes": "Only the explicit Java fact and skills destination are supported. No employer, duration or proficiency.",
+      "sourceId": "en-fact"
+    },
+    {
+      "id": "en-messy-profile",
+      "task": "profile_ingestion",
+      "language": "en",
+      "split": "development",
+      "tags": [
+        "messy",
+        "duplicates"
+      ],
+      "request": {
+        "input": "Buy milk. I use Java. I use Java.",
+        "profile": {
+          "careerGoals": "",
+          "skills": "",
+          "competencies": "",
+          "tools": "",
+          "employmentStatus": "",
+          "currentSalary": "",
+          "desiredSalary": "",
+          "additionalInfo": "",
+          "experience": [],
+          "projects": []
+        }
+      },
+      "provider": [
+        {
+          "claims": [
+            {
+              "id": "c1",
+              "source": "I use Java",
+              "text": "Java",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            }
+          ]
+        },
+        {
+          "operations": [
+            {
+              "claimId": "c1",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Java",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c1",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Java",
+              "finding": "addition"
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "java-fact",
+          "group": "claims",
+          "match": {
+            "text": "^(?:Java|Uses Java\\.|Usa Java\\.|Utiliza Java\\.|Uso Java\\.)$",
+            "targets": "skills",
+            "question": "^$"
+          }
+        },
+        {
+          "id": "java-destination",
+          "group": "operations",
+          "match": {
+            "value": "^Java$",
+            "target": "^skills$",
+            "field": "^skills$",
+            "action": "^add$"
+          }
+        }
+      ],
+      "forbidden": [
+        "\"(?:value|text)\"\\s*:\\s*\"[^\\\"]*(?:milk|leite)"
+      ],
+      "notes": "One skill addition despite repeated mentions and irrelevant noise.",
+      "sourceId": "en-messy-profile"
+    },
+    {
+      "id": "en-negation-aspiration",
+      "task": "profile_ingestion",
+      "language": "en",
+      "split": "heldout",
+      "tags": [
+        "negation",
+        "aspirations"
+      ],
+      "request": {
+        "input": "I do not know AWS. I want to learn Python.",
+        "profile": {
+          "careerGoals": "",
+          "skills": "",
+          "competencies": "",
+          "tools": "",
+          "employmentStatus": "",
+          "currentSalary": "",
+          "desiredSalary": "",
+          "additionalInfo": "",
+          "experience": [],
+          "projects": []
+        }
+      },
+      "provider": [
+        {
+          "claims": [
+            {
+              "id": "c1",
+              "source": "I do not know AWS. I want to learn Python.",
+              "text": "I do not know AWS. I want to learn Python.",
+              "targets": [
+                "careerGoals"
+              ],
+              "question": ""
+            }
+          ]
+        },
+        {
+          "operations": [
+            {
+              "claimId": "c1",
+              "target": "careerGoals",
+              "field": "careerGoals",
+              "entryId": "",
+              "action": "add",
+              "value": "I do not know AWS. I want to learn Python.",
+              "finding": "addition"
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "qualified-fact",
+          "group": "claims",
+          "match": {
+            "text": "(not|não).*AWS.*(want|quero).*Python"
+          }
+        },
+        {
+          "id": "goal-only",
+          "group": "operations",
+          "match": {
+            "value": "(want|quero).*Python",
+            "target": "^careerGoals$"
+          }
+        }
+      ],
+      "forbidden": [
+        "\"target\"\\s*:\\s*\"skills\"",
+        "(?i)AWS expert|especialista em AWS"
+      ],
+      "notes": "Negated AWS is not a capability. Python is only an aspiration; preserve negation and goal context."
+    },
+    {
+      "id": "en-ambiguous-date",
+      "task": "profile_ingestion",
+      "language": "en",
+      "split": "heldout",
+      "tags": [
+        "approximate_dates",
+        "ambiguous_pronouns"
+      ],
+      "request": {
+        "input": "Alex worked with Sam. They built an API around 2020.",
+        "profile": {
+          "careerGoals": "",
+          "skills": "",
+          "competencies": "",
+          "tools": "",
+          "employmentStatus": "",
+          "currentSalary": "",
+          "desiredSalary": "",
+          "additionalInfo": "",
+          "experience": [],
+          "projects": []
+        }
+      },
+      "provider": [
+        {
+          "claims": [
+            {
+              "id": "c1",
+              "source": "Alex worked with Sam. They built an API around 2020.",
+              "text": "Alex worked with Sam. They built an API around 2020.",
+              "targets": [],
+              "question": "Who built the API and when?"
+            }
+          ]
+        },
+        {
+          "operations": []
+        }
+      ],
+      "gold": [
+        {
+          "id": "clarification",
+          "group": "claims",
+          "match": {
+            "text": "API",
+            "question": ".+",
+            "targets": "^\\[\\]$"
+          }
+        }
+      ],
+      "forbidden": [
+        "\"value\"\\s*:\\s*\"2020-01\"",
+        "\"target\"\\s*:\\s*\"experience\""
+      ],
+      "notes": "Ask rather than assigning shared work to the candidate or converting an approximate year into an exact month."
+    },
+    {
+      "id": "en-existing-duplicate",
+      "task": "profile_ingestion",
+      "language": "en",
+      "split": "development",
+      "tags": [
+        "duplicates",
+        "existing_profile"
+      ],
+      "request": {
+        "input": "I use Java",
+        "profile": {
+          "careerGoals": "",
+          "skills": "Java",
+          "competencies": "",
+          "tools": "",
+          "employmentStatus": "",
+          "currentSalary": "",
+          "desiredSalary": "",
+          "additionalInfo": "",
+          "experience": [],
+          "projects": []
+        }
+      },
+      "provider": [
+        {
+          "claims": [
+            {
+              "id": "c1",
+              "source": "I use Java",
+              "text": "Java",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            }
+          ]
+        },
+        {
+          "operations": []
+        }
+      ],
+      "gold": [
+        {
+          "id": "java-fact",
+          "group": "claims",
+          "match": {
+            "text": "^(?:Java|Uses Java\\.|Usa Java\\.|Utiliza Java\\.|Uso Java\\.)$",
+            "targets": "skills",
+            "question": "^$"
+          }
+        }
+      ],
+      "forbidden": [
+        "\"target\"\\s*:\\s*\"skills\""
+      ],
+      "notes": "Exact existing Java is not a new addition."
+    },
+    {
+      "id": "en-proficiency-conflict",
+      "task": "profile_ingestion",
+      "language": "en",
+      "split": "heldout",
+      "tags": [
+        "proficiency",
+        "conflict"
+      ],
+      "request": {
+        "input": "My English is advanced.",
+        "profile": {
+          "careerGoals": "",
+          "skills": "",
+          "competencies": "",
+          "tools": "",
+          "employmentStatus": "",
+          "currentSalary": "",
+          "desiredSalary": "",
+          "additionalInfo": "",
+          "experience": [],
+          "projects": [],
+          "languages": [
+            {
+              "id": "l1",
+              "name": "English",
+              "proficiency": "Basic"
+            }
+          ],
+          "fullName": "",
+          "email": "",
+          "phone": "",
+          "location": "",
+          "professionalLinks": "",
+          "education": [],
+          "certifications": []
+        }
+      },
+      "provider": [
+        {
+          "claims": [
+            {
+              "id": "c1",
+              "source": "My English is advanced.",
+              "text": "My English is advanced.",
+              "targets": [
+                "languages"
+              ],
+              "question": ""
+            }
+          ]
+        },
+        {
+          "operations": [
+            {
+              "claimId": "c1",
+              "target": "languages",
+              "field": "proficiency",
+              "entryId": "l1",
+              "action": "update",
+              "value": "Advanced",
+              "finding": "conflict"
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "proficiency",
+          "group": "claims",
+          "match": {
+            "text": "advanced|avançado",
+            "targets": "languages"
+          }
+        }
+      ],
+      "forbidden": [
+        "\"field\"\\s*:\\s*\"proficiency\""
+      ],
+      "notes": "Conflicting Basic/Advanced proficiency without an explicit correction must be withheld, leaving the Profile unchanged."
+    },
+    {
+      "id": "en-roles-projects",
+      "task": "profile_ingestion",
+      "language": "en",
+      "split": "heldout",
+      "tags": [
+        "mixed_roles_projects",
+        "metrics",
+        "relationships"
+      ],
+      "request": {
+        "input": "At Acme I reduced latency by 20%. For Atlas I used Python.",
+        "profile": {
+          "careerGoals": "",
+          "skills": "",
+          "competencies": "",
+          "tools": "",
+          "employmentStatus": "",
+          "currentSalary": "",
+          "desiredSalary": "",
+          "additionalInfo": "",
+          "experience": [
+            {
+              "id": "e1",
+              "company": "Acme",
+              "title": "Developer",
+              "startDate": "",
+              "endDate": "",
+              "current": false,
+              "location": "",
+              "description": "",
+              "responsibilities": "",
+              "achievements": ""
+            }
+          ],
+          "projects": [
+            {
+              "id": "p1",
+              "name": "Atlas",
+              "description": "",
+              "technologies": "",
+              "url": "",
+              "highlights": ""
+            }
+          ]
+        }
+      },
+      "provider": [
+        {
+          "claims": [
+            {
+              "id": "c1",
+              "source": "At Acme I reduced latency by 20%.",
+              "text": "At Acme I reduced latency by 20%.",
+              "targets": [
+                "experience"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c2",
+              "source": "For Atlas I used Python.",
+              "text": "For Atlas I used Python.",
+              "targets": [
+                "projects"
+              ],
+              "question": ""
+            }
+          ]
+        },
+        {
+          "operations": [
+            {
+              "claimId": "c1",
+              "target": "experience",
+              "field": "achievements",
+              "entryId": "e1",
+              "action": "add",
+              "value": "At Acme I reduced latency by 20%.",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c2",
+              "target": "projects",
+              "field": "technologies",
+              "entryId": "p1",
+              "action": "add",
+              "value": "Python",
+              "finding": "addition"
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "role-fact",
+          "group": "claims",
+          "match": {
+            "text": "20%",
+            "targets": "experience"
+          }
+        },
+        {
+          "id": "project-fact",
+          "group": "claims",
+          "match": {
+            "text": "Python",
+            "targets": "projects"
+          }
+        },
+        {
+          "id": "role-owner",
+          "group": "operations",
+          "match": {
+            "value": "20%",
+            "target": "^experience$",
+            "entryId": "^e1$",
+            "field": "^achievements$"
+          }
+        },
+        {
+          "id": "project-owner",
+          "group": "operations",
+          "match": {
+            "value": "Python",
+            "target": "^projects$",
+            "entryId": "^p1$",
+            "field": "^technologies$"
+          }
+        }
+      ],
+      "forbidden": [
+        "90%",
+        "(?i)led|liderou"
+      ],
+      "notes": "Acme owns the 20% outcome; Atlas owns Python. Never transfer metrics or tools between entities."
+    },
+    {
+      "id": "en-capacity-35",
+      "task": "profile_ingestion",
+      "language": "en",
+      "split": "heldout",
+      "tags": [
+        "exceeds_extraction_capacity",
+        "omissions"
+      ],
+      "request": {
+        "input": "I use Tool00. I use Tool01. I use Tool02. I use Tool03. I use Tool04. I use Tool05. I use Tool06. I use Tool07. I use Tool08. I use Tool09. I use Tool10. I use Tool11. I use Tool12. I use Tool13. I use Tool14. I use Tool15. I use Tool16. I use Tool17. I use Tool18. I use Tool19. I use Tool20. I use Tool21. I use Tool22. I use Tool23. I use Tool24. I use Tool25. I use Tool26. I use Tool27. I use Tool28. I use Tool29. I use Tool30. I use Tool31. I use Tool32. I use Tool33. I use Tool34.",
+        "profile": {
+          "careerGoals": "",
+          "skills": "",
+          "competencies": "",
+          "tools": "",
+          "employmentStatus": "",
+          "currentSalary": "",
+          "desiredSalary": "",
+          "additionalInfo": "",
+          "experience": [],
+          "projects": []
+        }
+      },
+      "provider": [
+        {
+          "claims": [
+            {
+              "id": "c0",
+              "source": "I use Tool00.",
+              "text": "Tool00",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c1",
+              "source": "I use Tool01.",
+              "text": "Tool01",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c2",
+              "source": "I use Tool02.",
+              "text": "Tool02",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c3",
+              "source": "I use Tool03.",
+              "text": "Tool03",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c4",
+              "source": "I use Tool04.",
+              "text": "Tool04",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c5",
+              "source": "I use Tool05.",
+              "text": "Tool05",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c6",
+              "source": "I use Tool06.",
+              "text": "Tool06",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c7",
+              "source": "I use Tool07.",
+              "text": "Tool07",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c8",
+              "source": "I use Tool08.",
+              "text": "Tool08",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c9",
+              "source": "I use Tool09.",
+              "text": "Tool09",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c10",
+              "source": "I use Tool10.",
+              "text": "Tool10",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c11",
+              "source": "I use Tool11.",
+              "text": "Tool11",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c12",
+              "source": "I use Tool12.",
+              "text": "Tool12",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c13",
+              "source": "I use Tool13.",
+              "text": "Tool13",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c14",
+              "source": "I use Tool14.",
+              "text": "Tool14",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c15",
+              "source": "I use Tool15.",
+              "text": "Tool15",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c16",
+              "source": "I use Tool16.",
+              "text": "Tool16",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c17",
+              "source": "I use Tool17.",
+              "text": "Tool17",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c18",
+              "source": "I use Tool18.",
+              "text": "Tool18",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c19",
+              "source": "I use Tool19.",
+              "text": "Tool19",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c20",
+              "source": "I use Tool20.",
+              "text": "Tool20",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c21",
+              "source": "I use Tool21.",
+              "text": "Tool21",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c22",
+              "source": "I use Tool22.",
+              "text": "Tool22",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c23",
+              "source": "I use Tool23.",
+              "text": "Tool23",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c24",
+              "source": "I use Tool24.",
+              "text": "Tool24",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c25",
+              "source": "I use Tool25.",
+              "text": "Tool25",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c26",
+              "source": "I use Tool26.",
+              "text": "Tool26",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c27",
+              "source": "I use Tool27.",
+              "text": "Tool27",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c28",
+              "source": "I use Tool28.",
+              "text": "Tool28",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c29",
+              "source": "I use Tool29.",
+              "text": "Tool29",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            }
+          ]
+        },
+        {
+          "operations": [
+            {
+              "claimId": "c0",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool00",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c1",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool01",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c2",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool02",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c3",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool03",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c4",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool04",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c5",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool05",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c6",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool06",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c7",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool07",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c8",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool08",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c9",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool09",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c10",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool10",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c11",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool11",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c12",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool12",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c13",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool13",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c14",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool14",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c15",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool15",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c16",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool16",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c17",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool17",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c18",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool18",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c19",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool19",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c20",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool20",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c21",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool21",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c22",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool22",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c23",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool23",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c24",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool24",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c25",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool25",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c26",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool26",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c27",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool27",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c28",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool28",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c29",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool29",
+              "finding": "addition"
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "fact-00",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool00\\b"
+          }
+        },
+        {
+          "id": "destination-00",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool00\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-01",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool01\\b"
+          }
+        },
+        {
+          "id": "destination-01",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool01\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-02",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool02\\b"
+          }
+        },
+        {
+          "id": "destination-02",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool02\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-03",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool03\\b"
+          }
+        },
+        {
+          "id": "destination-03",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool03\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-04",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool04\\b"
+          }
+        },
+        {
+          "id": "destination-04",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool04\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-05",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool05\\b"
+          }
+        },
+        {
+          "id": "destination-05",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool05\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-06",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool06\\b"
+          }
+        },
+        {
+          "id": "destination-06",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool06\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-07",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool07\\b"
+          }
+        },
+        {
+          "id": "destination-07",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool07\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-08",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool08\\b"
+          }
+        },
+        {
+          "id": "destination-08",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool08\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-09",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool09\\b"
+          }
+        },
+        {
+          "id": "destination-09",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool09\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-10",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool10\\b"
+          }
+        },
+        {
+          "id": "destination-10",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool10\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-11",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool11\\b"
+          }
+        },
+        {
+          "id": "destination-11",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool11\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-12",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool12\\b"
+          }
+        },
+        {
+          "id": "destination-12",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool12\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-13",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool13\\b"
+          }
+        },
+        {
+          "id": "destination-13",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool13\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-14",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool14\\b"
+          }
+        },
+        {
+          "id": "destination-14",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool14\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-15",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool15\\b"
+          }
+        },
+        {
+          "id": "destination-15",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool15\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-16",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool16\\b"
+          }
+        },
+        {
+          "id": "destination-16",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool16\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-17",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool17\\b"
+          }
+        },
+        {
+          "id": "destination-17",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool17\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-18",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool18\\b"
+          }
+        },
+        {
+          "id": "destination-18",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool18\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-19",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool19\\b"
+          }
+        },
+        {
+          "id": "destination-19",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool19\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-20",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool20\\b"
+          }
+        },
+        {
+          "id": "destination-20",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool20\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-21",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool21\\b"
+          }
+        },
+        {
+          "id": "destination-21",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool21\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-22",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool22\\b"
+          }
+        },
+        {
+          "id": "destination-22",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool22\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-23",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool23\\b"
+          }
+        },
+        {
+          "id": "destination-23",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool23\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-24",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool24\\b"
+          }
+        },
+        {
+          "id": "destination-24",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool24\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-25",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool25\\b"
+          }
+        },
+        {
+          "id": "destination-25",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool25\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-26",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool26\\b"
+          }
+        },
+        {
+          "id": "destination-26",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool26\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-27",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool27\\b"
+          }
+        },
+        {
+          "id": "destination-27",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool27\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-28",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool28\\b"
+          }
+        },
+        {
+          "id": "destination-28",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool28\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-29",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool29\\b"
+          }
+        },
+        {
+          "id": "destination-29",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool29\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-30",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool30\\b"
+          }
+        },
+        {
+          "id": "destination-30",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool30\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-31",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool31\\b"
+          }
+        },
+        {
+          "id": "destination-31",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool31\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-32",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool32\\b"
+          }
+        },
+        {
+          "id": "destination-32",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool32\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-33",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool33\\b"
+          }
+        },
+        {
+          "id": "destination-33",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool33\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-34",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool34\\b"
+          }
+        },
+        {
+          "id": "destination-34",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool34\\b",
+            "target": "^skills$"
+          }
+        }
+      ],
+      "forbidden": [],
+      "notes": "35 explicit unique tool facts exceed the 30-claim result capacity. Score every omitted fact separately; never lower the denominator to emitted claims. Controlled provider intentionally returns 30."
+    },
+    {
+      "id": "en-short-job",
+      "task": "qualification_gaps",
+      "language": "en",
+      "split": "development",
+      "tags": [
+        "short_posting",
+        "requirement_coverage"
+      ],
+      "request": {
+        "jobPosting": "Java developer. AWS required.",
+        "repository": {
+          "careerGoals": "",
+          "skills": "Java",
+          "competencies": "",
+          "tools": "",
+          "employmentStatus": "",
+          "currentSalary": "",
+          "desiredSalary": "",
+          "additionalInfo": "",
+          "experience": [],
+          "projects": []
+        }
+      },
+      "provider": [
+        {
+          "gaps": [
+            {
+              "kind": "skill",
+              "requirement": "AWS",
+              "details": "AWS required."
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "aws-gap",
+          "group": "gaps",
+          "match": {
+            "requirement": "^AWS$",
+            "kind": "^skill$"
+          }
+        }
+      ],
+      "forbidden": [
+        "\"requirement\"\\s*:\\s*\"Java\"",
+        "(?i)Kubernetes|senior"
+      ],
+      "notes": "AWS is required and unsupported; Java is already supported. Do not invent extra requirements.",
+      "sourceId": "en-short-job"
+    },
+    {
+      "id": "en-messy-job",
+      "task": "qualification_gaps",
+      "language": "en",
+      "split": "heldout",
+      "tags": [
+        "messy_posting",
+        "duplicates",
+        "preferred"
+      ],
+      "request": {
+        "jobPosting": "MENU MENU. Java developer. Java required. AWS preferred. Apply with PDF. AWS preferred.",
+        "repository": {
+          "careerGoals": "",
+          "skills": "Java",
+          "competencies": "",
+          "tools": "",
+          "employmentStatus": "",
+          "currentSalary": "",
+          "desiredSalary": "",
+          "additionalInfo": "",
+          "experience": [],
+          "projects": []
+        }
+      },
+      "provider": [
+        {
+          "gaps": [
+            {
+              "kind": "skill",
+              "requirement": "AWS",
+              "details": "AWS required."
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "aws-preferred",
+          "group": "gaps",
+          "match": {
+            "requirement": "^AWS$",
+            "kind": "^skill$"
+          }
+        }
+      ],
+      "forbidden": [
+        "\"requirement\"\\s*:\\s*\"(?:Java|PDF)\""
+      ],
+      "notes": "One AWS memory prompt; applicant PDF instructions are not candidate qualifications. Java already covered."
+    },
+    {
+      "id": "en-cv-metric",
+      "task": "cv_generation",
+      "language": "en",
+      "split": "development",
+      "tags": [
+        "metrics",
+        "factual_support",
+        "sparse"
+      ],
+      "request": {
+        "cvLanguage": "en",
+        "facts": [
+          {
+            "id": "f0",
+            "section": "experience",
+            "entryId": "e1",
+            "field": "achievements",
+            "text": "Reduced latency by 20%."
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [
+            {
+              "sourceId": "f0",
+              "text": "Reduced latency by 20%."
+            }
+          ],
+          "selected": [
+            "f0"
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "metric-support",
+          "group": "summary",
+          "match": {
+            "text": "20%",
+            "sourceId": "^f0$"
+          }
+        },
+        {
+          "id": "selected-source",
+          "group": "selected",
+          "match": {
+            "text": "^f0$"
+          }
+        }
+      ],
+      "forbidden": [
+        "90%",
+        "(?i)senior|sênior|expert|especialista"
+      ],
+      "notes": "Only the supplied 20% achievement can support the CV summary and selected fact. Client metadata retains e1 ownership."
+    },
+    {
+      "id": "en-cv-negation",
+      "task": "cv_generation",
+      "language": "en",
+      "split": "heldout",
+      "tags": [
+        "negation",
+        "ownership"
+      ],
+      "request": {
+        "cvLanguage": "en",
+        "facts": [
+          {
+            "id": "f0",
+            "section": "experience",
+            "entryId": "e1",
+            "field": "description",
+            "text": "Did not lead the migration; supported testing."
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [
+            {
+              "sourceId": "f0",
+              "text": "Did not lead the migration; supported testing."
+            }
+          ],
+          "selected": [
+            "f0"
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "negation-support",
+          "group": "summary",
+          "match": {
+            "text": "(not|não).*(lead|liderei)",
+            "sourceId": "^f0$"
+          }
+        },
+        {
+          "id": "selected-source",
+          "group": "selected",
+          "match": {
+            "text": "^f0$"
+          }
+        }
+      ],
+      "forbidden": [
+        "\"text\"\\s*:\\s*\"(?:Led|Liderei)"
+      ],
+      "notes": "Supported testing is not leadership. Preserve negation and role attribution."
+    },
+    {
+      "id": "en-draft-sparse",
+      "task": "application_draft",
+      "language": "en",
+      "split": "development",
+      "tags": [
+        "sparse",
+        "unknown_metadata",
+        "factual_support",
+        "requirement_coverage"
+      ],
+      "request": {
+        "jobPosting": "Java developer. AWS required.",
+        "repository": {
+          "careerGoals": "",
+          "skills": "Java",
+          "competencies": "",
+          "tools": "",
+          "employmentStatus": "",
+          "currentSalary": "",
+          "desiredSalary": "",
+          "additionalInfo": "",
+          "experience": [],
+          "projects": []
+        },
+        "confirmedQualifications": [],
+        "cvLanguage": "en"
+      },
+      "provider": [
+        {
+          "jobTitle": "Java developer",
+          "company": null,
+          "jobSummary": "Java developer. AWS required.",
+          "resume": "## Technical Skills\nJava",
+          "coverLetter": {
+            "greeting": "Dear hiring team,",
+            "body": "I use Java.",
+            "closing": "Sincerely,"
+          },
+          "applicationAnswers": "I use Java."
+        }
+      ],
+      "gold": [
+        {
+          "id": "supported-draft",
+          "group": "draft",
+          "match": {
+            "jobTitle": "Java",
+            "company": "^null$",
+            "jobSummary": "AWS",
+            "resume": "Java",
+            "coverLetter": "Java",
+            "applicationAnswers": "Java"
+          }
+        }
+      ],
+      "forbidden": [
+        "(?i)AWS expert|AWS certified|certificad[oa] em AWS",
+        "(?i)Acme|90%|five years|cinco anos"
+      ],
+      "notes": "Candidate has only Java. Job AWS must remain a requirement, never candidate experience. Company is explicitly null; inspect every generated sentence in the human worksheet.",
+      "sourceId": "en-short-job"
+    },
+    {
+      "id": "pt-fact",
+      "task": "profile_ingestion",
+      "language": "pt-BR",
+      "split": "heldout",
+      "tags": [
+        "typical",
+        "sparse"
+      ],
+      "request": {
+        "input": "Eu uso Java",
+        "profile": {
+          "careerGoals": "",
+          "skills": "",
+          "competencies": "",
+          "tools": "",
+          "employmentStatus": "",
+          "currentSalary": "",
+          "desiredSalary": "",
+          "additionalInfo": "",
+          "experience": [],
+          "projects": []
+        }
+      },
+      "provider": [
+        {
+          "claims": [
+            {
+              "id": "c1",
+              "source": "Eu uso Java",
+              "text": "Java",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            }
+          ]
+        },
+        {
+          "operations": [
+            {
+              "claimId": "c1",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Java",
+              "finding": "addition"
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "java-fact",
+          "group": "claims",
+          "match": {
+            "text": "^(?:Java|Uses Java\\.|Usa Java\\.|Utiliza Java\\.|Uso Java\\.)$",
+            "targets": "skills",
+            "question": "^$"
+          }
+        },
+        {
+          "id": "java-destination",
+          "group": "operations",
+          "match": {
+            "value": "^Java$",
+            "target": "^skills$",
+            "field": "^skills$",
+            "action": "^add$"
+          }
+        }
+      ],
+      "forbidden": [
+        "(?i)expert|especialista|senior|sênior",
+        "\"(?:value|text)\"\\s*:\\s*\"[^\\\"]*\\b[0-9]+\\b"
+      ],
+      "notes": "Only the explicit Java fact and skills destination are supported. No employer, duration or proficiency.",
+      "sourceId": "pt-fact"
+    },
+    {
+      "id": "pt-messy-profile",
+      "task": "profile_ingestion",
+      "language": "pt-BR",
+      "split": "development",
+      "tags": [
+        "messy",
+        "duplicates"
+      ],
+      "request": {
+        "input": "Comprar leite. Eu uso Java. Eu uso Java.",
+        "profile": {
+          "careerGoals": "",
+          "skills": "",
+          "competencies": "",
+          "tools": "",
+          "employmentStatus": "",
+          "currentSalary": "",
+          "desiredSalary": "",
+          "additionalInfo": "",
+          "experience": [],
+          "projects": []
+        }
+      },
+      "provider": [
+        {
+          "claims": [
+            {
+              "id": "c1",
+              "source": "Eu uso Java",
+              "text": "Java",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            }
+          ]
+        },
+        {
+          "operations": [
+            {
+              "claimId": "c1",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Java",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c1",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Java",
+              "finding": "addition"
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "java-fact",
+          "group": "claims",
+          "match": {
+            "text": "^(?:Java|Uses Java\\.|Usa Java\\.|Utiliza Java\\.|Uso Java\\.)$",
+            "targets": "skills",
+            "question": "^$"
+          }
+        },
+        {
+          "id": "java-destination",
+          "group": "operations",
+          "match": {
+            "value": "^Java$",
+            "target": "^skills$",
+            "field": "^skills$",
+            "action": "^add$"
+          }
+        }
+      ],
+      "forbidden": [
+        "\"(?:value|text)\"\\s*:\\s*\"[^\\\"]*(?:milk|leite)"
+      ],
+      "notes": "One skill addition despite repeated mentions and irrelevant noise.",
+      "sourceId": "pt-messy-profile"
+    },
+    {
+      "id": "pt-negation-aspiration",
+      "task": "profile_ingestion",
+      "language": "pt-BR",
+      "split": "heldout",
+      "tags": [
+        "negation",
+        "aspirations"
+      ],
+      "request": {
+        "input": "Não conheço AWS. Quero aprender Python.",
+        "profile": {
+          "careerGoals": "",
+          "skills": "",
+          "competencies": "",
+          "tools": "",
+          "employmentStatus": "",
+          "currentSalary": "",
+          "desiredSalary": "",
+          "additionalInfo": "",
+          "experience": [],
+          "projects": []
+        }
+      },
+      "provider": [
+        {
+          "claims": [
+            {
+              "id": "c1",
+              "source": "Não conheço AWS. Quero aprender Python.",
+              "text": "Não conheço AWS. Quero aprender Python.",
+              "targets": [
+                "careerGoals"
+              ],
+              "question": ""
+            }
+          ]
+        },
+        {
+          "operations": [
+            {
+              "claimId": "c1",
+              "target": "careerGoals",
+              "field": "careerGoals",
+              "entryId": "",
+              "action": "add",
+              "value": "Não conheço AWS. Quero aprender Python.",
+              "finding": "addition"
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "qualified-fact",
+          "group": "claims",
+          "match": {
+            "text": "(not|não).*AWS.*(want|quero).*Python"
+          }
+        },
+        {
+          "id": "goal-only",
+          "group": "operations",
+          "match": {
+            "value": "(want|quero).*Python",
+            "target": "^careerGoals$"
+          }
+        }
+      ],
+      "forbidden": [
+        "\"target\"\\s*:\\s*\"skills\"",
+        "(?i)AWS expert|especialista em AWS"
+      ],
+      "notes": "Negated AWS is not a capability. Python is only an aspiration; preserve negation and goal context."
+    },
+    {
+      "id": "pt-ambiguous-date",
+      "task": "profile_ingestion",
+      "language": "pt-BR",
+      "split": "heldout",
+      "tags": [
+        "approximate_dates",
+        "ambiguous_pronouns"
+      ],
+      "request": {
+        "input": "Alex trabalhou com Sam. Eles criaram uma API por volta de 2020.",
+        "profile": {
+          "careerGoals": "",
+          "skills": "",
+          "competencies": "",
+          "tools": "",
+          "employmentStatus": "",
+          "currentSalary": "",
+          "desiredSalary": "",
+          "additionalInfo": "",
+          "experience": [],
+          "projects": []
+        }
+      },
+      "provider": [
+        {
+          "claims": [
+            {
+              "id": "c1",
+              "source": "Alex trabalhou com Sam. Eles criaram uma API por volta de 2020.",
+              "text": "Alex trabalhou com Sam. Eles criaram uma API por volta de 2020.",
+              "targets": [],
+              "question": "Who built the API and when?"
+            }
+          ]
+        },
+        {
+          "operations": []
+        }
+      ],
+      "gold": [
+        {
+          "id": "clarification",
+          "group": "claims",
+          "match": {
+            "text": "API",
+            "question": ".+",
+            "targets": "^\\[\\]$"
+          }
+        }
+      ],
+      "forbidden": [
+        "\"value\"\\s*:\\s*\"2020-01\"",
+        "\"target\"\\s*:\\s*\"experience\""
+      ],
+      "notes": "Ask rather than assigning shared work to the candidate or converting an approximate year into an exact month."
+    },
+    {
+      "id": "pt-existing-duplicate",
+      "task": "profile_ingestion",
+      "language": "pt-BR",
+      "split": "development",
+      "tags": [
+        "duplicates",
+        "existing_profile"
+      ],
+      "request": {
+        "input": "Eu uso Java",
+        "profile": {
+          "careerGoals": "",
+          "skills": "Java",
+          "competencies": "",
+          "tools": "",
+          "employmentStatus": "",
+          "currentSalary": "",
+          "desiredSalary": "",
+          "additionalInfo": "",
+          "experience": [],
+          "projects": []
+        }
+      },
+      "provider": [
+        {
+          "claims": [
+            {
+              "id": "c1",
+              "source": "Eu uso Java",
+              "text": "Java",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            }
+          ]
+        },
+        {
+          "operations": []
+        }
+      ],
+      "gold": [
+        {
+          "id": "java-fact",
+          "group": "claims",
+          "match": {
+            "text": "^(?:Java|Uses Java\\.|Usa Java\\.|Utiliza Java\\.|Uso Java\\.)$",
+            "targets": "skills",
+            "question": "^$"
+          }
+        }
+      ],
+      "forbidden": [
+        "\"target\"\\s*:\\s*\"skills\""
+      ],
+      "notes": "Exact existing Java is not a new addition."
+    },
+    {
+      "id": "pt-proficiency-conflict",
+      "task": "profile_ingestion",
+      "language": "pt-BR",
+      "split": "heldout",
+      "tags": [
+        "proficiency",
+        "conflict"
+      ],
+      "request": {
+        "input": "Meu inglês é avançado.",
+        "profile": {
+          "careerGoals": "",
+          "skills": "",
+          "competencies": "",
+          "tools": "",
+          "employmentStatus": "",
+          "currentSalary": "",
+          "desiredSalary": "",
+          "additionalInfo": "",
+          "experience": [],
+          "projects": [],
+          "languages": [
+            {
+              "id": "l1",
+              "name": "English",
+              "proficiency": "Basic"
+            }
+          ],
+          "fullName": "",
+          "email": "",
+          "phone": "",
+          "location": "",
+          "professionalLinks": "",
+          "education": [],
+          "certifications": []
+        }
+      },
+      "provider": [
+        {
+          "claims": [
+            {
+              "id": "c1",
+              "source": "Meu inglês é avançado.",
+              "text": "Meu inglês é avançado.",
+              "targets": [
+                "languages"
+              ],
+              "question": ""
+            }
+          ]
+        },
+        {
+          "operations": [
+            {
+              "claimId": "c1",
+              "target": "languages",
+              "field": "proficiency",
+              "entryId": "l1",
+              "action": "update",
+              "value": "Advanced",
+              "finding": "conflict"
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "proficiency",
+          "group": "claims",
+          "match": {
+            "text": "advanced|avançado",
+            "targets": "languages"
+          }
+        }
+      ],
+      "forbidden": [
+        "\"field\"\\s*:\\s*\"proficiency\""
+      ],
+      "notes": "Conflicting Basic/Advanced proficiency without an explicit correction must be withheld, leaving the Profile unchanged."
+    },
+    {
+      "id": "pt-roles-projects",
+      "task": "profile_ingestion",
+      "language": "pt-BR",
+      "split": "heldout",
+      "tags": [
+        "mixed_roles_projects",
+        "metrics",
+        "relationships"
+      ],
+      "request": {
+        "input": "Na Acme reduzi a latência em 20%. No Atlas usei Python.",
+        "profile": {
+          "careerGoals": "",
+          "skills": "",
+          "competencies": "",
+          "tools": "",
+          "employmentStatus": "",
+          "currentSalary": "",
+          "desiredSalary": "",
+          "additionalInfo": "",
+          "experience": [
+            {
+              "id": "e1",
+              "company": "Acme",
+              "title": "Developer",
+              "startDate": "",
+              "endDate": "",
+              "current": false,
+              "location": "",
+              "description": "",
+              "responsibilities": "",
+              "achievements": ""
+            }
+          ],
+          "projects": [
+            {
+              "id": "p1",
+              "name": "Atlas",
+              "description": "",
+              "technologies": "",
+              "url": "",
+              "highlights": ""
+            }
+          ]
+        }
+      },
+      "provider": [
+        {
+          "claims": [
+            {
+              "id": "c1",
+              "source": "Na Acme reduzi a latência em 20%.",
+              "text": "Na Acme reduzi a latência em 20%.",
+              "targets": [
+                "experience"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c2",
+              "source": "No Atlas usei Python.",
+              "text": "No Atlas usei Python.",
+              "targets": [
+                "projects"
+              ],
+              "question": ""
+            }
+          ]
+        },
+        {
+          "operations": [
+            {
+              "claimId": "c1",
+              "target": "experience",
+              "field": "achievements",
+              "entryId": "e1",
+              "action": "add",
+              "value": "Na Acme reduzi a latência em 20%.",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c2",
+              "target": "projects",
+              "field": "technologies",
+              "entryId": "p1",
+              "action": "add",
+              "value": "Python",
+              "finding": "addition"
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "role-fact",
+          "group": "claims",
+          "match": {
+            "text": "20%",
+            "targets": "experience"
+          }
+        },
+        {
+          "id": "project-fact",
+          "group": "claims",
+          "match": {
+            "text": "Python",
+            "targets": "projects"
+          }
+        },
+        {
+          "id": "role-owner",
+          "group": "operations",
+          "match": {
+            "value": "20%",
+            "target": "^experience$",
+            "entryId": "^e1$",
+            "field": "^achievements$"
+          }
+        },
+        {
+          "id": "project-owner",
+          "group": "operations",
+          "match": {
+            "value": "Python",
+            "target": "^projects$",
+            "entryId": "^p1$",
+            "field": "^technologies$"
+          }
+        }
+      ],
+      "forbidden": [
+        "90%",
+        "(?i)led|liderou"
+      ],
+      "notes": "Acme owns the 20% outcome; Atlas owns Python. Never transfer metrics or tools between entities."
+    },
+    {
+      "id": "pt-capacity-35",
+      "task": "profile_ingestion",
+      "language": "pt-BR",
+      "split": "heldout",
+      "tags": [
+        "exceeds_extraction_capacity",
+        "omissions"
+      ],
+      "request": {
+        "input": "Eu uso Tool00. Eu uso Tool01. Eu uso Tool02. Eu uso Tool03. Eu uso Tool04. Eu uso Tool05. Eu uso Tool06. Eu uso Tool07. Eu uso Tool08. Eu uso Tool09. Eu uso Tool10. Eu uso Tool11. Eu uso Tool12. Eu uso Tool13. Eu uso Tool14. Eu uso Tool15. Eu uso Tool16. Eu uso Tool17. Eu uso Tool18. Eu uso Tool19. Eu uso Tool20. Eu uso Tool21. Eu uso Tool22. Eu uso Tool23. Eu uso Tool24. Eu uso Tool25. Eu uso Tool26. Eu uso Tool27. Eu uso Tool28. Eu uso Tool29. Eu uso Tool30. Eu uso Tool31. Eu uso Tool32. Eu uso Tool33. Eu uso Tool34.",
+        "profile": {
+          "careerGoals": "",
+          "skills": "",
+          "competencies": "",
+          "tools": "",
+          "employmentStatus": "",
+          "currentSalary": "",
+          "desiredSalary": "",
+          "additionalInfo": "",
+          "experience": [],
+          "projects": []
+        }
+      },
+      "provider": [
+        {
+          "claims": [
+            {
+              "id": "c0",
+              "source": "Eu uso Tool00.",
+              "text": "Tool00",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c1",
+              "source": "Eu uso Tool01.",
+              "text": "Tool01",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c2",
+              "source": "Eu uso Tool02.",
+              "text": "Tool02",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c3",
+              "source": "Eu uso Tool03.",
+              "text": "Tool03",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c4",
+              "source": "Eu uso Tool04.",
+              "text": "Tool04",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c5",
+              "source": "Eu uso Tool05.",
+              "text": "Tool05",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c6",
+              "source": "Eu uso Tool06.",
+              "text": "Tool06",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c7",
+              "source": "Eu uso Tool07.",
+              "text": "Tool07",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c8",
+              "source": "Eu uso Tool08.",
+              "text": "Tool08",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c9",
+              "source": "Eu uso Tool09.",
+              "text": "Tool09",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c10",
+              "source": "Eu uso Tool10.",
+              "text": "Tool10",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c11",
+              "source": "Eu uso Tool11.",
+              "text": "Tool11",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c12",
+              "source": "Eu uso Tool12.",
+              "text": "Tool12",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c13",
+              "source": "Eu uso Tool13.",
+              "text": "Tool13",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c14",
+              "source": "Eu uso Tool14.",
+              "text": "Tool14",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c15",
+              "source": "Eu uso Tool15.",
+              "text": "Tool15",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c16",
+              "source": "Eu uso Tool16.",
+              "text": "Tool16",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c17",
+              "source": "Eu uso Tool17.",
+              "text": "Tool17",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c18",
+              "source": "Eu uso Tool18.",
+              "text": "Tool18",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c19",
+              "source": "Eu uso Tool19.",
+              "text": "Tool19",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c20",
+              "source": "Eu uso Tool20.",
+              "text": "Tool20",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c21",
+              "source": "Eu uso Tool21.",
+              "text": "Tool21",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c22",
+              "source": "Eu uso Tool22.",
+              "text": "Tool22",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c23",
+              "source": "Eu uso Tool23.",
+              "text": "Tool23",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c24",
+              "source": "Eu uso Tool24.",
+              "text": "Tool24",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c25",
+              "source": "Eu uso Tool25.",
+              "text": "Tool25",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c26",
+              "source": "Eu uso Tool26.",
+              "text": "Tool26",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c27",
+              "source": "Eu uso Tool27.",
+              "text": "Tool27",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c28",
+              "source": "Eu uso Tool28.",
+              "text": "Tool28",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            },
+            {
+              "id": "c29",
+              "source": "Eu uso Tool29.",
+              "text": "Tool29",
+              "targets": [
+                "skills"
+              ],
+              "question": ""
+            }
+          ]
+        },
+        {
+          "operations": [
+            {
+              "claimId": "c0",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool00",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c1",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool01",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c2",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool02",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c3",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool03",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c4",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool04",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c5",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool05",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c6",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool06",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c7",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool07",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c8",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool08",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c9",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool09",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c10",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool10",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c11",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool11",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c12",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool12",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c13",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool13",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c14",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool14",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c15",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool15",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c16",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool16",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c17",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool17",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c18",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool18",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c19",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool19",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c20",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool20",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c21",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool21",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c22",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool22",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c23",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool23",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c24",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool24",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c25",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool25",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c26",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool26",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c27",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool27",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c28",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool28",
+              "finding": "addition"
+            },
+            {
+              "claimId": "c29",
+              "target": "skills",
+              "field": "skills",
+              "entryId": "",
+              "action": "add",
+              "value": "Tool29",
+              "finding": "addition"
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "fact-00",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool00\\b"
+          }
+        },
+        {
+          "id": "destination-00",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool00\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-01",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool01\\b"
+          }
+        },
+        {
+          "id": "destination-01",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool01\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-02",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool02\\b"
+          }
+        },
+        {
+          "id": "destination-02",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool02\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-03",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool03\\b"
+          }
+        },
+        {
+          "id": "destination-03",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool03\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-04",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool04\\b"
+          }
+        },
+        {
+          "id": "destination-04",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool04\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-05",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool05\\b"
+          }
+        },
+        {
+          "id": "destination-05",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool05\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-06",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool06\\b"
+          }
+        },
+        {
+          "id": "destination-06",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool06\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-07",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool07\\b"
+          }
+        },
+        {
+          "id": "destination-07",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool07\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-08",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool08\\b"
+          }
+        },
+        {
+          "id": "destination-08",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool08\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-09",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool09\\b"
+          }
+        },
+        {
+          "id": "destination-09",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool09\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-10",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool10\\b"
+          }
+        },
+        {
+          "id": "destination-10",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool10\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-11",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool11\\b"
+          }
+        },
+        {
+          "id": "destination-11",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool11\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-12",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool12\\b"
+          }
+        },
+        {
+          "id": "destination-12",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool12\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-13",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool13\\b"
+          }
+        },
+        {
+          "id": "destination-13",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool13\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-14",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool14\\b"
+          }
+        },
+        {
+          "id": "destination-14",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool14\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-15",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool15\\b"
+          }
+        },
+        {
+          "id": "destination-15",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool15\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-16",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool16\\b"
+          }
+        },
+        {
+          "id": "destination-16",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool16\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-17",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool17\\b"
+          }
+        },
+        {
+          "id": "destination-17",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool17\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-18",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool18\\b"
+          }
+        },
+        {
+          "id": "destination-18",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool18\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-19",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool19\\b"
+          }
+        },
+        {
+          "id": "destination-19",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool19\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-20",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool20\\b"
+          }
+        },
+        {
+          "id": "destination-20",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool20\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-21",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool21\\b"
+          }
+        },
+        {
+          "id": "destination-21",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool21\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-22",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool22\\b"
+          }
+        },
+        {
+          "id": "destination-22",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool22\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-23",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool23\\b"
+          }
+        },
+        {
+          "id": "destination-23",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool23\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-24",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool24\\b"
+          }
+        },
+        {
+          "id": "destination-24",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool24\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-25",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool25\\b"
+          }
+        },
+        {
+          "id": "destination-25",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool25\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-26",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool26\\b"
+          }
+        },
+        {
+          "id": "destination-26",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool26\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-27",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool27\\b"
+          }
+        },
+        {
+          "id": "destination-27",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool27\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-28",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool28\\b"
+          }
+        },
+        {
+          "id": "destination-28",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool28\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-29",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool29\\b"
+          }
+        },
+        {
+          "id": "destination-29",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool29\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-30",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool30\\b"
+          }
+        },
+        {
+          "id": "destination-30",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool30\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-31",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool31\\b"
+          }
+        },
+        {
+          "id": "destination-31",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool31\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-32",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool32\\b"
+          }
+        },
+        {
+          "id": "destination-32",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool32\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-33",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool33\\b"
+          }
+        },
+        {
+          "id": "destination-33",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool33\\b",
+            "target": "^skills$"
+          }
+        },
+        {
+          "id": "fact-34",
+          "group": "claims",
+          "match": {
+            "text": "\\bTool34\\b"
+          }
+        },
+        {
+          "id": "destination-34",
+          "group": "operations",
+          "match": {
+            "value": "\\bTool34\\b",
+            "target": "^skills$"
+          }
+        }
+      ],
+      "forbidden": [],
+      "notes": "35 explicit unique tool facts exceed the 30-claim result capacity. Score every omitted fact separately; never lower the denominator to emitted claims. Controlled provider intentionally returns 30."
+    },
+    {
+      "id": "pt-short-job",
+      "task": "qualification_gaps",
+      "language": "pt-BR",
+      "split": "heldout",
+      "tags": [
+        "short_posting",
+        "requirement_coverage"
+      ],
+      "request": {
+        "jobPosting": "Desenvolvedor Java. AWS obrigatório.",
+        "repository": {
+          "careerGoals": "",
+          "skills": "Java",
+          "competencies": "",
+          "tools": "",
+          "employmentStatus": "",
+          "currentSalary": "",
+          "desiredSalary": "",
+          "additionalInfo": "",
+          "experience": [],
+          "projects": []
+        }
+      },
+      "provider": [
+        {
+          "gaps": [
+            {
+              "kind": "skill",
+              "requirement": "AWS",
+              "details": "AWS obrigatório."
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "aws-gap",
+          "group": "gaps",
+          "match": {
+            "requirement": "^AWS$",
+            "kind": "^skill$"
+          }
+        }
+      ],
+      "forbidden": [
+        "\"requirement\"\\s*:\\s*\"Java\"",
+        "(?i)Kubernetes|senior"
+      ],
+      "notes": "AWS is required and unsupported; Java is already supported. Do not invent extra requirements.",
+      "sourceId": "pt-short-job"
+    },
+    {
+      "id": "pt-messy-job",
+      "task": "qualification_gaps",
+      "language": "pt-BR",
+      "split": "heldout",
+      "tags": [
+        "messy_posting",
+        "duplicates",
+        "preferred"
+      ],
+      "request": {
+        "jobPosting": "MENU MENU. Desenvolvedor Java. Java obrigatório. AWS desejável. Envie PDF. AWS desejável.",
+        "repository": {
+          "careerGoals": "",
+          "skills": "Java",
+          "competencies": "",
+          "tools": "",
+          "employmentStatus": "",
+          "currentSalary": "",
+          "desiredSalary": "",
+          "additionalInfo": "",
+          "experience": [],
+          "projects": []
+        }
+      },
+      "provider": [
+        {
+          "gaps": [
+            {
+              "kind": "skill",
+              "requirement": "AWS",
+              "details": "AWS obrigatório."
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "aws-preferred",
+          "group": "gaps",
+          "match": {
+            "requirement": "^AWS$",
+            "kind": "^skill$"
+          }
+        }
+      ],
+      "forbidden": [
+        "\"requirement\"\\s*:\\s*\"(?:Java|PDF)\""
+      ],
+      "notes": "One AWS memory prompt; applicant PDF instructions are not candidate qualifications. Java already covered."
+    },
+    {
+      "id": "pt-cv-metric",
+      "task": "cv_generation",
+      "language": "pt-BR",
+      "split": "heldout",
+      "tags": [
+        "metrics",
+        "factual_support",
+        "sparse"
+      ],
+      "request": {
+        "cvLanguage": "pt-BR",
+        "facts": [
+          {
+            "id": "f0",
+            "section": "experience",
+            "entryId": "e1",
+            "field": "achievements",
+            "text": "Reduzi a latência em 20%."
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [
+            {
+              "sourceId": "f0",
+              "text": "Reduzi a latência em 20%."
+            }
+          ],
+          "selected": [
+            "f0"
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "metric-support",
+          "group": "summary",
+          "match": {
+            "text": "20%",
+            "sourceId": "^f0$"
+          }
+        },
+        {
+          "id": "selected-source",
+          "group": "selected",
+          "match": {
+            "text": "^f0$"
+          }
+        }
+      ],
+      "forbidden": [
+        "90%",
+        "(?i)senior|sênior|expert|especialista"
+      ],
+      "notes": "Only the supplied 20% achievement can support the CV summary and selected fact. Client metadata retains e1 ownership."
+    },
+    {
+      "id": "pt-cv-negation",
+      "task": "cv_generation",
+      "language": "pt-BR",
+      "split": "heldout",
+      "tags": [
+        "negation",
+        "ownership"
+      ],
+      "request": {
+        "cvLanguage": "pt-BR",
+        "facts": [
+          {
+            "id": "f0",
+            "section": "experience",
+            "entryId": "e1",
+            "field": "description",
+            "text": "Não liderei a migração; apoiei os testes."
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [
+            {
+              "sourceId": "f0",
+              "text": "Não liderei a migração; apoiei os testes."
+            }
+          ],
+          "selected": [
+            "f0"
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "negation-support",
+          "group": "summary",
+          "match": {
+            "text": "(not|não).*(lead|liderei)",
+            "sourceId": "^f0$"
+          }
+        },
+        {
+          "id": "selected-source",
+          "group": "selected",
+          "match": {
+            "text": "^f0$"
+          }
+        }
+      ],
+      "forbidden": [
+        "\"text\"\\s*:\\s*\"(?:Led|Liderei)"
+      ],
+      "notes": "Supported testing is not leadership. Preserve negation and role attribution."
+    },
+    {
+      "id": "pt-draft-sparse",
+      "task": "application_draft",
+      "language": "pt-BR",
+      "split": "heldout",
+      "tags": [
+        "sparse",
+        "unknown_metadata",
+        "factual_support",
+        "requirement_coverage"
+      ],
+      "request": {
+        "jobPosting": "Desenvolvedor Java. AWS obrigatório.",
+        "repository": {
+          "careerGoals": "",
+          "skills": "Java",
+          "competencies": "",
+          "tools": "",
+          "employmentStatus": "",
+          "currentSalary": "",
+          "desiredSalary": "",
+          "additionalInfo": "",
+          "experience": [],
+          "projects": []
+        },
+        "confirmedQualifications": [],
+        "cvLanguage": "pt-BR"
+      },
+      "provider": [
+        {
+          "jobTitle": "Desenvolvedor Java",
+          "company": null,
+          "jobSummary": "Desenvolvedor Java. AWS obrigatório.",
+          "resume": "## Technical Skills\nJava",
+          "coverLetter": {
+            "greeting": "Prezada equipe de contratação,",
+            "body": "Eu uso Java.",
+            "closing": "Atenciosamente,"
+          },
+          "applicationAnswers": "Eu uso Java."
+        }
+      ],
+      "gold": [
+        {
+          "id": "supported-draft",
+          "group": "draft",
+          "match": {
+            "jobTitle": "Java",
+            "company": "^null$",
+            "jobSummary": "AWS",
+            "resume": "Java",
+            "coverLetter": "Java",
+            "applicationAnswers": "Java"
+          }
+        }
+      ],
+      "forbidden": [
+        "(?i)AWS expert|AWS certified|certificad[oa] em AWS",
+        "(?i)Acme|90%|five years|cinco anos"
+      ],
+      "notes": "Candidate has only Java. Job AWS must remain a requirement, never candidate experience. Company is explicitly null; inspect every generated sentence in the human worksheet.",
+      "sourceId": "pt-short-job"
+    }
+  ]
+}

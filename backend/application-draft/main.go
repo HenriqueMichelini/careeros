@@ -60,6 +60,13 @@ type upstream struct {
 type app struct{ client *http.Client }
 
 func NewHandler() http.Handler { return (app{&http.Client{Timeout: timeout}}).handler() }
+
+// NewHandlerWithClient uses the production workflow with an explicit provider
+// transport, allowing local evaluation without changing process-wide networking.
+func NewHandlerWithClient(client *http.Client) http.Handler {
+	return (app{client: client}).handler()
+}
+
 func (a app) handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/application-draft", a.generate)
