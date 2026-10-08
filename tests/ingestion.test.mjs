@@ -14,7 +14,11 @@ const compiled = ts.transpileModule(
       verbatimModuleSyntax: false,
     },
   },
-).outputText.replace(/from ['"]\.\/profile['"]/g, `from "./careeros-profile-${process.pid}.mjs"`)
+).outputText.replace(/from ['"]\.\/fieldDecision['"]/g, `from "./careeros-field-${process.pid}.mjs"`).replace(/from ['"]\.\/profile['"]/g, `from "./careeros-profile-${process.pid}.mjs"`)
+writeFileSync(join(tmpdir(), `careeros-field-${process.pid}.mjs`), ts.transpileModule(
+ readFileSync(new URL("../src/lib/fieldDecision.ts", import.meta.url), "utf8"),
+ {compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}},
+).outputText)
 const profileCompiled = ts.transpileModule(
   readFileSync(new URL("../src/lib/profile.ts", import.meta.url), "utf8"),
   { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } },
@@ -349,7 +353,7 @@ test("Quick Add supplies the complete Profile for server-side minimal comparison
   let body
   globalThis.fetch = async (_url, options) => {
     body = JSON.parse(options.body)
-    return { ok: true, json: async () => review({ claims: [], operations: [] }) }
+    return { ok: true, json: async () => ({decision:{version:1,field:"professional_information",outcome:{kind:"accept"}},...review({ claims: [], operations: [] })}) }
   }
   try {
     await ingestProfile("TypeScript", before, "test-key")
@@ -405,7 +409,7 @@ test("new education and languages require reviewed identities and repeat pastes 
 test("client accepts exactly 30,000 UTF-8 bytes and rejects oversized mixed Unicode without a request", async () => {
   const originalFetch=globalThis.fetch
   let calls=0
-  globalThis.fetch=async()=>{calls++;return {ok:true,json:async()=>review({claims:[],operations:[]})}}
+  globalThis.fetch=async()=>{calls++;return {ok:true,json:async()=>({decision:{version:1,field:"professional_information",outcome:{kind:"accept"}},...review({claims:[],operations:[]})})}}
   try {
     const input="ação🙂 \n".repeat(2500) // 12 bytes per line
     assert.equal(new TextEncoder().encode(input).length,30000)

@@ -1,3 +1,4 @@
+import { type FieldDecision } from "../lib/fieldDecision"
 import { useState, useCallback, useEffect, useRef } from "react"
 import { useI18n, useStore } from "../lib/store"
 import { reviewRepository } from "../lib/ai"
@@ -474,6 +475,8 @@ export default function RepositoryPage() {
   const [ingestionResult, setIngestionResult] = useState<IngestionResult | null>(null)
   const [ingestionSnapshot, setIngestionSnapshot] = useState("")
   const [ingestionError, setIngestionError] = useState("")
+  const [ingestionDecision, setIngestionDecision] = useState<FieldDecision | null>(null)
+  const [revisionRequiredFor, setRevisionRequiredFor] = useState<string | null>(null)
   const [isIngesting, setIsIngesting] = useState(false)
   const discardDialog = useRef<HTMLDialogElement>(null)
   const ingestionRequest = useRef(0)
@@ -510,10 +513,12 @@ export default function RepositoryPage() {
     ingestionRequest.current += 1
     ingestionController.current?.abort()
     setIsIngesting(false)
+    setRevisionRequiredFor(null)
     setIngestionText("")
     setIngestionResult(null)
     setIngestionSnapshot("")
     setIngestionError("")
+    setIngestionDecision(null)
   }
 
   function changeIngestionText(value: string) {
@@ -523,24 +528,34 @@ export default function RepositoryPage() {
     setIngestionText(value)
     setIngestionResult(null)
     setIngestionError("")
+    setIngestionDecision(null)
   }
 
   async function handleIngestion() {
+    if (revisionRequiredFor !== null && ingestionText.trim() === revisionRequiredFor) return
     setIngestionError("")
+    setIngestionDecision(null)
     setIngestionResult(null)
     if (!state.apiKey) { setIngestionError(t("repo.setApiKeyFirst")); return }
+    if (!state.typesafeKey.trim()) { setIngestionError(t("field.typesafeMissing")); return }
     const requestId = ++ingestionRequest.current
     const controller = new AbortController()
     ingestionController.current = controller
     setIsIngesting(true)
     const snapshot = JSON.stringify(repo)
     try {
-      const proposals = await ingestProfile(ingestionText, repo, state.apiKey, controller.signal)
+      const proposals = await ingestProfile(ingestionText, repo, state.apiKey, controller.signal, state.typesafeKey)
       if (ingestionRequest.current !== requestId) return
       setIngestionSnapshot(snapshot)
       setIngestionResult(proposals)
     } catch (error) {
       if (ingestionRequest.current !== requestId) return
+      if (error instanceof IngestionError && error.decision) {
+        const outcome = error.decision.outcome
+        if (outcome.kind === "request_rephrasing") setRevisionRequiredFor(ingestionText.trim())
+        setIngestionDecision(error.decision)
+        return
+      }
       const code = error instanceof IngestionError ? error.code : "outage"
       const lookup = {
         input:"repo.ingestErrorInput", key:"repo.reviewErrorKey", rate_limit:"repo.reviewErrorRateLimit",
@@ -550,6 +565,11 @@ export default function RepositoryPage() {
       setIngestionError(t(lookup[code as keyof typeof lookup] || "repo.reviewFailed"))
     } finally { if (ingestionRequest.current === requestId) setIsIngesting(false) }
   }
+
+  const fieldOutcome = ingestionDecision?.outcome
+  const ingestionFeedback = fieldOutcome
+    ? t((fieldOutcome.kind === "service_failure" ? `field.failure.${fieldOutcome.reason}` : `field.${fieldOutcome.kind}`) as TranslationKey)
+    : ingestionError || (revisionRequiredFor !== null && ingestionText.trim() === revisionRequiredFor ? t("field.request_rephrasing") : "")
 
   function editOperation(index: number, patch: Partial<IngestionOperation>) {
     setIngestionResult(previous => previous && ({
@@ -853,19 +873,32 @@ export default function RepositoryPage() {
             <section className="p-5 border min-w-0" style={{borderColor:"var(--color-border)"}}>
               <h2 className="text-lg font-bold mb-2">{t("repo.ingestTitle")}</h2>
               <p className="text-sm mb-3">{t("repo.ingestGuide")}</p>
+              <details className="text-sm mb-3">
+                <summary className="cursor-pointer">{t("field.settings")}</summary>
+                <label htmlFor="typesafe-key" className="block mt-2">{t("field.typesafeKey")}</label>
+                <input id="typesafe-key" type="password" autoComplete="off" value={state.typesafeKey}
+                  onChange={e => dispatch({type:"SET_TYPESAFE_KEY",payload:e.target.value})}
+                  className="w-full min-w-0 p-2 border mt-1" style={{backgroundColor:"var(--color-card)",borderColor:"var(--color-border)"}} />
+                <p className="mt-2">{t("field.disclosure")}</p>
+              </details>
+              <details id="input-use-rule" className="text-sm mb-3">
+                <summary className="cursor-pointer">{t("field.ruleTitle")}</summary>
+                <p className="mt-2">{t("field.rule")}</p>
+              </details>
               <label htmlFor="ingestion-text" className="text-sm block mb-2">{t("repo.ingestLabel")}</label>
               <textarea id="ingestion-text" value={ingestionText} onChange={e => changeIngestionText(e.target.value)} rows={9}
-                placeholder={t("repo.ingestPlaceholder")}
+                aria-describedby={ingestionFeedback ? "ingestion-feedback" : undefined} aria-busy={isIngesting} placeholder={t("repo.ingestPlaceholder")}
                 className="w-full min-w-0 p-3 border text-sm resize-y" style={{backgroundColor:"var(--color-card)",borderColor:"var(--color-border)",color:"var(--color-fg)"}} />
               <p className="text-xs mb-3" style={{color:"var(--color-muted-fg)"}}>{ingestionInputBytes(ingestionText)} / 30000 {t("repo.bytes")}</p>
               <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={handleIngestion} disabled={isIngesting || !ingestionText.trim() || ingestionInputBytes(ingestionText) > ingestionMaxBytes}
+                <button type="button" onClick={handleIngestion} disabled={isIngesting || (revisionRequiredFor !== null && ingestionText.trim() === revisionRequiredFor) || !ingestionText.trim() || ingestionInputBytes(ingestionText) > ingestionMaxBytes}
                   className="px-4 py-2 text-sm disabled:opacity-50" style={{backgroundColor:"var(--color-fg)",color:"var(--color-bg)"}}>
                   {isIngesting ? t("repo.ingestWorking") : t("repo.ingestReview")}
                 </button>
                 <button type="button" onClick={() => discardDialog.current?.showModal()} className="px-4 py-2 text-sm border" style={{borderColor:"var(--color-border)"}}>{t("repo.ingestDiscard")}</button>
               </div>
-              {ingestionError && <p role="alert" className="text-sm mt-3" style={{color:"var(--color-accent)"}}>{ingestionError}</p>}
+              {isIngesting && <p role="status" className="text-sm mt-3">{t("field.working")}</p>}
+              {ingestionFeedback && <p id="ingestion-feedback" role="alert" className="text-sm mt-3" style={{color:"var(--color-accent)"}}>{ingestionFeedback} {fieldOutcome?.kind === "reject_attack" && <a href="#input-use-rule" onClick={() => { const rule = document.querySelector<HTMLDetailsElement>("#input-use-rule"); if (rule) rule.open = true }} className="underline">{t("field.ruleTitle")}</a>}</p>}
             </section>
             {ingestionResult && <section className="space-y-4" aria-label={t("repo.ingestProposals")}>
               <h2 className="text-xl font-bold">{t("repo.ingestProposals")}</h2>

@@ -1,3 +1,4 @@
+import { parseFieldDecision, type FieldDecision } from "./fieldDecision"
 import { ProfessionalRepository } from "./types"
 import { withContactFields, emptyContact, validQualifications } from "./profile"
 
@@ -91,7 +92,7 @@ const requiredFields = (target: string) => target === "experience" ? ["company",
 export const ingestionInputBytes = (input: string) => new TextEncoder().encode(input).length
 export const ingestionMaxBytes = 30000
 export class IngestionError extends Error {
-  constructor(public readonly code: string) {
+  constructor(public readonly code: string, public readonly decision?: FieldDecision) {
     super(code)
   }
 }
@@ -320,6 +321,7 @@ export async function ingestProfile(
   profile: ProfessionalRepository,
   apiKey: string,
   signal?: AbortSignal,
+  typesafeKey = "",
 ): Promise<IngestionResult> {
   if (
     !input.trim() ||
@@ -334,6 +336,7 @@ export async function ingestProfile(
       headers: {
         "Content-Type": "application/json",
         "X-OpenAI-Api-Key": apiKey,
+        "X-TypeSafe-Api-Key": typesafeKey,
       },
       body: JSON.stringify({ input, profile: withContactFields(profile) }),
       cache: "no-store",
@@ -347,6 +350,12 @@ export async function ingestProfile(
     )
   }
   const raw = await response.json().catch(() => null)
+  const decision = record(raw) ? parseFieldDecision(raw.decision, "professional_information") : null
+  if (decision && decision.outcome.kind !== "accept") {
+    if (!record(raw) || !keys(raw, ["decision"])) throw new IngestionError("invalid_output")
+    throw new IngestionError("field_decision", decision)
+  }
+  if (record(raw) && "decision" in raw && !decision) throw new IngestionError("invalid_output")
   if (!response.ok)
     throw new IngestionError(
       record(raw) &&
@@ -363,7 +372,9 @@ export async function ingestProfile(
         ? raw.error
         : "outage",
     )
-  return validateIngestionResult(raw, input, profile)
+  if (!decision || !record(raw)) throw new IngestionError("invalid_output")
+  const { decision: _decision, ...proposals } = raw
+  return validateIngestionResult(proposals, input, profile)
 }
 
 export function beforeValue(

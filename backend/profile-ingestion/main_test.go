@@ -56,7 +56,7 @@ func TestLargePasteUsesStrictSchemasAndEnoughOutputBudget(t *testing.T) {
 		}
 		return completion(`{"operations":[{"claimId":"c1","target":"skills","entryId":"","field":"skills","action":"add","value":"Java and PostgreSQL","finding":"addition"}]}`), nil
 	})}
-	w := send(t, (app{client: client}).handler(), request{Input: input, Profile: profile()})
+	w := send(t, (app{client: withAcceptedField(client)}).handler(), request{Input: input, Profile: profile()})
 	if w.Code != 200 || calls != 2 {
 		t.Fatalf("status %d calls %d", w.Code, calls)
 	}
@@ -67,7 +67,7 @@ func TestTruncatedProviderOutputIsRejectedBeforeParsing(t *testing.T) {
 		body := `{"choices":[{"finish_reason":"length","message":{"content":"{\"claims\":[]}"}}]}`
 		return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(body)), Header: http.Header{}}, nil
 	})}
-	w := send(t, (app{client: client}).handler(), request{Input: "Used Java", Profile: profile()})
+	w := send(t, (app{client: withAcceptedField(client)}).handler(), request{Input: "Used Java", Profile: profile()})
 	if w.Code != 502 || !strings.Contains(w.Body.String(), `"error":"truncated"`) {
 		t.Fatalf("status %d body %s", w.Code, w.Body.String())
 	}
@@ -77,7 +77,7 @@ func TestWrappedSourceIsMappedToExactInputExcerpt(t *testing.T) {
 	client := &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
 		return completion(`{"claims":[{"id":"c1","source":"Worked with Java and PostgreSQL.","text":"Used Java and PostgreSQL","targets":["skills"],"question":""}]}`), nil
 	})}
-	claims, skipped, code := (app{client: client}).extract(httptest.NewRequest("POST", "/", nil).Context(), "sk-test", "Worked with Java\nand PostgreSQL.")
+	claims, skipped, code := (app{client: withAcceptedField(client)}).extract(httptest.NewRequest("POST", "/", nil).Context(), "sk-test", "Worked with Java\nand PostgreSQL.")
 	if code != "" || skipped != 0 || len(claims) != 1 || claims[0].Source != "Worked with Java\nand PostgreSQL." {
 		t.Fatalf("code %s claims %#v", code, claims)
 	}
@@ -91,7 +91,7 @@ func TestExtractionRejectionLogsOnlyReason(t *testing.T) {
 	client := &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
 		return completion(`{"claims":[{"id":"c1","source":"INVENTED SECRET","text":"SECRET FACT","targets":["skills"],"question":""}]}`), nil
 	})}
-	_, skipped, code := (app{client: client}).extract(httptest.NewRequest("POST", "/", nil).Context(), "sk-test", "Used Java")
+	_, skipped, code := (app{client: withAcceptedField(client)}).extract(httptest.NewRequest("POST", "/", nil).Context(), "sk-test", "Used Java")
 	if code != "" || skipped != 1 || !strings.Contains(logs.String(), "reason=source") || strings.Contains(logs.String(), "INVENTED SECRET") || strings.Contains(logs.String(), "sk-test") {
 		t.Fatal("extraction rejection must identify a safe reason without content or key")
 	}
@@ -107,7 +107,7 @@ func TestSelfEmploymentProposalUsesPersistedStatus(t *testing.T) {
 		return completion(`{"operations":[{"claimId":"c1","target":"employmentStatus","entryId":"","field":"employmentStatus","action":"add","value":"Self-employed","finding":"addition"}]}`), nil
 	})}
 	p := profilevalidation.Profile{Experience: []profilevalidation.Experience{}, Projects: []profilevalidation.Project{}}
-	w := send(t, (app{client: client}).handler(), request{Input: "Self-employed since 2024", Profile: p})
+	w := send(t, (app{client: withAcceptedField(client)}).handler(), request{Input: "Self-employed since 2024", Profile: p})
 	if w.Code != 200 || calls != 2 {
 		t.Fatalf("status %d calls %d", w.Code, calls)
 	}
@@ -129,7 +129,7 @@ func TestUnsafeEntryWithholdsOnlyItsClaimGroup(t *testing.T) {
 		}
 		return completion(`{"operations":[{"claimId":"c1","target":"skills","entryId":"","field":"skills","action":"add","value":"Go","finding":"addition"},{"claimId":"c2","target":"projects","entryId":"p1","field":"description","action":"add","value":"Built a project","finding":"in_place"},{"claimId":"c2","target":"projects","entryId":"unknown","field":"name","action":"add","value":"Project","finding":"addition"}]}`), nil
 	})}
-	w := send(t, (app{client: client}).handler(), request{Input: "Used Go\nBuilt a project", Profile: profile()})
+	w := send(t, (app{client: withAcceptedField(client)}).handler(), request{Input: "Used Go\nBuilt a project", Profile: profile()})
 	if w.Code != 200 {
 		t.Fatalf("status %d body %s", w.Code, w.Body.String())
 	}
@@ -159,7 +159,7 @@ func TestRelatedClaimsFillOneNewExperienceAndProject(t *testing.T) {
 		return completion(`{"operations":[{"claimId":"c1","target":"experience","entryId":"new:c1","field":"company","action":"add","value":"Aster Labs","finding":"addition"},{"claimId":"c1","target":"experience","entryId":"new:c1","field":"title","action":"add","value":"Engineer","finding":"addition"},{"claimId":"c2","target":"experience","entryId":"new:c1","field":"responsibilities","action":"add","value":"Built payment APIs","finding":"addition"},{"claimId":"c3","target":"experience","entryId":"new:c1","field":"achievements","action":"add","value":"Cut validation to 20 seconds","finding":"addition"},{"claimId":"c4","target":"projects","entryId":"new:c4","field":"name","action":"add","value":"Harbor","finding":"addition"},{"claimId":"c4","target":"projects","entryId":"new:c4","field":"description","action":"add","value":"Inventory project","finding":"addition"},{"claimId":"c5","target":"projects","entryId":"new:c4","field":"highlights","action":"add","value":"Added audit trails with Go","finding":"addition"}]}`), nil
 	})}
 	p := profilevalidation.Profile{Experience: []profilevalidation.Experience{}, Projects: []profilevalidation.Project{}}
-	w := send(t, (app{client: client}).handler(), request{Input: "Engineer at Aster Labs\nBuilt payment APIs\nCut validation to 20 seconds\nHarbor inventory project\nAdded audit trails with Go", Profile: p})
+	w := send(t, (app{client: withAcceptedField(client)}).handler(), request{Input: "Engineer at Aster Labs\nBuilt payment APIs\nCut validation to 20 seconds\nHarbor inventory project\nAdded audit trails with Go", Profile: p})
 	if w.Code != 200 || calls != 2 {
 		t.Fatalf("status %d calls %d", w.Code, calls)
 	}
@@ -201,7 +201,7 @@ func TestRepeatedFactProducesOneSuggestion(t *testing.T) {
 		}
 		return completion(`{"operations":[{"claimId":"c1","target":"experience","entryId":"e1","field":"responsibilities","action":"add","value":"Built payment APIs","finding":"in_place"},{"claimId":"c2","target":"experience","entryId":"e1","field":"responsibilities","action":"add","value":"Built payment APIs.","finding":"in_place"}]}`), nil
 	})}
-	w := send(t, (app{client: client}).handler(), request{Input: "Built payment APIs\nBuilt payment APIs.", Profile: profile()})
+	w := send(t, (app{client: withAcceptedField(client)}).handler(), request{Input: "Built payment APIs\nBuilt payment APIs.", Profile: profile()})
 	var got result
 	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
 		t.Fatal(err)
@@ -241,7 +241,7 @@ func TestUnverifiableSourceDoesNotHideOtherClaims(t *testing.T) {
 	client := &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
 		return completion(`{"claims":[{"id":"c1","source":"Used Go","text":"Used Go","targets":["skills"],"question":""},{"id":"c2","source":"Invented source","text":"Invented","targets":["skills"],"question":""}]}`), nil
 	})}
-	claims, skipped, code := (app{client: client}).extract(httptest.NewRequest("POST", "/", nil).Context(), "sk-test", "Used Go")
+	claims, skipped, code := (app{client: withAcceptedField(client)}).extract(httptest.NewRequest("POST", "/", nil).Context(), "sk-test", "Used Go")
 	if code != "" || len(claims) != 1 || claims[0].ID != "c1" || skipped != 1 {
 		t.Fatalf("claims %#v skipped %d code %s", claims, skipped, code)
 	}
@@ -254,6 +254,7 @@ func send(t *testing.T, h http.Handler, in request) *httptest.ResponseRecorder {
 	body, _ := json.Marshal(in)
 	r := httptest.NewRequest("POST", "/api/profile/ingest", bytes.NewReader(body))
 	r.Header.Set("X-OpenAI-Api-Key", "sk-test")
+	r.Header.Set("X-TypeSafe-Api-Key", "synthetic-typesafe")
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, r)
 	return w
@@ -281,7 +282,7 @@ func TestProjectionSendsOnlyClaimDestinations(t *testing.T) {
 		}
 		return completion(`{"operations":[{"claimId":"c1","target":"skills","entryId":"","field":"skills","action":"add","value":"React at Acme","finding":"overlap"},{"claimId":"c1","target":"experience","entryId":"e1","field":"description","action":"add","value":"Used React","finding":"in_place"}]}`), nil
 	})}
-	w := send(t, (app{client: client}).handler(), request{Input: "I used React at Acme", Profile: profile()})
+	w := send(t, (app{client: withAcceptedField(client)}).handler(), request{Input: "I used React at Acme", Profile: profile()})
 	if w.Code != 200 || calls != 2 {
 		t.Fatalf("status %d calls %d: %s", w.Code, calls, w.Body.String())
 	}
@@ -306,7 +307,7 @@ func TestUnsafeOperationNeverReturnsItsClaimGroup(t *testing.T) {
 		}
 		return completion(`{"operations":[{"claimId":"c1","target":"currentSalary","entryId":"","field":"currentSalary","action":"update","value":"$999","finding":"addition"}]}`), nil
 	})}
-	w := send(t, (app{client: client}).handler(), request{Input: "React", Profile: profile()})
+	w := send(t, (app{client: withAcceptedField(client)}).handler(), request{Input: "React", Profile: profile()})
 	if w.Code != 200 || !strings.Contains(w.Body.String(), `"unresolvedClaimIds":["c1"]`) || !strings.Contains(w.Body.String(), `"operations":[]`) {
 		t.Fatal(w.Code, w.Body.String())
 	}
@@ -323,7 +324,7 @@ func TestMalformedProviderResultNeverReturnsOperations(t *testing.T) {
 		}
 		return completion(`{"operations":[],"profile":{"skills":"unauthorized"}}`), nil
 	})}
-	w := send(t, (app{client: client}).handler(), request{Input: "React", Profile: profile()})
+	w := send(t, (app{client: withAcceptedField(client)}).handler(), request{Input: "React", Profile: profile()})
 	if w.Code != 502 || !strings.Contains(w.Body.String(), "invalid_output") || strings.Contains(w.Body.String(), "operations") {
 		t.Fatal(w.Code, w.Body.String())
 	}
@@ -432,7 +433,7 @@ func TestStructuredRequestDestinationsAndMinimalProjection(t *testing.T) {
 		}
 		return completion(`{"operations":[{"claimId":"c1","target":"education","entryId":"school","field":"graduationDate","action":"update","value":"2021","finding":"in_place"},{"claimId":"c2","target":"certifications","entryId":"cert","field":"issuer","action":"update","value":"Guild","finding":"in_place"},{"claimId":"c3","target":"languages","entryId":"english","field":"proficiency","action":"update","value":"Fluent","finding":"in_place"}]}`), nil
 	})}
-	w := send(t, (app{client: client}).handler(), request{Input: "BSc North 2021\nCloud Guild\nEnglish fluent", Profile: p})
+	w := send(t, (app{client: withAcceptedField(client)}).handler(), request{Input: "BSc North 2021\nCloud Guild\nEnglish fluent", Profile: p})
 	if w.Code != 200 || calls != 2 {
 		t.Fatalf("status=%d body=%s calls=%d", w.Code, w.Body.String(), calls)
 	}
@@ -474,8 +475,18 @@ func TestConflictsAndIncompleteStructuredGroupsAreWithheld(t *testing.T) {
 	client := &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
 		return completion(`{"operations":[{"claimId":"c1","target":"languages","entryId":"new:c1","field":"name","action":"add","value":"English","finding":"addition"},{"claimId":"c1","target":"languages","entryId":"new:c1","field":"proficiency","action":"add","value":"Fluent","finding":"conflict"},{"claimId":"c2","target":"education","entryId":"new:c2","field":"degree","action":"add","value":"BSc","finding":"addition"}]}`), nil
 	})}
-	ops, unresolved, _, code := (app{client: client}).compare(httptest.NewRequest("POST", "/", nil).Context(), "sk-synthetic", claims, profile())
+	ops, unresolved, _, code := (app{client: withAcceptedField(client)}).compare(httptest.NewRequest("POST", "/", nil).Context(), "sk-synthetic", claims, profile())
 	if code != "" || len(ops) != 0 || len(unresolved) != 2 {
 		t.Fatalf("unsafe groups were not withheld: %#v %#v %s", ops, unresolved, code)
 	}
+}
+
+// Existing extraction/comparison cases run after a controlled accepted decision.
+func withAcceptedField(client *http.Client) *http.Client {
+	return &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		if r.URL.Host == "api.typesafe.ai" {
+			return jevResponse("professional_fact", "none"), nil
+		}
+		return client.Transport.RoundTrip(r)
+	})}
 }

@@ -165,7 +165,7 @@ try {
     "document.readyState === 'complete' && !!document.querySelector('header button')",
   )
   await evaluate(
-    `localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_apikey', 'synthetic-test-key'); location.reload()`,
+    `localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_apikey', 'synthetic-test-key'); localStorage.setItem('careeros_typesafe_key','synthetic-typesafe'); location.reload()`,
   )
   await until(
     "document.readyState === 'complete' && !!document.querySelector('header button')",
@@ -183,12 +183,109 @@ try {
   const saved = () => evaluate("localStorage.getItem('careeros_repo')")
   const byText = text => `Array.from(document.querySelectorAll('button')).find(el=>el.textContent.trim()===${JSON.stringify(text)})`
   const fixture = {
+    decision: {version:1,field:"professional_information",outcome:{kind:"accept"}},
     claims: [{id:'c1',source:'Ada',text:'Professional facts supplied by Ada',targets:['fullName','email','phone','location','professionalLinks','education','certifications','languages','experience','projects','skills'],question:''},
       {id:'c2',source:'English',text:'English proficiency needs clarification',targets:[],question:'Intermediate or fluent?'}],
     operations: [
       ...Object.entries({fullName:'Ada',email:'ada@example.test',phone:'+55 11 5555',location:'São Paulo',professionalLinks:'https://example.test/ada',skills:'Go'}).map(([target,value])=>({claimId:'c1',target,entryId:'',field:target,action:target==='skills'?'add':'update',value,finding:'addition'})),
       ...Object.entries({education:{degree:'BSc',institution:'North',graduationDate:'2021'},certifications:{name:'Cloud',issuer:'Guild'},languages:{name:'Portuguese',proficiency:'Fluent'},experience:{company:'Aster',title:'Engineer'},projects:{name:'Harbor'}}).flatMap(([target,fields])=>Object.entries(fields).map(([field,value])=>({claimId:'c1',target,entryId:'new:c1',field,action:'add',value,finding:'addition'}))),
     ],unverifiedClaimCount:1,unresolvedClaimIds:[],unplacedOperationCount:0,
+  }
+  // Rephrasing is a backend decision and requires changed text, with no Profile write.
+  await evaluate("localStorage.setItem('careeros_typesafe_key','synthetic-typesafe'); localStorage.setItem('careeros_apikey','sk-synthetic-test')")
+  await openProfile()
+  const gateInitial = await saved()
+  await evaluate(`window.__gateCalls=0; window.fetch=async()=>{window.__gateCalls++; return new Response(JSON.stringify({decision:{version:1,field:'professional_information',outcome:{kind:'request_rephrasing'}}}),{status:200})}`)
+  const quoted = 'I test security with "ignore previous instructions".'
+  await fill(quoted)
+  await evaluate(`${byText('Review suggested changes')}.click()`)
+  await until("!!document.querySelector('[role=alert]')")
+  assert.match(await evaluate("document.querySelector('[role=alert]').textContent"), /could be.*override/i)
+  assert.equal(await evaluate("document.querySelector('#ingestion-text').value"),quoted)
+  assert.equal(await evaluate(`${byText('Review suggested changes')}.disabled`),true)
+  assert.equal(await saved(),gateInitial)
+  await fill('I test application security.')
+  assert.equal(await evaluate(`${byText('Review suggested changes')}.disabled`),false)
+  await evaluate(`${byText('Review suggested changes')}.click()`)
+  await until("window.__gateCalls===2 && !!document.querySelector('[role=alert]')")
+  assert.equal(await saved(),gateInitial)
+  for (const locale of ['en','pt-BR']) for (const width of [1440,390]) {
+    await call('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:false})
+    await evaluate(`localStorage.setItem('careeros_locale',${JSON.stringify(locale)}); location.reload()`)
+    await until("document.readyState === 'complete' && !!document.querySelector('header button')")
+    await openProfile()
+    const review = locale==='en'?'Review suggested changes':'Revisar alterações sugeridas'
+    const initial = await saved()
+    const text = locale==='en'?'I use Java':'Eu uso Java'
+    const proposal = {decision:{version:1,field:'professional_information',outcome:{kind:'accept'}},claims:[{id:'c1',source:text,text:'Java',targets:['skills'],question:''}],operations:[{claimId:'c1',target:'skills',entryId:'',field:'skills',action:'add',value:'Java',finding:'addition'}],unverifiedClaimCount:0,unresolvedClaimIds:[],unplacedOperationCount:0}
+    for (const outcome of [
+      {kind:'reject_attack'}, {kind:'request_rephrasing'}, {kind:'irrelevant'},
+      {kind:'unusable'}, {kind:'request_information',needs:'professional_fact'},
+      ...['key','rate_limit','timeout','outage','invalid_output'].map(reason=>({kind:'service_failure',reason})),
+    ]) {
+      const submitted = text + ' '+outcome.kind+' '+(outcome.reason||'')
+      await fill(submitted)
+      await evaluate(`window.__calls=[];window.fetch=async(url,options)=>{window.__calls.push({body:JSON.parse(options.body),key:options.headers['X-TypeSafe-Api-Key']}); return new Response(JSON.stringify({decision:{version:1,field:'professional_information',outcome:${JSON.stringify(outcome)}}}),{status:${outcome.kind==='service_failure'?502:200}})}`)
+      await evaluate(`${byText(review)}.click()`)
+      await until("!!document.querySelector('[role=alert]')")
+      assert.equal(await evaluate("document.querySelector('#ingestion-text').value"),submitted)
+      assert.equal(await saved(),initial)
+      assert.equal(await evaluate("document.querySelectorAll('article').length"),0)
+      assert.equal(await evaluate("window.__calls.length"),1)
+      assert.equal(await evaluate("window.__calls[0].key"),'synthetic-typesafe')
+      const feedback = await evaluate("document.querySelector('[role=alert]').textContent")
+      if(outcome.kind==='reject_attack') {
+        assert.match(feedback,locale==='en'?/prohibited.*violates/:/proibido.*viola/)
+        await evaluate("document.querySelector('[role=alert] a').click()")
+        assert.equal(await evaluate("document.querySelector('#input-use-rule').open"),true)
+      } else {
+        assert.doesNotMatch(feedback,locale==='en'?/violates|prohibited/:/viola os|proibido/)
+      }
+      assert.equal(await evaluate(`${byText(review)}.disabled`),outcome.kind==='request_rephrasing')
+      if(outcome.kind==='request_rephrasing') {
+        await fill(submitted+' revised')
+        assert.equal(await evaluate(`${byText(review)}.disabled`),false)
+        await fill(submitted) // Changing away and back does not satisfy revision.
+        assert.equal(await evaluate(`${byText(review)}.disabled`),true)
+        const screen=await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:true})
+        writeFileSync(join(work,`rephrasing-${locale}-${width}.png`),Buffer.from(screen.data,'base64'))
+      }
+      assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth'))
+    }
+    // Hold a response: loading keeps text/Profile intact; editing cancels stale proposals.
+    await fill(text)
+    await evaluate(`window.fetch=async()=>new Promise(resolve=>window.__finish=()=>resolve(new Response(${JSON.stringify(JSON.stringify(proposal))},{status:200})))`)
+    await evaluate(`${byText(review)}.click()`)
+    await until("document.querySelector('#ingestion-text').getAttribute('aria-busy') === 'true'")
+    assert.ok(await evaluate("!!document.querySelector('[role=status]')"))
+    assert.equal(await saved(),initial)
+    await fill(text+' revised')
+    await evaluate("window.__finish()")
+    await pause(80)
+    assert.equal(await evaluate("document.querySelectorAll('article').length"),0)
+    assert.equal(await saved(),initial)
+    // A fact among ordinary noise can reach proposals; editing invalidates them.
+    for(const submitted of [text, 'Bread, apples. '+text+'. Weekend plans.']) {
+      await fill(submitted)
+      await evaluate(`window.fetch=async()=>new Response(${JSON.stringify(JSON.stringify(proposal))},{status:200})`)
+      await evaluate(`${byText(review)}.click()`)
+      await until("document.querySelectorAll('article').length === 1")
+      assert.equal(await saved(),initial)
+      assert.equal(await evaluate("document.querySelector('article textarea').value"),'Java')
+      await fill(submitted+' revised')
+      assert.equal(await evaluate("document.querySelectorAll('article').length"),0)
+    }
+    // An accepted decision is mandatory; old or malformed transport responses fail closed.
+    const {decision,...oldProposal}=proposal
+    for(const raw of [oldProposal,{...proposal,decision:{...decision,outcome:{kind:'accept',confidence:1}}}]) {
+      await fill(text)
+      await evaluate(`window.fetch=async()=>new Response(${JSON.stringify(JSON.stringify(raw))},{status:200})`)
+      await evaluate(`${byText(review)}.click()`)
+      await until("!!document.querySelector('[role=alert]')")
+      assert.equal(await evaluate("document.querySelectorAll('article').length"),0)
+      assert.equal(await saved(),initial)
+    }
+    console.log(`PASS field decisions ${locale} ${width}px`)
   }
   for (const locale of ['en','pt-BR']) for (const width of [1440,390]) for (const populated of [false,true]) {
     await call('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:false})

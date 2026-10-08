@@ -12,4 +12,8 @@ Integration must disclose the additional recipient and TypeSafe key/credit requi
 
 ## Implementation status
 
-Implemented generation workflows continue to use OpenAI; the deployed revision has not been verified in this evaluation. Jev classification is approved architecture, not an integration or deployment claim. Issue #29's local evaluation is complete after the [user-authorized drafting fix and successful EN/PT timing pairs](../evaluations/field-validation-draft-fixed-results.md); dependent integration has not started. The proposed 3-second classifier target must fit inside shared remaining browser/workflow deadlines and still requires integration verification, including maximum inputs and load.
+Generation workflows continue to use OpenAI. Issue #29's local evaluation is complete after the [user-authorized drafting fix and successful EN/PT timing pairs](../evaluations/field-validation-draft-fixed-results.md).
+
+The [#30 implementation](../profile-field-validation.md) applies the approved Jev classifier before professional-information extraction/comparison, with a 3-second classifier deadline inside a shared 52-second workflow bound. It provides browser-local TypeSafe key settings, recipient/credit/privacy disclosure, typed feedback and input-use terms. Job Posting integration remains separate.
+
+Local handler/browser checks do not establish live integration latency, production load reliability or deployment status. Maximum-input provider performance and load still require release verification.

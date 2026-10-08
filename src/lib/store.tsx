@@ -40,6 +40,7 @@ interface AppState {
   cvLanguage: Locale
   repository: ProfessionalRepository
   generatedMaterials: GeneratedMaterials | null
+  typesafeKey: string
   apiKey: string
   isReviewingRepo: boolean
   isGenerating: boolean
@@ -48,6 +49,9 @@ interface AppState {
 }
 
 type Action = {
+  type: "SET_TYPESAFE_KEY"
+  payload: string
+} | {
   type: "SET_CV_LANGUAGE"
   payload: Locale
 } | {
@@ -86,6 +90,8 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, repository: action.payload }
     case "SET_MATERIALS":
       return { ...state, generatedMaterials: action.payload }
+    case "SET_TYPESAFE_KEY":
+      return { ...state, typesafeKey: action.payload }
     case "SET_API_KEY":
       return { ...state, apiKey: action.payload }
     case "SET_REVIEWING":
@@ -139,6 +145,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     cvLanguage: loadCvLanguage(),
     repository: loadRepo(),
     generatedMaterials: null,
+    typesafeKey: localStorage.getItem("careeros_typesafe_key") || "",
     apiKey: localStorage.getItem("careeros_apikey") || "",
     isReviewingRepo: false,
     isGenerating: false,
@@ -158,6 +165,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       lastPersistedRepo.current = serialized
     }
   }, [state.repository])
+
+  useEffect(() => {
+    if (state.typesafeKey) localStorage.setItem("careeros_typesafe_key", state.typesafeKey)
+    else localStorage.removeItem("careeros_typesafe_key")
+  }, [state.typesafeKey])
 
   useEffect(() => {
     if (state.apiKey) localStorage.setItem("careeros_apikey", state.apiKey)
