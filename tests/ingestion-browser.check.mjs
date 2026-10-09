@@ -220,6 +220,17 @@ try {
     const review = locale==='en'?'Review suggested changes':'Revisar alterações sugeridas'
     const initial = await saved()
     const text = locale==='en'?'I use Java':'Eu uso Java'
+    // UTF-8 byte feedback must preserve the entire original at the boundary.
+    const atLimit = 'é'.repeat(15000)
+    await fill(atLimit)
+    assert.equal(await evaluate(`${byText(review)}.disabled`),false)
+    assert.ok((await evaluate("document.querySelector('#ingestion-text').nextElementSibling.textContent")).includes('30000 / 30000'))
+    await fill(atLimit+'x')
+    assert.equal(await evaluate(`${byText(review)}.disabled`),true)
+    assert.equal(await evaluate("document.querySelector('#ingestion-text').value"),atLimit+'x')
+    assert.ok((await evaluate("document.querySelector('#ingestion-text').nextElementSibling.textContent")).includes('30001 / 30000'))
+    assert.equal(await saved(),initial)
+
     const proposal = {decision:{version:1,field:'professional_information',outcome:{kind:'accept'}},claims:[{id:'c1',source:text,text:'Java',targets:['skills'],question:''}],operations:[{claimId:'c1',target:'skills',entryId:'',field:'skills',action:'add',value:'Java',finding:'addition'}],unverifiedClaimCount:0,unresolvedClaimIds:[],unplacedOperationCount:0}
     for (const outcome of [
       {kind:'reject_attack'}, {kind:'request_rephrasing'}, {kind:'irrelevant'},

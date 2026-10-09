@@ -1,0 +1,29 @@
+{
+  "version": "preprocessing-preservation-v1",
+  "cases": [
+    {
+      "id": "en-unicode-negation",
+      "language": "en",
+      "original": "Café Café\r\nI use C++ and C#; not C. 👩‍💻\r2024-01: $1,200.50\n",
+      "prepared": "Café Café\nI use C++ and C#; not C. 👩‍💻\n2024-01: $1,200.50\n"
+    },
+    {
+      "id": "pt-context-repeats",
+      "language": "pt-BR",
+      "original": "# Cargo A\r\n- Não uso C#\r\n  - Uso Java\r\n# Projeto B\r\n- Não uso C#\r\n  - Uso Java\r\n",
+      "prepared": "# Cargo A\n- Não uso C#\n  - Uso Java\n# Projeto B\n- Não uso C#\n  - Uso Java\n"
+    },
+    {
+      "id": "en-literal-table",
+      "language": "en",
+      "original": "```txt\r\nCafé  C++\r\n```\r\nA\tB\r\n1 | 2\r\nhttps://example.test/Café?q=C++ A@Example.test\r\n",
+      "prepared": "```txt\r\nCafé  C++\r\n```\r\nA\tB\r\n1 | 2\r\nhttps://example.test/Café?q=C++ A@Example.test\n"
+    },
+    {
+      "id": "pt-amount-tabs",
+      "language": "pt-BR",
+      "original": "Não aceito R$ 1.234,56; 2026-10-08.\r\n- Java\r\n\t- AWS\n",
+      "prepared": "Não aceito R$ 1.234,56; 2026-10-08.\n- Java\n\t- AWS\n"
+    }
+  ]
+}

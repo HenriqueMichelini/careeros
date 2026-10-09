@@ -1,9 +1,11 @@
 package qualificationgaps_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -211,6 +213,10 @@ func TestShortPostingRetainsItsQualification(t *testing.T) {
 }
 
 func TestApplyProvidersReceiveSamePreparedPosting(t *testing.T) {
+	var logs bytes.Buffer
+	oldOutput := log.Writer()
+	log.SetOutput(&logs)
+	t.Cleanup(func() { log.SetOutput(oldOutput) })
 	original := "# Café jobs\r\nHOME | LOGIN\r\n- Build  Java APIs\r\n- AWS required.\r\n- Send your portfolio and CV as a PDF.\r\nCafe\u0301  Java\r\nCafe\u0301   Java\r\n"
 	expected := "# Café jobs\nHOME | LOGIN\r\n- Build Java APIs\n- AWS required.\n- Send your portfolio and CV as a PDF.\nCafé Java\nCafé Java\n"
 	for _, endpoint := range []struct {
@@ -243,6 +249,14 @@ func TestApplyProvidersReceiveSamePreparedPosting(t *testing.T) {
 				return response(200, `{"choices":[{"message":{"content":"{\"jobTitle\":null,\"company\":null,\"jobSummary\":\"AWS required.\",\"resume\":\"Java\",\"applicationAnswers\":\"I use Java.\",\"coverLetter\":{\"greeting\":\"Dear team,\",\"body\":\"I use Java.\",\"closing\":\"Sincerely,\"}}"}}]}`), nil
 			})}
 			w := submit(endpoint.handler(client), endpoint.path, original, "", "synthetic")
+			if w.Header().Get("Cache-Control") != "no-store" {
+				t.Fatal("source response cached")
+			}
+			for _, secret := range []string{original, expected, "sk-synthetic", "synthetic"} {
+				if strings.Contains(logs.String(), secret) || strings.Contains(w.Body.String(), secret) {
+					t.Fatal("source/key leaked in logs or response")
+				}
+			}
 			if w.Code != 200 || calls != 2 {
 				t.Fatalf("status=%d calls=%d body=%s", w.Code, calls, w.Body.String())
 			}
