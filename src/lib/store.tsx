@@ -5,10 +5,26 @@ import {
   useEffect,
   useReducer,
   useRef,
+  useState,
   ReactNode,
 } from "react"
 import { ProfessionalRepository, GeneratedMaterials } from "./types"
-import { emptyContact, withContactFields } from "./profile"
+import {
+  emptyProfileView,
+  migrateProfile,
+  profileView,
+  replaceProfileView,
+  type ProfileDocument,
+  type ProfileOrigin,
+} from "./profileDocument"
+import {
+  openProfile,
+  saveProfile,
+  PROFILE_KEY,
+  LEGACY_KEY,
+  ProfileStorageError,
+  type ProfileStorageCode,
+} from "./profileStorage"
 import {
   getInitialLocale,
   isLocale,
@@ -18,27 +34,11 @@ import {
   TranslationValue,
 } from "./i18n"
 
-const defaultRepo: ProfessionalRepository = {
-  ...emptyContact,
-  careerGoals: "",
-  skills: "",
-  competencies: "",
-  experience: [],
-  tools: "",
-  projects: [],
-  education: [],
-  certifications: [],
-  languages: [],
-  employmentStatus: "",
-  currentSalary: "",
-  desiredSalary: "",
-  additionalInfo: "",
-}
-
 interface AppState {
   uiLocale: Locale
   cvLanguage: Locale
   repository: ProfessionalRepository
+  profileError: ProfileStorageCode | null
   generatedMaterials: GeneratedMaterials | null
   typesafeKey: string
   apiKey: string
@@ -107,12 +107,20 @@ function reducer(state: AppState, action: Action): AppState {
   }
 }
 
-function loadRepo(): ProfessionalRepository {
+function readSetting(key: string): string {
   try {
-    const saved = localStorage.getItem("careeros_repo")
-    return saved ? withContactFields(JSON.parse(saved)) : defaultRepo
+    return localStorage.getItem(key) || ""
   } catch {
-    return defaultRepo
+    return ""
+  }
+}
+
+function writeSetting(key: string, value: string) {
+  try {
+    if (value) localStorage.setItem(key, value)
+    else localStorage.removeItem(key)
+  } catch {
+    /* Profile persistence reports its own errors. */
   }
 }
 
@@ -133,20 +141,30 @@ function loadCvLanguage(): Locale {
 
 const StoreContext = createContext<{
   state: AppState
-  dispatch: React.Dispatch<Action>
+  dispatch: (action: Action) => Promise<boolean>
+  saveRepository: (
+    repo: ProfessionalRepository,
+    origin?: ProfileOrigin,
+  ) => Promise<boolean>
 } | null>(null)
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const lastPersistedRepo = useRef<string | null>(
-    localStorage.getItem("careeros_repo"),
+  const documentRef = useRef<ProfileDocument | null>(null)
+  const queue = useRef<Promise<boolean>>(Promise.resolve(true))
+  const failed = useRef(false)
+  const draft = useRef(emptyProfileView())
+  const [ready, setReady] = useState(false)
+  const [profileError, setProfileError] = useState<ProfileStorageCode | null>(
+    null,
   )
-  const [state, dispatch] = useReducer(reducer, {
+  const [state, rawDispatch] = useReducer(reducer, {
     uiLocale: getInitialLocale(),
     cvLanguage: loadCvLanguage(),
-    repository: loadRepo(),
+    repository: emptyProfileView(),
+    profileError: null,
     generatedMaterials: null,
-    typesafeKey: localStorage.getItem("careeros_typesafe_key") || "",
-    apiKey: localStorage.getItem("careeros_apikey") || "",
+    typesafeKey: readSetting("careeros_typesafe_key"),
+    apiKey: readSetting("careeros_apikey"),
     isReviewingRepo: false,
     isGenerating: false,
     lastReviewSummary: "",
@@ -154,39 +172,164 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   })
 
   useEffect(() => {
-    const serialized = JSON.stringify(state.repository)
-    if (
-      lastPersistedRepo.current === null &&
-      serialized === JSON.stringify(defaultRepo)
-    )
-      return
-    if (lastPersistedRepo.current !== serialized) {
-      localStorage.setItem("careeros_repo", serialized)
-      lastPersistedRepo.current = serialized
+    let active = true
+    Promise.resolve()
+      .then(() => openProfile(localStorage))
+      .then((doc) => {
+        if (!active) return
+        documentRef.current = doc
+        draft.current = profileView(doc)
+        rawDispatch({ type: "SET_REPO", payload: draft.current })
+        setReady(true)
+      })
+      .catch((error) => {
+        if (!active) return
+        // A valid legacy Profile remains visible when migration cannot persist.
+        try {
+          const raw = localStorage.getItem(LEGACY_KEY)
+          if (localStorage.getItem(PROFILE_KEY) === null && raw !== null) {
+            draft.current = profileView(
+              migrateProfile(JSON.parse(raw), crypto.randomUUID()),
+            )
+            rawDispatch({ type: "SET_REPO", payload: draft.current })
+          }
+        } catch {
+          /* Malformed originals are retained for download. */
+        }
+        failed.current = true
+        setProfileError(
+          error instanceof ProfileStorageError ? error.code : "storage",
+        )
+        setReady(true)
+      })
+    const changed = (event: StorageEvent) => {
+      if (event.key !== PROFILE_KEY && event.key !== null) return
+      if (
+        !documentRef.current ||
+        event.newValue === JSON.stringify(documentRef.current)
+      )
+        return
+      // Keep the local draft and review input, but block stale writes until reload.
+      failed.current = true
+      setProfileError("stale")
     }
-  }, [state.repository])
+    window.addEventListener("storage", changed)
+    return () => {
+      active = false
+      window.removeEventListener("storage", changed)
+    }
+  }, [])
+
+  const saveRepository = useCallback(
+    (
+      repo: ProfessionalRepository,
+      origin: ProfileOrigin = { kind: "manual_edit", original: "user" },
+    ) => {
+      draft.current = repo
+      rawDispatch({ type: "SET_REPO", payload: repo })
+      const saving = queue.current.then(async () => {
+        if (failed.current || !documentRef.current) return false
+        try {
+          const expected = documentRef.current
+          const candidate = replaceProfileView(expected, repo, origin)
+          await saveProfile(localStorage, expected, candidate)
+          documentRef.current = candidate
+          return true
+        } catch (error) {
+          failed.current = true
+          setProfileError(
+            error instanceof ProfileStorageError ? error.code : "validation",
+          )
+          return false
+        }
+      })
+      queue.current = saving
+      return saving
+    },
+    [],
+  )
+  const dispatch = useCallback(
+    async (action: Action) => {
+      if (action.type === "SET_REPO") return saveRepository(action.payload)
+      rawDispatch(action)
+      return true
+    },
+    [saveRepository],
+  )
+
+  function downloadRecovery() {
+    const data: Record<string, unknown> = { unsavedProfile: draft.current }
+    for (const key of [LEGACY_KEY, PROFILE_KEY]) {
+      try {
+        data[key] = localStorage.getItem(key)
+      } catch {
+        data[key] = null
+      }
+    }
+    const url = URL.createObjectURL(
+      new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }),
+    )
+    const anchor = document.createElement("a")
+    anchor.href = url
+    anchor.download = "careeros-profile-recovery.json"
+    anchor.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
 
   useEffect(() => {
-    if (state.typesafeKey) localStorage.setItem("careeros_typesafe_key", state.typesafeKey)
-    else localStorage.removeItem("careeros_typesafe_key")
+    writeSetting("careeros_typesafe_key", state.typesafeKey)
   }, [state.typesafeKey])
 
   useEffect(() => {
-    if (state.apiKey) localStorage.setItem("careeros_apikey", state.apiKey)
+    writeSetting("careeros_apikey", state.apiKey)
   }, [state.apiKey])
 
   useEffect(() => {
-    localStorage.setItem("careeros_locale", state.uiLocale)
+    writeSetting("careeros_locale", state.uiLocale)
     document.documentElement.lang = state.uiLocale
   }, [state.uiLocale])
 
   useEffect(() => {
-    localStorage.setItem("careeros_cv_language", state.cvLanguage)
+    writeSetting("careeros_cv_language", state.cvLanguage)
   }, [state.cvLanguage])
 
   return (
-    <StoreContext.Provider value={{ state, dispatch }}>
-      {children}
+    <StoreContext.Provider
+      value={{ state: { ...state, profileError }, dispatch, saveRepository }}
+    >
+      {profileError && (
+        <div
+          role="alert"
+          className="border-b border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+        >
+          <p>
+            {translate(state.uiLocale, `profile.persistence.${profileError}`)}
+          </p>
+          <div className="mt-2 flex gap-4">
+            <button
+              type="button"
+              className="underline"
+              onClick={downloadRecovery}
+            >
+              {translate(state.uiLocale, "profile.persistence.download")}
+            </button>
+            <button
+              type="button"
+              className="underline"
+              onClick={() => window.location.reload()}
+            >
+              {translate(state.uiLocale, "profile.persistence.reload")}
+            </button>
+          </div>
+        </div>
+      )}
+      {ready ? (
+        children
+      ) : (
+        <p role="status" className="p-4">
+          {translate(state.uiLocale, "profile.persistence.loading")}
+        </p>
+      )}
     </StoreContext.Provider>
   )
 }

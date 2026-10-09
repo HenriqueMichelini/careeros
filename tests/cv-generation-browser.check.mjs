@@ -1,3 +1,4 @@
+import { savedProfileExpression } from "./profile-browser-storage.mjs"
 // Browser PDF integration check. Run with: npm run test:cv-pdf
 // Requires Google Chrome, pdfinfo, and pdftotext on PATH.
 import assert from "node:assert/strict"
@@ -206,7 +207,7 @@ try {
       returnByValue: true,
       awaitPromise: true,
     })
-    if (result.exceptionDetails) throw new Error(result.exceptionDetails.text)
+    if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text)
     return result.result.value
   }
   const until = async (expression) => {
@@ -222,7 +223,7 @@ try {
       "document.readyState === 'complete' && !!document.querySelector('header button')",
     )
     await evaluate(
-      `localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_locale', ${JSON.stringify(locale)}); localStorage.setItem('careeros_cv_language', ${JSON.stringify(locale)}); localStorage.removeItem('careeros_curated_cv_v1'); localStorage.setItem('careeros_apikey','sk-synthetic'); localStorage.removeItem('careeros_cv_v1'); localStorage.removeItem('careeros_cv_preferences_v1'); location.reload()`,
+      `localStorage.removeItem('careeros_profile_v2'); localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_locale', ${JSON.stringify(locale)}); localStorage.setItem('careeros_cv_language', ${JSON.stringify(locale)}); localStorage.removeItem('careeros_curated_cv_v1'); localStorage.setItem('careeros_apikey','sk-synthetic'); localStorage.removeItem('careeros_cv_v1'); localStorage.removeItem('careeros_cv_preferences_v1'); location.reload()`,
     )
     await until(
       "document.readyState === 'complete' && !!document.querySelector('header button')",
@@ -236,7 +237,7 @@ try {
 
   const click = async (text) =>
     evaluate(
-      `Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()===${JSON.stringify(text)}).click()`,
+      `(() => { const button=Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()===${JSON.stringify(text)}); if(!button)throw new Error('Missing button '+${JSON.stringify(text)}+'; '+document.body.innerText.slice(0,3000)); button.click(); })()`,
     )
   const editSummary = async (text) =>
     evaluate(
@@ -271,14 +272,14 @@ try {
     await openCv(repo, fixture.locale)
     const generate =
       fixture.locale === "en"
-        ? "Generate from Profile"
-        : "Gerar a partir do Perfil"
+        ? "Generate CV"
+        : "Gerar currículo"
     const accept =
       fixture.locale === "en"
         ? "Accept and replace CV"
         : "Aceitar e substituir CV"
     await controlled()
-    const original = await evaluate("localStorage.getItem('careeros_repo')")
+    const original = await evaluate(savedProfileExpression)
     await click(generate)
     await until("!!document.querySelector('[data-generated-summary]')")
     const outbound = await evaluate("JSON.stringify(window.__outbound)")
@@ -298,7 +299,7 @@ try {
     await click(accept)
     await until("!!localStorage.getItem('careeros_curated_cv_v1')")
     assert.equal(
-      await evaluate("localStorage.getItem('careeros_repo')"),
+      await evaluate(savedProfileExpression),
       original,
     )
     await editSummary(
@@ -332,6 +333,7 @@ try {
       deviceScaleFactor: 1,
       mobile: false,
     })
+    await until("document.documentElement.scrollWidth<=innerWidth")
     assert.ok(
       await evaluate("document.documentElement.scrollWidth<=innerWidth"),
       "390px horizontal fit",
@@ -403,7 +405,7 @@ try {
   await evaluate(
     `window.fetch=()=>new Promise(resolve=>window.__resolve=resolve)`,
   )
-  await click("Generate from Profile")
+  await click("Generate CV")
   await until("!!window.__resolve")
   await editSummary("Newer edit wins.")
   await evaluate(
@@ -423,7 +425,7 @@ try {
     await evaluate(
       `window.fetch=async()=>new Response(JSON.stringify({error:${JSON.stringify(code)}}),{status:502})`,
     )
-    await click("Generate from Profile")
+    await click("Generate CV")
     await until("!!document.querySelector('[data-cv-generation] [role=alert]')")
     assert.ok(
       (await evaluate("localStorage.getItem('careeros_cv_v1')")).includes(
@@ -471,7 +473,7 @@ try {
   await evaluate(
     `window.fetch=async(url,options)=>{const facts=JSON.parse(options.body).facts;const summary=facts.find(f=>f.text.startsWith('Product leader designing useful services.'));const role=facts.find(f=>f.text==='Impact Studio');const ids=facts.filter(f=>f.entryId===role.entryId && f.field!=='responsibilities' || f.section==='education' || f.section==='projects' || f.text==='Research' || f.text==='Design').map(f=>f.id);return new Response(JSON.stringify({summary:[{sourceId:summary.id,text:'Product leader using research to design customer-facing services.'}],selected:ids,wording:{[summary.id]:'Designed customer-facing services using research.'}}),{status:200})}`,
   )
-  await click("Generate from Profile")
+  await click("Generate CV")
   await until("!!document.querySelector('[data-generated-summary]')")
   await click("Accept and replace CV")
   await until("!!localStorage.getItem('careeros_curated_cv_v1')")
@@ -501,7 +503,7 @@ try {
   )
   // Simulate failed legacy mirror write: atomic accepted snapshot contains the new choices.
   await controlled()
-  await click("Generate from Profile")
+  await click("Generate CV")
   await until("!!document.querySelector('[data-generated-summary]')")
   const atomicSummary = await evaluate(
     "document.querySelector('[data-generated-summary]').textContent",
@@ -531,7 +533,7 @@ try {
     "atomic choices win over failed old mirror",
   )
   await controlled()
-  await click("Generate from Profile")
+  await click("Generate CV")
   await until("!!document.querySelector('[data-generated-summary]')")
   const beforeFailedSave = await evaluate(
     "localStorage.getItem('careeros_curated_cv_v1')",
@@ -554,14 +556,14 @@ try {
   await click("Cancel / discard proposal")
 
   assert.equal(
-    JSON.parse(await evaluate("localStorage.getItem('careeros_repo')"))
+    JSON.parse(await evaluate(savedProfileExpression))
       .experience.length,
     19,
   )
   await evaluate(
     `window.fetch=()=>new Promise(resolve=>window.__resolveCancel=resolve)`,
   )
-  await click("Generate from Profile")
+  await click("Generate CV")
   await until("!!window.__resolveCancel")
   await click("Cancel / discard proposal")
   await evaluate("window.__resolveCancel(new Response('{}'))")
@@ -582,7 +584,7 @@ try {
   }
   await openCv(long, "en")
   await controlled()
-  await click("Generate from Profile")
+  await click("Generate CV")
   await until("!!document.querySelector('[data-generated-summary]')")
   await click("Accept and replace CV")
   await until(
@@ -606,13 +608,13 @@ try {
     ]) {
       await openCv(profile, fixture.locale)
       const originalProfile = await evaluate(
-        "localStorage.getItem('careeros_repo')",
+        savedProfileExpression,
       )
       const lengths = []
       const generate =
         fixture.locale === "en"
-          ? "Generate from Profile"
-          : "Gerar a partir do Perfil"
+          ? "Generate CV"
+          : "Gerar currículo"
       const accept =
         fixture.locale === "en"
           ? "Accept and replace CV"
@@ -666,7 +668,7 @@ try {
         )
         lengths.push(text.length)
         assert.equal(
-          await evaluate("localStorage.getItem('careeros_repo')"),
+          await evaluate(savedProfileExpression),
           originalProfile,
         )
         await call("Emulation.setDeviceMetricsOverride", {
@@ -840,7 +842,7 @@ try {
         "Manual wording stays until explicit replacement.",
       )
       assert.equal(
-        await evaluate("localStorage.getItem('careeros_repo')"),
+        await evaluate(savedProfileExpression),
         originalProfile,
       )
     }
@@ -849,7 +851,7 @@ try {
   await evaluate(
     `window.fetch=async(url,options)=>{const facts=JSON.parse(options.body).facts;const degree=facts.find(f=>f.field==='degree');return new Response(JSON.stringify({summary:[{sourceId:degree.id,text:'Education includes a BSc Design.'}],selected:facts.map(f=>f.id)}),{status:200})}`,
   )
-  await click("Generate from Profile")
+  await click("Generate CV")
   await until("!!document.querySelector('[data-generated-summary]')")
   await click("Accept and replace CV")
   await until("!!localStorage.getItem('careeros_curated_cv_v1')")

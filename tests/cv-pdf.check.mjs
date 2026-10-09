@@ -1,3 +1,4 @@
+import { savedProfileExpression } from "./profile-browser-storage.mjs"
 // Browser PDF integration check. Run with: npm run test:cv-pdf
 // Requires Google Chrome, pdfinfo, and pdftotext on PATH.
 import assert from "node:assert/strict"
@@ -222,7 +223,7 @@ try {
       "document.readyState === 'complete' && !!document.querySelector('header button')",
     )
     await evaluate(
-      `localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_locale', ${JSON.stringify(locale)}); localStorage.setItem('careeros_cv_language', ${JSON.stringify(locale)}); localStorage.removeItem('careeros_cv_v1'); localStorage.removeItem('careeros_cv_preferences_v1'); location.reload()`,
+      `localStorage.removeItem('careeros_profile_v2'); localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_locale', ${JSON.stringify(locale)}); localStorage.setItem('careeros_cv_language', ${JSON.stringify(locale)}); localStorage.removeItem('careeros_cv_v1'); localStorage.removeItem('careeros_cv_preferences_v1'); location.reload()`,
     )
     await until(
       "document.readyState === 'complete' && !!document.querySelector('header button')",
@@ -240,7 +241,7 @@ try {
   ]) {
     await openCv(fixture.repo, fixture.locale)
     const originalProfile = await evaluate(
-      "localStorage.getItem('careeros_repo')",
+      savedProfileExpression,
     )
     const originalChoices = await evaluate(
       "localStorage.getItem('careeros_cv_v1')",
@@ -303,7 +304,7 @@ try {
       if (screenType.contact) assert.equal(screenType.contact, `${size - 1}px`)
       assert.equal(await evaluate("window.__aiCalls"), 0)
       assert.equal(
-        await evaluate("localStorage.getItem('careeros_repo')"),
+        await evaluate(savedProfileExpression),
         originalProfile,
       )
       assert.equal(
@@ -422,7 +423,7 @@ try {
       "document.querySelector('.cv-font-controls input').value === '12'",
     )
     assert.equal(
-      await evaluate("localStorage.getItem('careeros_repo')"),
+      await evaluate(savedProfileExpression),
       originalProfile,
     )
     assert.equal(

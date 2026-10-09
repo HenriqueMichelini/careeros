@@ -1,0 +1,2923 @@
+[
+  {
+    "name": "supported fact with explicit semantics",
+    "valid": true,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  },
+  {
+    "name": "no version",
+    "valid": false,
+    "document": {
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  },
+  {
+    "name": "future version",
+    "valid": false,
+    "document": {
+      "version": 3,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  },
+  {
+    "name": "unsafe revision",
+    "valid": false,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 9007199254740992,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  },
+  {
+    "name": "empty profile ID",
+    "valid": false,
+    "document": {
+      "version": 2,
+      "id": "",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  },
+  {
+    "name": "missing facts",
+    "valid": false,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  },
+  {
+    "name": "null entities",
+    "valid": false,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": null,
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  },
+  {
+    "name": "extra confidence",
+    "valid": false,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported",
+          "confidence": 0.95
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  },
+  {
+    "name": "unknown normalization policy",
+    "valid": false,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "future",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  },
+  {
+    "name": "unknown origin",
+    "valid": false,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "external_verified",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  },
+  {
+    "name": "old content claimed manual",
+    "valid": false,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "existing_profile",
+            "original": "user"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  },
+  {
+    "name": "other Profile owner",
+    "valid": false,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "other",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  },
+  {
+    "name": "stale owner",
+    "valid": false,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 2
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  },
+  {
+    "name": "dangling context",
+    "valid": false,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "missing",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  },
+  {
+    "name": "stale evidence",
+    "valid": false,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 2
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  },
+  {
+    "name": "evidence in another Profile",
+    "valid": false,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "other",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  },
+  {
+    "name": "wrong role target",
+    "valid": false,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  },
+  {
+    "name": "unapproved support",
+    "valid": false,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "unreviewed",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  },
+  {
+    "name": "support without link",
+    "valid": false,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": []
+    }
+  },
+  {
+    "name": "ambiguous alias",
+    "valid": false,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "JS",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  },
+  {
+    "name": "legacy block cannot normalize",
+    "valid": false,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "legacy_block",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  },
+  {
+    "name": "unknown acronym remains unresolved",
+    "valid": true,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "AWS",
+            "canonical": null,
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  },
+  {
+    "name": "missing certainty",
+    "valid": false,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  },
+  {
+    "name": "numeric skills",
+    "valid": false,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": 100,
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  },
+  {
+    "name": "empty evidence excerpt",
+    "valid": false,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  },
+  {
+    "name": "extra document field",
+    "valid": false,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ],
+      "confidence": 1
+    }
+  },
+  {
+    "name": "duplicate node ID",
+    "valid": false,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  },
+  {
+    "name": "historical link can reference prior revision",
+    "valid": true,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 2
+          },
+          "state": "invalidated"
+        }
+      ]
+    }
+  },
+  {
+    "name": "historical link cannot leave Profile",
+    "valid": false,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "skills",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "other",
+            "id": "role",
+            "revision": 2
+          },
+          "state": "invalidated"
+        }
+      ]
+    }
+  },
+  {
+    "name": "root cannot masquerade as entity collection",
+    "valid": false,
+    "document": {
+      "version": 2,
+      "id": "p",
+      "revision": 1,
+      "normalizationPolicy": "exact-alias-v1",
+      "entities": [
+        {
+          "id": "role",
+          "revision": 1,
+          "kind": "experience",
+          "legacyId": "old-id",
+          "order": 0
+        }
+      ],
+      "facts": [
+        {
+          "id": "skill",
+          "revision": 1,
+          "owner": {
+            "profileId": "p",
+            "id": "p",
+            "revision": 1
+          },
+          "context": [
+            {
+              "profileId": "p",
+              "id": "role",
+              "revision": 1
+            }
+          ],
+          "field": "experience",
+          "order": 0,
+          "kind": "statement",
+          "value": "Javascript",
+          "assertion": "negated",
+          "intent": "aspiration",
+          "certainty": "uncertain",
+          "temporal": {
+            "wording": "around three years",
+            "precision": "approximate"
+          },
+          "normalization": {
+            "observed": "Javascript",
+            "canonical": "JavaScript",
+            "policy": "exact-alias-v1"
+          },
+          "origin": {
+            "kind": "accepted_proposal",
+            "original": "unknown"
+          },
+          "approval": "approved",
+          "support": "supported"
+        }
+      ],
+      "evidence": [
+        {
+          "id": "e",
+          "revision": 1,
+          "excerpt": "I hope to learn Javascript; I have not used it",
+          "origin": "submitted career notes",
+          "approval": "approved"
+        }
+      ],
+      "links": [
+        {
+          "id": "support",
+          "kind": "supports",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "e",
+            "revision": 1
+          },
+          "state": "active"
+        },
+        {
+          "id": "context",
+          "kind": "role_context",
+          "from": {
+            "profileId": "p",
+            "id": "skill",
+            "revision": 1
+          },
+          "to": {
+            "profileId": "p",
+            "id": "role",
+            "revision": 1
+          },
+          "state": "active"
+        }
+      ]
+    }
+  }
+]

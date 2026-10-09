@@ -175,7 +175,7 @@ try {
     "document.readyState === 'complete' && !!document.querySelector('header button')",
   )
   await evaluate(
-    `localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_apikey', 'synthetic-test-key'); location.reload()`,
+    `localStorage.removeItem('careeros_profile_v2'); localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_apikey', 'synthetic-test-key'); location.reload()`,
   )
   await until(
     "document.readyState === 'complete' && !!document.querySelector('header button')",

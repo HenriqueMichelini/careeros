@@ -1,3 +1,4 @@
+import { savedProfileExpression } from "./profile-browser-storage.mjs"
 import { keyboardFlow } from "./keyboard-flow.mjs"
 // Browser regression for the Apply checklist and workflow transitions.
 // Uses synthetic API responses; no provider request is made.
@@ -175,7 +176,7 @@ try {
     "document.readyState === 'complete' && !!document.querySelector('header button')",
   )
   await evaluate(
-    `localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_apikey', 'synthetic-test-key'); localStorage.setItem('careeros_typesafe_key', 'synthetic-typesafe'); location.reload()`,
+    `localStorage.removeItem('careeros_profile_v2'); localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_apikey', 'synthetic-test-key'); localStorage.setItem('careeros_typesafe_key', 'synthetic-typesafe'); location.reload()`,
   )
   await until(
     "document.readyState === 'complete' && !!document.querySelector('header button')",
@@ -220,7 +221,7 @@ try {
         mobile: false,
       })
       await evaluate(
-        `localStorage.setItem('careeros_locale', ${JSON.stringify(locale)}); localStorage.removeItem('careeros_apikey'); localStorage.removeItem('careeros_repo'); location.reload()`,
+        `localStorage.setItem('careeros_locale', ${JSON.stringify(locale)}); localStorage.removeItem('careeros_apikey'); localStorage.removeItem('careeros_profile_v2'); localStorage.removeItem('careeros_repo'); location.reload()`,
       )
       await until(
         "document.readyState === 'complete' && !!document.querySelector('header button')",
@@ -232,7 +233,7 @@ try {
         "pending",
       ])
       await evaluate(
-        `localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_apikey', 'synthetic-test-key'); localStorage.setItem('careeros_typesafe_key', 'synthetic-typesafe'); location.reload()`,
+        `localStorage.removeItem('careeros_profile_v2'); localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_apikey', 'synthetic-test-key'); localStorage.setItem('careeros_typesafe_key', 'synthetic-typesafe'); location.reload()`,
       )
       await until(
         "document.readyState === 'complete' && !!document.querySelector('header button')",
@@ -243,7 +244,7 @@ try {
       )
       const decision = (kind, extra = {}) => ({ decision: { version: 1, field: "job_posting", outcome: { kind, ...extra } } })
       const feedback = () => evaluate("Array.from(document.querySelectorAll('[role=alert]')).map(el => el.textContent).join(' ')")
-      const unchangedProfile = await evaluate("localStorage.getItem('careeros_repo')")
+      const unchangedProfile = await evaluate(savedProfileExpression)
       await fill("Software Engineer")
       await generate()
       assert.equal(await evaluate("window.__pending[0].options.headers['X-TypeSafe-Api-Key']"), "synthetic-typesafe")
@@ -290,7 +291,7 @@ try {
       await keyboardSubmit(submitTarget)
       assert.equal(await evaluate('window.__pending.length'),1)
       await respond(decision('request_information', {needs:'responsibilities_or_qualifications'}))
-      assert.equal(await evaluate("localStorage.getItem('careeros_repo')"),unchangedProfile)
+      assert.equal(await evaluate(savedProfileExpression),unchangedProfile)
       // Short postings preserve explicit unknowns through qualification confirmation, Results and print.
       const shortDraft = {
         jobTitle: "Java developer", company: null, jobSummary: "AWS required.",
@@ -331,7 +332,7 @@ try {
           assert.ok(printed.includes(target === "resume" ? "Research" : "Dear hiring team,"))
           assert.ok(!/Example Labs|Acme|null|undefined|Not provided|Não informado/.test(printed), "unknown metadata must not become exported facts")
         }
-        assert.equal(await evaluate("localStorage.getItem('careeros_repo')"), unchangedProfile)
+        assert.equal(await evaluate(savedProfileExpression), unchangedProfile)
         await evaluate("document.querySelectorAll('nav button')[0].click()")
         await until("document.querySelectorAll('[data-checklist-state]').length === 3")
       }
@@ -354,7 +355,7 @@ try {
         assert.equal(await evaluate("window.__pending[0].url"), "/api/qualification-gaps", "changed input must check qualifications again")
         await respond(decision("request_information", { needs: "responsibilities_or_qualifications" }))
       }
-      assert.equal(await evaluate("localStorage.getItem('careeros_repo')"), unchangedProfile)
+      assert.equal(await evaluate(savedProfileExpression), unchangedProfile)
       await fill(
         "Product lead with research and strategy experience needed for a service team.",
       )
@@ -494,7 +495,7 @@ try {
       await respond({ error: "capacity" }, 502)
       assert.ok((await feedback()).includes(locale === "en" ? "Try a smaller portion" : "Tente um trecho menor"))
       assert.equal(await evaluate("document.querySelector('main textarea').value"), rawPosting)
-      assert.equal(await evaluate("localStorage.getItem('careeros_repo')"), unchangedProfile)
+      assert.equal(await evaluate(savedProfileExpression), unchangedProfile)
       await generate()
       await respond({ gaps: [{ kind: "skill", requirement: "AWS", details: "AWS required." }] })
       await evaluate("document.querySelector('[role=dialog] button').click()")
