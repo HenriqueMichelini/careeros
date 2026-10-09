@@ -420,9 +420,6 @@ try {
         `document.querySelector('[data-fact-details]').open=true; document.querySelector('[data-fact-id="${fact.id}"]').open=true`,
       )
       await assertFit()
-      await evaluate(
-        "document.querySelector('[data-fact-details]').scrollIntoView({block:'start'})",
-      )
       assert.doesNotMatch(
         await evaluate(
           "document.querySelector('[data-fact-details]').textContent",
@@ -431,7 +428,8 @@ try {
       )
       const screenshot = await call("Page.captureScreenshot", {
         format: "png",
-        captureBeyondViewport: false,
+        captureBeyondViewport: true,
+        clip: await evaluate("(()=>{const r=document.querySelector('[data-fact-details]').getBoundingClientRect();return {x:r.left+scrollX,y:r.top+scrollY,width:r.width,height:Math.min(1000,r.height),scale:1}})()"),
       })
       writeFileSync(
         join(work, `manual-${locale}-${width}.png`),
