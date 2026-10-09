@@ -217,7 +217,7 @@ try {
     await evaluate(
       `document.querySelectorAll('aside nav button')[${sections.indexOf(name)}].click()`,
     )
-    await pause(70)
+    await until(`document.querySelector('[data-profile-content]')?.dataset.profileContent===${JSON.stringify(name)}`)
   }
   const reload = async (name) => {
     await evaluate("location.reload()")
@@ -317,7 +317,6 @@ try {
         "languages",
       ]) {
         await section(name)
-        console.log("Checking", locale, width, name)
         await until("!!document.querySelector('[data-profile-content] button')")
         const count = JSON.parse(await saved())[name].length
         // First section button outside the details panel is Add.
@@ -340,6 +339,12 @@ try {
           "Edited; no claimed qualification",
         )
         await assertFit()
+        assert.doesNotMatch(
+          await evaluate(
+            "document.querySelector('[data-fact-details]').textContent",
+          ),
+          /repo\.[a-zA-Z]+/,
+        )
         const remove = locale === "en" ? "Remove" : "Remover"
         await evaluate(`${byText(remove)}.click()`)
         await pause(100)
@@ -368,6 +373,7 @@ try {
         `document.querySelector('[data-fact-details]').open=true; document.querySelector('[data-fact-id="${fact.id}"]').open=true`,
       )
       const choose = async (index, value) => {
+        await until(`document.querySelectorAll('[data-fact-id="${fact.id}"] select')[${index}] instanceof HTMLSelectElement`)
         await evaluate(
           `(()=>{const e=document.querySelectorAll('[data-fact-id="${fact.id}"] select')[${index}];Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(e,${JSON.stringify(value)});e.dispatchEvent(new Event('change',{bubbles:true}))})()`,
         )
@@ -414,6 +420,15 @@ try {
         `document.querySelector('[data-fact-details]').open=true; document.querySelector('[data-fact-id="${fact.id}"]').open=true`,
       )
       await assertFit()
+      await evaluate(
+        "document.querySelector('[data-fact-details]').scrollIntoView({block:'start'})",
+      )
+      assert.doesNotMatch(
+        await evaluate(
+          "document.querySelector('[data-fact-details]').textContent",
+        ),
+        /repo\.[a-zA-Z]+/,
+      )
       const screenshot = await call("Page.captureScreenshot", {
         format: "png",
         captureBeyondViewport: false,
@@ -422,6 +437,76 @@ try {
         join(work, `manual-${locale}-${width}.png`),
         Buffer.from(screenshot.data, "base64"),
       )
+      // A metadata-only correction must stale an already reviewed compatibility proposal.
+      await section("profile")
+      const source = "I use Rust"
+      const proposal = {
+        decision: {
+          version: 1,
+          field: "professional_information",
+          outcome: { kind: "accept" },
+        },
+        claims: [
+          { id: "c1", source, text: "Rust", targets: ["skills"], question: "" },
+        ],
+        operations: [
+          {
+            claimId: "c1",
+            target: "skills",
+            entryId: "",
+            field: "skills",
+            action: "add",
+            value: "Rust",
+            finding: "addition",
+          },
+        ],
+        unverifiedClaimCount: 0,
+        unresolvedClaimIds: [],
+        unplacedOperationCount: 0,
+      }
+      await evaluate(
+        `window.fetch=async()=>new Response(JSON.stringify(${JSON.stringify(proposal)}),{status:200})`,
+      )
+      await fill(source)
+      const review =
+        locale === "en"
+          ? "Review suggested changes"
+          : "Revisar alterações sugeridas"
+      const approve =
+        locale === "en"
+          ? "Approve linked changes"
+          : "Aprovar alterações ligadas"
+      const apply =
+        locale === "en"
+          ? "Apply approved changes"
+          : "Aplicar alterações aprovadas"
+      await evaluate(`${byText(review)}.click()`)
+      await until(`${byText(apply)} !== undefined`)
+      await evaluate(`${byText(approve)}.click()`)
+      await section("skills")
+      await evaluate(
+        `document.querySelector('[data-fact-details]').open=true; document.querySelector('[data-fact-id="${fact.id}"]').open=true`,
+      )
+      await choose(2, "unknown")
+      const revisedRaw = await evaluate(
+        "localStorage.getItem('careeros_profile_v2')",
+      )
+      await section("profile")
+      await evaluate(`${byText(apply)}.click()`)
+      await until("!!document.querySelector('[role=alert]')")
+      assert.equal(
+        await evaluate("localStorage.getItem('careeros_profile_v2')"),
+        revisedRaw,
+      )
+      assert.equal(
+        await evaluate("document.querySelector('#ingestion-text').value"),
+        source,
+      )
+      assert.match(
+        await evaluate("document.querySelector('[role=alert]').textContent"),
+        locale === "en" ? /changed/ : /mudou|alterad/,
+      )
+      await reload("skills")
       // Quota failure keeps bytes intact and draft/qualifiers visible for recovery.
       const raw = await evaluate("localStorage.getItem('careeros_profile_v2')")
       await evaluate(
@@ -448,7 +533,9 @@ try {
         "No Java; hope to learn Go",
       )
       // A sibling tab installs a new revision. Local manual input survives and cannot overwrite it.
-      await evaluate("window.__peer=window.open(location.href,'manual-peer'); void 0")
+      await evaluate(
+        "window.__peer=window.open(location.href,'manual-peer'); void 0",
+      )
       await until(
         "!!window.__peer && window.__peer.document.readyState==='complete'",
       )

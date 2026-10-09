@@ -1,3 +1,4 @@
+import { profileFieldKey } from "../lib/profileLabels"
 import FactDetails from "../components/FactDetails"
 import { type EntityKind, type Json } from "../lib/profileDocument"
 import { type FieldDecision } from "../lib/fieldDecision"
@@ -106,22 +107,7 @@ const destinationKeys: Record<string, TranslationKey> = {
   professionalLinks: "repo.professionalLinks",
 }
 function operationFieldKey(op: IngestionOperation): TranslationKey {
-  const prefix = {
-    education: "education.",
-    certifications: "certification.",
-    languages: "language.",
-  }[(op.target as string)]
-  if (prefix) return ("repo." + prefix + op.field) as TranslationKey
-  if (op.field === "current") return "common.current"
-  return (
-    destinationKeys[op.field] ||
-    ("repo." +
-      ({
-        title: "jobTitle",
-        name: "projectName",
-        technologies: "technologiesUsed",
-      }[op.field] || op.field)) as TranslationKey
-  )
+  return profileFieldKey(op.target, op.field)
 }
 
 function operationEntryLabel(
@@ -1075,7 +1061,7 @@ export default function RepositoryPage() {
       </dialog>
 
       {/* Main content */}
-      <div data-profile-content className="min-w-0">
+      <div data-profile-content={activeSection} className="min-w-0">
         <div className="mb-8">
           <h1
             className="text-5xl font-bold uppercase tracking-tight leading-none mb-2"

@@ -710,3 +710,68 @@ test("removing period wording invalidates dependent support without reassigning 
   assert.equal(next.links.find((l) => l.id === "s").state, "invalidated")
   assert.deepEqual(next.evidence, doc.evidence)
 })
+
+test("typed relationship changes preserve unrelated inline context", () => {
+  const doc = migrateProfile(
+    {
+      ...legacy,
+      education: [{ id: "school", degree: "BSc" }],
+      projects: [{ id: "project", name: "Atlas" }],
+    },
+    "p",
+  )
+  const fact = doc.facts.find((f) => f.field === "skills")
+  const school = doc.entities.find((e) => e.kind === "education")
+  const project = doc.entities.find((e) => e.kind === "projects")
+  fact.context = [{ profileId: "p", id: school.id, revision: 1 }]
+  const next = editProfile(doc, {
+    type: "context",
+    id: fact.id,
+    kind: "project_context",
+    targetId: project.id,
+  })
+  assert.ok(
+    next.facts
+      .find((f) => f.id === fact.id)
+      .context.some((r) => r.id === school.id),
+  )
+})
+
+test("explicit inline context removal retains other typed links and their owners", () => {
+  const doc = migrateProfile(
+    {
+      ...legacy,
+      education: [{ id: "school", degree: "BSc" }],
+      projects: [{ id: "project", name: "Atlas" }],
+    },
+    "p",
+  )
+  const f = doc.facts.find((f) => f.field === "skills")
+  const school = doc.entities.find((e) => e.kind === "education")
+  const project = doc.entities.find((e) => e.kind === "projects")
+  f.context = [{ profileId: "p", id: school.id, revision: 1 }]
+  const linked = editProfile(doc, {
+    type: "context",
+    id: f.id,
+    kind: "project_context",
+    targetId: project.id,
+  })
+  const next = editProfile(linked, {
+    type: "remove_context",
+    id: f.id,
+    targetId: school.id,
+  })
+  assert.deepEqual(
+    next.facts.find((fact) => fact.id === f.id).context.map((r) => r.id),
+    [project.id],
+  )
+  assert.equal(
+    next.links.find((l) => l.kind === "project_context").state,
+    "active",
+  )
+  assert.equal(
+    next.links.find((l) => l.kind === "project_context").to.id,
+    project.id,
+  )
+  assert.equal(next.facts.find((fact) => fact.id === f.id).revision, 3)
+})

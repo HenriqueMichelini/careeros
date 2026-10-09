@@ -580,6 +580,10 @@ export type ProfileEdit = {
   ownerId: string
   field: string
 } | {
+  type: "remove_context"
+  id: string
+  targetId: string
+} | {
   type: "context"
   id: string
   kind: Exclude<ProfileLink["kind"], "supports">
@@ -779,10 +783,34 @@ export function editProfile(
       authored(fact)
       break
     }
+    case "remove_context": {
+      const fact = getFact(edit.id)
+      if (!fact.context.some((r) => r.id === edit.targetId))
+        throw new ProfileValidationError("Missing context")
+      for (const link of next.links.filter(
+        (l) =>
+          l.from.id === fact.id &&
+          l.to.id === edit.targetId &&
+          l.kind !== "supports",
+      ))
+        link.state = "invalidated"
+      fact.context = fact.context.filter((r) => r.id !== edit.targetId)
+      authored(fact)
+      break
+    }
     case "context": {
       const fact = getFact(edit.id)
       const target = edit.targetId === null ? null : ref(edit.targetId)
       // A relationship correction revises meaning, invalidating all old support.
+      const replaced = next.links
+        .filter(
+          (l) =>
+            l.from.id === fact.id &&
+            l.kind === edit.kind &&
+            l.state === "active",
+        )
+        .map((l) => l.to.id)
+      const inline = fact.context.filter((r) => !replaced.includes(r.id))
       const retained = next.links.filter(
         (l) =>
           l.from.id === fact.id &&
@@ -805,14 +833,20 @@ export function editProfile(
           to: target,
           state: "active",
         })
-      fact.context = next.links
-        .filter(
-          (l) =>
-            l.from.id === fact.id &&
-            l.state === "active" &&
-            l.kind !== "supports",
-        )
-        .map((l) => l.to)
+      const contexts = [
+        ...inline,
+        ...next.links
+          .filter(
+            (l) =>
+              l.from.id === fact.id &&
+              l.state === "active" &&
+              l.kind !== "supports",
+          )
+          .map((l) => l.to),
+      ]
+      fact.context = contexts.filter(
+        (r, i) => contexts.findIndex((other) => other.id === r.id) === i,
+      )
       break
     }
   }

@@ -1,3 +1,4 @@
+import { profileFieldKey } from "../lib/profileLabels"
 import { useState } from "react"
 import { useI18n, useStore } from "../lib/store"
 import {
@@ -14,13 +15,6 @@ const sectionFields: Record<string, readonly string[]> = {
   skills: ["skills", "competencies", "tools"],
   compensation: ["employmentStatus", "currentSalary", "desiredSalary"],
   other: ["additionalInfo"],
-}
-const fieldKeys: Record<string, string> = {
-  title: "jobTitle",
-  description: "description",
-  technologies: "technologiesUsed",
-  currentSalary: "currentCompensation",
-  desiredSalary: "desiredCompensation",
 }
 
 export default function FactDetails({ section }: { section: string }) {
@@ -57,18 +51,7 @@ export default function FactDetails({ section }: { section: string }) {
   }
   const fieldLabel = (fact: ProfileFact) => {
     const e = doc.entities.find((e) => e.id === fact.owner.id)
-    const prefix =
-      e &&
-      {
-        education: "education.",
-        certifications: "certification.",
-        languages: "language.",
-      }[(e.kind as "education" | "certifications" | "languages")]
-    return fact.field === "current"
-      ? t("common.current")
-      : t(
-          `repo.${prefix || ""}${fieldKeys[fact.field] || fact.field}` as TranslationKey,
-        )
+    return t(profileFieldKey(e?.kind || "", fact.field))
   }
   const facts = doc.facts
     .filter(
@@ -160,6 +143,33 @@ export default function FactDetails({ section }: { section: string }) {
               {label(fact.kind)} · {label(fact.origin.kind)} ·{" "}
               {label(fact.support)}
             </p>
+            {fact.context.length > 0 && (
+              <ul className="mb-3 space-y-1 text-xs">
+                {fact.context.map((context) => (
+                  <li
+                    key={context.id}
+                    className="flex flex-wrap items-center gap-2 break-words"
+                  >
+                    <span>
+                      {label("context")}: {entityLabel(context.id)}
+                    </span>
+                    <button
+                      type="button"
+                      className="underline"
+                      onClick={() =>
+                        void save({
+                          type: "remove_context",
+                          id: fact.id,
+                          targetId: context.id,
+                        })
+                      }
+                    >
+                      {label("removeContext")}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {([
                 ["assertion", ["unknown", "affirmed", "negated"]],

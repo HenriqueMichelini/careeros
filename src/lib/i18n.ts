@@ -5,6 +5,8 @@ export type TranslationValue = string | number
 
 const messages = {
   en: {
+    "profile.facts.context": "Context",
+    "profile.facts.removeContext": "Remove context",
     "profile.facts.title": "Fact details and context",
     "profile.facts.guide":
       "Existing blocks remain whole. Manual corrections are user authored; changed meaning invalidates old support. Move only into an empty compatible field.",
@@ -632,6 +634,8 @@ const messages = {
       "This cover letter exceeds one A4 page. Generate a shorter draft before saving it as PDF.",
   },
   "pt-BR": {
+    "profile.facts.context": "Contexto",
+    "profile.facts.removeContext": "Remover contexto",
     "profile.facts.title": "Detalhes e contexto dos fatos",
     "profile.facts.guide":
       "Blocos existentes permanecem inteiros. Correções manuais são de sua autoria; mudanças de significado invalidam o suporte anterior. Mova apenas para um campo compatível vazio.",
