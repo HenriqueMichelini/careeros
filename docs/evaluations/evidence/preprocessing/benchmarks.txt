@@ -1,7 +1,7 @@
 goos: linux
 goarch: amd64
 pkg: professional-information-repo/internal/preprocessing
-cpu: AMD Ryzen 5 3600 6-Core Processor              
+cpu: AMD Ryzen 5 3600 6-Core Processor
 BenchmarkWorkflowPreparation/small-12         	   10000	    107322 ns/op	   1.12 MB/s	         1.000 portions/op	         2.000 repeat-groups/op	         5.000 segments/op	   30680 B/op	     136 allocs/op
 BenchmarkWorkflowPreparation/small-12         	   10000	    105606 ns/op	   1.14 MB/s	         1.000 portions/op	         2.000 repeat-groups/op	         5.000 segments/op	   30698 B/op	     136 allocs/op
 BenchmarkWorkflowPreparation/small-12         	   10000	    104987 ns/op	   1.14 MB/s	         1.000 portions/op	         2.000 repeat-groups/op	         5.000 segments/op	   30690 B/op	     136 allocs/op
