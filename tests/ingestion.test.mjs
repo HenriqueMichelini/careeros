@@ -507,3 +507,28 @@ test("ingestion binds traceable evidence to the complete raw submission", async 
     await assert.rejects(ingestProfile(input+' changed',profile(),'sk-test'),{code:'invalid_output'})
   } finally { globalThis.fetch = originalFetch }
 })
+
+test("deliberate continuation binds source regions and capacity to the exact submission", async () => {
+  const { createHash } = await import("node:crypto")
+  const input = "I use Java.\nI use Ruby."
+  const sourceId = createHash("sha256").update(JSON.stringify(["normalization-v1", "structure-v1", "professional_information", input])).digest("hex")
+  const progress = {sourceId,index:0,total:2,bytes:800,regions:[[{Start:0,End:12}],[{Start:12,End:23}]],remaining:null,planComplete:true,processed:true}
+  const payload = {decision:{version:1,field:"professional_information",outcome:{kind:"accept"}},...review({claims:[],operations:[]}),continuation:progress}
+  const originalFetch = globalThis.fetch
+  let calls=0
+  try {
+    globalThis.fetch = async (_url,options) => {
+      calls++
+      const request=JSON.parse(options.body)
+      assert.equal(request.input,input)
+      assert.deepEqual(request.portion,{index:0,bytes:800})
+      return new Response(JSON.stringify(payload),{status:200})
+    }
+    assert.equal((await ingestProfile(input,profile(),"sk-test",undefined,"synthetic",undefined,{index:0,bytes:800})).continuation.total,2)
+    assert.equal(calls,1)
+    for (const patch of [{sourceId:"a".repeat(64)},{index:1},{bytes:400},{total:3},{regions:[[{Start:0,End:11}],[{Start:12,End:23}]]},{remaining:[{Start:12,End:23}]},{planComplete:false},{processed:"true"}]) {
+      globalThis.fetch=async()=>new Response(JSON.stringify({...payload,continuation:{...progress,...patch}}),{status:200})
+      await assert.rejects(ingestProfile(input,profile(),"sk-test",undefined,"synthetic",undefined,{index:0,bytes:800}),{code:"invalid_output"})
+    }
+  } finally { globalThis.fetch=originalFetch }
+})

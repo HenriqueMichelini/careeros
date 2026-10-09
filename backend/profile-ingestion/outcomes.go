@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	"professional-information-repo/internal/preprocessing"
 	"professional-information-repo/internal/profiledocument"
 	"professional-information-repo/internal/profilevalidation"
 )
@@ -38,6 +39,7 @@ type comparisonFact struct {
 	Evidence  []profiledocument.Evidence `json:"acceptedEvidence"`
 }
 type reconciliationContext struct {
+	view       *preprocessing.View
 	document   *profiledocument.Document
 	candidates []comparisonFact
 	proposed   []claimOutcome

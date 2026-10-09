@@ -317,6 +317,25 @@ const messages = {
     "repo.keepEditing": "Keep editing",
     "repo.ingestProposals": "Suggested Profile changes",
     "repo.ingestTerminology": "Proposed exact terminology",
+    "repo.ingestContinue": "Process next portion",
+    "repo.ingestPortionIncomplete":
+      "This portion reached a result limit or contained unprocessed claims. Save any reviewed changes, then retry unfinished work or restart with smaller portions.",
+    "repo.ingestPortionLimits":
+      "Each click processes one bounded portion (up to 30 claims / 60 changes). The complete input is validated each time. Review and save or dismiss these suggestions before continuing. The paste stays only in this session.",
+    "repo.ingestPortionProgress": "Source portions processed:",
+    "repo.ingestPortionAttempted": "Attempted:",
+    "repo.ingestPortionCoverageNote":
+      "Source progress does not prove every fact was found. Unresolved claims still need review. Only saved facts are compared with later portions; ambiguous references need clarification.",
+    "repo.ingestPortionUnplanned":
+      "Some source regions could not be planned within the current limits. Keep the original input and restart with a smaller portion or revise the input.",
+    "repo.ingestPortionRegions": "Source byte regions",
+    "repo.ingestPortionProcessed": "processed",
+    "repo.ingestPortionPending": "unfinished",
+    "repo.ingestPortionDismiss":
+      "Dismiss remaining suggestions for this portion",
+    "repo.ingestPortionRetry": "Retry first unfinished portion",
+    "repo.ingestPortionSmaller":
+      "Restart with smaller portions (saved facts stay)",
     "repo.ingestReviewNote":
       "Nothing is selected. Review the source and each before/after value, then approve the changes you want.",
     "repo.ingestSource": "Source",
@@ -1047,6 +1066,25 @@ const messages = {
     "repo.keepEditing": "Continuar editando",
     "repo.ingestProposals": "Alterações sugeridas no Perfil",
     "repo.ingestTerminology": "Terminologia exata proposta",
+    "repo.ingestContinue": "Processar próxima parte",
+    "repo.ingestPortionIncomplete":
+      "Esta parte atingiu um limite de resultado ou contém afirmações não processadas. Salve as alterações revisadas e tente novamente o trabalho pendente ou reinicie com partes menores.",
+    "repo.ingestPortionLimits":
+      "Cada clique processa uma parte limitada (até 30 afirmações / 60 alterações). O texto completo é validado a cada vez. Revise e salve ou dispense as sugestões antes de continuar. O texto fica somente nesta sessão.",
+    "repo.ingestPortionProgress": "Partes da fonte processadas:",
+    "repo.ingestPortionAttempted": "Tentadas:",
+    "repo.ingestPortionCoverageNote":
+      "O progresso da fonte não comprova que todos os fatos foram encontrados. Afirmações não resolvidas ainda precisam de revisão. Somente fatos salvos são comparados com partes posteriores; referências ambíguas precisam de esclarecimento.",
+    "repo.ingestPortionUnplanned":
+      "Algumas regiões da fonte não puderam ser planejadas nos limites atuais. Preserve o texto original e reinicie com partes menores ou revise o texto.",
+    "repo.ingestPortionRegions": "Regiões da fonte em bytes",
+    "repo.ingestPortionProcessed": "processada",
+    "repo.ingestPortionPending": "não concluída",
+    "repo.ingestPortionDismiss": "Dispensar sugestões restantes desta parte",
+    "repo.ingestPortionRetry":
+      "Tentar novamente a primeira parte não concluída",
+    "repo.ingestPortionSmaller":
+      "Reiniciar com partes menores (fatos salvos permanecem)",
     "repo.ingestReviewNote":
       "Nada está selecionado. Confira a fonte e os valores antes/depois e aprove as alterações desejadas.",
     "repo.ingestSource": "Fonte",
