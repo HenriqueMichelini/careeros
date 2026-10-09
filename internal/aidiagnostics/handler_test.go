@@ -206,3 +206,38 @@ func TestFieldRejectionIsNotCompletionAndRetainsJevUsage(t *testing.T) {
 		t.Fatalf("%+v", provider)
 	}
 }
+
+type failingBody struct{}
+
+func (failingBody) Read([]byte) (int, error) { return 0, io.ErrUnexpectedEOF }
+func (failingBody) Close() error             { return nil }
+func TestJevHTTPAndBodyFailuresAreMeasuredAsFailures(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		status int
+		body   io.ReadCloser
+		want   string
+	}{
+		{"http", 503, io.NopCloser(strings.NewReader(`{}`)), "provider_failure"},
+		{"body", 200, failingBody{}, "transport_failure"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var report d.Attempt
+			calls := 0
+			client := &http.Client{Transport: transport(func(*http.Request) (*http.Response, error) {
+				calls++
+				return &http.Response{StatusCode: tc.status, Body: tc.body}, nil
+			})}
+			req := httptest.NewRequest("POST", "/api/qualification-gaps", strings.NewReader(`{"repository":{"careerGoals":"","skills":"Java","competencies":"","experience":[],"tools":"","projects":[],"employmentStatus":"","currentSalary":"","desiredSalary":"","additionalInfo":""},"jobPosting":"Java developer."}`))
+			req.Header.Set("X-OpenAI-Api-Key", "sk-controlled")
+			req.Header.Set("X-TypeSafe-Api-Key", "controlled")
+			req = req.WithContext(d.WithSink(req.Context(), func(a d.Attempt) { report = a }))
+			rec := httptest.NewRecorder()
+			gaps.NewHandlerWithClient(client).ServeHTTP(rec, req)
+			p := report.Stages[0].Provider
+			if rec.Code != 502 || report.Outcome != tc.want || p.Completion != tc.want || p.Status != tc.status || calls != 1 || rec.Header().Get("Cache-Control") != "no-store" {
+				t.Fatalf("status=%d calls=%d report=%+v provider=%+v", rec.Code, calls, report, p)
+			}
+		})
+	}
+}

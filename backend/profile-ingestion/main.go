@@ -260,7 +260,7 @@ func (a app) sendProvider(ctx context.Context, key string, body []byte, required
 		if errors.Is(callCtx.Err(), context.DeadlineExceeded) || openaihttp.IsTimeout(decodeErr) {
 			return nil, "timeout"
 		}
-		if decodeErr.Error() == "truncated" {
+		if errors.Is(decodeErr, openaihttp.ErrTruncated) {
 			return nil, "truncated"
 		}
 		return nil, "invalid_output"

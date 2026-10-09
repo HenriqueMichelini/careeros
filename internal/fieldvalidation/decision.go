@@ -136,9 +136,9 @@ func Classify(parent context.Context, client *http.Client, key string, field Fie
 	aidiagnostics.BeginProvider(ctx, "typesafe", nil)
 	response, err := boundedClient.Do(req)
 	if err != nil {
-		aidiagnostics.Observe(ctx, 0, "transport_failure", nil, nil, nil, nil, nil)
+		aidiagnostics.Observe(ctx, aidiagnostics.Observation{Status: 0, Completion: "transport_failure"})
 	} else {
-		aidiagnostics.Observe(ctx, response.StatusCode, "completed", nil, nil, nil, nil, nil)
+		aidiagnostics.Observe(ctx, aidiagnostics.Observation{Status: response.StatusCode, Completion: "provider_failure"})
 	}
 	failure := func() Decision {
 		if errors.Is(ctx.Err(), context.DeadlineExceeded) || errors.Is(err, context.DeadlineExceeded) {
@@ -161,9 +161,11 @@ func Classify(parent context.Context, client *http.Client, key string, field Fie
 	}
 	raw, err := io.ReadAll(io.LimitReader(response.Body, (64<<10)+1))
 	if err != nil {
+		aidiagnostics.Observe(ctx, aidiagnostics.Observation{Status: response.StatusCode, Completion: "transport_failure"})
 		return failure()
 	}
 	if len(raw) > 64<<10 {
+		aidiagnostics.Observe(ctx, aidiagnostics.Observation{Status: response.StatusCode, Completion: "malformed_output"})
 		return Failure(field, "invalid_output")
 	}
 	var out struct {
@@ -172,7 +174,7 @@ func Classify(parent context.Context, client *http.Client, key string, field Fie
 		Answers map[string]choice `json:"answers"`
 	}
 	if json.Unmarshal(raw, &out) != nil {
-		aidiagnostics.Observe(ctx, response.StatusCode, "malformed_output", nil, nil, nil, nil, nil)
+		aidiagnostics.Observe(ctx, aidiagnostics.Observation{Status: response.StatusCode, Completion: "malformed_output"})
 		return Failure(field, "invalid_output")
 	}
 	inputTokens, outputTokens, reasoningTokens, cachedTokens := aidiagnostics.Usage(out.Usage, "input_tokens", "output_tokens")
@@ -180,7 +182,7 @@ func Classify(parent context.Context, client *http.Client, key string, field Fie
 	if out.Model == Model {
 		returnedModel = &out.Model
 	}
-	aidiagnostics.Observe(ctx, response.StatusCode, "completed", returnedModel, inputTokens, outputTokens, reasoningTokens, cachedTokens)
+	aidiagnostics.Observe(ctx, aidiagnostics.Observation{Status: response.StatusCode, Completion: "completed", Model: returnedModel, TokenUsage: aidiagnostics.TokenUsage{InputTokens: inputTokens, OutputTokens: outputTokens, ReasoningTokens: reasoningTokens, CachedTokens: cachedTokens}})
 	if out.Model != Model || len(out.Answers) != 2 {
 		return Failure(field, "invalid_output")
 	}

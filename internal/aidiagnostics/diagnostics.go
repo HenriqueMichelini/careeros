@@ -12,18 +12,27 @@ import (
 	"time"
 )
 
+type TokenUsage struct {
+	InputTokens     *int64 `json:"inputTokens"`
+	OutputTokens    *int64 `json:"outputTokens"`
+	ReasoningTokens *int64 `json:"reasoningTokens"`
+	CachedTokens    *int64 `json:"prefixCachedTokens"`
+}
+type Observation struct {
+	Status     int
+	Completion string
+	Model      *string
+	TokenUsage
+}
 type Provider struct {
-	Name            string  `json:"name"`
-	Model           *string `json:"returnedModel"`
-	InputTokens     *int64  `json:"inputTokens"`
-	OutputTokens    *int64  `json:"outputTokens"`
-	ReasoningTokens *int64  `json:"reasoningTokens"`
-	CachedTokens    *int64  `json:"prefixCachedTokens"`
-	OutputCeiling   *int64  `json:"outputTokenCeiling"`
-	DurationMS      float64 `json:"durationMs"`
-	Status          int     `json:"httpStatus"`
-	Completion      string  `json:"completion"`
-	started         time.Time
+	Name  string  `json:"name"`
+	Model *string `json:"returnedModel"`
+	TokenUsage
+	OutputCeiling *int64  `json:"outputTokenCeiling"`
+	DurationMS    float64 `json:"durationMs"`
+	Status        int     `json:"httpStatus"`
+	Completion    string  `json:"completion"`
+	started       time.Time
 }
 type Stage struct {
 	Name       string    `json:"name"`
@@ -147,16 +156,13 @@ func BeginProvider(ctx context.Context, name string, ceiling *int64) {
 		s.Provider = &Provider{Name: name, OutputCeiling: ceiling, started: time.Now()}
 	}
 }
-func Observe(ctx context.Context, status int, completion string, model *string, input, output, reasoning, cached *int64) {
+func Observe(ctx context.Context, observation Observation) {
 	if s, ok := ctx.Value(stageKey).(*Stage); ok && s.Provider != nil {
 		p := s.Provider
-		p.Status = status
+		p.Status = observation.Status
 		p.DurationMS = milliseconds(p.started)
-		p.Completion = completion
-		p.Model = model
-		p.InputTokens = input
-		p.OutputTokens = output
-		p.ReasoningTokens = reasoning
-		p.CachedTokens = cached
+		p.Completion = observation.Completion
+		p.Model = observation.Model
+		p.TokenUsage = observation.TokenUsage
 	}
 }

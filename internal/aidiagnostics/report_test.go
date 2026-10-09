@@ -10,8 +10,8 @@ func TestReportKeepsMissingBillingAndAcceptanceUnavailable(t *testing.T) {
 	model := "gpt-6-luna"
 	yes := true
 	attempts := []d.Attempt{
-		{Outcome: "completed", Accepted: &yes, Stages: []*d.Stage{{Name: "extraction", Provider: &d.Provider{Name: "openai", Model: &model, InputTokens: i(100), OutputTokens: i(20), CachedTokens: i(40)}}}},
-		{Outcome: "truncated", Stages: []*d.Stage{{Name: "extraction", Provider: &d.Provider{Name: "openai", Model: &model, InputTokens: i(50)}}}},
+		{Outcome: "completed", Accepted: &yes, Stages: []*d.Stage{{Name: "extraction", Provider: &d.Provider{Name: "openai", Model: &model, TokenUsage: d.TokenUsage{InputTokens: i(100), OutputTokens: i(20), CachedTokens: i(40)}}}}},
+		{Outcome: "truncated", Stages: []*d.Stage{{Name: "extraction", Provider: &d.Provider{Name: "openai", Model: &model, TokenUsage: d.TokenUsage{InputTokens: i(50)}}}}},
 	}
 	report, err := d.Summarize(attempts, nil)
 	if err != nil {
@@ -35,7 +35,7 @@ func TestReportKeepsMissingBillingAndAcceptanceUnavailable(t *testing.T) {
 func TestReportChargesFailedAttemptsToCompletedResultAndRequiresAcceptanceEvidence(t *testing.T) {
 	model := "gpt-6-luna"
 	stage := func() *d.Stage {
-		return &d.Stage{Provider: &d.Provider{Name: "openai", Model: &model, InputTokens: i(100), OutputTokens: i(20), CachedTokens: i(40)}}
+		return &d.Stage{Provider: &d.Provider{Name: "openai", Model: &model, TokenUsage: d.TokenUsage{InputTokens: i(100), OutputTokens: i(20), CachedTokens: i(40)}}}
 	}
 	attempts := []d.Attempt{{Outcome: "completed", Stages: []*d.Stage{stage()}}, {Outcome: "truncated", Stages: []*d.Stage{stage()}}}
 	report, err := d.Summarize(attempts, []d.Price{{Provider: "openai", Model: model, AsOf: "2026-10-08", InputPerMillion: 2, CachedPerMillion: 1, OutputPerMillion: 10}})

@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+var ErrTruncated = errors.New("truncated")
+
 // Completion decodes the full bounded envelope before any workflow consumes prose.
 // A parsable content object is insufficient: stop and no refusal are required.
 func Completion(ctx context.Context, body io.Reader, limit int64, requiredFields ...string) (string, error) {
@@ -28,7 +30,7 @@ func Completion(ctx context.Context, body io.Reader, limit int64, requiredFields
 	outcome := "malformed_output"
 	observe := func() {
 		input, output, reasoning, cached := aidiagnostics.Usage(envelope.Usage, "prompt_tokens", "completion_tokens")
-		aidiagnostics.Observe(ctx, 200, outcome, SafeModel(envelope.Model), input, output, reasoning, cached)
+		aidiagnostics.Observe(ctx, aidiagnostics.Observation{Status: 200, Completion: outcome, Model: SafeModel(envelope.Model), TokenUsage: aidiagnostics.TokenUsage{InputTokens: input, OutputTokens: output, ReasoningTokens: reasoning, CachedTokens: cached}})
 	}
 	defer observe()
 	if err != nil {
@@ -44,6 +46,7 @@ func Completion(ctx context.Context, body io.Reader, limit int64, requiredFields
 		outcome = "refused"
 	case c.Finish == "length":
 		outcome = "truncated"
+		return "", ErrTruncated
 	case c.Finish != "stop":
 		outcome = "incomplete_output"
 	case strings.TrimSpace(c.Message.Content) == "":

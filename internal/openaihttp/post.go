@@ -28,9 +28,9 @@ func Post(parent context.Context, client *http.Client, timeout time.Duration, ke
 	req.Header.Set("Authorization", "Bearer "+key)
 	resp, err := client.Do(req)
 	if err != nil {
-		aidiagnostics.Observe(ctx, 0, "transport_failure", nil, nil, nil, nil, nil)
+		aidiagnostics.Observe(ctx, aidiagnostics.Observation{Status: 0, Completion: "transport_failure"})
 	} else if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		aidiagnostics.Observe(ctx, resp.StatusCode, "provider_failure", nil, nil, nil, nil, nil)
+		aidiagnostics.Observe(ctx, aidiagnostics.Observation{Status: resp.StatusCode, Completion: "provider_failure"})
 	}
 	return ctx, cancel, resp, err
 }
