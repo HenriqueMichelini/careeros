@@ -321,8 +321,65 @@ const messages = {
       "Nothing is selected. Review the source and each before/after value, then approve the changes you want.",
     "repo.ingestSource": "Source",
     "repo.ingestClarify": "Needs clarification",
-    "repo.ingestNoChange":
-      "No change suggested; this may already be in your Profile.",
+    "repo.ingestCoverage": "Claims reviewed",
+    "repo.ingestInvalidCount": "Invalid claims",
+    "repo.ingestUnplacedCount": "Unplaced changes",
+    "repo.ingestCoverageLimit":
+      "This ledger accounts for returned claims. It does not prove that every fact in the submitted text was discovered.",
+    "repo.ingestCapacityReached":
+      "The 30-claim limit was reached. More information may remain unprocessed; review the original text before submitting another portion.",
+    "repo.ingestSkippedClaim": "Unprocessed claim",
+    "repo.ingestRelatedFact": "Existing Profile fact",
+    "repo.ingestFactReference": "Fact ID",
+    "repo.ingestRevision": "revision",
+    "repo.ingestContextReferences": "Context IDs and revisions",
+    "repo.ingestAcceptedSource": "Accepted excerpt",
+    "repo.ingestNoAcceptedSource":
+      "No accepted excerpt supports this existing fact.",
+    "repo.ingestRelatedStatement": "Related submitted statement",
+    "repo.ingestOutcome.change": "Proposed change",
+    "repo.ingestOutcome.exact_duplicate":
+      "Exact duplicate — already represented",
+    "repo.ingestOutcome.overlap":
+      "Overlapping detail — review all retained information",
+    "repo.ingestOutcome.additional_support":
+      "Additional supporting evidence — review before saving",
+    "repo.ingestOutcome.contradiction":
+      "Contradiction — both statements retained for review",
+    "repo.ingestOutcome.correction":
+      "Correction or supersession candidate — resolution required",
+    "repo.ingestOutcome.clarification": "Needs clarification",
+    "repo.ingestOutcome.unsupported": "Unsupported claim",
+    "repo.ingestOutcome.unresolved": "Processing unresolved",
+    "repo.ingestReason.no_validated_disposition":
+      "No safe comparison outcome was established. An absent change does not mean this fact is already in your Profile.",
+    "repo.ingestReason.source_ambiguity":
+      "The submitted wording needs clarification.",
+    "repo.ingestReason.verified_exact_alias_or_wording":
+      "The wording or a verified exact alias matches an existing fact with compatible meaning and context.",
+    "repo.ingestReason.validated_operation":
+      "Review the source and proposed change before applying.",
+    "repo.ingestReason.identity_not_established":
+      "The employer, role, project or period could not be matched safely. Keep the entries distinct until you clarify.",
+    "repo.ingestReason.invalid_evidence_update":
+      "The additional evidence could not be safely attached to an existing fact.",
+    "repo.ingestReason.no_validated_operation":
+      "No safe change could be produced for this outcome.",
+    "repo.ingestAction.evidence": "Add supporting evidence only",
+    "repo.ingestSkipped.claim_id": "Invalid claim identifier.",
+    "repo.ingestSkipped.duplicate_claim_id": "Repeated claim identifier.",
+    "repo.ingestSkipped.claim_text": "Missing or oversized claim wording.",
+    "repo.ingestSkipped.source_size": "Source excerpt exceeded the limit.",
+    "repo.ingestSkipped.target_count": "Too many destinations.",
+    "repo.ingestSkipped.question_size": "Clarification exceeded the limit.",
+    "repo.ingestSkipped.source":
+      "The source occurrence could not be validated.",
+    "repo.ingestSkipped.meaning_or_support":
+      "Invalid meaning or supporting references.",
+    "repo.ingestSkipped.support_source":
+      "Supporting source or temporal wording could not be validated.",
+    "repo.ingestSkipped.target": "Invalid destination.",
+    "repo.ingestNoChange": "No safe comparison outcome was established.",
     "repo.ingestApproveClaim": "Approve linked changes",
     "repo.ingestRejectClaim": "Reject linked changes",
     "repo.ingestBefore": "Before",
@@ -968,6 +1025,65 @@ const messages = {
       "Nada está selecionado. Confira a fonte e os valores antes/depois e aprove as alterações desejadas.",
     "repo.ingestSource": "Fonte",
     "repo.ingestClarify": "Precisa de esclarecimento",
+    "repo.ingestCoverage": "Afirmações revisadas",
+    "repo.ingestInvalidCount": "Afirmações inválidas",
+    "repo.ingestUnplacedCount": "Alterações não alocadas",
+    "repo.ingestCoverageLimit":
+      "Este registro contabiliza as afirmações retornadas. Ele não comprova que todos os fatos do texto enviado foram descobertos.",
+    "repo.ingestCapacityReached":
+      "O limite de 30 afirmações foi atingido. Pode haver informações não processadas; revise o texto original antes de enviar outra parte.",
+    "repo.ingestSkippedClaim": "Afirmação não processada",
+    "repo.ingestRelatedFact": "Fato existente no Perfil",
+    "repo.ingestFactReference": "ID do fato",
+    "repo.ingestRevision": "revisão",
+    "repo.ingestContextReferences": "IDs e revisões do contexto",
+    "repo.ingestAcceptedSource": "Trecho aceito",
+    "repo.ingestNoAcceptedSource":
+      "Nenhum trecho aceito dá suporte a este fato existente.",
+    "repo.ingestRelatedStatement": "Afirmação enviada relacionada",
+    "repo.ingestOutcome.change": "Alteração proposta",
+    "repo.ingestOutcome.exact_duplicate": "Duplicata exata — já representada",
+    "repo.ingestOutcome.overlap":
+      "Detalhe sobreposto — revise todas as informações preservadas",
+    "repo.ingestOutcome.additional_support":
+      "Evidência adicional — revise antes de salvar",
+    "repo.ingestOutcome.contradiction":
+      "Contradição — ambas as afirmações preservadas para revisão",
+    "repo.ingestOutcome.correction":
+      "Candidata a correção ou substituição — requer resolução",
+    "repo.ingestOutcome.clarification": "Precisa de esclarecimento",
+    "repo.ingestOutcome.unsupported": "Afirmação sem suporte",
+    "repo.ingestOutcome.unresolved": "Processamento não resolvido",
+    "repo.ingestReason.no_validated_disposition":
+      "Não foi possível estabelecer uma comparação segura. A ausência de alteração não significa que este fato já esteja no seu Perfil.",
+    "repo.ingestReason.source_ambiguity":
+      "O texto enviado precisa de esclarecimento.",
+    "repo.ingestReason.verified_exact_alias_or_wording":
+      "O texto ou um alias exato verificado corresponde a um fato existente com significado e contexto compatíveis.",
+    "repo.ingestReason.validated_operation":
+      "Revise a fonte e a alteração proposta antes de aplicar.",
+    "repo.ingestReason.identity_not_established":
+      "Não foi possível identificar com segurança a empresa, função, projeto ou período. Mantenha as entradas separadas até esclarecer.",
+    "repo.ingestReason.invalid_evidence_update":
+      "Não foi possível vincular com segurança a evidência adicional a um fato existente.",
+    "repo.ingestReason.no_validated_operation":
+      "Não foi possível produzir uma alteração segura para este resultado.",
+    "repo.ingestAction.evidence": "Adicionar apenas evidência de suporte",
+    "repo.ingestSkipped.claim_id": "Identificador da afirmação inválido.",
+    "repo.ingestSkipped.duplicate_claim_id":
+      "Identificador da afirmação repetido.",
+    "repo.ingestSkipped.claim_text":
+      "Texto da afirmação ausente ou muito longo.",
+    "repo.ingestSkipped.source_size": "Trecho de origem excedeu o limite.",
+    "repo.ingestSkipped.target_count": "Destinos demais.",
+    "repo.ingestSkipped.question_size": "Esclarecimento excedeu o limite.",
+    "repo.ingestSkipped.source":
+      "Não foi possível validar a ocorrência de origem.",
+    "repo.ingestSkipped.meaning_or_support":
+      "Significado ou referências de suporte inválidos.",
+    "repo.ingestSkipped.support_source":
+      "Não foi possível validar o suporte ou o texto temporal.",
+    "repo.ingestSkipped.target": "Destino inválido.",
     "repo.ingestNoChange":
       "Nenhuma alteração sugerida; talvez já esteja no Perfil.",
     "repo.ingestApproveClaim": "Aprovar alterações ligadas",

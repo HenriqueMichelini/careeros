@@ -1,3 +1,4 @@
+import {withIngestionLedger} from "./ingestion-fixtures.mjs"
 import { savedProfileExpression } from "./profile-browser-storage.mjs"
 import { keyboardFlow } from "./keyboard-flow.mjs"
 // Browser regression for raw professional-information review and explicit apply.
@@ -312,6 +313,7 @@ try {
     claimId: op.target,
     entryId: op.entryId ? "new:" + op.target : "",
   }))
+  Object.assign(fixture,withIngestionLedger(fixture))
   if (!process.env.PROFILE_RECOVERY_ONLY) {
     // Rephrasing is a backend decision and requires changed text, with no Profile write.
     await evaluate(
@@ -426,6 +428,7 @@ try {
           unresolvedClaimIds: [],
           unplacedOperationCount: 0,
         }
+        Object.assign(proposal,withIngestionLedger(proposal))
         for (const outcome of [
           { kind: "reject_attack" },
           { kind: "request_rephrasing" },
@@ -509,6 +512,7 @@ try {
           operations: [],
           unresolvedClaimIds: ["c1"],
         }
+        Object.assign(omitted,withIngestionLedger(omitted))
         await fill(text + " omitted")
         await evaluate(
           `window.fetch=async()=>new Response(${JSON.stringify(JSON.stringify(omitted))},{status:200})`,
@@ -529,6 +533,49 @@ try {
           locale === "en" ? /may already be/ : /talvez já esteja/,
         )
         assert.equal(await saved(), initial)
+        // Every ledger disposition is visible, including exact fact IDs and
+        // competing statements; inspecting or reviewing never writes Profile.
+        const ledgerText = "Figma\nJava\nI do not use Figma\nWhich period?\nUnsupported qualification\nUnresolved detail"
+        const canonical = JSON.parse(await evaluate("localStorage.getItem('careeros_profile_v2')"))
+        const toolFact = canonical.facts.find(f => f.field === "tools" && f.owner.id === canonical.id)
+        const toolRef = {profileId:canonical.id,id:toolFact.id,revision:toolFact.revision}
+        const ledgerClaims = [
+          {id:"exact",source:"Figma",text:"Figma",targets:["tools"],question:""},
+          {id:"support",source:"Figma",text:"Figma with new support",targets:["tools"],question:""},
+          {id:"overlap",source:"Java",text:"Distinct added detail",targets:["tools"],question:""},
+          {id:"change",source:"Java",text:"Java",targets:["skills"],question:""},
+          {id:"contradiction",source:"I do not use Figma",text:"Does not use Figma",targets:["tools"],question:""},
+          {id:"correction",source:"I do not use Figma",text:"Correction candidate",targets:["tools"],question:""},
+          {id:"clarification",source:"Which period?",text:"Period unclear",targets:[],question:"Which period?"},
+          {id:"unsupported",source:"Unsupported qualification",text:"Unsupported qualification",targets:[],question:""},
+          {id:"unresolved",source:"Unresolved detail",text:"Unresolved detail",targets:[],question:""},
+        ]
+        const ledger = {
+          decision:proposal.decision,claims:ledgerClaims,
+          operations:[
+            {claimId:"support",target:"tools",entryId:"",field:"tools",action:"evidence",value:"Figma",finding:"in_place"},
+            {claimId:"overlap",target:"tools",entryId:"",field:"tools",action:"add",value:"Java",finding:"overlap"},
+            {claimId:"change",target:"skills",entryId:"",field:"skills",action:"add",value:"Java",finding:"addition"},
+          ],
+          outcomes:ledgerClaims.map((c,i)=>({claimId:c.id,kind:["exact_duplicate","additional_support","overlap","change","contradiction","correction","clarification","unsupported","unresolved"][i],reason:"validated_operation",relatedFacts:["exact","support","overlap","contradiction","correction"].includes(c.id)?[toolRef]:[],relatedClaimIds:["contradiction","correction"].includes(c.id)?["exact"]:[],operationIndexes:i>=1&&i<=3?[i-1]:[]})),
+          unverifiedClaimCount:1,unresolvedClaimIds:["unresolved"],unplacedOperationCount:0,
+          skippedClaims:[{index:10,reason:"source"}],coverage:{validClaims:9,invalidClaims:1,discoveryComplete:false,capacity:"within_limit"},
+        }
+        await fill(ledgerText)
+        await evaluate(`window.fetch=async()=>new Response(${JSON.stringify(JSON.stringify(ledger))},{status:200})`)
+        await evaluate(`${byText(review)}.click()`)
+        await until("document.querySelectorAll('article').length===9")
+        const ledgerScreenText = await evaluate("document.body.innerText")
+        for (const label of locale === "en" ? ["Exact duplicate", "Additional supporting evidence", "Overlapping detail", "Proposed change", "Contradiction", "Correction or supersession", "Needs clarification", "Unsupported claim", "Processing unresolved", "Unprocessed claim 10"] : ["Duplicata exata", "Evidência adicional", "Detalhe sobreposto", "Alteração proposta", "Contradição", "Candidata a correção", "Precisa de esclarecimento", "Afirmação sem suporte", "Processamento não resolvido", "Afirmação não processada 10"]) assert.ok(ledgerScreenText.includes(label),label)
+        await evaluate("document.querySelector('article details summary').focus()")
+        await call("Input.dispatchKeyEvent",{type:"keyDown",key:"Enter",code:"Enter",windowsVirtualKeyCode:13,text:"\r"})
+        await call("Input.dispatchKeyEvent",{type:"keyUp",key:"Enter",code:"Enter",windowsVirtualKeyCode:13})
+        assert.ok(await evaluate("document.querySelector('article details').open"))
+        assert.ok((await evaluate("document.querySelector('article').innerText")).includes(toolFact.id))
+        assert.equal(await saved(), initial)
+        assert.ok(await evaluate("document.documentElement.scrollWidth<=innerWidth"))
+        const ledgerScreen = await call("Page.captureScreenshot",{format:"png",captureBeyondViewport:true})
+        writeFileSync(join(work,`claim-ledger-${locale}-${width}.png`),Buffer.from(ledgerScreen.data,"base64"))
         // Real Tab/Enter and text input exercise revision and deliberate retry.
         await keyboardFill(quoted)
         await evaluate(

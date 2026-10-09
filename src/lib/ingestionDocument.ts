@@ -40,6 +40,7 @@ export function applyIngestionDocument(
     },
     input,
     view,
+    doc,
   )
   const approved = result.operations.filter((o) => o.approved)
   for (const op of approved) {
@@ -101,6 +102,78 @@ export function applyIngestionDocument(
     const last = ops.at(-1)!
     const fact = next.facts.find((f) => f.owner.id + "/" + f.field === key)!
     const old = doc.facts.find((f) => f.id === fact.id)
+    if (ops.some((op) => op.action === "evidence")) {
+      if (
+        !old ||
+        ops.some(
+          (op) =>
+            op.action !== "evidence" ||
+            op.value !== old.value ||
+            (op.proposedValue !== undefined && op.proposedValue !== op.value),
+        )
+      )
+        throw new IngestionError("invalid_output")
+      fact.revision = old.revision + 1
+      for (const link of next.links.filter(
+        (l) => l.from.id === fact.id && l.state === "active",
+      )) {
+        link.state = "invalidated"
+        next.links.push({
+          ...structuredClone(link),
+          id: crypto.randomUUID(),
+          state: "active",
+          from: ref(fact.id, fact.revision),
+        })
+      }
+      const retained = new Set(
+        next.links
+          .filter(
+            (l) =>
+              l.kind === "supports" &&
+              l.state === "active" &&
+              l.from.id === fact.id,
+          )
+          .flatMap((l) =>
+            next.evidence.filter((e) => e.id === l.to.id).map((e) => e.excerpt),
+          ),
+      )
+      for (const op of ops) {
+        const claim = result.claims.find((c) => c.id === op.claimId)!
+        for (const excerpt of [
+          claim.source,
+          ...(claim.supportingSources ?? []).map((s) => s.source),
+        ]) {
+          if (retained.has(excerpt)) continue
+          retained.add(excerpt)
+          const evidence = {
+            id: crypto.randomUUID(),
+            revision: 1,
+            excerpt,
+            origin: "professional_information",
+            approval: "approved" as const,
+          }
+          next.evidence.push(evidence)
+          next.links.push({
+            id: crypto.randomUUID(),
+            kind: "supports",
+            state: "active",
+            from: ref(fact.id, fact.revision),
+            to: ref(evidence.id, 1),
+          })
+        }
+      }
+      fact.approval = "approved"
+      if (
+        old.support === "supported" ||
+        ops.some((op) =>
+          result.claims
+            .find((c) => c.id === op.claimId)
+            ?.source.includes(String(fact.value)),
+        )
+      )
+        fact.support = "supported"
+      continue
+    }
     if (old && JSON.stringify(old.value) === JSON.stringify(fact.value))
       continue
     // Every edit is user-authored; it cannot inherit an AI support claim.
@@ -145,8 +218,14 @@ export function applyIngestionDocument(
     // Supporting identity claims supply context, not the narrative's semantic
     // qualifiers. Mixed narrative qualifiers stay unknown rather than forcing
     // one assertion onto the entire composite field.
-    const meanings = relevant.map(op => result.claims.find(c => c.id === op.claimId)?.meaning)
-    const meaning = meanings.every(m => JSON.stringify(m) === JSON.stringify(meanings[0])) ? meanings[0] : undefined
+    const meanings = relevant.map(
+      (op) => result.claims.find((c) => c.id === op.claimId)?.meaning,
+    )
+    const meaning = meanings.every(
+      (m) => JSON.stringify(m) === JSON.stringify(meanings[0]),
+    )
+      ? meanings[0]
+      : undefined
     const appending =
       relevant.every((op) => op.action === "add") && !!old?.value
     fact.kind = appending ? "legacy_block" : "statement"
@@ -186,11 +265,36 @@ export function applyIngestionDocument(
         Object.assign(fact, structuredClone(meaning))
     }
     const owner = next.entities.find((e) => e.id === fact.owner.id)
-    const identityFields = owner?.kind === "experience" ? ["company","title","startDate","endDate","current"] : owner?.kind === "projects" ? ["name"] : []
-    const identityUnchanged = identityFields.every(field => JSON.stringify(doc.facts.find(f => f.owner.id === owner?.id && f.field === field)?.value) === JSON.stringify(next.facts.find(f => f.owner.id === owner?.id && f.field === field)?.value))
-    const contextUnchanged = (old?.context ?? []).every(c => c.id === owner?.id || next.entities.some(e => e.id === c.id && e.revision === c.revision))
-    const retainsOld = !!old?.value && retainsWording(String(fact.value),String(old.value))
-    const preserveOldSupport = appending && retainsOld && old?.support === "supported" && identityUnchanged && contextUnchanged
+    const identityFields =
+      owner?.kind === "experience"
+        ? ["company", "title", "startDate", "endDate", "current"]
+        : owner?.kind === "projects"
+          ? ["name"]
+          : []
+    const identityUnchanged = identityFields.every(
+      (field) =>
+        JSON.stringify(
+          doc.facts.find((f) => f.owner.id === owner?.id && f.field === field)
+            ?.value,
+        ) ===
+        JSON.stringify(
+          next.facts.find((f) => f.owner.id === owner?.id && f.field === field)
+            ?.value,
+        ),
+    )
+    const contextUnchanged = (old?.context ?? []).every(
+      (c) =>
+        c.id === owner?.id ||
+        next.entities.some((e) => e.id === c.id && e.revision === c.revision),
+    )
+    const retainsOld =
+      !!old?.value && retainsWording(String(fact.value), String(old.value))
+    const preserveOldSupport =
+      appending &&
+      retainsOld &&
+      old?.support === "supported" &&
+      identityUnchanged &&
+      contextUnchanged
     if (old?.value && preserveOldSupport) {
       for (const link of doc.links.filter(
         (l) =>
@@ -242,8 +346,14 @@ export function applyIngestionDocument(
       fact.context = [ref(owner.id, owner.revision)]
       const kinds =
         owner.kind === "experience"
-          ? next.facts.some(f => f.owner.id === owner.id && ["startDate","endDate","current"].includes(f.field) && !!f.value)
-            ? ["role_context", "period_context"] as const : ["role_context"] as const
+          ? next.facts.some(
+              (f) =>
+                f.owner.id === owner.id &&
+                ["startDate", "endDate", "current"].includes(f.field) &&
+                !!f.value,
+            )
+            ? ["role_context", "period_context"] as const
+            : ["role_context"] as const
           : ["project_context"] as const
       for (const kind of kinds)
         next.links.push({
@@ -301,9 +411,12 @@ export function ingestionNormalization(
   return { observed: source, canonical: null, policy: proposed.policy }
 }
 
-function retainsWording(value:string, prior:string):boolean {
+function retainsWording(value: string, prior: string): boolean {
   const at = value.indexOf(prior)
   if (at < 0) return false
-  const adjacent = [value.slice(0,at).slice(-1),value.slice(at+prior.length,at+prior.length+1)]
-  return adjacent.every(c => !/[\p{L}\p{N}_+#]/u.test(c))
+  const adjacent = [
+    value.slice(0, at).slice(-1),
+    value.slice(at + prior.length, at + prior.length + 1),
+  ]
+  return adjacent.every((c) => !/[\p{L}\p{N}_+#]/u.test(c))
 }
