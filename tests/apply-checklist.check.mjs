@@ -440,6 +440,7 @@ try {
           "outage",
           "invalid_output",
           "rate_limit",
+          "capacity",
         ]) {
           await generate()
           if (step === "draft") await respond({ gaps: [] })
@@ -478,6 +479,26 @@ try {
       await until(
         "document.querySelector('[role=alert]') !== null",
       )
+      // Exact originals invalidate work even when shared preparation would match.
+      const rawPosting = "# Role\nBuild  Java APIs.\nAWS required."
+      await fill(rawPosting)
+      await generate()
+      assert.equal(await evaluate("JSON.parse(window.__pending[0].options.body).jobPosting"), rawPosting)
+      await fill("# Role\nBuild Java APIs.\nAWS required.")
+      await respond({ gaps: [] })
+      assert.equal(await evaluate("window.__pending.length"), 0, "format-equivalent changed original must not draft")
+      assert.equal(await evaluate("document.querySelector('main textarea').value"), "# Role\nBuild Java APIs.\nAWS required.")
+      // Failure preserves exact textarea spacing and offers an actionable localized correction.
+      await fill(rawPosting)
+      await generate()
+      await respond({ error: "capacity" }, 502)
+      assert.ok((await feedback()).includes(locale === "en" ? "Try a smaller portion" : "Tente um trecho menor"))
+      assert.equal(await evaluate("document.querySelector('main textarea').value"), rawPosting)
+      assert.equal(await evaluate("localStorage.getItem('careeros_repo')"), unchangedProfile)
+      await generate()
+      await respond({ gaps: [{ kind: "skill", requirement: "AWS", details: "AWS required." }] })
+      await evaluate("document.querySelector('[role=dialog] button').click()")
+      assert.equal(await evaluate("document.querySelector('main textarea').value"), rawPosting, "cancellation preserves exact original")
       await generate()
       await fill(
         "Edited during request: Product lead with research and strategy experience needed for a service team.",

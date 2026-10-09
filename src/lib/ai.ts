@@ -125,7 +125,7 @@ export async function generateMaterials(
   }
   const payload = await response.json().catch(() => null) as { error?: unknown; coverLetter?: unknown } & Partial<Omit<GeneratedMaterials, 'coverLetter'>> | null
   checkJobDecision(payload)
-  const known = new Set(['input', 'key', 'rate_limit', 'outage', 'timeout', 'invalid_output'])
+  const known = new Set(['input', 'key', 'rate_limit', 'outage', 'timeout', 'invalid_output', 'capacity'])
   if (!response.ok) throw new ApplicationDraftError(typeof payload?.error === 'string' && known.has(payload.error) ? payload.error : 'outage')
   if (!payload || ['jobSummary','resume','applicationAnswers'].some((key) => typeof payload[key as keyof GeneratedMaterials] !== 'string' || !(payload[key as keyof GeneratedMaterials] as string).trim())) throw new ApplicationDraftError('invalid_output')
   if (['jobTitle', 'company'].some(key => {
@@ -159,7 +159,7 @@ export async function findProfileGaps(
   const payload = await response.json().catch(() => null) as { error?: unknown; gaps?: unknown } | null
   checkJobDecision(payload)
   if (!response.ok) {
-    const known = new Set(['input', 'key', 'rate_limit', 'outage', 'timeout', 'invalid_output'])
+    const known = new Set(['input', 'key', 'rate_limit', 'outage', 'timeout', 'invalid_output', 'capacity'])
     throw new QualificationGapsError(typeof payload?.error === 'string' && known.has(payload.error) ? payload.error : 'outage')
   }
   if (!payload || !Array.isArray(payload.gaps) || payload.gaps.length > 5 || payload.gaps.some((gap) => {

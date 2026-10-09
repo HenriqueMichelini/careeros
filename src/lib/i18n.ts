@@ -107,6 +107,7 @@ const messages = {
     "home.viewPreviousResults": "View Previous Results →",
     "home.generationFailed":
       "Generation failed. Check your API key and try again.",
+    "home.jobErrorCapacity": "This job posting exceeds the preparation capacity. Try a smaller portion and submit again. Your text and saved Profile are unchanged.",
     "home.gapErrorInput": "The profile or job posting is too large or invalid. Review it and try again.",
     "home.gapErrorKey": "The OpenAI API key is missing or invalid. Update your key and try again.",
     "home.gapErrorRateLimit": "OpenAI is receiving too many requests. Wait a moment before trying again.",
@@ -602,6 +603,7 @@ const messages = {
     "home.viewPreviousResults": "Ver resultados anteriores →",
     "home.generationFailed":
       "Falha ao gerar. Verifique sua chave API e tente novamente.",
+    "home.jobErrorCapacity": "Esta vaga excede a capacidade de preparação. Tente um trecho menor e envie novamente. Seu texto e Perfil salvo permanecem inalterados.",
     "home.gapErrorInput": "O perfil ou a vaga é muito grande ou contém dados inválidos. Revise e tente novamente.",
     "home.gapErrorKey": "A chave da API da OpenAI está ausente ou é inválida. Atualize a chave e tente novamente.",
     "home.gapErrorRateLimit": "A OpenAI está recebendo muitas solicitações. Aguarde um momento antes de tentar novamente.",

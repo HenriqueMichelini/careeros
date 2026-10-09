@@ -23,6 +23,7 @@ const gapErrorTranslationKeys = {
   outage: "home.gapErrorOutage",
   timeout: "home.gapErrorTimeout",
   invalid_output: "home.gapErrorInvalidOutput",
+  capacity: "home.jobErrorCapacity",
 } as const
 
 const draftErrorTranslationKeys = {
@@ -32,6 +33,7 @@ const draftErrorTranslationKeys = {
   outage: "home.draftErrorOutage",
   timeout: "home.draftErrorTimeout",
   invalid_output: "home.draftErrorInvalidOutput",
+  capacity: "home.jobErrorCapacity",
 } as const
 
 type StepState = "pending" | "ready" | "processing" | "confirmation" | "complete" | "failed"
