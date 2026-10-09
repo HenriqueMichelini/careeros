@@ -176,6 +176,8 @@ try {
     "document.readyState === 'complete' && !!document.querySelector('header button')",
   )
   const openProfile = async () => {
+    await pause(150)
+    await until("!!document.querySelector('header button:last-child')")
     await evaluate("document.querySelector('header button:last-child').click()")
     await until("document.querySelectorAll('header nav button').length === 4")
     await evaluate("document.querySelectorAll('header nav button')[1].click()")
@@ -430,13 +432,65 @@ try {
     const reviewAi=locale==='en'?'Review with AI':'Revisar com IA'
     await evaluate(`${byText(skills)}.click()`)
     assert.ok(await evaluate("document.querySelector('aside').textContent").then(text => text.includes((locale==='en'?'Reviews only ':'Revisa apenas ')+skills)))
-    const beforeReview=JSON.parse(await saved())
-    await evaluate(`window.fetch=async(url,options)=>{if(url!='/api/profile/review')throw new Error('Unexpected request');const body=JSON.parse(options.body);window.__reviewSection=body.changedSection;return new Response(JSON.stringify({updatedRepository:{...body.repository,skills:'Reviewed skills',careerGoals:'Unrequested model edit'},summary:'Reviewed skills'}),{status:200,headers:{'Content-Type':'application/json'}})}`)
-    await evaluate(`${byText(reviewAi)}.click()`)
-    await until(`(async () => JSON.parse(await ${savedProfileExpression}).skills === 'Reviewed skills')()` )
-    assert.equal(await evaluate('window.__reviewSection'),'skills')
-    assert.equal(JSON.parse(await saved()).careerGoals,beforeReview.careerGoals)
-    const education=locale==='en'?'Education':'Formação'
+    const beforeReview = JSON.parse(await saved())
+          const acceptSection =
+            locale === "en"
+              ? "Accept and save changes"
+              : "Aceitar e salvar alterações"
+          const rejectSection =
+            locale === "en" ? "Reject proposal" : "Rejeitar proposta"
+          const sectionLabel =
+            locale === "en"
+              ? "Review Profile Proposal"
+              : "Revisar proposta do Perfil"
+          await evaluate(
+            `window.fetch=async(url,options)=>{if(url!='/api/profile/review')throw new Error('Unexpected request');const body=JSON.parse(options.body);window.__reviewBody=body;const {reviewableFact}=await import('/src/lib/sectionReview.ts');return new Response(JSON.stringify({profileId:body.document.id,revision:body.document.revision,section:body.section,summary:'Clearer wording',patches:body.document.facts.filter(f=>reviewableFact(body.document,body.section,f)).map(f=>({factId:f.id,revision:f.revision,wording:f.field==='skills'?'Reviewed skills':String(f.value),supporting:[{id:f.id,revision:f.revision}]}))}),{status:200,headers:{'Content-Type':'application/json'}})}`,
+          )
+          await evaluate(`${byText(reviewAi)}.click()`)
+          await until(
+            `!!document.querySelector('section[aria-label='+${JSON.stringify(JSON.stringify(sectionLabel))}+']')`,
+          )
+          assert.deepEqual(
+            JSON.parse(await saved()),
+            beforeReview,
+            "generation/rendering must not save",
+          )
+          assert.equal(await evaluate("window.__reviewBody.section"), "skills")
+          assert.equal(
+            await evaluate(
+              'JSON.stringify(window.__reviewBody).includes("ada@example.test")',
+            ),
+            false,
+          )
+          assert.equal(
+            await evaluate(
+              'JSON.stringify(window.__reviewBody).includes("careerGoals")',
+            ),
+            false,
+          )
+          await evaluate(`${byText(rejectSection)}.click()`)
+          assert.deepEqual(
+            JSON.parse(await saved()),
+            beforeReview,
+            "rejection must not save",
+          )
+          await evaluate(`${byText(reviewAi)}.click()`)
+          await until(`${byText(acceptSection)} !== undefined`)
+          await evaluate(`${byText(acceptSection)}.click()`)
+          await until(
+            `(async () => JSON.parse(await ${savedProfileExpression}).skills === 'Reviewed skills')()`,
+          )
+          assert.equal(
+            JSON.parse(await saved()).careerGoals,
+            beforeReview.careerGoals,
+          )
+          assert.ok(
+            await evaluate(
+              "document.documentElement.scrollWidth <= innerWidth",
+            ),
+            "proposal horizontal overflow",
+          )
+          const education=locale==='en'?'Education':'Formação'
     await evaluate(`${byText(education)}.click()`)
     assert.equal(await evaluate(`${byText(reviewAi)} !== undefined`),false)
     console.log(`PASS ingestion ${locale} ${width}px ${populated?'populated':'empty'}`)

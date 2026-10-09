@@ -9,7 +9,7 @@ writeFileSync(
   join(temp, "contract.mjs"),
   `export default ${readFileSync(new URL("../internal/profiledocument/contract.json", import.meta.url), "utf8")}`,
 )
-for (const name of ["profileDocument", "profileStorage"]) {
+for (const name of ["profileDocument", "profileStorage", "sectionReview"]) {
   const source = readFileSync(
     new URL(`../src/lib/${name}.ts`, import.meta.url),
     "utf8",
@@ -37,6 +37,8 @@ const {
   replaceProfileView,
   editProfile,
 } = await import(join(temp, "profileDocument.mjs"))
+const { sectionReviewRequest, validateSectionProposal, applySectionProposal } =
+  await import(join(temp, "sectionReview.mjs"))
 const legacy = {
   skills: "JS? No Java; hope to learn Go",
   experience: [
@@ -774,4 +776,222 @@ test("explicit inline context removal retains other typed links and their owners
     project.id,
   )
   assert.equal(next.facts.find((fact) => fact.id === f.id).revision, 3)
+})
+
+test("section proposals remain transient, scoped and revision-bound until explicitly applied", () => {
+  const doc = migrateProfile(
+    { ...legacy, careerGoals: "Unrelated goal" },
+    "review-profile",
+  )
+  const request = sectionReviewRequest(doc, "skills", "en")
+  assert.equal(JSON.stringify(request).includes("Unrelated goal"), false)
+  const fact = request.document.facts.find((f) => f.field === "skills")
+  const proposal = {
+    profileId: doc.id,
+    revision: doc.revision,
+    section: "skills",
+    summary: "Clearer wording",
+    patches: [
+      {
+        factId: fact.id,
+        revision: fact.revision,
+        wording: "JS? No Java; I hope to learn Go",
+        supporting: [{ id: fact.id, revision: fact.revision }],
+      },
+    ],
+  }
+  assert.equal(validateSectionProposal(request, proposal), true)
+  assert.equal(
+    doc.facts.find((f) => f.id === fact.id).value,
+    "JS? No Java; hope to learn Go",
+  )
+  const next = applySectionProposal(doc, request, proposal, {}, [])
+  assert.equal(profileView(next).skills, "JS? No Java; I hope to learn Go")
+  assert.equal(profileView(next).careerGoals, "Unrelated goal")
+  assert.throws(() =>
+    applySectionProposal(
+      editProfile(doc, {
+        type: "fact",
+        id: fact.id,
+        patch: { certainty: "uncertain" },
+      }),
+      request,
+      proposal,
+      {},
+      [],
+    ),
+  )
+})
+
+test("section proposal validation rejects invalid references, protected metadata and silent fact loss", () => {
+  const doc = migrateProfile({ skills: "Go", tools: "Docker" }, "p")
+  const request = sectionReviewRequest(doc, "skills", "pt-BR")
+  const proposal = {
+    profileId: "p",
+    revision: 1,
+    section: "skills",
+    summary: "Revisado",
+    patches: request.document.facts.map((f) => ({
+      factId: f.id,
+      revision: f.revision,
+      wording: String(f.value),
+      supporting: [{ id: f.id, revision: f.revision }],
+    })),
+  }
+  assert.equal(validateSectionProposal(request, proposal), true)
+  for (const change of [
+    (p) => p.patches.pop(),
+    (p) => p.patches[0].supporting[0].revision++,
+    (p) => (p.patches[0].owner = "invented"),
+    (p) => (p.patches[0].supporting = [p.patches[1].supporting[0]]),
+    (p) => p.patches.push(p.patches[0]),
+  ]) {
+    const bad = structuredClone(proposal)
+    change(bad)
+    assert.equal(validateSectionProposal(request, bad), false)
+  }
+})
+test("acceptance preserves excerpt support, but edited meaning becomes user-authored and explicit removal retains other facts", () => {
+  const doc = migrateProfile({ skills: "Go", tools: "Docker" }, "p")
+  const fact = doc.facts.find((f) => f.field === "skills")
+  fact.approval = "approved"
+  fact.support = "supported"
+  doc.evidence.push({
+    id: "excerpt",
+    revision: 1,
+    excerpt: "Go",
+    origin: "Accepted note",
+    approval: "approved",
+  })
+  doc.links.push({
+    id: "support",
+    kind: "supports",
+    from: { profileId: "p", id: fact.id, revision: 1 },
+    to: { profileId: "p", id: "excerpt", revision: 1 },
+    state: "active",
+  })
+  const request = sectionReviewRequest(doc, "skills", "en")
+  const proposal = {
+    profileId: "p",
+    revision: 1,
+    section: "skills",
+    summary: "Clearer",
+    patches: request.document.facts.map((f) => ({
+      factId: f.id,
+      revision: 1,
+      wording: f.field === "skills" ? "I use Go" : "Docker",
+      supporting: [{ id: f.id, revision: 1 }],
+    })),
+  }
+  const accepted = applySectionProposal(doc, request, proposal, {}, [])
+  assert.equal(
+    accepted.facts.find((f) => f.id === fact.id).support,
+    "supported",
+  )
+  assert.equal(accepted.links.find((l) => l.id === "support").from.revision, 2)
+  const edited = applySectionProposal(
+    doc,
+    request,
+    proposal,
+    { [fact.id]: "I use Rust" },
+    [],
+  )
+  assert.deepEqual(edited.facts.find((f) => f.id === fact.id).origin, {
+    kind: "manual_edit",
+    original: "user",
+  })
+  assert.equal(
+    edited.facts.find((f) => f.id === fact.id).support,
+    "invalidated",
+  )
+  assert.equal(edited.evidence[0].excerpt, "Go")
+  const removed = applySectionProposal(doc, request, proposal, {}, [fact.id])
+  assert.equal(profileView(removed).skills, "")
+  assert.equal(profileView(removed).tools, "Docker")
+})
+
+test("overview and unsupported subsections cannot create a section rewrite request", () => {
+  const doc = migrateProfile(legacy, "p")
+  for (const section of [
+    "profile",
+    "overview",
+    "education",
+    "certifications",
+    "languages",
+  ])
+    assert.throws(() => sectionReviewRequest(doc, section, "en"))
+})
+test("correcting a source fact invalidates a composite rewrite that shares its accepted excerpt", () => {
+  const doc = migrateProfile({ skills: "Go", tools: "Docker" }, "p")
+  const skill = doc.facts.find((f) => f.field === "skills"),
+    tool = doc.facts.find((f) => f.field === "tools")
+  for (const f of [skill, tool]) {
+    f.approval = "approved"
+    f.support = "supported"
+    doc.evidence.push({
+      id: f.id + "-e",
+      revision: 1,
+      excerpt: String(f.value),
+      origin: "Accepted note",
+      approval: "approved",
+    })
+    doc.links.push({
+      id: f.id + "-l",
+      kind: "supports",
+      state: "active",
+      from: { profileId: "p", id: f.id, revision: 1 },
+      to: { profileId: "p", id: f.id + "-e", revision: 1 },
+    })
+  }
+  const request = sectionReviewRequest(doc, "skills", "en")
+  const proposal = {
+    profileId: "p",
+    revision: 1,
+    section: "skills",
+    summary: "Combined context",
+    patches: [
+      {
+        factId: skill.id,
+        revision: 1,
+        wording: "Go with Docker",
+        supporting: [
+          { id: skill.id, revision: 1 },
+          { id: tool.id, revision: 1 },
+        ],
+      },
+      {
+        factId: tool.id,
+        revision: 1,
+        wording: "Docker",
+        supporting: [{ id: tool.id, revision: 1 }],
+      },
+    ],
+  }
+  const accepted = applySectionProposal(doc, request, proposal, {}, [])
+  const corrected = editProfile(accepted, {
+    type: "fact",
+    id: tool.id,
+    patch: { value: "Podman" },
+  })
+  assert.equal(
+    corrected.facts.find((f) => f.id === skill.id).support,
+    "invalidated",
+  )
+  assert.equal(corrected.evidence.length, 2)
+})
+test("editing a composite source in the same acceptance never reactivates invalid support, regardless of patch order", () => {
+ const doc=migrateProfile({skills:"Go",tools:"Docker"},"p")
+ const skill=doc.facts.find(f=>f.field==="skills"),tool=doc.facts.find(f=>f.field==="tools")
+ for(const f of [skill,tool]){f.approval="approved";f.support="supported";doc.evidence.push({id:f.id+"-e",revision:1,excerpt:String(f.value),origin:"Accepted note",approval:"approved"});doc.links.push({id:f.id+"-l",kind:"supports",state:"active",from:{profileId:"p",id:f.id,revision:1},to:{profileId:"p",id:f.id+"-e",revision:1}})}
+ const request=sectionReviewRequest(doc,"skills","en")
+ const proposal={profileId:"p",revision:1,section:"skills",summary:"Combined",patches:[{factId:tool.id,revision:1,wording:"Docker",supporting:[{id:tool.id,revision:1}]},{factId:skill.id,revision:1,wording:"Go with Docker",supporting:[{id:skill.id,revision:1},{id:tool.id,revision:1}]}]}
+ const accepted=applySectionProposal(doc,request,proposal,{[tool.id]:"Podman"},[])
+ assert.equal(accepted.facts.find(f=>f.id===skill.id).support,"invalidated")
+})
+test("deliberate removal accepts an emptied wording field and malformed supporting references fail validation safely", () => {
+ const doc=migrateProfile({skills:"Go"},"p"),request=sectionReviewRequest(doc,"skills","en"),fact=request.document.facts[0]
+ const proposal={profileId:"p",revision:1,section:"skills",summary:"Clearer",patches:[{factId:fact.id,revision:1,wording:"I use Go",supporting:[{id:fact.id,revision:1}]}]}
+ assert.equal(profileView(applySectionProposal(doc,request,proposal,{[fact.id]:""},[fact.id])).skills,"")
+ const malformed=structuredClone(proposal);malformed.patches[0].supporting=[null]
+ assert.equal(validateSectionProposal(request,malformed),false)
 })

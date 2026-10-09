@@ -1,0 +1,1382 @@
+{
+  "version": "section-rewrite-v1",
+  "cases": [
+    {
+      "id": "en-grounded",
+      "request": {
+        "document": {
+          "version": 2,
+          "id": "p",
+          "revision": 1,
+          "normalizationPolicy": "exact-alias-v1",
+          "entities": [],
+          "facts": [
+            {
+              "id": "f",
+              "revision": 1,
+              "owner": {
+                "profileId": "p",
+                "id": "p",
+                "revision": 1
+              },
+              "context": [],
+              "field": "skills",
+              "order": 0,
+              "kind": "legacy_block",
+              "value": "I use Go",
+              "assertion": "unknown",
+              "intent": "unknown",
+              "certainty": "unknown",
+              "temporal": {
+                "wording": "",
+                "precision": "unknown"
+              },
+              "normalization": {
+                "observed": "I use Go",
+                "canonical": null,
+                "policy": "exact-alias-v1"
+              },
+              "origin": {
+                "kind": "existing_profile",
+                "original": "unknown"
+              },
+              "approval": "unreviewed",
+              "support": "unsupported"
+            }
+          ],
+          "evidence": [],
+          "links": []
+        },
+        "section": "skills",
+        "locale": "en"
+      },
+      "proposal": {
+        "profileId": "p",
+        "revision": 1,
+        "section": "skills",
+        "summary": "Clearer wording",
+        "patches": [
+          {
+            "factId": "f",
+            "revision": 1,
+            "wording": "I work with Go",
+            "supporting": [
+              {
+                "id": "f",
+                "revision": 1
+              }
+            ]
+          }
+        ]
+      },
+      "verification": {
+        "checks": [
+          {
+            "factId": "f",
+            "supported": true,
+            "complete": true
+          }
+        ]
+      },
+      "finish": "stop",
+      "refusal": "",
+      "status": 200,
+      "providerStatus": 200
+    },
+    {
+      "id": "pt-grounded",
+      "request": {
+        "document": {
+          "version": 2,
+          "id": "p",
+          "revision": 1,
+          "normalizationPolicy": "exact-alias-v1",
+          "entities": [],
+          "facts": [
+            {
+              "id": "f",
+              "revision": 1,
+              "owner": {
+                "profileId": "p",
+                "id": "p",
+                "revision": 1
+              },
+              "context": [],
+              "field": "skills",
+              "order": 0,
+              "kind": "legacy_block",
+              "value": "Uso Go",
+              "assertion": "unknown",
+              "intent": "unknown",
+              "certainty": "unknown",
+              "temporal": {
+                "wording": "",
+                "precision": "unknown"
+              },
+              "normalization": {
+                "observed": "Uso Go",
+                "canonical": null,
+                "policy": "exact-alias-v1"
+              },
+              "origin": {
+                "kind": "existing_profile",
+                "original": "unknown"
+              },
+              "approval": "unreviewed",
+              "support": "unsupported"
+            }
+          ],
+          "evidence": [],
+          "links": []
+        },
+        "section": "skills",
+        "locale": "pt-BR"
+      },
+      "proposal": {
+        "profileId": "p",
+        "revision": 1,
+        "section": "skills",
+        "summary": "Texto revisado",
+        "patches": [
+          {
+            "factId": "f",
+            "revision": 1,
+            "wording": "Trabalho com Go",
+            "supporting": [
+              {
+                "id": "f",
+                "revision": 1
+              }
+            ]
+          }
+        ]
+      },
+      "verification": {
+        "checks": [
+          {
+            "factId": "f",
+            "supported": true,
+            "complete": true
+          }
+        ]
+      },
+      "finish": "stop",
+      "refusal": "",
+      "status": 200,
+      "providerStatus": 200
+    },
+    {
+      "id": "invented-metric",
+      "request": {
+        "document": {
+          "version": 2,
+          "id": "p",
+          "revision": 1,
+          "normalizationPolicy": "exact-alias-v1",
+          "entities": [],
+          "facts": [
+            {
+              "id": "f",
+              "revision": 1,
+              "owner": {
+                "profileId": "p",
+                "id": "p",
+                "revision": 1
+              },
+              "context": [],
+              "field": "skills",
+              "order": 0,
+              "kind": "legacy_block",
+              "value": "I use Go",
+              "assertion": "unknown",
+              "intent": "unknown",
+              "certainty": "unknown",
+              "temporal": {
+                "wording": "",
+                "precision": "unknown"
+              },
+              "normalization": {
+                "observed": "I use Go",
+                "canonical": null,
+                "policy": "exact-alias-v1"
+              },
+              "origin": {
+                "kind": "existing_profile",
+                "original": "unknown"
+              },
+              "approval": "unreviewed",
+              "support": "unsupported"
+            }
+          ],
+          "evidence": [],
+          "links": []
+        },
+        "section": "skills",
+        "locale": "en"
+      },
+      "proposal": {
+        "profileId": "p",
+        "revision": 1,
+        "section": "skills",
+        "summary": "Clearer wording",
+        "patches": [
+          {
+            "factId": "f",
+            "revision": 1,
+            "wording": "Improved revenue by 75%",
+            "supporting": [
+              {
+                "id": "f",
+                "revision": 1
+              }
+            ]
+          }
+        ]
+      },
+      "verification": {
+        "checks": [
+          {
+            "factId": "f",
+            "supported": true,
+            "complete": true
+          }
+        ]
+      },
+      "finish": "stop",
+      "refusal": "",
+      "status": 502,
+      "providerStatus": 200
+    },
+    {
+      "id": "stronger-qualification",
+      "request": {
+        "document": {
+          "version": 2,
+          "id": "p",
+          "revision": 1,
+          "normalizationPolicy": "exact-alias-v1",
+          "entities": [],
+          "facts": [
+            {
+              "id": "f",
+              "revision": 1,
+              "owner": {
+                "profileId": "p",
+                "id": "p",
+                "revision": 1
+              },
+              "context": [],
+              "field": "skills",
+              "order": 0,
+              "kind": "legacy_block",
+              "value": "I use Go",
+              "assertion": "unknown",
+              "intent": "unknown",
+              "certainty": "unknown",
+              "temporal": {
+                "wording": "",
+                "precision": "unknown"
+              },
+              "normalization": {
+                "observed": "I use Go",
+                "canonical": null,
+                "policy": "exact-alias-v1"
+              },
+              "origin": {
+                "kind": "existing_profile",
+                "original": "unknown"
+              },
+              "approval": "unreviewed",
+              "support": "unsupported"
+            }
+          ],
+          "evidence": [],
+          "links": []
+        },
+        "section": "skills",
+        "locale": "en"
+      },
+      "proposal": {
+        "profileId": "p",
+        "revision": 1,
+        "section": "skills",
+        "summary": "Clearer wording",
+        "patches": [
+          {
+            "factId": "f",
+            "revision": 1,
+            "wording": "Expert Go engineer",
+            "supporting": [
+              {
+                "id": "f",
+                "revision": 1
+              }
+            ]
+          }
+        ]
+      },
+      "verification": {
+        "checks": [
+          {
+            "factId": "f",
+            "supported": false,
+            "complete": true
+          }
+        ]
+      },
+      "finish": "stop",
+      "refusal": "",
+      "status": 502,
+      "providerStatus": 200
+    },
+    {
+      "id": "lost-meaning",
+      "request": {
+        "document": {
+          "version": 2,
+          "id": "p",
+          "revision": 1,
+          "normalizationPolicy": "exact-alias-v1",
+          "entities": [],
+          "facts": [
+            {
+              "id": "f",
+              "revision": 1,
+              "owner": {
+                "profileId": "p",
+                "id": "p",
+                "revision": 1
+              },
+              "context": [],
+              "field": "skills",
+              "order": 0,
+              "kind": "legacy_block",
+              "value": "I use Go",
+              "assertion": "unknown",
+              "intent": "unknown",
+              "certainty": "unknown",
+              "temporal": {
+                "wording": "",
+                "precision": "unknown"
+              },
+              "normalization": {
+                "observed": "I use Go",
+                "canonical": null,
+                "policy": "exact-alias-v1"
+              },
+              "origin": {
+                "kind": "existing_profile",
+                "original": "unknown"
+              },
+              "approval": "unreviewed",
+              "support": "unsupported"
+            }
+          ],
+          "evidence": [],
+          "links": []
+        },
+        "section": "skills",
+        "locale": "en"
+      },
+      "proposal": {
+        "profileId": "p",
+        "revision": 1,
+        "section": "skills",
+        "summary": "Clearer wording",
+        "patches": [
+          {
+            "factId": "f",
+            "revision": 1,
+            "wording": "I work with Go",
+            "supporting": [
+              {
+                "id": "f",
+                "revision": 1
+              }
+            ]
+          }
+        ]
+      },
+      "verification": {
+        "checks": [
+          {
+            "factId": "f",
+            "supported": true,
+            "complete": false
+          }
+        ]
+      },
+      "finish": "stop",
+      "refusal": "",
+      "status": 502,
+      "providerStatus": 200
+    },
+    {
+      "id": "invalid-fact-id",
+      "request": {
+        "document": {
+          "version": 2,
+          "id": "p",
+          "revision": 1,
+          "normalizationPolicy": "exact-alias-v1",
+          "entities": [],
+          "facts": [
+            {
+              "id": "f",
+              "revision": 1,
+              "owner": {
+                "profileId": "p",
+                "id": "p",
+                "revision": 1
+              },
+              "context": [],
+              "field": "skills",
+              "order": 0,
+              "kind": "legacy_block",
+              "value": "I use Go",
+              "assertion": "unknown",
+              "intent": "unknown",
+              "certainty": "unknown",
+              "temporal": {
+                "wording": "",
+                "precision": "unknown"
+              },
+              "normalization": {
+                "observed": "I use Go",
+                "canonical": null,
+                "policy": "exact-alias-v1"
+              },
+              "origin": {
+                "kind": "existing_profile",
+                "original": "unknown"
+              },
+              "approval": "unreviewed",
+              "support": "unsupported"
+            }
+          ],
+          "evidence": [],
+          "links": []
+        },
+        "section": "skills",
+        "locale": "en"
+      },
+      "proposal": {
+        "profileId": "p",
+        "revision": 1,
+        "section": "skills",
+        "summary": "Clearer wording",
+        "patches": [
+          {
+            "factId": "foreign",
+            "revision": 1,
+            "wording": "I work with Go",
+            "supporting": [
+              {
+                "id": "f",
+                "revision": 1
+              }
+            ]
+          }
+        ]
+      },
+      "verification": {
+        "checks": [
+          {
+            "factId": "f",
+            "supported": true,
+            "complete": true
+          }
+        ]
+      },
+      "finish": "stop",
+      "refusal": "",
+      "status": 502,
+      "providerStatus": 200
+    },
+    {
+      "id": "stale-fact",
+      "request": {
+        "document": {
+          "version": 2,
+          "id": "p",
+          "revision": 1,
+          "normalizationPolicy": "exact-alias-v1",
+          "entities": [],
+          "facts": [
+            {
+              "id": "f",
+              "revision": 1,
+              "owner": {
+                "profileId": "p",
+                "id": "p",
+                "revision": 1
+              },
+              "context": [],
+              "field": "skills",
+              "order": 0,
+              "kind": "legacy_block",
+              "value": "I use Go",
+              "assertion": "unknown",
+              "intent": "unknown",
+              "certainty": "unknown",
+              "temporal": {
+                "wording": "",
+                "precision": "unknown"
+              },
+              "normalization": {
+                "observed": "I use Go",
+                "canonical": null,
+                "policy": "exact-alias-v1"
+              },
+              "origin": {
+                "kind": "existing_profile",
+                "original": "unknown"
+              },
+              "approval": "unreviewed",
+              "support": "unsupported"
+            }
+          ],
+          "evidence": [],
+          "links": []
+        },
+        "section": "skills",
+        "locale": "en"
+      },
+      "proposal": {
+        "profileId": "p",
+        "revision": 1,
+        "section": "skills",
+        "summary": "Clearer wording",
+        "patches": [
+          {
+            "factId": "f",
+            "revision": 2,
+            "wording": "I work with Go",
+            "supporting": [
+              {
+                "id": "f",
+                "revision": 1
+              }
+            ]
+          }
+        ]
+      },
+      "verification": {
+        "checks": [
+          {
+            "factId": "f",
+            "supported": true,
+            "complete": true
+          }
+        ]
+      },
+      "finish": "stop",
+      "refusal": "",
+      "status": 502,
+      "providerStatus": 200
+    },
+    {
+      "id": "protected-metadata",
+      "request": {
+        "document": {
+          "version": 2,
+          "id": "p",
+          "revision": 1,
+          "normalizationPolicy": "exact-alias-v1",
+          "entities": [],
+          "facts": [
+            {
+              "id": "f",
+              "revision": 1,
+              "owner": {
+                "profileId": "p",
+                "id": "p",
+                "revision": 1
+              },
+              "context": [],
+              "field": "skills",
+              "order": 0,
+              "kind": "legacy_block",
+              "value": "I use Go",
+              "assertion": "unknown",
+              "intent": "unknown",
+              "certainty": "unknown",
+              "temporal": {
+                "wording": "",
+                "precision": "unknown"
+              },
+              "normalization": {
+                "observed": "I use Go",
+                "canonical": null,
+                "policy": "exact-alias-v1"
+              },
+              "origin": {
+                "kind": "existing_profile",
+                "original": "unknown"
+              },
+              "approval": "unreviewed",
+              "support": "unsupported"
+            }
+          ],
+          "evidence": [],
+          "links": []
+        },
+        "section": "skills",
+        "locale": "en"
+      },
+      "proposal": {
+        "profileId": "p",
+        "revision": 1,
+        "section": "skills",
+        "summary": "Clearer wording",
+        "patches": [
+          {
+            "factId": "f",
+            "revision": 1,
+            "wording": "I work with Go",
+            "supporting": [
+              {
+                "id": "f",
+                "revision": 1
+              }
+            ],
+            "owner": "foreign"
+          }
+        ]
+      },
+      "verification": {
+        "checks": [
+          {
+            "factId": "f",
+            "supported": true,
+            "complete": true
+          }
+        ]
+      },
+      "finish": "stop",
+      "refusal": "",
+      "status": 502,
+      "providerStatus": 200
+    },
+    {
+      "id": "silently-removed-fact",
+      "request": {
+        "document": {
+          "version": 2,
+          "id": "p",
+          "revision": 1,
+          "normalizationPolicy": "exact-alias-v1",
+          "entities": [],
+          "facts": [
+            {
+              "id": "f",
+              "revision": 1,
+              "owner": {
+                "profileId": "p",
+                "id": "p",
+                "revision": 1
+              },
+              "context": [],
+              "field": "skills",
+              "order": 0,
+              "kind": "legacy_block",
+              "value": "I use Go",
+              "assertion": "unknown",
+              "intent": "unknown",
+              "certainty": "unknown",
+              "temporal": {
+                "wording": "",
+                "precision": "unknown"
+              },
+              "normalization": {
+                "observed": "I use Go",
+                "canonical": null,
+                "policy": "exact-alias-v1"
+              },
+              "origin": {
+                "kind": "existing_profile",
+                "original": "unknown"
+              },
+              "approval": "unreviewed",
+              "support": "unsupported"
+            }
+          ],
+          "evidence": [],
+          "links": []
+        },
+        "section": "skills",
+        "locale": "en"
+      },
+      "proposal": {
+        "profileId": "p",
+        "revision": 1,
+        "section": "skills",
+        "summary": "Clearer wording",
+        "patches": []
+      },
+      "verification": {
+        "checks": [
+          {
+            "factId": "f",
+            "supported": true,
+            "complete": true
+          }
+        ]
+      },
+      "finish": "stop",
+      "refusal": "",
+      "status": 502,
+      "providerStatus": 200
+    },
+    {
+      "id": "missing-self-support",
+      "request": {
+        "document": {
+          "version": 2,
+          "id": "p",
+          "revision": 1,
+          "normalizationPolicy": "exact-alias-v1",
+          "entities": [],
+          "facts": [
+            {
+              "id": "f",
+              "revision": 1,
+              "owner": {
+                "profileId": "p",
+                "id": "p",
+                "revision": 1
+              },
+              "context": [],
+              "field": "skills",
+              "order": 0,
+              "kind": "legacy_block",
+              "value": "I use Go",
+              "assertion": "unknown",
+              "intent": "unknown",
+              "certainty": "unknown",
+              "temporal": {
+                "wording": "",
+                "precision": "unknown"
+              },
+              "normalization": {
+                "observed": "I use Go",
+                "canonical": null,
+                "policy": "exact-alias-v1"
+              },
+              "origin": {
+                "kind": "existing_profile",
+                "original": "unknown"
+              },
+              "approval": "unreviewed",
+              "support": "unsupported"
+            }
+          ],
+          "evidence": [],
+          "links": []
+        },
+        "section": "skills",
+        "locale": "en"
+      },
+      "proposal": {
+        "profileId": "p",
+        "revision": 1,
+        "section": "skills",
+        "summary": "Clearer wording",
+        "patches": [
+          {
+            "factId": "f",
+            "revision": 1,
+            "wording": "I work with Go",
+            "supporting": []
+          }
+        ]
+      },
+      "verification": {
+        "checks": [
+          {
+            "factId": "f",
+            "supported": true,
+            "complete": true
+          }
+        ]
+      },
+      "finish": "stop",
+      "refusal": "",
+      "status": 502,
+      "providerStatus": 200
+    },
+    {
+      "id": "missing-verifier-check",
+      "request": {
+        "document": {
+          "version": 2,
+          "id": "p",
+          "revision": 1,
+          "normalizationPolicy": "exact-alias-v1",
+          "entities": [],
+          "facts": [
+            {
+              "id": "f",
+              "revision": 1,
+              "owner": {
+                "profileId": "p",
+                "id": "p",
+                "revision": 1
+              },
+              "context": [],
+              "field": "skills",
+              "order": 0,
+              "kind": "legacy_block",
+              "value": "I use Go",
+              "assertion": "unknown",
+              "intent": "unknown",
+              "certainty": "unknown",
+              "temporal": {
+                "wording": "",
+                "precision": "unknown"
+              },
+              "normalization": {
+                "observed": "I use Go",
+                "canonical": null,
+                "policy": "exact-alias-v1"
+              },
+              "origin": {
+                "kind": "existing_profile",
+                "original": "unknown"
+              },
+              "approval": "unreviewed",
+              "support": "unsupported"
+            }
+          ],
+          "evidence": [],
+          "links": []
+        },
+        "section": "skills",
+        "locale": "en"
+      },
+      "proposal": {
+        "profileId": "p",
+        "revision": 1,
+        "section": "skills",
+        "summary": "Clearer wording",
+        "patches": [
+          {
+            "factId": "f",
+            "revision": 1,
+            "wording": "I work with Go",
+            "supporting": [
+              {
+                "id": "f",
+                "revision": 1
+              }
+            ]
+          }
+        ]
+      },
+      "verification": {
+        "checks": []
+      },
+      "finish": "stop",
+      "refusal": "",
+      "status": 502,
+      "providerStatus": 200
+    },
+    {
+      "id": "duplicate-verifier-check",
+      "request": {
+        "document": {
+          "version": 2,
+          "id": "p",
+          "revision": 1,
+          "normalizationPolicy": "exact-alias-v1",
+          "entities": [],
+          "facts": [
+            {
+              "id": "f",
+              "revision": 1,
+              "owner": {
+                "profileId": "p",
+                "id": "p",
+                "revision": 1
+              },
+              "context": [],
+              "field": "skills",
+              "order": 0,
+              "kind": "legacy_block",
+              "value": "I use Go",
+              "assertion": "unknown",
+              "intent": "unknown",
+              "certainty": "unknown",
+              "temporal": {
+                "wording": "",
+                "precision": "unknown"
+              },
+              "normalization": {
+                "observed": "I use Go",
+                "canonical": null,
+                "policy": "exact-alias-v1"
+              },
+              "origin": {
+                "kind": "existing_profile",
+                "original": "unknown"
+              },
+              "approval": "unreviewed",
+              "support": "unsupported"
+            }
+          ],
+          "evidence": [],
+          "links": []
+        },
+        "section": "skills",
+        "locale": "en"
+      },
+      "proposal": {
+        "profileId": "p",
+        "revision": 1,
+        "section": "skills",
+        "summary": "Clearer wording",
+        "patches": [
+          {
+            "factId": "f",
+            "revision": 1,
+            "wording": "I work with Go",
+            "supporting": [
+              {
+                "id": "f",
+                "revision": 1
+              }
+            ]
+          }
+        ]
+      },
+      "verification": {
+        "checks": [
+          {
+            "factId": "f",
+            "supported": true,
+            "complete": true
+          },
+          {
+            "factId": "f",
+            "supported": true,
+            "complete": true
+          }
+        ]
+      },
+      "finish": "stop",
+      "refusal": "",
+      "status": 502,
+      "providerStatus": 200
+    },
+    {
+      "id": "truncated",
+      "request": {
+        "document": {
+          "version": 2,
+          "id": "p",
+          "revision": 1,
+          "normalizationPolicy": "exact-alias-v1",
+          "entities": [],
+          "facts": [
+            {
+              "id": "f",
+              "revision": 1,
+              "owner": {
+                "profileId": "p",
+                "id": "p",
+                "revision": 1
+              },
+              "context": [],
+              "field": "skills",
+              "order": 0,
+              "kind": "legacy_block",
+              "value": "I use Go",
+              "assertion": "unknown",
+              "intent": "unknown",
+              "certainty": "unknown",
+              "temporal": {
+                "wording": "",
+                "precision": "unknown"
+              },
+              "normalization": {
+                "observed": "I use Go",
+                "canonical": null,
+                "policy": "exact-alias-v1"
+              },
+              "origin": {
+                "kind": "existing_profile",
+                "original": "unknown"
+              },
+              "approval": "unreviewed",
+              "support": "unsupported"
+            }
+          ],
+          "evidence": [],
+          "links": []
+        },
+        "section": "skills",
+        "locale": "en"
+      },
+      "proposal": {
+        "profileId": "p",
+        "revision": 1,
+        "section": "skills",
+        "summary": "Clearer wording",
+        "patches": [
+          {
+            "factId": "f",
+            "revision": 1,
+            "wording": "I work with Go",
+            "supporting": [
+              {
+                "id": "f",
+                "revision": 1
+              }
+            ]
+          }
+        ]
+      },
+      "verification": {
+        "checks": [
+          {
+            "factId": "f",
+            "supported": true,
+            "complete": true
+          }
+        ]
+      },
+      "finish": "length",
+      "refusal": "",
+      "status": 502,
+      "providerStatus": 200
+    },
+    {
+      "id": "refused",
+      "request": {
+        "document": {
+          "version": 2,
+          "id": "p",
+          "revision": 1,
+          "normalizationPolicy": "exact-alias-v1",
+          "entities": [],
+          "facts": [
+            {
+              "id": "f",
+              "revision": 1,
+              "owner": {
+                "profileId": "p",
+                "id": "p",
+                "revision": 1
+              },
+              "context": [],
+              "field": "skills",
+              "order": 0,
+              "kind": "legacy_block",
+              "value": "I use Go",
+              "assertion": "unknown",
+              "intent": "unknown",
+              "certainty": "unknown",
+              "temporal": {
+                "wording": "",
+                "precision": "unknown"
+              },
+              "normalization": {
+                "observed": "I use Go",
+                "canonical": null,
+                "policy": "exact-alias-v1"
+              },
+              "origin": {
+                "kind": "existing_profile",
+                "original": "unknown"
+              },
+              "approval": "unreviewed",
+              "support": "unsupported"
+            }
+          ],
+          "evidence": [],
+          "links": []
+        },
+        "section": "skills",
+        "locale": "en"
+      },
+      "proposal": {
+        "profileId": "p",
+        "revision": 1,
+        "section": "skills",
+        "summary": "Clearer wording",
+        "patches": [
+          {
+            "factId": "f",
+            "revision": 1,
+            "wording": "I work with Go",
+            "supporting": [
+              {
+                "id": "f",
+                "revision": 1
+              }
+            ]
+          }
+        ]
+      },
+      "verification": {
+        "checks": [
+          {
+            "factId": "f",
+            "supported": true,
+            "complete": true
+          }
+        ]
+      },
+      "finish": "stop",
+      "refusal": "Cannot comply",
+      "status": 502,
+      "providerStatus": 200
+    },
+    {
+      "id": "bad-key",
+      "request": {
+        "document": {
+          "version": 2,
+          "id": "p",
+          "revision": 1,
+          "normalizationPolicy": "exact-alias-v1",
+          "entities": [],
+          "facts": [
+            {
+              "id": "f",
+              "revision": 1,
+              "owner": {
+                "profileId": "p",
+                "id": "p",
+                "revision": 1
+              },
+              "context": [],
+              "field": "skills",
+              "order": 0,
+              "kind": "legacy_block",
+              "value": "I use Go",
+              "assertion": "unknown",
+              "intent": "unknown",
+              "certainty": "unknown",
+              "temporal": {
+                "wording": "",
+                "precision": "unknown"
+              },
+              "normalization": {
+                "observed": "I use Go",
+                "canonical": null,
+                "policy": "exact-alias-v1"
+              },
+              "origin": {
+                "kind": "existing_profile",
+                "original": "unknown"
+              },
+              "approval": "unreviewed",
+              "support": "unsupported"
+            }
+          ],
+          "evidence": [],
+          "links": []
+        },
+        "section": "skills",
+        "locale": "en"
+      },
+      "proposal": {
+        "profileId": "p",
+        "revision": 1,
+        "section": "skills",
+        "summary": "Clearer wording",
+        "patches": [
+          {
+            "factId": "f",
+            "revision": 1,
+            "wording": "I work with Go",
+            "supporting": [
+              {
+                "id": "f",
+                "revision": 1
+              }
+            ]
+          }
+        ]
+      },
+      "verification": {
+        "checks": [
+          {
+            "factId": "f",
+            "supported": true,
+            "complete": true
+          }
+        ]
+      },
+      "finish": "stop",
+      "refusal": "",
+      "status": 401,
+      "providerStatus": 401
+    },
+    {
+      "id": "rate-limit",
+      "request": {
+        "document": {
+          "version": 2,
+          "id": "p",
+          "revision": 1,
+          "normalizationPolicy": "exact-alias-v1",
+          "entities": [],
+          "facts": [
+            {
+              "id": "f",
+              "revision": 1,
+              "owner": {
+                "profileId": "p",
+                "id": "p",
+                "revision": 1
+              },
+              "context": [],
+              "field": "skills",
+              "order": 0,
+              "kind": "legacy_block",
+              "value": "I use Go",
+              "assertion": "unknown",
+              "intent": "unknown",
+              "certainty": "unknown",
+              "temporal": {
+                "wording": "",
+                "precision": "unknown"
+              },
+              "normalization": {
+                "observed": "I use Go",
+                "canonical": null,
+                "policy": "exact-alias-v1"
+              },
+              "origin": {
+                "kind": "existing_profile",
+                "original": "unknown"
+              },
+              "approval": "unreviewed",
+              "support": "unsupported"
+            }
+          ],
+          "evidence": [],
+          "links": []
+        },
+        "section": "skills",
+        "locale": "en"
+      },
+      "proposal": {
+        "profileId": "p",
+        "revision": 1,
+        "section": "skills",
+        "summary": "Clearer wording",
+        "patches": [
+          {
+            "factId": "f",
+            "revision": 1,
+            "wording": "I work with Go",
+            "supporting": [
+              {
+                "id": "f",
+                "revision": 1
+              }
+            ]
+          }
+        ]
+      },
+      "verification": {
+        "checks": [
+          {
+            "factId": "f",
+            "supported": true,
+            "complete": true
+          }
+        ]
+      },
+      "finish": "stop",
+      "refusal": "",
+      "status": 429,
+      "providerStatus": 429
+    },
+    {
+      "id": "outage",
+      "request": {
+        "document": {
+          "version": 2,
+          "id": "p",
+          "revision": 1,
+          "normalizationPolicy": "exact-alias-v1",
+          "entities": [],
+          "facts": [
+            {
+              "id": "f",
+              "revision": 1,
+              "owner": {
+                "profileId": "p",
+                "id": "p",
+                "revision": 1
+              },
+              "context": [],
+              "field": "skills",
+              "order": 0,
+              "kind": "legacy_block",
+              "value": "I use Go",
+              "assertion": "unknown",
+              "intent": "unknown",
+              "certainty": "unknown",
+              "temporal": {
+                "wording": "",
+                "precision": "unknown"
+              },
+              "normalization": {
+                "observed": "I use Go",
+                "canonical": null,
+                "policy": "exact-alias-v1"
+              },
+              "origin": {
+                "kind": "existing_profile",
+                "original": "unknown"
+              },
+              "approval": "unreviewed",
+              "support": "unsupported"
+            }
+          ],
+          "evidence": [],
+          "links": []
+        },
+        "section": "skills",
+        "locale": "en"
+      },
+      "proposal": {
+        "profileId": "p",
+        "revision": 1,
+        "section": "skills",
+        "summary": "Clearer wording",
+        "patches": [
+          {
+            "factId": "f",
+            "revision": 1,
+            "wording": "I work with Go",
+            "supporting": [
+              {
+                "id": "f",
+                "revision": 1
+              }
+            ]
+          }
+        ]
+      },
+      "verification": {
+        "checks": [
+          {
+            "factId": "f",
+            "supported": true,
+            "complete": true
+          }
+        ]
+      },
+      "finish": "stop",
+      "refusal": "",
+      "status": 502,
+      "providerStatus": 503
+    }
+  ]
+}

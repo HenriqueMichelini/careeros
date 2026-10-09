@@ -407,6 +407,21 @@ const messages = {
       "Older notes stay here as written. Add qualifications in their own sections when you want them shown as structured CV entries.",
     "repo.aiReview": "AI Review",
     "repo.aiReviewDescription": "Reviews only {{section}}.",
+    "repo.sectionProposal": "Review Profile Proposal",
+    "repo.sectionNote":
+      "Nothing is saved until you accept. Confirm that every claim is accurate before applying.",
+    "repo.sectionBefore": "Current wording",
+    "repo.sectionAfter": "Proposed wording",
+    "repo.sectionSources": "Original sources",
+    "repo.sectionAuthored":
+      "Your edited wording will be saved as your own statement; previous excerpt support will be invalidated.",
+    "repo.sectionRemove": "I deliberately approve removing this fact.",
+    "repo.sectionReject": "Reject proposal",
+    "repo.sectionAccept": "Accept and save changes",
+    "repo.sectionRefused":
+      "The provider declined this rewrite. Your Profile is unchanged.",
+    "repo.sectionTruncated":
+      "The rewrite was incomplete. Your Profile is unchanged.",
     "repo.reviewing": "Reviewing...",
     "repo.reviewWithAi": "Review with AI",
     "repo.setApiKeyFirst": "Set your API key first.",
@@ -1041,6 +1056,21 @@ const messages = {
       "Suas notas antigas permanecem aqui como foram escritas. Adicione qualificações nas seções próprias para exibi-las como itens estruturados no currículo.",
     "repo.aiReview": "Revisão por IA",
     "repo.aiReviewDescription": "Revisa apenas {{section}}.",
+    "repo.sectionProposal": "Revisar proposta do Perfil",
+    "repo.sectionNote":
+      "Nada é salvo até você aceitar. Confirme a precisão de cada afirmação antes de aplicar.",
+    "repo.sectionBefore": "Texto atual",
+    "repo.sectionAfter": "Texto proposto",
+    "repo.sectionSources": "Fontes originais",
+    "repo.sectionAuthored":
+      "O texto editado será salvo como sua própria afirmação; o suporte dos trechos anteriores será invalidado.",
+    "repo.sectionRemove": "Aprovo deliberadamente a remoção deste fato.",
+    "repo.sectionReject": "Rejeitar proposta",
+    "repo.sectionAccept": "Aceitar e salvar alterações",
+    "repo.sectionRefused":
+      "O provedor recusou a revisão. Seu Perfil foi preservado.",
+    "repo.sectionTruncated":
+      "A revisão ficou incompleta. Seu Perfil foi preservado.",
     "repo.reviewing": "Revisando...",
     "repo.reviewWithAi": "Revisar com IA",
     "repo.setApiKeyFirst": "Configure sua chave API primeiro.",

@@ -20,6 +20,11 @@ import {
   type ProfileOrigin,
 } from "./profileDocument"
 import {
+  applySectionProposal,
+  type SectionReviewRequest,
+  type SectionProposal,
+} from "./sectionReview"
+import {
   openProfile,
   saveProfile,
   PROFILE_KEY,
@@ -146,6 +151,12 @@ const StoreContext = createContext<{
   dispatch: (action: Action) => Promise<boolean>
   profileDocument: ProfileDocument | null
   editCanonicalProfile: (edit: ProfileEdit) => Promise<boolean>
+  applyProfileProposal: (
+    request: SectionReviewRequest,
+    proposal: SectionProposal,
+    edits: Record<string, string>,
+    removals: string[],
+  ) => Promise<boolean>
   saveRepository: (
     repo: ProfessionalRepository,
     origin?: ProfileOrigin,
@@ -197,7 +208,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         try {
           const raw = localStorage.getItem(LEGACY_KEY)
           if (localStorage.getItem(PROFILE_KEY) === null && raw !== null) {
-            const recovered = migrateProfile(JSON.parse(raw), crypto.randomUUID())
+            const recovered = migrateProfile(
+              JSON.parse(raw),
+              crypto.randomUUID(),
+            )
             optimisticDocument.current = recovered
             setProfileDocument(recovered)
             draft.current = profileView(recovered)
@@ -268,6 +282,43 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     (edit: ProfileEdit) => updateCanonical((doc) => editProfile(doc, edit)),
     [updateCanonical],
   )
+  const applyProfileProposal = useCallback(
+    async (
+      request: SectionReviewRequest,
+      proposal: SectionProposal,
+      edits: Record<string, string>,
+      removals: string[],
+    ) => {
+      const saving = queue.current.then(async () => {
+        const expected = documentRef.current
+        if (failed.current || !expected) return false
+        try {
+          const candidate = applySectionProposal(
+            expected,
+            request,
+            proposal,
+            edits,
+            removals,
+          )
+          await saveProfile(localStorage, expected, candidate)
+          documentRef.current = candidate
+          optimisticDocument.current = candidate
+          setProfileDocument(candidate)
+          draft.current = profileView(candidate)
+          rawDispatch({ type: "SET_REPO", payload: draft.current })
+          return true
+        } catch (error) {
+          setProfileError(
+            error instanceof ProfileStorageError ? error.code : error instanceof Error && error.message === "stale" ? "stale" : "validation",
+          )
+          return false
+        }
+      })
+      queue.current = saving
+      return saving
+    },
+    [],
+  )
   const saveRepository = useCallback(
     (
       repo: ProfessionalRepository,
@@ -331,6 +382,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         saveRepository,
         profileDocument,
         editCanonicalProfile,
+        applyProfileProposal,
       }}
     >
       {profileError && (

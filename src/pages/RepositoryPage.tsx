@@ -4,9 +4,15 @@ import { type EntityKind, type Json } from "../lib/profileDocument"
 import { type FieldDecision } from "../lib/fieldDecision"
 import { useState, useCallback, useEffect, useRef } from "react"
 import { useI18n, useStore } from "../lib/store"
-import { reviewRepository } from "../lib/ai"
+import {
+  sectionReviewRequest,
+  requestSectionProposal,
+  SectionReviewError,
+  type SectionReviewRequest,
+  type SectionProposal,
+} from "../lib/sectionReview"
 import { profileReviewFields } from "../lib/profile"
-import { ProfileReviewError } from "../lib/ai"
+
 import {
   ExperienceEntry,
   ProjectEntry,
@@ -596,11 +602,19 @@ export default function RepositoryPage() {
     dispatch,
     saveRepository,
     editCanonicalProfile,
+    applyProfileProposal,
     profileDocument,
   } = useStore()
   const { t } = useI18n()
   const [activeSection, setActiveSection] = useState<Section>("profile")
   const [reviewError, setReviewError] = useState("")
+  const [sectionProposal, setSectionProposal] = useState<{
+    request: SectionReviewRequest
+    proposal: SectionProposal
+  } | null>(null)
+  const [sectionEdits, setSectionEdits] = useState<Record<string, string>>({})
+  const [sectionRemovals, setSectionRemovals] = useState<string[]>([])
+  const [applyingSection, setApplyingSection] = useState(false)
   const [ingestionText, setIngestionText] = useState("")
   const [ingestionResult, setIngestionResult] =
     useState<IngestionResult | null>(null)
@@ -621,8 +635,16 @@ export default function RepositoryPage() {
   const reviewRequest = useRef(0)
   const reviewController = useRef<AbortController | null>(null)
   const repo = state.repository
-  const currentReviewContext = useRef({ section: activeSection, repo })
-  currentReviewContext.current = { section: activeSection, repo }
+  const currentReviewContext = useRef({
+    section: activeSection,
+    repo,
+    revision: profileDocument?.revision,
+  })
+  currentReviewContext.current = {
+    section: activeSection,
+    repo,
+    revision: profileDocument?.revision,
+  }
 
   useEffect(
     () => () => {
@@ -640,6 +662,7 @@ export default function RepositoryPage() {
     currentReviewContext.current.section = section
     dispatch({ type: "SET_REVIEWING", payload: false })
     setReviewError("")
+    setSectionProposal(null)
     setActiveSection(section)
   }
 
@@ -836,7 +859,11 @@ export default function RepositoryPage() {
     if (
       !profileReviewFields(activeSection).length ||
       currentReviewContext.current.section !== activeSection ||
-      state.isReviewingRepo
+      state.isReviewingRepo ||
+      applyingSection ||
+      !!sectionProposal ||
+      !profileDocument ||
+      !!state.profileError
     )
       return
     if (!state.apiKey) {
@@ -850,28 +877,28 @@ export default function RepositoryPage() {
     const isCurrent = () =>
       reviewRequest.current === requestId &&
       currentReviewContext.current.section === activeSection &&
-      currentReviewContext.current.repo === repo
+      currentReviewContext.current.repo === repo &&
+      currentReviewContext.current.revision === profileDocument?.revision
     dispatch({ type: "SET_REVIEWING", payload: true })
     try {
-      const { updatedRepo, summary } = await reviewRepository(
-        repo,
+      const request = sectionReviewRequest(
+        profileDocument!,
         activeSection,
+        state.uiLocale,
+      )
+      const proposal = await requestSectionProposal(
+        request,
         state.apiKey,
         controller.signal,
       )
       if (!isCurrent()) return
-      if (
-        await saveRepository(updatedRepo, {
-          kind: "ai_review",
-          original: "unknown",
-        })
-      ) {
-        dispatch({ type: "SET_REVIEW_SUMMARY", payload: summary })
-      }
+      setSectionEdits({})
+      setSectionRemovals([])
+      setSectionProposal({ request, proposal })
     } catch (e: any) {
       if (!isCurrent()) return
       const errorKey =
-        e instanceof ProfileReviewError
+        e instanceof SectionReviewError
           ? ({
               input: "repo.reviewErrorInput",
               key: "repo.reviewErrorKey",
@@ -879,8 +906,10 @@ export default function RepositoryPage() {
               outage: "repo.reviewErrorOutage",
               timeout: "repo.reviewErrorTimeout",
               invalid_output: "repo.reviewErrorInvalidOutput",
+              refused: "repo.sectionRefused",
+              truncated: "repo.sectionTruncated",
             } as const)[
-              (e.code as "input" | "key" | "rate_limit" | "outage" | "timeout" | "invalid_output")
+              (e.code as "input" | "key" | "rate_limit" | "outage" | "timeout" | "invalid_output" | "refused" | "truncated")
             ]
           : undefined
       setReviewError(errorKey ? t(errorKey) : t("repo.reviewFailed"))
@@ -985,7 +1014,12 @@ export default function RepositoryPage() {
             </p>
             <button
               onClick={handleAiReview}
-              disabled={state.isReviewingRepo}
+              disabled={
+                state.isReviewingRepo ||
+                !!sectionProposal ||
+                applyingSection ||
+                !!state.profileError
+              }
               className="w-full py-2.5 text-xs uppercase tracking-[0.15em] transition-colors"
               style={{
                 fontFamily: "var(--font-mono)",
@@ -1003,6 +1037,18 @@ export default function RepositoryPage() {
                 ? t("repo.reviewing")
                 : t("repo.reviewWithAi")}
             </button>
+            {state.isReviewingRepo && (
+              <button
+                className="mt-3 text-sm underline"
+                onClick={() => {
+                  reviewRequest.current++
+                  reviewController.current?.abort()
+                  dispatch({ type: "SET_REVIEWING", payload: false })
+                }}
+              >
+                {t("repo.ingestCancel")}
+              </button>
+            )}
             {reviewError && (
               <p
                 className="text-xs mt-2"
@@ -1028,6 +1074,148 @@ export default function RepositoryPage() {
           </div>
         )}
       </aside>
+
+      {sectionProposal && (
+        <section
+          aria-label={t("repo.sectionProposal")}
+          className="min-w-0 space-y-5"
+        >
+          <h2 className="text-xl font-bold">{t("repo.sectionProposal")}</h2>
+          <p>{sectionProposal.proposal.summary}</p>
+          <p className="text-sm">{t("repo.sectionNote")}</p>
+          {sectionProposal.proposal.patches.map((patch) => {
+            const fact = sectionProposal.request.document.facts.find(
+              (f) => f.id === patch.factId,
+            )!
+            const sources = sectionProposal.request.document.facts.filter((f) =>
+              patch.supporting.some((r) => r.id === f.id),
+            )
+            const evidence = sectionProposal.request.document.evidence.filter(
+              (e) =>
+                sectionProposal.request.document.links.some(
+                  (l) =>
+                    l.kind === "supports" &&
+                    l.to.id === e.id &&
+                    sources.some((f) => f.id === l.from.id),
+                ),
+            )
+            return (
+              <article
+                key={patch.factId}
+                className="border border-[var(--color-border)] p-4 space-y-3 min-w-0"
+              >
+                <h3 className="font-bold">
+                  {t(
+                    profileFieldKey(
+                      sectionProposal.request.section,
+                      fact.field,
+                    ),
+                  )}
+                </h3>
+                <p className="text-sm">{t("repo.sectionBefore")}</p>
+                <p className="whitespace-pre-wrap break-words">
+                  {String(fact.value)}
+                </p>
+                <label className="block text-sm">
+                  {t("repo.sectionAfter")}
+                  <textarea
+                    className="block w-full border p-2 min-h-28 bg-transparent"
+                    value={sectionEdits[patch.factId] ?? patch.wording}
+                    disabled={applyingSection}
+                    onChange={(e) =>
+                      setSectionEdits({
+                        ...sectionEdits,
+                        [patch.factId]: e.target.value,
+                      })
+                    }
+                  />
+                </label>
+                <details>
+                  <summary>{t("repo.sectionSources")}</summary>
+                  {Array.from(new Set(sources.flatMap(f => [f.owner.id, ...f.context.map(c => c.id)]))).filter(id => id !== sectionProposal.request.document.id).map(id => <p key={id} className="my-2 text-sm break-words">{sectionProposal.request.document.facts.filter(f => f.owner.id === id && ["company", "title", "name", "startDate", "endDate", "location"].includes(f.field)).map(f => String(f.value)).filter(Boolean).join(" · ")}</p>)}
+                  {sources.map((f) => (
+                    <p
+                      key={f.id}
+                      className="whitespace-pre-wrap break-words text-sm my-2"
+                    >
+                      {String(f.value)} — {t(`profile.facts.${f.origin.kind}`)}{" "}
+                      · {t(`profile.facts.${f.support}`)}
+                    </p>
+                  ))}
+                  {evidence.map((e) => (
+                    <blockquote
+                      key={e.id}
+                      className="whitespace-pre-wrap break-words border-l pl-3 my-2"
+                    >
+                      {e.excerpt} — {e.origin}
+                    </blockquote>
+                  ))}
+                </details>
+                {sectionEdits[patch.factId] !== undefined &&
+                  sectionEdits[patch.factId] !== patch.wording && (
+                    <p className="text-sm">{t("repo.sectionAuthored")}</p>
+                  )}
+                <label className="flex gap-2 items-start text-sm">
+                  <input
+                    type="checkbox"
+                    disabled={applyingSection}
+                    checked={sectionRemovals.includes(patch.factId)}
+                    onChange={(e) =>
+                      setSectionRemovals(
+                        e.target.checked
+                          ? [...sectionRemovals, patch.factId]
+                          : sectionRemovals.filter((id) => id !== patch.factId),
+                      )
+                    }
+                  />
+                  {t("repo.sectionRemove")}
+                </label>
+              </article>
+            )
+          })}
+          {profileDocument?.revision !==
+            sectionProposal.request.document.revision && (
+            <p role="alert">{t("repo.ingestStale")}</p>
+          )}
+          <div className="flex flex-wrap gap-4">
+            <button
+              className="border px-4 py-2"
+              disabled={applyingSection}
+              onClick={() => setSectionProposal(null)}
+            >
+              {t("repo.sectionReject")}
+            </button>
+            <button
+              className="border px-4 py-2"
+              disabled={
+                applyingSection ||
+                !!state.profileError ||
+                profileDocument?.revision !==
+                  sectionProposal.request.document.revision
+              }
+              onClick={async () => {
+                setApplyingSection(true)
+                const saved = await applyProfileProposal(
+                  sectionProposal.request,
+                  sectionProposal.proposal,
+                  sectionEdits,
+                  sectionRemovals,
+                )
+                if (saved) {
+                  setSectionProposal(null)
+                  dispatch({
+                    type: "SET_REVIEW_SUMMARY",
+                    payload: sectionProposal.proposal.summary,
+                  })
+                }
+                setApplyingSection(false)
+              }}
+            >
+              {t("repo.sectionAccept")}
+            </button>
+          </div>
+        </section>
+      )}
 
       <dialog
         ref={discardDialog}
@@ -1061,7 +1249,11 @@ export default function RepositoryPage() {
       </dialog>
 
       {/* Main content */}
-      <div data-profile-content={activeSection} className="min-w-0">
+      <div
+        data-profile-content={activeSection}
+        className="min-w-0"
+        hidden={!!sectionProposal}
+      >
         <div className="mb-8">
           <h1
             className="text-5xl font-bold uppercase tracking-tight leading-none mb-2"
