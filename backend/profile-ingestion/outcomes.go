@@ -19,8 +19,11 @@ type claimOutcome struct {
 	OperationIndexes []int                       `json:"operationIndexes,omitempty"`
 }
 type skippedClaim struct {
-	Index  int    `json:"index"`
-	Reason string `json:"reason"`
+	Index     int    `json:"index"`
+	Reason    string `json:"reason"`
+	Text      string `json:"text"`
+	Source    string `json:"source"`
+	Shortened bool   `json:"shortened"`
 }
 type processingCoverage struct {
 	ValidClaims       int    `json:"validClaims"`
@@ -29,9 +32,10 @@ type processingCoverage struct {
 	Capacity          string `json:"capacity"`
 }
 type comparisonFact struct {
-	Reference profiledocument.Reference `json:"reference"`
-	Fact      profiledocument.Fact      `json:"fact"`
-	Identity  []profiledocument.Fact    `json:"identity"`
+	Reference profiledocument.Reference  `json:"reference"`
+	Fact      profiledocument.Fact       `json:"fact"`
+	Identity  []profiledocument.Fact     `json:"identity"`
+	Evidence  []profiledocument.Evidence `json:"acceptedEvidence"`
 }
 type reconciliationContext struct {
 	document   *profiledocument.Document
@@ -45,7 +49,7 @@ type reconciliationContext struct {
 var outcomeKinds = []string{"change", "exact_duplicate", "overlap", "additional_support", "contradiction", "correction", "clarification", "unsupported", "unresolved"}
 
 const outcomeInstructions = `
-Return outcomes for EVERY claim, including claims with no operation. Each outcome: {claimId,kind,reason,relatedFacts:[{profileId,id,revision}],relatedClaimIds:[]}. kind is change, exact_duplicate, overlap, additional_support, contradiction, correction, clarification, unsupported or unresolved. reason explains the comparison in the source language. Reference only stable existingFacts references and known claims; no invented references. A missing operation NEVER proves a duplicate. exact_duplicate requires identical wording or verified exact JavaScript/Javascript or TypeScript/Typescript aliases AND identical meaning, owner, role, employer and period. Spring Framework and Spring Boot, AWS and each service, and similarly named employers are distinct. Negated, aspirational, uncertain and temporally different claims are not equivalent. relatedClaimIds identifies competing or supporting submitted statements. overlap must retain all distinct information. additional_support may emit an evidence operation with the existing whole field value, target/entryId/field of that fact, when the claim repeats an assertion with new supporting evidence; this does not change wording. Contradiction and correction/supersession are review candidates: emit no change and preserve both statements until the user resolves them. Ambiguous identity requires clarification, never silently merge distinct entries. Every comparison outcome needs relevant stable facts or related claim IDs; absent stable references use unresolved. Never choose a correction automatically. No operation for unsupported or unresolved claims.`
+Return outcomes for EVERY claim, including claims with no operation. Each outcome: {claimId,kind,reason,relatedFacts:[{profileId,id,revision}],relatedClaimIds:[]}. kind is change, exact_duplicate, overlap, additional_support, contradiction, correction, clarification, unsupported or unresolved. reason explains the comparison in the source language. Reference only stable existingFacts references and known claims; no invented references. A missing operation NEVER proves a duplicate. exact_duplicate requires identical wording or verified exact JavaScript/Javascript or TypeScript/Typescript aliases AND identical meaning, owner, role, employer and period. Spring Framework and Spring Boot, AWS and each service, and similarly named employers are distinct. Negated, aspirational, uncertain and temporally different claims are not equivalent. relatedClaimIds identifies competing or supporting submitted statements. overlap must retain all distinct information. additional_support may emit an evidence operation with the existing whole field value, target/entryId/field of that fact, when the claim repeats an assertion with new supporting evidence not already in acceptedEvidence; this does not change wording. Contradiction and correction/supersession are review candidates: emit no change and preserve both statements until the user resolves them. Ambiguous identity requires clarification, never silently merge distinct entries. Every comparison outcome needs relevant stable facts or related claim IDs; absent stable references use unresolved. Never choose a correction automatically. No operation for unsupported or unresolved claims.`
 
 func coverageFor(valid, invalid int) processingCoverage {
 	capacity := "within_limit"
@@ -194,7 +198,17 @@ func candidateFacts(claims []claim, p profilevalidation.Profile, doc *profiledoc
 				identity = append(identity, other)
 			}
 		}
-		out = append(out, comparisonFact{Reference: profiledocument.Reference{ProfileID: doc.ID, ID: f.ID, Revision: f.Revision}, Fact: f, Identity: identity})
+		evidence := []profiledocument.Evidence{}
+		for _, link := range doc.Links {
+			if link.Kind == "supports" && link.State == "active" && link.From.ID == f.ID && link.From.Revision == f.Revision {
+				for _, excerpt := range doc.Evidence {
+					if excerpt.ID == link.To.ID && excerpt.Revision == link.To.Revision {
+						evidence = append(evidence, excerpt)
+					}
+				}
+			}
+		}
+		out = append(out, comparisonFact{Reference: profiledocument.Reference{ProfileID: doc.ID, ID: f.ID, Revision: f.Revision}, Fact: f, Identity: identity, Evidence: evidence})
 	}
 	return out
 }
@@ -224,12 +238,17 @@ func exactFact(c claim, f comparisonFact) bool {
 	if !found || c.Question != "" {
 		return false
 	}
-	if c.Meaning != nil {
+	if f.Fact.Kind == "statement" && c.Meaning != nil {
+		m := c.Meaning
+		if m.Assertion != f.Fact.Assertion || m.Intent != f.Fact.Intent || m.Certainty != f.Fact.Certainty || m.Temporal.Wording != f.Fact.Temporal.Wording || m.Temporal.Precision != f.Fact.Temporal.Precision {
+			return false
+		}
+	} else if c.Meaning != nil {
 		if c.Meaning.Assertion != "affirmed" || c.Meaning.Intent != "actual" || c.Meaning.Certainty != "certain" || c.Meaning.Temporal.Wording != "" {
 			return false
 		}
 	}
-	if f.Fact.Kind == "statement" && (f.Fact.Assertion != "affirmed" || f.Fact.Intent != "actual" || f.Fact.Certainty != "certain" || f.Fact.Temporal.Wording != "") {
+	if f.Fact.Kind == "statement" && c.Meaning == nil && (f.Fact.Assertion != "affirmed" || f.Fact.Intent != "actual" || f.Fact.Certainty != "certain" || f.Fact.Temporal.Wording != "") {
 		return false
 	}
 	if f.Fact.Owner.ID != f.Reference.ProfileID || len(f.Fact.Context) > 0 {
@@ -298,6 +317,9 @@ func reconcileOutcomes(claims []claim, ops []operation, unresolved []string, l *
 			}
 			if !matched {
 				o = defaultOutcome(c)
+			}
+			if matched && o.Kind == "additional_support" && !hasNewSupport(c, o, l.candidates) {
+				o.Kind, o.Reason = "exact_duplicate", "support_already_retained"
 			}
 		}
 		if contains([]string{"change", "overlap"}, o.Kind) {
@@ -543,6 +565,30 @@ func evidenceOperation(op operation, o claimOutcome, l *reconciliationContext) b
 			}
 			for _, e := range l.document.Entities {
 				if e.ID == f.Fact.Owner.ID && e.Kind == op.Target && e.LegacyID == op.EntryID {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func hasNewSupport(c claim, o claimOutcome, candidates []comparisonFact) bool {
+	sources := []string{c.Source}
+	for _, s := range c.SupportingSources {
+		sources = append(sources, s.Source)
+	}
+	for _, ref := range o.RelatedFacts {
+		for _, f := range candidates {
+			if f.Reference != ref {
+				continue
+			}
+			for _, source := range sources {
+				found := false
+				for _, e := range f.Evidence {
+					found = found || e.Excerpt == source
+				}
+				if !found {
 					return true
 				}
 			}

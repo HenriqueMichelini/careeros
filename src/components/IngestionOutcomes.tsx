@@ -1,3 +1,4 @@
+import { ingestionIdentityFacts } from "../lib/ingestion"
 import type {
   IngestionClaim,
   IngestionOutcome,
@@ -35,6 +36,20 @@ export function IngestionCoverageNotice({
             <li key={item.index}>
               {t("repo.ingestSkippedClaim")} {item.index}:{" "}
               {t(("repo.ingestSkipped." + item.reason) as TranslationKey)}
+              {item.text && (
+                <p className="mt-1 whitespace-pre-wrap">
+                  {t("repo.ingestUnvalidatedWording")}
+                  {item.shortened ? ` (${t("repo.ingestShortened")})` : ""}: “
+                  {item.text}”
+                </p>
+              )}
+              {item.source ? (
+                <blockquote className="mt-1 whitespace-pre-wrap">
+                  {t("repo.ingestSource")}: “{item.source}”
+                </blockquote>
+              ) : (
+                <p className="mt-1">{t("repo.ingestNoValidSource")}</p>
+              )}
             </li>
           ))}
         </ul>
@@ -62,29 +77,26 @@ export function ClaimOutcomeDetails({
       <p className="font-semibold">
         {t(("repo.ingestOutcome." + outcome.kind) as TranslationKey)}
       </p>
-      <p>{translated === reasonKey ? outcome.reason : translated}</p>
+      <p>
+        {translated === reasonKey
+          ? t(("repo.ingestReason." + outcome.kind) as TranslationKey)
+          : translated}
+      </p>
+      {translated === reasonKey && (
+        <details>
+          <summary className="cursor-pointer">
+            {t("repo.ingestComparisonDetail")}
+          </summary>
+          <p className="mt-2 whitespace-pre-wrap">{outcome.reason}</p>
+        </details>
+      )}
       {outcome.relatedFacts.map((ref) => {
         const fact = document?.facts.find(
           (f) => f.id === ref.id && f.revision === ref.revision,
         )
         if (!fact || !document) return null
         const owner = document.entities.find((e) => e.id === fact.owner.id)
-        const identity = document.facts.filter(
-          (f) =>
-            (f.owner.id === owner?.id ||
-              fact.context.some((ref) => ref.id === f.owner.id)) &&
-            [
-              "company",
-              "title",
-              "startDate",
-              "endDate",
-              "name",
-              "degree",
-              "institution",
-              "issuer",
-            ].includes(f.field) &&
-            !!f.value,
-        )
+        const identity = ingestionIdentityFacts(document, fact)
         const evidence = document.links
           .filter(
             (l) =>

@@ -1121,8 +1121,35 @@ test("canonical ingestion rejects malformed stable outcome references before app
   const valid = structuredClone(result)
   valid.outcomes[0].relatedFacts[0].id = doc.facts.find(f => f.field === "skills").id
   assert.doesNotThrow(() => applyIngestionDocument(doc, structuredClone(doc), "I use Java", valid))
+  for (const patch of [{revision:999},{profileId:"foreign-profile"}]) {
+    const malformed = structuredClone(valid)
+    Object.assign(malformed.outcomes[0].relatedFacts[0],patch)
+    assert.throws(()=>applyIngestionDocument(doc,structuredClone(doc),"I use Java",malformed),{code:"invalid_output"})
+  }
   assert.throws(() => applyIngestionDocument(doc, structuredClone(doc), "I use Java", result), {code: "invalid_output"})
   assert.equal(JSON.stringify(doc), before)
+})
+test("exact repeats preserve explicit negative, uncertain, aspirational and temporal meaning", () => {
+  for (const [source, assertion, intent, certainty, wording] of [
+    ["I do not use Java","negated","actual","certain",""],
+    ["I hope to learn Java","affirmed","aspiration","certain",""],
+    ["Maybe I use Java","affirmed","actual","uncertain",""],
+    ["I used Java in 2020","affirmed","actual","certain","2020"],
+  ]) {
+    const doc=migrateProfile({skills:source},"qualified-repeat")
+    const fact=doc.facts.find(f=>f.field==="skills")
+    fact.kind="statement"
+    Object.assign(fact,{assertion,intent,certainty,temporal:{wording,precision:wording?"exact":"unknown"}})
+    const claim=ingestionClaim("c1",source)
+    claim.meaning={assertion,intent,certainty,temporal:structuredClone(fact.temporal)}
+    const result=ingestionResult([claim],[])
+    result.unresolvedClaimIds=[]
+    result.outcomes=[{claimId:"c1",kind:"exact_duplicate",reason:"verified_exact_alias_or_wording",relatedFacts:[{profileId:doc.id,id:fact.id,revision:fact.revision}],relatedClaimIds:[]}]
+    assert.doesNotThrow(()=>applyIngestionDocument(doc,structuredClone(doc),source,result))
+    const mismatch=structuredClone(result)
+    mismatch.claims[0].meaning.assertion=assertion==="negated"?"affirmed":"negated"
+    assert.throws(()=>applyIngestionDocument(doc,structuredClone(doc),source,mismatch),{code:"invalid_output"})
+  }
 })
 test("accepting new support retains wording and earlier excerpts after reload", () => {
   let doc = migrateProfile({ skills: "" }, "support-only")

@@ -557,15 +557,17 @@ try {
             {claimId:"overlap",target:"tools",entryId:"",field:"tools",action:"add",value:"Java",finding:"overlap"},
             {claimId:"change",target:"skills",entryId:"",field:"skills",action:"add",value:"Java",finding:"addition"},
           ],
-          outcomes:ledgerClaims.map((c,i)=>({claimId:c.id,kind:["exact_duplicate","additional_support","overlap","change","contradiction","correction","clarification","unsupported","unresolved"][i],reason:"validated_operation",relatedFacts:["exact","support","overlap","contradiction","correction"].includes(c.id)?[toolRef]:[],relatedClaimIds:["contradiction","correction"].includes(c.id)?["exact"]:[],operationIndexes:i>=1&&i<=3?[i-1]:[]})),
+          outcomes:ledgerClaims.map((c,i)=>({claimId:c.id,kind:["exact_duplicate","additional_support","overlap","change","contradiction","correction","clarification","unsupported","unresolved"][i],reason:i===0?"verified_exact_alias_or_wording":"Source-specific comparison detail",relatedFacts:["exact","support","overlap","contradiction","correction"].includes(c.id)?[toolRef]:[],relatedClaimIds:["contradiction","correction"].includes(c.id)?["exact"]:[],operationIndexes:i>=1&&i<=3?[i-1]:[]})),
           unverifiedClaimCount:1,unresolvedClaimIds:["unresolved"],unplacedOperationCount:0,
-          skippedClaims:[{index:10,reason:"source"}],coverage:{validClaims:9,invalidClaims:1,discoveryComplete:false,capacity:"within_limit"},
+          skippedClaims:[{index:10,reason:"source",text:"Returned statement with unusable source",source:"",shortened:false}],coverage:{validClaims:9,invalidClaims:1,discoveryComplete:false,capacity:"within_limit"},
         }
         await fill(ledgerText)
         await evaluate(`window.fetch=async()=>new Response(${JSON.stringify(JSON.stringify(ledger))},{status:200})`)
         await evaluate(`${byText(review)}.click()`)
         await until("document.querySelectorAll('article').length===9")
         const ledgerScreenText = await evaluate("document.body.innerText")
+        assert.ok(ledgerScreenText.includes("Returned statement with unusable source"))
+        assert.ok(ledgerScreenText.includes(locale==="en"?"This assertion has additional supporting evidence":"Esta afirmação tem evidência adicional"))
         for (const label of locale === "en" ? ["Exact duplicate", "Additional supporting evidence", "Overlapping detail", "Proposed change", "Contradiction", "Correction or supersession", "Needs clarification", "Unsupported claim", "Processing unresolved", "Unprocessed claim 10"] : ["Duplicata exata", "Evidência adicional", "Detalhe sobreposto", "Alteração proposta", "Contradição", "Candidata a correção", "Precisa de esclarecimento", "Afirmação sem suporte", "Processamento não resolvido", "Afirmação não processada 10"]) assert.ok(ledgerScreenText.includes(label),label)
         await evaluate("document.querySelector('article details summary').focus()")
         await call("Input.dispatchKeyEvent",{type:"keyDown",key:"Enter",code:"Enter",windowsVirtualKeyCode:13,text:"\r"})

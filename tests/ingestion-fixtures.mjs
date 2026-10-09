@@ -47,6 +47,9 @@ export function withIngestionLedger(data) {
       (_, index) => ({
         index: data.claims.length + index + 1,
         reason: "source",
+        text: "Unvalidated extracted claim",
+        source: "",
+        shortened: false,
       }),
     ),
   }

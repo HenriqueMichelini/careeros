@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"professional-information-repo/internal/aidiagnostics"
 	"professional-information-repo/internal/fieldvalidation"
@@ -325,7 +326,7 @@ func exactArray(raw []byte, name string) bool {
 	return ok && strings.HasPrefix(strings.TrimSpace(string(item)), "[")
 }
 func (a app) extract(ctx context.Context, key string, source preprocessing.Source, contexts ...*reconciliationContext) (res []claim, skippedCount int, codeResult string) {
-	ctx, finish := aidiagnostics.Start(ctx, "extraction", "profile-claims-prompt-v2/schema-v2/source-resolution-v1")
+	ctx, finish := aidiagnostics.Start(ctx, "extraction", "profile-claims-prompt-v3/schema-v2/source-resolution-v1")
 	defer func() { finish(codeResult) }()
 	reject := func(reason string) ([]claim, int, string) {
 		log.Printf("profile_ingestion stage=extract reason=%s", reason)
@@ -350,15 +351,33 @@ func (a app) extract(ctx context.Context, key string, source preprocessing.Sourc
 	}
 	verified := make([]claim, 0, len(out.Claims))
 	skipped := 0
+	var currentClaim *claim
 	skip := func(reason string) {
 		log.Printf("profile_ingestion stage=extract reason=%s", reason)
 		skipped++
 		if len(contexts) > 0 {
-			contexts[0].skipped = append(contexts[0].skipped, skippedClaim{Index: len(verified) + skipped, Reason: reason})
+			item := skippedClaim{Index: len(verified) + skipped, Reason: reason}
+			if currentClaim != nil {
+				item.Text = currentClaim.Text
+				if len(item.Text) > 1000 {
+					item.Text = item.Text[:1000]
+					for !utf8.ValidString(item.Text) {
+						item.Text = item.Text[:len(item.Text)-1]
+					}
+					item.Shortened = true
+				}
+				if currentClaim.SourceReference != nil {
+					item.Source = currentClaim.Source
+				} else if len(currentClaim.Source) <= 1000 {
+					item.Source, _ = resolveExcerpt(source, currentClaim.Source, currentClaim.SegmentID)
+				}
+			}
+			contexts[0].skipped = append(contexts[0].skipped, item)
 		}
 	}
 	for i := range out.Claims {
 		c := &out.Claims[i]
+		currentClaim = c
 		if c.ID == "" || len(c.ID) > 40 {
 			skip("claim_id")
 			continue
@@ -630,7 +649,7 @@ func (a app) compare(ctx context.Context, key string, claims []claim, p profilev
 	if len(claims) == 0 {
 		return []operation{}, []string{}, 0, ""
 	}
-	_, retrievalDone := aidiagnostics.Start(ctx, "candidate_retrieval", "lexical-projection-v2")
+	_, retrievalDone := aidiagnostics.Start(ctx, "candidate_retrieval", "lexical-projection-v3/stable-facts-v1")
 	projected := projection(claims, p)
 	retrievalDone("")
 	ledger.candidates = candidateFacts(claims, p, ledger.document)

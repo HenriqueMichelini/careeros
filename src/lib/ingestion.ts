@@ -76,13 +76,17 @@ export interface IngestionCoverage {
   discoveryComplete: false
   capacity: "within_limit" | "possibly_exhausted"
 }
+export interface IngestionSkippedClaim {
+  index: number
+  reason: string
+  text: string
+  source: string
+  shortened: boolean
+}
 export interface IngestionResult {
   outcomes?: IngestionOutcome[]
   coverage?: IngestionCoverage
-  skippedClaims?: {
-    index: number
-    reason: string
-  }[]
+  skippedClaims?: IngestionSkippedClaim[]
   claims: IngestionClaim[]
   operations: IngestionOperation[]
   unverifiedClaimCount: number
@@ -559,7 +563,7 @@ export function validateIngestionResult(
     )
       throw new IngestionError("invalid_output")
   }
-  const ledger = validateOutcomeLedger(raw, claims, operations, document)
+  const ledger = validateOutcomeLedger(raw, claims, operations, input, document)
   return {
     ...ledger,
     claims,
@@ -593,6 +597,7 @@ function validateOutcomeLedger(
   raw: Record<string, unknown>,
   claims: IngestionClaim[],
   operations: IngestionOperation[],
+  input: string,
   document?: ProfileDocument,
 ): Pick<IngestionResult, "outcomes" | "coverage" | "skippedClaims"> {
   const fail = (): never => {
@@ -624,13 +629,17 @@ function validateOutcomeLedger(
   for (const item of raw.skippedClaims) {
     if (
       !record(item) ||
-      !keys(item, ["index", "reason"]) ||
+      !keys(item, ["index", "reason", "text", "source", "shortened"]) ||
       !Number.isInteger(item.index) ||
       Number(item.index) < 1 ||
       Number(item.index) > 30 ||
       skippedIndexes.has(Number(item.index)) ||
       !string(item.reason, 100) ||
-      !item.reason
+      !item.reason ||
+      !string(item.text, 1000) ||
+      !string(item.source, 1000) ||
+      (item.source && !input.includes(item.source)) ||
+      typeof item.shortened !== "boolean"
     )
       return fail()
     skippedIndexes.add(Number(item.index))
@@ -775,11 +784,31 @@ function validateOutcomeLedger(
   return {
     outcomes: raw.outcomes as IngestionOutcome[],
     coverage: raw.coverage as unknown as IngestionCoverage,
-    skippedClaims: raw.skippedClaims as {
-      index: number
-      reason: string
-    }[],
+    skippedClaims: raw.skippedClaims as IngestionSkippedClaim[],
   }
+}
+
+export function ingestionIdentityFacts(
+  doc: ProfileDocument,
+  fact: ProfileFact,
+): ProfileFact[] {
+  return doc.facts.filter(
+    (f) =>
+      (f.owner.id === fact.owner.id ||
+        fact.context.some((r) => r.id === f.owner.id)) &&
+      [
+        "company",
+        "title",
+        "startDate",
+        "endDate",
+        "name",
+        "degree",
+        "institution",
+        "issuer",
+      ].includes(f.field) &&
+      typeof f.value === "string" &&
+      !!f.value,
+  )
 }
 
 // Only exact wording and the pinned alias policy can establish equivalence.
@@ -802,19 +831,32 @@ function exactIngestionFact(
         )?.[1]
       : undefined
   const value = alias(use ?? claim.source.trim())
+  if (typeof fact.value !== "string" || claim.question) return false
+  const meaning = claim.meaning
+  if (fact.kind === "statement" && meaning) {
+    if (
+      meaning.assertion !== fact.assertion ||
+      meaning.intent !== fact.intent ||
+      meaning.certainty !== fact.certainty ||
+      meaning.temporal.wording !== fact.temporal.wording ||
+      meaning.temporal.precision !== fact.temporal.precision
+    )
+      return false
+  } else if (
+    meaning &&
+    (meaning.assertion !== "affirmed" ||
+      meaning.intent !== "actual" ||
+      meaning.certainty !== "certain" ||
+      meaning.temporal.wording !== "")
+  )
+    return false
   if (
-    typeof fact.value !== "string" ||
-    claim.question ||
-    (claim.meaning &&
-      (claim.meaning.assertion !== "affirmed" ||
-        claim.meaning.intent !== "actual" ||
-        claim.meaning.certainty !== "certain" ||
-        claim.meaning.temporal.wording !== "")) ||
-    (fact.kind === "statement" &&
-      (fact.assertion !== "affirmed" ||
-        fact.intent !== "actual" ||
-        fact.certainty !== "certain" ||
-        fact.temporal.wording !== ""))
+    fact.kind === "statement" &&
+    !meaning &&
+    (fact.assertion !== "affirmed" ||
+      fact.intent !== "actual" ||
+      fact.certainty !== "certain" ||
+      fact.temporal.wording !== "")
   )
     return false
   const sharedCapability =
@@ -840,23 +882,7 @@ function exactIngestionFact(
   )
     return false
   if (fact.owner.id !== doc.id || fact.context.length) {
-    const identity = doc.facts.filter(
-      (f) =>
-        (f.owner.id === fact.owner.id ||
-          fact.context.some((r) => r.id === f.owner.id)) &&
-        [
-          "company",
-          "title",
-          "startDate",
-          "endDate",
-          "name",
-          "degree",
-          "institution",
-          "issuer",
-        ].includes(f.field) &&
-        typeof f.value === "string" &&
-        !!f.value,
-    )
+    const identity = ingestionIdentityFacts(doc, fact)
     const source = [
       claim.source,
       ...(claim.supportingSources ?? []).map((s) => s.source),

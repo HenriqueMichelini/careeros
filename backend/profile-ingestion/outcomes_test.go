@@ -77,9 +77,12 @@ func stringValue(v any) string {
 	}
 	return string(mustJSON(v))
 }
-func sendLedger(t *testing.T, p profilevalidation.Profile, input string, claims []claim, comparison string) *httptest.ResponseRecorder {
+func sendLedger(t *testing.T, p profilevalidation.Profile, input string, claims []claim, comparison string, edits ...func(*profiledocument.Document)) *httptest.ResponseRecorder {
 	t.Helper()
 	doc := ledgerDocument(p)
+	for _, edit := range edits {
+		edit(&doc)
+	}
 	if _, err := profiledocument.Decode(mustJSON(doc)); err != nil {
 		t.Fatal(err)
 	}
@@ -100,6 +103,42 @@ func sendLedger(t *testing.T, p profilevalidation.Profile, input string, claims 
 	w := httptest.NewRecorder()
 	NewHandlerWithClient(client).ServeHTTP(w, r)
 	return w
+}
+
+func TestHandlerRecognizesIdenticalExplicitQualifiedAssertions(t *testing.T) {
+	for _, tc := range []struct{ source, assertion, intent, certainty, time string }{
+		{"I do not use Java", "negated", "actual", "certain", ""},
+		{"I hope to learn Java", "affirmed", "aspiration", "certain", ""},
+		{"Maybe I use Java", "affirmed", "actual", "uncertain", ""},
+		{"I used Java in 2020", "affirmed", "actual", "certain", "2020"},
+	} {
+		t.Run(tc.source, func(t *testing.T) {
+			p := profile()
+			p.Skills = tc.source
+			m := &meaning{Assertion: tc.assertion, Intent: tc.intent, Certainty: tc.certainty}
+			m.Temporal.Wording, m.Temporal.Precision = tc.time, "unknown"
+			if tc.time != "" {
+				m.Temporal.Precision = "exact"
+			}
+			c := claim{ID: "c1", Source: tc.source, Text: tc.source, Targets: []string{"skills"}, Meaning: m}
+			comparison := `{"operations":[],"outcomes":[{"claimId":"c1","kind":"exact_duplicate","reason":"Identical original qualified statement","relatedFacts":[{"profileId":"profile","id":"profile/skills","revision":1}],"relatedClaimIds":[]}]}`
+			w := sendLedger(t, p, tc.source, []claim{c}, comparison, func(doc *profiledocument.Document) {
+				for i := range doc.Facts {
+					f := &doc.Facts[i]
+					if f.Field == "skills" {
+						f.Kind = "statement"
+						f.Assertion, f.Intent, f.Certainty = tc.assertion, tc.intent, tc.certainty
+						f.Temporal = profiledocument.Temporal{Wording: m.Temporal.Wording, Precision: m.Temporal.Precision}
+					}
+				}
+			})
+			var got result
+			_ = json.Unmarshal(w.Body.Bytes(), &got)
+			if w.Code != 200 || len(got.Outcomes) != 1 || got.Outcomes[0].Kind != "exact_duplicate" {
+				t.Fatalf("identical qualified fact not recognized: %d %s", w.Code, w.Body.String())
+			}
+		})
+	}
 }
 func TestHandlerRejectsRelatedTechnologiesAndQualifiedDuplicateAssertions(t *testing.T) {
 	for _, tc := range []struct {
@@ -201,9 +240,35 @@ func TestHandlerReportsInvalidClaimsAndPossibleCapacityExhaustion(t *testing.T) 
 		t.Fatalf("%d %s", w.Code, w.Body.String())
 	}
 	for i, item := range got.SkippedClaims {
-		if item.Index != i+1 || item.Reason != "source" {
+		if item.Index != i+1 || item.Reason != "source" || item.Text != "Invalid source" || item.Source != "" {
 			t.Fatal("invalid claims disappeared")
 		}
+	}
+}
+
+func TestSkippedClaimRetainsResolvedOriginalExcerpt(t *testing.T) {
+	c := claim{ID: "c1", Source: "I use Java", Text: "Uses Java", Targets: []string{"invalid-destination"}}
+	w := sendLedger(t, profile(), "I use Java", []claim{c}, `{"operations":[]}`)
+	var got result
+	_ = json.Unmarshal(w.Body.Bytes(), &got)
+	if w.Code != 200 || len(got.SkippedClaims) != 1 || got.SkippedClaims[0].Source != "I use Java" || got.SkippedClaims[0].Text != "Uses Java" || got.SkippedClaims[0].Reason != "target" {
+		t.Fatalf("identifiable skipped statement lost: %d %s", w.Code, w.Body.String())
+	}
+}
+
+func TestRepeatedAcceptedSupportDoesNotPretendToBeNewEvidence(t *testing.T) {
+	p := profile()
+	p.Skills = "Java"
+	c := claim{ID: "c1", Source: "I use Java", Text: "Java", Targets: []string{"skills"}}
+	comparison := `{"operations":[{"claimId":"c1","target":"skills","entryId":"","field":"skills","action":"evidence","value":"Java","finding":"in_place"}],"outcomes":[{"claimId":"c1","kind":"additional_support","reason":"More evidence","relatedFacts":[{"profileId":"profile","id":"profile/skills","revision":1}],"relatedClaimIds":[]}]}`
+	w := sendLedger(t, p, c.Source, []claim{c}, comparison, func(doc *profiledocument.Document) {
+		doc.Evidence = append(doc.Evidence, profiledocument.Evidence{ID: "accepted-source", Revision: 1, Excerpt: c.Source, Origin: "professional_information", Approval: "approved"})
+		doc.Links = append(doc.Links, profiledocument.Link{ID: "support-link", Kind: "supports", State: "active", From: profiledocument.Reference{ProfileID: doc.ID, ID: "profile/skills", Revision: 1}, To: profiledocument.Reference{ProfileID: doc.ID, ID: "accepted-source", Revision: 1}})
+	})
+	var got result
+	_ = json.Unmarshal(w.Body.Bytes(), &got)
+	if w.Code != 200 || len(got.Outcomes) != 1 || got.Outcomes[0].Kind != "exact_duplicate" || len(got.Operations) != 0 {
+		t.Fatalf("old support presented as new: %d %s", w.Code, w.Body.String())
 	}
 }
 

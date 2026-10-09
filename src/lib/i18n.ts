@@ -353,6 +353,8 @@ const messages = {
     "repo.ingestOutcome.unresolved": "Processing unresolved",
     "repo.ingestReason.no_validated_disposition":
       "No safe comparison outcome was established. An absent change does not mean this fact is already in your Profile.",
+    "repo.ingestReason.support_already_retained":
+      "The same assertion and its submitted support are already retained.",
     "repo.ingestReason.source_ambiguity":
       "The submitted wording needs clarification.",
     "repo.ingestReason.verified_exact_alias_or_wording":
@@ -379,6 +381,30 @@ const messages = {
     "repo.ingestSkipped.support_source":
       "Supporting source or temporal wording could not be validated.",
     "repo.ingestSkipped.target": "Invalid destination.",
+    "repo.ingestComparisonDetail":
+      "Comparison detail in the submitted text’s language",
+    "repo.ingestUnvalidatedWording": "Unvalidated extracted wording",
+    "repo.ingestShortened": "shortened",
+    "repo.ingestNoValidSource":
+      "No exact source excerpt could be validated; review the original text.",
+    "repo.ingestReason.change":
+      "A change is proposed for explicit review before saving.",
+    "repo.ingestReason.exact_duplicate":
+      "The same assertion is represented by the referenced fact and compatible context.",
+    "repo.ingestReason.overlap":
+      "Review the shared wording and distinct information against the referenced facts.",
+    "repo.ingestReason.additional_support":
+      "This assertion has additional supporting evidence. Accept it explicitly to attach that evidence without changing the wording.",
+    "repo.ingestReason.contradiction":
+      "These statements conflict. Both remain available for review; no resolution has been selected.",
+    "repo.ingestReason.correction":
+      "This may correct or replace an existing assertion. Review both statements and their support before deciding.",
+    "repo.ingestReason.clarification":
+      "More information is needed to compare this statement safely.",
+    "repo.ingestReason.unsupported":
+      "A supported Profile change could not be established for this statement.",
+    "repo.ingestReason.unresolved":
+      "Processing did not establish a safe disposition. This does not mean the assertion is already in Profile.",
     "repo.ingestNoChange": "No safe comparison outcome was established.",
     "repo.ingestApproveClaim": "Approve linked changes",
     "repo.ingestRejectClaim": "Reject linked changes",
@@ -1056,6 +1082,8 @@ const messages = {
     "repo.ingestOutcome.unresolved": "Processamento não resolvido",
     "repo.ingestReason.no_validated_disposition":
       "Não foi possível estabelecer uma comparação segura. A ausência de alteração não significa que este fato já esteja no seu Perfil.",
+    "repo.ingestReason.support_already_retained":
+      "A mesma afirmação e seu suporte enviado já estão preservados.",
     "repo.ingestReason.source_ambiguity":
       "O texto enviado precisa de esclarecimento.",
     "repo.ingestReason.verified_exact_alias_or_wording":
@@ -1084,8 +1112,32 @@ const messages = {
     "repo.ingestSkipped.support_source":
       "Não foi possível validar o suporte ou o texto temporal.",
     "repo.ingestSkipped.target": "Destino inválido.",
+    "repo.ingestComparisonDetail":
+      "Detalhe da comparação no idioma do texto enviado",
+    "repo.ingestUnvalidatedWording": "Texto extraído não validado",
+    "repo.ingestShortened": "abreviado",
+    "repo.ingestNoValidSource":
+      "Não foi possível validar um trecho exato de origem; revise o texto original.",
+    "repo.ingestReason.change":
+      "Uma alteração foi proposta para revisão explícita antes de salvar.",
+    "repo.ingestReason.exact_duplicate":
+      "A mesma afirmação está representada pelo fato referenciado e pelo contexto compatível.",
+    "repo.ingestReason.overlap":
+      "Compare o texto em comum e as informações distintas com os fatos referenciados.",
+    "repo.ingestReason.additional_support":
+      "Esta afirmação tem evidência adicional. Aceite explicitamente para vincular a evidência sem alterar o texto.",
+    "repo.ingestReason.contradiction":
+      "Estas afirmações são conflitantes. Ambas continuam disponíveis para revisão; nenhuma resolução foi escolhida.",
+    "repo.ingestReason.correction":
+      "Esta afirmação pode corrigir ou substituir uma anterior. Revise ambas e seus suportes antes de decidir.",
+    "repo.ingestReason.clarification":
+      "São necessárias mais informações para comparar esta afirmação com segurança.",
+    "repo.ingestReason.unsupported":
+      "Não foi possível estabelecer uma alteração com suporte para esta afirmação.",
+    "repo.ingestReason.unresolved":
+      "O processamento não estabeleceu um resultado seguro. Isso não significa que a afirmação já esteja no Perfil.",
     "repo.ingestNoChange":
-      "Nenhuma alteração sugerida; talvez já esteja no Perfil.",
+      "Nenhum resultado seguro de comparação foi estabelecido.",
     "repo.ingestApproveClaim": "Aprovar alterações ligadas",
     "repo.ingestRejectClaim": "Rejeitar alterações ligadas",
     "repo.ingestBefore": "Antes",
