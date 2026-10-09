@@ -1428,3 +1428,14 @@ test("identity support can accompany an approximate dated narrative without inhe
  assert.equal(fact.temporal.wording,"around 2020")
  assert.equal(next.links.filter(l=>l.kind==="supports" && l.from.id===fact.id && l.state==="active").length,2)
 })
+test("polarity changes cannot reactivate a previous affirmative excerpt", () => {
+ const empty=migrateProfile({skills:""},"polarity-ingestion")
+ const doc=applyIngestionDocument(empty,empty,"I use Java.",ingestionResult([ingestionClaim("c1","I use Java.")],[ingestionOp({value:"Java"})]))
+ const c=ingestionClaim("c1","I do not use Java.")
+ c.meaning={assertion:"negated",intent:"actual",certainty:"certain",temporal:{wording:"",precision:"unknown"}}
+ const next=applyIngestionDocument(doc,doc,c.source,ingestionResult([c],[ingestionOp({action:"update",value:"Do not use Java"})]))
+ const fact=next.facts.find(f=>f.field==="skills")
+ const active=next.links.filter(l=>l.from.id===fact.id && l.kind==="supports" && l.state==="active").map(l=>l.to.id)
+ assert.deepEqual(next.evidence.filter(e=>active.includes(e.id)).map(e=>e.excerpt),["I do not use Java."])
+ assert.equal(fact.assertion,"negated")
+})

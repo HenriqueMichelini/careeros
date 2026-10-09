@@ -190,7 +190,7 @@ export function applyIngestionDocument(
     const identityUnchanged = identityFields.every(field => JSON.stringify(doc.facts.find(f => f.owner.id === owner?.id && f.field === field)?.value) === JSON.stringify(next.facts.find(f => f.owner.id === owner?.id && f.field === field)?.value))
     const contextUnchanged = (old?.context ?? []).every(c => c.id === owner?.id || next.entities.some(e => e.id === c.id && e.revision === c.revision))
     const retainsOld = !!old?.value && retainsWording(String(fact.value),String(old.value))
-    const preserveOldSupport = retainsOld && old?.support === "supported" && identityUnchanged && contextUnchanged
+    const preserveOldSupport = appending && retainsOld && old?.support === "supported" && identityUnchanged && contextUnchanged
     if (old?.value && preserveOldSupport) {
       for (const link of doc.links.filter(
         (l) =>
