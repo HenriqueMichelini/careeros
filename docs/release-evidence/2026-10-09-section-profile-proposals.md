@@ -23,3 +23,17 @@ The review shows before/after text, all cited original facts, role/project conte
 - Existing 34-case semantic suite ran with controlled production-handler adapters. Eight known label/contract failures remain in capacity and adversarial Application Draft fixtures. Those workflows are unchanged by #38. Report: `/tmp/issue38-semantic-quality.json` in this local session. Do not interpret controlled responses as live-provider quality or billing evidence.
 
 No deployed behavior or live semantic accuracy is claimed. A semantic verifier is fallible; the user still inspects and confirms every claim before acceptance. Whole facts remain whole; this ticket does not introduce ingestion persistence, semantic decomposition, remote storage, vectors or model fallback.
+
+## Standards
+
+Independent review of `4efbff2...2d6893a` found no documented standards violations or heuristic smells. It identified two correctness findings: empty wording blocked deliberate removal, and null supporting references threw rather than returning invalid output. Both were reproduced and corrected in `e4110d3`. Independent correction review found no remaining actionable standards or correctness gaps.
+
+## Spec
+
+Independent review identified the same removal bug plus missing server enforcement of section-only provider context. `e4110d3` now rebuilds and validates the selected snapshot at the HTTP boundary before either provider call. An outbound sentinel regression confirms unrelated email facts reach neither call. The independent correction review found no remaining actionable specification gaps.
+
+Review totals: Standards 0 remaining (2 corrected); Spec 0 remaining (2 corrected, one shared with Standards).
+
+The complete Node and Go suites, TypeScript checking, production build and both controlled browser matrices passed. The public canonical suite now has 28 tests, including clear-and-remove, null support references and order-independent source invalidation. Go fixtures contain 17 versioned cases plus public-boundary tests for malformed/legacy requests, strict output, bounded verifier and server containment. No real provider calls were performed.
+
+Screenshots: [English desktop](section-rewrite-2026-10-09/section-en-1440.png), [Portuguese mobile](section-rewrite-2026-10-09/section-pt-BR-390.png). Both final captures were visually inspected.

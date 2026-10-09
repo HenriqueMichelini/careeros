@@ -2,7 +2,7 @@
 
 Issue #36 introduces an expand-phase boundary. `careeros_profile_v2` contains the only editable, authoritative Profile. A successful atomic `localStorage.setItem` installs the authority after the candidate passes validation. The unchanged `careeros_repo` key is the recovery snapshot of pre-migration data. No subsequent Profile writes update that key. A malformed v2 document never falls back silently to an older snapshot.
 
-`src/lib/profileDocument.ts` defines migration, validation, compatibility projection and whole-field replacement. `internal/profiledocument/contract.json` defines the shared wire shape; both TypeScript and Go evaluate its small schema subset and separately validate domain references. `fixtures.json` is the common positive/negative parity corpus. The Go contract package is not connected to handlers or persistence. Existing HTTP workflow contracts continue receiving `careerProfile` and qualification views; no provider, account, database or synchronization is added.
+`src/lib/profileDocument.ts` defines migration, validation, compatibility projection and whole-field replacement. `internal/profiledocument/contract.json` defines the shared wire shape; both TypeScript and Go evaluate its small schema subset and separately validate domain references. `fixtures.json` is the common positive/negative parity corpus. The stateless section-review handler validates bounded canonical snapshots with the Go contract. Other HTTP workflow contracts continue receiving `careerProfile` and qualification views; no provider, account, database or synchronization is added.
 
 ## Identity and meaning
 
