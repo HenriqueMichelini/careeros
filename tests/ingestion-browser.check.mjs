@@ -881,6 +881,10 @@ try {
               : "Habilidades e tecnologias"
           const reviewAi = locale === "en" ? "Review with AI" : "Revisar com IA"
           await evaluate(`${byText(skills)}.click()`)
+          await evaluate("document.querySelector('[data-fact-details]').open=true")
+          await until("Array.from(document.querySelectorAll('[data-fact-details] blockquote')).some(el=>el.textContent.includes('Go'))")
+          const sourceScreen = await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:true})
+          writeFileSync(join(work,`accepted-evidence-${locale}-${width}-${populated}.png`),Buffer.from(sourceScreen.data,'base64'))
           assert.ok(
             await evaluate("document.querySelector('aside').textContent").then(
               (text) =>

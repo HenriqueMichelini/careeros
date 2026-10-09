@@ -142,10 +142,11 @@ export function applyIngestionDocument(
         claims.set(id, claim)
       }
     }
-    const meanings = [...claims.values()].map((c) => c.meaning)
-    const meaning = meanings[0]
-    if (meanings.some((m) => JSON.stringify(m) !== JSON.stringify(meaning)))
-      throw new IngestionError("invalid_output")
+    // Supporting identity claims supply context, not the narrative's semantic
+    // qualifiers. Mixed narrative qualifiers stay unknown rather than forcing
+    // one assertion onto the entire composite field.
+    const meanings = relevant.map(op => result.claims.find(c => c.id === op.claimId)?.meaning)
+    const meaning = meanings.every(m => JSON.stringify(m) === JSON.stringify(meanings[0])) ? meanings[0] : undefined
     const appending =
       relevant.every((op) => op.action === "add") && !!old?.value
     fact.kind = appending ? "legacy_block" : "statement"
@@ -188,7 +189,8 @@ export function applyIngestionDocument(
     const identityFields = owner?.kind === "experience" ? ["company","title","startDate","endDate","current"] : owner?.kind === "projects" ? ["name"] : []
     const identityUnchanged = identityFields.every(field => JSON.stringify(doc.facts.find(f => f.owner.id === owner?.id && f.field === field)?.value) === JSON.stringify(next.facts.find(f => f.owner.id === owner?.id && f.field === field)?.value))
     const contextUnchanged = (old?.context ?? []).every(c => c.id === owner?.id || next.entities.some(e => e.id === c.id && e.revision === c.revision))
-    const preserveOldSupport = old?.support === "supported" && identityUnchanged && contextUnchanged
+    const retainsOld = !!old?.value && retainsWording(String(fact.value),String(old.value))
+    const preserveOldSupport = retainsOld && old?.support === "supported" && identityUnchanged && contextUnchanged
     if (old?.value && preserveOldSupport) {
       for (const link of doc.links.filter(
         (l) =>
@@ -231,16 +233,17 @@ export function applyIngestionDocument(
     // not be upgraded merely because its new clause has an exact pointer.
     const sourceText = [...excerpts].join("\n")
     fact.support =
-      old?.value &&
+      retainsOld &&
       !preserveOldSupport &&
-      !sourceText.includes(String(old.value))
+      !sourceText.includes(String(old?.value))
         ? "unsupported"
         : "supported"
     if (owner && ["experience", "projects"].includes(owner.kind)) {
       fact.context = [ref(owner.id, owner.revision)]
       const kinds =
         owner.kind === "experience"
-          ? ["role_context", "period_context"] as const
+          ? next.facts.some(f => f.owner.id === owner.id && ["startDate","endDate","current"].includes(f.field) && !!f.value)
+            ? ["role_context", "period_context"] as const : ["role_context"] as const
           : ["project_context"] as const
       for (const kind of kinds)
         next.links.push({
@@ -296,4 +299,11 @@ export function ingestionNormalization(
     if (observed) return normalizeTerm(observed)
   }
   return { observed: source, canonical: null, policy: proposed.policy }
+}
+
+function retainsWording(value:string, prior:string):boolean {
+  const at = value.indexOf(prior)
+  if (at < 0) return false
+  const adjacent = [value.slice(0,at).slice(-1),value.slice(at+prior.length,at+prior.length+1)]
+  return adjacent.every(c => !/[\p{L}\p{N}_+#]/u.test(c))
 }

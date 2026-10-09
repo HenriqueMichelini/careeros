@@ -1399,3 +1399,32 @@ test("ingestion preserves aspirations and rejects metadata-only stale acceptance
   const changed = editProfile(doc,{type:"fact",id:doc.facts.find(f => f.field === "skills").id,patch:{intent:"actual"}})
   assert.throws(() => applyIngestionDocument(changed,doc,source,result), /stale/)
 })
+test("complete replacements use their own accepted evidence and invalidate obsolete excerpts", () => {
+ const source = "I use Python."
+ const result = ingestionResult([ingestionClaim("c1",source)],[ingestionOp({action:"update",value:"Python"})])
+ const migrated = migrateProfile({skills:"Java"},"replace-ingestion")
+ const fresh = applyIngestionDocument(migrated,migrated,source,result)
+ assert.equal(fresh.facts.find(f => f.field === "skills").support,"supported")
+ const empty = migrateProfile({skills:""},"old-evidence")
+ const doc = applyIngestionDocument(empty,empty,"I use Java.",ingestionResult([ingestionClaim("c1","I use Java.")],[ingestionOp({value:"Java"})]))
+ const next = applyIngestionDocument(doc,doc,source,result)
+ const fact = next.facts.find(f => f.field === "skills")
+ const active = next.links.filter(l => l.from.id === fact.id && l.kind === "supports" && l.state === "active").map(l => l.to.id)
+ assert.deepEqual(next.evidence.filter(e => active.includes(e.id)).map(e => e.excerpt),["I use Python."])
+ assert.ok(next.evidence.some(e => e.excerpt === "I use Java."))
+ assert.equal(fact.support,"supported")
+})
+test("identity support can accompany an approximate dated narrative without inheriting its qualifiers", () => {
+ const doc = migrateProfile({skills:""},"composite-period")
+ const input = "At Acme I was an Engineer.\nI used Java around 2020."
+ const c1=ingestionClaim("c1","At Acme I was an Engineer.",["experience"])
+ const c2=ingestionClaim("c2","I used Java around 2020.",["experience"])
+ c1.meaning={assertion:"affirmed",intent:"actual",certainty:"certain",temporal:{wording:"",precision:"unknown"}}
+ c2.meaning={assertion:"affirmed",intent:"actual",certainty:"certain",temporal:{wording:"around 2020",precision:"approximate"}}
+ const ops=[ingestionOp({target:"experience",entryId:"new:c1",field:"company",value:"Acme"}),ingestionOp({target:"experience",entryId:"new:c1",field:"title",value:"Engineer"}),ingestionOp({claimId:"c2",target:"experience",entryId:"new:c1",field:"responsibilities",value:"Used Java around 2020",supportingClaimIds:["c2","c1"]})]
+ const next=applyIngestionDocument(doc,doc,input,ingestionResult([c1,c2],ops))
+ const fact=next.facts.find(f=>f.field==="responsibilities")
+ assert.equal(fact.temporal.precision,"approximate")
+ assert.equal(fact.temporal.wording,"around 2020")
+ assert.equal(next.links.filter(l=>l.kind==="supports" && l.from.id===fact.id && l.state==="active").length,2)
+})

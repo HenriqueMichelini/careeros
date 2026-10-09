@@ -6,7 +6,7 @@ Milestone: Evidence-backed Profile (#3). Implementation branch: `codex/evidence-
 
 The existing bounded extraction/comparison calls now propose semantic qualifiers, complete contextual supporting excerpts and composite claim references. Every excerpt uses #60's preparation/source occurrence resolver. The client validates UTF-8 original ranges and binds source identities to the original submission; temporal wording and literal numbers/technology spellings have deterministic guards. Invalid/conflicting references remain unresolved. No additional provider call, semantic verifier, source normalizer, database or source archive was introduced.
 
-`applyIngestionDocument` converts explicitly selected field operations into stable canonical facts/entities, accepted excerpts and same-Profile revisioned support/role/project/period links in one transaction. New entity anchors remain proposal-local until apply. Required identity operations and supporting claim dependencies must be selected; different role/project destinations cannot lend each other support. Existing experience candidates always include employer, role and period, including lexical candidates in other destinations. A selected field replacement retains existing approved supporting excerpts; unsupported retained text never acquires support merely from a new source pointer.
+`applyIngestionDocument` converts explicitly selected field operations into stable canonical facts/entities, accepted excerpts and same-Profile revisioned support/role/project/period links in one transaction. New entity anchors remain proposal-local until apply. Required identity operations and supporting claim dependencies must be selected; different role/project destinations cannot lend each other support. Existing experience candidates always include employer, role and period, including lexical candidates in other destinations. A selected field replacement retains existing approved excerpts only when their complete prior wording and identity/context remain explicitly present. Obsolete excerpts stay historical with invalidated links; a wholly new replacement can have its own accepted support. Unsupported retained text never acquires support merely from a new source pointer.
 
 Observed terminology remains separate from canonical spelling, under `exact-alias-v1`. Only JavaScript/Javascript and TypeScript/Typescript have deterministic aliases. Other wording, uncertainty and alternatives remain in the accepted excerpts without forced normalization. Qualifiers are explicit; identity labels do not inherit a narrative claim's negation. Complete pastes, pending proposals, and source hashes are not persisted. Edited wording is user-authored with unknown qualifiers and no inherited proposal evidence.
 
@@ -18,11 +18,15 @@ Approved sources remain inspectable through Fact details and context after reloa
 
 Henrique approved the existing public ingestion HTTP handler, canonical apply/storage boundaries and controlled browser checks as TDD seams. Red/green slices covered accepted-only reload, composite references/partial selection, protected values, distinct role stints/ownership and exact alias wording. Tests also cover manual edits and all structured destinations.
 
-- Canonical Profile suite: 36 public-boundary cases passed.
+- Canonical Profile suite: 38 public-boundary cases passed.
 - Client ingestion suite: 22 cases passed.
 - Ingestion Go handler suite and semantic controlled corpus passed after correcting phone-prefix and percentage literal handling.
 - TypeScript checking and production build passed.
 - Controlled ingestion browser matrix passed: English/Portuguese, 1440/390px, empty/populated Profiles; whole-submission decisions, edit/reject/apply, approved-only evidence after reload, recovery/quota, stale completions, delayed lock/save and real sibling-window storage conflicts.
-- Browser screenshots: `/tmp/careeros-ingestion-browser-l0IVDT` (local run artifacts).
+- Rendered Fact Details source inspection after reload also passed. Browser screenshots: `/tmp/careeros-ingestion-browser-lC1lft` (local run artifacts).
 
 All provider responses in these tests were synthetic controlled transports. No real provider calls were made; provider semantic accuracy, live latency and deployed semantic behavior remain outside this local verification. PR/deployment checks and final review results are recorded below after publication.
+
+## Independent review corrections
+
+Standards review reproduced obsolete evidence transfer and false unsupported state on complete replacements. Spec review additionally reproduced an approximate narrative blocked by undated supporting identity. Regression tests were added before fixing all three. Prior evidence now follows explicitly retained wording and unchanged identity/context; new replacements use their own sources; semantic qualifiers come from operative narrative claims, while identity excerpts supply context. Entirely undated roles receive role context without inventing a period link. Final correction review is recorded in the PR/issue.
