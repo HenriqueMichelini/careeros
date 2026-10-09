@@ -988,3 +988,10 @@ test("editing a composite source in the same acceptance never reactivates invali
  const accepted=applySectionProposal(doc,request,proposal,{[tool.id]:"Podman"},[])
  assert.equal(accepted.facts.find(f=>f.id===skill.id).support,"invalidated")
 })
+test("deliberate removal accepts an emptied wording field and malformed supporting references fail validation safely", () => {
+ const doc=migrateProfile({skills:"Go"},"p"),request=sectionReviewRequest(doc,"skills","en"),fact=request.document.facts[0]
+ const proposal={profileId:"p",revision:1,section:"skills",summary:"Clearer",patches:[{factId:fact.id,revision:1,wording:"I use Go",supporting:[{id:fact.id,revision:1}]}]}
+ assert.equal(profileView(applySectionProposal(doc,request,proposal,{[fact.id]:""},[fact.id])).skills,"")
+ const malformed=structuredClone(proposal);malformed.patches[0].supporting=[null]
+ assert.equal(validateSectionProposal(request,malformed),false)
+})

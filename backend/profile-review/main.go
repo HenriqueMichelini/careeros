@@ -82,6 +82,77 @@ func eligible(in reviewRequest, f pd.Fact) bool {
 	}
 	return false
 }
+
+// Rebuild the minimal section snapshot at the public boundary as well as in
+// the client. A valid broader Profile must never be forwarded to a provider.
+func scopedRequest(in reviewRequest) reviewRequest {
+	doc := in.Document
+	facts := map[string]bool{}
+	owners := map[string]bool{}
+	for _, f := range doc.Facts {
+		if eligible(in, f) {
+			facts[f.ID] = true
+			owners[f.Owner.ID] = true
+		}
+	}
+	narrative := map[string]bool{"description": true, "responsibilities": true, "achievements": true, "highlights": true, "details": true}
+	for changed := true; changed; {
+		changed = false
+		addOwner := func(id string) {
+			if !owners[id] {
+				owners[id] = true
+				changed = true
+			}
+		}
+		for _, f := range doc.Facts {
+			if !facts[f.ID] && f.Owner.ID != doc.ID && owners[f.Owner.ID] && !narrative[f.Field] {
+				facts[f.ID] = true
+				changed = true
+			}
+			if facts[f.ID] {
+				addOwner(f.Owner.ID)
+				for _, c := range f.Context {
+					addOwner(c.ID)
+				}
+			}
+		}
+		for _, l := range doc.Links {
+			if l.State == "active" && facts[l.From.ID] && l.Kind != "supports" {
+				addOwner(l.To.ID)
+			}
+		}
+	}
+	in.Document.Facts = []pd.Fact{}
+	in.Document.Entities = []pd.Entity{}
+	in.Document.Links = []pd.Link{}
+	in.Document.Evidence = []pd.Evidence{}
+	for _, f := range doc.Facts {
+		if facts[f.ID] {
+			in.Document.Facts = append(in.Document.Facts, f)
+		}
+	}
+	for _, e := range doc.Entities {
+		if owners[e.ID] {
+			in.Document.Entities = append(in.Document.Entities, e)
+		}
+	}
+	evidence := map[string]bool{}
+	for _, l := range doc.Links {
+		if l.State == "active" && facts[l.From.ID] {
+			in.Document.Links = append(in.Document.Links, l)
+			if l.Kind == "supports" {
+				evidence[l.To.ID] = true
+			}
+		}
+	}
+	for _, e := range doc.Evidence {
+		if evidence[e.ID] {
+			in.Document.Evidence = append(in.Document.Evidence, e)
+		}
+	}
+	return in
+}
+
 func decode(raw []byte, target any) error {
 	d := json.NewDecoder(strings.NewReader(string(raw)))
 	d.DisallowUnknownFields()
@@ -111,6 +182,13 @@ func (a app) review(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, "input")
 		return
 	}
+	in = scopedRequest(in)
+	docRaw, _ = json.Marshal(in.Document)
+	if _, err = pd.Decode(docRaw); err != nil {
+		writeError(w, 400, "input")
+		return
+	}
+	raw, _ = json.Marshal(in)
 	count := 0
 	for _, f := range in.Document.Facts {
 		if eligible(in, f) {

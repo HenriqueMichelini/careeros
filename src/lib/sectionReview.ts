@@ -56,36 +56,25 @@ export function sectionReviewRequest(
     throw new Error("input")
   const selected = doc.facts.filter((f) => reviewableFact(doc, section, f))
   if (!selected.length || selected.length > 80) throw new Error("input")
-  const owners = new Set(
-    selected.flatMap((f) => [f.owner.id, ...f.context.map((c) => c.id)]),
-  )
-  for (const link of doc.links.filter(
-    (l) =>
-      l.state === "active" &&
-      selected.some((f) => f.id === l.from.id) &&
-      l.kind !== "supports",
-  ))
-    owners.add(link.to.id)
-  // Context identities are read-only. No unrelated Profile-level fields travel.
-  const facts = doc.facts.filter(
-    (f) =>
-      selected.includes(f) ||
-      (f.owner.id !== doc.id &&
-        owners.has(f.owner.id) &&
-        ![
-          "description",
-          "responsibilities",
-          "achievements",
-          "highlights",
-          "details",
-        ].includes(f.field)),
-  )
-  const factIds = new Set(facts.map((f) => f.id))
-  const links = doc.links.filter(
-    (l) => l.state === "active" && factIds.has(l.from.id),
-  )
-  for (const f of facts) for (const context of f.context) owners.add(context.id)
-  for (const l of links) if (l.kind !== "supports") owners.add(l.to.id)
+  const owners = new Set(selected.map(f => f.owner.id))
+  const factIds = new Set(selected.map(f => f.id))
+  // Include protected identities through explicit context references, even
+  // when a context identity has another context of its own. Never send
+  // unrelated Profile-level facts or contextual narrative blocks.
+  let size = -1
+  while (size !== owners.size + factIds.size) {
+    size = owners.size + factIds.size
+    for (const f of doc.facts) {
+      if (f.owner.id !== doc.id && owners.has(f.owner.id) && !["description", "responsibilities", "achievements", "highlights", "details"].includes(f.field)) factIds.add(f.id)
+      if (factIds.has(f.id)) {
+        owners.add(f.owner.id)
+        for (const c of f.context) owners.add(c.id)
+      }
+    }
+    for (const l of doc.links) if (l.state === "active" && factIds.has(l.from.id) && l.kind !== "supports") owners.add(l.to.id)
+  }
+  const facts = doc.facts.filter(f => factIds.has(f.id))
+  const links = doc.links.filter(l => l.state === "active" && factIds.has(l.from.id))
   const evidenceIds = new Set(
     links.filter((l) => l.kind === "supports").map((l) => l.to.id),
   )
@@ -151,6 +140,7 @@ export function validateSectionProposal(
       return false
     seen.add(target.id)
     const refs = new Set<string>()
+    if (patch.supporting.some(r => !r || typeof r !== "object")) return false
     const sourceText = patch.supporting.map(r => targets.find(f => f.id === r.id)?.value ?? "").join("\n")
     const numbers: string[] = sourceText.match(/[0-9]+(?:[.,][0-9]+)*(?:%|[kKmM])?/g) ?? []
     if ((patch.wording.match(/[0-9]+(?:[.,][0-9]+)*(?:%|[kKmM])?/g) ?? []).some(n => !numbers.includes(n))) return false
@@ -205,6 +195,7 @@ export function applySectionProposal(
     throw new Error("input")
   let next = structuredClone(doc)
   for (const patch of proposal.patches) {
+    if (removals.includes(patch.factId)) continue
     const wording = edits[patch.factId] ?? patch.wording
     if (!wording.trim() || wording.length > 12000) throw new Error("input")
     if (removals.includes(patch.factId) || wording !== patch.wording) continue
