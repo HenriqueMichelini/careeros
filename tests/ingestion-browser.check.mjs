@@ -528,6 +528,24 @@ try {
       )
       await openProfile()
       assert.deepEqual(JSON.parse(await saved()), repo)
+      // A delayed accepted save must not clear a newer paste entered while the
+      // previous save waits for the origin's lock.
+      await fill(text)
+      await evaluate(`window.fetch=async()=>new Response(${JSON.stringify(JSON.stringify(fixture))},{status:200})`)
+      await evaluate(`${byText(review)}.click()`)
+      await until(`${byText(apply)} !== undefined`)
+      await evaluate(`${byText(approve)}.click()`)
+      await evaluate(`window.__heldLock=navigator.locks.request('careeros_profile_v2',()=>new Promise(resolve=>window.__releaseSave=resolve)); void 0`)
+      await until("typeof window.__releaseSave === 'function'")
+      await evaluate(`${byText(apply)}.click()`)
+      await fill('New career notes entered while saving previous review')
+      await evaluate('window.__releaseSave()')
+      await until(`localStorage.getItem('careeros_profile_v2') !== ${JSON.stringify(original)}`)
+      await pause(100)
+      assert.equal(await evaluate("document.querySelector('#ingestion-text').value"),'New career notes entered while saving previous review')
+      await evaluate(`localStorage.removeItem('careeros_profile_v2'); localStorage.setItem('careeros_repo',${JSON.stringify(JSON.stringify(repo))}); location.reload()`)
+      await until("document.readyState === 'complete' && !!document.querySelector('header button')")
+      await openProfile()
       // A real same-origin sibling window writes a new revision. The storage event
       // blocks the old tab and preserves pending text rather than merging silently.
       await fill("Pending notes before another tab saves")

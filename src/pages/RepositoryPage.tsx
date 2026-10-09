@@ -573,12 +573,14 @@ export default function RepositoryPage() {
     : ingestionError || (revisionRequiredFor !== null && ingestionText.trim() === revisionRequiredFor ? t("field.request_rephrasing") : "")
 
   function editOperation(index: number, patch: Partial<IngestionOperation>) {
+    ingestionRequest.current += 1
     setIngestionResult(previous => previous && ({
       ...previous, operations: previous.operations.map((op, i) => i === index ? {...op,...patch} : op),
     }))
   }
 
   function approveClaim(claimId: string, approved: boolean) {
+    ingestionRequest.current += 1
     setIngestionResult(previous => previous && ({
       ...previous, operations: previous.operations.map(op => op.claimId === claimId ? {...op,approved} : op),
     }))
@@ -586,9 +588,11 @@ export default function RepositoryPage() {
 
   async function confirmIngestion() {
     if (!ingestionResult?.operations.some(op => op.approved)) return
+    const applyingRequest = ingestionRequest.current
     try {
       const updated = applyIngestion(repo, ingestionSnapshot, ingestionResult.operations)
-      if (await saveRepository(updated, { kind: "accepted_proposal", original: "unknown" })) discardIngestion()
+      const saved = await saveRepository(updated, { kind: "accepted_proposal", original: "unknown" })
+      if (saved && ingestionRequest.current === applyingRequest) discardIngestion()
     } catch (error) {
       const code = error instanceof IngestionError ? error.code : "invalid_output"
       setIngestionError(t(code === "stale" ? "repo.ingestStale" : "repo.ingestInvalidEdit"))

@@ -369,3 +369,13 @@ test('a typed context-link correction also invalidates support when no inline co
   assert.equal(next.facts.find(fact => fact.id === f.id).support, 'invalidated')
   assert.ok(next.links.every(link => link.state === 'invalidated'))
 })
+test('compatibility field enumeration does not revise an unchanged career entity', () => {
+  const doc = migrateProfile({ ...legacy, experience: [{ id: 'role', title: 'Dev', company: 'A', startDate: 'about 3 years ago', endDate: '', current: true, location: '', description: 'Maybe led team', responsibilities: '', achievements: '' }] }, 'p')
+  const title = doc.facts.find(f => f.field === 'title')
+  title.approval = 'approved'; title.support = 'supported'
+  doc.evidence.push({ id: 'title-evidence', revision: 1, excerpt: 'Dev at A', origin: 'career notes', approval: 'approved' })
+  doc.links.push({ id: 'title-support', kind: 'supports', from: { profileId: 'p', id: title.id, revision: 1 }, to: { profileId: 'p', id: 'title-evidence', revision: 1 }, state: 'active' })
+  const next = replaceProfileView(doc, { ...profileView(doc), skills: 'Docker' })
+  assert.equal(next.entities[0].revision, doc.entities[0].revision)
+  assert.equal(next.facts.find(f => f.id === title.id).support, 'supported')
+})

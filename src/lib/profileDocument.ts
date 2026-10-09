@@ -435,6 +435,14 @@ export function validateProfileDocument(
   )
 }
 
+function entitySnapshot(doc: ProfileDocument, id: string, kind: EntityKind) {
+  const fields = Object.fromEntries([
+    ...entityFields[kind].map(field => [field, field === "current" ? false : ""]),
+    ...doc.facts.filter(f => f.owner.id === id).map(f => [f.field, f.value]),
+  ])
+  return Object.entries(fields).sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0)
+}
+
 // Transitional whole-field edits invalidate support; wording changes never inherit evidence.
 export function replaceProfileView(
   doc: ProfileDocument,
@@ -455,12 +463,8 @@ export function replaceProfileView(
     const generatedId = e.id
     if (previous) {
       e.id = previous.id
-      const before = doc.facts
-        .filter((f) => f.owner.id === previous.id)
-        .map((f) => [f.field, f.value])
-      const after = candidate.facts
-        .filter((f) => f.owner.id === generatedId)
-        .map((f) => [f.field, f.value])
+      const before = entitySnapshot(doc, previous.id, e.kind)
+      const after = entitySnapshot(candidate, generatedId, e.kind)
       e.revision =
         previous.revision +
         (JSON.stringify(before) === JSON.stringify(after) ? 0 : 1)
