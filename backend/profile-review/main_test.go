@@ -20,7 +20,7 @@ func sampleRequest() reviewRequest {
 }
 
 func validProviderResponse() string {
-	return `{"choices":[{"message":{"content":"{\"updatedRepository\":{\"careerGoals\":\"Build better software\",\"skills\":\"Go\",\"competencies\":\"\",\"experience\":[{\"id\":\"e1\",\"company\":\"Example\",\"title\":\"Engineer\",\"startDate\":\"\",\"endDate\":\"\",\"current\":false,\"location\":\"\",\"description\":\"\",\"responsibilities\":\"\",\"achievements\":\"\"}],\"tools\":\"\",\"projects\":[{\"id\":\"p1\",\"name\":\"Project\",\"description\":\"\",\"technologies\":\"\",\"url\":\"\",\"highlights\":\"\"}],\"employmentStatus\":\"\",\"currentSalary\":\"$100k\",\"desiredSalary\":\"\",\"additionalInfo\":\"\"},\"summary\":\"Clarified the profile.\"}"}}]}`
+	return `{"choices":[{"finish_reason":"stop","message":{"content":"{\"updatedRepository\":{\"careerGoals\":\"Build better software\",\"skills\":\"Go\",\"competencies\":\"\",\"experience\":[{\"id\":\"e1\",\"company\":\"Example\",\"title\":\"Engineer\",\"startDate\":\"\",\"endDate\":\"\",\"current\":false,\"location\":\"\",\"description\":\"\",\"responsibilities\":\"\",\"achievements\":\"\"}],\"tools\":\"\",\"projects\":[{\"id\":\"p1\",\"name\":\"Project\",\"description\":\"\",\"technologies\":\"\",\"url\":\"\",\"highlights\":\"\"}],\"employmentStatus\":\"\",\"currentSalary\":\"$100k\",\"desiredSalary\":\"\",\"additionalInfo\":\"\"},\"summary\":\"Clarified the profile.\"}"}}]}`
 }
 
 func TestReviewValidOutputUsesSingleProviderCallAndPreservesProfileShape(t *testing.T) {
@@ -164,7 +164,7 @@ func TestHandlerRejectsMalformedAndIncompleteProviderOutput(t *testing.T) {
 		content string
 	}{{"malformed JSON", "not JSON"}, {"incomplete repository", string(incompleteOutput)}} {
 		t.Run(tc.name, func(t *testing.T) {
-			providerBody, err := json.Marshal(map[string]any{"choices": []any{map[string]any{"message": map[string]string{"content": tc.content}}}})
+			providerBody, err := json.Marshal(map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": tc.content}}}})
 			if err != nil {
 				t.Fatal(err)
 			}

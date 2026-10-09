@@ -1,0 +1,2508 @@
+{
+  "mode": "controlled: no live resource or quality claim",
+  "summary": {
+    "stagesByVersion": {
+      "candidate_retrieval/lexical-projection-v1": {
+        "runs": 16,
+        "requests": 0,
+        "totalDurationMs": 0.47990000000000005,
+        "totalProviderDurationMs": 0,
+        "inputTokens": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 0
+        },
+        "outputTokens": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 0
+        },
+        "reasoningTokensSubsetOfOutput": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 0
+        },
+        "prefixCachedTokensSubsetOfInput": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 0
+        },
+        "outcomes": {
+          "completed": 16
+        }
+      },
+      "extraction/profile-claims-prompt-v1/schema-v1/source-resolution-v1": {
+        "runs": 16,
+        "requests": 16,
+        "totalDurationMs": 3.375114,
+        "totalProviderDurationMs": 1.8037989999999997,
+        "inputTokens": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 16
+        },
+        "outputTokens": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 16
+        },
+        "reasoningTokensSubsetOfOutput": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 16
+        },
+        "prefixCachedTokensSubsetOfInput": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 16
+        },
+        "outcomes": {
+          "completed": 16
+        }
+      },
+      "field_validation/jev-rubric-v1/policy-v1": {
+        "runs": 30,
+        "requests": 30,
+        "totalDurationMs": 6.10103,
+        "totalProviderDurationMs": 2.538446,
+        "inputTokens": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 30
+        },
+        "outputTokens": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 30
+        },
+        "reasoningTokensSubsetOfOutput": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 30
+        },
+        "prefixCachedTokensSubsetOfInput": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 30
+        },
+        "outcomes": {
+          "completed": 30
+        }
+      },
+      "generation/application-draft-policy-v1/schema-v1": {
+        "runs": 10,
+        "requests": 10,
+        "totalDurationMs": 2.657139,
+        "totalProviderDurationMs": 1.1397400000000002,
+        "inputTokens": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 10
+        },
+        "outputTokens": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 10
+        },
+        "reasoningTokensSubsetOfOutput": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 10
+        },
+        "prefixCachedTokensSubsetOfInput": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 10
+        },
+        "outcomes": {
+          "completed": 10
+        }
+      },
+      "generation/cv-policy-v1/schema-v1": {
+        "runs": 4,
+        "requests": 4,
+        "totalDurationMs": 1.032478,
+        "totalProviderDurationMs": 0.2169,
+        "inputTokens": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 4
+        },
+        "outputTokens": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 4
+        },
+        "reasoningTokensSubsetOfOutput": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 4
+        },
+        "prefixCachedTokensSubsetOfInput": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 4
+        },
+        "outcomes": {
+          "completed": 4
+        }
+      },
+      "mechanical_preparation/normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1": {
+        "runs": 30,
+        "requests": 0,
+        "totalDurationMs": 2.764898,
+        "totalProviderDurationMs": 0,
+        "inputTokens": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 0
+        },
+        "outputTokens": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 0
+        },
+        "reasoningTokensSubsetOfOutput": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 0
+        },
+        "prefixCachedTokensSubsetOfInput": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 0
+        },
+        "outcomes": {
+          "completed": 30
+        }
+      },
+      "qualification_matching/qualification_gaps-policy-v1/schema-v1": {
+        "runs": 4,
+        "requests": 4,
+        "totalDurationMs": 0.5689000000000001,
+        "totalProviderDurationMs": 0.16569,
+        "inputTokens": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 4
+        },
+        "outputTokens": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 4
+        },
+        "reasoningTokensSubsetOfOutput": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 4
+        },
+        "prefixCachedTokensSubsetOfInput": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 4
+        },
+        "outcomes": {
+          "completed": 4
+        }
+      },
+      "reconciliation/profile-operations-prompt-v1/schema-v1/reconciliation-v1": {
+        "runs": 16,
+        "requests": 16,
+        "totalDurationMs": 6.062370000000001,
+        "totalProviderDurationMs": 2.5505750000000003,
+        "inputTokens": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 16
+        },
+        "outputTokens": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 16
+        },
+        "reasoningTokensSubsetOfOutput": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 16
+        },
+        "prefixCachedTokensSubsetOfInput": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 16
+        },
+        "outcomes": {
+          "completed": 16
+        }
+      },
+      "statement_support_checks/cv-heuristic-grounding-v1": {
+        "runs": 4,
+        "requests": 0,
+        "totalDurationMs": 0.6331289999999999,
+        "totalProviderDurationMs": 0,
+        "inputTokens": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 0
+        },
+        "outputTokens": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 0
+        },
+        "reasoningTokensSubsetOfOutput": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 0
+        },
+        "prefixCachedTokensSubsetOfInput": {
+          "observed": null,
+          "availableRequests": 0,
+          "unavailableRequests": 0
+        },
+        "outcomes": {
+          "completed": 4
+        }
+      }
+    },
+    "totalWorkflowDurationMs": 24.825512999999997,
+    "attempts": 34,
+    "requests": 80,
+    "completed": 34,
+    "failed": 0,
+    "accepted": 0,
+    "attemptsWithAcceptanceEvidence": 0,
+    "completionRate": 1,
+    "failureRate": 0,
+    "acceptanceRate": null,
+    "inputTokens": {
+      "observed": null,
+      "availableRequests": 0,
+      "unavailableRequests": 80
+    },
+    "outputTokens": {
+      "observed": null,
+      "availableRequests": 0,
+      "unavailableRequests": 80
+    },
+    "reasoningTokensSubsetOfOutput": {
+      "observed": null,
+      "availableRequests": 0,
+      "unavailableRequests": 80
+    },
+    "prefixCachedTokensSubsetOfInput": {
+      "observed": null,
+      "availableRequests": 0,
+      "unavailableRequests": 80
+    },
+    "outcomes": {
+      "completed": 34
+    },
+    "unpricedRequests": 80,
+    "estimatedKnownComponentsUSD": null,
+    "estimatedTotalUSD": null,
+    "estimatedCostPerCompletedUSD": null,
+    "estimatedCostPerAcceptedUSD": null,
+    "billing": "unavailable: no invoice evidence; estimates exclude unobserved/provider-specific billing components",
+    "datedPriceAssumptions": null
+  },
+  "attempts": [
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "d8f3d06af4958a50416afe7f877b88ad",
+      "workflow": "profile_ingestion",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 1.024758,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.06938,
+          "provider": null
+        },
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.25612,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.10809,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "extraction",
+          "version": "profile-claims-prompt-v1/schema-v1/source-resolution-v1",
+          "outcome": "completed",
+          "durationMs": 0.2197,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.11091,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "reconciliation",
+          "version": "profile-operations-prompt-v1/schema-v1/reconciliation-v1",
+          "outcome": "completed",
+          "durationMs": 0.250219,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.128759,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "candidate_retrieval",
+          "version": "lexical-projection-v1",
+          "outcome": "completed",
+          "durationMs": 0.00843,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "a8819291705d26b719e9d277763c3323",
+      "workflow": "profile_ingestion",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.782389,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.03365,
+          "provider": null
+        },
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.258149,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.09208,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "extraction",
+          "version": "profile-claims-prompt-v1/schema-v1/source-resolution-v1",
+          "outcome": "completed",
+          "durationMs": 0.18406,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.11608,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "reconciliation",
+          "version": "profile-operations-prompt-v1/schema-v1/reconciliation-v1",
+          "outcome": "completed",
+          "durationMs": 0.26823,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.12716,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "candidate_retrieval",
+          "version": "lexical-projection-v1",
+          "outcome": "completed",
+          "durationMs": 0.01567,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "490700c6f7f5559ffa49812098de8d30",
+      "workflow": "profile_ingestion",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.712609,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.03984,
+          "provider": null
+        },
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.194799,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.07417,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "extraction",
+          "version": "profile-claims-prompt-v1/schema-v1/source-resolution-v1",
+          "outcome": "completed",
+          "durationMs": 0.18795,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.12467,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "reconciliation",
+          "version": "profile-operations-prompt-v1/schema-v1/reconciliation-v1",
+          "outcome": "completed",
+          "durationMs": 0.2447,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.133659,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "candidate_retrieval",
+          "version": "lexical-projection-v1",
+          "outcome": "completed",
+          "durationMs": 0.01489,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "afa8356372b8532a6af7fdd5d83c65ad",
+      "workflow": "profile_ingestion",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.679539,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.05225,
+          "provider": null
+        },
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.19826,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.08746,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "extraction",
+          "version": "profile-claims-prompt-v1/schema-v1/source-resolution-v1",
+          "outcome": "completed",
+          "durationMs": 0.14937,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.08796,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "reconciliation",
+          "version": "profile-operations-prompt-v1/schema-v1/reconciliation-v1",
+          "outcome": "completed",
+          "durationMs": 0.233399,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.10955,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "candidate_retrieval",
+          "version": "lexical-projection-v1",
+          "outcome": "completed",
+          "durationMs": 0.01944,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "57624f81520d03b8f09b31f3e1d9992d",
+      "workflow": "profile_ingestion",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.601819,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.01556,
+          "provider": null
+        },
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.17782,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.07318,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "extraction",
+          "version": "profile-claims-prompt-v1/schema-v1/source-resolution-v1",
+          "outcome": "completed",
+          "durationMs": 0.14941,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.08511,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "reconciliation",
+          "version": "profile-operations-prompt-v1/schema-v1/reconciliation-v1",
+          "outcome": "completed",
+          "durationMs": 0.215809,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.1084,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "candidate_retrieval",
+          "version": "lexical-projection-v1",
+          "outcome": "completed",
+          "durationMs": 0.00752,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "14c0ead55dd43dec0e5b75b340c6036a",
+      "workflow": "profile_ingestion",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.726819,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.02438,
+          "provider": null
+        },
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.18936,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.0746,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "extraction",
+          "version": "profile-claims-prompt-v1/schema-v1/source-resolution-v1",
+          "outcome": "completed",
+          "durationMs": 0.153149,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.08202,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "reconciliation",
+          "version": "profile-operations-prompt-v1/schema-v1/reconciliation-v1",
+          "outcome": "completed",
+          "durationMs": 0.26876,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.11445,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "candidate_retrieval",
+          "version": "lexical-projection-v1",
+          "outcome": "completed",
+          "durationMs": 0.03499,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "01ced693fc116b7ef4a220520399fee5",
+      "workflow": "profile_ingestion",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 1.556797,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.29547,
+          "provider": null
+        },
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.244779,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.094939,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "extraction",
+          "version": "profile-claims-prompt-v1/schema-v1/source-resolution-v1",
+          "outcome": "completed",
+          "durationMs": 0.16702,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.08891,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "reconciliation",
+          "version": "profile-operations-prompt-v1/schema-v1/reconciliation-v1",
+          "outcome": "completed",
+          "durationMs": 0.301719,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.12664,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "candidate_retrieval",
+          "version": "lexical-projection-v1",
+          "outcome": "completed",
+          "durationMs": 0.04915,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "b1eb4a4b0bac84ee6eee3807a8fd4c73",
+      "workflow": "profile_ingestion",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 2.450787,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.517749,
+          "provider": null
+        },
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.1868,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.074,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "extraction",
+          "version": "profile-claims-prompt-v1/schema-v1/source-resolution-v1",
+          "outcome": "completed",
+          "durationMs": 0.514659,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.23976,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "reconciliation",
+          "version": "profile-operations-prompt-v1/schema-v1/reconciliation-v1",
+          "outcome": "completed",
+          "durationMs": 1.137818,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.370059,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "candidate_retrieval",
+          "version": "lexical-projection-v1",
+          "outcome": "completed",
+          "durationMs": 0.11172,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "dc2c55e1e216b518f5d286eef29a6f01",
+      "workflow": "qualification_gaps",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.37774,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.18076,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.07227,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "qualification_matching",
+          "version": "qualification_gaps-policy-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 0.14116,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 1200,
+            "durationMs": 0.03756,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.02966,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "64e5d1d9a46531a3a9370da70de9b2ca",
+      "workflow": "qualification_gaps",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.369749,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.17085,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.066809,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "qualification_matching",
+          "version": "qualification_gaps-policy-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 0.16633,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 1200,
+            "durationMs": 0.05076,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.0895,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "befba5bb132ade1a1ae20f016ae7d28b",
+      "workflow": "cv_generation",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.21457,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "generation",
+          "version": "cv-policy-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 0.18804,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 4000,
+            "durationMs": 0.0534,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "statement_support_checks",
+          "version": "cv-heuristic-grounding-v1",
+          "outcome": "completed",
+          "durationMs": 0.08181,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "064fb0b425e1b95d07ad4a874a4c4040",
+      "workflow": "cv_generation",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.188969,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "generation",
+          "version": "cv-policy-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 0.178239,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 4000,
+            "durationMs": 0.05002,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "statement_support_checks",
+          "version": "cv-heuristic-grounding-v1",
+          "outcome": "completed",
+          "durationMs": 0.09252,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "1358055a456bf17f511d566158c64224",
+      "workflow": "application_draft",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.44291,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.17433,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.06986,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "generation",
+          "version": "application-draft-policy-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 0.20842,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 8000,
+            "durationMs": 0.0829,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.02821,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "cd0754128822d3f9fbf4de0d24df583e",
+      "workflow": "profile_ingestion",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 1.152058,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.0199,
+          "provider": null
+        },
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.19918,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.07833,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "extraction",
+          "version": "profile-claims-prompt-v1/schema-v1/source-resolution-v1",
+          "outcome": "completed",
+          "durationMs": 0.189719,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.098199,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "reconciliation",
+          "version": "profile-operations-prompt-v1/schema-v1/reconciliation-v1",
+          "outcome": "completed",
+          "durationMs": 0.690779,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.30311,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "candidate_retrieval",
+          "version": "lexical-projection-v1",
+          "outcome": "completed",
+          "durationMs": 0.00893,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "93ba7cf13b8eede1813ba6cb664dffbb",
+      "workflow": "profile_ingestion",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.694709,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.042,
+          "provider": null
+        },
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.20307,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.07881,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "extraction",
+          "version": "profile-claims-prompt-v1/schema-v1/source-resolution-v1",
+          "outcome": "completed",
+          "durationMs": 0.171609,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.10343,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "reconciliation",
+          "version": "profile-operations-prompt-v1/schema-v1/reconciliation-v1",
+          "outcome": "completed",
+          "durationMs": 0.23272,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.10937,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "candidate_retrieval",
+          "version": "lexical-projection-v1",
+          "outcome": "completed",
+          "durationMs": 0.017491,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "83d35b0a1f593596417f0e45423f5335",
+      "workflow": "profile_ingestion",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.656289,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.04405,
+          "provider": null
+        },
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.19,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.07817,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "extraction",
+          "version": "profile-claims-prompt-v1/schema-v1/source-resolution-v1",
+          "outcome": "completed",
+          "durationMs": 0.156759,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.09535,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "reconciliation",
+          "version": "profile-operations-prompt-v1/schema-v1/reconciliation-v1",
+          "outcome": "completed",
+          "durationMs": 0.22993,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.1221,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "candidate_retrieval",
+          "version": "lexical-projection-v1",
+          "outcome": "completed",
+          "durationMs": 0.01782,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "16efa600cd1560e0aa496dcc38b9146a",
+      "workflow": "profile_ingestion",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.654179,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.06413,
+          "provider": null
+        },
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.189799,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.080569,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "extraction",
+          "version": "profile-claims-prompt-v1/schema-v1/source-resolution-v1",
+          "outcome": "completed",
+          "durationMs": 0.15579,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.08663,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "reconciliation",
+          "version": "profile-operations-prompt-v1/schema-v1/reconciliation-v1",
+          "outcome": "completed",
+          "durationMs": 0.20676,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.10495,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "candidate_retrieval",
+          "version": "lexical-projection-v1",
+          "outcome": "completed",
+          "durationMs": 0.02066,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "0f50eb2fe42981d7ff5d65ba7894acb6",
+      "workflow": "profile_ingestion",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.622069,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.02825,
+          "provider": null
+        },
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.223969,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.08792,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "extraction",
+          "version": "profile-claims-prompt-v1/schema-v1/source-resolution-v1",
+          "outcome": "completed",
+          "durationMs": 0.14527,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.08113,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "reconciliation",
+          "version": "profile-operations-prompt-v1/schema-v1/reconciliation-v1",
+          "outcome": "completed",
+          "durationMs": 0.19067,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.09975,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "candidate_retrieval",
+          "version": "lexical-projection-v1",
+          "outcome": "completed",
+          "durationMs": 0.01185,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "209e4f94d61624f607db3b475844a16c",
+      "workflow": "profile_ingestion",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.846808,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.02918,
+          "provider": null
+        },
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.372019,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.26258,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "extraction",
+          "version": "profile-claims-prompt-v1/schema-v1/source-resolution-v1",
+          "outcome": "completed",
+          "durationMs": 0.13393,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.07991,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "reconciliation",
+          "version": "profile-operations-prompt-v1/schema-v1/reconciliation-v1",
+          "outcome": "completed",
+          "durationMs": 0.222329,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.115239,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "candidate_retrieval",
+          "version": "lexical-projection-v1",
+          "outcome": "completed",
+          "durationMs": 0.01096,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "5748c9054aff07cb08a7af930fc20c86",
+      "workflow": "profile_ingestion",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.707329,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.05148,
+          "provider": null
+        },
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.1832,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.07455,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "extraction",
+          "version": "profile-claims-prompt-v1/schema-v1/source-resolution-v1",
+          "outcome": "completed",
+          "durationMs": 0.15355,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.08138,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "reconciliation",
+          "version": "profile-operations-prompt-v1/schema-v1/reconciliation-v1",
+          "outcome": "completed",
+          "durationMs": 0.252879,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.11589,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "candidate_retrieval",
+          "version": "lexical-projection-v1",
+          "outcome": "completed",
+          "durationMs": 0.02782,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "e6d3352c41df5e996feee4eeaa6f34f0",
+      "workflow": "profile_ingestion",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 2.789136,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.828729,
+          "provider": null
+        },
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.223869,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.09012,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "extraction",
+          "version": "profile-claims-prompt-v1/schema-v1/source-resolution-v1",
+          "outcome": "completed",
+          "durationMs": 0.543169,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.24235,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "reconciliation",
+          "version": "profile-operations-prompt-v1/schema-v1/reconciliation-v1",
+          "outcome": "completed",
+          "durationMs": 1.115649,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 6000,
+            "durationMs": 0.361489,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "candidate_retrieval",
+          "version": "lexical-projection-v1",
+          "outcome": "completed",
+          "durationMs": 0.102559,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "ea246c3cbb82341dd1b796e3425cdebe",
+      "workflow": "qualification_gaps",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.33684,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.18311,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.06905,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "qualification_matching",
+          "version": "qualification_gaps-policy-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 0.10904,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 1200,
+            "durationMs": 0.04076,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.0387,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "e2d638d5566ab9d1e4d98808c8a94f68",
+      "workflow": "qualification_gaps",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.356449,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.171329,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.06585,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "qualification_matching",
+          "version": "qualification_gaps-policy-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 0.15237,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 1200,
+            "durationMs": 0.03661,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.08912,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "70cf1ed3c0fec6b802fc8c08f60a80d2",
+      "workflow": "cv_generation",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.472849,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "generation",
+          "version": "cv-policy-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 0.457899,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 4000,
+            "durationMs": 0.05264,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "statement_support_checks",
+          "version": "cv-heuristic-grounding-v1",
+          "outcome": "completed",
+          "durationMs": 0.367609,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "375ef99d5bef582ed6f1bb51331e1fbb",
+      "workflow": "cv_generation",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.22378,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "generation",
+          "version": "cv-policy-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 0.2083,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 4000,
+            "durationMs": 0.06084,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "statement_support_checks",
+          "version": "cv-heuristic-grounding-v1",
+          "outcome": "completed",
+          "durationMs": 0.09119,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "e2994e39d42023c72aaa186be9c9a207",
+      "workflow": "application_draft",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.534749,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.195689,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.07748,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "generation",
+          "version": "application-draft-policy-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 0.284939,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 8000,
+            "durationMs": 0.12945,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.035711,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "b0d584670eb17aef40121ec6380b2640",
+      "workflow": "application_draft",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.558249,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.18313,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.06831,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "generation",
+          "version": "application-draft-policy-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 0.26983,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 8000,
+            "durationMs": 0.09739,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.03044,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "c62de4fa955a881a303c9560a5f51500",
+      "workflow": "application_draft",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.61725,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.18954,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.07488,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "generation",
+          "version": "application-draft-policy-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 0.28673,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 8000,
+            "durationMs": 0.13225,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.02911,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "2a10527299fbc8d9e80996b6555b7f19",
+      "workflow": "application_draft",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.54527,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.1898,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.08123,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "generation",
+          "version": "application-draft-policy-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 0.23914,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 8000,
+            "durationMs": 0.11067,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.03124,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "ac594da3ebd2e0e9d332d92ed1da6ce8",
+      "workflow": "application_draft",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.517329,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.17421,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.06901,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "generation",
+          "version": "application-draft-policy-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 0.22552,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 8000,
+            "durationMs": 0.10253,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.02927,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "d28fa0e69ba43045ae6e5e0a45eac57f",
+      "workflow": "application_draft",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.525199,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.17692,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.07153,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "generation",
+          "version": "application-draft-policy-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 0.24088,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 8000,
+            "durationMs": 0.1058,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.03573,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "cffccd886ea59654cb32cdecb0900d50",
+      "workflow": "application_draft",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.728989,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.233029,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.093009,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "generation",
+          "version": "application-draft-policy-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 0.36515,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 8000,
+            "durationMs": 0.16332,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.05853,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "9edb25586a650c1d2bcd9007e1e24314",
+      "workflow": "application_draft",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.628259,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.19468,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.08004,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "generation",
+          "version": "application-draft-policy-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 0.31367,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 8000,
+            "durationMs": 0.12737,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.047819,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "22b8cf51918d67351fab4c202853f670",
+      "workflow": "application_draft",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 0.528269,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 0.19246,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 0.06955,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "generation",
+          "version": "application-draft-policy-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 0.22286,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 8000,
+            "durationMs": 0.08806,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.03586,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    }
+  ]
+}

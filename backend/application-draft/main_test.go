@@ -32,7 +32,7 @@ func (timeoutReader) Read([]byte) (int, error) { return 0, timeoutReadError{} }
 func draftResponse() string {
 	content := `{"jobTitle":"Engineer","company":"Example","jobSummary":"Build systems","resume":"# Resume","coverLetter":{"greeting":"Dear team,","body":"I build systems.","closing":"Sincerely,"},"applicationAnswers":"Q&A"}`
 	encoded, _ := json.Marshal(content)
-	return `{"choices":[{"message":{"content":` + string(encoded) + `}}]}`
+	return `{"choices":[{"finish_reason":"stop","message":{"content":` + string(encoded) + `}}]}`
 }
 
 func TestProviderUsesOpenAIAndFullPopulatedProfile(t *testing.T) {
@@ -303,7 +303,7 @@ func TestIncompleteAndMalformedProviderDraftsAreRejected(t *testing.T) {
 			calls := 0
 			a := app{client: &http.Client{Transport: transportFunc(func(*http.Request) (*http.Response, error) {
 				calls++
-				return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(`{"choices":[{"message":{"content":` + mustJSONString(t, tc.content) + `}}]}`)), Header: make(http.Header)}, nil
+				return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(`{"choices":[{"finish_reason":"stop","message":{"content":` + mustJSONString(t, tc.content) + `}}]}`)), Header: make(http.Header)}, nil
 			})}}
 			body := `{"repository":{"careerGoals":"","skills":"Go","competencies":"","experience":[],"tools":"Docker","projects":[],"employmentStatus":"","currentSalary":"","desiredSalary":"","additionalInfo":""},"jobPosting":"Engineer","confirmedQualifications":[]}`
 			r := httptest.NewRequest(http.MethodPost, "/api/application-draft", strings.NewReader(body))

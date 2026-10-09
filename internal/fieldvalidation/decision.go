@@ -10,6 +10,7 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"professional-information-repo/internal/aidiagnostics"
 	"strings"
 	"time"
 )
@@ -102,7 +103,18 @@ func validChoice(c choice, options map[string]json.RawMessage) bool {
 func probability(p float64) bool { return !math.IsNaN(p) && p >= 0 && p <= 1 }
 
 // Classify sends only field and submission to TypeSafe, once, under a shared deadline.
-func Classify(parent context.Context, client *http.Client, key string, field Field, input string) Decision {
+func Classify(parent context.Context, client *http.Client, key string, field Field, input string) (decision Decision) {
+	parent, finish := aidiagnostics.Start(parent, "field_validation", "jev-rubric-v1/policy-v1")
+	defer func() {
+		outcome := decision.Outcome.Kind
+		if outcome == "accept" {
+			outcome = ""
+		}
+		if outcome == "service_failure" {
+			outcome = decision.Outcome.Reason
+		}
+		finish(outcome)
+	}()
 	if strings.TrimSpace(key) == "" || len(key) > 512 || strings.ContainsAny(key, "\r\n") {
 		return Failure(field, "key")
 	}
@@ -121,7 +133,13 @@ func Classify(parent context.Context, client *http.Client, key string, field Fie
 	req.Header.Set("Content-Type", "application/json")
 	boundedClient := *client
 	boundedClient.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	aidiagnostics.BeginProvider(ctx, "typesafe", nil)
 	response, err := boundedClient.Do(req)
+	if err != nil {
+		aidiagnostics.Observe(ctx, 0, "transport_failure", nil, nil, nil, nil, nil)
+	} else {
+		aidiagnostics.Observe(ctx, response.StatusCode, "completed", nil, nil, nil, nil, nil)
+	}
 	failure := func() Decision {
 		if errors.Is(ctx.Err(), context.DeadlineExceeded) || errors.Is(err, context.DeadlineExceeded) {
 			return Failure(field, "timeout")
@@ -150,9 +168,20 @@ func Classify(parent context.Context, client *http.Client, key string, field Fie
 	}
 	var out struct {
 		Model   string            `json:"model"`
+		Usage   json.RawMessage   `json:"usage"`
 		Answers map[string]choice `json:"answers"`
 	}
-	if json.Unmarshal(raw, &out) != nil || out.Model != Model || len(out.Answers) != 2 {
+	if json.Unmarshal(raw, &out) != nil {
+		aidiagnostics.Observe(ctx, response.StatusCode, "malformed_output", nil, nil, nil, nil, nil)
+		return Failure(field, "invalid_output")
+	}
+	inputTokens, outputTokens, reasoningTokens, cachedTokens := aidiagnostics.Usage(out.Usage, "input_tokens", "output_tokens")
+	var returnedModel *string
+	if out.Model == Model {
+		returnedModel = &out.Model
+	}
+	aidiagnostics.Observe(ctx, response.StatusCode, "completed", returnedModel, inputTokens, outputTokens, reasoningTokens, cachedTokens)
+	if out.Model != Model || len(out.Answers) != 2 {
 		return Failure(field, "invalid_output")
 	}
 	var expected map[string]struct {

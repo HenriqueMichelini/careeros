@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"professional-information-repo/internal/aidiagnostics"
 	"professional-information-repo/internal/fieldvalidation"
 	"professional-information-repo/internal/openaihttp"
 	"professional-information-repo/internal/preprocessing"
@@ -78,13 +79,6 @@ type gap struct {
 type gapResult struct {
 	Gaps []gap `json:"gaps"`
 }
-type openAIResponse struct {
-	Choices []struct {
-		Message struct {
-			Content string `json:"content"`
-		} `json:"message"`
-	} `json:"choices"`
-}
 type app struct{ client *http.Client }
 
 func isTimeout(err error) bool {
@@ -103,7 +97,7 @@ func NewHandlerWithClient(client *http.Client) http.Handler {
 func (a app) handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/qualification-gaps", a.check)
-	return mux
+	return aidiagnostics.Workflow("qualification_gaps", mux)
 }
 func (a app) check(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
@@ -371,11 +365,13 @@ func fmtMonths(months int) string {
 	}
 	return strconv.Itoa(years) + " years " + strconv.Itoa(remain) + " months"
 }
-func (a app) callProvider(parent context.Context, key string, input gapRequest) (gapResult, string, error) {
+func (a app) callProvider(parent context.Context, key string, input gapRequest) (res gapResult, code string, callErr error) {
+	parent, finish := aidiagnostics.Start(parent, "qualification_matching", "qualification_gaps-policy-v1/schema-v1")
+	defer func() { finish(code) }()
 	var empty gapResult
 	// Retain the traceable Source for structured job understanding (#44). Only
 	// this accepted workflow consumes its full working view; no source is cached.
-	prepared, err := preprocessing.PrepareBounded(input.JobPosting, fieldvalidation.JobPosting)
+	prepared, err := preprocessing.PrepareBoundedWithContext(parent, input.JobPosting, fieldvalidation.JobPosting)
 	if err != nil || prepared.Status != preprocessing.Ready {
 		return empty, "capacity", errors.New("job preparation capacity")
 	}
@@ -409,21 +405,18 @@ func (a app) callProvider(parent context.Context, key string, input gapRequest) 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return empty, "outage", errors.New("provider unavailable")
 	}
-	var upstream openAIResponse
-	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&upstream); err != nil {
-		if errors.Is(ctx.Err(), context.DeadlineExceeded) || errors.Is(err, context.DeadlineExceeded) || (isTimeout(err)) {
-			return empty, "timeout", err
+	content, decodeErr := openaihttp.Completion(ctx, resp.Body, 1<<20, "gaps")
+	if decodeErr != nil {
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) || openaihttp.IsTimeout(decodeErr) {
+			return empty, "timeout", decodeErr
 		}
-		return empty, "invalid_output", errors.New("provider response invalid")
-	}
-	if len(upstream.Choices) != 1 {
-		return empty, "invalid_output", errors.New("provider response invalid")
+		return empty, "invalid_output", decodeErr
 	}
 	var rawResult map[string]json.RawMessage
-	if json.Unmarshal([]byte(strings.TrimSpace(upstream.Choices[0].Message.Content)), &rawResult) != nil || !hasExactFields(rawResult, "gaps") || !jsonArray(rawResult["gaps"]) {
+	if json.Unmarshal([]byte(strings.TrimSpace(content)), &rawResult) != nil || !hasExactFields(rawResult, "gaps") || !jsonArray(rawResult["gaps"]) {
 		return empty, "invalid_output", errors.New("provider result missing gaps array")
 	}
-	decoder := json.NewDecoder(strings.NewReader(strings.TrimSpace(upstream.Choices[0].Message.Content)))
+	decoder := json.NewDecoder(strings.NewReader(strings.TrimSpace(content)))
 	decoder.DisallowUnknownFields()
 	var result gapResult
 	if err := decoder.Decode(&result); err != nil {

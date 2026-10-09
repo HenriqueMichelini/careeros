@@ -104,7 +104,7 @@ func TestShortDraftPreservesUnknownMetadata(t *testing.T) {
 		t.Run(metadata, func(t *testing.T) {
 			http.DefaultTransport = providerTransport(func(r *http.Request) (*http.Response, error) {
 				content := `{` + metadata + `,"jobSummary":"AWS required.","resume":"## Technical Skills\n- Java","applicationAnswers":"I use Java.","coverLetter":{"greeting":"Dear hiring team,","body":"I use Java.","closing":"Sincerely,"}}`
-				raw, _ := json.Marshal(map[string]any{"choices": []any{map[string]any{"message": map[string]string{"content": content}}}})
+				raw, _ := json.Marshal(map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": content}}}})
 				return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(string(raw)))}, nil
 			})
 			r := draftRequest()
@@ -127,7 +127,7 @@ func TestDraftRejectsMalformedUnknownMetadata(t *testing.T) {
 			http.DefaultTransport = providerTransport(func(*http.Request) (*http.Response, error) {
 				calls++
 				content := `{` + metadata + `,"jobSummary":"AWS required.","resume":"Java","applicationAnswers":"I use Java.","coverLetter":{"greeting":"Dear team,","body":"I use Java.","closing":"Sincerely,"}}`
-				raw, _ := json.Marshal(map[string]any{"choices": []any{map[string]any{"message": map[string]string{"content": content}}}})
+				raw, _ := json.Marshal(map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": content}}}})
 				return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(string(raw)))}, nil
 			})
 			w := httptest.NewRecorder()

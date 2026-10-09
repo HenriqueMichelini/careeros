@@ -20,7 +20,7 @@ func TestGenerationContract(t *testing.T) {
 		if strings.Contains(string(body), "currentSalary") {
 			t.Fatal("private field outbound")
 		}
-		return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(`{"choices":[{"message":{"content":"{\"summary\":[{\"sourceId\":\"f0\",\"text\":\"Reduced wait by 20%.\"}],\"selected\":[\"f0\"]}"}}]}`))}, nil
+		return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(`{"choices":[{"finish_reason":"stop","message":{"content":"{\"summary\":[{\"sourceId\":\"f0\",\"text\":\"Reduced wait by 20%.\"}],\"selected\":[\"f0\"]}"}}]}`))}, nil
 	})}}
 	for _, tc := range []struct {
 		body   string
@@ -65,7 +65,7 @@ func TestProviderFailuresPreserveContract(t *testing.T) {
 		want    int
 		code    string
 	}{
-		{401, "", 401, "key"}, {429, "", 429, "rate_limit"}, {500, "", 502, "outage"}, {200, `{"choices":[{"message":{"content":"{\"summary\":[{\"sourceId\":\"f0\",\"text\":\"CEO\"}],\"selected\":[\"f0\"]}"}}]}`, 502, "invalid_output"},
+		{401, "", 401, "key"}, {429, "", 429, "rate_limit"}, {500, "", 502, "outage"}, {200, `{"choices":[{"finish_reason":"stop","message":{"content":"{\"summary\":[{\"sourceId\":\"f0\",\"text\":\"CEO\"}],\"selected\":[\"f0\"]}"}}]}`, 502, "invalid_output"},
 	} {
 		a := app{client: &http.Client{Transport: roundTrip(func(r *http.Request) (*http.Response, error) {
 			return &http.Response{StatusCode: tc.status, Body: io.NopCloser(strings.NewReader(tc.content))}, nil
@@ -136,7 +136,7 @@ func TestDensityRequestPolicy(t *testing.T) {
 			if !strings.Contains(body.Messages[0].Content, "Density "+want+":") {
 				t.Fatal("missing chosen density policy")
 			}
-			return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(`{"choices":[{"message":{"content":"{\"summary\":[{\"sourceId\":\"f0\",\"text\":\"Research\"}],\"selected\":[\"f0\"]}"}}]}`))}, nil
+			return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(`{"choices":[{"finish_reason":"stop","message":{"content":"{\"summary\":[{\"sourceId\":\"f0\",\"text\":\"Research\"}],\"selected\":[\"f0\"]}"}}]}`))}, nil
 		})}}
 		input := map[string]any{"locale": "en", "facts": []fact{{ID: "f0", Section: "skills", Field: "skills", Text: "Research"}}}
 		if density != "" {
