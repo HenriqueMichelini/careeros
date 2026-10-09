@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"professional-information-repo/internal/aidiagnostics"
 	"professional-information-repo/internal/fieldvalidation"
 	"professional-information-repo/internal/openaihttp"
 	"professional-information-repo/internal/preprocessing"
@@ -51,13 +52,6 @@ type coverLetter struct {
 	Closing  string `json:"closing"`
 }
 
-type upstream struct {
-	Choices []struct {
-		Message struct {
-			Content string `json:"content"`
-		} `json:"message"`
-	} `json:"choices"`
-}
 type app struct{ client *http.Client }
 
 func NewHandler() http.Handler { return (app{&http.Client{Timeout: timeout}}).handler() }
@@ -71,7 +65,7 @@ func NewHandlerWithClient(client *http.Client) http.Handler {
 func (a app) handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/application-draft", a.generate)
-	return mux
+	return aidiagnostics.Workflow("application_draft", mux)
 }
 func (a app) generate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
@@ -138,11 +132,13 @@ func (a app) generate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	_ = json.NewEncoder(w).Encode(out)
 }
-func (a app) call(parent context.Context, key string, in request) (result, string, error) {
+func (a app) call(parent context.Context, key string, in request) (res result, code string, callErr error) {
+	parent, finish := aidiagnostics.Start(parent, "generation", "application-draft-policy-v1/schema-v1")
+	defer func() { finish(code) }()
 	var empty result
 	// Retain the traceable Source for structured job understanding (#44). Only
 	// this accepted workflow consumes its full working view; no source is cached.
-	prepared, err := preprocessing.PrepareBounded(in.JobPosting, fieldvalidation.JobPosting)
+	prepared, err := preprocessing.PrepareBoundedWithContext(parent, in.JobPosting, fieldvalidation.JobPosting)
 	if err != nil || prepared.Status != preprocessing.Ready {
 		return empty, "capacity", errors.New("job preparation capacity")
 	}
@@ -189,21 +185,17 @@ func (a app) call(parent context.Context, key string, in request) (result, strin
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return empty, "outage", errors.New("provider unavailable")
 	}
-	var u upstream
-	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&u); err != nil {
-		var ne net.Error
-		if errors.As(err, &ne) && ne.Timeout() || errors.Is(ctx.Err(), context.DeadlineExceeded) {
-			return empty, "timeout", err
+	content, decodeErr := openaihttp.Completion(ctx, resp.Body, 1<<20, "jobTitle", "company", "jobSummary", "resume", "applicationAnswers", "coverLetter")
+	if decodeErr != nil {
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) || openaihttp.IsTimeout(decodeErr) {
+			return empty, "timeout", decodeErr
 		}
-		return empty, "invalid_output", err
+		return empty, "invalid_output", decodeErr
 	}
-	if len(u.Choices) != 1 {
-		return empty, "invalid_output", errors.New("invalid response")
-	}
-	if !exactFields(json.RawMessage(u.Choices[0].Message.Content), "jobTitle", "company", "jobSummary", "resume", "applicationAnswers", "coverLetter") {
+	if !exactFields(json.RawMessage(content), "jobTitle", "company", "jobSummary", "resume", "applicationAnswers", "coverLetter") {
 		return result{}, "invalid_output", errors.New("missing output fields")
 	}
-	d := json.NewDecoder(strings.NewReader(u.Choices[0].Message.Content))
+	d := json.NewDecoder(strings.NewReader(content))
 	d.DisallowUnknownFields()
 	if d.Decode(&empty) != nil {
 		return result{}, "invalid_output", errors.New("invalid output")

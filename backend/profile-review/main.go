@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"professional-information-repo/internal/aidiagnostics"
 	"professional-information-repo/internal/openaihttp"
 	"professional-information-repo/internal/profilevalidation"
 )
@@ -35,14 +36,6 @@ type reviewResult struct {
 	Summary           string     `json:"summary"`
 }
 
-type openAIResponse struct {
-	Choices []struct {
-		Message struct {
-			Content string `json:"content"`
-		} `json:"message"`
-	} `json:"choices"`
-}
-
 type app struct{ client *http.Client }
 
 // NewHandler returns the stateless Profile review HTTP API shared by local preview and Netlify.
@@ -54,7 +47,7 @@ func NewHandler() http.Handler {
 func (a app) handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/profile/review", a.review)
-	return mux
+	return aidiagnostics.Workflow("profile_review", mux)
 }
 
 func (a app) review(w http.ResponseWriter, r *http.Request) {
@@ -189,7 +182,9 @@ func scopedRepository(original, updated repository, fields []string) repository 
 	return original
 }
 
-func (a app) callProvider(parent context.Context, key string, input reviewRequest) (reviewResult, string, error) {
+func (a app) callProvider(parent context.Context, key string, input reviewRequest) (res reviewResult, code string, callErr error) {
+	parent, finish := aidiagnostics.Start(parent, "section_review", "profile_review-policy-v1/schema-v1")
+	defer func() { finish(code) }()
 	var empty reviewResult
 	repoJSON, _ := json.Marshal(input.Repository)
 	prompt := "You are an expert career coach reviewing a professional profile. The user updated the section: " + input.ChangedSection + ".\n\nProfile JSON:\n" + string(repoJSON) + "\n\nImprove clarity, grammar, and professional tone only in these fields: " + strings.Join(reviewFields(input.ChangedSection), ", ") + ". Leave every other field unchanged; preserve all facts, numbers, names, dates, and structure. Never invent facts. Return only JSON with this exact shape: {\"updatedRepository\":<complete profile object with every original field>,\"summary\":\"brief description\"}. Include every field and every list entry."
@@ -212,11 +207,14 @@ func (a app) callProvider(parent context.Context, key string, input reviewReques
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return empty, "outage", errors.New("provider unavailable")
 	}
-	var upstream openAIResponse
-	if err := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&upstream); err != nil || len(upstream.Choices) != 1 || strings.TrimSpace(upstream.Choices[0].Message.Content) == "" {
-		return empty, "invalid_output", errors.New("provider response invalid")
+	content, decodeErr := openaihttp.Completion(ctx, resp.Body, 1<<20, "updatedRepository", "summary")
+	if decodeErr != nil {
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) || openaihttp.IsTimeout(decodeErr) {
+			return empty, "timeout", decodeErr
+		}
+		return empty, "invalid_output", decodeErr
 	}
-	decoder := json.NewDecoder(strings.NewReader(upstream.Choices[0].Message.Content))
+	decoder := json.NewDecoder(strings.NewReader(content))
 	decoder.DisallowUnknownFields()
 	var result reviewResult
 	var rawResult map[string]json.RawMessage

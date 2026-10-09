@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"professional-information-repo/internal/aidiagnostics"
 	"professional-information-repo/internal/openaihttp"
 	"regexp"
 	"strings"
@@ -51,10 +52,10 @@ func NewHandlerWithClient(client *http.Client) http.Handler {
 func (a app) handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/cv/generate", a.generate)
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return aidiagnostics.Workflow("cv_generation", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
 		mux.ServeHTTP(w, r)
-	})
+	}))
 }
 func strict(raw []byte, out any) bool {
 	d := json.NewDecoder(strings.NewReader(string(raw)))
@@ -232,7 +233,9 @@ var densityPolicy = map[string]string{
 	"detailed": "Density detailed: Include more relevant supporting evidence across experience, distinct projects and qualifications than compact or balanced. Retain useful context and additional nonredundant achievements and responsibilities, with an organized concise summary and prose. Do not add filler or repeat evidence to create volume. Still target one A4 page, but detailed content may overflow and require user revision; never promise fit or truncate facts.",
 }
 
-func (a app) call(parent context.Context, key string, in request) (result, string) {
+func (a app) call(parent context.Context, key string, in request) (res result, code string) {
+	parent, finish := aidiagnostics.Start(parent, "generation", "cv-policy-v1/schema-v1")
+	defer func() { finish(code) }()
 	var empty result
 	if in.CvLanguage == "" {
 		in.CvLanguage = in.Locale
@@ -262,28 +265,26 @@ func (a app) call(parent context.Context, key string, in request) (result, strin
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
 		return empty, "outage"
 	}
-	raw, err := io.ReadAll(io.LimitReader(response.Body, (1<<20)+1))
-	if err != nil {
-		if timeout(err) {
+	content, decodeErr := openaihttp.Completion(ctx, response.Body, 1<<20, "summary", "selected")
+	if decodeErr != nil {
+		if timeout(decodeErr) {
 			return empty, "timeout"
 		}
 		return empty, "invalid_output"
 	}
-	if len(raw) > 1<<20 {
-		return empty, "invalid_output"
-	}
-	var upstream struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
-	}
-	if json.Unmarshal(raw, &upstream) != nil || len(upstream.Choices) != 1 {
-		return empty, "invalid_output"
-	}
+
 	var out result
-	if !strict([]byte(upstream.Choices[0].Message.Content), &out) || !validResult(out, in.Facts) {
+	if !strict([]byte(content), &out) {
+		return empty, "invalid_output"
+	}
+	_, supportDone := aidiagnostics.Start(parent, "statement_support_checks", "cv-heuristic-grounding-v1")
+	supported := validResult(out, in.Facts)
+	if !supported {
+		supportDone("invalid_output")
+	} else {
+		supportDone("")
+	}
+	if !supported {
 		return empty, "invalid_output"
 	}
 	return out, ""

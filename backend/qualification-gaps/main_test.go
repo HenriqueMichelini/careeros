@@ -37,7 +37,7 @@ type blockingReader struct{ done <-chan struct{} }
 
 func (r blockingReader) Read([]byte) (int, error) { <-r.done; return 0, errors.New("read canceled") }
 func providerOK() string {
-	return `{"choices":[{"message":{"content":"{\"gaps\":[{\"kind\":\"skill\",\"requirement\":\"Distributed systems\",\"details\":\"The posting asks for distributed systems experience.\"}] }"}}]}`
+	return `{"choices":[{"finish_reason":"stop","message":{"content":"{\"gaps\":[{\"kind\":\"skill\",\"requirement\":\"Distributed systems\",\"details\":\"The posting asks for distributed systems experience.\"}] }"}}]}`
 }
 
 func TestProviderRequestUsesOnlyQualificationAllowlist(t *testing.T) {
@@ -175,7 +175,7 @@ func TestIncompleteFullProfileRejectedBeforeProvider(t *testing.T) {
 
 func TestInvalidProviderOutputPreservesErrorCategory(t *testing.T) {
 	for _, content := range []string{"not json", `{"gaps":[{"kind":"skill","requirement":"x","details":"y"},{"kind":"skill","requirement":"x","details":"y"},{"kind":"skill","requirement":"x","details":"y"},{"kind":"skill","requirement":"x","details":"y"},{"kind":"skill","requirement":"x","details":"y"},{"kind":"skill","requirement":"x","details":"y"}]}`} {
-		providerBody, _ := json.Marshal(map[string]any{"choices": []any{map[string]any{"message": map[string]string{"content": content}}}})
+		providerBody, _ := json.Marshal(map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": content}}}})
 		a := app{client: &http.Client{Transport: transportFunc(func(*http.Request) (*http.Response, error) {
 			return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(string(providerBody))), Header: make(http.Header)}, nil
 		})}}

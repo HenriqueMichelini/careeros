@@ -119,9 +119,9 @@ func TestJobAcceptanceIsRecheckedForEveryPostingAndAttempt(t *testing.T) {
 				}
 				extractionCalls++
 				if endpoint.path == "/api/qualification-gaps" {
-					return response(200, `{"choices":[{"message":{"content":"{\"gaps\":[]}"}}]}`), nil
+					return response(200, `{"choices":[{"finish_reason":"stop","message":{"content":"{\"gaps\":[]}"}}]}`), nil
 				}
-				return response(200, `{"choices":[{"message":{"content":"{\"jobTitle\":\"Engineer\",\"company\":null,\"jobSummary\":\"Build APIs\",\"resume\":\"Java\",\"applicationAnswers\":\"I use Java.\",\"coverLetter\":{\"greeting\":\"Dear team,\",\"body\":\"I use Java.\",\"closing\":\"Sincerely,\"}}"}}]}`), nil
+				return response(200, `{"choices":[{"finish_reason":"stop","message":{"content":"{\"jobTitle\":\"Engineer\",\"company\":null,\"jobSummary\":\"Build APIs\",\"resume\":\"Java\",\"applicationAnswers\":\"I use Java.\",\"coverLetter\":{\"greeting\":\"Dear team,\",\"body\":\"I use Java.\",\"closing\":\"Sincerely,\"}}"}}]}`), nil
 			})
 			h := endpoint.handler()
 			messy := "HOME | LOGIN | JOBS\nEngineer build APIs Java Java Java. include your salary expectations; send your portfolio; describe your experience with Java; submit your CV as a PDF and include a short cover letter. Cookie policy"
@@ -204,7 +204,7 @@ func TestShortPostingRetainsItsQualification(t *testing.T) {
 		if !strings.Contains(string(payload["messages"]), "Java developer. AWS required.") {
 			t.Fatal("short requirement lost before extraction")
 		}
-		return response(200, `{"choices":[{"message":{"content":"{\"gaps\":[{\"kind\":\"skill\",\"requirement\":\"AWS\",\"details\":\"AWS required.\"}]}"}}]}`), nil
+		return response(200, `{"choices":[{"finish_reason":"stop","message":{"content":"{\"gaps\":[{\"kind\":\"skill\",\"requirement\":\"AWS\",\"details\":\"AWS required.\"}]}"}}]}`), nil
 	})
 	w := submit(gaps.NewHandler(), "/api/qualification-gaps", "Java developer. AWS required.", "", "synthetic")
 	if w.Code != 200 || calls != 2 || !strings.Contains(w.Body.String(), `"requirement":"AWS"`) || w.Header().Get("Cache-Control") != "no-store" {
@@ -244,9 +244,9 @@ func TestApplyProvidersReceiveSamePreparedPosting(t *testing.T) {
 					t.Fatalf("provider did not receive complete normalized posting: %q", payload.Messages[0].Content)
 				}
 				if endpoint.path == "/api/qualification-gaps" {
-					return response(200, `{"choices":[{"message":{"content":"{\"gaps\":[]}"}}]}`), nil
+					return response(200, `{"choices":[{"finish_reason":"stop","message":{"content":"{\"gaps\":[]}"}}]}`), nil
 				}
-				return response(200, `{"choices":[{"message":{"content":"{\"jobTitle\":null,\"company\":null,\"jobSummary\":\"AWS required.\",\"resume\":\"Java\",\"applicationAnswers\":\"I use Java.\",\"coverLetter\":{\"greeting\":\"Dear team,\",\"body\":\"I use Java.\",\"closing\":\"Sincerely,\"}}"}}]}`), nil
+				return response(200, `{"choices":[{"finish_reason":"stop","message":{"content":"{\"jobTitle\":null,\"company\":null,\"jobSummary\":\"AWS required.\",\"resume\":\"Java\",\"applicationAnswers\":\"I use Java.\",\"coverLetter\":{\"greeting\":\"Dear team,\",\"body\":\"I use Java.\",\"closing\":\"Sincerely,\"}}"}}]}`), nil
 			})}
 			w := submit(endpoint.handler(client), endpoint.path, original, "", "synthetic")
 			if w.Header().Get("Cache-Control") != "no-store" {

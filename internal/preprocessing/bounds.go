@@ -1,7 +1,9 @@
 package preprocessing
 
 import (
+	"context"
 	"errors"
+	"professional-information-repo/internal/aidiagnostics"
 
 	"professional-information-repo/internal/fieldvalidation"
 )
@@ -79,4 +81,16 @@ func PrepareBounded(original string, field fieldvalidation.Field) (Preparation, 
 	r.PreparedBytes = len(r.Source.Text())
 	r.Status = Ready
 	return r, nil
+}
+
+// PrepareBoundedWithContext measures local preparation without a provider event.
+func PrepareBoundedWithContext(ctx context.Context, original string, field fieldvalidation.Field) (Preparation, error) {
+	_, finish := aidiagnostics.Start(ctx, "mechanical_preparation", RulesVersion+"/"+StructureVersion+"/"+RepetitionVersion+"/"+PlanningVersion+"/bounds-v1")
+	result, err := PrepareBounded(original, field)
+	outcome := ""
+	if err != nil || result.Status != Ready {
+		outcome = "capacity"
+	}
+	finish(outcome)
+	return result, err
 }

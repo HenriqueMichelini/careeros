@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"professional-information-repo/internal/aidiagnostics"
 	"time"
 
 	draft "professional-information-repo/backend/application-draft"
@@ -32,18 +33,19 @@ type Call struct {
 	ReturnedModel       string `json:"returnedModel,omitempty"`
 }
 type RunResult struct {
-	ID              string            `json:"id"`
-	Task            string            `json:"task"`
-	Split           string            `json:"split"`
-	Language        string            `json:"language"`
-	Mode            string            `json:"mode"`
-	Role            string            `json:"role"`
-	Status          int               `json:"status"`
-	NoStore         bool              `json:"noStore"`
-	Calls           []Call            `json:"calls"`
-	Output          json.RawMessage   `json:"output"`
-	ProviderOutputs []json.RawMessage `json:"providerOutputs,omitempty"`
-	Score           Result            `json:"score"`
+	Diagnostics     *aidiagnostics.Attempt `json:"diagnostics,omitempty"`
+	ID              string                 `json:"id"`
+	Task            string                 `json:"task"`
+	Split           string                 `json:"split"`
+	Language        string                 `json:"language"`
+	Mode            string                 `json:"mode"`
+	Role            string                 `json:"role"`
+	Status          int                    `json:"status"`
+	NoStore         bool                   `json:"noStore"`
+	Calls           []Call                 `json:"calls"`
+	Output          json.RawMessage        `json:"output"`
+	ProviderOutputs []json.RawMessage      `json:"providerOutputs,omitempty"`
+	Score           Result                 `json:"score"`
 }
 type transport struct {
 	mode      string
@@ -195,6 +197,7 @@ func Run(c Case, mode, openAIKey, typeSafeKey string) (RunResult, error) {
 	req.Header.Set("X-OpenAI-Api-Key", openAIKey)
 	req.Header.Set("X-TypeSafe-Api-Key", typeSafeKey)
 	rec := httptest.NewRecorder()
+	req = req.WithContext(aidiagnostics.WithSink(req.Context(), func(a aidiagnostics.Attempt) { result.Diagnostics = &a }))
 	handler.ServeHTTP(rec, req)
 	result.Status = rec.Code
 	result.NoStore = rec.Header().Get("Cache-Control") == "no-store"
