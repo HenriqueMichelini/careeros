@@ -30,3 +30,7 @@ All provider responses in these tests were synthetic controlled transports. No r
 ## Independent review corrections
 
 Standards review reproduced obsolete evidence transfer and false unsupported state on complete replacements. Spec review additionally reproduced an approximate narrative blocked by undated supporting identity. Regression tests were added before fixing all three. Prior evidence now follows unchanged appended blocks and unchanged identity/context; new replacements use their own sources; semantic qualifiers come from operative narrative claims, while identity excerpts supply context. Entirely undated roles receive role context without inventing a period link. A subsequent polarity-change regression prevents lexical inclusion from transferring affirmative evidence to negated replacement wording. Final correction review is recorded in the PR/issue.
+
+## Final review and validation
+
+Standards: zero remaining actionable findings after correction review of `5669703`. Spec: zero remaining actionable findings after correction review of `5669703`. All discovered evidence-state and qualifier issues have regression coverage. The final complete Node and Go suites, TypeScript check and production build pass. Screenshots of rendered accepted excerpts after reload are retained in [English](issue-39/accepted-evidence-en-390.png) and [Portuguese](issue-39/accepted-evidence-pt-390.png). Browser evidence remains controlled; no live provider semantic claim is made.
