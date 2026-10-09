@@ -604,13 +604,38 @@ export function editProfile(
     if (!node) throw new ProfileValidationError("Missing owner/context")
     return { profileId: next.id, id, revision: node.revision }
   }
+  // A correction withdraws shared excerpt support conservatively. Composite
+  // AI wording must not retain evidence that its source fact just invalidated.
+  const invalidateSharedSupport = (id: string) => {
+    const evidence = new Set(
+      next.links
+        .filter(
+          (l) =>
+            l.kind === "supports" && l.state === "active" && l.from.id === id,
+        )
+        .map((l) => l.to.id),
+    )
+    for (const link of next.links) {
+      if (
+        link.kind !== "supports" ||
+        link.state !== "active" ||
+        !evidence.has(link.to.id)
+      )
+        continue
+      const dependent = next.facts.find((f) => f.id === link.from.id)
+      if (dependent?.support === "supported") dependent.support = "invalidated"
+      link.state = "invalidated"
+    }
+  }
   const invalidate = (id: string) => {
+    invalidateSharedSupport(id)
     const fact = next.facts.find((f) => f.id === id)
     for (const link of next.links.filter((l) => l.from.id === id))
       link.state = "invalidated"
     if (fact?.support === "supported") fact.support = "invalidated"
   }
   const authored = (fact: ProfileFact) => {
+    invalidateSharedSupport(fact.id)
     for (const link of next.links.filter(
       (l) => l.from.id === fact.id && l.state === "active",
     )) {

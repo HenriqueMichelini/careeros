@@ -14,7 +14,7 @@ for (const name of ["profile", "cover-letter", "fieldDecision", "ai"]) {
   writeFileSync(join(temp, `${name}.mjs`), compiled)
 }
 const { withContactFields, careerProfile, cvQualifications, validQualifications } = await import(join(temp, "profile.mjs"))
-const { reviewRepository, findProfileGaps, generateMaterials } = await import(join(temp, "ai.mjs"))
+const { findProfileGaps, generateMaterials } = await import(join(temp, "ai.mjs"))
 
 const oldProfile = {
   careerGoals: "Lead teams", skills: "Go", competencies: "Communication",
@@ -33,7 +33,7 @@ test("old saved Profiles gain blank contact fields without losing existing facts
   assert.equal(migrated.additionalInfo, "Certificate")
 })
 
-test("the three AI requests exclude contact facts, and review preserves them", async () => {
+test("application AI requests exclude contact facts", async () => {
   const repo = {
     ...withContactFields(oldProfile), fullName: "Ada Lovelace", email: "ada@example.test",
     phone: "+1 555 0100", location: "London", professionalLinks: "example.test/ada",
@@ -42,10 +42,6 @@ test("the three AI requests exclude contact facts, and review preserves them", a
   const requests = []
   globalThis.fetch = async (url, options) => {
     requests.push({ url, body: JSON.parse(options.body) })
-    if (url === "/api/profile/review") return {
-      ok: true,
-      json: async () => ({ updatedRepository: { ...oldProfile, careerGoals: "Unexpected model change", skills: "Go, TypeScript" }, summary: "Updated skills" }),
-    }
     if (url === "/api/qualification-gaps") return { ok: true, json: async () => ({ gaps: [] }) }
     return { ok: true, json: async () => ({
       jobTitle: "Engineer", company: "Acme", jobSummary: "Role", resume: "Resume",
@@ -53,30 +49,23 @@ test("the three AI requests exclude contact facts, and review preserves them", a
     }) }
   }
   try {
-    const reviewed = await reviewRepository(repo, "Skills", "test-key")
-    assert.equal(reviewed.updatedRepo.skills, "Go, TypeScript")
-    assert.equal(reviewed.updatedRepo.careerGoals, repo.careerGoals)
-    for (const key of ["fullName", "email", "phone", "location", "professionalLinks"]) {
-      assert.equal(reviewed.updatedRepo[key], repo[key])
-    }
     await findProfileGaps(repo, "Engineer", "test-key")
     const materials = await generateMaterials(repo, "Engineer", "test-key", [], "pt-BR")
     assert.equal(materials.cvLanguage, "pt-BR")
     assert.equal(requests.at(-1).body.cvLanguage, "pt-BR")
     assert.equal(requests.at(-1).body.uiLocale, undefined)
     assert.deepEqual(requests.map(request => request.url), [
-      "/api/profile/review", "/api/qualification-gaps", "/api/application-draft",
+      "/api/qualification-gaps", "/api/application-draft",
     ])
     for (const request of requests) assert.deepEqual(request.body.repository, oldProfile)
-    assert.equal("qualifications" in requests[0].body, false)
+    assert.deepEqual(requests[0].body.qualifications, { education: [], certifications: [], languages: [] })
     assert.deepEqual(requests[1].body.qualifications, { education: [], certifications: [], languages: [] })
-    assert.deepEqual(requests[2].body.qualifications, { education: [], certifications: [], languages: [] })
   } finally {
     globalThis.fetch = originalFetch
   }
 })
 
-test("structured qualifications survive review and reach only the relevant AI requests", async () => {
+test("structured qualifications reach relevant application AI requests", async () => {
   const repo = {
     ...withContactFields(oldProfile),
     education: [{ id: "e1", degree: "BSc", institution: "Example University", location: "London", graduationDate: "2018", details: "Honors" }],
@@ -88,18 +77,14 @@ test("structured qualifications survive review and reach only the relevant AI re
   const requests = []
   globalThis.fetch = async (url, options) => {
     requests.push({ url, body: JSON.parse(options.body) })
-    if (url === "/api/profile/review") return { ok: true, json: async () => ({ updatedRepository: oldProfile, summary: "Reviewed" }) }
     if (url === "/api/qualification-gaps") return { ok: true, json: async () => ({ gaps: [] }) }
     return { ok: true, json: async () => ({ jobTitle: "Engineer", company: "Acme", jobSummary: "Role", resume: "Resume", coverLetter: { greeting: "Dear team,", body: "I build systems.", closing: "Sincerely," }, applicationAnswers: "Answers" }) }
   }
   try {
-    const reviewed = await reviewRepository(repo, "skills", "test-key")
-    assert.deepEqual(cvQualifications(reviewed.updatedRepo), cvQualifications(repo))
     await findProfileGaps(repo, "Engineer", "test-key")
     await generateMaterials(repo, "Engineer", "test-key")
-    assert.equal("qualifications" in requests[0].body, false)
+    assert.deepEqual(requests[0].body.qualifications, cvQualifications(repo))
     assert.deepEqual(requests[1].body.qualifications, cvQualifications(repo))
-    assert.deepEqual(requests[2].body.qualifications, cvQualifications(repo))
     assert.equal(requests.every(request => !JSON.stringify(request.body).includes("London") || request.url !== "/api/profile/review"), true)
   } finally { globalThis.fetch = originalFetch }
 })
@@ -166,17 +151,5 @@ test("model signatures and incomplete structures fail safely rather than duplica
         await assert.rejects(generateMaterials({ ...withContactFields(oldProfile), fullName }, "Go", "test-key"), error => error.code === "invalid_output")
       }
     }
-  } finally { globalThis.fetch = originalFetch }
-})
-
-test("overview review is refused without a request", async () => {
-  const originalFetch = globalThis.fetch
-  let requests = 0
-  globalThis.fetch = async () => { requests++; throw new Error("unexpected request") }
-  try {
-    for (const section of ["profile", "PROFILE", "PERFIL", "overview", "education", "certifications", "languages"]) {
-      await assert.rejects(reviewRepository(withContactFields(oldProfile), section, "synthetic"), { code: "input" })
-    }
-    assert.equal(requests, 0)
   } finally { globalThis.fetch = originalFetch }
 })
