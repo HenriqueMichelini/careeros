@@ -23,7 +23,7 @@ Henrique approved the existing public ingestion HTTP handler, canonical apply/st
 - Ingestion Go handler suite and semantic controlled corpus passed after correcting phone-prefix and percentage literal handling.
 - TypeScript checking and production build passed.
 - Controlled ingestion browser matrix passed: English/Portuguese, 1440/390px, empty/populated Profiles; whole-submission decisions, edit/reject/apply, approved-only evidence after reload, recovery/quota, stale completions, delayed lock/save and real sibling-window storage conflicts.
-- Rendered Fact Details source inspection after reload also passed. Browser screenshots: `/tmp/careeros-ingestion-browser-lC1lft` (local run artifacts).
+- Rendered Fact Details source inspection after reload also passed. Browser screenshots: `/tmp/careeros-ingestion-browser-u4aRlD` (local run artifacts).
 
 All provider responses in these tests were synthetic controlled transports. No real provider calls were made; provider semantic accuracy, live latency and deployed semantic behavior remain outside this local verification. PR/deployment checks and final review results are recorded below after publication.
 

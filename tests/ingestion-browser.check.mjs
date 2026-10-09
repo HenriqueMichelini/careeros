@@ -881,8 +881,8 @@ try {
               : "Habilidades e tecnologias"
           const reviewAi = locale === "en" ? "Review with AI" : "Revisar com IA"
           await evaluate(`${byText(skills)}.click()`)
-          await evaluate("document.querySelector('[data-fact-details]').open=true")
-          await until("Array.from(document.querySelectorAll('[data-fact-details] blockquote')).some(el=>el.textContent.includes('Go'))")
+          await evaluate("document.querySelector('[data-fact-details]').open=true; document.querySelectorAll('[data-fact-details] details').forEach(el=>el.open=true)")
+          await until("Array.from(document.querySelectorAll('[data-fact-details] blockquote')).some(el=>el.textContent.includes('Go') && el.checkVisibility())")
           const sourceScreen = await call('Page.captureScreenshot',{format:'png',captureBeyondViewport:true})
           writeFileSync(join(work,`accepted-evidence-${locale}-${width}-${populated}.png`),Buffer.from(sourceScreen.data,'base64'))
           assert.ok(
