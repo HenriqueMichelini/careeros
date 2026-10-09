@@ -1506,3 +1506,33 @@ test("polarity changes cannot reactivate a previous affirmative excerpt", () => 
  assert.deepEqual(next.evidence.filter(e=>active.includes(e.id)).map(e=>e.excerpt),["I do not use Java."])
  assert.equal(fact.assertion,"negated")
 })
+
+test("clarification answers retain a truthful origin only after explicit accepted Apply", async () => {
+  const doc = migrateProfile({skills:""}, "clarified")
+  const before = JSON.stringify(doc)
+  const claim = {...ingestionClaim("c1", "It used TypeScript."), supportingSources:[{source:"I used TypeScript at Acme.",origin:"clarification_answer"}]}
+  const result = ingestionResult([claim],[ingestionOp({approved:false})])
+  const pending = applyIngestionDocument(doc,doc,"It used TypeScript. PRIVATE PASTE",result)
+  assert.deepEqual(pending.evidence, [])
+  assert.equal(JSON.stringify(doc),before)
+  result.operations[0].approved=true
+  const next = applyIngestionDocument(doc,doc,"It used TypeScript. PRIVATE PASTE",result)
+  assert.deepEqual(next.evidence.map(e=>[e.excerpt,e.origin]),[
+    ["It used TypeScript.","professional_information"],
+    ["I used TypeScript at Acme.","clarification_answer"],
+  ])
+  const saved = storage({careeros_profile_v2:before})
+  await saveProfile(saved,doc,next,lock)
+  const reloaded = await openProfile(saved,lock)
+  assert.deepEqual(reloaded.evidence,next.evidence)
+  assert.equal(JSON.stringify(reloaded).includes("PRIVATE PASTE"),false)
+  assert.throws(()=>applyIngestionDocument({...doc,revision:doc.revision+1},doc,"It used TypeScript.",result),{code:"stale"})
+})
+
+test("a repeated clarification excerpt keeps both independently accepted origins", () => {
+  const doc=migrateProfile({skills:""},"repeated-origin")
+  const source="I use TypeScript."
+  const c={...ingestionClaim("c1",source),supportingSources:[{source,origin:"clarification_answer"}]}
+  const next=applyIngestionDocument(doc,doc,source,ingestionResult([c],[ingestionOp()]))
+  assert.deepEqual(next.evidence.map(e=>e.origin),["professional_information","clarification_answer"])
+})

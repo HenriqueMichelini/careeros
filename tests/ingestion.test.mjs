@@ -532,3 +532,28 @@ test("deliberate continuation binds source regions and capacity to the exact sub
     }
   } finally { globalThis.fetch=originalFetch }
 })
+
+test("clarification replaces only its claim, resets approval, and preserves unrelated edits", async () => {
+  const { mergeClarification } = await import(output)
+  const pending = review({claims:[claim({id:"amb",source:"It used Java",text:"Unknown owner",targets:[],question:"Who used Java?"}),claim()], operations:[op({value:"Edited TypeScript",proposedValue:"TypeScript"})]})
+  const revised = review({claims:[claim({id:"amb",source:"It used Java",text:"I used Java",supportingSources:[{source:"I used Java at Acme",origin:"clarification_answer"}]})],operations:[op({claimId:"amb",value:"Java"})]})
+  const merged = mergeClarification(pending, "amb", revised, "It used Java\nTypeScript", profile())
+  assert.equal(merged.operations[0].value,"Edited TypeScript")
+  assert.equal(merged.operations[0].approved,true)
+  assert.equal(merged.operations[1].approved,false)
+  assert.equal(merged.claims[0].supportingSources[0].origin,"clarification_answer")
+  assert.equal(pending.claims[0].question,"Who used Java?")
+})
+
+test("clarification accepts the server's origin-first JSON field order without losing prior support", async () => {
+  const originalFetch=globalThis.fetch
+  const original=claim({source:"It used TypeScript.",text:"Unclear ownership",targets:[],question:"Who used TypeScript?"})
+  const answer="I used TypeScript."
+  const revised=review({claims:[claim({source:original.source,supportingSources:[{origin:"clarification_answer",source:answer}]})],operations:[op({approved:false})]})
+  revised.operations=revised.operations.map(({approved,...o})=>o)
+  globalThis.fetch=async()=>new Response(JSON.stringify({...revised,decision:{version:1,field:"professional_information",outcome:{kind:"accept"}}}))
+  try {
+    const got=await ingestProfile(original.source,profile(),"sk-test",undefined,"synthetic-typesafe",undefined,undefined,{claim:original,answer})
+    assert.equal(got.claims[0].supportingSources[0].origin,"clarification_answer")
+  } finally {globalThis.fetch=originalFetch}
+})

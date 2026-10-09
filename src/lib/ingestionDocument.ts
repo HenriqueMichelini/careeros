@@ -134,22 +134,29 @@ export function applyIngestionDocument(
               l.from.id === fact.id,
           )
           .flatMap((l) =>
-            next.evidence.filter((e) => e.id === l.to.id).map((e) => e.excerpt),
+            next.evidence
+              .filter((e) => e.id === l.to.id)
+              .map((e) => JSON.stringify([e.origin, e.excerpt])),
           ),
       )
       for (const op of ops) {
         const claim = result.claims.find((c) => c.id === op.claimId)!
-        for (const excerpt of [
-          claim.source,
-          ...(claim.supportingSources ?? []).map((s) => s.source),
+        for (const source of [
+          { source: claim.source, origin: undefined },
+          ...(claim.supportingSources ?? []),
         ]) {
-          if (retained.has(excerpt)) continue
-          retained.add(excerpt)
+          const excerpt = source.source
+          const identity = JSON.stringify([
+            source.origin ?? "professional_information",
+            excerpt,
+          ])
+          if (retained.has(identity)) continue
+          retained.add(identity)
           const evidence = {
             id: crypto.randomUUID(),
             revision: 1,
             excerpt,
-            origin: "professional_information",
+            origin: source.origin ?? "professional_information",
             approval: "approved" as const,
           }
           next.evidence.push(evidence)
@@ -307,6 +314,7 @@ export function applyIngestionDocument(
         })
     }
     const excerpts = new Set<string>()
+    const evidenceIdentities = new Set<string>()
     for (const claim of claims.values()) {
       for (const source of [
         { source: claim.source, sourceReference: claim.sourceReference },
@@ -314,13 +322,18 @@ export function applyIngestionDocument(
       ]) {
         // Do not persist source IDs derived from the full paste; the retained
         // excerpt itself and its accepted origin are sufficient for inspection.
-        if (excerpts.has(source.source)) continue
+        const identity = JSON.stringify([
+          source.origin ?? "professional_information",
+          source.source,
+        ])
+        if (evidenceIdentities.has(identity)) continue
+        evidenceIdentities.add(identity)
         excerpts.add(source.source)
         const evidence = {
           id: crypto.randomUUID(),
           revision: 1,
           excerpt: source.source,
-          origin: "professional_information",
+          origin: source.origin ?? "professional_information",
           approval: "approved" as const,
         }
         next.evidence.push(evidence)

@@ -339,6 +339,17 @@ const messages = {
     "repo.ingestReviewNote":
       "Nothing is selected. Review the source and each before/after value, then approve the changes you want.",
     "repo.ingestSource": "Source",
+    "repo.clarificationAnswer": "Your answer",
+    "repo.clarificationReview": "Review revised proposal",
+    "repo.clarificationNote":
+      "Answer only what you know. Optional details can remain unknown. Nothing is saved until you approve and apply.",
+    "repo.clarificationConflict":
+      "Which statement should this proposal use? Explain any correction or leave it unresolved.",
+    "repo.clarificationRevised":
+      "Revised proposal ready for review. Nothing has been saved.",
+    "repo.clarificationFailed":
+      "Could not revise this proposal. Your pending proposals are preserved; check your keys or try again deliberately.",
+    "repo.clarificationEvidence": "Clarification answer",
     "repo.ingestClarify": "Needs clarification",
     "repo.ingestCoverage": "Claims reviewed",
     "repo.ingestInvalidCount": "Invalid claims",
@@ -1088,6 +1099,17 @@ const messages = {
     "repo.ingestReviewNote":
       "Nada está selecionado. Confira a fonte e os valores antes/depois e aprove as alterações desejadas.",
     "repo.ingestSource": "Fonte",
+    "repo.clarificationAnswer": "Sua resposta",
+    "repo.clarificationReview": "Revisar proposta atualizada",
+    "repo.clarificationNote":
+      "Responda apenas o que sabe. Detalhes opcionais podem continuar desconhecidos. Nada é salvo até você aprovar e aplicar.",
+    "repo.clarificationConflict":
+      "Qual declaração esta proposta deve usar? Explique a correção ou mantenha a questão em aberto.",
+    "repo.clarificationRevised":
+      "Proposta atualizada pronta para revisão. Nada foi salvo.",
+    "repo.clarificationFailed":
+      "Não foi possível atualizar esta proposta. Suas propostas pendentes foram preservadas; confira as chaves ou tente novamente de forma explícita.",
+    "repo.clarificationEvidence": "Resposta de esclarecimento",
     "repo.ingestClarify": "Precisa de esclarecimento",
     "repo.ingestCoverage": "Afirmações revisadas",
     "repo.ingestInvalidCount": "Afirmações inválidas",
