@@ -1,0 +1,18 @@
+goos: linux
+goarch: amd64
+pkg: professional-information-repo/internal/preprocessing
+cpu: AMD Ryzen 5 3600 6-Core Processor
+BenchmarkWorkflowPreparation/small-12         	   10000	    107322 ns/op	   1.12 MB/s	         1.000 portions/op	         2.000 repeat-groups/op	         5.000 segments/op	   30680 B/op	     136 allocs/op
+BenchmarkWorkflowPreparation/small-12         	   10000	    105606 ns/op	   1.14 MB/s	         1.000 portions/op	         2.000 repeat-groups/op	         5.000 segments/op	   30698 B/op	     136 allocs/op
+BenchmarkWorkflowPreparation/small-12         	   10000	    104987 ns/op	   1.14 MB/s	         1.000 portions/op	         2.000 repeat-groups/op	         5.000 segments/op	   30690 B/op	     136 allocs/op
+BenchmarkWorkflowPreparation/typical-12       	     192	   6302085 ns/op	   0.95 MB/s	         1.000 portions/op	         2.000 repeat-groups/op	       285.0 segments/op	 2085511 B/op	    2752 allocs/op
+BenchmarkWorkflowPreparation/typical-12       	     190	   6556258 ns/op	   0.92 MB/s	         1.000 portions/op	         2.000 repeat-groups/op	       285.0 segments/op	 2082192 B/op	    2751 allocs/op
+BenchmarkWorkflowPreparation/typical-12       	     174	   7009400 ns/op	   0.86 MB/s	         1.000 portions/op	         2.000 repeat-groups/op	       285.0 segments/op	 2088772 B/op	    2753 allocs/op
+BenchmarkWorkflowPreparation/maximum-12       	      18	  65991719 ns/op	   0.45 MB/s	         1.000 portions/op	         2.000 repeat-groups/op	      1429 segments/op	14252416 B/op	   13251 allocs/op
+BenchmarkWorkflowPreparation/maximum-12       	      18	  67557578 ns/op	   0.44 MB/s	         1.000 portions/op	         2.000 repeat-groups/op	      1429 segments/op	14215571 B/op	   13249 allocs/op
+BenchmarkWorkflowPreparation/maximum-12       	      18	  66570223 ns/op	   0.45 MB/s	         1.000 portions/op	         2.000 repeat-groups/op	      1429 segments/op	14235250 B/op	   13256 allocs/op
+BenchmarkWorkflowPreparation/maximum-job-12   	      16	  68992938 ns/op	   0.45 MB/s	         1.000 portions/op	         2.000 repeat-groups/op	      1463 segments/op	14218111 B/op	   13554 allocs/op
+BenchmarkWorkflowPreparation/maximum-job-12   	      16	  68517451 ns/op	   0.45 MB/s	         1.000 portions/op	         2.000 repeat-groups/op	      1463 segments/op	14247607 B/op	   13561 allocs/op
+BenchmarkWorkflowPreparation/maximum-job-12   	      16	  68069043 ns/op	   0.45 MB/s	         1.000 portions/op	         2.000 repeat-groups/op	      1463 segments/op	14231617 B/op	   13551 allocs/op
+PASS
+ok  	professional-information-repo/internal/preprocessing	16.992s

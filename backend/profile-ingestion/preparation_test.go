@@ -1,7 +1,9 @@
 package profileingestion
 
 import (
+	"bytes"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 	"testing"
@@ -11,6 +13,10 @@ import (
 )
 
 func TestPreparedIngestionPreservesOriginalEvidence(t *testing.T) {
+	var logs bytes.Buffer
+	oldOutput := log.Writer()
+	log.SetOutput(&logs)
+	t.Cleanup(func() { log.SetOutput(oldOutput) })
 	original := "# First\r\nCafe\u0301  Java\r\n# Second\r\nCafe\u0301   Java\r\n"
 	source, err := preprocessing.Prepare(original, fieldvalidation.ProfessionalInformation)
 	if err != nil {
@@ -48,6 +54,19 @@ func TestPreparedIngestionPreservesOriginalEvidence(t *testing.T) {
 	w := send(t, NewHandlerWithClient(client), request{Input: original, Profile: profile()})
 	if w.Code != 200 || calls != 3 {
 		t.Fatalf("status=%d calls=%d body=%s", w.Code, calls, w.Body.String())
+	}
+	if w.Header().Get("Cache-Control") != "no-store" {
+		t.Fatal("source response cached")
+	}
+	for _, secret := range []string{original, source.Text(), "sk-test", "synthetic-typesafe", segment.ID} {
+		if strings.Contains(logs.String(), secret) {
+			t.Fatal("content, source identifier or credential leaked in logs")
+		}
+	}
+	for _, forbidden := range []string{`"Mappings"`, `"normalizedText"`, `"preparedText"`, `"Original"`, "sk-test", "synthetic-typesafe"} {
+		if strings.Contains(w.Body.String(), forbidden) {
+			t.Fatal("transient source/key leaked in response")
+		}
 	}
 	var got struct {
 		Claims []struct {

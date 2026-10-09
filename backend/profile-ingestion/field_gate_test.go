@@ -112,7 +112,7 @@ func TestClientAcceptanceCannotBypassGate(t *testing.T) {
 		return jevResponse("professional_fact", "detected"), nil
 	})}
 	h := (app{client: client}).handler()
-	for _, extra := range []string{`,"accepted":true`, `,"decision":{"version":1,"field":"professional_information","outcome":{"kind":"accept"}}`} {
+	for _, extra := range []string{`,"accepted":true`, `,"prepared":{"text":"I use Java"}`, `,"sourceMap":[]`, `,"decision":{"version":1,"field":"professional_information","outcome":{"kind":"accept"}}`} {
 		raw := `{"input":"I use Java", "profile":` + string(mustJSON(profile())) + extra + `}`
 		r := httptest.NewRequest("POST", "/api/profile/ingest", strings.NewReader(raw))
 		r.Header.Set("X-OpenAI-Api-Key", "sk-test")
