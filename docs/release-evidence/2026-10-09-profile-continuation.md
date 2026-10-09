@@ -60,3 +60,13 @@ heading remains supporting evidence for later Java responsibilities, retaining a
 five grounded structured fields. An ambiguous “Its project” claim remains a
 Clarification Request with zero attributed operations. No semantic completeness
 claim is inferred from these controlled responses.
+
+## Final validation
+
+Final implementation `1b741b0` passed `go test ./...` (with the repository's temporary
+Go cache), `node --test tests/*.test.mjs`, `tsc --noEmit`, and a production Vite build
+to a temporary output directory. The complete `tests/ingestion-browser.check.mjs`
+run passed field-decision, empty/populated ingestion, continuation/retry/incomplete-plan
+restart, save recovery and cross-tab checks in EN/PT at 1440px and 390px. Retained
+screenshots are from this final run. Separate correction reviews report zero
+remaining actionable Standards findings and zero remaining actionable Spec findings.
