@@ -608,7 +608,7 @@ try {
         await evaluate("document.querySelector('article:nth-of-type(2) input[type=checkbox]').click()")
         const answerReview=locale==="en"?"Review revised proposal":"Revisar proposta atualizada"
         const unknownAnswer="I do not know who used TypeScript."
-        const unknownRevision=withIngestionLedger({decision:proposal.decision,claims:[{...pendingClarification.claims[0],supportingSources:[{source:unknownAnswer,origin:"clarification_answer"}]}],operations:[],unverifiedClaimCount:0,unresolvedClaimIds:[],unplacedOperationCount:0})
+        const unknownRevision=withIngestionLedger({decision:proposal.decision,claims:[{...pendingClarification.claims[0],supportingSources:[{origin:"clarification_answer",source:unknownAnswer}]}],operations:[],unverifiedClaimCount:0,unresolvedClaimIds:[],unplacedOperationCount:0})
         await fill(unknownAnswer,"#clarification-amb")
         await evaluate(`window.__clarificationCalls=[];window.fetch=async(url,options)=>{window.__clarificationCalls.push(JSON.parse(options.body));return new Response(JSON.stringify(${JSON.stringify(unknownRevision)}),{status:200})}`)
         await evaluate(`${byText(answerReview)}.click()`)
@@ -632,7 +632,7 @@ try {
         await fill(resolvedAnswer,"#clarification-amb")
         assert.equal(await evaluate(`${byText(answerReview)}.disabled`),false)
         // Cancellation ignores a late response and keeps the pending review.
-        const resolvedRevision=withIngestionLedger({decision:proposal.decision,claims:[{id:"amb",source:"It used TypeScript.",text:"Used TypeScript at Acme",targets:["skills"],question:"",supportingSources:[{source:unknownAnswer,origin:"clarification_answer"},{source:resolvedAnswer,origin:"clarification_answer"}]}],operations:[{claimId:"amb",target:"skills",entryId:"",field:"skills",action:"add",value:"TypeScript",finding:"addition"}],unverifiedClaimCount:0,unresolvedClaimIds:[],unplacedOperationCount:0})
+        const resolvedRevision=withIngestionLedger({decision:proposal.decision,claims:[{id:"amb",source:"It used TypeScript.",text:"Used TypeScript at Acme",targets:["skills"],question:"",supportingSources:[{origin:"clarification_answer",source:unknownAnswer},{origin:"clarification_answer",source:resolvedAnswer}]}],operations:[{claimId:"amb",target:"skills",entryId:"",field:"skills",action:"add",value:"TypeScript",finding:"addition"}],unverifiedClaimCount:0,unresolvedClaimIds:[],unplacedOperationCount:0})
         await evaluate(`window.fetch=async()=>new Promise(resolve=>window.__releaseClarification=()=>resolve(new Response(JSON.stringify(${JSON.stringify(resolvedRevision)}),{status:200})))`)
         await evaluate(`${byText(answerReview)}.click()`)
         await until("document.querySelector('#clarification-amb').disabled")

@@ -923,6 +923,18 @@ function exactIngestionFact(
   return true
 }
 
+function sameSourceReference(
+  a?: IngestionSourceReference,
+  b?: IngestionSourceReference,
+): boolean {
+  if (!a || !b) return a === b
+  return Object.keys(a).every(
+    (key) =>
+      a[(key as keyof IngestionSourceReference)] ===
+      b[(key as keyof IngestionSourceReference)],
+  )
+}
+
 export async function ingestProfile(
   input: string,
   profile: ProfessionalRepository,
@@ -1021,9 +1033,20 @@ export async function ingestProfile(
       result.claims.length !== 1 ||
       c.id !== clarification.claim.id ||
       c.source !== clarification.claim.source ||
-      JSON.stringify(c.sourceReference) !==
-        JSON.stringify(clarification.claim.sourceReference) ||
-      JSON.stringify(c.supportingSources) !== JSON.stringify(allowed)
+      !sameSourceReference(
+        c.sourceReference,
+        clarification.claim.sourceReference,
+      ) ||
+      c.supportingSources?.length !== allowed.length ||
+      c.supportingSources?.some(
+        (source, i) =>
+          source.source !== allowed[i].source ||
+          source.origin !== allowed[i].origin ||
+          !sameSourceReference(
+            source.sourceReference,
+            allowed[i].sourceReference,
+          ),
+      )
     )
       throw new IngestionError("invalid_output")
   } else if (

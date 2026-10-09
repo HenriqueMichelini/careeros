@@ -544,3 +544,16 @@ test("clarification replaces only its claim, resets approval, and preserves unre
   assert.equal(merged.claims[0].supportingSources[0].origin,"clarification_answer")
   assert.equal(pending.claims[0].question,"Who used Java?")
 })
+
+test("clarification accepts the server's origin-first JSON field order without losing prior support", async () => {
+  const originalFetch=globalThis.fetch
+  const original=claim({source:"It used TypeScript.",text:"Unclear ownership",targets:[],question:"Who used TypeScript?"})
+  const answer="I used TypeScript."
+  const revised=review({claims:[claim({source:original.source,supportingSources:[{origin:"clarification_answer",source:answer}]})],operations:[op({approved:false})]})
+  revised.operations=revised.operations.map(({approved,...o})=>o)
+  globalThis.fetch=async()=>new Response(JSON.stringify({...revised,decision:{version:1,field:"professional_information",outcome:{kind:"accept"}}}))
+  try {
+    const got=await ingestProfile(original.source,profile(),"sk-test",undefined,"synthetic-typesafe",undefined,undefined,{claim:original,answer})
+    assert.equal(got.claims[0].supportingSources[0].origin,"clarification_answer")
+  } finally {globalThis.fetch=originalFetch}
+})
