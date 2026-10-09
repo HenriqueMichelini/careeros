@@ -43,7 +43,15 @@ Run from the repository root with Go 1.26.4, Node 24.15.0, Linux amd64:
 The first ingestion run passed. A later run with added byte-counter assertions
 passed all four locale/width boundary cases, then failed in the final mobile
 review/apply case with an absent Apply button after screenshot capture (line 411).
-This individual failure is recorded; a repeat run is reported below.
+A second repeat failed at line 336 with another absent review button. These
+failures occurred while workspace files were changing (including restoring
+build HTML), which can reload Vite pages and discard their current view.
+A final run with the workspace held unchanged passed all four decision/byte
+boundary cases and all eight empty/populated review/apply cases (exit 0;
+`/tmp/careeros-ingestion-browser-vs3XYx`). Reload interference is the leading
+explanation, not an instrumented causal proof; no production workflow failure
+was reproduced with the unchanged workspace. Keep the workspace stable while
+these dev-server browser suites run.
 
 Both browser suites initially failed under the sandbox with `listen EPERM` on
 127.0.0.1. They passed when rerun with local loopback/Chrome permission. Their
