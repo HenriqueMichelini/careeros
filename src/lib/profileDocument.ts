@@ -266,8 +266,14 @@ export function profileView(doc: ProfileDocument): ProfessionalRepository {
       .filter((e) => e.kind === group)
       .sort((a, b) => a.order - b.order)
       .map((e) => ({
-        ...Object.fromEntries(entityFields[group].map(field => [field, field === "current" ? false : ""])),
-        ...fields(e.id), id: e.legacyId,
+        ...Object.fromEntries(
+          entityFields[group].map((field) => [
+            field,
+            field === "current" ? false : "",
+          ]),
+        ),
+        ...fields(e.id),
+        id: e.legacyId,
       }))
   return view as unknown as ProfessionalRepository
 }
@@ -437,10 +443,17 @@ export function validateProfileDocument(
 
 function entitySnapshot(doc: ProfileDocument, id: string, kind: EntityKind) {
   const fields = Object.fromEntries([
-    ...entityFields[kind].map(field => [field, field === "current" ? false : ""]),
-    ...doc.facts.filter(f => f.owner.id === id).map(f => [f.field, f.value]),
+    ...entityFields[kind].map((field) => [
+      field,
+      field === "current" ? false : "",
+    ]),
+    ...doc.facts
+      .filter((f) => f.owner.id === id)
+      .map((f) => [f.field, f.value]),
   ])
-  return Object.entries(fields).sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0)
+  return Object.entries(fields).sort(([left], [right]) =>
+    left < right ? -1 : left > right ? 1 : 0,
+  )
 }
 
 // Transitional whole-field edits invalidate support; wording changes never inherit evidence.
@@ -516,7 +529,13 @@ export function replaceProfileView(
         previous.owner.revision !== f.owner.revision &&
         f.owner.id !== doc.id) ||
       f.context.some((r) => revisions.get(r.id) !== r.revision) ||
-      candidate.links.some(l => l.from.id === f.id && l.kind !== "supports" && l.state === "invalidated" && doc.links.some(old => old.id === l.id && old.state === "active"))
+      candidate.links.some(
+        (l) =>
+          l.from.id === f.id &&
+          l.kind !== "supports" &&
+          l.state === "invalidated" &&
+          doc.links.some((old) => old.id === l.id && old.state === "active"),
+      )
     if (contextChanged) {
       if (f.support === "supported") f.support = "invalidated"
       for (const l of candidate.links)
@@ -535,6 +554,337 @@ export function replaceProfileView(
   if (!validateProfileDocument(candidate))
     throw new ProfileValidationError("Invalid replacement")
   return candidate
+}
+
+export type ProfileEdit = {
+  type: "field"
+  ownerId: string
+  field: string
+  value: Json
+} | {
+  type: "add_entity"
+  kind: EntityKind
+  legacyId: string
+  values: Record<string, Json>
+} | { type: "remove_entity"; id: string } | {
+  type: "reorder"
+  kind: EntityKind
+  ids: string[]
+} | {
+  type: "fact"
+  id: string
+  patch: Partial<Pick<ProfileFact, "value" | "assertion" | "intent" | "certainty" | "temporal">>
+} | { type: "remove_fact"; id: string } | {
+  type: "move_fact"
+  id: string
+  ownerId: string
+  field: string
+} | {
+  type: "remove_context"
+  id: string
+  targetId: string
+} | {
+  type: "context"
+  id: string
+  kind: Exclude<ProfileLink["kind"], "supports">
+  targetId: string | null
+}
+
+// Explicit commands, never text diffs, determine which fact owns a manual edit.
+export function editProfile(
+  doc: ProfileDocument,
+  edit: ProfileEdit,
+): ProfileDocument {
+  if (!validateProfileDocument(doc))
+    throw new ProfileValidationError("Invalid Profile")
+  const next = structuredClone(doc)
+  next.revision++
+  const ref = (id: string): ProfileRef => {
+    const node = id === next.id ? next : next.entities.find((e) => e.id === id)
+    if (!node) throw new ProfileValidationError("Missing owner/context")
+    return { profileId: next.id, id, revision: node.revision }
+  }
+  const invalidate = (id: string) => {
+    const fact = next.facts.find((f) => f.id === id)
+    for (const link of next.links.filter((l) => l.from.id === id))
+      link.state = "invalidated"
+    if (fact?.support === "supported") fact.support = "invalidated"
+  }
+  const authored = (fact: ProfileFact) => {
+    for (const link of next.links.filter(
+      (l) => l.from.id === fact.id && l.state === "active",
+    )) {
+      if (link.kind === "supports") link.state = "invalidated"
+      else link.from.revision = fact.revision + 1
+    }
+    if (fact.support === "supported") fact.support = "invalidated"
+    fact.revision++
+    fact.origin = { kind: "manual_edit", original: "user" }
+    fact.approval = "approved"
+    fact.normalization = {
+      observed: text(fact.value) ? fact.value : "",
+      canonical: null,
+      policy: NORMALIZATION_POLICY,
+    }
+  }
+  const getFact = (id: string) => {
+    const fact = next.facts.find((f) => f.id === id)
+    if (!fact) throw new ProfileValidationError("Missing fact")
+    return fact
+  }
+  const reviseContext = (ownerId: string, field: string) => {
+    const entity = next.entities.find((e) => e.id === ownerId)
+    if (
+      entity &&
+      [
+        "company",
+        "title",
+        "name",
+        "startDate",
+        "endDate",
+        "current",
+        "graduationDate",
+        "date",
+      ].includes(field)
+    )
+      entity.revision++
+  }
+  const setField = (ownerId: string, field: string, value: Json) => {
+    const owner = ref(ownerId)
+    let fact = next.facts.find(
+      (f) => f.owner.id === ownerId && f.field === field,
+    )
+    if (fact) {
+      if (JSON.stringify(fact.value) === JSON.stringify(value)) return
+      fact.value = structuredClone(value)
+      authored(fact)
+    } else {
+      fact = {
+        id: crypto.randomUUID(),
+        revision: 1,
+        owner,
+        context: [],
+        field,
+        order:
+          Math.max(
+            -1,
+            ...next.facts
+              .filter((f) => f.owner.id === ownerId)
+              .map((f) => f.order),
+          ) + 1,
+        kind: "legacy_block",
+        value: structuredClone(value),
+        assertion: "unknown",
+        intent: "unknown",
+        certainty: "unknown",
+        temporal: { wording: "", precision: "unknown" },
+        normalization: {
+          observed: text(value) ? value : "",
+          canonical: null,
+          policy: NORMALIZATION_POLICY,
+        },
+        origin: { kind: "manual_edit", original: "user" },
+        approval: "approved",
+        support: "unsupported",
+      }
+      next.facts.push(fact)
+    }
+    if (/(?:date|duration)$/i.test(field) && text(value))
+      fact.temporal.wording = value
+    // These fields define the employer/role/project/period identity of support.
+    reviseContext(ownerId, field)
+  }
+  switch (edit.type) {
+    case "field":
+      setField(edit.ownerId, edit.field, edit.value)
+      break
+    case "add_entity": {
+      const entity: ProfileEntity = {
+        id: crypto.randomUUID(),
+        revision: 1,
+        kind: edit.kind,
+        legacyId: edit.legacyId,
+        order: 0,
+      }
+      next.entities
+        .filter((e) => e.kind === edit.kind)
+        .forEach((e) => e.order++)
+      next.entities.push(entity)
+      for (const [field, value] of Object.entries(edit.values))
+        setField(entity.id, field, value)
+      // Creation is one revision, regardless of the number of initial fields.
+      entity.revision = 1
+      break
+    }
+    case "remove_entity": {
+      ref(edit.id)
+      if (edit.id === next.id)
+        throw new ProfileValidationError("Cannot remove Profile")
+      const ids = next.facts
+        .filter((f) => f.owner.id === edit.id)
+        .map((f) => f.id)
+      ids.forEach(invalidate)
+      next.facts = next.facts.filter((f) => !ids.includes(f.id))
+      next.entities = next.entities.filter((e) => e.id !== edit.id)
+      break
+    }
+    case "reorder": {
+      const entities = next.entities.filter((e) => e.kind === edit.kind)
+      if (
+        entities.length !== edit.ids.length ||
+        new Set(edit.ids).size !== edit.ids.length ||
+        entities.some((e) => !edit.ids.includes(e.id))
+      )
+        throw new ProfileValidationError("Invalid order")
+      entities.forEach((e) => {
+        e.order = edit.ids.indexOf(e.id)
+      })
+      break
+    }
+    case "fact": {
+      const fact = getFact(edit.id)
+      const valueChanged =
+        own(edit.patch, "value") &&
+        JSON.stringify(edit.patch.value) !== JSON.stringify(fact.value)
+      Object.assign(fact, structuredClone(edit.patch))
+      authored(fact)
+      if (
+        valueChanged &&
+        /(?:date|duration)$/i.test(fact.field) &&
+        text(fact.value) &&
+        !edit.patch.temporal
+      )
+        fact.temporal.wording = fact.value
+      if (valueChanged) reviseContext(fact.owner.id, fact.field)
+      break
+    }
+    case "remove_fact": {
+      const fact = getFact(edit.id)
+      reviseContext(fact.owner.id, fact.field)
+      invalidate(edit.id)
+      next.facts = next.facts.filter((f) => f.id !== edit.id)
+      break
+    }
+    case "move_fact": {
+      const fact = getFact(edit.id)
+      invalidate(fact.id)
+      reviseContext(fact.owner.id, fact.field)
+      reviseContext(edit.ownerId, edit.field)
+      fact.owner = ref(edit.ownerId)
+      fact.field = edit.field
+      fact.context = []
+      fact.order =
+        Math.max(
+          -1,
+          ...next.facts
+            .filter((f) => f.owner.id === edit.ownerId && f.id !== fact.id)
+            .map((f) => f.order),
+        ) + 1
+      authored(fact)
+      break
+    }
+    case "remove_context": {
+      const fact = getFact(edit.id)
+      if (!fact.context.some((r) => r.id === edit.targetId))
+        throw new ProfileValidationError("Missing context")
+      for (const link of next.links.filter(
+        (l) =>
+          l.from.id === fact.id &&
+          l.to.id === edit.targetId &&
+          l.kind !== "supports",
+      ))
+        link.state = "invalidated"
+      fact.context = fact.context.filter((r) => r.id !== edit.targetId)
+      authored(fact)
+      break
+    }
+    case "context": {
+      const fact = getFact(edit.id)
+      const target = edit.targetId === null ? null : ref(edit.targetId)
+      // A relationship correction revises meaning, invalidating all old support.
+      const replaced = next.links
+        .filter(
+          (l) =>
+            l.from.id === fact.id &&
+            l.kind === edit.kind &&
+            l.state === "active",
+        )
+        .map((l) => l.to.id)
+      const inline = fact.context.filter((r) => !replaced.includes(r.id))
+      const retained = next.links.filter(
+        (l) =>
+          l.from.id === fact.id &&
+          l.state === "active" &&
+          l.kind !== "supports" &&
+          l.kind !== edit.kind,
+      )
+      invalidate(fact.id)
+      authored(fact)
+      const from = { profileId: next.id, id: fact.id, revision: fact.revision }
+      for (const link of retained) {
+        link.from = from
+        link.state = "active"
+      }
+      if (target)
+        next.links.push({
+          id: crypto.randomUUID(),
+          kind: edit.kind,
+          from,
+          to: target,
+          state: "active",
+        })
+      const contexts = [
+        ...inline,
+        ...next.links
+          .filter(
+            (l) =>
+              l.from.id === fact.id &&
+              l.state === "active" &&
+              l.kind !== "supports",
+          )
+          .map((l) => l.to),
+      ]
+      fact.context = contexts.filter(
+        (r, i) => contexts.findIndex((other) => other.id === r.id) === i,
+      )
+      break
+    }
+  }
+  // Owner references follow current entity revisions; support never follows changed contexts.
+  const revisions = new Map([
+    [next.id, next.revision],
+    ...next.entities.map((e) => [e.id, e.revision] as [string, number]),
+  ])
+  for (const fact of next.facts) {
+    const previous = doc.facts.find((f) => f.id === fact.id)
+    if (
+      (fact.owner.id !== next.id &&
+        previous &&
+        revisions.get(fact.owner.id) !== previous.owner.revision) ||
+      fact.context.some((r) => revisions.get(r.id) !== r.revision)
+    )
+      invalidate(fact.id)
+    fact.owner = ref(fact.owner.id)
+    fact.context = fact.context.filter(
+      (r) => revisions.get(r.id) === r.revision,
+    )
+  }
+  for (const link of next.links) {
+    if (link.state !== "active") continue
+    const fact = next.facts.find((f) => f.id === link.from.id)
+    if (
+      !fact ||
+      fact.revision !== link.from.revision ||
+      (link.kind !== "supports" &&
+        revisions.get(link.to.id) !== link.to.revision)
+    ) {
+      link.state = "invalidated"
+      if (fact) invalidate(fact.id)
+    }
+  }
+  if (!validateProfileDocument(next))
+    throw new ProfileValidationError("Invalid manual edit")
+  return next
 }
 
 // The same deliberately small JSON Schema subset is evaluated in Go. The

@@ -29,3 +29,11 @@ UI edits remain available as in-memory drafts if persistence fails. Accepted ing
 ## Verification
 
 Public-boundary tests cover lossless migration, absent/empty values, entry ordering, stable identity, reload, original retention, quota and malformed data, stale/concurrent writes, semantic qualifiers, conservative aliases, contextual invalidation/removal and shared Go/TypeScript parity. Controlled browser ingestion checks cover existing field-decision routing, explicit review/apply, EN/PT at 390/1440px, failed-save retention and real sibling-window storage events. Provider semantics and deployed behavior are separate evidence boundaries.
+
+## Canonical manual editing (#37)
+
+Existing Profile forms now call `editProfile` through the store's `editCanonicalProfile` queue. Commands name the field owner, fact, entity or typed context explicitly; manual forms never replace a compatibility view. `replaceProfileView` remains only for transitional AI writers pending their migration tickets.
+
+Manual corrections retain the affected fact ID, revise its user authorship and approval, and invalidate old excerpt support. Explicit assertion/intent/certainty/date precision remain available without inferring semantics from narrative or decomposing a migrated block. Employer/role/project/period identity changes invalidate dependent support. Typed corrections preserve unrelated links and inline references; context removal never reassigns evidence. Entry ordering does not alter meaning revisions. Moving into an occupied field is rejected atomically; remove the destination fact explicitly first.
+
+The store preserves a canonical draft separately from the durable document, so queued typing composes correctly and recovery downloads include unsaved qualifiers/context as well as compatibility wording. Canonical revision checks also reject pending ingestion proposals after metadata-only edits. Failed migration retains an editable recovery draft while durable writes remain blocked until deliberate recovery/reload.

@@ -35,6 +35,7 @@ const {
   profileView,
   validateProfileDocument,
   replaceProfileView,
+  editProfile,
 } = await import(join(temp, "profileDocument.mjs"))
 const legacy = {
   skills: "JS? No Java; hope to learn Go",
@@ -351,31 +352,426 @@ test("removal keeps approved excerpts and invalidates historical links to remove
     false,
   )
 })
-test('old optional entry fields have safe views and original date wording is explicit', () => {
-  const doc = migrateProfile({ experience: [{ id: 'role', company: 'A' }], certifications: [{ id: 'certificate', date: 'roughly 2020' }] }, 'p')
-  assert.equal(profileView(doc).experience[0].title, '')
+test("old optional entry fields have safe views and original date wording is explicit", () => {
+  const doc = migrateProfile(
+    {
+      experience: [{ id: "role", company: "A" }],
+      certifications: [{ id: "certificate", date: "roughly 2020" }],
+    },
+    "p",
+  )
+  assert.equal(profileView(doc).experience[0].title, "")
   assert.equal(profileView(doc).experience[0].current, false)
-  const date = doc.facts.find(f => f.field === 'date')
-  assert.deepEqual(date.temporal, { wording: 'roughly 2020', precision: 'unknown' })
+  const date = doc.facts.find((f) => f.field === "date")
+  assert.deepEqual(date.temporal, {
+    wording: "roughly 2020",
+    precision: "unknown",
+  })
 })
-test('a typed context-link correction also invalidates support when no inline context is present', () => {
-  const doc = migrateProfile(legacy, 'p')
-  const f = doc.facts.find(f => f.field === 'skills')
-  f.approval = 'approved'; f.support = 'supported'
-  const ref = id => ({ profileId: 'p', id, revision: 1 })
-  doc.evidence.push({ id: 'e', revision: 1, excerpt: legacy.skills, origin: 'career notes', approval: 'approved' })
-  doc.links.push({ id: 's', kind: 'supports', from: ref(f.id), to: ref('e'), state: 'active' }, { id: 'c', kind: 'role_context', from: ref(f.id), to: ref(doc.entities[0].id), state: 'active' })
+test("a typed context-link correction also invalidates support when no inline context is present", () => {
+  const doc = migrateProfile(legacy, "p")
+  const f = doc.facts.find((f) => f.field === "skills")
+  f.approval = "approved"
+  f.support = "supported"
+  const ref = (id) => ({ profileId: "p", id, revision: 1 })
+  doc.evidence.push({
+    id: "e",
+    revision: 1,
+    excerpt: legacy.skills,
+    origin: "career notes",
+    approval: "approved",
+  })
+  doc.links.push(
+    {
+      id: "s",
+      kind: "supports",
+      from: ref(f.id),
+      to: ref("e"),
+      state: "active",
+    },
+    {
+      id: "c",
+      kind: "role_context",
+      from: ref(f.id),
+      to: ref(doc.entities[0].id),
+      state: "active",
+    },
+  )
   const next = replaceProfileView(doc, { ...profileView(doc), experience: [] })
-  assert.equal(next.facts.find(fact => fact.id === f.id).support, 'invalidated')
-  assert.ok(next.links.every(link => link.state === 'invalidated'))
+  assert.equal(
+    next.facts.find((fact) => fact.id === f.id).support,
+    "invalidated",
+  )
+  assert.ok(next.links.every((link) => link.state === "invalidated"))
 })
-test('compatibility field enumeration does not revise an unchanged career entity', () => {
-  const doc = migrateProfile({ ...legacy, experience: [{ id: 'role', title: 'Dev', company: 'A', startDate: 'about 3 years ago', endDate: '', current: true, location: '', description: 'Maybe led team', responsibilities: '', achievements: '' }] }, 'p')
-  const title = doc.facts.find(f => f.field === 'title')
-  title.approval = 'approved'; title.support = 'supported'
-  doc.evidence.push({ id: 'title-evidence', revision: 1, excerpt: 'Dev at A', origin: 'career notes', approval: 'approved' })
-  doc.links.push({ id: 'title-support', kind: 'supports', from: { profileId: 'p', id: title.id, revision: 1 }, to: { profileId: 'p', id: 'title-evidence', revision: 1 }, state: 'active' })
-  const next = replaceProfileView(doc, { ...profileView(doc), skills: 'Docker' })
+test("compatibility field enumeration does not revise an unchanged career entity", () => {
+  const doc = migrateProfile(
+    {
+      ...legacy,
+      experience: [
+        {
+          id: "role",
+          title: "Dev",
+          company: "A",
+          startDate: "about 3 years ago",
+          endDate: "",
+          current: true,
+          location: "",
+          description: "Maybe led team",
+          responsibilities: "",
+          achievements: "",
+        },
+      ],
+    },
+    "p",
+  )
+  const title = doc.facts.find((f) => f.field === "title")
+  title.approval = "approved"
+  title.support = "supported"
+  doc.evidence.push({
+    id: "title-evidence",
+    revision: 1,
+    excerpt: "Dev at A",
+    origin: "career notes",
+    approval: "approved",
+  })
+  doc.links.push({
+    id: "title-support",
+    kind: "supports",
+    from: { profileId: "p", id: title.id, revision: 1 },
+    to: { profileId: "p", id: "title-evidence", revision: 1 },
+    state: "active",
+  })
+  const next = replaceProfileView(doc, {
+    ...profileView(doc),
+    skills: "Docker",
+  })
   assert.equal(next.entities[0].revision, doc.entities[0].revision)
-  assert.equal(next.facts.find(f => f.id === title.id).support, 'supported')
+  assert.equal(next.facts.find((f) => f.id === title.id).support, "supported")
+})
+
+test("targeted manual wording edits retain unrelated IDs, revisions and qualifiers", () => {
+  const doc = migrateProfile(legacy, "profile")
+  const fact = doc.facts.find((f) => f.field === "skills")
+  fact.kind = "statement"
+  fact.assertion = "negated"
+  fact.intent = "aspiration"
+  fact.certainty = "uncertain"
+  fact.temporal = { wording: "about 3 years", precision: "approximate" }
+  const next = editProfile(doc, {
+    type: "field",
+    ownerId: doc.id,
+    field: "skills",
+    value: "No Java; hope to learn Go later",
+  })
+  const edited = next.facts.find((f) => f.id === fact.id)
+  assert.equal(edited.revision, 2)
+  assert.equal(edited.assertion, "negated")
+  assert.equal(edited.intent, "aspiration")
+  assert.deepEqual(edited.temporal, fact.temporal)
+  assert.deepEqual(edited.origin, { kind: "manual_edit", original: "user" })
+  for (const untouched of doc.facts.filter((f) => f.id !== fact.id)) {
+    const saved = next.facts.find((f) => f.id === untouched.id)
+    assert.equal(saved.revision, untouched.revision)
+    assert.equal(saved.value, untouched.value)
+  }
+  assert.equal(validateProfileDocument(next), true)
+  assert.equal(profileView(next).skills, "No Java; hope to learn Go later")
+})
+
+test("explicit relationship corrections invalidate evidence, preserve other links and reject wrong target kinds", () => {
+  const doc = migrateProfile(
+    { ...legacy, projects: [{ id: "project", name: "Atlas" }] },
+    "p",
+  )
+  const f = doc.facts.find((f) => f.field === "skills")
+  f.support = "supported"
+  f.approval = "approved"
+  const ref = (id) => ({ profileId: "p", id, revision: 1 })
+  doc.evidence.push({
+    id: "excerpt",
+    revision: 1,
+    excerpt: "Go at A",
+    origin: "notes",
+    approval: "approved",
+  })
+  const role = doc.entities.find((e) => e.kind === "experience")
+  const project = doc.entities.find((e) => e.kind === "projects")
+  doc.links.push(
+    {
+      id: "support",
+      kind: "supports",
+      from: ref(f.id),
+      to: ref("excerpt"),
+      state: "active",
+    },
+    {
+      id: "role",
+      kind: "role_context",
+      from: ref(f.id),
+      to: ref(role.id),
+      state: "active",
+    },
+  )
+  const next = editProfile(doc, {
+    type: "context",
+    id: f.id,
+    kind: "project_context",
+    targetId: project.id,
+  })
+  assert.equal(next.facts.find((x) => x.id === f.id).support, "invalidated")
+  assert.equal(next.links.find((x) => x.id === "support").state, "invalidated")
+  assert.equal(next.links.find((x) => x.id === "role").state, "active")
+  assert.equal(next.evidence[0].excerpt, "Go at A")
+  assert.throws(() =>
+    editProfile(doc, {
+      type: "context",
+      id: f.id,
+      kind: "role_context",
+      targetId: project.id,
+    }),
+  )
+  const edited = editProfile(doc, {
+    type: "field",
+    ownerId: doc.id,
+    field: "skills",
+    value: "No Java",
+  })
+  assert.equal(edited.links.find((x) => x.id === "role").state, "active")
+  assert.equal(
+    edited.links.find((x) => x.id === "support").state,
+    "invalidated",
+  )
+})
+
+test("every section supports explicit create, edit, remove and durable reload without touching recovery", async () => {
+  const s = storage({ [LEGACY_KEY]: JSON.stringify(legacy) })
+  let doc = await openProfile(s, lock)
+  const apply = async (edit) => {
+    const next = editProfile(doc, edit)
+    await saveProfile(s, doc, next, lock)
+    doc = await openProfile(s, lock)
+    assert.deepEqual(doc, next)
+  }
+  for (const field of [
+    "fullName",
+    "email",
+    "phone",
+    "location",
+    "professionalLinks",
+    "careerGoals",
+    "skills",
+    "competencies",
+    "tools",
+    "employmentStatus",
+    "currentSalary",
+    "desiredSalary",
+    "additionalInfo",
+  ]) {
+    await apply({
+      type: "field",
+      ownerId: doc.id,
+      field,
+      value: "Unknown; no Java; aspire to Go",
+    })
+    const fact = doc.facts.find(
+      (f) => f.owner.id === doc.id && f.field === field,
+    )
+    await apply({
+      type: "field",
+      ownerId: doc.id,
+      field,
+      value: "Approximately 2020; still uncertain",
+    })
+    assert.equal(
+      doc.facts.find((f) => f.id === fact.id).revision,
+      fact.revision + 1,
+    )
+    assert.equal(profileView(doc)[field], "Approximately 2020; still uncertain")
+    await apply({ type: "remove_fact", id: fact.id })
+    assert.equal(profileView(doc)[field], "")
+  }
+  for (const [kind, field] of [
+    ["experience", "company"],
+    ["projects", "name"],
+    ["education", "degree"],
+    ["certifications", "name"],
+    ["languages", "name"],
+  ]) {
+    await apply({
+      type: "add_entity",
+      kind,
+      legacyId: "new-" + kind,
+      values: { [field]: "Unknown" },
+    })
+    const entity = doc.entities.find((e) => e.legacyId === "new-" + kind)
+    await apply({
+      type: "field",
+      ownerId: entity.id,
+      field,
+      value: "Perhaps A",
+    })
+    assert.equal(profileView(doc)[kind][0][field], "Perhaps A")
+    await apply({ type: "remove_entity", id: entity.id })
+    assert.ok(!doc.entities.some((e) => e.id === entity.id))
+  }
+  assert.equal(s.getItem(LEGACY_KEY), JSON.stringify(legacy))
+})
+
+test("explicit regrouping preserves unrelated order and refuses occupied or foreign destinations atomically", () => {
+  let doc = migrateProfile(
+    {
+      ...legacy,
+      experience: [...legacy.experience, { id: "second", company: "B" }],
+    },
+    "p",
+  )
+  const [first, second] = doc.entities
+  const fact = doc.facts.find(
+    (f) => f.owner.id === first.id && f.field === "achievements",
+  )
+  doc = editProfile(doc, {
+    type: "move_fact",
+    id: fact.id,
+    ownerId: second.id,
+    field: "achievements",
+  })
+  assert.equal(doc.facts.find((f) => f.id === fact.id).owner.id, second.id)
+  assert.deepEqual(
+    profileView(doc).experience.map((e) => e.company),
+    ["A", "B"],
+  )
+  const reordered = editProfile(doc, {
+    type: "reorder",
+    kind: "experience",
+    ids: [second.id, first.id],
+  })
+  assert.deepEqual(
+    profileView(reordered).experience.map((e) => e.company),
+    ["B", "A"],
+  )
+  assert.equal(
+    reordered.entities.find((e) => e.id === first.id).revision,
+    first.revision,
+  )
+  const before = JSON.stringify(doc)
+  assert.throws(() =>
+    editProfile(doc, {
+      type: "move_fact",
+      id: fact.id,
+      ownerId: first.id,
+      field: "company",
+    }),
+  )
+  assert.throws(() =>
+    editProfile(doc, {
+      type: "move_fact",
+      id: fact.id,
+      ownerId: "foreign",
+      field: "achievements",
+    }),
+  )
+  assert.equal(JSON.stringify(doc), before)
+})
+
+test("removing period wording invalidates dependent support without reassigning excerpts", () => {
+  const doc = migrateProfile(legacy, "p")
+  const period = doc.facts.find((f) => f.field === "startDate")
+  const skill = doc.facts.find((f) => f.field === "skills")
+  const owner = doc.entities[0]
+  skill.approval = "approved"
+  skill.support = "supported"
+  const ref = (id, revision = 1) => ({ profileId: "p", id, revision })
+  doc.evidence.push({
+    id: "e",
+    revision: 1,
+    excerpt: "Used Go at A",
+    origin: "notes",
+    approval: "approved",
+  })
+  doc.links.push(
+    {
+      id: "s",
+      kind: "supports",
+      from: ref(skill.id),
+      to: ref("e"),
+      state: "active",
+    },
+    {
+      id: "period",
+      kind: "period_context",
+      from: ref(skill.id),
+      to: ref(owner.id),
+      state: "active",
+    },
+  )
+  const next = editProfile(doc, { type: "remove_fact", id: period.id })
+  assert.equal(next.facts.find((f) => f.id === skill.id).support, "invalidated")
+  assert.equal(next.links.find((l) => l.id === "s").state, "invalidated")
+  assert.deepEqual(next.evidence, doc.evidence)
+})
+
+test("typed relationship changes preserve unrelated inline context", () => {
+  const doc = migrateProfile(
+    {
+      ...legacy,
+      education: [{ id: "school", degree: "BSc" }],
+      projects: [{ id: "project", name: "Atlas" }],
+    },
+    "p",
+  )
+  const fact = doc.facts.find((f) => f.field === "skills")
+  const school = doc.entities.find((e) => e.kind === "education")
+  const project = doc.entities.find((e) => e.kind === "projects")
+  fact.context = [{ profileId: "p", id: school.id, revision: 1 }]
+  const next = editProfile(doc, {
+    type: "context",
+    id: fact.id,
+    kind: "project_context",
+    targetId: project.id,
+  })
+  assert.ok(
+    next.facts
+      .find((f) => f.id === fact.id)
+      .context.some((r) => r.id === school.id),
+  )
+})
+
+test("explicit inline context removal retains other typed links and their owners", () => {
+  const doc = migrateProfile(
+    {
+      ...legacy,
+      education: [{ id: "school", degree: "BSc" }],
+      projects: [{ id: "project", name: "Atlas" }],
+    },
+    "p",
+  )
+  const f = doc.facts.find((f) => f.field === "skills")
+  const school = doc.entities.find((e) => e.kind === "education")
+  const project = doc.entities.find((e) => e.kind === "projects")
+  f.context = [{ profileId: "p", id: school.id, revision: 1 }]
+  const linked = editProfile(doc, {
+    type: "context",
+    id: f.id,
+    kind: "project_context",
+    targetId: project.id,
+  })
+  const next = editProfile(linked, {
+    type: "remove_context",
+    id: f.id,
+    targetId: school.id,
+  })
+  assert.deepEqual(
+    next.facts.find((fact) => fact.id === f.id).context.map((r) => r.id),
+    [project.id],
+  )
+  assert.equal(
+    next.links.find((l) => l.kind === "project_context").state,
+    "active",
+  )
+  assert.equal(
+    next.links.find((l) => l.kind === "project_context").to.id,
+    project.id,
+  )
+  assert.equal(next.facts.find((fact) => fact.id === f.id).revision, 3)
 })
