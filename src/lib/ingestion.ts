@@ -1,3 +1,8 @@
+import type {
+  ProfileDocument,
+  ProfileRef,
+  ProfileFact,
+} from "./profileDocument"
 import { parseFieldDecision, type FieldDecision } from "./fieldDecision"
 import { ProfessionalRepository } from "./types"
 import { withContactFields, emptyContact, validQualifications } from "./profile"
@@ -16,7 +21,10 @@ export interface IngestionMeaning {
   assertion: "affirmed" | "negated" | "unknown"
   intent: "actual" | "aspiration" | "unknown"
   certainty: "certain" | "uncertain" | "unknown"
-  temporal: { wording: string; precision: "exact" | "approximate" | "unknown" }
+  temporal: {
+    wording: string
+    precision: "exact" | "approximate" | "unknown"
+  }
 }
 export interface IngestionClaim {
   meaning?: IngestionMeaning
@@ -38,12 +46,47 @@ export interface IngestionOperation {
   target: IngestionTarget
   entryId: string
   field: string
-  action: "add" | "update" | "remove"
+  action: "add" | "update" | "remove" | "evidence"
   value: string
   finding: "addition" | "overlap" | "conflict" | "in_place"
   approved: boolean
 }
+export const ingestionOutcomeKinds = [
+  "change",
+  "exact_duplicate",
+  "overlap",
+  "additional_support",
+  "contradiction",
+  "correction",
+  "clarification",
+  "unsupported",
+  "unresolved",
+] as const
+export interface IngestionOutcome {
+  claimId: string
+  kind: typeof ingestionOutcomeKinds[number]
+  reason: string
+  relatedFacts: ProfileRef[]
+  relatedClaimIds: string[]
+  operationIndexes?: number[]
+}
+export interface IngestionCoverage {
+  validClaims: number
+  invalidClaims: number
+  discoveryComplete: false
+  capacity: "within_limit" | "possibly_exhausted"
+}
+export interface IngestionSkippedClaim {
+  index: number
+  reason: string
+  text: string
+  source: string
+  shortened: boolean
+}
 export interface IngestionResult {
+  outcomes?: IngestionOutcome[]
+  coverage?: IngestionCoverage
+  skippedClaims?: IngestionSkippedClaim[]
   claims: IngestionClaim[]
   operations: IngestionOperation[]
   unverifiedClaimCount: number
@@ -306,16 +349,24 @@ export function validateIngestionResult(
   raw: unknown,
   input: string,
   profile: ProfessionalRepository,
+  document?: ProfileDocument,
 ): IngestionResult {
   if (
     !record(raw) ||
-    !keys(raw, [
-      "claims",
-      "operations",
-      "unverifiedClaimCount",
-      "unresolvedClaimIds",
-      "unplacedOperationCount",
-    ]) ||
+    !keys(
+      Object.fromEntries(
+        Object.entries(raw).filter(
+          ([key]) => !["outcomes", "coverage", "skippedClaims"].includes(key),
+        ),
+      ),
+      [
+        "claims",
+        "operations",
+        "unverifiedClaimCount",
+        "unresolvedClaimIds",
+        "unplacedOperationCount",
+      ],
+    ) ||
     !Array.isArray(raw.claims) ||
     !Array.isArray(raw.operations) ||
     typeof raw.unverifiedClaimCount !== "number" ||
@@ -429,7 +480,9 @@ export function validateIngestionResult(
       claim.question ||
       item.finding === "conflict" ||
       !hasTarget(claim.targets, item.target) ||
-      !["add", "update", "remove"].includes(item.action as string) ||
+      !["add", "update", "remove", "evidence"].includes(
+        item.action as string,
+      ) ||
       !["addition", "overlap", "conflict", "in_place"].includes(
         item.finding as string,
       )
@@ -510,12 +563,9 @@ export function validateIngestionResult(
     )
       throw new IngestionError("invalid_output")
   }
-  operations.sort(
-    (a, b) =>
-      claims.findIndex((c) => c.id === a.claimId) -
-      claims.findIndex((c) => c.id === b.claimId),
-  )
+  const ledger = validateOutcomeLedger(raw, claims, operations, input, document)
   return {
+    ...ledger,
     claims,
     operations,
     unverifiedClaimCount: raw.unverifiedClaimCount as number,
@@ -543,12 +593,316 @@ export function validMeaning(value: unknown): value is IngestionMeaning {
   )
 }
 
+function validateOutcomeLedger(
+  raw: Record<string, unknown>,
+  claims: IngestionClaim[],
+  operations: IngestionOperation[],
+  input: string,
+  document?: ProfileDocument,
+): Pick<IngestionResult, "outcomes" | "coverage" | "skippedClaims"> {
+  const fail = (): never => {
+    throw new IngestionError("invalid_output")
+  }
+  if (!("outcomes" in raw) && !document) return {}
+  if (
+    !Array.isArray(raw.outcomes) ||
+    raw.outcomes.length !== claims.length ||
+    !record(raw.coverage) ||
+    !keys(raw.coverage, [
+      "validClaims",
+      "invalidClaims",
+      "discoveryComplete",
+      "capacity",
+    ]) ||
+    raw.coverage.validClaims !== claims.length ||
+    raw.coverage.invalidClaims !== raw.unverifiedClaimCount ||
+    raw.coverage.discoveryComplete !== false ||
+    raw.coverage.capacity !==
+      (claims.length + Number(raw.unverifiedClaimCount) === 30
+        ? "possibly_exhausted"
+        : "within_limit") ||
+    !Array.isArray(raw.skippedClaims) ||
+    raw.skippedClaims.length !== raw.unverifiedClaimCount
+  )
+    return fail()
+  const skippedIndexes = new Set<number>()
+  for (const item of raw.skippedClaims) {
+    if (
+      !record(item) ||
+      !keys(item, ["index", "reason", "text", "source", "shortened"]) ||
+      !Number.isInteger(item.index) ||
+      Number(item.index) < 1 ||
+      Number(item.index) > 30 ||
+      skippedIndexes.has(Number(item.index)) ||
+      !string(item.reason, 100) ||
+      !item.reason ||
+      !string(item.text, 1000) ||
+      !string(item.source, 1000) ||
+      (item.source && !input.includes(item.source)) ||
+      typeof item.shortened !== "boolean"
+    )
+      return fail()
+    skippedIndexes.add(Number(item.index))
+  }
+  const accounted = new Set<string>()
+  const referencedOperations = new Set<number>()
+  for (const item of raw.outcomes) {
+    if (
+      !record(item) ||
+      !keys(
+        Object.fromEntries(
+          Object.entries(item).filter(([k]) => k !== "operationIndexes"),
+        ),
+        ["claimId", "kind", "reason", "relatedFacts", "relatedClaimIds"],
+      ) ||
+      !string(item.claimId, 40) ||
+      accounted.has(item.claimId) ||
+      !claims.some((c) => c.id === item.claimId) ||
+      !ingestionOutcomeKinds.includes(item.kind as IngestionOutcome["kind"]) ||
+      !string(item.reason, 500) ||
+      !item.reason.trim() ||
+      !Array.isArray(item.relatedFacts) ||
+      item.relatedFacts.length > 12 ||
+      !Array.isArray(item.relatedClaimIds) ||
+      item.relatedClaimIds.length > 12 ||
+      new Set(item.relatedClaimIds).size !== item.relatedClaimIds.length ||
+      item.relatedClaimIds.some(
+        (id) =>
+          typeof id !== "string" ||
+          id === item.claimId ||
+          !claims.some((c) => c.id === id),
+      )
+    )
+      return fail()
+    accounted.add(item.claimId)
+    const factIds = new Set<string>()
+    for (const ref of item.relatedFacts) {
+      if (
+        !record(ref) ||
+        !keys(ref, ["profileId", "id", "revision"]) ||
+        !string(ref.id, 100) ||
+        !ref.id ||
+        !string(ref.profileId, 100) ||
+        !Number.isSafeInteger(ref.revision) ||
+        Number(ref.revision) < 1 ||
+        factIds.has(ref.id)
+      )
+        return fail()
+      factIds.add(ref.id)
+      if (
+        !document ||
+        ref.profileId !== document.id ||
+        !document.facts.some(
+          (f) => f.id === ref.id && f.revision === ref.revision,
+        )
+      )
+        return fail()
+    }
+    if (
+      ["exact_duplicate", "additional_support"].includes(String(item.kind)) &&
+      (!item.relatedFacts.length ||
+        !document ||
+        item.relatedFacts.some(
+          (ref) =>
+            !exactIngestionFact(
+              claims.find((c) => c.id === item.claimId)!,
+              document.facts.find((f) => f.id === ref.id)!,
+              document,
+            ),
+        ))
+    )
+      return fail()
+    if (
+      ["overlap", "contradiction", "correction"].includes(String(item.kind)) &&
+      item.relatedFacts.length + item.relatedClaimIds.length === 0
+    )
+      return fail()
+    const indexes = item.operationIndexes ?? []
+    if (
+      !Array.isArray(indexes) ||
+      indexes.length > 60 ||
+      new Set(indexes).size !== indexes.length
+    )
+      return fail()
+    for (const index of indexes) {
+      if (
+        !Number.isInteger(index) ||
+        index < 0 ||
+        index >= operations.length ||
+        operations[index].claimId !== item.claimId ||
+        referencedOperations.has(index)
+      )
+        return fail()
+      referencedOperations.add(index)
+      const op = operations[index]
+      if (op.action === "evidence") {
+        if (
+          item.kind !== "additional_support" ||
+          !document ||
+          !item.relatedFacts.some((ref) =>
+            document.facts.some(
+              (f) =>
+                f.id === ref.id &&
+                f.field === op.field &&
+                f.value === op.value &&
+                (f.owner.id === document.id
+                  ? op.target === op.field && op.entryId === ""
+                  : document.entities.some(
+                      (e) =>
+                        e.id === f.owner.id &&
+                        e.kind === op.target &&
+                        e.legacyId === op.entryId,
+                    )),
+            ),
+          )
+        )
+          return fail()
+      } else if (!["change", "overlap"].includes(String(item.kind)))
+        return fail()
+    }
+    if (
+      ["change", "overlap", "additional_support"].includes(
+        String(item.kind),
+      ) !==
+      indexes.length > 0
+    )
+      return fail()
+    if (
+      claims.find((c) => c.id === item.claimId)?.question &&
+      !["clarification", "contradiction", "correction"].includes(
+        String(item.kind),
+      )
+    )
+      return fail()
+    if (
+      (raw.unresolvedClaimIds as string[]).includes(item.claimId) !==
+      (item.kind === "unresolved")
+    )
+      return fail()
+  }
+  if (referencedOperations.size !== operations.length) return fail()
+  return {
+    outcomes: raw.outcomes as IngestionOutcome[],
+    coverage: raw.coverage as unknown as IngestionCoverage,
+    skippedClaims: raw.skippedClaims as IngestionSkippedClaim[],
+  }
+}
+
+export function ingestionIdentityFacts(
+  doc: ProfileDocument,
+  fact: ProfileFact,
+): ProfileFact[] {
+  return doc.facts.filter(
+    (f) =>
+      (f.owner.id === fact.owner.id ||
+        fact.context.some((r) => r.id === f.owner.id)) &&
+      [
+        "company",
+        "title",
+        "startDate",
+        "endDate",
+        "name",
+        "degree",
+        "institution",
+        "issuer",
+      ].includes(f.field) &&
+      typeof f.value === "string" &&
+      !!f.value,
+  )
+}
+
+// Only exact wording and the pinned alias policy can establish equivalence.
+// A generated summary never establishes the meaning of its original source.
+function exactIngestionFact(
+  claim: IngestionClaim,
+  fact: ProfileFact,
+  doc: ProfileDocument,
+): boolean {
+  const aliases: Record<string, string> = {
+    Javascript: "JavaScript",
+    Typescript: "TypeScript",
+  }
+  const alias = (value: string) => aliases[value] ?? value
+  const capability = ["skills", "tools", "competencies"]
+  const use =
+    claim.targets.length === 1 && claim.targets[0] === "skills"
+      ? /^(?:I use|Eu uso)\s+([a-z][a-z0-9_+#-]{0,59})[.!]?$/i.exec(
+          claim.source.trim(),
+        )?.[1]
+      : undefined
+  const value = alias(use ?? claim.source.trim())
+  if (typeof fact.value !== "string" || claim.question) return false
+  const meaning = claim.meaning
+  if (fact.kind === "statement" && meaning) {
+    if (
+      meaning.assertion !== fact.assertion ||
+      meaning.intent !== fact.intent ||
+      meaning.certainty !== fact.certainty ||
+      meaning.temporal.wording !== fact.temporal.wording ||
+      meaning.temporal.precision !== fact.temporal.precision
+    )
+      return false
+  } else if (
+    meaning &&
+    (meaning.assertion !== "affirmed" ||
+      meaning.intent !== "actual" ||
+      meaning.certainty !== "certain" ||
+      meaning.temporal.wording !== "")
+  )
+    return false
+  if (
+    fact.kind === "statement" &&
+    !meaning &&
+    (fact.assertion !== "affirmed" ||
+      fact.intent !== "actual" ||
+      fact.certainty !== "certain" ||
+      fact.temporal.wording !== "")
+  )
+    return false
+  const sharedCapability =
+    fact.owner.id === doc.id &&
+    !fact.context.length &&
+    capability.includes(fact.field) &&
+    claim.targets.length === 1 &&
+    capability.includes(claim.targets[0])
+  if (
+    !(
+      alias(fact.value) === value ||
+      (sharedCapability &&
+        fact.value
+          .split(/[\n,;]+/)
+          .some((part) => alias(part.trim()) === value))
+    )
+  )
+    return false
+  const entity = doc.entities.find((e) => e.id === fact.owner.id)
+  if (
+    !sharedCapability &&
+    !claim.targets.includes((entity?.kind ?? fact.field) as IngestionTarget)
+  )
+    return false
+  if (fact.owner.id !== doc.id || fact.context.length) {
+    const identity = ingestionIdentityFacts(doc, fact)
+    const source = [
+      claim.source,
+      ...(claim.supportingSources ?? []).map((s) => s.source),
+    ].join("\n")
+    if (
+      !identity.length ||
+      identity.some((f) => !source.includes(String(f.value)))
+    )
+      return false
+  }
+  return true
+}
+
 export async function ingestProfile(
   input: string,
   profile: ProfessionalRepository,
   apiKey: string,
   signal?: AbortSignal,
   typesafeKey = "",
+  document?: ProfileDocument,
 ): Promise<IngestionResult> {
   if (
     !input.trim() ||
@@ -565,7 +919,11 @@ export async function ingestProfile(
         "X-OpenAI-Api-Key": apiKey,
         "X-TypeSafe-Api-Key": typesafeKey,
       },
-      body: JSON.stringify({ input, profile: withContactFields(profile) }),
+      body: JSON.stringify({
+        input,
+        profile: withContactFields(profile),
+        ...(document ? { document } : {}),
+      }),
       cache: "no-store",
       signal: signal
         ? AbortSignal.any([signal, AbortSignal.timeout(55_000)])
@@ -609,7 +967,8 @@ export async function ingestProfile(
     )
   if (!decision || !record(raw)) throw new IngestionError("invalid_output")
   const { decision: _decision, ...proposals } = raw
-  const result = validateIngestionResult(proposals, input, profile)
+  if (!("outcomes" in proposals)) throw new IngestionError("invalid_output")
+  const result = validateIngestionResult(proposals, input, profile, document)
   if (
     result.claims.some(
       (claim) => claim.sourceReference || claim.supportingSources?.length,
@@ -651,6 +1010,7 @@ export function afterValue(
 }
 
 function fieldResult(before: string, op: IngestionOperation): string {
+  if (op.action === "evidence") return before
   if (op.field === "current") return op.action === "remove" ? "false" : op.value
   if (
     [
@@ -678,7 +1038,10 @@ export function previewValues(
   profile: ProfessionalRepository,
   ops: IngestionOperation[],
   index: number,
-): { before: string; after: string } {
+): {
+  before: string
+  after: string
+} {
   const selected = ops[index]
   let before = beforeValue(profile, selected)
   for (const prior of ops.slice(0, index)) {
@@ -716,7 +1079,7 @@ export function applyIngestion(
     if (
       !string(op.value) ||
       !hasTarget(claim.targets, op.target) ||
-      !["add", "update", "remove"].includes(op.action)
+      !["add", "update", "remove", "evidence"].includes(op.action)
     )
       throw new IngestionError("invalid_output")
     if (op.action === "remove" && op.value !== "")

@@ -1,3 +1,7 @@
+import {
+  ClaimOutcomeDetails,
+  IngestionCoverageNotice,
+} from "../components/IngestionOutcomes"
 import { ingestionNormalization } from "../lib/ingestionDocument"
 import type { ProfileDocument } from "../lib/profileDocument"
 import { profileFieldKey } from "../lib/profileLabels"
@@ -278,7 +282,10 @@ function QualificationList<T extends { id: string }>({
   onDelete,
 }: {
   items: T[]
-  fields: { key: keyof T & string; label: TranslationKey }[]
+  fields: {
+    key: keyof T & string
+    label: TranslationKey
+  }[]
   title: string
   addLabel: string
   emptyLabel: string
@@ -758,6 +765,7 @@ export default function RepositoryPage() {
         state.apiKey,
         controller.signal,
         state.typesafeKey,
+        snapshot ?? undefined,
       )
       if (ingestionRequest.current !== requestId) return
       setIngestionRevision(profileDocument?.revision ?? null)
@@ -1503,6 +1511,7 @@ export default function RepositoryPage() {
                 >
                   {t("repo.ingestReviewNote")}
                 </p>
+                <IngestionCoverageNotice result={ingestionResult} />
                 {(ingestionResult.unverifiedClaimCount > 0 ||
                   ingestionResult.unresolvedClaimIds.length > 0 ||
                   ingestionResult.unplacedOperationCount > 0) && (
@@ -1545,13 +1554,13 @@ export default function RepositoryPage() {
                           {t("repo.ingestUnresolvedClaim")}
                         </p>
                       )}
-                      {indexed.length === 0 &&
-                        !claim.question &&
-                        !unresolved && (
-                          <p className="text-sm mt-2">
-                            {t("repo.ingestNoChange")}
-                          </p>
+                      <ClaimOutcomeDetails
+                        outcome={ingestionResult.outcomes?.find(
+                          (o) => o.claimId === claim.id,
                         )}
+                        document={ingestionSnapshot}
+                        claims={ingestionResult.claims}
+                      />
                       {indexed.length > 0 && (
                         <>
                           <div className="flex flex-wrap gap-2 mt-3">
@@ -1653,6 +1662,7 @@ export default function RepositoryPage() {
                                 {t("repo.ingestAfter")}
                                 <textarea
                                   value={op.value}
+                                  readOnly={op.action === "evidence"}
                                   onChange={(e) =>
                                     editOperation(index, {
                                       value: e.target.value,

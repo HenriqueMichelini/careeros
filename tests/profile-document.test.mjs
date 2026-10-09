@@ -1101,11 +1101,78 @@ const ingestionOp = (patch = {}) => ({
   ...patch,
 })
 const ingestionResult = (claims, operations) => ({
+  outcomes: claims.map(c => ({claimId:c.id, kind:c.question ? "clarification" : operations.some(o => o.claimId === c.id) ? "change" : "unresolved", reason:"Controlled proposal", relatedFacts:[],relatedClaimIds:[],operationIndexes:operations.flatMap((o,i)=>o.claimId===c.id?[i]:[])})),
+  coverage:{validClaims:claims.length,invalidClaims:0,discoveryComplete:false,capacity:"within_limit"},
+  skippedClaims:[],
   claims,
   operations,
   unverifiedClaimCount: 0,
-  unresolvedClaimIds: [],
+  unresolvedClaimIds: claims.filter(c => !c.question && !operations.some(o=>o.claimId===c.id)).map(c=>c.id),
   unplacedOperationCount: 0,
+})
+test("canonical ingestion rejects malformed stable outcome references before apply", () => {
+  const doc = migrateProfile({ skills: "Java" }, "outcomes")
+  const result = ingestionResult([ingestionClaim("c1", "I use Java")], [])
+  result.unresolvedClaimIds = []
+  result.outcomes = [{ claimId: "c1", kind: "exact_duplicate", reason: "verified_exact_alias_or_wording", relatedFacts: [{profileId: doc.id, id: "missing", revision: 1}], relatedClaimIds: [] }]
+  result.coverage = {validClaims: 1, invalidClaims: 0, discoveryComplete: false, capacity: "within_limit"}
+  result.skippedClaims = []
+  const before = JSON.stringify(doc)
+  const valid = structuredClone(result)
+  valid.outcomes[0].relatedFacts[0].id = doc.facts.find(f => f.field === "skills").id
+  assert.doesNotThrow(() => applyIngestionDocument(doc, structuredClone(doc), "I use Java", valid))
+  for (const patch of [{revision:999},{profileId:"foreign-profile"}]) {
+    const malformed = structuredClone(valid)
+    Object.assign(malformed.outcomes[0].relatedFacts[0],patch)
+    assert.throws(()=>applyIngestionDocument(doc,structuredClone(doc),"I use Java",malformed),{code:"invalid_output"})
+  }
+  assert.throws(() => applyIngestionDocument(doc, structuredClone(doc), "I use Java", result), {code: "invalid_output"})
+  assert.equal(JSON.stringify(doc), before)
+})
+test("exact repeats preserve explicit negative, uncertain, aspirational and temporal meaning", () => {
+  for (const [source, assertion, intent, certainty, wording] of [
+    ["I do not use Java","negated","actual","certain",""],
+    ["I hope to learn Java","affirmed","aspiration","certain",""],
+    ["Maybe I use Java","affirmed","actual","uncertain",""],
+    ["I used Java in 2020","affirmed","actual","certain","2020"],
+  ]) {
+    const doc=migrateProfile({skills:source},"qualified-repeat")
+    const fact=doc.facts.find(f=>f.field==="skills")
+    fact.kind="statement"
+    Object.assign(fact,{assertion,intent,certainty,temporal:{wording,precision:wording?"exact":"unknown"}})
+    const claim=ingestionClaim("c1",source)
+    claim.meaning={assertion,intent,certainty,temporal:structuredClone(fact.temporal)}
+    const result=ingestionResult([claim],[])
+    result.unresolvedClaimIds=[]
+    result.outcomes=[{claimId:"c1",kind:"exact_duplicate",reason:"verified_exact_alias_or_wording",relatedFacts:[{profileId:doc.id,id:fact.id,revision:fact.revision}],relatedClaimIds:[]}]
+    assert.doesNotThrow(()=>applyIngestionDocument(doc,structuredClone(doc),source,result))
+    const mismatch=structuredClone(result)
+    mismatch.claims[0].meaning.assertion=assertion==="negated"?"affirmed":"negated"
+    assert.throws(()=>applyIngestionDocument(doc,structuredClone(doc),source,mismatch),{code:"invalid_output"})
+  }
+})
+test("accepting new support retains wording and earlier excerpts after reload", () => {
+  let doc = migrateProfile({ skills: "" }, "support-only")
+  const first = ingestionClaim("c1", "I use TypeScript.")
+  first.meaning = {assertion:"affirmed",intent:"actual",certainty:"certain",temporal:{wording:"",precision:"unknown"}}
+  doc = applyIngestionDocument(doc, structuredClone(doc), "I use TypeScript.", ingestionResult([first], [ingestionOp()]))
+  const fact = doc.facts.find(f => f.field === "skills")
+  const result = ingestionResult([ingestionClaim("c1", "I use TypeScript")], [ingestionOp({action:"evidence", value:"TypeScript"})])
+  result.outcomes = [{claimId:"c1",kind:"additional_support",reason:"New support",relatedFacts:[{profileId:doc.id,id:fact.id,revision:fact.revision}],relatedClaimIds:[],operationIndexes:[0]}]
+  result.coverage = {validClaims:1,invalidClaims:0,discoveryComplete:false,capacity:"within_limit"}
+  result.skippedClaims = []
+  const before = JSON.stringify(doc)
+  result.operations[0].approved = false
+  const rejected = applyIngestionDocument(doc, structuredClone(doc), "I use TypeScript", result)
+  assert.deepEqual(rejected.evidence, doc.evidence)
+  assert.equal(JSON.stringify(doc), before)
+  result.operations[0].approved = true
+  const next = JSON.parse(JSON.stringify(applyIngestionDocument(doc, structuredClone(doc), "I use TypeScript", result)))
+  assert.equal(profileView(next).skills, "TypeScript")
+  assert.equal(next.facts.find(f => f.id === fact.id).revision, fact.revision + 1)
+  assert.deepEqual(next.evidence.map(e => e.excerpt), ["I use TypeScript.", "I use TypeScript"])
+  assert.equal(next.links.filter(l => l.kind === "supports" && l.state === "active").length, 2)
+  assert.equal(validateProfileDocument(next), true)
 })
 test("accepted ingestion keeps only approved excerpts through canonical storage reload", async () => {
   const doc = migrateProfile({ skills: "" }, "ingested")

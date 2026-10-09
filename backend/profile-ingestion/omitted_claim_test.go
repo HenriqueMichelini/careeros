@@ -112,7 +112,7 @@ func TestExplicitUseOmissionStillProposesSkill(t *testing.T) {
 					})}
 					w := send(t, (app{client: client}).handler(), request{Input: input, Profile: p})
 					var got result
-					if json.Unmarshal(w.Body.Bytes(), &got) != nil || w.Code != 200 || calls != 3 || len(got.UnresolvedClaimIds) != 0 {
+					if json.Unmarshal(w.Body.Bytes(), &got) != nil || w.Code != 200 || calls != 3 || (saved == "Java" && !reflect.DeepEqual(got.UnresolvedClaimIds, []string{"c1"})) || (saved != "Java" && len(got.UnresolvedClaimIds) != 0) {
 						t.Fatalf("status=%d calls=%d body=%s", w.Code, calls, w.Body.String())
 					}
 					if saved == "Java" {

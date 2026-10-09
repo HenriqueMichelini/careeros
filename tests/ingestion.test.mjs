@@ -1,3 +1,4 @@
+import {withIngestionLedger} from "./ingestion-fixtures.mjs"
 import test from "node:test"
 import assert from "node:assert/strict"
 import { readFileSync, writeFileSync } from "node:fs"
@@ -82,7 +83,7 @@ const claim = (overrides = {}) => ({
   question: "",
   ...overrides,
 })
-const review = (data) => ({ unverifiedClaimCount: 0, unresolvedClaimIds: [], unplacedOperationCount: 0, ...data })
+const review = (data) => withIngestionLedger({ unverifiedClaimCount: 0, unresolvedClaimIds: [], unplacedOperationCount: 0, ...data })
 
 test("expanded Profile validates and Quick Add preserves structured qualifications", () => {
   const expanded = {
