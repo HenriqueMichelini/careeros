@@ -1612,7 +1612,7 @@ export default function RepositoryPage() {
                     )}
                 </div>
               )}
-              {((continuation && !continuation.processed) || ingestionError) &&
+              {(continuation || ingestionError) &&
                 portionBytes > 200 && (
                   <button
                     type="button"

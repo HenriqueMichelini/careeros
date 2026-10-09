@@ -1088,6 +1088,30 @@ try {
       await until("document.querySelectorAll('article').length===0")
       assert.equal(await evaluate("document.querySelector('#ingestion-text').value"),input)
       assert.equal(await evaluate(`${byText(review)} !== undefined`),true)
+      // A processed planned region is not a complete plan: keep restart available.
+      await evaluate("location.reload()")
+      await until("document.readyState==='complete' && !!document.querySelector('header button')")
+      await openProfile()
+      await fill(input)
+      await evaluate(`window.__partialCalls=[];window.fetch=async(url,options)=>{
+        const req=JSON.parse(options.body);window.__partialCalls.push(req);
+        const payload={decision:{version:1,field:'professional_information',outcome:{kind:'accept'}},claims:[],operations:[],outcomes:[],skippedClaims:[],coverage:{validClaims:0,invalidClaims:0,discoveryComplete:false,capacity:'within_limit'},unverifiedClaimCount:0,unresolvedClaimIds:[],unplacedOperationCount:0};
+        const raw=await (await window.__portionResponse(payload)).json();
+        raw.continuation={...raw.continuation,bytes:req.portion.bytes,regions:[[{Start:0,End:14}]],remaining:[{Start:14,End:new TextEncoder().encode(req.input).length}],planComplete:false};
+        return new Response(JSON.stringify(raw),{status:200});
+      }`)
+      await evaluate(`${byText(review)}.click()`)
+      await until(`${byText(dismiss)} !== undefined`)
+      await evaluate(`${byText(dismiss)}.click()`)
+      const smaller=locale==="en"?"Restart with smaller portions (saved facts stay)":"Reiniciar com partes menores (fatos salvos permanecem)"
+      assert.equal(await evaluate(`${byText(smaller)}.disabled`),false)
+      await evaluate(`${byText(smaller)}.click()`)
+      assert.equal(await evaluate("window.__partialCalls.length"),1)
+      assert.equal(await evaluate("document.querySelector('#ingestion-text').value"),input)
+      assert.equal(JSON.parse(await saved()).skills,"Java")
+      await evaluate(`${byText(review)}.click()`)
+      await until("window.__partialCalls.length===2")
+      assert.equal(await evaluate("window.__partialCalls[1].portion.bytes"),1000)
       console.log(`PASS deliberate continuation, saved duplicate, truncation/retry and cross-tab ${locale} ${width}px`)
     }
   }
@@ -1142,7 +1166,7 @@ try {
         `window.__setItem=Storage.prototype.setItem; Storage.prototype.setItem=function(key,value){if(key==='careeros_profile_v2')throw new DOMException('quota','QuotaExceededError');return window.__setItem.call(this,key,value)}`,
       )
       await evaluate(`${byText(apply)}.click()`)
-      await until("!!document.querySelector('[role=alert]')")
+      await until(`document.body.innerText.includes(${JSON.stringify(locale === "en" ? "could not be saved" : "Não foi possível salvar")})`)
       assert.match(
         await evaluate("document.querySelector('[role=alert]').textContent"),
         locale === "en" ? /could not be saved/ : /Não foi possível salvar/,

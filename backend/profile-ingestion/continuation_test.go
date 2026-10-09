@@ -219,3 +219,68 @@ func TestContinuationClaimCeilingRemainsUnfinished(t *testing.T) {
 		t.Fatalf("%d %s", w.Code, w.Body.String())
 	}
 }
+
+func TestContinuationFactsAcrossRealPortionBoundaryRetainContextOrClarify(t *testing.T) {
+	input := "# Acme Engineer 2020–2021\r\n" + strings.Repeat("- Maintained Java services.\r\n", 70) + "- Its project used Java.\r\n"
+	source := preparedTestSource(t, input)
+	plan, err := planContinuation(source, portionRequest{Index: 1, Bytes: 800})
+	if err != nil {
+		t.Fatal(err)
+	}
+	index := len(plan.Portions) - 1
+	view := plan.Portions[index].View
+	if len(view.Context) != 1 || view.Context[0].Original[0].End > view.Original[0].Start {
+		t.Fatal("test requires heading across a real boundary")
+	}
+	var detailID, ambiguousID string
+	for _, seg := range source.Segments() {
+		if seg.Normalized.Start >= view.Normalized.Start && seg.Normalized.End <= view.Normalized.End && strings.Contains(source.Text()[seg.Normalized.Start:seg.Normalized.End], "Maintained") {
+			detailID = seg.ID
+			break
+		}
+	}
+	for _, seg := range source.Segments() {
+		if strings.Contains(source.Text()[seg.Normalized.Start:seg.Normalized.End], "Its project") {
+			ambiguousID = seg.ID
+		}
+	}
+	for _, ambiguous := range []bool{false, true} {
+		calls := 0
+		client := &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+			calls++
+			if calls == 1 {
+				return jevResponse("professional_fact", "none"), nil
+			}
+			if calls == 2 {
+				c := claim{ID: "c1", Source: "Maintained Java services.", SegmentID: detailID, Text: "Maintained Java services", Targets: []string{"experience"}, SupportingSources: []supportingSource{{Source: "Acme Engineer 2020–2021", SegmentID: view.Context[0].SegmentID}}}
+				if ambiguous {
+					c.Source, c.SegmentID, c.Text = "Its project used Java.", ambiguousID, "Project used Java"
+					c.Question = "Which project does the cross-portion reference identify?"
+					c.Targets = []string{}
+				}
+				return completion(string(mustJSON(extraction{Claims: []claim{c}}))), nil
+			}
+			if ambiguous {
+				return completion(`{"operations":[]}`), nil
+			}
+			return completion(`{"operations":[{"claimId":"c1","target":"experience","entryId":"new:c1","field":"company","action":"add","value":"Acme","finding":"addition"},{"claimId":"c1","target":"experience","entryId":"new:c1","field":"title","action":"add","value":"Engineer","finding":"addition"},{"claimId":"c1","target":"experience","entryId":"new:c1","field":"startDate","action":"add","value":"2020","finding":"addition"},{"claimId":"c1","target":"experience","entryId":"new:c1","field":"endDate","action":"add","value":"2021","finding":"addition"},{"claimId":"c1","target":"experience","entryId":"new:c1","field":"responsibilities","action":"add","value":"Maintained Java services","finding":"addition"}]}`), nil
+		})}
+		w := sendPortion(t, NewHandlerWithClient(client), input, index, 800)
+		var got result
+		_ = json.Unmarshal(w.Body.Bytes(), &got)
+		if w.Code != 200 || len(got.Claims) != 1 || len(got.Claims[0].SupportingSources) != 1 {
+			t.Fatalf("%d %s", w.Code, w.Body.String())
+		}
+		c := got.Claims[0]
+		if c.SupportingSources[0].SourceReference.OriginalEnd > c.SourceReference.OriginalStart {
+			t.Fatal("context does not precede detail")
+		}
+		if ambiguous {
+			if len(got.Operations) != 0 || got.Outcomes[0].Kind != "clarification" || calls != 3 {
+				t.Fatalf("ambiguous ownership attributed: %s", w.Body.String())
+			}
+		} else if len(got.Operations) != 5 {
+			t.Fatalf("lost composite fact: %s", w.Body.String())
+		}
+	}
+}

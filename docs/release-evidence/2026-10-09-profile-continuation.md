@@ -44,3 +44,19 @@ This is controlled local evidence. It does not establish live-provider semantic
 completeness, billing, latency, load reliability, or deployment status. Complete
 planned source coverage is explicitly distinct from complete discovery of career
 facts. No live key was read or used.
+
+## Review corrections
+
+The standards review found that a successfully processed portion of an incomplete
+plan hid the smaller-budget restart control. The control now remains available
+throughout a continuation session after reviewing the pending proposal. A browser
+regression verifies `processed: true` with `planComplete: false`, explicit restart
+without an automatic call, preservation of saved Java and the full paste, and the
+next deliberate request using the smaller 1,000-byte budget in EN/PT at both widths.
+
+The spec review requested spanning-fact verification. A controlled public-handler
+regression now uses the real planner boundary: an earlier Acme/Engineer/2020–2021
+heading remains supporting evidence for later Java responsibilities, retaining all
+five grounded structured fields. An ambiguous “Its project” claim remains a
+Clarification Request with zero attributed operations. No semantic completeness
+claim is inferred from these controlled responses.
