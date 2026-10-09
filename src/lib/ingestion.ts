@@ -83,7 +83,27 @@ export interface IngestionSkippedClaim {
   source: string
   shortened: boolean
 }
+export interface IngestionSourceRange {
+  Start: number
+  End: number
+}
+export interface IngestionPortionRequest {
+  index: number
+  bytes: number
+}
+export interface IngestionContinuation {
+  sourceId: string
+  index: number
+  total: number
+  bytes: number
+  regions: IngestionSourceRange[][]
+  remaining: IngestionSourceRange[] | null
+  planComplete: boolean
+  processed: boolean
+}
 export interface IngestionResult {
+  continuation?: IngestionContinuation
+
   outcomes?: IngestionOutcome[]
   coverage?: IngestionCoverage
   skippedClaims?: IngestionSkippedClaim[]
@@ -356,7 +376,10 @@ export function validateIngestionResult(
     !keys(
       Object.fromEntries(
         Object.entries(raw).filter(
-          ([key]) => !["outcomes", "coverage", "skippedClaims"].includes(key),
+          ([key]) =>
+            !["outcomes", "coverage", "skippedClaims", "continuation"].includes(
+              key,
+            ),
         ),
       ),
       [
@@ -903,6 +926,7 @@ export async function ingestProfile(
   signal?: AbortSignal,
   typesafeKey = "",
   document?: ProfileDocument,
+  portion?: IngestionPortionRequest,
 ): Promise<IngestionResult> {
   if (
     !input.trim() ||
@@ -923,6 +947,7 @@ export async function ingestProfile(
         input,
         profile: withContactFields(profile),
         ...(document ? { document } : {}),
+        ...(portion ? { portion } : {}),
       }),
       cache: "no-store",
       signal: signal
@@ -987,6 +1012,71 @@ export async function ingestProfile(
     )
       throw new IngestionError("invalid_output")
   }
+  if (portion) {
+    const progress = raw.continuation
+    const size = ingestionInputBytes(input)
+    const range = (r: unknown) =>
+      record(r) &&
+      keys(r, ["Start", "End"]) &&
+      typeof r.Start === "number" &&
+      typeof r.End === "number" &&
+      Number.isInteger(r.Start) &&
+      Number.isInteger(r.End) &&
+      r.Start >= 0 &&
+      r.End > r.Start &&
+      r.End <= size
+    if (
+      !record(progress) ||
+      !keys(progress, [
+        "sourceId",
+        "index",
+        "total",
+        "bytes",
+        "regions",
+        "remaining",
+        "planComplete",
+        "processed",
+      ]) ||
+      progress.sourceId !== (await sourceIdentity(input)) ||
+      progress.index !== portion.index ||
+      progress.bytes !== portion.bytes ||
+      typeof progress.total !== "number" ||
+      !Number.isInteger(progress.total) ||
+      progress.total < 1 ||
+      progress.total > 256 ||
+      portion.index >= progress.total ||
+      typeof progress.planComplete !== "boolean" ||
+      typeof progress.processed !== "boolean" ||
+      !Array.isArray(progress.regions) ||
+      progress.regions.length !== progress.total ||
+      !progress.regions.every(
+        (rs) => Array.isArray(rs) && rs.length > 0 && rs.every(range),
+      ) ||
+      !(
+        progress.remaining === null ||
+        (Array.isArray(progress.remaining) && progress.remaining.every(range))
+      ) ||
+      (progress.processed &&
+        (result.unverifiedClaimCount > 0 ||
+          result.claims.length >= 30 ||
+          result.operations.length >= 60 ||
+          result.unplacedOperationCount > 0))
+    )
+      throw new IngestionError("invalid_output")
+    const ordered = [
+      ...progress.regions.flat(),
+      ...(progress.remaining ?? []),
+    ] as IngestionSourceRange[]
+    if (
+      ordered[0]?.Start !== 0 ||
+      ordered.at(-1)?.End !== size ||
+      ordered.some((r, i) => i > 0 && r.Start !== ordered[i - 1].End) ||
+      progress.planComplete !== !progress.remaining?.length
+    )
+      throw new IngestionError("invalid_output")
+    result.continuation = (progress as unknown as IngestionContinuation)
+  } else if (raw.continuation !== undefined)
+    throw new IngestionError("invalid_output")
   return result
 }
 

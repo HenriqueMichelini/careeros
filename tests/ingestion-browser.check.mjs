@@ -168,10 +168,22 @@ try {
       await pause(100)
     }
     throw new Error(
-      `Timed out: ${expression}; ${await evaluate("JSON.stringify({text:document.body.innerText.slice(0,1500),injected:typeof window.__originalStorageSet,canonical:localStorage.getItem('careeros_profile_v2')!==null})")}`,
+      `Timed out: ${expression}; ${await evaluate("JSON.stringify({text:document.body.innerText.slice(0,1500),alerts:Array.from(document.querySelectorAll('[role=alert]')).map(e=>e.textContent),helper:typeof window.__portionResponse,injected:typeof window.__originalStorageSet,canonical:localStorage.getItem('careeros_profile_v2')!==null})")}`,
     )
   }
   await call("Page.enable")
+  await call("Page.addScriptToEvaluateOnNewDocument", {source: String.raw`
+    window.__portionResponse = async (raw, init = {status:200}) => {
+      if (typeof raw === 'string') raw = JSON.parse(raw);
+      if (raw.claims && raw.coverage && raw.decision?.outcome.kind === 'accept') {
+        const input = document.querySelector('#ingestion-text').value;
+        const identity = JSON.stringify(['normalization-v1','structure-v1','professional_information',input]).replace(/[<>&\u2028\u2029]/g,c=>'\\u'+c.charCodeAt(0).toString(16).padStart(4,'0'));
+        const sourceId = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(identity))),b=>b.toString(16).padStart(2,'0')).join('');
+        raw.continuation = {sourceId,index:0,total:1,bytes:2000,regions:[[{Start:0,End:new TextEncoder().encode(input).length}]],remaining:null,planComplete:true,processed:raw.unverifiedClaimCount===0&&raw.claims.length<30&&raw.operations.length<60&&raw.unplacedOperationCount===0};
+      }
+      return new Response(JSON.stringify(raw),init);
+    };
+  `});
   await call("Page.navigate", { url: `http://127.0.0.1:${port}/` })
   await until(
     "document.readyState === 'complete' && !!document.querySelector('header button')",
@@ -314,7 +326,7 @@ try {
     entryId: op.entryId ? "new:" + op.target : "",
   }))
   Object.assign(fixture,withIngestionLedger(fixture))
-  if (!process.env.PROFILE_RECOVERY_ONLY) {
+  if (!process.env.PROFILE_RECOVERY_ONLY && !process.env.PROFILE_CONTINUATION_ONLY) {
     // Rephrasing is a backend decision and requires changed text, with no Profile write.
     await evaluate(
       "localStorage.setItem('careeros_typesafe_key','synthetic-typesafe'); localStorage.setItem('careeros_apikey','sk-synthetic-test')",
@@ -515,7 +527,7 @@ try {
         Object.assign(omitted,withIngestionLedger(omitted))
         await fill(text + " omitted")
         await evaluate(
-          `window.fetch=async()=>new Response(${JSON.stringify(JSON.stringify(omitted))},{status:200})`,
+          `window.fetch=async()=>await window.__portionResponse(${JSON.stringify(omitted)},{status:200})`,
         )
         await evaluate(`${byText(review)}.click()`)
         await until("document.querySelectorAll('article').length === 1")
@@ -562,7 +574,7 @@ try {
           skippedClaims:[{index:10,reason:"source",text:"Returned statement with unusable source",source:"",shortened:false}],coverage:{validClaims:9,invalidClaims:1,discoveryComplete:false,capacity:"within_limit"},
         }
         await fill(ledgerText)
-        await evaluate(`window.fetch=async()=>new Response(${JSON.stringify(JSON.stringify(ledger))},{status:200})`)
+        await evaluate(`window.fetch=async()=>await window.__portionResponse(${JSON.stringify(ledger)},{status:200})`)
         await evaluate(`${byText(review)}.click()`)
         await until("document.querySelectorAll('article').length===9")
         const ledgerScreenText = await evaluate("document.body.innerText")
@@ -581,7 +593,7 @@ try {
         // Real Tab/Enter and text input exercise revision and deliberate retry.
         await keyboardFill(quoted)
         await evaluate(
-          `window.__keyboardCalls=0; window.fetch=async()=>{window.__keyboardCalls++; const body=window.__keyboardCalls===1?{decision:{version:1,field:'professional_information',outcome:{kind:'request_rephrasing'}}}:window.__keyboardCalls===2?{decision:{version:1,field:'professional_information',outcome:{kind:'service_failure',reason:'timeout'}}}:${JSON.stringify(proposal)};return new Response(JSON.stringify(body),{status:window.__keyboardCalls===2?504:200})}`,
+          `window.__keyboardCalls=0; window.fetch=async()=>{window.__keyboardCalls++; const body=window.__keyboardCalls===1?{decision:{version:1,field:'professional_information',outcome:{kind:'request_rephrasing'}}}:window.__keyboardCalls===2?{decision:{version:1,field:'professional_information',outcome:{kind:'service_failure',reason:'timeout'}}}:${JSON.stringify(proposal)};return await window.__portionResponse(body,{status:window.__keyboardCalls===2?504:200})}`,
         )
         await keyboardSubmit(byText(review))
         await until("!!document.querySelector('[role=alert]')")
@@ -603,7 +615,7 @@ try {
         // Hold a response: loading keeps text/Profile intact; editing cancels stale proposals.
         await fill(text)
         await evaluate(
-          `window.fetch=async()=>new Promise(resolve=>window.__finish=()=>resolve(new Response(${JSON.stringify(JSON.stringify(proposal))},{status:200})))`,
+          `window.fetch=async()=>new Promise(resolve=>window.__finish=async()=>resolve(await window.__portionResponse(${JSON.stringify(proposal)},{status:200})))`,
         )
         await evaluate(`${byText(review)}.click()`)
         await until(
@@ -626,7 +638,7 @@ try {
         ]) {
           await fill(submitted)
           await evaluate(
-            `window.fetch=async()=>new Response(${JSON.stringify(JSON.stringify(proposal))},{status:200})`,
+            `window.fetch=async()=>await window.__portionResponse(${JSON.stringify(proposal)},{status:200})`,
           )
           await evaluate(`${byText(review)}.click()`)
           await until("document.querySelectorAll('article').length === 1")
@@ -690,7 +702,7 @@ try {
         }
         await fill(traceText)
         await evaluate(
-          `window.fetch=async(url,options)=>{window.__raw=JSON.parse(options.body).input;return new Response(${JSON.stringify(JSON.stringify(traceProposal))},{status:200})}`,
+          `window.fetch=async(url,options)=>{window.__raw=JSON.parse(options.body).input;return await window.__portionResponse(${JSON.stringify(traceProposal)},{status:200})}`,
         )
         await evaluate(`${byText(review)}.click()`)
         await until("document.querySelectorAll('article').length === 1")
@@ -719,9 +731,10 @@ try {
           join(work, `source-review-${locale}-${width}.png`),
           Buffer.from(traceScreen.data, "base64"),
         )
+        await fill(traceText + " ")
         await fill(traceText)
         await evaluate(
-          `window.fetch=async()=>new Promise(resolve=>window.__finish=()=>resolve(new Response(${JSON.stringify(JSON.stringify(traceProposal))},{status:200})))`,
+          `window.fetch=async()=>new Promise(resolve=>window.__finish=async()=>resolve(await window.__portionResponse(${JSON.stringify(traceProposal)},{status:200})))`,
         )
         await evaluate(`${byText(review)}.click()`)
         await until(
@@ -794,7 +807,7 @@ try {
             null,
           )
           await evaluate(
-            `window.__calls=[]; window.fetch=async(url,options)=>{if(url!='/api/profile/ingest')throw new Error('Unexpected request');window.__calls.push(JSON.parse(options.body));return new Response(${JSON.stringify(JSON.stringify(fixture))},{status:200,headers:{'Content-Type':'application/json'}})}`,
+            `window.__calls=[]; window.fetch=async(url,options)=>{if(url!='/api/profile/ingest')throw new Error('Unexpected request');window.__calls.push(JSON.parse(options.body));return await window.__portionResponse(${JSON.stringify(fixture)},{status:200,headers:{'Content-Type':'application/json'}})}`,
           )
           const review =
             locale === "en"
@@ -1014,8 +1027,73 @@ try {
           )
         }
   }
+  if (!process.env.PROFILE_RECOVERY_ONLY) {
+    for (const locale of ["en", "pt-BR"]) for (const width of [1440,390]) {
+      await call("Emulation.setDeviceMetricsOverride",{width,height:1000,deviceScaleFactor:1,mobile:false})
+      await evaluate(`localStorage.setItem('careeros_locale',${JSON.stringify(locale)});localStorage.removeItem('careeros_profile_v2');localStorage.removeItem('careeros_repo');location.reload()`)
+      await until("document.readyState==='complete' && !!document.querySelector('header button')")
+      await openProfile()
+      const review=locale==="en"?"Review suggested changes":"Revisar alterações sugeridas"
+      const next=locale==="en"?"Process next portion":"Processar próxima parte"
+      const dismiss=locale==="en"?"Dismiss remaining suggestions for this portion":"Dispensar sugestões restantes desta parte"
+      const approve=locale==="en"?"Approve linked changes":"Aprovar alterações ligadas"
+      const apply=locale==="en"?"Apply approved changes":"Aplicar alterações aprovadas"
+      const retry=locale==="en"?"Retry first unfinished portion":"Tentar novamente a primeira parte não concluída"
+      const input="# Role A\nJava\n# Role A\nJava\n# Role B\nRuby"
+      await fill(input)
+      await evaluate(`window.__portionCalls=[];window.__failPortion=true;window.fetch=async(url,options)=>{
+        const req=JSON.parse(options.body);window.__portionCalls.push(req);
+        const index=req.portion.index;
+        if(index===2&&window.__failPortion) return new Response(JSON.stringify({error:'truncated'}),{status:502});
+        const name=index===2?'Ruby':'Java';
+        const claim={id:'c1',source:name,text:name,targets:['skills'],question:'',meaning:{assertion:'affirmed',intent:'actual',certainty:'certain',temporal:{wording:'',precision:'unknown'}}};
+        const operations=index===1?[]:[{claimId:'c1',target:'skills',entryId:'',field:'skills',action:'add',value:name,finding:'addition'}];
+        const fact=req.document.facts.find(f=>f.field==='skills'&&f.value==='Java');
+        const payload={decision:{version:1,field:'professional_information',outcome:{kind:'accept'}},claims:[claim],operations,unverifiedClaimCount:0,unresolvedClaimIds:[],unplacedOperationCount:0,skippedClaims:[],coverage:{validClaims:1,invalidClaims:0,discoveryComplete:false,capacity:'within_limit'},outcomes:[{claimId:'c1',kind:index===1?'exact_duplicate':'change',reason:'validated_operation',relatedFacts:index===1?[{profileId:req.document.id,id:fact.id,revision:fact.revision}]:[],relatedClaimIds:[],operationIndexes:index===1?[]:[0]}]};
+        const raw=await (await window.__portionResponse(payload)).json();
+        const a=req.input.indexOf('# Role A',1),b=req.input.indexOf('# Role B');
+        raw.continuation={...raw.continuation,index,total:3,regions:[[{Start:0,End:a}],[{Start:a,End:b}],[{Start:b,End:new TextEncoder().encode(req.input).length}]]};
+        return new Response(JSON.stringify(raw),{status:200});
+      }`)
+      await evaluate(`${byText(review)}.click()`)
+      await until("document.querySelectorAll('article').length===1")
+      assert.equal(await evaluate("window.__portionCalls.length"),1)
+      assert.equal(await evaluate(`${byText(next)}.disabled`),true)
+      await evaluate(`${byText(approve)}.click()`)
+      await evaluate(`${byText(apply)}.click()`)
+      await until("document.querySelectorAll('article').length===0")
+      assert.equal(JSON.parse(await saved()).skills,"Java")
+      assert.equal(await evaluate("document.querySelector('#ingestion-text').value"),input)
+      await evaluate(`${byText(next)}.click()`)
+      await until("document.querySelectorAll('article').length===1")
+      assert.equal(await evaluate("window.__portionCalls[1].profile.skills"),"Java")
+      assert.ok((await evaluate("document.querySelector('article').textContent")).includes(locale==="en"?"Exact duplicate":"Duplicata exata"))
+      await evaluate(`${byText(dismiss)}.click()`)
+      await evaluate(`${byText(next)}.click()`)
+      await until("!!document.querySelector('[role=alert]')")
+      await pause(100)
+      assert.equal(await evaluate("window.__portionCalls.length"),3)
+      assert.equal(JSON.parse(await saved()).skills,"Java")
+      assert.equal(await evaluate("document.querySelector('#ingestion-text').value"),input)
+      await evaluate("window.__failPortion=false")
+      await evaluate(`${byText(retry)}.click()`)
+      await until("document.querySelectorAll('article').length===1")
+      assert.equal(await evaluate("window.__portionCalls[3].portion.index"),2)
+      assert.equal(JSON.parse(await saved()).skills,"Java")
+      assert.ok(await evaluate("document.documentElement.scrollWidth<=innerWidth"))
+      const screen=await call("Page.captureScreenshot",{format:"png",captureBeyondViewport:true})
+      writeFileSync(join(work,`continuation-${locale}-${width}.png`),Buffer.from(screen.data,"base64"))
+      // A new tab's incompatible revision invalidates pending work, preserving the paste.
+      await evaluate(`(()=>{const old=localStorage.getItem('careeros_profile_v2');const doc=JSON.parse(old);doc.revision++;const value=JSON.stringify(doc);localStorage.setItem('careeros_profile_v2',value);window.dispatchEvent(new StorageEvent('storage',{key:'careeros_profile_v2',oldValue:old,newValue:value,storageArea:localStorage}))})()`)
+      await until("document.querySelectorAll('article').length===0")
+      assert.equal(await evaluate("document.querySelector('#ingestion-text').value"),input)
+      assert.equal(await evaluate(`${byText(review)} !== undefined`),true)
+      console.log(`PASS deliberate continuation, saved duplicate, truncation/retry and cross-tab ${locale} ${width}px`)
+    }
+  }
+
   // Persistence failures must retain the review and original input in both locales.
-  for (const locale of ["en", "pt-BR"])
+  if (!process.env.PROFILE_CONTINUATION_ONLY) for (const locale of ["en", "pt-BR"])
     for (const width of [1440, 390]) {
       await call("Emulation.setDeviceMetricsOverride", {
         width,
@@ -1053,7 +1131,7 @@ try {
         " English; Go; BSc North 2021; Cloud Guild; English fluent."
       await fill(text)
       await evaluate(
-        `window.fetch=async()=>new Response(${JSON.stringify(JSON.stringify(fixture))},{status:200})`,
+        `window.fetch=async()=>await window.__portionResponse(${JSON.stringify(fixture)},{status:200})`,
       )
       await evaluate(`${byText(review)}.click()`)
       await until(`${byText(apply)} !== undefined`)
@@ -1107,7 +1185,7 @@ try {
       // previous save waits for the origin's lock.
       await fill(text)
       await evaluate(
-        `window.fetch=async()=>new Response(${JSON.stringify(JSON.stringify(fixture))},{status:200})`,
+        `window.fetch=async()=>await window.__portionResponse(${JSON.stringify(fixture)},{status:200})`,
       )
       await evaluate(`${byText(review)}.click()`)
       await until(`${byText(apply)} !== undefined`)

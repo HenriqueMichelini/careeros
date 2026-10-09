@@ -36,6 +36,7 @@ import {
   IngestionError,
   IngestionOperation,
   IngestionResult,
+  IngestionContinuation,
 } from "../lib/ingestion"
 
 type Section = "profile" | "goals" | "skills" | "experience" | "projects" | "education" | "certifications" | "languages" | "compensation" | "other"
@@ -631,6 +632,14 @@ export default function RepositoryPage() {
   )
   const [ingestionSnapshot, setIngestionSnapshot] =
     useState<ProfileDocument | null>(null)
+  const [continuation, setContinuation] =
+    useState<IngestionContinuation | null>(null)
+  const [processedPortions, setProcessedPortions] = useState<number[]>([])
+  const [attemptedPortions, setAttemptedPortions] = useState<number[]>([])
+  const [portionBytes, setPortionBytes] = useState(2000)
+  const ownIngestionSave =
+    useRef<Pick<ProfileDocument, "id" | "revision"> | null>(null)
+  const previousIngestionProfile = useRef(profileDocument)
   const [ingestionError, setIngestionError] = useState("")
   const [ingestionDecision, setIngestionDecision] =
     useState<FieldDecision | null>(null)
@@ -714,12 +723,42 @@ export default function RepositoryPage() {
       values,
     })
   }
+  useEffect(() => {
+    if (
+      state.profileError === "stale" ||
+      (previousIngestionProfile.current !== profileDocument &&
+        !(
+          ownIngestionSave.current?.id === profileDocument?.id &&
+          ownIngestionSave.current?.revision === profileDocument?.revision
+        ))
+    ) {
+      ingestionRequest.current += 1
+      ingestionController.current?.abort()
+      setIsIngesting(false)
+      setIngestionResult(null)
+      setContinuation(null)
+      setProcessedPortions([])
+      setAttemptedPortions([])
+      if (ingestionText) setIngestionError(t("repo.ingestStale"))
+    }
+    previousIngestionProfile.current = profileDocument
+    ownIngestionSave.current = null
+  }, [profileDocument, t, state.profileError])
+
+  function resetContinuation() {
+    setContinuation(null)
+    setProcessedPortions([])
+    setAttemptedPortions([])
+  }
+
   function discardIngestion() {
     ingestionRequest.current += 1
     ingestionController.current?.abort()
     setIsIngesting(false)
     setRevisionRequiredFor(null)
     setIngestionText("")
+    resetContinuation()
+    setPortionBytes(2000)
     setIngestionResult(null)
     setIngestionSnapshot(null)
     setIngestionError("")
@@ -731,12 +770,18 @@ export default function RepositoryPage() {
     ingestionController.current?.abort()
     setIsIngesting(false)
     setIngestionText(value)
+    resetContinuation()
+    setPortionBytes(2000)
     setIngestionResult(null)
     setIngestionError("")
     setIngestionDecision(null)
   }
 
-  async function handleIngestion() {
+  async function handleIngestion(index = 0, bytes = portionBytes) {
+    if (state.profileError === "stale") {
+      setIngestionError(t("repo.ingestStale"))
+      return
+    }
     if (
       revisionRequiredFor !== null &&
       ingestionText.trim() === revisionRequiredFor
@@ -758,6 +803,7 @@ export default function RepositoryPage() {
     ingestionController.current = controller
     setIsIngesting(true)
     const snapshot = profileDocument ? structuredClone(profileDocument) : null
+    setAttemptedPortions((prior) => [...new Set([...prior, index])])
     try {
       const proposals = await ingestProfile(
         ingestionText,
@@ -766,8 +812,14 @@ export default function RepositoryPage() {
         controller.signal,
         state.typesafeKey,
         snapshot ?? undefined,
+        { index, bytes },
       )
       if (ingestionRequest.current !== requestId) return
+      if (currentReviewContext.current.revision !== snapshot?.revision)
+        throw new IngestionError("stale")
+      setContinuation(proposals.continuation ?? null)
+      if (proposals.continuation?.processed)
+        setProcessedPortions((prior) => [...new Set([...prior, index])])
       setIngestionRevision(profileDocument?.revision ?? null)
       setIngestionSnapshot(snapshot)
       setIngestionResult(proposals)
@@ -791,6 +843,7 @@ export default function RepositoryPage() {
         invalid_output: "repo.ingestErrorInvalidOutput",
         preparation: "repo.ingestErrorPreparation",
         capacity: "repo.ingestErrorCapacity",
+        stale: "repo.ingestStale",
       } as const
       setIngestionError(
         t(lookup[(code as keyof typeof lookup)] || "repo.reviewFailed"),
@@ -800,6 +853,10 @@ export default function RepositoryPage() {
     }
   }
 
+  const nextPlannedPortion =
+    continuation?.regions.findIndex(
+      (_, index) => !attemptedPortions.includes(index),
+    ) ?? 0
   const fieldOutcome = ingestionDecision?.outcome
   const ingestionFeedback = fieldOutcome
     ? t(
@@ -846,13 +903,29 @@ export default function RepositoryPage() {
       if (ingestionRevision !== profileDocument?.revision)
         throw new IngestionError("stale")
       if (!ingestionSnapshot) throw new IngestionError("stale")
+      ownIngestionSave.current = {
+        id: ingestionSnapshot.id,
+        revision: ingestionSnapshot.revision + 1,
+      }
       const saved = await applyIngestionProposal(
         ingestionSnapshot,
         ingestionText,
         ingestionResult,
       )
-      if (saved && ingestionRequest.current === applyingRequest)
-        discardIngestion()
+      if (!saved) ownIngestionSave.current = null
+      if (saved && ingestionRequest.current === applyingRequest) {
+        if (
+          !continuation ||
+          (continuation.total === 1 &&
+            continuation.processed &&
+            continuation.planComplete)
+        )
+          discardIngestion()
+        else {
+          setIngestionResult(null)
+          setIngestionSnapshot(null)
+        }
+      }
     } catch (error) {
       const code =
         error instanceof IngestionError ? error.code : "invalid_output"
@@ -1439,9 +1512,12 @@ export default function RepositoryPage() {
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={handleIngestion}
+                  onClick={() => handleIngestion(nextPlannedPortion)}
                   disabled={
                     isIngesting ||
+                    state.profileError === "stale" ||
+                    !!ingestionResult ||
+                    (!!continuation && nextPlannedPortion < 0) ||
                     (revisionRequiredFor !== null &&
                       ingestionText.trim() === revisionRequiredFor) ||
                     !ingestionText.trim() ||
@@ -1455,7 +1531,9 @@ export default function RepositoryPage() {
                 >
                   {isIngesting
                     ? t("repo.ingestWorking")
-                    : t("repo.ingestReview")}
+                    : continuation
+                      ? t("repo.ingestContinue")
+                      : t("repo.ingestReview")}
                 </button>
                 <button
                   type="button"
@@ -1466,6 +1544,91 @@ export default function RepositoryPage() {
                   {t("repo.ingestDiscard")}
                 </button>
               </div>
+              <p className="text-xs mt-3">{t("repo.ingestPortionLimits")}</p>
+              {continuation && (
+                <div className="text-sm mt-3 space-y-2" aria-live="polite">
+                  <p>
+                    {t("repo.ingestPortionProgress")} {processedPortions.length}{" "}
+                    / {continuation.total}; {t("repo.ingestPortionAttempted")}{" "}
+                    {attemptedPortions.length}
+                  </p>
+                  <p>{t("repo.ingestPortionCoverageNote")}</p>
+                  {!continuation.planComplete && (
+                    <p role="alert">
+                      {t("repo.ingestPortionUnplanned")}{" "}
+                      {continuation.remaining
+                        ?.map((r) => `${r.Start}–${r.End}`)
+                        .join(", ")}
+                    </p>
+                  )}
+                  {!continuation.processed && (
+                    <p role="alert">{t("repo.ingestPortionIncomplete")}</p>
+                  )}
+                  <details>
+                    <summary className="cursor-pointer">
+                      {t("repo.ingestPortionRegions")}
+                    </summary>
+                    <ul>
+                      {continuation.regions.map((regions, index) => (
+                        <li key={index}>
+                          {index + 1}:{" "}
+                          {regions.map((r) => `${r.Start}–${r.End}`).join(", ")}{" "}
+                          {processedPortions.includes(index)
+                            ? t("repo.ingestPortionProcessed")
+                            : t("repo.ingestPortionPending")}
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                  {ingestionResult && (
+                    <button
+                      type="button"
+                      disabled={isIngesting}
+                      className="border px-3 py-2"
+                      onClick={() => {
+                        setIngestionResult(null)
+                        setIngestionSnapshot(null)
+                      }}
+                    >
+                      {t("repo.ingestPortionDismiss")}
+                    </button>
+                  )}
+                  {!ingestionResult &&
+                    processedPortions.length < continuation.total && (
+                      <button
+                        type="button"
+                        disabled={isIngesting}
+                        className="border px-3 py-2"
+                        onClick={() =>
+                          handleIngestion(
+                            continuation.regions.findIndex(
+                              (_, i) => !processedPortions.includes(i),
+                            ),
+                          )
+                        }
+                      >
+                        {t("repo.ingestPortionRetry")}
+                      </button>
+                    )}
+                </div>
+              )}
+              {((continuation && !continuation.processed) || ingestionError) &&
+                portionBytes > 200 && (
+                  <button
+                    type="button"
+                    disabled={isIngesting || !!ingestionResult}
+                    className="border px-3 py-2 mt-2"
+                    onClick={() => {
+                      resetContinuation()
+                      setPortionBytes(
+                        Math.max(200, Math.floor(portionBytes / 2)),
+                      )
+                      setIngestionError("")
+                    }}
+                  >
+                    {t("repo.ingestPortionSmaller")}
+                  </button>
+                )}
               {isIngesting && (
                 <p role="status" className="text-sm mt-3">
                   {t("field.working")}

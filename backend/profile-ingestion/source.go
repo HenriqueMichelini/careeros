@@ -8,8 +8,8 @@ import (
 )
 
 // Byte budgets include normalization expansion and the complete serialized
-// provider envelope/schema/context. They are not token estimates. No portion
-// execution or automatic continuation is allowed by this integration.
+// provider envelope/schema/context. They are not token estimates. Continuation
+// selects one planner view per deliberate request; there is no execution loop.
 const maxPreparedInput = preprocessing.MaxPreparedWorkflowBytes
 const maxProviderPayload = preprocessing.MaxWorkflowPayloadBytes
 
