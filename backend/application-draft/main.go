@@ -166,7 +166,7 @@ func (a app) call(parent context.Context, key string, in request) (result, strin
 	body, _ := json.Marshal(map[string]any{"model": model, "reasoning_effort": "none", "max_completion_tokens": 8000, "response_format": applicationDraftResponseFormat(), "messages": []any{map[string]string{"role": "user", "content": prompt}}})
 	// Match ingestion's prepared-text bound; measure the complete serialized
 	// provider envelope separately. Never truncate or execute planned portions.
-	if len(source.Text()) > 60000 || len(body) > 256<<10 {
+	if len(source.Text()) > preprocessing.MaxPreparedWorkflowBytes || len(body) > preprocessing.MaxWorkflowPayloadBytes {
 		return empty, "capacity", errors.New("job preparation capacity")
 	}
 

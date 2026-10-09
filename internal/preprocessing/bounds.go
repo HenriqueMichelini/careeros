@@ -6,6 +6,11 @@ import (
 	"professional-information-repo/internal/fieldvalidation"
 )
 
+// Workflow budgets bound a full prepared view and the complete serialized AI
+// envelope, separately from each field's original and HTTP transport limits.
+const MaxPreparedWorkflowBytes = 60000
+const MaxWorkflowPayloadBytes = 256 << 10
+
 type CapacityStatus string
 
 const (

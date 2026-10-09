@@ -387,7 +387,7 @@ func (a app) callProvider(parent context.Context, key string, input gapRequest) 
 	body, _ := json.Marshal(map[string]any{"model": model, "reasoning_effort": "none", "max_completion_tokens": 1200, "response_format": map[string]string{"type": "json_object"}, "messages": []any{map[string]string{"role": "user", "content": prompt}}})
 	// Match ingestion's prepared-text bound; measure the complete serialized
 	// provider envelope separately. Never truncate or execute planned portions.
-	if len(source.Text()) > 60000 || len(body) > 256<<10 {
+	if len(source.Text()) > preprocessing.MaxPreparedWorkflowBytes || len(body) > preprocessing.MaxWorkflowPayloadBytes {
 		return empty, "capacity", errors.New("job preparation capacity")
 	}
 

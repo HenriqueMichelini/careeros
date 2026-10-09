@@ -10,8 +10,8 @@ import (
 // Byte budgets include normalization expansion and the complete serialized
 // provider envelope/schema/context. They are not token estimates. No portion
 // execution or automatic continuation is allowed by this integration.
-const maxPreparedInput = 60000
-const maxProviderPayload = 256 << 10
+const maxPreparedInput = preprocessing.MaxPreparedWorkflowBytes
+const maxProviderPayload = preprocessing.MaxWorkflowPayloadBytes
 
 type sourceReference struct {
 	Version            int    `json:"version"`
