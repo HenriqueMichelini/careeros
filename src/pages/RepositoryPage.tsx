@@ -467,7 +467,7 @@ function ProjectForm({
 }
 
 export default function RepositoryPage() {
-  const { state, dispatch } = useStore()
+  const { state, dispatch, saveRepository } = useStore()
   const { t } = useI18n()
   const [activeSection, setActiveSection] = useState<Section>("profile")
   const [reviewError, setReviewError] = useState("")
@@ -584,14 +584,11 @@ export default function RepositoryPage() {
     }))
   }
 
-  function confirmIngestion() {
+  async function confirmIngestion() {
     if (!ingestionResult?.operations.some(op => op.approved)) return
     try {
-      const saved = localStorage.getItem("careeros_repo")
-      if (saved && saved !== ingestionSnapshot) throw new IngestionError("stale")
       const updated = applyIngestion(repo, ingestionSnapshot, ingestionResult.operations)
-      dispatch({type:"SET_REPO",payload:updated})
-      discardIngestion()
+      if (await saveRepository(updated, { kind: "accepted_proposal", original: "unknown" })) discardIngestion()
     } catch (error) {
       const code = error instanceof IngestionError ? error.code : "invalid_output"
       setIngestionError(t(code === "stale" ? "repo.ingestStale" : "repo.ingestInvalidEdit"))
@@ -619,8 +616,9 @@ export default function RepositoryPage() {
         controller.signal,
       )
       if (!isCurrent()) return
-      dispatch({ type: "SET_REPO", payload: updatedRepo })
-      dispatch({ type: "SET_REVIEW_SUMMARY", payload: summary })
+      if (await saveRepository(updatedRepo, { kind: "ai_review", original: "unknown" })) {
+        dispatch({ type: "SET_REVIEW_SUMMARY", payload: summary })
+      }
     } catch (e: any) {
       if (!isCurrent()) return
       const errorKey = e instanceof ProfileReviewError

@@ -1,3 +1,4 @@
+import { savedProfileExpression } from "./profile-browser-storage.mjs"
 import { keyboardFlow } from "./keyboard-flow.mjs"
 // Browser regression for raw professional-information review and explicit apply.
 // Uses synthetic API responses; no provider request is made.
@@ -151,6 +152,7 @@ try {
       expression,
       returnByValue: true,
       awaitPromise: true,
+      userGesture: true,
     })
     if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text)
     return result.result.value
@@ -160,14 +162,15 @@ try {
       if (await evaluate(expression)) return
       await pause(100)
     }
-    throw new Error(`Timed out: ${expression}`)
+    throw new Error(`Timed out: ${expression}; ${await evaluate("JSON.stringify({text:document.body.innerText.slice(0,1500),injected:typeof window.__originalStorageSet,canonical:localStorage.getItem('careeros_profile_v2')!==null})")}`)
   }
+  await call("Page.enable")
   await call("Page.navigate", { url: `http://127.0.0.1:${port}/` })
   await until(
     "document.readyState === 'complete' && !!document.querySelector('header button')",
   )
   await evaluate(
-    `localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_apikey', 'synthetic-test-key'); localStorage.setItem('careeros_typesafe_key','synthetic-typesafe'); location.reload()`,
+    `localStorage.removeItem('careeros_profile_v2'); localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_apikey', 'synthetic-test-key'); localStorage.setItem('careeros_typesafe_key','synthetic-typesafe'); location.reload()`,
   )
   await until(
     "document.readyState === 'complete' && !!document.querySelector('header button')",
@@ -182,7 +185,7 @@ try {
     await evaluate(`(() => { const el = document.querySelector(${JSON.stringify(selector)}); Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(el, ${JSON.stringify(value)}); el.dispatchEvent(new Event('input', { bubbles: true })); })()`)
     await pause(60)
   }
-  const saved = () => evaluate("localStorage.getItem('careeros_repo')")
+  const saved = () => evaluate(savedProfileExpression)
   const byText = text => `Array.from(document.querySelectorAll('button')).find(el=>el.textContent.trim()===${JSON.stringify(text)})`
   const {keyboardFill, keyboardSubmit} = keyboardFlow({call, evaluate, pause, selector:'#ingestion-text'})
   const fixture = {
@@ -194,6 +197,7 @@ try {
       ...Object.entries({education:{degree:'BSc',institution:'North',graduationDate:'2021'},certifications:{name:'Cloud',issuer:'Guild'},languages:{name:'Portuguese',proficiency:'Fluent'},experience:{company:'Aster',title:'Engineer'},projects:{name:'Harbor'}}).flatMap(([target,fields])=>Object.entries(fields).map(([field,value])=>({claimId:'c1',target,entryId:'new:c1',field,action:'add',value,finding:'addition'}))),
     ],unverifiedClaimCount:1,unresolvedClaimIds:[],unplacedOperationCount:0,
   }
+  if (!process.env.PROFILE_RECOVERY_ONLY) {
   // Rephrasing is a backend decision and requires changed text, with no Profile write.
   await evaluate("localStorage.setItem('careeros_typesafe_key','synthetic-typesafe'); localStorage.setItem('careeros_apikey','sk-synthetic-test')")
   await openProfile()
@@ -366,7 +370,7 @@ try {
   }
   for (const locale of ['en','pt-BR']) for (const width of [1440,390]) for (const populated of [false,true]) {
     await call('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:false})
-    await evaluate(`localStorage.setItem('careeros_locale', ${JSON.stringify(locale)}); localStorage.setItem('careeros_apikey','sk-synthetic-test'); ${populated ? `localStorage.setItem('careeros_repo',${JSON.stringify(JSON.stringify(repo))})` : "localStorage.removeItem('careeros_repo')"}; location.reload()`)
+    await evaluate(`localStorage.setItem('careeros_locale', ${JSON.stringify(locale)}); localStorage.setItem('careeros_apikey','sk-synthetic-test'); ${populated ? `localStorage.removeItem('careeros_profile_v2'); localStorage.setItem('careeros_repo',${JSON.stringify(JSON.stringify(repo))})` : "localStorage.removeItem('careeros_profile_v2'); localStorage.removeItem('careeros_repo')"}; location.reload()`)
     await until("document.readyState === 'complete' && !!document.querySelector('header button')")
     await openProfile()
     const initial=await saved()
@@ -429,7 +433,7 @@ try {
     const beforeReview=JSON.parse(await saved())
     await evaluate(`window.fetch=async(url,options)=>{if(url!='/api/profile/review')throw new Error('Unexpected request');const body=JSON.parse(options.body);window.__reviewSection=body.changedSection;return new Response(JSON.stringify({updatedRepository:{...body.repository,skills:'Reviewed skills',careerGoals:'Unrequested model edit'},summary:'Reviewed skills'}),{status:200,headers:{'Content-Type':'application/json'}})}`)
     await evaluate(`${byText(reviewAi)}.click()`)
-    await until("JSON.parse(localStorage.getItem('careeros_repo')).skills === 'Reviewed skills'")
+    await until(`(async () => JSON.parse(await ${savedProfileExpression}).skills === 'Reviewed skills')()` )
     assert.equal(await evaluate('window.__reviewSection'),'skills')
     assert.equal(JSON.parse(await saved()).careerGoals,beforeReview.careerGoals)
     const education=locale==='en'?'Education':'Formação'
@@ -437,6 +441,124 @@ try {
     assert.equal(await evaluate(`${byText(reviewAi)} !== undefined`),false)
     console.log(`PASS ingestion ${locale} ${width}px ${populated?'populated':'empty'}`)
   }
+  }
+  // Persistence failures must retain the review and original input in both locales.
+  for (const locale of ["en", "pt-BR"])
+    for (const width of [1440, 390]) {
+      await call("Emulation.setDeviceMetricsOverride", {
+        width,
+        height: 1000,
+        deviceScaleFactor: 1,
+        mobile: false,
+      })
+      await evaluate(
+        `localStorage.setItem('careeros_locale',${JSON.stringify(locale)}); localStorage.removeItem('careeros_profile_v2'); localStorage.setItem('careeros_repo',${JSON.stringify(JSON.stringify(repo))}); location.reload()`,
+      )
+      await until(
+        "document.readyState === 'complete' && !!document.querySelector('header button')",
+      )
+      await openProfile()
+      const original = await evaluate(
+        "localStorage.getItem('careeros_profile_v2')",
+      )
+      const legacySnapshot = await evaluate(
+        "localStorage.getItem('careeros_repo')",
+      )
+      const review =
+        locale === "en"
+          ? "Review suggested changes"
+          : "Revisar alterações sugeridas"
+      const approve =
+        locale === "en"
+          ? "Approve linked changes"
+          : "Aprovar alterações ligadas"
+      const apply =
+        locale === "en"
+          ? "Apply approved changes"
+          : "Aplicar alterações aprovadas"
+      const text =
+        "Ada English; Go; BSc North 2021; Cloud Guild; English fluent."
+      await fill(text)
+      await evaluate(
+        `window.fetch=async()=>new Response(${JSON.stringify(JSON.stringify(fixture))},{status:200})`,
+      )
+      await evaluate(`${byText(review)}.click()`)
+      await until(`${byText(apply)} !== undefined`)
+      await evaluate(`${byText(approve)}.click()`)
+      await evaluate(
+        `window.__setItem=Storage.prototype.setItem; Storage.prototype.setItem=function(key,value){if(key==='careeros_profile_v2')throw new DOMException('quota','QuotaExceededError');return window.__setItem.call(this,key,value)}`,
+      )
+      await evaluate(`${byText(apply)}.click()`)
+      await until("!!document.querySelector('[role=alert]')")
+      assert.match(
+        await evaluate("document.querySelector('[role=alert]').textContent"),
+        locale === "en" ? /could not be saved/ : /Não foi possível salvar/,
+      )
+      assert.equal(
+        await evaluate("document.querySelector('#ingestion-text').value"),
+        text,
+      )
+      assert.ok(
+        await evaluate("document.querySelectorAll('article').length > 0"),
+      )
+      assert.equal(
+        await evaluate("localStorage.getItem('careeros_profile_v2')"),
+        original,
+      )
+      assert.equal(
+        await evaluate("localStorage.getItem('careeros_repo')"),
+        legacySnapshot,
+      )
+      assert.ok(
+        await evaluate("document.documentElement.scrollWidth <= innerWidth"),
+      )
+      const screenshot = await call("Page.captureScreenshot", {
+        format: "png",
+        captureBeyondViewport: true,
+      })
+      writeFileSync(
+        join(work, `save-failure-${locale}-${width}.png`),
+        Buffer.from(screenshot.data, "base64"),
+      )
+      await evaluate(
+        "Storage.prototype.setItem=window.__setItem; location.reload()",
+      )
+      await until(
+        "document.readyState === 'complete' && !!document.querySelector('header button')",
+      )
+      await openProfile()
+      assert.deepEqual(JSON.parse(await saved()), repo)
+      // A real same-origin sibling window writes a new revision. The storage event
+      // blocks the old tab and preserves pending text rather than merging silently.
+      await fill("Pending notes before another tab saves")
+      await evaluate(
+        `(() => { window.__peer=window.open('about:blank','profile-peer'); const doc=JSON.parse(localStorage.getItem('careeros_profile_v2')); doc.revision++; for(const fact of doc.facts)if(fact.owner.id===doc.id)fact.owner.revision=doc.revision; window.__peer.localStorage.setItem('careeros_profile_v2',JSON.stringify(doc)); })()`,
+      )
+      await until("!!document.querySelector('[role=alert]')")
+      assert.match(
+        await evaluate("document.querySelector('[role=alert]').textContent"),
+        locale === "en" ? /another tab/ : /outra aba/,
+      )
+      assert.equal(
+        await evaluate("document.querySelector('#ingestion-text').value"),
+        "Pending notes before another tab saves",
+      )
+      await evaluate("window.__peer.close()")
+      // Inject a quota failure before initialization: migration must retain the
+    // original key and show its valid fields without installing v2 authority.
+    const injection = await call('Page.addScriptToEvaluateOnNewDocument', {source: `window.__originalStorageSet=Storage.prototype.setItem; Storage.prototype.setItem=function(key,value){if(key==='careeros_profile_v2')throw new DOMException('quota','QuotaExceededError');return window.__originalStorageSet.call(this,key,value)}`})
+    await evaluate(`localStorage.removeItem('careeros_profile_v2'); location.reload()`)
+    await until("document.readyState === 'complete' && !!document.querySelector('header button') && !!document.querySelector('[role=alert]')")
+    await openProfile()
+    assert.equal(await evaluate("localStorage.getItem('careeros_profile_v2')"), null)
+    assert.equal(await evaluate("localStorage.getItem('careeros_repo')"), legacySnapshot)
+    assert.equal(await evaluate("document.querySelector('#contact-fullName').value"), repo.fullName)
+    assert.match(await evaluate("document.querySelector('[role=alert]').textContent"),locale==='en'?/could not be saved/:/Não foi possível salvar/)
+    await call('Page.removeScriptToEvaluateOnNewDocument', {identifier: injection.identifier})
+    await evaluate(`location.reload()`)
+    await until("document.readyState === 'complete' && !!document.querySelector('header button')")
+    console.log(`PASS save recovery and cross-tab ${locale} ${width}px`)
+    }
   console.log('Screenshots:',work)
 } finally {
   socket?.close()

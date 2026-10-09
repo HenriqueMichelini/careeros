@@ -145,7 +145,7 @@ try {
     experience: [],
   }
   await evaluate(
-    `localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_apikey', 'synthetic-test-key')`,
+    `localStorage.removeItem('careeros_profile_v2'); localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_apikey', 'synthetic-test-key')`,
   )
   await call("browsingContext.navigate", {
     context,
@@ -259,7 +259,7 @@ try {
   assert.equal(await evaluate("document.querySelector('.results-content pre').textContent"), completed)
   // A migrated Profile without a name produces an unsigned Portuguese letter and advice.
   const unnamed = { ...repo }; delete unnamed.fullName
-  await evaluate(`localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(unnamed))})`)
+  await evaluate(`localStorage.removeItem('careeros_profile_v2'); localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(unnamed))})`)
   await call("browsingContext.navigate", { context, url: `http://127.0.0.1:${port}/`, wait: "complete" })
   await until("!!document.querySelector('header button')")
   await evaluate("document.querySelector('header button:last-child').click()")
