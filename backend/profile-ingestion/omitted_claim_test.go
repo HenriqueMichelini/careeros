@@ -119,7 +119,7 @@ func TestExplicitUseOmissionStillProposesSkill(t *testing.T) {
 						if len(got.Operations) != 0 {
 							t.Fatal("saved Java duplicated")
 						}
-					} else if len(got.Operations) != 1 || got.Operations[0] != (operation{ClaimID: "c1", Target: "skills", Field: "skills", Action: "add", Value: "Java", Finding: "addition"}) {
+					} else if len(got.Operations) != 1 || !reflect.DeepEqual(got.Operations[0], operation{ClaimID: "c1", Target: "skills", Field: "skills", Action: "add", Value: "Java", Finding: "addition"}) {
 						t.Fatalf("missing exact reviewable skill: %#v", got.Operations)
 					}
 					if string(mustJSON(p)) != before {

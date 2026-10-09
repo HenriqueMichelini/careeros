@@ -12,7 +12,18 @@ export interface IngestionSourceReference {
   originalStart: number
   originalEnd: number
 }
+export interface IngestionMeaning {
+  assertion: "affirmed" | "negated" | "unknown"
+  intent: "actual" | "aspiration" | "unknown"
+  certainty: "certain" | "uncertain" | "unknown"
+  temporal: { wording: string; precision: "exact" | "approximate" | "unknown" }
+}
 export interface IngestionClaim {
+  meaning?: IngestionMeaning
+  supportingSources?: {
+    source: string
+    sourceReference?: IngestionSourceReference
+  }[]
   sourceReference?: IngestionSourceReference
   id: string
   source: string
@@ -21,6 +32,8 @@ export interface IngestionClaim {
   question: string
 }
 export interface IngestionOperation {
+  supportingClaimIds?: string[]
+  proposedValue?: string
   claimId: string
   target: IngestionTarget
   entryId: string
@@ -77,16 +90,22 @@ const statuses = [
   "student",
 ]
 const legacyStatuses = [
-  "Employed", "Employed — Full-time", "Employed — Part-time",
-  "Employed — Contract", "Freelance / Self-employed",
-  "Actively looking for work", "Open to opportunities (not actively searching)",
-  "Unemployed", "Student",
+  "Employed",
+  "Employed — Full-time",
+  "Employed — Part-time",
+  "Employed — Contract",
+  "Freelance / Self-employed",
+  "Actively looking for work",
+  "Open to opportunities (not actively searching)",
+  "Unemployed",
+  "Student",
 ]
 const profileFields = [...scalarFields, "experience", "projects"]
 const contactFields = Object.keys(emptyContact)
 const writableScalars = [...scalarFields, ...contactFields]
 const collectionFields: Record<string, string[]> = {
-  experience: experienceFields, projects: projectFields,
+  experience: experienceFields,
+  projects: projectFields,
   education: ["degree", "institution", "location", "graduationDate", "details"],
   certifications: ["name", "issuer", "date", "credentialId", "url"],
   languages: ["name", "proficiency"],
@@ -98,11 +117,20 @@ const identityFields = (target: string) =>
     : target === "certifications"
       ? ["name", "issuer"]
       : requiredFields(target)
-const requiredFields = (target: string) => target === "experience" ? ["company", "title"] : target === "education" ? ["degree", "institution"] : ["name"]
-export const ingestionInputBytes = (input: string) => new TextEncoder().encode(input).length
+const requiredFields = (target: string) =>
+  target === "experience"
+    ? ["company", "title"]
+    : target === "education"
+      ? ["degree", "institution"]
+      : ["name"]
+export const ingestionInputBytes = (input: string) =>
+  new TextEncoder().encode(input).length
 export const ingestionMaxBytes = 30000
 export class IngestionError extends Error {
-  constructor(public readonly code: string, public readonly decision?: FieldDecision) {
+  constructor(
+    public readonly code: string,
+    public readonly decision?: FieldDecision,
+  ) {
     super(code)
   }
 }
@@ -118,8 +146,16 @@ const hasTarget = (
   value: unknown,
 ): value is IngestionTarget =>
   typeof value === "string" && targets.includes(value as IngestionTarget)
-const entry = (profile: ProfessionalRepository, target: IngestionTarget, id: string) =>
-  collectionFields[target] ? (profile[target as keyof ProfessionalRepository] as unknown as {id: string}[] | undefined)?.find(item => item.id === id) : undefined
+const entry = (
+  profile: ProfessionalRepository,
+  target: IngestionTarget,
+  id: string,
+) =>
+  collectionFields[target]
+    ? (profile[(target as keyof ProfessionalRepository)] as unknown as {
+        id: string
+      }[] | undefined)?.find((item) => item.id === id)
+    : undefined
 const normalizedFact = (value: string) =>
   value
     .trim()
@@ -130,23 +166,37 @@ const normalizedFact = (value: string) =>
 const duplicate = (before: string, value: string) =>
   before
     .split(/[\n,;]+/)
-    .some(
-      (part) =>
-        normalizedFact(part) === normalizedFact(value),
-    )
+    .some((part) => normalizedFact(part) === normalizedFact(value))
 
 export function validProfile(profile: ProfessionalRepository): boolean {
   if (
     !record(profile) ||
-    !(keys(profile, profileFields) || keys(profile, [...profileFields, ...contactFields]) ||
-      keys(profile, [...profileFields, ...contactFields, "education", "certifications", "languages"])) ||
-    contactFields.some(f => f in profile && !string(profile[f as keyof ProfessionalRepository], 2000)) ||
+    !(
+      keys(profile, profileFields) ||
+      keys(profile, [...profileFields, ...contactFields]) ||
+      keys(profile, [
+        ...profileFields,
+        ...contactFields,
+        "education",
+        "certifications",
+        "languages",
+      ])
+    ) ||
+    contactFields.some(
+      (f) =>
+        f in profile &&
+        !string(profile[(f as keyof ProfessionalRepository)], 2000),
+    ) ||
     scalarFields.some(
       (f) => !string(profile[(f as keyof ProfessionalRepository)], 12 << 10),
     )
   )
     return false
-  if (profile.employmentStatus && !statuses.includes(profile.employmentStatus) && !legacyStatuses.includes(profile.employmentStatus))
+  if (
+    profile.employmentStatus &&
+    !statuses.includes(profile.employmentStatus) &&
+    !legacyStatuses.includes(profile.employmentStatus)
+  )
     return false
   if (
     !Array.isArray(profile.experience) ||
@@ -177,7 +227,11 @@ export function validProfile(profile: ProfessionalRepository): boolean {
   }
   if ("education" in profile) {
     if (!validQualifications(profile)) return false
-    for (const item of [...profile.education, ...profile.certifications, ...profile.languages]) {
+    for (const item of [
+      ...profile.education,
+      ...profile.certifications,
+      ...profile.languages,
+    ]) {
       if (ids.has(item.id)) return false
       ids.add(item.id)
     }
@@ -187,24 +241,65 @@ export function validProfile(profile: ProfessionalRepository): boolean {
 
 // Ranges are UTF-8 bytes, not JavaScript UTF-16 indices. Fatal decoding rejects
 // references that split a character. The source excerpt stays in original form.
-function validSourceReference(value: unknown, input: string, excerpt: string): boolean {
-  if (!record(value) || !keys(value, ["version", "sourceId", "preparationVersion", "segmentId", "occurrenceId", "originalStart", "originalEnd"]) ||
-      value.version !== 1 || value.preparationVersion !== "structure-v1" ||
-      [value.sourceId, value.segmentId, value.occurrenceId].some(id => typeof id !== "string" || !/^[a-f0-9]{64}$/.test(id)) ||
-      !Number.isInteger(value.originalStart) || !Number.isInteger(value.originalEnd)) return false
-  const start = value.originalStart as number, end = value.originalEnd as number
+export function validSourceReference(
+  value: unknown,
+  input: string,
+  excerpt: string,
+): boolean {
+  if (
+    !record(value) ||
+    !keys(value, [
+      "version",
+      "sourceId",
+      "preparationVersion",
+      "segmentId",
+      "occurrenceId",
+      "originalStart",
+      "originalEnd",
+    ]) ||
+    value.version !== 1 ||
+    value.preparationVersion !== "structure-v1" ||
+    [value.sourceId, value.segmentId, value.occurrenceId].some(
+      (id) => typeof id !== "string" || !/^[a-f0-9]{64}$/.test(id),
+    ) ||
+    !Number.isInteger(value.originalStart) ||
+    !Number.isInteger(value.originalEnd)
+  )
+    return false
+  const start = value.originalStart as number,
+    end = value.originalEnd as number
   const bytes = new TextEncoder().encode(input)
   if (start < 0 || end <= start || end > bytes.length) return false
-  try { return new TextDecoder("utf-8", {fatal:true}).decode(bytes.slice(start,end)) === excerpt } catch { return false }
+  try {
+    return (
+      new TextDecoder("utf-8", { fatal: true }).decode(
+        bytes.slice(start, end),
+      ) === excerpt
+    )
+  } catch {
+    return false
+  }
 }
 
 async function sourceIdentity(input: string): Promise<string> {
   // Match Go encoding/json's HTML and line-separator escaping for the pinned
   // shared Source identity namespace, including the complete original paste.
-  const identity = JSON.stringify(["normalization-v1", "structure-v1", "professional_information", input])
-    .replace(/[<>&\u2028\u2029]/g, c => "\\u" + c.charCodeAt(0).toString(16).padStart(4,"0"))
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(identity))
-  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2,"0")).join("")
+  const identity = JSON.stringify([
+    "normalization-v1",
+    "structure-v1",
+    "professional_information",
+    input,
+  ]).replace(
+    /[<>&\u2028\u2029]/g,
+    (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"),
+  )
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(identity),
+  )
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("")
 }
 
 export function validateIngestionResult(
@@ -214,7 +309,13 @@ export function validateIngestionResult(
 ): IngestionResult {
   if (
     !record(raw) ||
-    !keys(raw, ["claims", "operations", "unverifiedClaimCount", "unresolvedClaimIds", "unplacedOperationCount"]) ||
+    !keys(raw, [
+      "claims",
+      "operations",
+      "unverifiedClaimCount",
+      "unresolvedClaimIds",
+      "unplacedOperationCount",
+    ]) ||
     !Array.isArray(raw.claims) ||
     !Array.isArray(raw.operations) ||
     typeof raw.unverifiedClaimCount !== "number" ||
@@ -236,15 +337,23 @@ export function validateIngestionResult(
   for (const item of raw.claims) {
     if (
       !record(item) ||
-      !(keys(item, ["id", "source", "text", "targets", "question"]) ||
-        keys(item, ["id", "source", "text", "targets", "question", "sourceReference"])) ||
+      !keys(
+        Object.fromEntries(
+          Object.entries(item).filter(
+            ([k]) =>
+              !["sourceReference", "meaning", "supportingSources"].includes(k),
+          ),
+        ),
+        ["id", "source", "text", "targets", "question"],
+      ) ||
       !string(item.id, 40) ||
       !item.id ||
       ids.has(item.id) ||
       !string(item.source, 1000) ||
       !item.source ||
       !input.includes(item.source) ||
-      ("sourceReference" in item && !validSourceReference(item.sourceReference, input, item.source)) ||
+      ("sourceReference" in item &&
+        !validSourceReference(item.sourceReference, input, item.source)) ||
       !string(item.text, 1000) ||
       !item.text.trim() ||
       !Array.isArray(item.targets) ||
@@ -253,26 +362,58 @@ export function validateIngestionResult(
       !string(item.question, 500)
     )
       throw new IngestionError("invalid_output")
+    if (item.meaning !== undefined && !validMeaning(item.meaning))
+      throw new IngestionError("invalid_output")
+    if (
+      item.supportingSources !== undefined &&
+      (!Array.isArray(item.supportingSources) ||
+        item.supportingSources.length > 12 ||
+        item.supportingSources.some(
+          (s) =>
+            !record(s) ||
+            !keys(s, ["source", "sourceReference"]) ||
+            !string(s.source, 1000) ||
+            !s.source ||
+            !validSourceReference(s.sourceReference, input, s.source),
+        ))
+    )
+      throw new IngestionError("invalid_output")
+    if (item.meaning !== undefined) {
+      const meaning = item.meaning as unknown as IngestionMeaning
+      const sources = [
+        item.source,
+        ...(
+          item.supportingSources as { source: string }[] | undefined ?? []
+        ).map((s) => s.source),
+      ].join("\n")
+      if (
+        (meaning.temporal.precision !== "unknown" &&
+          !meaning.temporal.wording) ||
+        (meaning.temporal.wording &&
+          !sources.includes(meaning.temporal.wording))
+      )
+        throw new IngestionError("invalid_output")
+    }
     ids.add(item.id)
     claims.push(item as unknown as IngestionClaim)
   }
   const unresolvedClaimIds = raw.unresolvedClaimIds as unknown[]
-  if (unresolvedClaimIds.length > claims.length || new Set(unresolvedClaimIds).size !== unresolvedClaimIds.length ||
-      unresolvedClaimIds.some(id => typeof id !== "string" || !ids.has(id)))
+  if (
+    unresolvedClaimIds.length > claims.length ||
+    new Set(unresolvedClaimIds).size !== unresolvedClaimIds.length ||
+    unresolvedClaimIds.some((id) => typeof id !== "string" || !ids.has(id))
+  )
     throw new IngestionError("invalid_output")
   const operations: IngestionOperation[] = []
   for (const item of raw.operations) {
     if (
       !record(item) ||
-      !keys(item, [
-        "claimId",
-        "target",
-        "entryId",
-        "field",
-        "action",
-        "value",
-        "finding",
-      ]) ||
+      !keys(
+        Object.fromEntries(
+          Object.entries(item).filter(([k]) => k !== "supportingClaimIds"),
+        ),
+        ["claimId", "target", "entryId", "field", "action", "value", "finding"],
+      ) ||
       !string(item.claimId, 40) ||
       !string(item.target, 40) ||
       !string(item.entryId, 100) ||
@@ -297,12 +438,12 @@ export function validateIngestionResult(
     if (
       writableScalars.includes(item.target)
         ? item.field !== item.target || item.entryId !== ""
-        : !(
-            collectionFields[item.target] ?? []
-          ).includes(item.field as string) ||
+        : !(collectionFields[item.target] ?? []).includes(
+            item.field as string,
+          ) ||
           !((item.entryId as string).startsWith("new:")
             ? claims.some(
-                anchor =>
+                (anchor) =>
                   anchor.id === (item.entryId as string).slice(4) &&
                   anchor.targets.includes(item.target as IngestionTarget) &&
                   !anchor.question &&
@@ -314,7 +455,8 @@ export function validateIngestionResult(
     if (item.entryId.startsWith("new:") && item.action !== "add")
       throw new IngestionError("invalid_output")
     if (
-      item.field === "current" && item.action !== "remove" &&
+      item.field === "current" &&
+      item.action !== "remove" &&
       !["true", "false"].includes(item.value as string)
     )
       throw new IngestionError("invalid_output")
@@ -328,7 +470,30 @@ export function validateIngestionResult(
       throw new IngestionError("invalid_output")
     if (item.action === "remove" && item.value !== "")
       throw new IngestionError("invalid_output")
-    operations.push({ ...item, approved: false } as IngestionOperation)
+    if (
+      item.supportingClaimIds !== undefined &&
+      (!Array.isArray(item.supportingClaimIds) ||
+        !item.supportingClaimIds.length ||
+        item.supportingClaimIds.length > 12 ||
+        new Set(item.supportingClaimIds).size !==
+          item.supportingClaimIds.length ||
+        !item.supportingClaimIds.includes(claim.id) ||
+        item.supportingClaimIds.some(
+          (id) =>
+            !claims.some(
+              (c) =>
+                c.id === id &&
+                !c.question &&
+                !unresolvedClaimIds.includes(c.id),
+            ),
+        ))
+    )
+      throw new IngestionError("invalid_output")
+    operations.push({
+      ...item,
+      proposedValue: item.value,
+      approved: false,
+    } as IngestionOperation)
   }
   const newGroups = new Map<string, IngestionOperation[]>()
   for (const operation of operations) {
@@ -338,16 +503,44 @@ export function validateIngestionResult(
   }
   for (const group of newGroups.values()) {
     const anchor = group[0].entryId.slice(4)
-    const fields = new Set(group.map(operation => operation.field))
+    const fields = new Set(group.map((operation) => operation.field))
     if (
-      !group.some(operation => operation.claimId === anchor) ||
-      requiredFields(group[0].target).some(field => !fields.has(field))
+      !group.some((operation) => operation.claimId === anchor) ||
+      requiredFields(group[0].target).some((field) => !fields.has(field))
     )
       throw new IngestionError("invalid_output")
   }
-  operations.sort((a, b) => claims.findIndex(c => c.id === a.claimId) - claims.findIndex(c => c.id === b.claimId))
-  return { claims, operations, unverifiedClaimCount: raw.unverifiedClaimCount as number,
-    unresolvedClaimIds: unresolvedClaimIds as string[], unplacedOperationCount: raw.unplacedOperationCount as number }
+  operations.sort(
+    (a, b) =>
+      claims.findIndex((c) => c.id === a.claimId) -
+      claims.findIndex((c) => c.id === b.claimId),
+  )
+  return {
+    claims,
+    operations,
+    unverifiedClaimCount: raw.unverifiedClaimCount as number,
+    unresolvedClaimIds: unresolvedClaimIds as string[],
+    unplacedOperationCount: raw.unplacedOperationCount as number,
+  }
+}
+
+export function validMeaning(value: unknown): value is IngestionMeaning {
+  if (
+    !record(value) ||
+    !keys(value, ["assertion", "intent", "certainty", "temporal"]) ||
+    !record(value.temporal) ||
+    !keys(value.temporal, ["wording", "precision"])
+  )
+    return false
+  return (
+    ["affirmed", "negated", "unknown"].includes(String(value.assertion)) &&
+    ["actual", "aspiration", "unknown"].includes(String(value.intent)) &&
+    ["certain", "uncertain", "unknown"].includes(String(value.certainty)) &&
+    string(value.temporal.wording, 1000) &&
+    ["exact", "approximate", "unknown"].includes(
+      String(value.temporal.precision),
+    )
+  )
 }
 
 export async function ingestProfile(
@@ -374,7 +567,9 @@ export async function ingestProfile(
       },
       body: JSON.stringify({ input, profile: withContactFields(profile) }),
       cache: "no-store",
-      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(55_000)]) : AbortSignal.timeout(55_000),
+      signal: signal
+        ? AbortSignal.any([signal, AbortSignal.timeout(55_000)])
+        : AbortSignal.timeout(55_000),
     })
   } catch (error) {
     throw new IngestionError(
@@ -384,12 +579,16 @@ export async function ingestProfile(
     )
   }
   const raw = await response.json().catch(() => null)
-  const decision = record(raw) ? parseFieldDecision(raw.decision, "professional_information") : null
+  const decision = record(raw)
+    ? parseFieldDecision(raw.decision, "professional_information")
+    : null
   if (decision && decision.outcome.kind !== "accept") {
-    if (!record(raw) || !keys(raw, ["decision"])) throw new IngestionError("invalid_output")
+    if (!record(raw) || !keys(raw, ["decision"]))
+      throw new IngestionError("invalid_output")
     throw new IngestionError("field_decision", decision)
   }
-  if (record(raw) && "decision" in raw && !decision) throw new IngestionError("invalid_output")
+  if (record(raw) && "decision" in raw && !decision)
+    throw new IngestionError("invalid_output")
   if (!response.ok)
     throw new IngestionError(
       record(raw) &&
@@ -411,9 +610,22 @@ export async function ingestProfile(
   if (!decision || !record(raw)) throw new IngestionError("invalid_output")
   const { decision: _decision, ...proposals } = raw
   const result = validateIngestionResult(proposals, input, profile)
-  if (result.claims.some(claim => claim.sourceReference)) {
+  if (
+    result.claims.some(
+      (claim) => claim.sourceReference || claim.supportingSources?.length,
+    )
+  ) {
     const expected = await sourceIdentity(input)
-    if (result.claims.some(claim => claim.sourceReference && claim.sourceReference.sourceId !== expected))
+    if (
+      result.claims.some(
+        (claim) =>
+          (claim.sourceReference &&
+            claim.sourceReference.sourceId !== expected) ||
+          claim.supportingSources?.some(
+            (s) => s.sourceReference?.sourceId !== expected,
+          ),
+      )
+    )
       throw new IngestionError("invalid_output")
   }
   return result
@@ -440,20 +652,45 @@ export function afterValue(
 
 function fieldResult(before: string, op: IngestionOperation): string {
   if (op.field === "current") return op.action === "remove" ? "false" : op.value
-  if (["employmentStatus", ...contactFields.filter(field => field !== "professionalLinks"), "startDate", "endDate", "graduationDate", "date", "proficiency", "credentialId", "url"].includes(op.field)) return op.action === "remove" ? "" : op.value.trim()
+  if (
+    [
+      "employmentStatus",
+      ...contactFields.filter((field) => field !== "professionalLinks"),
+      "startDate",
+      "endDate",
+      "graduationDate",
+      "date",
+      "proficiency",
+      "credentialId",
+      "url",
+    ].includes(op.field)
+  )
+    return op.action === "remove" ? "" : op.value.trim()
   if (op.action === "remove") return ""
   return op.action === "add" && before.trim()
-    ? duplicate(before, op.value) ? before : before.trimEnd() + "\n" + op.value.trim()
+    ? duplicate(before, op.value)
+      ? before
+      : before.trimEnd() + "\n" + op.value.trim()
     : op.value.trim()
 }
 
-export function previewValues(profile: ProfessionalRepository, ops: IngestionOperation[], index: number): {before: string; after: string} {
+export function previewValues(
+  profile: ProfessionalRepository,
+  ops: IngestionOperation[],
+  index: number,
+): { before: string; after: string } {
   const selected = ops[index]
   let before = beforeValue(profile, selected)
-  for (const prior of ops.slice(0,index)) {
-    if (prior.approved && prior.target === selected.target && prior.entryId === selected.entryId && prior.field === selected.field) before = fieldResult(before,prior)
+  for (const prior of ops.slice(0, index)) {
+    if (
+      prior.approved &&
+      prior.target === selected.target &&
+      prior.entryId === selected.entryId &&
+      prior.field === selected.field
+    )
+      before = fieldResult(before, prior)
   }
-  return {before,after:fieldResult(before,selected)}
+  return { before, after: fieldResult(before, selected) }
 }
 
 export function applyIngestion(
@@ -463,7 +700,9 @@ export function applyIngestion(
 ): ProfessionalRepository {
   if (JSON.stringify(profile) !== snapshot || !validProfile(profile))
     throw new IngestionError("stale")
-  const next: ProfessionalRepository = structuredClone(withContactFields(profile))
+  const next: ProfessionalRepository = structuredClone(
+    withContactFields(profile),
+  )
   const created = new Map<string, Record<string, unknown>>()
   const approvedOps = ops.filter((o) => o.approved)
   for (const op of approvedOps) {
@@ -480,15 +719,21 @@ export function applyIngestion(
       !["add", "update", "remove"].includes(op.action)
     )
       throw new IngestionError("invalid_output")
-    if (op.action === "remove" && op.value !== "") throw new IngestionError("invalid_output")
-    if (op.field === "current" && op.action !== "remove" && !["true","false"].includes(op.value)) throw new IngestionError("invalid_output")
+    if (op.action === "remove" && op.value !== "")
+      throw new IngestionError("invalid_output")
+    if (
+      op.field === "current" &&
+      op.action !== "remove" &&
+      !["true", "false"].includes(op.value)
+    )
+      throw new IngestionError("invalid_output")
     if (writableScalars.includes(op.target)) {
       if (op.field !== op.target || op.entryId)
         throw new IngestionError("invalid_output")
       const values = next as unknown as Record<string, string>
       const field = op.target
       const prior = values[field]
-      values[field] = fieldResult(prior,op)
+      values[field] = fieldResult(prior, op)
       if (
         field === "employmentStatus" &&
         values[field] &&
@@ -496,8 +741,7 @@ export function applyIngestion(
       )
         throw new IngestionError("invalid_output")
     } else {
-      const fields =
-        collectionFields[op.target] ?? []
+      const fields = collectionFields[op.target] ?? []
       if (!fields.includes(op.field) || !op.entryId)
         throw new IngestionError("invalid_output")
       let target = entry(
@@ -508,9 +752,10 @@ export function applyIngestion(
       if (op.entryId.startsWith("new:")) {
         const anchorId = op.entryId.slice(4)
         if (
-          !anchorId || op.action !== "add" ||
+          !anchorId ||
+          op.action !== "add" ||
           !approvedOps.some(
-            candidate =>
+            (candidate) =>
               candidate.claimId === anchorId &&
               candidate.target === op.target &&
               candidate.entryId === op.entryId,
@@ -521,25 +766,37 @@ export function applyIngestion(
         if (!created.has(groupKey)) {
           const id = crypto.randomUUID()
           const fresh: Record<string, unknown> = { id }
-          for (const field of fields) fresh[field] = field === "current" ? false : ""
+          for (const field of fields)
+            fresh[field] = field === "current" ? false : ""
           created.set(groupKey, fresh)
-          const collection = next[op.target as keyof ProfessionalRepository] as unknown as Record<string, unknown>[]
+          const collection = next[
+            (op.target as keyof ProfessionalRepository)
+          ] as unknown as Record<string, unknown>[]
           collection.push(fresh)
         }
         target = (created.get(groupKey) as unknown as Record<string, unknown>)
       }
       if (!target) throw new IngestionError("stale")
       const prior = String(target[op.field] ?? "")
-      const result = fieldResult(prior,op)
+      const result = fieldResult(prior, op)
       target[op.field] = op.field === "current" ? result === "true" : result
     }
   }
   for (const [groupKey, fresh] of created) {
     const target = groupKey.split("/")[0]
-    if (requiredFields(target).some(field => !String(fresh[field]).trim())) throw new IngestionError("incomplete")
-    const identity = (item: Record<string, unknown>) => identityFields(target).map(field => normalizedFact(String(item[field]))).join("/")
-    const collection = next[target as keyof ProfessionalRepository] as unknown as Record<string, unknown>[]
-    if (collection.filter(item => identity(item) === identity(fresh)).length > 1) throw new IngestionError("incomplete")
+    if (requiredFields(target).some((field) => !String(fresh[field]).trim()))
+      throw new IngestionError("incomplete")
+    const identity = (item: Record<string, unknown>) =>
+      identityFields(target)
+        .map((field) => normalizedFact(String(item[field])))
+        .join("/")
+    const collection = next[
+      (target as keyof ProfessionalRepository)
+    ] as unknown as Record<string, unknown>[]
+    if (
+      collection.filter((item) => identity(item) === identity(fresh)).length > 1
+    )
+      throw new IngestionError("incomplete")
   }
   if (!validProfile(next)) throw new IngestionError("incomplete")
   return next

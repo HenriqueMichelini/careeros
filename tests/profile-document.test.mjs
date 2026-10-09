@@ -9,7 +9,15 @@ writeFileSync(
   join(temp, "contract.mjs"),
   `export default ${readFileSync(new URL("../internal/profiledocument/contract.json", import.meta.url), "utf8")}`,
 )
-for (const name of ["profileDocument", "profileStorage", "sectionReview"]) {
+for (const name of [
+  "profileDocument",
+  "profileStorage",
+  "sectionReview",
+  "ingestion",
+  "ingestionDocument",
+  "profile",
+  "fieldDecision",
+]) {
   const source = readFileSync(
     new URL(`../src/lib/${name}.ts`, import.meta.url),
     "utf8",
@@ -24,6 +32,9 @@ for (const name of ["profileDocument", "profileStorage", "sectionReview"]) {
         },
       })
       .outputText.replaceAll('"./profileDocument"', '"./profileDocument.mjs"')
+      .replaceAll('"./ingestion"', '"./ingestion.mjs"')
+      .replaceAll('"./profile"', '"./profile.mjs"')
+      .replaceAll('"./fieldDecision"', '"./fieldDecision.mjs"')
       .replaceAll(
         '"../../internal/profiledocument/contract.json"',
         '"./contract.mjs"',
@@ -980,18 +991,411 @@ test("correcting a source fact invalidates a composite rewrite that shares its a
   assert.equal(corrected.evidence.length, 2)
 })
 test("editing a composite source in the same acceptance never reactivates invalid support, regardless of patch order", () => {
- const doc=migrateProfile({skills:"Go",tools:"Docker"},"p")
- const skill=doc.facts.find(f=>f.field==="skills"),tool=doc.facts.find(f=>f.field==="tools")
- for(const f of [skill,tool]){f.approval="approved";f.support="supported";doc.evidence.push({id:f.id+"-e",revision:1,excerpt:String(f.value),origin:"Accepted note",approval:"approved"});doc.links.push({id:f.id+"-l",kind:"supports",state:"active",from:{profileId:"p",id:f.id,revision:1},to:{profileId:"p",id:f.id+"-e",revision:1}})}
- const request=sectionReviewRequest(doc,"skills","en")
- const proposal={profileId:"p",revision:1,section:"skills",summary:"Combined",patches:[{factId:tool.id,revision:1,wording:"Docker",supporting:[{id:tool.id,revision:1}]},{factId:skill.id,revision:1,wording:"Go with Docker",supporting:[{id:skill.id,revision:1},{id:tool.id,revision:1}]}]}
- const accepted=applySectionProposal(doc,request,proposal,{[tool.id]:"Podman"},[])
- assert.equal(accepted.facts.find(f=>f.id===skill.id).support,"invalidated")
+  const doc = migrateProfile({ skills: "Go", tools: "Docker" }, "p")
+  const skill = doc.facts.find((f) => f.field === "skills"),
+    tool = doc.facts.find((f) => f.field === "tools")
+  for (const f of [skill, tool]) {
+    f.approval = "approved"
+    f.support = "supported"
+    doc.evidence.push({
+      id: f.id + "-e",
+      revision: 1,
+      excerpt: String(f.value),
+      origin: "Accepted note",
+      approval: "approved",
+    })
+    doc.links.push({
+      id: f.id + "-l",
+      kind: "supports",
+      state: "active",
+      from: { profileId: "p", id: f.id, revision: 1 },
+      to: { profileId: "p", id: f.id + "-e", revision: 1 },
+    })
+  }
+  const request = sectionReviewRequest(doc, "skills", "en")
+  const proposal = {
+    profileId: "p",
+    revision: 1,
+    section: "skills",
+    summary: "Combined",
+    patches: [
+      {
+        factId: tool.id,
+        revision: 1,
+        wording: "Docker",
+        supporting: [{ id: tool.id, revision: 1 }],
+      },
+      {
+        factId: skill.id,
+        revision: 1,
+        wording: "Go with Docker",
+        supporting: [
+          { id: skill.id, revision: 1 },
+          { id: tool.id, revision: 1 },
+        ],
+      },
+    ],
+  }
+  const accepted = applySectionProposal(
+    doc,
+    request,
+    proposal,
+    { [tool.id]: "Podman" },
+    [],
+  )
+  assert.equal(
+    accepted.facts.find((f) => f.id === skill.id).support,
+    "invalidated",
+  )
 })
 test("deliberate removal accepts an emptied wording field and malformed supporting references fail validation safely", () => {
- const doc=migrateProfile({skills:"Go"},"p"),request=sectionReviewRequest(doc,"skills","en"),fact=request.document.facts[0]
- const proposal={profileId:"p",revision:1,section:"skills",summary:"Clearer",patches:[{factId:fact.id,revision:1,wording:"I use Go",supporting:[{id:fact.id,revision:1}]}]}
- assert.equal(profileView(applySectionProposal(doc,request,proposal,{[fact.id]:""},[fact.id])).skills,"")
- const malformed=structuredClone(proposal);malformed.patches[0].supporting=[null]
- assert.equal(validateSectionProposal(request,malformed),false)
+  const doc = migrateProfile({ skills: "Go" }, "p"),
+    request = sectionReviewRequest(doc, "skills", "en"),
+    fact = request.document.facts[0]
+  const proposal = {
+    profileId: "p",
+    revision: 1,
+    section: "skills",
+    summary: "Clearer",
+    patches: [
+      {
+        factId: fact.id,
+        revision: 1,
+        wording: "I use Go",
+        supporting: [{ id: fact.id, revision: 1 }],
+      },
+    ],
+  }
+  assert.equal(
+    profileView(
+      applySectionProposal(doc, request, proposal, { [fact.id]: "" }, [
+        fact.id,
+      ]),
+    ).skills,
+    "",
+  )
+  const malformed = structuredClone(proposal)
+  malformed.patches[0].supporting = [null]
+  assert.equal(validateSectionProposal(request, malformed), false)
+})
+
+const { applyIngestionDocument } = await import(
+  join(temp, "ingestionDocument.mjs")
+)
+const ingestionClaim = (id, source, targets = ["skills"]) => ({
+  id,
+  source,
+  text: source,
+  targets,
+  question: "",
+})
+const ingestionOp = (patch = {}) => ({
+  claimId: "c1",
+  target: "skills",
+  entryId: "",
+  field: "skills",
+  action: "add",
+  value: "TypeScript",
+  finding: "addition",
+  approved: true,
+  ...patch,
+})
+const ingestionResult = (claims, operations) => ({
+  claims,
+  operations,
+  unverifiedClaimCount: 0,
+  unresolvedClaimIds: [],
+  unplacedOperationCount: 0,
+})
+test("accepted ingestion keeps only approved excerpts through canonical storage reload", async () => {
+  const doc = migrateProfile({ skills: "" }, "ingested")
+  const result = ingestionResult(
+    [
+      ingestionClaim("c1", "I use TypeScript."),
+      ingestionClaim("c2", "I use Java."),
+    ],
+    [
+      ingestionOp(),
+      ingestionOp({ claimId: "c2", value: "Java", approved: false }),
+    ],
+  )
+  const next = applyIngestionDocument(
+    doc,
+    doc,
+    "I use TypeScript. I use Java. PRIVATE PASTE",
+    result,
+  )
+  assert.equal(validateProfileDocument(next), true)
+  assert.equal(profileView(next).skills, "TypeScript")
+  assert.deepEqual(
+    next.evidence.map((e) => e.excerpt),
+    ["I use TypeScript."],
+  )
+  const fact = next.facts.find((f) => f.field === "skills")
+  assert.equal(fact.kind, "statement")
+  assert.equal(fact.approval, "approved")
+  assert.equal(fact.support, "supported")
+  assert.equal(fact.normalization.canonical, "TypeScript")
+  const saved = storage({ careeros_profile_v2: JSON.stringify(doc) })
+  await saveProfile(saved, doc, next, lock)
+  const reloaded = await openProfile(saved, lock)
+  assert.deepEqual(reloaded.evidence, next.evidence)
+  assert.equal(JSON.stringify(reloaded).includes("PRIVATE PASTE"), false)
+})
+test("composite accepted facts keep every supporting excerpt and reject partial dependencies", () => {
+  const doc = migrateProfile({ skills: "" }, "composite")
+  const result = ingestionResult(
+    [
+      ingestionClaim("c1", "I use TypeScript."),
+      ingestionClaim("c2", "I use JavaScript."),
+    ],
+    [
+      ingestionOp({
+        value: "TypeScript and JavaScript",
+        supportingClaimIds: ["c1", "c2"],
+      }),
+      ingestionOp({
+        claimId: "c2",
+        target: "tools",
+        field: "tools",
+        value: "JavaScript",
+      }),
+    ],
+  )
+  result.claims[1].targets.push("tools")
+  const next = applyIngestionDocument(
+    doc,
+    doc,
+    "I use TypeScript. I use JavaScript.",
+    result,
+  )
+  const fact = next.facts.find((f) => f.field === "skills")
+  assert.equal(
+    next.links.filter((l) => l.from.id === fact.id && l.state === "active")
+      .length,
+    2,
+  )
+  assert.deepEqual(
+    next.evidence
+      .filter((e) =>
+        next.links.some((l) => l.from.id === fact.id && l.to.id === e.id),
+      )
+      .map((e) => e.excerpt),
+    ["I use TypeScript.", "I use JavaScript."],
+  )
+  assert.throws(
+    () =>
+      applyIngestionDocument(doc, doc, "I use TypeScript. I use JavaScript.", {
+        ...result,
+        operations: [result.operations[0]],
+      }),
+    /invalid_output/,
+  )
+})
+
+test("edited ingestion is user authored and does not persist the proposed evidence", () => {
+  const doc = migrateProfile({ skills: "" }, "edit-ingestion")
+  const result = ingestionResult([ingestionClaim("c1", "I use TypeScript.")], [
+    ingestionOp({ value: "I hope to learn Go", proposedValue: "TypeScript" }),
+  ])
+  const next = applyIngestionDocument(doc, doc, "I use TypeScript.", result)
+  const fact = next.facts.find((f) => f.field === "skills")
+  assert.deepEqual(fact.origin, { kind: "manual_edit", original: "user" })
+  assert.equal(fact.support, "unsupported")
+  assert.equal(next.evidence.length, 0)
+  assert.equal(fact.intent, "unknown")
+})
+test("generated ingestion refuses protected numbers and technologies absent from its sources", () => {
+  const doc = migrateProfile({ skills: "" }, "protected-ingestion")
+  for (const value of [
+    "TypeScript and Kubernetes",
+    "TypeScript for 20 years",
+    "JavaScript",
+  ]) {
+    assert.throws(
+      () =>
+        applyIngestionDocument(
+          doc,
+          doc,
+          "I use TypeScript.",
+          ingestionResult([ingestionClaim("c1", "I use TypeScript.")], [
+            ingestionOp({ value }),
+          ]),
+        ),
+      /invalid_output/,
+    )
+  }
+})
+test("distinct accepted role stints keep ownership, approximate dates and negation without cross-role support", () => {
+  const doc = migrateProfile({ skills: "" }, "role-ingestion")
+  const input =
+    "Acme Engineer around 2020; did not use Java.\nAcme Engineer 2024; used TypeScript."
+  const claims = [
+    ingestionClaim("c1", "Acme Engineer around 2020; did not use Java.", [
+      "experience",
+    ]),
+    ingestionClaim("c2", "Acme Engineer 2024; used TypeScript.", [
+      "experience",
+    ]),
+  ]
+  claims[0].meaning = {
+    assertion: "negated",
+    intent: "actual",
+    certainty: "certain",
+    temporal: { wording: "around 2020", precision: "approximate" },
+  }
+  claims[1].meaning = {
+    assertion: "affirmed",
+    intent: "actual",
+    certainty: "certain",
+    temporal: { wording: "2024", precision: "exact" },
+  }
+  const operations = claims.flatMap((c, index) =>
+    Object.entries({
+      company: "Acme",
+      title: "Engineer",
+      startDate: index ? "2024" : "around 2020",
+      responsibilities: index ? "Used TypeScript" : "Did not use Java",
+    }).map(([field, value]) =>
+      ingestionOp({
+        claimId: c.id,
+        target: "experience",
+        entryId: "new:" + c.id,
+        field,
+        value,
+      }),
+    ),
+  )
+  const result = ingestionResult(claims, operations)
+  const next = applyIngestionDocument(doc, doc, input, result)
+  assert.equal(profileView(next).experience.length, 2)
+  for (const [i, entity] of next.entities.entries()) {
+    const fact = next.facts.find(
+      (f) => f.owner.id === entity.id && f.field === "responsibilities",
+    )
+    assert.equal(fact.assertion, i ? "affirmed" : "negated")
+    assert.equal(fact.temporal.precision, i ? "exact" : "approximate")
+    assert.ok(
+      next.links.some(
+        (l) =>
+          l.from.id === fact.id &&
+          l.kind === "role_context" &&
+          l.to.id === entity.id,
+      ),
+    )
+    const evidenceIds = next.links
+      .filter((l) => l.from.id === fact.id && l.kind === "supports")
+      .map((l) => l.to.id)
+    assert.deepEqual(
+      next.evidence
+        .filter((e) => evidenceIds.includes(e.id))
+        .map((e) => e.excerpt),
+      [claims[i].source],
+    )
+  }
+  // Even matching employers and role titles cannot justify borrowing another stint's evidence.
+  result.operations[3].supportingClaimIds = ["c1", "c2"]
+  claims[1].meaning = claims[0].meaning
+  assert.throws(
+    () => applyIngestionDocument(doc, doc, input, result),
+    /invalid_output/,
+  )
+})
+test("all structured ingestion destinations commit together", () => {
+  const doc = migrateProfile({ skills: "" }, "all-destinations")
+  const source =
+    "Ada ada@example.test +55 11 5555 São Paulo https://example.test/ada Go BSc North 2021 Cloud Guild Portuguese Fluent Aster Engineer Harbor"
+  const claims = [
+    ingestionClaim("c1", source, [
+      "fullName",
+      "email",
+      "phone",
+      "location",
+      "professionalLinks",
+      "education",
+      "certifications",
+      "languages",
+      "experience",
+      "projects",
+      "skills",
+    ]),
+  ]
+  const ops = [
+    ...Object.entries({
+      fullName: "Ada",
+      email: "ada@example.test",
+      phone: "+55 11 5555",
+      location: "São Paulo",
+      professionalLinks: "https://example.test/ada",
+      skills: "Go",
+    }).map(([target, value]) =>
+      ingestionOp({
+        target,
+        field: target,
+        action: target === "skills" ? "add" : "update",
+        value,
+        proposedValue: value,
+      }),
+    ),
+    ...Object.entries({
+      education: {
+        degree: "BSc",
+        institution: "North",
+        graduationDate: "2021",
+      },
+      certifications: { name: "Cloud", issuer: "Guild" },
+      languages: { name: "Portuguese", proficiency: "Fluent" },
+      experience: { company: "Aster", title: "Engineer" },
+      projects: { name: "Harbor" },
+    }).flatMap(([target, fields]) =>
+      Object.entries(fields).map(([field, value]) =>
+        ingestionOp({
+          target,
+          entryId: "new:c1",
+          field,
+          value,
+          proposedValue: value,
+        }),
+      ),
+    ),
+  ]
+  ops[0].value = "Ada Reviewed"
+  const next = applyIngestionDocument(
+    doc,
+    doc,
+    source,
+    ingestionResult(claims, ops),
+  )
+  assert.equal(validateProfileDocument(next), true)
+  assert.equal(profileView(next).education[0].institution, "North")
+  assert.equal(profileView(next).experience[0].company, "Aster")
+  assert.equal(profileView(next).languages[0].proficiency, "Fluent")
+})
+test("accepted alias normalization retains observed spelling and remains conservative", () => {
+  const doc = migrateProfile({ skills: "" }, "alias-ingestion")
+  const next = applyIngestionDocument(
+    doc,
+    doc,
+    "I use Javascript.",
+    ingestionResult([ingestionClaim("c1", "I use Javascript.")], [
+      ingestionOp({ value: "JavaScript" }),
+    ]),
+  )
+  assert.deepEqual(next.facts.find((f) => f.field === "skills").normalization, {
+    observed: "Javascript",
+    canonical: "JavaScript",
+    policy: "exact-alias-v1",
+  })
+})
+test("ingestion preserves aspirations and rejects metadata-only stale acceptance", () => {
+  const doc = migrateProfile({skills:""},"aspiration-ingestion")
+  const source = "I hope to learn Go, perhaps around 2027."
+  const claim = ingestionClaim("c1",source)
+  claim.meaning = {assertion:"affirmed",intent:"aspiration",certainty:"uncertain",temporal:{wording:"around 2027",precision:"approximate"}}
+  const result = ingestionResult([claim],[ingestionOp({value:"Hope to learn Go, perhaps around 2027"})])
+  const next = applyIngestionDocument(doc,doc,source,result)
+  assert.equal(next.facts.find(f => f.field === "skills").intent,"aspiration")
+  assert.equal(next.facts.find(f => f.field === "skills").certainty,"uncertain")
+  const changed = editProfile(doc,{type:"fact",id:doc.facts.find(f => f.field === "skills").id,patch:{intent:"actual"}})
+  assert.throws(() => applyIngestionDocument(changed,doc,source,result), /stale/)
 })
