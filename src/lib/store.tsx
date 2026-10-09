@@ -10,6 +10,8 @@ import {
 } from "react"
 import { ProfessionalRepository, GeneratedMaterials } from "./types"
 import {
+  editProfile,
+  type ProfileEdit,
   emptyProfileView,
   migrateProfile,
   profileView,
@@ -142,6 +144,8 @@ function loadCvLanguage(): Locale {
 const StoreContext = createContext<{
   state: AppState
   dispatch: (action: Action) => Promise<boolean>
+  profileDocument: ProfileDocument | null
+  editCanonicalProfile: (edit: ProfileEdit) => Promise<boolean>
   saveRepository: (
     repo: ProfessionalRepository,
     origin?: ProfileOrigin,
@@ -149,6 +153,9 @@ const StoreContext = createContext<{
 } | null>(null)
 
 export function StoreProvider({ children }: { children: ReactNode }) {
+  const [profileDocument, setProfileDocument] =
+    useState<ProfileDocument | null>(null)
+  const optimisticDocument = useRef<ProfileDocument | null>(null)
   const documentRef = useRef<ProfileDocument | null>(null)
   const queue = useRef<Promise<boolean>>(Promise.resolve(true))
   const failed = useRef(false)
@@ -177,6 +184,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       .then(() => openProfile(localStorage))
       .then((doc) => {
         if (!active) return
+        optimisticDocument.current = doc
+        setProfileDocument(doc)
         documentRef.current = doc
         draft.current = profileView(doc)
         rawDispatch({ type: "SET_REPO", payload: draft.current })
@@ -188,9 +197,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         try {
           const raw = localStorage.getItem(LEGACY_KEY)
           if (localStorage.getItem(PROFILE_KEY) === null && raw !== null) {
-            draft.current = profileView(
-              migrateProfile(JSON.parse(raw), crypto.randomUUID()),
-            )
+            const recovered = migrateProfile(JSON.parse(raw), crypto.randomUUID())
+            optimisticDocument.current = recovered
+            setProfileDocument(recovered)
+            draft.current = profileView(recovered)
             rawDispatch({ type: "SET_REPO", payload: draft.current })
           }
         } catch {
@@ -220,18 +230,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const saveRepository = useCallback(
-    (
-      repo: ProfessionalRepository,
-      origin: ProfileOrigin = { kind: "manual_edit", original: "user" },
-    ) => {
-      draft.current = repo
-      rawDispatch({ type: "SET_REPO", payload: repo })
+  const updateCanonical = useCallback(
+    (build: (doc: ProfileDocument) => ProfileDocument) => {
+      const expected = optimisticDocument.current
+      if (!expected) return Promise.resolve(false)
+      let candidate: ProfileDocument
+      try {
+        candidate = build(expected)
+      } catch {
+        setProfileError("validation")
+        return Promise.resolve(false)
+      }
+      optimisticDocument.current = candidate
+      setProfileDocument(candidate)
+      draft.current = profileView(candidate)
+      rawDispatch({ type: "SET_REPO", payload: draft.current })
       const saving = queue.current.then(async () => {
         if (failed.current || !documentRef.current) return false
         try {
-          const expected = documentRef.current
-          const candidate = replaceProfileView(expected, repo, origin)
           await saveProfile(localStorage, expected, candidate)
           documentRef.current = candidate
           return true
@@ -248,6 +264,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     [],
   )
+  const editCanonicalProfile = useCallback(
+    (edit: ProfileEdit) => updateCanonical((doc) => editProfile(doc, edit)),
+    [updateCanonical],
+  )
+  const saveRepository = useCallback(
+    (
+      repo: ProfessionalRepository,
+      origin: ProfileOrigin = { kind: "manual_edit", original: "user" },
+    ) => updateCanonical((doc) => replaceProfileView(doc, repo, origin)),
+    [updateCanonical],
+  )
   const dispatch = useCallback(
     async (action: Action) => {
       if (action.type === "SET_REPO") return saveRepository(action.payload)
@@ -258,7 +285,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   )
 
   function downloadRecovery() {
-    const data: Record<string, unknown> = { unsavedProfile: draft.current }
+    const data: Record<string, unknown> = {
+      unsavedProfile: draft.current,
+      unsavedCanonicalProfile: optimisticDocument.current,
+    }
     for (const key of [LEGACY_KEY, PROFILE_KEY]) {
       try {
         data[key] = localStorage.getItem(key)
@@ -295,7 +325,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   return (
     <StoreContext.Provider
-      value={{ state: { ...state, profileError }, dispatch, saveRepository }}
+      value={{
+        state: { ...state, profileError },
+        dispatch,
+        saveRepository,
+        profileDocument,
+        editCanonicalProfile,
+      }}
     >
       {profileError && (
         <div
