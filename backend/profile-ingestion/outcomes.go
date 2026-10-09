@@ -39,13 +39,15 @@ type comparisonFact struct {
 	Evidence  []profiledocument.Evidence `json:"acceptedEvidence"`
 }
 type reconciliationContext struct {
-	view       *preprocessing.View
-	document   *profiledocument.Document
-	candidates []comparisonFact
-	proposed   []claimOutcome
-	outcomes   []claimOutcome
-	skipped    []skippedClaim
-	rejected   map[string]bool
+	extractionInstruction string
+	comparisonInstruction string
+	view                  *preprocessing.View
+	document              *profiledocument.Document
+	candidates            []comparisonFact
+	proposed              []claimOutcome
+	outcomes              []claimOutcome
+	skipped               []skippedClaim
+	rejected              map[string]bool
 }
 
 var outcomeKinds = []string{"change", "exact_duplicate", "overlap", "additional_support", "contradiction", "correction", "clarification", "unsupported", "unresolved"}

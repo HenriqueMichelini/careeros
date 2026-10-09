@@ -1,3 +1,4 @@
+import { IngestionClarification } from "../components/IngestionClarification"
 import {
   ClaimOutcomeDetails,
   IngestionCoverageNotice,
@@ -33,6 +34,7 @@ import {
   ingestionMaxBytes,
   previewValues,
   ingestProfile,
+  mergeClarification,
   IngestionError,
   IngestionOperation,
   IngestionResult,
@@ -870,6 +872,62 @@ export default function RepositoryPage() {
         ? t("field.request_rephrasing")
         : "")
 
+  function cancelClarification() {
+    ingestionRequest.current++
+    ingestionController.current?.abort()
+    setIsIngesting(false)
+  }
+
+  async function answerClarification(claimId: string, answer: string) {
+    if (
+      !ingestionResult ||
+      !ingestionSnapshot ||
+      isIngesting ||
+      state.profileError ||
+      ingestionRevision !== profileDocument?.revision
+    )
+      throw new IngestionError("stale")
+    const pending = ingestionResult
+    const claim = pending.claims.find((c) => c.id === claimId)!
+    const snapshot = ingestionSnapshot
+    const requestId = ++ingestionRequest.current
+    const controller = new AbortController()
+    ingestionController.current = controller
+    setIsIngesting(true)
+    try {
+      const revised = await ingestProfile(
+        ingestionText,
+        repo,
+        state.apiKey,
+        controller.signal,
+        state.typesafeKey,
+        snapshot,
+        undefined,
+        { claim, answer },
+      )
+      if (ingestionRequest.current !== requestId)
+        throw new IngestionError("cancelled")
+      if (currentReviewContext.current.revision !== snapshot.revision)
+        throw new IngestionError("stale")
+      setIngestionResult(
+        mergeClarification(
+          pending,
+          claimId,
+          revised,
+          ingestionText,
+          repo,
+          snapshot,
+        ),
+      )
+    } catch (error) {
+      if (ingestionRequest.current !== requestId)
+        throw new IngestionError("cancelled")
+      throw error
+    } finally {
+      if (ingestionRequest.current === requestId) setIsIngesting(false)
+    }
+  }
+
   function editOperation(index: number, patch: Partial<IngestionOperation>) {
     ingestionRequest.current += 1
     setIngestionResult(
@@ -1612,23 +1670,20 @@ export default function RepositoryPage() {
                     )}
                 </div>
               )}
-              {(continuation || ingestionError) &&
-                portionBytes > 200 && (
-                  <button
-                    type="button"
-                    disabled={isIngesting || !!ingestionResult}
-                    className="border px-3 py-2 mt-2"
-                    onClick={() => {
-                      resetContinuation()
-                      setPortionBytes(
-                        Math.max(200, Math.floor(portionBytes / 2)),
-                      )
-                      setIngestionError("")
-                    }}
-                  >
-                    {t("repo.ingestPortionSmaller")}
-                  </button>
-                )}
+              {(continuation || ingestionError) && portionBytes > 200 && (
+                <button
+                  type="button"
+                  disabled={isIngesting || !!ingestionResult}
+                  className="border px-3 py-2 mt-2"
+                  onClick={() => {
+                    resetContinuation()
+                    setPortionBytes(Math.max(200, Math.floor(portionBytes / 2)))
+                    setIngestionError("")
+                  }}
+                >
+                  {t("repo.ingestPortionSmaller")}
+                </button>
+              )}
               {isIngesting && (
                 <p role="status" className="text-sm mt-3">
                   {t("field.working")}
@@ -1707,11 +1762,37 @@ export default function RepositoryPage() {
                       >
                         {t("repo.ingestSource")}: “{claim.source}”
                       </p>
-                      {claim.question && (
-                        <p className="text-sm mt-2" role="note">
-                          {t("repo.ingestClarify")}: {claim.question}
-                        </p>
+                      {(claim.question ||
+                        ingestionResult.outcomes?.some(
+                          (o) =>
+                            o.claimId === claim.id &&
+                            [
+                              "clarification",
+                              "contradiction",
+                              "correction",
+                            ].includes(o.kind),
+                        )) && (
+                        <IngestionClarification
+                          claimId={claim.id}
+                          question={claim.question}
+                          busy={isIngesting}
+                          disabled={!!state.profileError}
+                          onAnswer={(answer) =>
+                            answerClarification(claim.id, answer)
+                          }
+                          onCancel={cancelClarification}
+                        />
                       )}
+                      {claim.supportingSources
+                        ?.filter((s) => s.origin === "clarification_answer")
+                        .map((s, i) => (
+                          <blockquote
+                            key={i}
+                            className="mt-2 border-l pl-2 text-xs whitespace-pre-wrap break-words"
+                          >
+                            {t("repo.clarificationEvidence")}: “{s.source}”
+                          </blockquote>
+                        ))}
                       {unresolved && (
                         <p className="text-sm mt-2" role="note">
                           {t("repo.ingestUnresolvedClaim")}
@@ -1725,7 +1806,7 @@ export default function RepositoryPage() {
                         claims={ingestionResult.claims}
                       />
                       {indexed.length > 0 && (
-                        <>
+                        <fieldset disabled={isIngesting} className="min-w-0">
                           <div className="flex flex-wrap gap-2 mt-3">
                             <button
                               type="button"
@@ -1785,7 +1866,10 @@ export default function RepositoryPage() {
                                   )
                                   return source
                                     ? [
-                                        { source: source.source },
+                                        {
+                                          source: source.source,
+                                          origin: undefined,
+                                        },
                                         ...(source.supportingSources ?? []),
                                       ]
                                     : []
@@ -1795,7 +1879,12 @@ export default function RepositoryPage() {
                                     key={i}
                                     className="mt-2 border-l-2 pl-2 text-xs whitespace-pre-wrap break-words"
                                   >
-                                    {t("repo.ingestSource")}: “{source.source}”
+                                    {t(
+                                      source.origin === "clarification_answer"
+                                        ? "repo.clarificationEvidence"
+                                        : "repo.ingestSource",
+                                    )}
+                                    : “{source.source}”
                                   </blockquote>
                                 ))}
                               <p className="mt-2 text-xs break-words">
@@ -1874,7 +1963,7 @@ export default function RepositoryPage() {
                               )}
                             </div>
                           ))}
-                        </>
+                        </fieldset>
                       )}
                     </article>
                   )
@@ -1884,6 +1973,7 @@ export default function RepositoryPage() {
                     type="button"
                     onClick={confirmIngestion}
                     disabled={
+                      isIngesting ||
                       !ingestionResult.operations.some((op) => op.approved)
                     }
                     className="px-4 py-2 text-sm disabled:opacity-50"

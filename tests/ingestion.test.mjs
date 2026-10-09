@@ -532,3 +532,15 @@ test("deliberate continuation binds source regions and capacity to the exact sub
     }
   } finally { globalThis.fetch=originalFetch }
 })
+
+test("clarification replaces only its claim, resets approval, and preserves unrelated edits", async () => {
+  const { mergeClarification } = await import(output)
+  const pending = review({claims:[claim({id:"amb",source:"It used Java",text:"Unknown owner",targets:[],question:"Who used Java?"}),claim()], operations:[op({value:"Edited TypeScript",proposedValue:"TypeScript"})]})
+  const revised = review({claims:[claim({id:"amb",source:"It used Java",text:"I used Java",supportingSources:[{source:"I used Java at Acme",origin:"clarification_answer"}]})],operations:[op({claimId:"amb",value:"Java"})]})
+  const merged = mergeClarification(pending, "amb", revised, "It used Java\nTypeScript", profile())
+  assert.equal(merged.operations[0].value,"Edited TypeScript")
+  assert.equal(merged.operations[0].approved,true)
+  assert.equal(merged.operations[1].approved,false)
+  assert.equal(merged.claims[0].supportingSources[0].origin,"clarification_answer")
+  assert.equal(pending.claims[0].question,"Who used Java?")
+})

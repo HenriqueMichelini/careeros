@@ -31,6 +31,7 @@ export interface IngestionClaim {
   supportingSources?: {
     source: string
     sourceReference?: IngestionSourceReference
+    origin?: "clarification_answer"
   }[]
   sourceReference?: IngestionSourceReference
   id: string
@@ -445,10 +446,13 @@ export function validateIngestionResult(
         item.supportingSources.some(
           (s) =>
             !record(s) ||
-            !keys(s, ["source", "sourceReference"]) ||
+            !(s.origin === "clarification_answer"
+              ? keys(s, ["source", "origin"])
+              : keys(s, ["source", "sourceReference"])) ||
             !string(s.source, 1000) ||
             !s.source ||
-            !validSourceReference(s.sourceReference, input, s.source),
+            (s.origin !== "clarification_answer" &&
+              !validSourceReference(s.sourceReference, input, s.source)),
         ))
     )
       throw new IngestionError("invalid_output")
@@ -927,6 +931,10 @@ export async function ingestProfile(
   typesafeKey = "",
   document?: ProfileDocument,
   portion?: IngestionPortionRequest,
+  clarification?: {
+    claim: IngestionClaim
+    answer: string
+  },
 ): Promise<IngestionResult> {
   if (
     !input.trim() ||
@@ -948,6 +956,7 @@ export async function ingestProfile(
         profile: withContactFields(profile),
         ...(document ? { document } : {}),
         ...(portion ? { portion } : {}),
+        ...(clarification ? { clarification } : {}),
       }),
       cache: "no-store",
       signal: signal
@@ -994,6 +1003,34 @@ export async function ingestProfile(
   const { decision: _decision, ...proposals } = raw
   if (!("outcomes" in proposals)) throw new IngestionError("invalid_output")
   const result = validateIngestionResult(proposals, input, profile, document)
+  if (clarification) {
+    const c = result.claims[0]
+    const allowed = [...(clarification.claim.supportingSources ?? [])]
+    if (
+      !allowed.some(
+        (s) =>
+          s.origin === "clarification_answer" &&
+          s.source === clarification.answer,
+      )
+    )
+      allowed.push({
+        source: clarification.answer,
+        origin: "clarification_answer",
+      })
+    if (
+      result.claims.length !== 1 ||
+      c.id !== clarification.claim.id ||
+      c.source !== clarification.claim.source ||
+      JSON.stringify(c.sourceReference) !==
+        JSON.stringify(clarification.claim.sourceReference) ||
+      JSON.stringify(c.supportingSources) !== JSON.stringify(allowed)
+    )
+      throw new IngestionError("invalid_output")
+  } else if (
+    result.claims.some((c) => c.supportingSources?.some((s) => s.origin))
+  )
+    throw new IngestionError("invalid_output")
+
   if (
     result.claims.some(
       (claim) => claim.sourceReference || claim.supportingSources?.length,
@@ -1006,7 +1043,9 @@ export async function ingestProfile(
           (claim.sourceReference &&
             claim.sourceReference.sourceId !== expected) ||
           claim.supportingSources?.some(
-            (s) => s.sourceReference?.sourceId !== expected,
+            (s) =>
+              s.origin !== "clarification_answer" &&
+              s.sourceReference?.sourceId !== expected,
           ),
       )
     )
@@ -1253,4 +1292,82 @@ export function applyIngestion(
   }
   if (!validProfile(next)) throw new IngestionError("incomplete")
   return next
+}
+
+// Replace the focused revision without losing another claim's edited wording or
+// approval. Dependent proposals require renewed review when their support changes.
+export function mergeClarification(
+  pending: IngestionResult,
+  claimId: string,
+  revised: IngestionResult,
+  input: string,
+  profile: ProfessionalRepository,
+  document?: ProfileDocument,
+): IngestionResult {
+  if (
+    !pending.claims.some((c) => c.id === claimId) ||
+    revised.claims.length !== 1 ||
+    revised.claims[0].id !== claimId
+  )
+    throw new IngestionError("invalid_output")
+  const dependent = new Set(
+    pending.operations
+      .filter(
+        (o) => o.claimId !== claimId && o.supportingClaimIds?.includes(claimId),
+      )
+      .map((o) => o.claimId),
+  )
+  const operations = [
+    ...pending.operations.filter(
+      (o) => o.claimId !== claimId && !dependent.has(o.claimId),
+    ),
+    ...revised.operations.map((o) => ({ ...o, approved: false })),
+  ]
+  const outcomes = [
+    ...(pending.outcomes ?? [])
+      .filter((o) => o.claimId !== claimId)
+      .map((o) =>
+        dependent.has(o.claimId)
+          ? {
+              ...o,
+              kind: "unresolved" as const,
+              reason: "unresolved",
+              relatedFacts: [],
+              relatedClaimIds: [],
+            }
+          : o,
+      ),
+    ...(revised.outcomes ?? []),
+  ].map((o) => ({
+    ...o,
+    operationIndexes: operations.flatMap((op, i) =>
+      op.claimId === o.claimId ? [i] : [],
+    ),
+  }))
+  const merged: IngestionResult = {
+    ...pending,
+    claims: pending.claims.map((c) =>
+      c.id === claimId ? revised.claims[0] : c,
+    ),
+    operations,
+    outcomes,
+    unresolvedClaimIds: outcomes
+      .filter((o) => o.kind === "unresolved")
+      .map((o) => o.claimId),
+  }
+  validateIngestionResult(
+    {
+      ...merged,
+      operations: operations.map(
+        ({ approved: _approved, proposedValue, ...o }) => ({
+          ...o,
+          value: proposedValue ?? o.value,
+        }),
+      ),
+    },
+    input,
+    profile,
+    document,
+  )
+  return merged
 }
