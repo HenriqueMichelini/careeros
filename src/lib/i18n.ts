@@ -316,6 +316,7 @@ const messages = {
       "Your pasted text and unapplied suggestions will be removed.",
     "repo.keepEditing": "Keep editing",
     "repo.ingestProposals": "Suggested Profile changes",
+    "repo.ingestTerminology": "Proposed exact terminology",
     "repo.ingestReviewNote":
       "Nothing is selected. Review the source and each before/after value, then approve the changes you want.",
     "repo.ingestSource": "Source",
@@ -962,6 +963,7 @@ const messages = {
       "O texto colado e as sugestões não aplicadas serão removidos.",
     "repo.keepEditing": "Continuar editando",
     "repo.ingestProposals": "Alterações sugeridas no Perfil",
+    "repo.ingestTerminology": "Terminologia exata proposta",
     "repo.ingestReviewNote":
       "Nada está selecionado. Confira a fonte e os valores antes/depois e aprove as alterações desejadas.",
     "repo.ingestSource": "Fonte",

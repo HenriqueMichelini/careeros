@@ -339,14 +339,14 @@ func TestInputAndErrorsAreNoStore(t *testing.T) {
 	}
 }
 
-func TestProjectionMatchesAcrossSectionsWithoutLeakingDates(t *testing.T) {
+func TestProjectionMatchesAcrossSectionsWithIdentityDates(t *testing.T) {
 	p := profile()
 	p.Tools = "React"
 	p.Experience[0].StartDate = "SECRET START DATE"
 	p.Experience[0].EndDate = "SECRET END DATE"
 	projected := projection([]claim{{ID: "c1", Source: "Improved conversion by 20% with React", Targets: []string{"experience", "skills"}}}, p)
 	encoded := string(mustJSON(projected))
-	if !strings.Contains(encoded, "related_tools") || strings.Contains(encoded, "SECRET START DATE") || strings.Contains(encoded, "SECRET SALARY") || strings.Contains(encoded, "SECRET CITY") {
+	if !strings.Contains(encoded, "related_tools") || !strings.Contains(encoded, "SECRET START DATE") || strings.Contains(encoded, "SECRET SALARY") || strings.Contains(encoded, "SECRET CITY") {
 		t.Fatal(encoded)
 	}
 	if mentionsDate("Won a 2023 award") {

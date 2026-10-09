@@ -1,3 +1,5 @@
+import { ingestionNormalization } from "../lib/ingestionDocument"
+import type { ProfileDocument } from "../lib/profileDocument"
 import { profileFieldKey } from "../lib/profileLabels"
 import FactDetails from "../components/FactDetails"
 import { type EntityKind, type Json } from "../lib/profileDocument"
@@ -26,7 +28,6 @@ import {
   ingestionInputBytes,
   ingestionMaxBytes,
   previewValues,
-  applyIngestion,
   ingestProfile,
   IngestionError,
   IngestionOperation,
@@ -124,7 +125,7 @@ function operationEntryLabel(
   if (!op.entryId) return ""
   const fields =
     op.target === "experience"
-      ? ["company", "title"]
+      ? ["company", "title", "startDate", "endDate"]
       : op.target === "education"
         ? ["degree", "institution"]
         : op.target === "certifications"
@@ -600,7 +601,7 @@ export default function RepositoryPage() {
   const {
     state,
     dispatch,
-    saveRepository,
+    applyIngestionProposal,
     editCanonicalProfile,
     applyProfileProposal,
     profileDocument,
@@ -621,7 +622,8 @@ export default function RepositoryPage() {
   const [ingestionRevision, setIngestionRevision] = useState<number | null>(
     null,
   )
-  const [ingestionSnapshot, setIngestionSnapshot] = useState("")
+  const [ingestionSnapshot, setIngestionSnapshot] =
+    useState<ProfileDocument | null>(null)
   const [ingestionError, setIngestionError] = useState("")
   const [ingestionDecision, setIngestionDecision] =
     useState<FieldDecision | null>(null)
@@ -712,7 +714,7 @@ export default function RepositoryPage() {
     setRevisionRequiredFor(null)
     setIngestionText("")
     setIngestionResult(null)
-    setIngestionSnapshot("")
+    setIngestionSnapshot(null)
     setIngestionError("")
     setIngestionDecision(null)
   }
@@ -748,7 +750,7 @@ export default function RepositoryPage() {
     const controller = new AbortController()
     ingestionController.current = controller
     setIsIngesting(true)
-    const snapshot = JSON.stringify(repo)
+    const snapshot = profileDocument ? structuredClone(profileDocument) : null
     try {
       const proposals = await ingestProfile(
         ingestionText,
@@ -835,15 +837,12 @@ export default function RepositoryPage() {
     try {
       if (ingestionRevision !== profileDocument?.revision)
         throw new IngestionError("stale")
-      const updated = applyIngestion(
-        repo,
+      if (!ingestionSnapshot) throw new IngestionError("stale")
+      const saved = await applyIngestionProposal(
         ingestionSnapshot,
-        ingestionResult.operations,
+        ingestionText,
+        ingestionResult,
       )
-      const saved = await saveRepository(updated, {
-        kind: "accepted_proposal",
-        original: "unknown",
-      })
       if (saved && ingestionRequest.current === applyingRequest)
         discardIngestion()
     } catch (error) {
@@ -1132,7 +1131,35 @@ export default function RepositoryPage() {
                 </label>
                 <details>
                   <summary>{t("repo.sectionSources")}</summary>
-                  {Array.from(new Set(sources.flatMap(f => [f.owner.id, ...f.context.map(c => c.id)]))).filter(id => id !== sectionProposal.request.document.id).map(id => <p key={id} className="my-2 text-sm break-words">{sectionProposal.request.document.facts.filter(f => f.owner.id === id && ["company", "title", "name", "startDate", "endDate", "location"].includes(f.field)).map(f => String(f.value)).filter(Boolean).join(" · ")}</p>)}
+                  {Array.from(
+                    new Set(
+                      sources.flatMap((f) => [
+                        f.owner.id,
+                        ...f.context.map((c) => c.id),
+                      ]),
+                    ),
+                  )
+                    .filter((id) => id !== sectionProposal.request.document.id)
+                    .map((id) => (
+                      <p key={id} className="my-2 text-sm break-words">
+                        {sectionProposal.request.document.facts
+                          .filter(
+                            (f) =>
+                              f.owner.id === id &&
+                              [
+                                "company",
+                                "title",
+                                "name",
+                                "startDate",
+                                "endDate",
+                                "location",
+                              ].includes(f.field),
+                          )
+                          .map((f) => String(f.value))
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
+                    ))}
                   {sources.map((f) => (
                     <p
                       key={f.id}
@@ -1579,6 +1606,49 @@ export default function RepositoryPage() {
                                     op.finding) as TranslationKey,
                                 )}
                               </label>
+                              {(op.supportingClaimIds ?? [op.claimId])
+                                .flatMap((id) => {
+                                  const source = ingestionResult.claims.find(
+                                    (c) => c.id === id,
+                                  )
+                                  return source
+                                    ? [
+                                        { source: source.source },
+                                        ...(source.supportingSources ?? []),
+                                      ]
+                                    : []
+                                })
+                                .map((source, i) => (
+                                  <blockquote
+                                    key={i}
+                                    className="mt-2 border-l-2 pl-2 text-xs whitespace-pre-wrap break-words"
+                                  >
+                                    {t("repo.ingestSource")}: “{source.source}”
+                                  </blockquote>
+                                ))}
+                              <p className="mt-2 text-xs break-words">
+                                {t("repo.ingestTerminology")}:{" "}
+                                {ingestionNormalization(op, ingestionResult)
+                                  .canonical ?? "—"}
+                              </p>
+                              {claim.meaning && (
+                                <p className="mt-2 text-xs">
+                                  {([
+                                    claim.meaning.assertion,
+                                    claim.meaning.intent,
+                                    claim.meaning.certainty,
+                                    claim.meaning.temporal.precision,
+                                  ] as const)
+                                    .map((value) =>
+                                      t(
+                                        `profile.facts.${value}` as TranslationKey,
+                                      ),
+                                    )
+                                    .join(" · ")}
+                                  {claim.meaning.temporal.wording &&
+                                    ` · ${claim.meaning.temporal.wording}`}
+                                </p>
+                              )}
                               <label className="text-xs block mt-2">
                                 {t("repo.ingestAfter")}
                                 <textarea

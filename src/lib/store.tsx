@@ -1,3 +1,5 @@
+import { applyIngestionDocument } from "./ingestionDocument"
+import type { IngestionResult } from "./ingestion"
 import {
   createContext,
   useCallback,
@@ -151,6 +153,11 @@ const StoreContext = createContext<{
   dispatch: (action: Action) => Promise<boolean>
   profileDocument: ProfileDocument | null
   editCanonicalProfile: (edit: ProfileEdit) => Promise<boolean>
+  applyIngestionProposal: (
+    snapshot: ProfileDocument,
+    input: string,
+    result: IngestionResult,
+  ) => Promise<boolean>
   applyProfileProposal: (
     request: SectionReviewRequest,
     proposal: SectionProposal,
@@ -282,24 +289,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     (edit: ProfileEdit) => updateCanonical((doc) => editProfile(doc, edit)),
     [updateCanonical],
   )
-  const applyProfileProposal = useCallback(
-    async (
-      request: SectionReviewRequest,
-      proposal: SectionProposal,
-      edits: Record<string, string>,
-      removals: string[],
-    ) => {
+  const persistProposal = useCallback(
+    (build: (expected: ProfileDocument) => ProfileDocument) => {
       const saving = queue.current.then(async () => {
         const expected = documentRef.current
         if (failed.current || !expected) return false
         try {
-          const candidate = applySectionProposal(
-            expected,
-            request,
-            proposal,
-            edits,
-            removals,
-          )
+          const candidate = build(expected)
           await saveProfile(localStorage, expected, candidate)
           documentRef.current = candidate
           optimisticDocument.current = candidate
@@ -309,7 +305,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           return true
         } catch (error) {
           setProfileError(
-            error instanceof ProfileStorageError ? error.code : error instanceof Error && error.message === "stale" ? "stale" : "validation",
+            error instanceof ProfileStorageError
+              ? error.code
+              : error instanceof Error && error.message === "stale"
+                ? "stale"
+                : "validation",
           )
           return false
         }
@@ -318,6 +318,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return saving
     },
     [],
+  )
+  const applyIngestionProposal = useCallback(
+    (snapshot: ProfileDocument, input: string, result: IngestionResult) =>
+      persistProposal((doc) =>
+        applyIngestionDocument(doc, snapshot, input, result),
+      ),
+    [persistProposal],
+  )
+  const applyProfileProposal = useCallback(
+    (
+      request: SectionReviewRequest,
+      proposal: SectionProposal,
+      edits: Record<string, string>,
+      removals: string[],
+    ) =>
+      persistProposal((doc) =>
+        applySectionProposal(doc, request, proposal, edits, removals),
+      ),
+    [persistProposal],
   )
   const saveRepository = useCallback(
     (
@@ -383,6 +402,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         profileDocument,
         editCanonicalProfile,
         applyProfileProposal,
+        applyIngestionProposal,
       }}
     >
       {profileError && (
