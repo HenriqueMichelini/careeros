@@ -83,8 +83,8 @@ func run() error {
 	if err = eval.Validate(data.Cases); err != nil {
 		return err
 	}
-	// Two explicit repeats per configuration measure ordinary cache behavior.
-	if (workflowCount(data.Cases)+2)*len(eval.Configurations()) > *workflows {
+	// Naturally shared instruction prefixes measure ordinary cache behavior.
+	if workflowCount(data.Cases)*len(eval.Configurations()) > *workflows {
 		return fmt.Errorf("matrix exceeds authorized workflow cap")
 	}
 	file, err := os.OpenFile(*output, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
@@ -120,13 +120,7 @@ func run() error {
 			}
 		}
 	}
-	for _, c := range cacheCases(data.Cases) {
-		for _, config := range rep.Configurations {
-			if err = attempt(&rep, file, c, config.ID, true, *mode, key, gate, budget); err != nil {
-				return err
-			}
-		}
-	}
+
 	return nil
 }
 func attempt(rep *report, file *os.File, c eval.Case, config string, repeat bool, mode, key, gate string, budget *eval.Budget) error {
@@ -231,15 +225,6 @@ func workflowCount(cases []eval.Case) int {
 		total += max(1, len(c.Steps))
 	}
 	return total
-}
-func cacheCases(cases []eval.Case) []eval.Case {
-	selected := []eval.Case{}
-	for _, c := range cases {
-		if strings.HasSuffix(c.ID, "-reviewed-draft") {
-			selected = append(selected, c)
-		}
-	}
-	return selected[:min(2, len(selected))]
 }
 
 func reassess(path, annotations, output string) error {

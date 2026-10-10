@@ -64,13 +64,23 @@ func runSteps(c Case, mode, key, gate string, config *Configuration, budget *Bud
 	result := RunResult{ID: c.ID, Task: c.Task, Language: c.Language, Split: c.Split, Role: c.Role, Mode: mode, Status: 200, NoStore: true}
 	combined := map[string][]json.RawMessage{"claims": {}, "operations": {}}
 	for _, step := range c.Steps {
-		part, err := run(step, mode, key, gate, config, budget)
-		if err != nil {
-			return result, err
+		if c.SequenceOutput == "final" && len(result.Steps) > 0 {
+			var ok bool
+			step, ok = withReturnedClarification(step, result.Output)
+			if !ok {
+				result.Status = 409
+				return Assess(c, result)
+			}
 		}
+		part, err := run(step, mode, key, gate, config, budget)
 		result.Steps = append(result.Steps, part)
 		result.Calls = append(result.Calls, part.Calls...)
 		result.NoStore = result.NoStore && part.NoStore
+		result.Output = part.Output
+		if err != nil {
+			result.Status = 502
+			return result, err
+		}
 		var out map[string]json.RawMessage
 		_ = json.Unmarshal(part.Output, &out)
 		for _, field := range []string{"claims", "operations"} {
@@ -83,6 +93,46 @@ func runSteps(c Case, mode, key, gate string, config *Configuration, budget *Bud
 			break
 		}
 	}
-	result.Output, _ = json.Marshal(combined)
+	if c.SequenceOutput != "final" {
+		result.Output, _ = json.Marshal(combined)
+	}
 	return Assess(c, result)
+}
+
+// The answer is frozen synthetic user input; the unresolved claim must come
+// from the actual initial response. No synthetic question or repair is invented.
+func withReturnedClarification(step Case, previous json.RawMessage) (Case, bool) {
+	var output struct {
+		Claims []json.RawMessage `json:"claims"`
+	}
+	if json.Unmarshal(previous, &output) != nil {
+		return step, false
+	}
+	var unresolved json.RawMessage
+	for _, raw := range output.Claims {
+		var claim struct {
+			Question string `json:"question"`
+		}
+		if json.Unmarshal(raw, &claim) != nil {
+			return step, false
+		}
+		if strings.TrimSpace(claim.Question) != "" {
+			if unresolved != nil {
+				return step, false
+			}
+			unresolved = raw
+		}
+	}
+	if unresolved == nil {
+		return step, false
+	}
+	var request map[string]json.RawMessage
+	var clarification map[string]json.RawMessage
+	if json.Unmarshal(step.Request, &request) != nil || json.Unmarshal(request["clarification"], &clarification) != nil {
+		return step, false
+	}
+	clarification["claim"] = unresolved
+	request["clarification"], _ = json.Marshal(clarification)
+	step.Request, _ = json.Marshal(request)
+	return step, true
 }

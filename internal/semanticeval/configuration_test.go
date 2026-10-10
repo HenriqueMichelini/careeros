@@ -180,3 +180,46 @@ func TestCurrentReviewedDraftControlsExposeInventedLeadershipAndPortugueseAnswer
 		})
 	}
 }
+
+func TestContinuationAssessmentErrorRetainsEveryDispatchedCall(t *testing.T) {
+	c := factFixture(t)
+	first := factFixture(t)
+	second := factFixture(t)
+	second.Gold = []Atom{{ID: "invalid", Group: "claims", Match: map[string]string{"text": "["}}}
+	c.Steps = []Case{first, second}
+	budget := &Budget{Limit: 20}
+	run, err := RunConfigured(c, "controlled", "", "", "current", budget)
+	if err == nil {
+		t.Fatal("invalid assessment was accepted")
+	}
+	if len(run.Steps) != 2 || len(run.Calls) != 6 || budget.Used != 6 {
+		t.Fatalf("failed assessment hid dispatched calls: steps=%d calls=%d dispatched=%d", len(run.Steps), len(run.Calls), budget.Used)
+	}
+}
+
+func TestClarificationUsesTheReturnedUnresolvedClaimAndStopsWithoutOne(t *testing.T) {
+	var data struct {
+		Cases []Case `json:"cases"`
+	}
+	raw, err := os.ReadFile("../../docs/evaluations/workflow-settings/cases.v1.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = json.Unmarshal(raw, &data); err != nil {
+		t.Fatal(err)
+	}
+	var c Case
+	for _, fixture := range data.Cases {
+		if fixture.ID == "en-clarification" {
+			c = fixture
+		}
+	}
+	c.Steps[0].Provider[0] = json.RawMessage(`{"claims":[]}`)
+	run, err := RunConfigured(c, "controlled", "", "", "current", &Budget{Limit: 20})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if run.Status != 409 || len(run.Steps) != 1 || len(run.Calls) != 2 {
+		t.Fatalf("invented a clarification instead of retaining missing initial question: %+v", run)
+	}
+}

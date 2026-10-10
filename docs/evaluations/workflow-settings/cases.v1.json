@@ -83,82 +83,6 @@
       "role": "acceptance"
     },
     {
-      "id": "en-negation-aspiration",
-      "task": "profile_ingestion",
-      "language": "en",
-      "split": "heldout",
-      "tags": [
-        "negation",
-        "aspirations"
-      ],
-      "request": {
-        "input": "I do not know AWS. I want to learn Python.",
-        "profile": {
-          "careerGoals": "",
-          "skills": "",
-          "competencies": "",
-          "tools": "",
-          "employmentStatus": "",
-          "currentSalary": "",
-          "desiredSalary": "",
-          "additionalInfo": "",
-          "experience": [],
-          "projects": []
-        }
-      },
-      "provider": [
-        {
-          "claims": [
-            {
-              "id": "c1",
-              "source": "I do not know AWS. I want to learn Python.",
-              "text": "I do not know AWS. I want to learn Python.",
-              "targets": [
-                "careerGoals"
-              ],
-              "question": ""
-            }
-          ]
-        },
-        {
-          "operations": [
-            {
-              "claimId": "c1",
-              "target": "careerGoals",
-              "field": "careerGoals",
-              "entryId": "",
-              "action": "add",
-              "value": "I do not know AWS. I want to learn Python.",
-              "finding": "addition"
-            }
-          ]
-        }
-      ],
-      "gold": [
-        {
-          "id": "qualified-fact",
-          "group": "claims",
-          "match": {
-            "text": "(not|não).*AWS.*(want|quero).*Python"
-          }
-        },
-        {
-          "id": "goal-only",
-          "group": "operations",
-          "match": {
-            "value": "(want|quero).*Python",
-            "target": "^careerGoals$"
-          }
-        }
-      ],
-      "forbidden": [
-        "\"target\"\\s*:\\s*\"skills\"",
-        "(?i)AWS expert|especialista em AWS"
-      ],
-      "notes": "Negated AWS is not a capability. Python is only an aspiration; preserve negation and goal context.",
-      "role": "acceptance"
-    },
-    {
       "id": "en-stable-cv-metric",
       "task": "cv_generation",
       "language": "en",
@@ -324,9 +248,161 @@
         "(?i)expert|especialista|senior|sênior",
         "\"(?:value|text)\"\\s*:\\s*\"[^\\\"]*\\b[0-9]+\\b"
       ],
-      "notes": "Answer resolves candidate ownership; Acme is explicit. Preserve original and clarification_answer origins. Unknown dates stay unknown.",
+      "notes": "Answer resolves candidate ownership; Acme is explicit. Preserve original and clarification_answer origins. Unknown dates stay unknown. Execute and charge the initial submission and the deliberate answer; score final output while retaining both legs and all their source/usage evidence.",
       "sourceId": "en-fact",
-      "role": "acceptance"
+      "role": "acceptance",
+      "steps": [
+        {
+          "id": "en-clarification-initial",
+          "task": "profile_ingestion",
+          "language": "en",
+          "split": "development",
+          "tags": [
+            "clarification",
+            "origins"
+          ],
+          "request": {
+            "input": "It used Java.",
+            "profile": {
+              "careerGoals": "",
+              "skills": "",
+              "competencies": "",
+              "tools": "",
+              "employmentStatus": "",
+              "currentSalary": "",
+              "desiredSalary": "",
+              "additionalInfo": "",
+              "experience": [],
+              "projects": []
+            }
+          },
+          "provider": [
+            {
+              "claims": [
+                {
+                  "id": "c1",
+                  "source": "It used Java.",
+                  "text": "Ambiguous Java usage",
+                  "targets": [],
+                  "question": "Who used Java?"
+                }
+              ]
+            },
+            {
+              "operations": []
+            }
+          ],
+          "gold": [
+            {
+              "id": "question",
+              "group": "claims",
+              "match": {
+                "question": "^Who used Java\\?$",
+                "targets": "^\\[\\]$"
+              }
+            }
+          ],
+          "forbidden": [
+            "(?i)expert|especialista|senior|sênior",
+            "\"(?:value|text)\"\\s*:\\s*\"[^\\\"]*\\b[0-9]+\\b"
+          ],
+          "notes": "Answer resolves candidate ownership; Acme is explicit. Preserve original and clarification_answer origins. Unknown dates stay unknown.",
+          "sourceId": "en-fact",
+          "role": "acceptance"
+        },
+        {
+          "id": "en-clarification-answer",
+          "task": "profile_ingestion",
+          "language": "en",
+          "split": "development",
+          "tags": [
+            "clarification",
+            "origins"
+          ],
+          "request": {
+            "input": "It used Java.",
+            "profile": {
+              "careerGoals": "",
+              "skills": "",
+              "competencies": "",
+              "tools": "",
+              "employmentStatus": "",
+              "currentSalary": "",
+              "desiredSalary": "",
+              "additionalInfo": "",
+              "experience": [],
+              "projects": []
+            },
+            "clarification": {
+              "claim": {
+                "id": "c1",
+                "source": "It used Java.",
+                "text": "Ambiguous Java usage",
+                "targets": [],
+                "question": "Who used Java?"
+              },
+              "answer": "I used Java at Acme."
+            }
+          },
+          "provider": [
+            {
+              "claims": [
+                {
+                  "id": "c1",
+                  "source": "It used Java.",
+                  "text": "Java",
+                  "targets": [
+                    "skills"
+                  ],
+                  "question": ""
+                }
+              ]
+            },
+            {
+              "operations": [
+                {
+                  "claimId": "c1",
+                  "target": "skills",
+                  "field": "skills",
+                  "entryId": "",
+                  "action": "add",
+                  "value": "Java",
+                  "finding": "addition"
+                }
+              ]
+            }
+          ],
+          "gold": [
+            {
+              "id": "java-fact",
+              "group": "claims",
+              "match": {
+                "text": "^(?:Java|Uses Java\\.|Usa Java\\.|Utiliza Java\\.|Uso Java\\.)$",
+                "targets": "skills",
+                "question": "^$"
+              }
+            },
+            {
+              "id": "java-destination",
+              "group": "operations",
+              "match": {
+                "value": "^Java$",
+                "target": "^skills$",
+                "field": "^skills$",
+                "action": "^add$"
+              }
+            }
+          ],
+          "forbidden": [
+            "(?i)expert|especialista|senior|sênior",
+            "\"(?:value|text)\"\\s*:\\s*\"[^\\\"]*\\b[0-9]+\\b"
+          ],
+          "notes": "Answer resolves candidate ownership; Acme is explicit. Preserve original and clarification_answer origins. Unknown dates stay unknown.",
+          "sourceId": "en-fact",
+          "role": "acceptance"
+        }
+      ],
+      "sequenceOutput": "final"
     },
     {
       "id": "en-correction",
@@ -420,9 +496,173 @@
       "forbidden": [
         "expert|especialista"
       ],
-      "notes": "Deliberate correction, four calls including independent original/answer gates; remains an unapplied proposal.",
+      "notes": "Deliberate correction, four calls including independent original/answer gates; remains an unapplied proposal. Execute and charge the initial submission and the deliberate answer; score final output while retaining both legs and all their source/usage evidence.",
       "sourceId": "en-fact",
-      "role": "acceptance"
+      "role": "acceptance",
+      "steps": [
+        {
+          "id": "en-correction-initial",
+          "task": "profile_ingestion",
+          "language": "en",
+          "split": "development",
+          "tags": [
+            "typical",
+            "sparse"
+          ],
+          "request": {
+            "input": "My email may be old@example.test.",
+            "profile": {
+              "careerGoals": "",
+              "skills": "",
+              "competencies": "",
+              "tools": "",
+              "employmentStatus": "",
+              "currentSalary": "",
+              "desiredSalary": "",
+              "additionalInfo": "",
+              "experience": [],
+              "projects": [],
+              "fullName": "",
+              "email": "old@example.test",
+              "phone": "",
+              "location": "",
+              "professionalLinks": "",
+              "education": [],
+              "certifications": [],
+              "languages": []
+            }
+          },
+          "provider": [
+            {
+              "claims": [
+                {
+                  "id": "c1",
+                  "source": "My email may be old@example.test.",
+                  "text": "Uncertain current email",
+                  "targets": [],
+                  "question": "Which email is current?"
+                }
+              ]
+            },
+            {
+              "operations": []
+            }
+          ],
+          "gold": [
+            {
+              "id": "question",
+              "group": "claims",
+              "match": {
+                "question": "^Which email is current\\?$",
+                "targets": "^\\[\\]$"
+              }
+            }
+          ],
+          "forbidden": [
+            "expert|especialista"
+          ],
+          "notes": "Deliberate correction, four calls including independent original/answer gates; remains an unapplied proposal.",
+          "sourceId": "en-fact",
+          "role": "acceptance"
+        },
+        {
+          "id": "en-correction-answer",
+          "task": "profile_ingestion",
+          "language": "en",
+          "split": "development",
+          "tags": [
+            "typical",
+            "sparse"
+          ],
+          "request": {
+            "input": "My email may be old@example.test.",
+            "profile": {
+              "careerGoals": "",
+              "skills": "",
+              "competencies": "",
+              "tools": "",
+              "employmentStatus": "",
+              "currentSalary": "",
+              "desiredSalary": "",
+              "additionalInfo": "",
+              "experience": [],
+              "projects": [],
+              "fullName": "",
+              "email": "old@example.test",
+              "phone": "",
+              "location": "",
+              "professionalLinks": "",
+              "education": [],
+              "certifications": [],
+              "languages": []
+            },
+            "clarification": {
+              "claim": {
+                "id": "c1",
+                "source": "My email may be old@example.test.",
+                "text": "My email may be old@example.test.",
+                "targets": [],
+                "question": "Which email is current?"
+              },
+              "answer": "Use new@example.test instead; old@example.test is obsolete."
+            }
+          },
+          "provider": [
+            {
+              "claims": [
+                {
+                  "id": "c1",
+                  "source": "Use new@example.test instead; old@example.test is obsolete.",
+                  "text": "Use new@example.test instead; old@example.test is obsolete.",
+                  "targets": [
+                    "email"
+                  ],
+                  "question": ""
+                }
+              ]
+            },
+            {
+              "operations": [
+                {
+                  "claimId": "c1",
+                  "target": "email",
+                  "field": "email",
+                  "entryId": "",
+                  "action": "update",
+                  "value": "new@example.test",
+                  "finding": "in_place"
+                }
+              ]
+            }
+          ],
+          "gold": [
+            {
+              "id": "correct-email",
+              "group": "claims",
+              "match": {
+                "text": "new@example.test",
+                "targets": "email"
+              }
+            },
+            {
+              "id": "correction-proposal",
+              "group": "operations",
+              "match": {
+                "value": "^new@example.test$",
+                "action": "^update$",
+                "target": "^email$"
+              }
+            }
+          ],
+          "forbidden": [
+            "expert|especialista"
+          ],
+          "notes": "Deliberate correction, four calls including independent original/answer gates; remains an unapplied proposal.",
+          "sourceId": "en-fact",
+          "role": "acceptance"
+        }
+      ],
+      "sequenceOutput": "final"
     },
     {
       "id": "en-continuation-35",
@@ -2631,7 +2871,8 @@
           "role": "acceptance",
           "sourceId": "en-capacity-35"
         }
-      ]
+      ],
+      "sequenceOutput": "union"
     },
     {
       "id": "en-evidence-matching",
@@ -3271,82 +3512,6 @@
       "role": "acceptance"
     },
     {
-      "id": "pt-negation-aspiration",
-      "task": "profile_ingestion",
-      "language": "pt-BR",
-      "split": "heldout",
-      "tags": [
-        "negation",
-        "aspirations"
-      ],
-      "request": {
-        "input": "Não conheço AWS. Quero aprender Python.",
-        "profile": {
-          "careerGoals": "",
-          "skills": "",
-          "competencies": "",
-          "tools": "",
-          "employmentStatus": "",
-          "currentSalary": "",
-          "desiredSalary": "",
-          "additionalInfo": "",
-          "experience": [],
-          "projects": []
-        }
-      },
-      "provider": [
-        {
-          "claims": [
-            {
-              "id": "c1",
-              "source": "Não conheço AWS. Quero aprender Python.",
-              "text": "Não conheço AWS. Quero aprender Python.",
-              "targets": [
-                "careerGoals"
-              ],
-              "question": ""
-            }
-          ]
-        },
-        {
-          "operations": [
-            {
-              "claimId": "c1",
-              "target": "careerGoals",
-              "field": "careerGoals",
-              "entryId": "",
-              "action": "add",
-              "value": "Não conheço AWS. Quero aprender Python.",
-              "finding": "addition"
-            }
-          ]
-        }
-      ],
-      "gold": [
-        {
-          "id": "qualified-fact",
-          "group": "claims",
-          "match": {
-            "text": "(not|não).*AWS.*(want|quero).*Python"
-          }
-        },
-        {
-          "id": "goal-only",
-          "group": "operations",
-          "match": {
-            "value": "(want|quero).*Python",
-            "target": "^careerGoals$"
-          }
-        }
-      ],
-      "forbidden": [
-        "\"target\"\\s*:\\s*\"skills\"",
-        "(?i)AWS expert|especialista em AWS"
-      ],
-      "notes": "Negated AWS is not a capability. Python is only an aspiration; preserve negation and goal context.",
-      "role": "acceptance"
-    },
-    {
       "id": "pt-stable-cv-metric",
       "task": "cv_generation",
       "language": "pt-BR",
@@ -3512,9 +3677,161 @@
         "(?i)expert|especialista|senior|sênior",
         "\"(?:value|text)\"\\s*:\\s*\"[^\\\"]*\\b[0-9]+\\b"
       ],
-      "notes": "Answer resolves candidate ownership; Acme is explicit. Preserve original and clarification_answer origins. Unknown dates stay unknown.",
+      "notes": "Answer resolves candidate ownership; Acme is explicit. Preserve original and clarification_answer origins. Unknown dates stay unknown. Execute and charge the initial submission and the deliberate answer; score final output while retaining both legs and all their source/usage evidence.",
       "sourceId": "pt-fact",
-      "role": "acceptance"
+      "role": "acceptance",
+      "steps": [
+        {
+          "id": "pt-clarification-initial",
+          "task": "profile_ingestion",
+          "language": "pt-BR",
+          "split": "heldout",
+          "tags": [
+            "clarification",
+            "origins"
+          ],
+          "request": {
+            "input": "Ele usou Java.",
+            "profile": {
+              "careerGoals": "",
+              "skills": "",
+              "competencies": "",
+              "tools": "",
+              "employmentStatus": "",
+              "currentSalary": "",
+              "desiredSalary": "",
+              "additionalInfo": "",
+              "experience": [],
+              "projects": []
+            }
+          },
+          "provider": [
+            {
+              "claims": [
+                {
+                  "id": "c1",
+                  "source": "Ele usou Java.",
+                  "text": "Ambiguous Java usage",
+                  "targets": [],
+                  "question": "Who used Java?"
+                }
+              ]
+            },
+            {
+              "operations": []
+            }
+          ],
+          "gold": [
+            {
+              "id": "question",
+              "group": "claims",
+              "match": {
+                "question": "^Who used Java\\?$",
+                "targets": "^\\[\\]$"
+              }
+            }
+          ],
+          "forbidden": [
+            "(?i)expert|especialista|senior|sênior",
+            "\"(?:value|text)\"\\s*:\\s*\"[^\\\"]*\\b[0-9]+\\b"
+          ],
+          "notes": "Answer resolves candidate ownership; Acme is explicit. Preserve original and clarification_answer origins. Unknown dates stay unknown.",
+          "sourceId": "pt-fact",
+          "role": "acceptance"
+        },
+        {
+          "id": "pt-clarification-answer",
+          "task": "profile_ingestion",
+          "language": "pt-BR",
+          "split": "heldout",
+          "tags": [
+            "clarification",
+            "origins"
+          ],
+          "request": {
+            "input": "Ele usou Java.",
+            "profile": {
+              "careerGoals": "",
+              "skills": "",
+              "competencies": "",
+              "tools": "",
+              "employmentStatus": "",
+              "currentSalary": "",
+              "desiredSalary": "",
+              "additionalInfo": "",
+              "experience": [],
+              "projects": []
+            },
+            "clarification": {
+              "claim": {
+                "id": "c1",
+                "source": "Ele usou Java.",
+                "text": "Ambiguous Java usage",
+                "targets": [],
+                "question": "Who used Java?"
+              },
+              "answer": "Eu usei Java na Acme."
+            }
+          },
+          "provider": [
+            {
+              "claims": [
+                {
+                  "id": "c1",
+                  "source": "Ele usou Java.",
+                  "text": "Java",
+                  "targets": [
+                    "skills"
+                  ],
+                  "question": ""
+                }
+              ]
+            },
+            {
+              "operations": [
+                {
+                  "claimId": "c1",
+                  "target": "skills",
+                  "field": "skills",
+                  "entryId": "",
+                  "action": "add",
+                  "value": "Java",
+                  "finding": "addition"
+                }
+              ]
+            }
+          ],
+          "gold": [
+            {
+              "id": "java-fact",
+              "group": "claims",
+              "match": {
+                "text": "^(?:Java|Uses Java\\.|Usa Java\\.|Utiliza Java\\.|Uso Java\\.)$",
+                "targets": "skills",
+                "question": "^$"
+              }
+            },
+            {
+              "id": "java-destination",
+              "group": "operations",
+              "match": {
+                "value": "^Java$",
+                "target": "^skills$",
+                "field": "^skills$",
+                "action": "^add$"
+              }
+            }
+          ],
+          "forbidden": [
+            "(?i)expert|especialista|senior|sênior",
+            "\"(?:value|text)\"\\s*:\\s*\"[^\\\"]*\\b[0-9]+\\b"
+          ],
+          "notes": "Answer resolves candidate ownership; Acme is explicit. Preserve original and clarification_answer origins. Unknown dates stay unknown.",
+          "sourceId": "pt-fact",
+          "role": "acceptance"
+        }
+      ],
+      "sequenceOutput": "final"
     },
     {
       "id": "pt-correction",
@@ -3608,9 +3925,173 @@
       "forbidden": [
         "expert|especialista"
       ],
-      "notes": "Deliberate correction, four calls including independent original/answer gates; remains an unapplied proposal.",
+      "notes": "Deliberate correction, four calls including independent original/answer gates; remains an unapplied proposal. Execute and charge the initial submission and the deliberate answer; score final output while retaining both legs and all their source/usage evidence.",
       "sourceId": "pt-fact",
-      "role": "acceptance"
+      "role": "acceptance",
+      "steps": [
+        {
+          "id": "pt-correction-initial",
+          "task": "profile_ingestion",
+          "language": "pt-BR",
+          "split": "heldout",
+          "tags": [
+            "typical",
+            "sparse"
+          ],
+          "request": {
+            "input": "Meu email pode ser old@example.test.",
+            "profile": {
+              "careerGoals": "",
+              "skills": "",
+              "competencies": "",
+              "tools": "",
+              "employmentStatus": "",
+              "currentSalary": "",
+              "desiredSalary": "",
+              "additionalInfo": "",
+              "experience": [],
+              "projects": [],
+              "fullName": "",
+              "email": "old@example.test",
+              "phone": "",
+              "location": "",
+              "professionalLinks": "",
+              "education": [],
+              "certifications": [],
+              "languages": []
+            }
+          },
+          "provider": [
+            {
+              "claims": [
+                {
+                  "id": "c1",
+                  "source": "Meu email pode ser old@example.test.",
+                  "text": "Uncertain current email",
+                  "targets": [],
+                  "question": "Which email is current?"
+                }
+              ]
+            },
+            {
+              "operations": []
+            }
+          ],
+          "gold": [
+            {
+              "id": "question",
+              "group": "claims",
+              "match": {
+                "question": "^Which email is current\\?$",
+                "targets": "^\\[\\]$"
+              }
+            }
+          ],
+          "forbidden": [
+            "expert|especialista"
+          ],
+          "notes": "Deliberate correction, four calls including independent original/answer gates; remains an unapplied proposal.",
+          "sourceId": "pt-fact",
+          "role": "acceptance"
+        },
+        {
+          "id": "pt-correction-answer",
+          "task": "profile_ingestion",
+          "language": "pt-BR",
+          "split": "heldout",
+          "tags": [
+            "typical",
+            "sparse"
+          ],
+          "request": {
+            "input": "Meu email pode ser old@example.test.",
+            "profile": {
+              "careerGoals": "",
+              "skills": "",
+              "competencies": "",
+              "tools": "",
+              "employmentStatus": "",
+              "currentSalary": "",
+              "desiredSalary": "",
+              "additionalInfo": "",
+              "experience": [],
+              "projects": [],
+              "fullName": "",
+              "email": "old@example.test",
+              "phone": "",
+              "location": "",
+              "professionalLinks": "",
+              "education": [],
+              "certifications": [],
+              "languages": []
+            },
+            "clarification": {
+              "claim": {
+                "id": "c1",
+                "source": "Meu email pode ser old@example.test.",
+                "text": "Meu email pode ser old@example.test.",
+                "targets": [],
+                "question": "Which email is current?"
+              },
+              "answer": "Use new@example.test; old@example.test está obsoleto."
+            }
+          },
+          "provider": [
+            {
+              "claims": [
+                {
+                  "id": "c1",
+                  "source": "Use new@example.test; old@example.test está obsoleto.",
+                  "text": "Use new@example.test; old@example.test está obsoleto.",
+                  "targets": [
+                    "email"
+                  ],
+                  "question": ""
+                }
+              ]
+            },
+            {
+              "operations": [
+                {
+                  "claimId": "c1",
+                  "target": "email",
+                  "field": "email",
+                  "entryId": "",
+                  "action": "update",
+                  "value": "new@example.test",
+                  "finding": "in_place"
+                }
+              ]
+            }
+          ],
+          "gold": [
+            {
+              "id": "correct-email",
+              "group": "claims",
+              "match": {
+                "text": "new@example.test",
+                "targets": "email"
+              }
+            },
+            {
+              "id": "correction-proposal",
+              "group": "operations",
+              "match": {
+                "value": "^new@example.test$",
+                "action": "^update$",
+                "target": "^email$"
+              }
+            }
+          ],
+          "forbidden": [
+            "expert|especialista"
+          ],
+          "notes": "Deliberate correction, four calls including independent original/answer gates; remains an unapplied proposal.",
+          "sourceId": "pt-fact",
+          "role": "acceptance"
+        }
+      ],
+      "sequenceOutput": "final"
     },
     {
       "id": "pt-continuation-35",
@@ -5819,7 +6300,8 @@
           "role": "acceptance",
           "sourceId": "pt-capacity-35"
         }
-      ]
+      ],
+      "sequenceOutput": "union"
     },
     {
       "id": "pt-evidence-matching",

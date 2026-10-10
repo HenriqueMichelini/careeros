@@ -18,6 +18,7 @@ type Atom struct {
 	Source   string            `json:"source,omitempty"`
 }
 type Case struct {
+	SequenceOutput    string            `json:"sequenceOutput,omitempty"`
 	Steps             []Case            `json:"steps,omitempty"`
 	ID                string            `json:"id"`
 	Task              string            `json:"task"`
@@ -359,6 +360,9 @@ func Validate(cases []Case) error {
 			return err
 		}
 		if len(c.Steps) > 0 {
+			if c.SequenceOutput != "" && c.SequenceOutput != "union" && c.SequenceOutput != "final" {
+				return fmt.Errorf("invalid sequence output in %s", c.ID)
+			}
 			if c.Task != "profile_ingestion" || len(c.Steps) > 256 {
 				return fmt.Errorf("invalid continuation in %s", c.ID)
 			}

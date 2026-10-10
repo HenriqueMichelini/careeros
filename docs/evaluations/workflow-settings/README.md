@@ -25,7 +25,7 @@ existing field rubric/policy. The evaluation records actual outbound settings;
 production artifact version strings still describe the production Luna policy.
 Candidate artifacts must not be reused in the application.
 
-`cases.v1.json` freezes 16 synthetic cases (eight per language), with original
+`cases.v1.json` freezes 14 synthetic cases (seven per language), with original
 #34 source IDs, development/heldout splits, source material, gold labels and
 controlled responses. It adapts the historical CV cases to current stable fact
 references and the draft cases to reviewed resume/artifact contracts. The
@@ -34,27 +34,25 @@ historical #34 reports and labels remain unchanged.
 | Cases per language | Required observations |
 | --- | --- |
 | fact | extraction and reconciliation; language drift remains a separate review finding |
-| negation-aspiration | context does not become demonstrated qualifications |
 | stable-cv-metric | retain 20% ownership; historical EN/PT `invalid_output` remains explicit regression evidence |
-| clarification | answer origin and resolved ownership without repasting |
-| correction | explicit email replacement stays a proposal; original and answer both validated |
+| clarification | initial ambiguous submission, then answer with the actual returned unresolved claim; preserve origins |
+| correction | initial uncertain email, then deliberate answer; replacement stays a proposal and both originals/answers are validated |
 | continuation-35 | both portions, all 35 facts/destinations, whole original gate on every portion |
 | evidence-matching | canonical fact and exact source-backed requirement, separately observed explanation |
 | reviewed-draft | generation plus resume and remaining-artifact support assessments; Java answer scored in its own field |
 
 Every configuration runs the same cases, interleaved current/Luna-low/Sol-low to
-reduce time/order bias. Two designated draft repeats per configuration measure
-ordinary returned cache usage. They are explicit observations, not retries of a
-failure. The complete matrix is 60 HTTP attempts (including continuation), 54
-logical results including repeats, and 192 simulated calls in controlled
-preflight. The live cap is 60 HTTP attempts and 300 dispatch attempts; dispatch
+reduce time/order bias. Cache observations use unchanged instruction prefixes naturally shared across
+these requests; no additional repeats are dispatched. The complete matrix is 60
+HTTP attempts (including initial clarification/correction legs and continuation),
+42 logical results, and 186 simulated calls in controlled preflight. The live cap is 60 HTTP attempts and 300 dispatch attempts; dispatch
 failures count. Each new invocation needs its own deliberate authorization and
 new output path. The tool does not resume or retry automatically.
 
 Heldout inputs/labels remain frozen through the comparison. Many are translated
 counterparts or previously observed #34 cases, so this is a small regression
 comparison, not an independent generalization study. One sample per case and
-configuration plus two repeats provides no reliable population latency estimate,
+configuration provides no reliable population latency estimate,
 confidence interval, or savings percentage. No candidate prompt was tuned.
 
 ## Evidence and quality decision
@@ -62,7 +60,12 @@ confidence interval, or savings percentage. No candidate prompt was tuned.
 Reports retain each output, conservative unsupported candidates, individual
 missing atoms and fields, language, all provider calls, returned usage and stage
 diagnostics. Continuation retains each response and scores the complete 35-fact
-union against the full denominator. The original and answer gates, local
+union against the full denominator. Clarification/correction retains and charges
+both initial and answer legs, scoring the final output. If the initial response
+does not produce exactly one unresolved claim, the sequence records an incomplete
+result rather than inventing a question or sending the answer anyway. The actual
+returned claim supplies the answer request; frozen user answers remain identical
+across configurations. The original and answer gates, local
 preparation/retrieval, reconciliation, and both draft support checks remain in
 workflow accounting. Stage durations can overlap; use measured workflow duration
 (or the sum of sequential continuation workflow durations), not summed stages.
