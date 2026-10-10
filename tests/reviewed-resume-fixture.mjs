@@ -128,3 +128,18 @@ export function reviewedDraftFixture(body, input) {
     },
   }
 }
+
+// Install after the app loads. Preserve each test's own synthetic fetch function
+// while adapting its legacy draft fixture to the structured review contract.
+export const reviewedFixtureFetchWrapper = `(() => {
+ const fixture = ${reviewedDraftFixture.toString()};
+ let sourceFetch = window.fetch;
+ Object.defineProperty(window, 'fetch', {configurable:true,
+  get: () => async (url, options) => {
+   const response = await sourceFetch(url, options);
+   if (!String(url).includes('/api/application-draft') || !response.ok) return response;
+   const body = await response.json();
+   return new Response(JSON.stringify(fixture(body, JSON.parse(options.body))), {status:response.status,headers:{'Content-Type':'application/json'}});
+  },set: value => {sourceFetch = value;}
+ });
+})()`

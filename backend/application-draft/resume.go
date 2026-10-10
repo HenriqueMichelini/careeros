@@ -65,7 +65,7 @@ func decodeResumeClaims(raw []byte, out *[]resumeClaim) error {
 		return errors.New("invalid resume structure")
 	}
 	for _, c := range *out {
-		if !slices.Contains(resumeSections, c.Section) || !slices.Contains([]string{"paragraph", "subheading", "bullet"}, c.Kind) || strings.TrimSpace(c.Text) == "" || len(c.Text) > 2000 || strings.ContainsAny(c.Text, "\r\n*`") || resumeMarkup.MatchString(c.Text) || c.Sources == nil || len(c.Sources) > 16 {
+		if !slices.Contains(resumeSections, c.Section) || !slices.Contains([]string{"paragraph", "subheading", "bullet"}, c.Kind) || strings.TrimSpace(c.Text) == "" || len(c.Text) > 2000 || strings.ContainsAny(c.Text, "\r\n*`") || resumeMarkup.MatchString(strings.TrimSpace(c.Text)) || c.Sources == nil || len(c.Sources) > 16 {
 			return errors.New("invalid resume statement")
 		}
 	}

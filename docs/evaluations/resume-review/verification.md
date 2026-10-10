@@ -50,7 +50,10 @@ unchanged source snapshot, without additional model calls.
 Pending edits are isolated from the accepted resume. Cancellation restores the
 accepted version. Profile changes preserve the previous wording and original
 snapshot, while blocking acceptance, copy and PDF until a new draft is generated.
-Failure/cancellation during generation does not clear the previous result.
+Failure/cancellation during generation does not clear the previous result. A
+successfully generated replacement remains pending: the complete last accepted
+Application Draft is retained in memory and can be restored explicitly before
+accepting the replacement. This also restores its original source snapshot.
 Preview, copy and PDF derive from the same accepted structured statements and
 frozen local name/contact identity. CV language remains independent from UI
 language. Actual unscaled content height gates A4 export; long accepted content
@@ -79,7 +82,8 @@ and are explicitly outside this slice's support check.
   accepted-content overflow blocking. No credentials/providers are used.
 - Chrome-generated PDFs are actual one-page A4 artifacts, with extracted text
   checked and rendered pages visually inspected. Screenshots/PDFs are in
-  `evidence/`. This is local Chrome evidence, not deployed or Firefox evidence.
+  `evidence/`. This is local Chrome evidence, not deployed evidence. The existing Firefox print regression
+  separately passed with a one-page resume PDF and signed/unsigned cover checks.
 
 Live support-check accuracy, token/billing changes, latency improvement and
 production deployment behavior are unmeasured. The separate final milestone
@@ -87,4 +91,10 @@ cross-workflow/release gate remains #52.
 
 ## Final verification and review
 
-Pending final suite and independent Standards/Spec review; update before merge.
+Initial Standards review found one duplicated statement-text predicate, now shared.
+Initial Spec review found indented Markdown could be reparsed as a disappearing
+heading. Both server and browser now reject Markdown prefixes after trimming;
+red/green HTTP and frontend regressions reproduce and prevent the mismatch.
+Existing Apply checklist, CV preview/PDF and Firefox PDF regressions passed with
+fixtures adapted to explicit acceptance and deterministic local identity.
+Final full suite and independent review follow-up are pending before merge.

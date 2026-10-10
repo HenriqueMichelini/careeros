@@ -1,3 +1,4 @@
+import { reviewedFixtureFetchWrapper } from "./reviewed-resume-fixture.mjs"
 import { jobContextFixture } from "./job-context-fixtures.mjs"
 // Browser regression for the Profile CV and an Application Draft resume.
 // Uses synthetic API responses; no provider request is made.
@@ -213,6 +214,7 @@ try {
   }
   await evaluate("document.querySelectorAll('header nav button')[0].click()")
   await until("!!document.querySelector('textarea')")
+  await evaluate(reviewedFixtureFetchWrapper)
   await evaluate(
     `window.__jobContextFixture = (JOB_CONTEXT_FIXTURE); window.fetch = async (url) => new Response(JSON.stringify(String(url).includes('qualification-gaps') ? { gaps: [], jobContext: window.__jobContextFixture } : ${JSON.stringify(materials)}), { status: 200, headers: { 'Content-Type': 'application/json' } }); const el = document.querySelector('textarea'); Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(el, 'A long synthetic job posting for a product lead at Harbor Works.'); el.dispatchEvent(new Event('input', { bubbles: true }))`.replaceAll("JOB_CONTEXT_FIXTURE", JSON.stringify(jobContextFixture(""))),
   )
@@ -230,6 +232,8 @@ try {
   await evaluate(
     "Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'Résumé').click()",
   )
+  await pause(50)
+  await evaluate("Array.from(document.querySelectorAll('.resume-review button')).find(b => b.textContent.trim() === 'Accept resume')?.click()")
   const generated = await evaluate(
     "({ paper: !!document.querySelector('.cv-paper'), headings: Array.from(document.querySelectorAll('.cv-paper-content section h3')).map(el => el.textContent.trim()), rawMarkdown: !!document.querySelector('pre') })",
   )
@@ -256,18 +260,18 @@ try {
     await evaluate(
       "document.querySelectorAll('.cv-paper-content header').length",
     ),
-    1,
+    0,
   )
   assert.equal(
     await evaluate(
-      "document.querySelector('.cv-paper-content').textContent.match(/avery@example\\.com/g)?.length",
+      "document.querySelector('.cv-paper-content').textContent.match(/avery@example\\.com/g)?.length ?? 0",
     ),
-    1,
+    0,
   )
   assert.equal(
     await evaluate("document.querySelector('.cv-paper-content header h2')?.textContent.trim()"),
-    "Avery Morgan",
-    "Results should recover a generated name when Profile has none",
+    undefined,
+    "Results identity must come from the frozen Profile, never a generated header",
   )
   assert.ok(
     await evaluate("document.querySelector('.cv-paper-content').textContent.includes('my_variable')"),
@@ -278,11 +282,11 @@ try {
   await evaluate("window.print = () => { window.__printCalled = true }")
   const originalTitle = await evaluate("document.title")
   assert.equal(await evaluate("document.querySelectorAll('.results-page-header button').length"), 1, "New Application should be the only header action")
-  assert.equal(await evaluate("document.querySelectorAll('.results-resume-actions button').length"), 1, "résumé should offer PDF instead of copy text")
-  assert.equal(await evaluate("getComputedStyle(document.querySelector('.results-resume-actions button')).backgroundColor"), "rgb(200, 16, 46)", "PDF action should use the red accent")
+  assert.equal(await evaluate("document.querySelectorAll('.results-resume-actions button').length"), 2, "accepted résumé should offer copy and PDF from the same content")
+  assert.equal(await evaluate("getComputedStyle(document.querySelector('.results-resume-actions button:last-child')).backgroundColor"), "rgb(200, 16, 46)", "PDF action should use the red accent")
   await evaluate("{ const badge = document.createElement('iframe'); badge.id = 'nl-badge-frame'; badge.srcdoc = '<body>Powered by Netlify</body>'; badge.style.cssText = 'position:fixed;bottom:0;right:0;width:194px;height:64px;border:0'; document.body.append(badge) }")
   await until("document.querySelector('#nl-badge-frame')?.contentDocument?.body?.textContent.includes('Powered by Netlify')")
-  await evaluate("document.querySelector('.results-resume-actions button').click()")
+  await evaluate("document.querySelector('.results-resume-actions button:last-child').click()")
   await until("window.__printCalled === true && document.body.classList.contains('results-print-resume')")
   assert.equal(await evaluate("document.querySelectorAll('.results-print-root > .cv-paper').length"), 1, "PDF export should print a standalone résumé")
   assert.equal(await evaluate("getComputedStyle(document.querySelector('.results-print-root .cv-paper-content p')).fontSize"), "16px", "print clone preserves selected type")
@@ -290,7 +294,7 @@ try {
   writeFileSync(resumePdf, Buffer.from((await call("Page.printToPDF", { printBackground: true, preferCSSPageSize: true })).data, "base64"))
   assert.match(execFileSync("pdfinfo", [resumePdf], { encoding: "utf8" }), /Pages:\s+1\b[\s\S]*Page size:\s+59[45]\.\d+ x 841\.\d+ pts \(A4\)/)
   const resumePdfText = execFileSync("pdftotext", ["-raw", resumePdf, "-"], { encoding: "utf8" })
-  assert.match(resumePdfText, /Avery Morgan/i)
+  assert.doesNotMatch(resumePdfText, /Avery Morgan/i)
   assert.match(resumePdfText, /Professional Summary/i)
   assert.doesNotMatch(resumePdfText, /Generated Application|Cover Letter|Application Q&A/i)
   assert.doesNotMatch(resumePdfText, /Powered by Netlify/i)
@@ -324,6 +328,7 @@ try {
   await evaluate(`document.querySelector('.results-cover-print').textContent = ${JSON.stringify("Dear team,\n\nI led useful service work at Harbor Works.\n\nSincerely,")}`)
   await evaluate("document.querySelector('#nl-badge-frame')?.remove()")
   await evaluate("Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'Résumé').click()")
+  await evaluate("Array.from(document.querySelectorAll('.resume-review button')).find(b => b.textContent.trim() === 'Accept resume')?.click()")
   await until("!!document.querySelector('.cv-paper-content')")
   if (process.env.CV_PREVIEW_KEEP) {
     const shot = await call("Page.captureScreenshot", {
@@ -432,15 +437,16 @@ try {
   await evaluate("Array.from(document.querySelectorAll('[role=dialog] button')).at(-2).click()")
   await until("document.querySelector('h1')?.textContent.includes('Product Lead')")
   await evaluate("Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'Résumé').click()")
+  await evaluate("Array.from(document.querySelectorAll('.resume-review button')).find(b => b.textContent.trim() === 'Accept resume')?.click()")
   await until("document.querySelector('.cv-paper-content')?.textContent.includes('evidence-based product decisions 5')")
-  const denseFit = await evaluate("({ status: document.querySelector('[role=status]')?.textContent, height: Math.round(document.querySelector('.cv-paper-content').getBoundingClientRect().height), page: Math.round(document.querySelector('.cv-page-boundary').getBoundingClientRect().height) })")
+  const denseFit = await evaluate("({ status: document.querySelector('.generated-resume-preview [role=status]')?.textContent, height: Math.round(document.querySelector('.cv-paper-content').getBoundingClientRect().height), page: Math.round(document.querySelector('.cv-page-boundary').getBoundingClientRect().height) })")
   assert.ok(
     denseFit.status?.includes("fits on one A4 page"),
     `a representative dense résumé should fit within one A4 page: ${JSON.stringify(denseFit)}`,
   )
   await evaluate("{ const badge = document.createElement('iframe'); badge.id = 'nl-badge-frame'; badge.srcdoc = '<body>Powered by Netlify</body>'; badge.style.cssText = 'position:fixed;bottom:0;right:0;width:194px;height:64px;border:0'; document.body.append(badge) }")
   await until("document.querySelector('#nl-badge-frame')?.contentDocument?.body?.textContent.includes('Powered by Netlify')")
-  await evaluate("window.__printCalled = false; document.querySelector('.results-resume-actions button').click()")
+  await evaluate("window.__printCalled = false; document.querySelector('.results-resume-actions button:last-child').click()")
   await until("window.__printCalled === true && document.body.classList.contains('results-print-resume')")
   const densePdf = join(work, "results-dense-resume.pdf")
   writeFileSync(densePdf, Buffer.from((await call("Page.printToPDF", { printBackground: true, preferCSSPageSize: true })).data, "base64"))
@@ -458,7 +464,7 @@ try {
     const content = paper.querySelector('.cv-paper-content')
     content.style.paddingBottom = (parseFloat(getComputedStyle(content).paddingBottom) + (297 * 96 / 25.4 - 10 - height)) + 'px'
   }`)
-  await evaluate("document.querySelector('.results-resume-actions button').click()")
+  await evaluate("document.querySelector('.results-resume-actions button:last-child').click()")
   await until("window.__printCalled === true && document.body.classList.contains('results-print-resume')")
   const boundaryPdf = join(work, "results-boundary-resume.pdf")
   writeFileSync(boundaryPdf, Buffer.from((await call("Page.printToPDF", { printBackground: true, preferCSSPageSize: true })).data, "base64"))
@@ -478,9 +484,10 @@ try {
   await evaluate("Array.from(document.querySelectorAll('[role=dialog] button')).at(-2).click()")
   await until("document.querySelector('h1')?.textContent.includes('Product Lead')")
   await evaluate("Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'Résumé').click()")
-  await until("document.querySelector('[role=status]')?.textContent.includes('extends beyond')")
+  await evaluate("Array.from(document.querySelectorAll('.resume-review button')).find(b => b.textContent.trim() === 'Accept resume')?.click()")
+  await until("document.querySelector('.generated-resume-preview [role=status]')?.textContent.includes('extends beyond')")
   assert.ok(await evaluate("document.querySelector('.cv-paper-content').textContent.includes('END-MARKER')"), "overflow must not hide generated text")
-  await evaluate("window.__printCalled = false; document.querySelector('.results-resume-actions button').click()")
+  await evaluate("window.__printCalled = false; document.querySelector('.results-resume-actions button:last-child').click()")
   await until("document.querySelector('[role=alert]')?.textContent.includes('exceeds one A4 page')")
   assert.equal(await evaluate("window.__printCalled"), false, "overflowing résumé should not open a misleading PDF export")
   assert.ok(await evaluate("document.body.textContent.includes('Add your name and contact details in Profile')"), "a draft without identity should direct the user to Profile")

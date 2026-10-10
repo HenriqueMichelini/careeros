@@ -30,6 +30,7 @@ export interface ReviewedResumeClaim {
   }
 }
 export interface ResumeReview {
+  id: string
   version: "resume-review-v1"
   claims: ReviewedResumeClaim[]
   facts: QualificationFact[]
@@ -118,6 +119,13 @@ export function removeResumeClaim(
   next.claims[index].removed = true
   return next
 }
+function isResumeStatementText(text: unknown): text is string {
+  return (
+    typeof text === "string" && !!text.trim() && text.length <= 2000 &&
+    !/[\r\n*`]/.test(text) &&
+    !/^(?:#{1,6}\s|[-•]\s|\d+[.)]\s)/.test(text.trim())
+  )
+}
 export function correctResume(
   review: ResumeReview,
   index: number,
@@ -125,12 +133,7 @@ export function correctResume(
 ): ResumeReview {
   const original = review.claims[index]
   const text = evidence.trim()
-  if (
-    !original ||
-    !text ||
-    text.length > 2000 ||
-    /[\r\n*`]/.test(text) || /^(?:#{1,6}\s|[-•]\s|\d+[.)]\s)/.test(text)
-  )
+  if (!original || !isResumeStatementText(text))
     throw new Error("input")
   const next = structuredClone(review)
   // The person explicitly supplies and owns the complete replacement assertion.
@@ -220,11 +223,7 @@ export function parseResumeReview(
       !c ||
       !resumeSections.includes(c.section) ||
       !["paragraph", "subheading", "bullet"].includes(c.kind) ||
-      typeof c.text !== "string" ||
-      !c.text.trim() ||
-      c.text.length > 2000 ||
-      /[\r\n*`]/.test(c.text) ||
-        /^(?:#{1,6}\s|[-•]\s|\d+[.)]\s)/.test(c.text) ||
+      !isResumeStatementText(c.text) ||
       !["supported", "uncertain", "unsupported"].includes(c.state) ||
       !Array.isArray(c.concerns) ||
       c.concerns.some((s) => typeof s !== "string" || s.length > 1000) ||
@@ -265,6 +264,7 @@ export function parseResumeReview(
   }
   if (renderReviewedResume(r.claims, language) !== markdown) return null
   return {
+    id: crypto.randomUUID(),
     version: r.version,
     claims: structuredClone(r.claims),
     facts: structuredClone(r.facts),

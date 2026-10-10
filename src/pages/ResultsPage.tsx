@@ -377,8 +377,13 @@ export default function ResultsPage({ setPage }: Props) {
           </div>
         ) : activeTab === "resume" ? (
           <div>
+            {!acceptedResume && state.lastAcceptedMaterials && <button
+              className="mb-4 border px-3 py-2 text-xs border-[var(--color-border)]"
+              onClick={() => dispatch({type:"SET_MATERIALS",payload:state.lastAcceptedMaterials!})}
+            >{t("resumeReview.restorePrevious")}</button>}
             {materials.resumeReview ? (
               <ResumeReviewPanel
+                key={materials.resumeReview.id}
                 review={materials.resumeReview}
                 accepted={acceptedResume}
                 document={profileDocument}

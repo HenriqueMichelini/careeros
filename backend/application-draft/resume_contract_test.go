@@ -232,3 +232,21 @@ func TestTemporaryQualificationHasApplicationOwnedSupport(t *testing.T) {
 		t.Fatalf("temporary qualification not reviewable: %d %s", w.Code, w.Body.String())
 	}
 }
+
+func TestIndentedMarkdownCannotDisappearFromAcceptedResume(t *testing.T) {
+	calls := 0
+	client := &http.Client{Transport: providerTransport(func(r *http.Request) (*http.Response, error) {
+		calls++
+		if calls == 1 {
+			c := citedClaim("  ## Acme")
+			c["kind"] = "paragraph"
+			return completionResponse(structuredDraft([]any{c})), nil
+		}
+		return completionResponse(map[string]any{"judgments": []any{map[string]any{"index": 0, "state": "supported", "reason": "Controlled semantic approval cannot bypass the syntax bound."}}}), nil
+	})}
+	w := httptest.NewRecorder()
+	applicationdraft.NewHandlerWithClient(client).ServeHTTP(w, reviewedRequest(t))
+	if w.Code != 502 || !strings.Contains(w.Body.String(), `"error":"invalid_output"`) {
+		t.Fatalf("indented Markdown escaped plain statement boundary: %d %s", w.Code, w.Body.String())
+	}
+}

@@ -765,6 +765,7 @@ const messages = {
     "results.noResultsDescription":
       "Go to Apply, paste a job opportunity, and click Generate Materials.",
     "results.goToApply": "Go to Apply",
+    "resumeReview.restorePrevious": "Restore previous accepted draft",
     "resumeReview.context": "Context",
     "resumeReview.generalContext": "General career information",
     "resumeReview.cancel": "Cancel",
@@ -1612,6 +1613,7 @@ const messages = {
     "results.noResultsDescription":
       "Acesse Aplicar, cole uma oportunidade e clique em Gerar materiais.",
     "results.goToApply": "Ir para Aplicar",
+    "resumeReview.restorePrevious": "Restaurar rascunho aceito anterior",
     "resumeReview.context": "Contexto",
     "resumeReview.generalContext": "Informações profissionais gerais",
     "resumeReview.cancel": "Cancelar",

@@ -500,6 +500,21 @@ try {
         0,
         "failure must not retry automatically",
       )
+      // A successful replacement stays a draft; cancellation restores the
+      // complete previous accepted result, not just the resume string.
+      await evaluate("document.querySelectorAll('nav button')[0].click()")
+      await until("!!document.querySelector('main textarea')")
+      await generate();await until('window.__pending.length === 1');await respond({gaps:[]});await until('window.__pending.length === 1')
+      await respond({...materials,jobTitle:'Replacement draft',resume:'## Technical Skills\n- Research'})
+      await until("!!document.querySelector('.results-tabs')")
+      await evaluate("document.querySelectorAll('.results-tabs button')[1].click()")
+      await until("!!document.querySelector('.resume-review')")
+      const restore = locale === 'en' ? 'Restore previous accepted draft' : 'Restaurar rascunho aceito anterior'
+      assert.equal(await evaluate(`Array.from(document.querySelectorAll('button')).some(b=>b.textContent.trim()===${JSON.stringify(restore)})`),true)
+      await evaluate(`Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()===${JSON.stringify(restore)}).click()`)
+      await until("!!document.querySelector('.cv-paper')")
+      assert.equal(await evaluate("document.querySelector('.cv-paper-content').textContent"),before)
+      assert.ok(!(await evaluate("document.querySelector('h1').textContent")).includes('Replacement draft'))
     }
   }
   // Actual accepted-content overflow is measured before opening the print dialog.

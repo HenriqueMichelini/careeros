@@ -140,3 +140,8 @@ test("malformed unresolved references fail at the review boundary instead of cra
     null,
   )
 })
+
+test('indented Markdown cannot become accepted wording that disappears from preview', () => {
+ const invalid={version:'resume-review-v1',check:'not_needed',facts:[],claims:[{...claim,section:'experience',kind:'paragraph',text:'  ## Acme',state:'unsupported',sources:[]}]}
+ assert.equal(parseResumeReview(invalid,sourceSnapshot,{},'en','## Professional Experience\n  ## Acme'),null)
+})
