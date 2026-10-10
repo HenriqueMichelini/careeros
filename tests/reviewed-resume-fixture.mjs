@@ -120,6 +120,67 @@ export function reviewedDraftFixture(body, input) {
   return {
     ...body,
     resume,
+    ...(input.reviewArtifacts
+      ? {
+          artifactReview: {
+            version: "artifact-review-v1",
+            check: "complete",
+            facts,
+            jobPosting: input.jobPosting,
+            closing: body.coverLetter.closing,
+            claims: [
+              ["jobTitle", body.jobTitle],
+              ["company", body.company],
+              ["jobSummary", body.jobSummary],
+              ["greeting", body.coverLetter.greeting],
+              ["body", body.coverLetter.body],
+              ["applicationAnswers", body.applicationAnswers],
+            ].flatMap(([field, text]) =>
+              text
+                ? String(text)
+                    .split("\n\n")
+                    .filter(Boolean)
+                    .map((text) => ({
+                      field,
+                      text,
+                      state: "supported",
+                      concerns: [],
+                      nonfactual: field === "greeting",
+                      scope:
+                        field === "greeting"
+                          ? "nonfactual"
+                          : ["body", "applicationAnswers"].includes(field)
+                            ? "career"
+                            : "job",
+                      sources: ["body", "applicationAnswers"].includes(field)
+                        ? [
+                            {
+                              profileId: doc.id,
+                              id: facts[0].id,
+                              revision: facts[0].revision,
+                            },
+                          ]
+                        : [],
+                      jobSources: [
+                        "jobTitle",
+                        "company",
+                        "jobSummary",
+                      ].includes(field)
+                        ? [
+                            {
+                              start: 0,
+                              end: new TextEncoder().encode(input.jobPosting)
+                                .length,
+                              quote: input.jobPosting,
+                            },
+                          ]
+                        : [],
+                    }))
+                : [],
+            ),
+          },
+        }
+      : {}),
     resumeReview: {
       version: "resume-review-v1",
       check: "complete",

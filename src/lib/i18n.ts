@@ -765,15 +765,38 @@ const messages = {
     "results.noResultsDescription":
       "Go to Apply, paste a job opportunity, and click Generate Materials.",
     "results.goToApply": "Go to Apply",
+    "artifactReview.title": "Review application evidence",
+    "artifactReview.all": "View all wording and support",
+    "artifactReview.concernsOnly": "Show material concerns",
+    "artifactReview.jobSource": "Job Posting excerpt",
+    "artifactReview.correctionHelp":
+      "Supply your complete truthful replacement. Preserve every requested answer, including qualifications, and remove unsupported details. Old citations will not support the replacement.",
+    "artifactReview.acceptHelp":
+      "Resolve material concerns to accept the summary, cover letter and answers together. Supported wording needs no individual confirmation.",
+    "artifactReview.accept": "Accept application materials",
+    "artifactReview.accepted":
+      "Application materials accepted. Support checks are fallible.",
+    "artifactReview.error":
+      "Check required answers and cover-letter format, signature and length before accepting.",
+    "artifactReview.legacy":
+      "Generate a new draft to review evidence before copying or exporting these materials.",
+    "artifactReview.complete":
+      "All draft artifacts accepted; support checks are fallible.",
+    "artifactReview.field.jobTitle": "Role",
+    "artifactReview.field.company": "Employer",
+    "artifactReview.field.jobSummary": "Job summary",
+    "artifactReview.field.greeting": "Greeting",
+    "artifactReview.field.body": "Cover letter",
+    "artifactReview.field.applicationAnswers": "Application answers",
     "resumeReview.restorePrevious": "Restore previous accepted draft",
     "resumeReview.context": "Context",
     "resumeReview.generalContext": "General career information",
     "resumeReview.cancel": "Cancel",
     "resumeReview.title": "Review resume evidence",
     "resumeReview.limits":
-      "Support checks can be wrong. References show sources, not proof of truth. Only this resume is checked; review the other draft materials separately.",
+      "Support checks can be wrong. References show sources, not proof of truth. Each artifact has its own review; accept all materials to complete the draft review.",
     "resumeReview.stale":
-      "Your Profile changed. The previous resume and its sources are preserved. Generate a new draft before accepting, copying or exporting.",
+      "Your Profile changed. The previous content and its sources are preserved. Generate a new draft before accepting, copying or exporting.",
     "resumeReview.edit": "Review wording",
     "resumeReview.unavailable":
       "The support check was unavailable. Nothing was accepted. Remove unresolved wording or supply your own correction. No automatic retry was made.",
@@ -1613,13 +1636,36 @@ const messages = {
     "results.noResultsDescription":
       "Acesse Aplicar, cole uma oportunidade e clique em Gerar materiais.",
     "results.goToApply": "Ir para Aplicar",
+    "artifactReview.title": "Revisar evidências da candidatura",
+    "artifactReview.all": "Ver todo o texto e suporte",
+    "artifactReview.concernsOnly": "Mostrar pendências relevantes",
+    "artifactReview.jobSource": "Trecho da vaga",
+    "artifactReview.correctionHelp":
+      "Forneça sua substituição completa e verdadeira. Preserve cada resposta solicitada, incluindo qualificações, e remova detalhes sem suporte. As citações anteriores não darão suporte à substituição.",
+    "artifactReview.acceptHelp":
+      "Resolva as pendências relevantes para aceitar o resumo, a carta e as respostas juntos. O texto com suporte não exige confirmação individual.",
+    "artifactReview.accept": "Aceitar materiais da candidatura",
+    "artifactReview.accepted":
+      "Materiais da candidatura aceitos. As verificações de suporte podem falhar.",
+    "artifactReview.error":
+      "Verifique as respostas obrigatórias e o formato, a assinatura e o tamanho da carta antes de aceitar.",
+    "artifactReview.legacy":
+      "Gere um novo rascunho para revisar as evidências antes de copiar ou exportar estes materiais.",
+    "artifactReview.complete":
+      "Todos os materiais aceitos; as verificações de suporte podem falhar.",
+    "artifactReview.field.jobTitle": "Cargo",
+    "artifactReview.field.company": "Empresa",
+    "artifactReview.field.jobSummary": "Resumo da vaga",
+    "artifactReview.field.greeting": "Saudação",
+    "artifactReview.field.body": "Carta de apresentação",
+    "artifactReview.field.applicationAnswers": "Respostas da candidatura",
     "resumeReview.restorePrevious": "Restaurar rascunho aceito anterior",
     "resumeReview.context": "Contexto",
     "resumeReview.generalContext": "Informações profissionais gerais",
     "resumeReview.cancel": "Cancelar",
     "resumeReview.title": "Revisar evidências do currículo",
     "resumeReview.limits":
-      "As verificações podem errar. Referências indicam fontes, não comprovam a veracidade. Apenas este currículo é verificado; revise os outros materiais separadamente.",
+      "As verificações podem errar. Referências indicam fontes, não comprovam a veracidade. Cada material tem sua própria revisão; aceite todos os materiais para concluir a revisão do rascunho.",
     "resumeReview.stale":
       "Seu Perfil mudou. O currículo anterior e suas fontes foram preservados. Gere um novo rascunho antes de aceitar, copiar ou exportar.",
     "resumeReview.edit": "Revisar texto",

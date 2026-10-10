@@ -66,6 +66,8 @@ export interface ProfessionalRepository {
 }
 
 export interface GeneratedMaterials {
+  artifactReview?: import("./artifactReview").ArtifactReview
+  acceptedArtifacts?: import("./artifactReview").AcceptedArtifacts
   resumeReview?: import("./resumeReview").ResumeReview
   acceptedResume?: import("./resumeReview").AcceptedResume
   contextSelection?: {

@@ -1,3 +1,4 @@
+import { parseArtifactReview } from "./artifactReview"
 import { parseResumeReview } from "./resumeReview"
 import {
   qualificationProjection,
@@ -85,6 +86,7 @@ export async function generateMaterials(
           ? {
               profileEvidence: qualificationProjection(profileDocument),
               reviewResume: true,
+              reviewArtifacts: true,
               selectedFactIds: [...new Set(selectedFactIds)],
             }
           : {}),
@@ -161,9 +163,24 @@ export async function generateMaterials(
         cvLanguage,
         payload.resume!,
         confirmedQualifications,
+        qualificationAnswers,
       )
     : undefined
   if (profileDocument && !resumeReview)
+    throw new ApplicationDraftError("invalid_output")
+  const artifactReview =
+    profileDocument && resumeReview
+      ? parseArtifactReview(
+          payload.artifactReview,
+          profileDocument,
+          repo,
+          cvLanguage,
+          jobPosting,
+          payload,
+          resumeReview.facts,
+        )
+      : undefined
+  if (profileDocument && !artifactReview)
     throw new ApplicationDraftError("invalid_output")
   const fullName = repo.fullName?.trim() || ""
   const coverLetter = completeCoverLetter(payload.coverLetter, fullName)
@@ -171,6 +188,7 @@ export async function generateMaterials(
   return {
     ...payload,
     resumeReview: resumeReview ?? undefined,
+    artifactReview: artifactReview ?? undefined,
     cvLanguage,
     coverLetter,
     coverLetterHasSignature: !!fullName,

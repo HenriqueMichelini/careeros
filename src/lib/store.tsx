@@ -99,8 +99,14 @@ function reducer(state: AppState, action: Action): AppState {
     case "SET_REPO":
       return { ...state, repository: action.payload }
     case "SET_MATERIALS":
-      return { ...state, generatedMaterials: action.payload,
-        lastAcceptedMaterials: action.payload.acceptedResume ? action.payload : state.lastAcceptedMaterials }
+      return {
+        ...state,
+        generatedMaterials: action.payload,
+        lastAcceptedMaterials:
+          action.payload.acceptedResume || action.payload.acceptedArtifacts
+            ? action.payload
+            : state.lastAcceptedMaterials,
+      }
     case "SET_TYPESAFE_KEY":
       return { ...state, typesafeKey: action.payload }
     case "SET_API_KEY":

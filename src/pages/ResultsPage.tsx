@@ -1,3 +1,5 @@
+import ArtifactReviewPanel from "../components/ArtifactReviewPanel"
+import { artifactsCurrent } from "../lib/artifactReview"
 import ResumeReviewPanel from "../components/ResumeReviewPanel"
 import { resumeReviewCurrent } from "../lib/resumeReview"
 import { useEffect, useRef, useState } from "react"
@@ -11,8 +13,8 @@ type PdfTarget = "resume" | "cover"
 const A4_HEIGHT_PX = (297 * 96) / 25.4
 
 const TABS: {
- id: Tab
- labelKey: TranslationKey
+  id: Tab
+  labelKey: TranslationKey
 }[] = [
   { id: "summary", labelKey: "results.summary" },
   { id: "resume", labelKey: "results.resume" },
@@ -64,7 +66,11 @@ export default function ResultsPage({ setPage }: Props) {
   }, [])
   useEffect(
     () => setPdfOverflow(false),
-    [activeTab, materials?.resume, materials?.coverLetter],
+    [
+      activeTab,
+      materials?.acceptedResume?.markdown,
+      materials?.acceptedArtifacts?.coverLetter,
+    ],
   )
 
   if (!materials) {
@@ -109,15 +115,19 @@ export default function ResultsPage({ setPage }: Props) {
   const resumeContent = acceptedResume?.markdown ?? ""
   const resumeIdentity = acceptedResume?.identityProfile ?? state.repository
 
+  const acceptedArtifacts = materials.acceptedArtifacts
+  const artifactsUsable =
+    !!acceptedArtifacts && artifactsCurrent(acceptedArtifacts, profileDocument)
+  const coverContent = acceptedArtifacts?.coverLetter ?? ""
   const tabContent: Record<Tab, string> = {
-    summary: materials.jobSummary,
+    summary: acceptedArtifacts?.jobSummary ?? "",
     resume: resumeContent,
-    cover: materials.coverLetter,
-    answers: materials.applicationAnswers,
+    cover: coverContent,
+    answers: acceptedArtifacts?.applicationAnswers ?? "",
   }
 
   function handleCopy() {
-    if (activeTab === "resume" && !resumeUsable) return
+    if (activeTab === "resume" ? !resumeUsable : !artifactsUsable) return
     const text =
       activeTab === "resume"
         ? [
@@ -137,7 +147,8 @@ export default function ResultsPage({ setPage }: Props) {
   }
 
   async function savePdf(target: PdfTarget) {
-    if (!materials || (target === "resume" && !resumeUsable)) return
+    if (!materials || (target === "resume" ? !resumeUsable : !artifactsUsable))
+      return
     await document.fonts.ready
     let printContent: HTMLElement
     if (target === "resume") {
@@ -190,9 +201,9 @@ export default function ResultsPage({ setPage }: Props) {
     const name =
       (target === "resume"
         ? resumeIdentity
-        : state.repository
+        : (acceptedArtifacts?.review.identityProfile ?? state.repository)
       ).fullName.trim() ||
-      materials.company ||
+      acceptedArtifacts?.company ||
       "CareerOS"
     document.title = `${name} - ${
       target === "resume" ? "Resume" : "Cover Letter"
@@ -243,14 +254,14 @@ export default function ResultsPage({ setPage }: Props) {
             className="break-words text-5xl font-bold uppercase tracking-tight leading-tight"
             style={{ fontFamily: "var(--font-display)" }}
           >
-            {materials.jobTitle || t("results.applicationMaterials")}
+            {acceptedArtifacts?.jobTitle || t("results.applicationMaterials")}
           </h1>
-          {materials.company && (
+          {acceptedArtifacts?.company && (
             <p
               className="text-lg mt-1"
               style={{ color: "var(--color-muted-fg)" }}
             >
-              {materials.company}
+              {acceptedArtifacts?.company ?? t("results.notProvided")}
             </p>
           )}
         </div>
@@ -302,6 +313,34 @@ export default function ResultsPage({ setPage }: Props) {
           borderTop: "none",
         }}
       >
+        {activeTab !== "resume" &&
+          (materials.artifactReview ? (
+            <ArtifactReviewPanel
+              key={materials.artifactReview.id}
+              review={materials.artifactReview}
+              accepted={acceptedArtifacts}
+              document={profileDocument}
+              onAccept={(review, accepted) =>
+                dispatch({
+                  type: "SET_MATERIALS",
+                  payload: {
+                    ...materials,
+                    artifactReview: review,
+                    acceptedArtifacts: accepted,
+                  },
+                })
+              }
+            />
+          ) : (
+            <p role="alert" className="mb-6">
+              {t("artifactReview.legacy")}
+            </p>
+          ))}
+        {resumeUsable && artifactsUsable && (
+          <p role="status" className="mb-4 text-sm">
+            {t("artifactReview.complete")}
+          </p>
+        )}
         {activeTab === "summary" ? (
           <div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
@@ -319,7 +358,7 @@ export default function ResultsPage({ setPage }: Props) {
                   {t("results.role")}
                 </p>
                 <p className="text-sm font-medium">
-                  {materials.jobTitle || t("results.notProvided")}
+                  {acceptedArtifacts?.jobTitle || t("results.notProvided")}
                 </p>
               </div>
               <div
@@ -336,7 +375,7 @@ export default function ResultsPage({ setPage }: Props) {
                   {t("results.company")}
                 </p>
                 <p className="text-sm font-medium">
-                  {materials.company || t("results.notProvided")}
+                  {acceptedArtifacts?.company || t("results.notProvided")}
                 </p>
               </div>
               <div
@@ -371,16 +410,25 @@ export default function ResultsPage({ setPage }: Props) {
                 className="text-sm leading-relaxed max-w-2xl"
                 style={{ color: "var(--color-fg)" }}
               >
-                {materials.jobSummary}
+                {tabContent.summary}
               </p>
             </div>
           </div>
         ) : activeTab === "resume" ? (
           <div>
-            {!acceptedResume && state.lastAcceptedMaterials && <button
-              className="mb-4 border px-3 py-2 text-xs border-[var(--color-border)]"
-              onClick={() => dispatch({type:"SET_MATERIALS",payload:state.lastAcceptedMaterials!})}
-            >{t("resumeReview.restorePrevious")}</button>}
+            {!acceptedResume && state.lastAcceptedMaterials && (
+              <button
+                className="mb-4 border px-3 py-2 text-xs border-[var(--color-border)]"
+                onClick={() =>
+                  dispatch({
+                    type: "SET_MATERIALS",
+                    payload: state.lastAcceptedMaterials!,
+                  })
+                }
+              >
+                {t("resumeReview.restorePrevious")}
+              </button>
+            )}
             {materials.resumeReview ? (
               <ResumeReviewPanel
                 key={materials.resumeReview.id}
@@ -465,7 +513,8 @@ export default function ResultsPage({ setPage }: Props) {
               <div className="results-other-actions flex min-h-10 items-center justify-end gap-3">
                 <button
                   onClick={handleCopy}
-                  className="bg-[var(--color-fg)] px-3 py-1.5 text-xs uppercase tracking-widest text-white transition-opacity hover:opacity-85"
+                  disabled={!artifactsUsable}
+                  className="disabled:opacity-40 bg-[var(--color-fg)] px-3 py-1.5 text-xs uppercase tracking-widest text-white transition-opacity hover:opacity-85"
                   style={{ fontFamily: "var(--font-mono)" }}
                 >
                   {copied ? t("common.copied") : t("common.copyText")}
@@ -473,6 +522,7 @@ export default function ResultsPage({ setPage }: Props) {
                 {activeTab === "cover" && (
                   <button
                     onClick={() => savePdf("cover")}
+                    disabled={!artifactsUsable}
                     className="inline-flex items-center gap-2 bg-[var(--color-accent)] px-3 py-1.5 text-xs uppercase tracking-widest text-white transition-opacity hover:opacity-85"
                     style={{ fontFamily: "var(--font-mono)" }}
                   >
@@ -513,7 +563,7 @@ export default function ResultsPage({ setPage }: Props) {
         )}
       </div>
       <div className="results-cover-print" aria-hidden="true">
-        {materials.coverLetter}
+        {coverContent}
       </div>
     </div>
   )
