@@ -69,6 +69,9 @@ func TestArtifactSupportGuardsAndAnswerOmission(t *testing.T) {
 			json.NewDecoder(req.Body).Decode(&input)
 			input["reviewArtifacts"] = true
 			input["jobPosting"] = "Java developer. AWS required."
+			if tc.name == "Portuguese field omission" {
+				input["jobPosting"] = "Desenvolvedor Java. AWS é obrigatório. Responda em português: como você usa Java?"
+			}
 			input["qualificationAnswers"] = []any{map[string]string{"requirement": "Describe Java experience", "userContext": "I use Java."}}
 			data, _ := json.Marshal(input)
 			req = httptest.NewRequest("POST", "/api/application-draft", strings.NewReader(string(data)))
@@ -80,6 +83,9 @@ func TestArtifactSupportGuardsAndAnswerOmission(t *testing.T) {
 				if calls == 1 {
 					draft := structuredDraft([]any{citedClaim("Java")})
 					draft["coverLetter"].(map[string]string)["body"] = tc.body
+					if tc.name == "Portuguese field omission" {
+						draft["applicationAnswers"] = "Minha experiência se concentra em sistemas."
+					}
 					return completionResponse(draft), nil
 				}
 				if calls == 2 {
@@ -91,6 +97,20 @@ func TestArtifactSupportGuardsAndAnswerOmission(t *testing.T) {
 					Blocks []struct{ Field, Text string }
 				}
 				json.Unmarshal([]byte(envelope.Messages[1].Content), &payload)
+				if tc.name == "Portuguese field omission" {
+					coverHasJava, answerHasJava := false, false
+					for _, b := range payload.Blocks {
+						if b.Field == "body" {
+							coverHasJava = strings.Contains(b.Text, "Java")
+						}
+						if b.Field == "applicationAnswers" {
+							answerHasJava = strings.Contains(b.Text, "Java")
+						}
+					}
+					if !coverHasJava || answerHasJava {
+						t.Fatal("fixture must contain Java outside the answer, but omit it from the required answer")
+					}
+				}
 				judgments := []any{}
 				for i, b := range payload.Blocks {
 					refs := []any{}
@@ -103,10 +123,13 @@ func TestArtifactSupportGuardsAndAnswerOmission(t *testing.T) {
 					}
 					if b.Field == "jobSummary" || (b.Field == "body" && tc.jobQuote != "") {
 						quote := "Java developer."
+						if tc.name == "Portuguese field omission" {
+							quote = "Desenvolvedor Java."
+						}
 						if tc.jobQuote != "" {
 							quote = tc.jobQuote
 						}
-						jobs = append(jobs, map[string]any{"start": 0, "end": 15, "quote": quote})
+						jobs = append(jobs, map[string]any{"start": 0, "end": len(quote), "quote": quote})
 					}
 					scope := artifactScope(b.Field)
 					if b.Field == "body" && strings.HasPrefix(tc.name, "employer") {
