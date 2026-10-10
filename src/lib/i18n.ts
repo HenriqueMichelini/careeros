@@ -160,6 +160,8 @@ const messages = {
     "home.posting": "Posting",
     "home.pasteJobDetails": "Paste job details on the left",
     "home.generating": "Generating...",
+    "home.cancel": "Cancel request",
+    "home.reanalyze": "Discard analysis and analyze again",
     "home.checkingRequirements": "Checking requirements...",
     "home.checkingRequirementsNote":
       "Checking each qualification against approved Profile evidence.",
@@ -1024,6 +1026,8 @@ const messages = {
     "home.posting": "Vaga",
     "home.pasteJobDetails": "Cole os detalhes da vaga à esquerda",
     "home.generating": "Gerando...",
+    "home.cancel": "Cancelar solicitação",
+    "home.reanalyze": "Descartar análise e analisar novamente",
     "home.checkingRequirements": "Conferindo requisitos...",
     "home.checkingRequirementsNote":
       "Conferindo cada qualificação com as evidências aprovadas do Perfil.",

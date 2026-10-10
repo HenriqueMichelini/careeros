@@ -268,7 +268,10 @@ export default function ResultsPage({ setPage }: Props) {
 
         <div className="flex flex-wrap gap-3 sm:pt-4">
           <button
-            onClick={() => setPage("home")}
+            onClick={() => {
+              dispatch({ type: "NEW_APPLICATION" })
+              setPage("home")
+            }}
             className="text-xs uppercase tracking-[0.15em] px-4 py-2.5 transition-opacity hover:opacity-75"
             style={{
               fontFamily: "var(--font-mono)",

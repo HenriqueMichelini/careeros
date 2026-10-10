@@ -214,7 +214,7 @@ func TestReusingJobContextRequiresExactSourceVersionsAndWholeOriginalGate(t *tes
 			req.Header.Set("X-TypeSafe-Api-Key", "synthetic")
 			w := httptest.NewRecorder()
 			draft.NewHandlerWithClient(client).ServeHTTP(w, req)
-			if name == "valid" {
+			if name == "valid" || name == "altered profile" {
 				if w.Code != 200 || calls != 1 {
 					t.Fatalf("%d %s", w.Code, w.Body.String())
 				}

@@ -20,7 +20,7 @@ export function jobContextFixture(posting) {
   }
   return {
     version:
-      "job-context-v1/prompt-v1/schema-v1/gpt-6-luna/none/jev-rubric-v1/policy-v1",
+      "job-context-v2/prompt-v1/schema-v1/gpt-6-luna/none/jev-rubric-v1/policy-v1",
     sourceId: "a".repeat(64),
     inputsId: "b".repeat(64),
     job: {

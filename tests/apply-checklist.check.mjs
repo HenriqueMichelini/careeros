@@ -213,6 +213,14 @@ try {
     await until(
       "!!document.querySelector('main textarea') && !!document.querySelector('main [data-checklist-state]')",
     )
+    // Each fixture below represents an independent analysis outcome. Explicitly
+    // edit the original before starting it; unchanged-retry reuse has its own
+    // regression in application-reuse-browser.check.mjs.
+    const original = await evaluate(
+      "document.querySelector('main textarea').value",
+    )
+    await fill(original + "\n")
+    await fill(original)
     return evaluate(
       "document.querySelector('main [data-checklist-state]').parentElement.parentElement.querySelector('button').click()",
     )
@@ -269,14 +277,20 @@ try {
         }),
       )
     }
-    if (body.resume && !body.resumeReview && status === 200) body = reviewedDraftFixture(body, await evaluate("JSON.parse(window.__pending[0].options.body)"))
+    if (body.resume && !body.resumeReview && status === 200)
+      body = reviewedDraftFixture(
+        body,
+        await evaluate("JSON.parse(window.__pending[0].options.body)"),
+      )
     await evaluate(
       `window.__pending.shift().resolve(new Response(${JSON.stringify(JSON.stringify(body))}, { status: ${status}, headers: { 'Content-Type': 'application/json' } }))`,
     )
     await pause(70)
     if (body.artifactReview && status === 200) {
       await until("!!document.querySelector('.artifact-review')")
-      await evaluate("Array.from(document.querySelectorAll('.artifact-review button')).find(b=>/^(Accept application materials|Aceitar materiais da candidatura)$/.test(b.textContent.trim())).click()")
+      await evaluate(
+        "Array.from(document.querySelectorAll('.artifact-review button')).find(b=>/^(Accept application materials|Aceitar materiais da candidatura)$/.test(b.textContent.trim())).click()",
+      )
     }
     if (
       body.gaps?.length === 0 &&
@@ -440,7 +454,14 @@ try {
       assert.equal(await evaluate(savedProfileExpression), unchangedProfile)
       // Short postings preserve explicit unknowns through qualification confirmation, Results and print.
       const shortDraft = {
-        contextSelection: { version: "application-context-v1", sources: ["fixture/fact@1"], budgetExcluded: 1, relevanceExcluded: 0, complete: false, bytes: 100 },
+        contextSelection: {
+          version: "application-context-v1",
+          sources: ["fixture/fact@1"],
+          budgetExcluded: 1,
+          relevanceExcluded: 0,
+          complete: false,
+          bytes: 100,
+        },
         jobTitle: "Java developer",
         company: null,
         jobSummary: "AWS required.",
@@ -508,7 +529,9 @@ try {
           ),
           true,
         )
-        await evaluate("document.querySelector('[role=dialog]').scrollTop = document.querySelector('[data-requirement-state]').offsetTop - document.querySelector('[role=dialog]').offsetTop")
+        await evaluate(
+          "document.querySelector('[role=dialog]').scrollTop = document.querySelector('[data-requirement-state]').offsetTop - document.querySelector('[role=dialog]').offsetTop",
+        )
         await pause(250)
         const evidenceShot = await call("Page.captureScreenshot", {
           format: "png",
@@ -542,7 +565,11 @@ try {
           jobTitle: unknownTitle ? null : shortDraft.jobTitle,
         })
         await until("!!document.querySelector('.results-page')")
-        assert.ok(await evaluate(`document.querySelector('.results-page [role="status"]').textContent.includes(${JSON.stringify(locale === "en" ? "context budget" : "limite de contexto")})`))
+        assert.ok(
+          await evaluate(
+            `document.querySelector('.results-page [role="status"]').textContent.includes(${JSON.stringify(locale === "en" ? "context budget" : "limite de contexto")})`,
+          ),
+        )
         const unknownLabel = locale === "en" ? "Not provided" : "Não informado"
         assert.ok(
           (
@@ -592,7 +619,9 @@ try {
           await pause(100)
           if (target === "resume") {
             await until("!!document.querySelector('.resume-review')")
-            await evaluate("Array.from(document.querySelectorAll('.resume-review button')).find(b => /^(Accept resume|Aceitar currículo)$/.test(b.textContent.trim())).click()")
+            await evaluate(
+              "Array.from(document.querySelectorAll('.resume-review button')).find(b => /^(Accept resume|Aceitar currículo)$/.test(b.textContent.trim())).click()",
+            )
             await until("!!document.querySelector('.cv-paper')")
           }
           await evaluate(
@@ -1052,7 +1081,20 @@ try {
             "document.querySelector('[role=dialog] button').click()",
           )
         }
-        const contrasted = { ...repo, experience: [...repo.experience, { ...repo.experience[0], id: "contrasting", company: "Summit", title: "Analyst", startDate: "2015", endDate: "2017" }] }
+        const contrasted = {
+          ...repo,
+          experience: [
+            ...repo.experience,
+            {
+              ...repo.experience[0],
+              id: "contrasting",
+              company: "Summit",
+              title: "Analyst",
+              startDate: "2015",
+              endDate: "2017",
+            },
+          ],
+        }
         await evaluate(`(async () => {
           const { migrateProfile } = await import('/src/lib/profileDocument.ts');
           const doc = migrateProfile(${JSON.stringify(contrasted)}, crypto.randomUUID());
@@ -1062,24 +1104,62 @@ try {
           localStorage.setItem('careeros_profile_v2', JSON.stringify(doc));
           location.reload();
         })()`)
-        await until("document.readyState === 'complete' && !!document.querySelector('header button')")
+        await until(
+          "document.readyState === 'complete' && !!document.querySelector('header button')",
+        )
         await clickApply()
-        await evaluate("window.__pending = []; window.fetch = (url, options) => new Promise(resolve => window.__pending.push({url, options, resolve}))")
-        await fill('Java developer. AWS required.')
+        await evaluate(
+          "window.__pending = []; window.fetch = (url, options) => new Promise(resolve => window.__pending.push({url, options, resolve}))",
+        )
+        await fill("Java developer. AWS required.")
         await generate()
-        await respond({gaps: []}, 200, true)
-        await evaluate("document.querySelector('[data-requirement-state] summary').click()")
-        await until("document.querySelector('[data-requirement-state] details').open && document.querySelector('[data-linked-context]').offsetHeight > 0")
-        const linked = await evaluate("document.querySelector('[data-linked-context]').textContent")
-        assert.ok(linked.includes('Harbor Works') && linked.includes('Product Lead') && linked.includes('2021'))
-        assert.ok(!linked.includes('Summit'), 'linked skill must retain its actual employer')
-        const owners = await evaluate("Array.from(document.querySelectorAll('[data-evidence-owner] h4')).map(el => el.textContent)")
-        assert.ok(owners.some(text => text.includes('Summit') && text.includes('Analyst') && text.includes('2015')))
-        assert.ok(owners.some(text => text.includes('Harbor Works') && text.includes('Product Lead')))
-        await evaluate("document.querySelector('[role=dialog]').scrollTop = document.querySelector('[data-linked-context]').offsetTop - document.querySelector('[role=dialog]').offsetTop")
+        await respond({ gaps: [] }, 200, true)
+        await evaluate(
+          "document.querySelector('[data-requirement-state] summary').click()",
+        )
+        await until(
+          "document.querySelector('[data-requirement-state] details').open && document.querySelector('[data-linked-context]').offsetHeight > 0",
+        )
+        const linked = await evaluate(
+          "document.querySelector('[data-linked-context]').textContent",
+        )
+        assert.ok(
+          linked.includes("Harbor Works") &&
+            linked.includes("Product Lead") &&
+            linked.includes("2021"),
+        )
+        assert.ok(
+          !linked.includes("Summit"),
+          "linked skill must retain its actual employer",
+        )
+        const owners = await evaluate(
+          "Array.from(document.querySelectorAll('[data-evidence-owner] h4')).map(el => el.textContent)",
+        )
+        assert.ok(
+          owners.some(
+            (text) =>
+              text.includes("Summit") &&
+              text.includes("Analyst") &&
+              text.includes("2015"),
+          ),
+        )
+        assert.ok(
+          owners.some(
+            (text) =>
+              text.includes("Harbor Works") && text.includes("Product Lead"),
+          ),
+        )
+        await evaluate(
+          "document.querySelector('[role=dialog]').scrollTop = document.querySelector('[data-linked-context]').offsetTop - document.querySelector('[role=dialog]').offsetTop",
+        )
         await pause(250)
-        const contextShot = await call("Page.captureScreenshot", {format: "png"})
-        writeFileSync(join(work, `linked-context-${locale}.png`), Buffer.from(contextShot.data, "base64"))
+        const contextShot = await call("Page.captureScreenshot", {
+          format: "png",
+        })
+        writeFileSync(
+          join(work, `linked-context-${locale}.png`),
+          Buffer.from(contextShot.data, "base64"),
+        )
         await evaluate("document.querySelector('[role=dialog] button').click()")
         // Approved evidence in every sparse section can start Apply, with all
         // key/posting/in-progress guards still active. No provider is contacted.

@@ -56,9 +56,10 @@ interface AppState {
   isGenerating: boolean
   lastReviewSummary: string
   jobPosting: string
+  applicationRevision: number
 }
 
-type Action = {
+type Action = { type: "NEW_APPLICATION" } | {
   type: "SET_TYPESAFE_KEY"
   payload: string
 } | {
@@ -92,6 +93,12 @@ type Action = {
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
+    case "NEW_APPLICATION":
+      return {
+        ...state,
+        jobPosting: "",
+        applicationRevision: state.applicationRevision + 1,
+      }
     case "SET_UI_LOCALE":
       return { ...state, uiLocale: action.payload }
     case "SET_CV_LANGUAGE":
@@ -202,6 +209,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     isReviewingRepo: false,
     isGenerating: false,
     lastReviewSummary: "",
+    applicationRevision: 0,
     jobPosting: "",
   })
 
