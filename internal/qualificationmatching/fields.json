@@ -1,0 +1,8 @@
+{
+  "profile": ["skills", "competencies", "tools"],
+  "experience": ["company", "title", "startDate", "endDate", "current", "description", "responsibilities", "achievements"],
+  "projects": ["name", "description", "technologies", "highlights"],
+  "education": ["degree", "institution", "graduationDate", "details"],
+  "certifications": ["name", "issuer", "date"],
+  "languages": ["name", "proficiency"]
+}

@@ -1,0 +1,532 @@
+{
+  "mode": "controlled-offline",
+  "fixtureHash": "6caa5ddf5077785da0a3865a23b9956ccb72080748e688c6b15479c9b1be2684",
+  "candidateRetrieval": [
+    {
+      "controlledMatchState": "supported",
+      "controlledMatchCorrect": true,
+      "id": "explicit-support",
+      "budgetBytes": 2048,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "supported",
+      "controlledMatchCorrect": true,
+      "id": "explicit-support",
+      "budgetBytes": 8192,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "supported",
+      "controlledMatchCorrect": true,
+      "id": "explicit-support",
+      "budgetBytes": 16384,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "partially_supported",
+      "controlledMatchCorrect": true,
+      "id": "composite-partial",
+      "budgetBytes": 2048,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "partially_supported",
+      "controlledMatchCorrect": true,
+      "id": "composite-partial",
+      "budgetBytes": 8192,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "partially_supported",
+      "controlledMatchCorrect": true,
+      "id": "composite-partial",
+      "budgetBytes": 16384,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "not_evidenced",
+      "controlledMatchCorrect": true,
+      "id": "missing-not-lacking",
+      "budgetBytes": 2048,
+      "relevant": 0,
+      "retrieved": 0,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "not_evidenced",
+      "controlledMatchCorrect": true,
+      "id": "missing-not-lacking",
+      "budgetBytes": 8192,
+      "relevant": 0,
+      "retrieved": 0,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "not_evidenced",
+      "controlledMatchCorrect": true,
+      "id": "missing-not-lacking",
+      "budgetBytes": 16384,
+      "relevant": 0,
+      "retrieved": 0,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "needs_clarification",
+      "controlledMatchCorrect": true,
+      "id": "aspiration",
+      "budgetBytes": 2048,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "needs_clarification",
+      "controlledMatchCorrect": true,
+      "id": "aspiration",
+      "budgetBytes": 8192,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "needs_clarification",
+      "controlledMatchCorrect": true,
+      "id": "aspiration",
+      "budgetBytes": 16384,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "not_evidenced",
+      "controlledMatchCorrect": true,
+      "id": "negation",
+      "budgetBytes": 2048,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "not_evidenced",
+      "controlledMatchCorrect": true,
+      "id": "negation",
+      "budgetBytes": 8192,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "not_evidenced",
+      "controlledMatchCorrect": true,
+      "id": "negation",
+      "budgetBytes": 16384,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "needs_clarification",
+      "controlledMatchCorrect": true,
+      "id": "approximate-duration",
+      "budgetBytes": 2048,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "needs_clarification",
+      "controlledMatchCorrect": true,
+      "id": "approximate-duration",
+      "budgetBytes": 8192,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "needs_clarification",
+      "controlledMatchCorrect": true,
+      "id": "approximate-duration",
+      "budgetBytes": 16384,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "not_evidenced",
+      "controlledMatchCorrect": true,
+      "id": "related-technology",
+      "budgetBytes": 2048,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "not_evidenced",
+      "controlledMatchCorrect": true,
+      "id": "related-technology",
+      "budgetBytes": 8192,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "not_evidenced",
+      "controlledMatchCorrect": true,
+      "id": "related-technology",
+      "budgetBytes": 16384,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "not_evidenced",
+      "controlledMatchCorrect": true,
+      "id": "technology-similarity",
+      "budgetBytes": 2048,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "not_evidenced",
+      "controlledMatchCorrect": true,
+      "id": "technology-similarity",
+      "budgetBytes": 8192,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "not_evidenced",
+      "controlledMatchCorrect": true,
+      "id": "technology-similarity",
+      "budgetBytes": 16384,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "rejected_unresolved_reference",
+      "controlledMatchCorrect": false,
+      "id": "contrasting-employers",
+      "budgetBytes": 2048,
+      "relevant": 4,
+      "retrieved": 2,
+      "materialMisses": [
+        "b-company",
+        "b-aws"
+      ],
+      "negativeMisses": [],
+      "complete": false
+    },
+    {
+      "controlledMatchState": "partially_supported",
+      "controlledMatchCorrect": true,
+      "id": "contrasting-employers",
+      "budgetBytes": 8192,
+      "relevant": 4,
+      "retrieved": 4,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "partially_supported",
+      "controlledMatchCorrect": true,
+      "id": "contrasting-employers",
+      "budgetBytes": 16384,
+      "relevant": 4,
+      "retrieved": 4,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "partially_supported",
+      "controlledMatchCorrect": true,
+      "id": "project-not-employment",
+      "budgetBytes": 2048,
+      "relevant": 2,
+      "retrieved": 2,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "partially_supported",
+      "controlledMatchCorrect": true,
+      "id": "project-not-employment",
+      "budgetBytes": 8192,
+      "relevant": 2,
+      "retrieved": 2,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "partially_supported",
+      "controlledMatchCorrect": true,
+      "id": "project-not-employment",
+      "budgetBytes": 16384,
+      "relevant": 2,
+      "retrieved": 2,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "not_evidenced",
+      "controlledMatchCorrect": true,
+      "id": "portuguese-negative",
+      "budgetBytes": 2048,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "not_evidenced",
+      "controlledMatchCorrect": true,
+      "id": "portuguese-negative",
+      "budgetBytes": 8192,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "not_evidenced",
+      "controlledMatchCorrect": true,
+      "id": "portuguese-negative",
+      "budgetBytes": 16384,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": true
+    },
+    {
+      "controlledMatchState": "supported",
+      "controlledMatchCorrect": true,
+      "id": "material-miss-under-budget",
+      "budgetBytes": 2048,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": false
+    },
+    {
+      "controlledMatchState": "supported",
+      "controlledMatchCorrect": true,
+      "id": "material-miss-under-budget",
+      "budgetBytes": 8192,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": false
+    },
+    {
+      "controlledMatchState": "supported",
+      "controlledMatchCorrect": true,
+      "id": "material-miss-under-budget",
+      "budgetBytes": 16384,
+      "relevant": 1,
+      "retrieved": 1,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": false
+    },
+    {
+      "controlledMatchState": "needs_clarification",
+      "controlledMatchCorrect": true,
+      "id": "incomplete-cannot-assert-absence",
+      "budgetBytes": 2048,
+      "relevant": 0,
+      "retrieved": 0,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": false
+    },
+    {
+      "controlledMatchState": "needs_clarification",
+      "controlledMatchCorrect": true,
+      "id": "incomplete-cannot-assert-absence",
+      "budgetBytes": 8192,
+      "relevant": 0,
+      "retrieved": 0,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": false
+    },
+    {
+      "controlledMatchState": "needs_clarification",
+      "controlledMatchCorrect": true,
+      "id": "incomplete-cannot-assert-absence",
+      "budgetBytes": 16384,
+      "relevant": 0,
+      "retrieved": 0,
+      "materialMisses": [],
+      "negativeMisses": [],
+      "complete": false
+    }
+  ],
+  "controlledFinalMatching": [
+    {
+      "id": "explicit-support",
+      "status": 200,
+      "expected": "supported",
+      "actual": "supported",
+      "correct": true
+    },
+    {
+      "id": "composite-partial",
+      "status": 200,
+      "expected": "partially_supported",
+      "actual": "partially_supported",
+      "correct": true
+    },
+    {
+      "id": "missing-not-lacking",
+      "status": 200,
+      "expected": "not_evidenced",
+      "actual": "not_evidenced",
+      "correct": true
+    },
+    {
+      "id": "aspiration",
+      "status": 200,
+      "expected": "needs_clarification",
+      "actual": "needs_clarification",
+      "correct": true
+    },
+    {
+      "id": "negation",
+      "status": 200,
+      "expected": "not_evidenced",
+      "actual": "not_evidenced",
+      "correct": true
+    },
+    {
+      "id": "approximate-duration",
+      "status": 200,
+      "expected": "needs_clarification",
+      "actual": "needs_clarification",
+      "correct": true
+    },
+    {
+      "id": "related-technology",
+      "status": 200,
+      "expected": "not_evidenced",
+      "actual": "not_evidenced",
+      "correct": true
+    },
+    {
+      "id": "technology-similarity",
+      "status": 200,
+      "expected": "not_evidenced",
+      "actual": "not_evidenced",
+      "correct": true
+    },
+    {
+      "id": "contrasting-employers",
+      "status": 200,
+      "expected": "partially_supported",
+      "actual": "partially_supported",
+      "correct": true
+    },
+    {
+      "id": "project-not-employment",
+      "status": 200,
+      "expected": "partially_supported",
+      "actual": "partially_supported",
+      "correct": true
+    },
+    {
+      "id": "portuguese-negative",
+      "status": 200,
+      "expected": "not_evidenced",
+      "actual": "not_evidenced",
+      "correct": true
+    },
+    {
+      "id": "material-miss-under-budget",
+      "status": 200,
+      "expected": "supported",
+      "actual": "supported",
+      "correct": true
+    },
+    {
+      "id": "incomplete-cannot-assert-absence",
+      "status": 200,
+      "expected": "needs_clarification",
+      "actual": "needs_clarification",
+      "correct": true
+    }
+  ],
+  "limitation": "Final matching replays labeled provider outputs through the production HTTP handler. It measures contract preservation, not live semantic model accuracy. Candidate recall is measured independently at each byte budget. No provider or billing calls."
+}

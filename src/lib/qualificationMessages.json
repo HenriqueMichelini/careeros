@@ -1,0 +1,28 @@
+{
+  "en": {
+    "requirementEvidence.linkedContext": "Linked role/project",
+    "requirementEvidence.contextUnavailable": "Context identity not available in selected evidence",
+    "requirementEvidence.title": "Requirement support",
+    "requirementEvidence.supported": "Supported",
+    "requirementEvidence.partially_supported": "Partially supported",
+    "requirementEvidence.not_evidenced": "Not evidenced in your Profile",
+    "requirementEvidence.needs_clarification": "Needs clarification",
+    "requirementEvidence.incomplete": "Incomplete analysis: {{count}} Profile facts were excluded by the context limit. This does not establish absence of a qualification.",
+    "requirementEvidence.inspect": "Inspect Profile evidence and context",
+    "requirementEvidence.traceability": "Review the cited facts alongside their role/project context and any conflicting evidence. References show origin, not proof of truth.",
+    "requirementEvidence.cited": "Cited support"
+  },
+  "pt-BR": {
+    "requirementEvidence.linkedContext": "Cargo/projeto vinculado",
+    "requirementEvidence.contextUnavailable": "Identidade do contexto indisponível nas evidências selecionadas",
+    "requirementEvidence.title": "Evidências dos requisitos",
+    "requirementEvidence.supported": "Com evidência",
+    "requirementEvidence.partially_supported": "Com evidência parcial",
+    "requirementEvidence.not_evidenced": "Sem evidência no seu Perfil",
+    "requirementEvidence.needs_clarification": "Precisa de esclarecimento",
+    "requirementEvidence.incomplete": "Análise incompleta: {{count}} fatos do Perfil foram excluídos pelo limite de contexto. Isso não demonstra ausência de qualificação.",
+    "requirementEvidence.inspect": "Inspecionar evidências e contexto do Perfil",
+    "requirementEvidence.traceability": "Revise os fatos citados com seu contexto de cargo/projeto e possíveis contradições. Referências mostram a origem, não comprovam a veracidade.",
+    "requirementEvidence.cited": "Evidência citada"
+  }
+}

@@ -1,3 +1,5 @@
+import qualificationMessages from "./qualificationMessages.json"
+
 export const SUPPORTED_LOCALES = ["en", "pt-BR"] as const
 
 export type Locale = typeof SUPPORTED_LOCALES[number]
@@ -5,6 +7,7 @@ export type TranslationValue = string | number
 
 const messages = {
   en: {
+    ...qualificationMessages.en,
     "profile.facts.context": "Context",
     "profile.facts.removeContext": "Remove context",
     "profile.facts.title": "Fact details and context",
@@ -159,7 +162,7 @@ const messages = {
     "home.generating": "Generating...",
     "home.checkingRequirements": "Checking requirements...",
     "home.checkingRequirementsNote":
-      "Looking for job requirements your profile may not mention yet.",
+      "Checking each qualification against approved Profile evidence.",
     "home.generateMaterials": "Generate Materials",
     "home.generatingNote":
       "Analyzing opportunity and tailoring your application — this may take 20–40 seconds.",
@@ -213,18 +216,18 @@ const messages = {
     "home.draftErrorInvalidOutput":
       "Application generation returned an incomplete result. Try again.",
     "home.gapPromptEyebrow": "Quick profile check",
-    "home.gapPromptTitle": "Did we miss something?",
+    "home.gapPromptTitle": "Review qualification support",
     "home.gapPromptDescription":
-      "I couldn't find these job requirements in your profile. Sometimes we forget to mention things we know. Do any of these sound familiar?",
+      "Review partial or uncertain support and requirements without Profile evidence. Confirm only qualifications you have, or supply an answer without checking the box.",
     "home.gapTypeSkill": "Skill",
     "home.gapTypeExperience": "Experience",
     "home.gapConfirmSkill": "I have this skill",
     "home.gapConfirmExperience": "I have this experience",
-    "home.gapExampleLabel": "Where have you used it? (optional)",
+    "home.gapExampleLabel": "Your answer or factual context (optional)",
     "home.gapExamplePlaceholder":
       "Add a quick example or context to help tailor your application.",
     "home.gapPromptPrivacyNote":
-      "Only the items you confirm will be used for this application. Your saved profile won't change.",
+      "Selected qualifications and supplied answers are used for this application only. A checkbox adds no examples, duration or outcomes. Your saved Profile stays unchanged.",
     "home.backToPosting": "Back to posting",
     "home.generateWithoutThese": "Generate without these",
     "home.generateWithConfirmed": "Generate with {{count}} selected",
@@ -788,6 +791,7 @@ const messages = {
       "This cover letter exceeds one A4 page. Generate a shorter draft before saving it as PDF.",
   },
   "pt-BR": {
+    ...qualificationMessages["pt-BR"],
     "profile.facts.context": "Contexto",
     "profile.facts.removeContext": "Remover contexto",
     "profile.facts.title": "Detalhes e contexto dos fatos",
@@ -942,7 +946,7 @@ const messages = {
     "home.generating": "Gerando...",
     "home.checkingRequirements": "Conferindo requisitos...",
     "home.checkingRequirementsNote":
-      "Procurando requisitos da vaga que talvez ainda não estejam no seu perfil.",
+      "Conferindo cada qualificação com as evidências aprovadas do Perfil.",
     "home.generateMaterials": "Gerar materiais",
     "home.generatingNote":
       "Analisando a oportunidade e personalizando sua candidatura — isso pode levar de 20 a 40 segundos.",
@@ -996,18 +1000,18 @@ const messages = {
     "home.draftErrorInvalidOutput":
       "A geração retornou um resultado incompleto. Tente novamente.",
     "home.gapPromptEyebrow": "Revisão rápida do perfil",
-    "home.gapPromptTitle": "Faltou alguma coisa?",
+    "home.gapPromptTitle": "Revise as evidências de qualificação",
     "home.gapPromptDescription":
-      "Não encontrei estes requisitos da vaga no seu perfil. Às vezes esquecemos de mencionar algo que sabemos. Algum deles parece familiar?",
+      "Revise evidências parciais ou incertas e requisitos sem evidência no Perfil. Confirme apenas qualificações que você tem, ou forneça uma resposta sem marcar a caixa.",
     "home.gapTypeSkill": "Habilidade",
     "home.gapTypeExperience": "Experiência",
     "home.gapConfirmSkill": "Tenho esta habilidade",
     "home.gapConfirmExperience": "Tenho esta experiência",
-    "home.gapExampleLabel": "Onde você usou isso? (opcional)",
+    "home.gapExampleLabel": "Sua resposta ou contexto factual (opcional)",
     "home.gapExamplePlaceholder":
       "Dê um exemplo rápido ou contexto para personalizar sua candidatura.",
     "home.gapPromptPrivacyNote":
-      "Somente os itens confirmados serão usados nesta candidatura. Seu perfil salvo não será alterado.",
+      "Qualificações selecionadas e respostas fornecidas valem apenas para esta candidatura. A caixa não acrescenta exemplos, duração ou resultados. Seu Perfil salvo permanece igual.",
     "home.backToPosting": "Voltar à vaga",
     "home.generateWithoutThese": "Gerar sem incluir estes itens",
     "home.generateWithConfirmed": "Gerar com {{count}} selecionado(s)",

@@ -1,0 +1,2802 @@
+{
+  "version": "qualification-evidence-labels-v1",
+  "cases": [
+    {
+      "id": "explicit-support",
+      "language": "en",
+      "requirement": "Java required.",
+      "document": {
+        "version": 2,
+        "id": "p",
+        "revision": 1,
+        "normalizationPolicy": "exact-alias-v1",
+        "entities": [],
+        "facts": [
+          {
+            "id": "java",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "p",
+              "revision": 1
+            },
+            "context": [],
+            "field": "skills",
+            "order": 0,
+            "kind": "statement",
+            "value": "I use Java.",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "I use Java.",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          }
+        ],
+        "evidence": [],
+        "links": []
+      },
+      "relevantFactIds": [
+        "java"
+      ],
+      "negativeFactIds": [],
+      "expectedState": "supported",
+      "providerDecision": {
+        "requirementIndex": 0,
+        "state": "supported",
+        "factIds": [
+          "java"
+        ],
+        "explanation": "explicit-support controlled explanation.",
+        "question": ""
+      }
+    },
+    {
+      "id": "composite-partial",
+      "language": "en",
+      "requirement": "Java and Kubernetes required.",
+      "document": {
+        "version": 2,
+        "id": "p",
+        "revision": 1,
+        "normalizationPolicy": "exact-alias-v1",
+        "entities": [],
+        "facts": [
+          {
+            "id": "java",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "p",
+              "revision": 1
+            },
+            "context": [],
+            "field": "skills",
+            "order": 0,
+            "kind": "statement",
+            "value": "I use Java.",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "I use Java.",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          }
+        ],
+        "evidence": [],
+        "links": []
+      },
+      "relevantFactIds": [
+        "java"
+      ],
+      "negativeFactIds": [],
+      "expectedState": "partially_supported",
+      "providerDecision": {
+        "requirementIndex": 0,
+        "state": "partially_supported",
+        "factIds": [
+          "java"
+        ],
+        "explanation": "composite-partial controlled explanation.",
+        "question": ""
+      }
+    },
+    {
+      "id": "missing-not-lacking",
+      "language": "en",
+      "requirement": "Kubernetes required.",
+      "document": {
+        "version": 2,
+        "id": "p",
+        "revision": 1,
+        "normalizationPolicy": "exact-alias-v1",
+        "entities": [],
+        "facts": [
+          {
+            "id": "java",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "p",
+              "revision": 1
+            },
+            "context": [],
+            "field": "skills",
+            "order": 0,
+            "kind": "statement",
+            "value": "I use Java.",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "I use Java.",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          }
+        ],
+        "evidence": [],
+        "links": []
+      },
+      "relevantFactIds": [],
+      "negativeFactIds": [],
+      "expectedState": "not_evidenced",
+      "providerDecision": {
+        "requirementIndex": 0,
+        "state": "not_evidenced",
+        "factIds": [],
+        "explanation": "missing-not-lacking controlled explanation.",
+        "question": ""
+      }
+    },
+    {
+      "id": "aspiration",
+      "language": "en",
+      "requirement": "Java required.",
+      "document": {
+        "version": 2,
+        "id": "p",
+        "revision": 1,
+        "normalizationPolicy": "exact-alias-v1",
+        "entities": [],
+        "facts": [
+          {
+            "id": "wish",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "p",
+              "revision": 1
+            },
+            "context": [],
+            "field": "skills",
+            "order": 0,
+            "kind": "statement",
+            "value": "I want to learn Java.",
+            "assertion": "affirmed",
+            "intent": "aspiration",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "I want to learn Java.",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          }
+        ],
+        "evidence": [],
+        "links": []
+      },
+      "relevantFactIds": [
+        "wish"
+      ],
+      "negativeFactIds": [
+        "wish"
+      ],
+      "expectedState": "needs_clarification",
+      "providerDecision": {
+        "requirementIndex": 0,
+        "state": "needs_clarification",
+        "factIds": [
+          "wish"
+        ],
+        "explanation": "aspiration controlled explanation.",
+        "question": "What relevant experience can you supply?"
+      }
+    },
+    {
+      "id": "negation",
+      "language": "en",
+      "requirement": "Java required.",
+      "document": {
+        "version": 2,
+        "id": "p",
+        "revision": 1,
+        "normalizationPolicy": "exact-alias-v1",
+        "entities": [],
+        "facts": [
+          {
+            "id": "no",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "p",
+              "revision": 1
+            },
+            "context": [],
+            "field": "skills",
+            "order": 0,
+            "kind": "statement",
+            "value": "I have not used Java.",
+            "assertion": "negated",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "I have not used Java.",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          }
+        ],
+        "evidence": [],
+        "links": []
+      },
+      "relevantFactIds": [
+        "no"
+      ],
+      "negativeFactIds": [
+        "no"
+      ],
+      "expectedState": "not_evidenced",
+      "providerDecision": {
+        "requirementIndex": 0,
+        "state": "not_evidenced",
+        "factIds": [
+          "no"
+        ],
+        "explanation": "negation controlled explanation.",
+        "question": ""
+      }
+    },
+    {
+      "id": "approximate-duration",
+      "language": "en",
+      "requirement": "At least three years of Java required.",
+      "document": {
+        "version": 2,
+        "id": "p",
+        "revision": 1,
+        "normalizationPolicy": "exact-alias-v1",
+        "entities": [],
+        "facts": [
+          {
+            "id": "java",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "p",
+              "revision": 1
+            },
+            "context": [],
+            "field": "skills",
+            "order": 0,
+            "kind": "statement",
+            "value": "Used Java for around three years.",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "uncertain",
+            "temporal": {
+              "wording": "around three years",
+              "precision": "approximate"
+            },
+            "normalization": {
+              "observed": "Used Java for around three years.",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          }
+        ],
+        "evidence": [],
+        "links": []
+      },
+      "relevantFactIds": [
+        "java"
+      ],
+      "negativeFactIds": [],
+      "expectedState": "needs_clarification",
+      "providerDecision": {
+        "requirementIndex": 0,
+        "state": "needs_clarification",
+        "factIds": [
+          "java"
+        ],
+        "explanation": "approximate-duration controlled explanation.",
+        "question": "What relevant experience can you supply?"
+      }
+    },
+    {
+      "id": "related-technology",
+      "language": "en",
+      "requirement": "Spring Boot required.",
+      "document": {
+        "version": 2,
+        "id": "p",
+        "revision": 1,
+        "normalizationPolicy": "exact-alias-v1",
+        "entities": [],
+        "facts": [
+          {
+            "id": "spring",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "p",
+              "revision": 1
+            },
+            "context": [],
+            "field": "skills",
+            "order": 0,
+            "kind": "statement",
+            "value": "Used Spring Framework.",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Used Spring Framework.",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          }
+        ],
+        "evidence": [],
+        "links": []
+      },
+      "relevantFactIds": [
+        "spring"
+      ],
+      "negativeFactIds": [],
+      "expectedState": "not_evidenced",
+      "providerDecision": {
+        "requirementIndex": 0,
+        "state": "not_evidenced",
+        "factIds": [],
+        "explanation": "related-technology controlled explanation.",
+        "question": ""
+      }
+    },
+    {
+      "id": "technology-similarity",
+      "language": "en",
+      "requirement": "Java required.",
+      "document": {
+        "version": 2,
+        "id": "p",
+        "revision": 1,
+        "normalizationPolicy": "exact-alias-v1",
+        "entities": [],
+        "facts": [
+          {
+            "id": "js",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "p",
+              "revision": 1
+            },
+            "context": [],
+            "field": "skills",
+            "order": 0,
+            "kind": "statement",
+            "value": "I use JavaScript.",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "I use JavaScript.",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          }
+        ],
+        "evidence": [],
+        "links": []
+      },
+      "relevantFactIds": [
+        "js"
+      ],
+      "negativeFactIds": [],
+      "expectedState": "not_evidenced",
+      "providerDecision": {
+        "requirementIndex": 0,
+        "state": "not_evidenced",
+        "factIds": [],
+        "explanation": "technology-similarity controlled explanation.",
+        "question": ""
+      }
+    },
+    {
+      "id": "contrasting-employers",
+      "language": "en",
+      "requirement": "Java and AWS in the same role required.",
+      "document": {
+        "version": 2,
+        "id": "p",
+        "revision": 1,
+        "normalizationPolicy": "exact-alias-v1",
+        "entities": [
+          {
+            "id": "a",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "a",
+            "order": 0
+          },
+          {
+            "id": "b",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "b",
+            "order": 1
+          }
+        ],
+        "facts": [
+          {
+            "id": "a-company",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "a",
+              "revision": 1
+            },
+            "context": [],
+            "field": "company",
+            "order": 0,
+            "kind": "statement",
+            "value": "Harbor",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Harbor",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "a-title",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "a",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Engineer",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Engineer",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "a-period",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "a",
+              "revision": 1
+            },
+            "context": [],
+            "field": "startDate",
+            "order": 0,
+            "kind": "statement",
+            "value": "2020-01",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "2020-01",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "a-java",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "a",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Used Java, no AWS.",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Used Java, no AWS.",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "b-company",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "b",
+              "revision": 1
+            },
+            "context": [],
+            "field": "company",
+            "order": 0,
+            "kind": "statement",
+            "value": "Summit",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Summit",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "b-title",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "b",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Analyst",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Analyst",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "b-period",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "b",
+              "revision": 1
+            },
+            "context": [],
+            "field": "startDate",
+            "order": 0,
+            "kind": "statement",
+            "value": "2024-01",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "2024-01",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "b-aws",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "b",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Used AWS, not Java.",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Used AWS, not Java.",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          }
+        ],
+        "evidence": [],
+        "links": []
+      },
+      "relevantFactIds": [
+        "a-company",
+        "a-java",
+        "b-company",
+        "b-aws"
+      ],
+      "negativeFactIds": [],
+      "expectedState": "partially_supported",
+      "providerDecision": {
+        "requirementIndex": 0,
+        "state": "partially_supported",
+        "factIds": [
+          "a-java",
+          "b-aws"
+        ],
+        "explanation": "contrasting-employers controlled explanation.",
+        "question": ""
+      }
+    },
+    {
+      "id": "project-not-employment",
+      "language": "en",
+      "requirement": "Production Java experience required.",
+      "document": {
+        "version": 2,
+        "id": "p",
+        "revision": 1,
+        "normalizationPolicy": "exact-alias-v1",
+        "entities": [
+          {
+            "id": "project",
+            "revision": 1,
+            "kind": "projects",
+            "legacyId": "project",
+            "order": 0
+          }
+        ],
+        "facts": [
+          {
+            "id": "p-name",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "project",
+              "revision": 1
+            },
+            "context": [],
+            "field": "name",
+            "order": 0,
+            "kind": "statement",
+            "value": "Learning Atlas",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Learning Atlas",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "p-java",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "project",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Java learning demo; never deployed.",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Java learning demo; never deployed.",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          }
+        ],
+        "evidence": [],
+        "links": []
+      },
+      "relevantFactIds": [
+        "p-name",
+        "p-java"
+      ],
+      "negativeFactIds": [],
+      "expectedState": "partially_supported",
+      "providerDecision": {
+        "requirementIndex": 0,
+        "state": "partially_supported",
+        "factIds": [
+          "p-java"
+        ],
+        "explanation": "project-not-employment controlled explanation.",
+        "question": ""
+      }
+    },
+    {
+      "id": "portuguese-negative",
+      "language": "pt-BR",
+      "requirement": "Experiência com Java obrigatória.",
+      "document": {
+        "version": 2,
+        "id": "p",
+        "revision": 1,
+        "normalizationPolicy": "exact-alias-v1",
+        "entities": [],
+        "facts": [
+          {
+            "id": "no",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "p",
+              "revision": 1
+            },
+            "context": [],
+            "field": "skills",
+            "order": 0,
+            "kind": "statement",
+            "value": "Não usei Java profissionalmente.",
+            "assertion": "negated",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Não usei Java profissionalmente.",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          }
+        ],
+        "evidence": [],
+        "links": []
+      },
+      "relevantFactIds": [
+        "no"
+      ],
+      "negativeFactIds": [
+        "no"
+      ],
+      "expectedState": "not_evidenced",
+      "providerDecision": {
+        "requirementIndex": 0,
+        "state": "not_evidenced",
+        "factIds": [
+          "no"
+        ],
+        "explanation": "portuguese-negative controlled explanation.",
+        "question": ""
+      }
+    },
+    {
+      "id": "material-miss-under-budget",
+      "language": "en",
+      "requirement": "Java required.",
+      "document": {
+        "version": 2,
+        "id": "p",
+        "revision": 1,
+        "normalizationPolicy": "exact-alias-v1",
+        "entities": [
+          {
+            "id": "noise0",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "noise0",
+            "order": 0
+          },
+          {
+            "id": "noise1",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "noise1",
+            "order": 1
+          },
+          {
+            "id": "noise2",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "noise2",
+            "order": 2
+          },
+          {
+            "id": "noise3",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "noise3",
+            "order": 3
+          },
+          {
+            "id": "noise4",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "noise4",
+            "order": 4
+          },
+          {
+            "id": "noise5",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "noise5",
+            "order": 5
+          },
+          {
+            "id": "noise6",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "noise6",
+            "order": 6
+          },
+          {
+            "id": "noise7",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "noise7",
+            "order": 7
+          },
+          {
+            "id": "noise8",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "noise8",
+            "order": 8
+          },
+          {
+            "id": "noise9",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "noise9",
+            "order": 9
+          },
+          {
+            "id": "noise10",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "noise10",
+            "order": 10
+          },
+          {
+            "id": "noise11",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "noise11",
+            "order": 11
+          }
+        ],
+        "facts": [
+          {
+            "id": "noise-title-0",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise0",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated research role 0",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated research role 0",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-0",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise0",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-title-1",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise1",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated research role 1",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated research role 1",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-1",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise1",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-title-2",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise2",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated research role 2",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated research role 2",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-2",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise2",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-title-3",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise3",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated research role 3",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated research role 3",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-3",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise3",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-title-4",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise4",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated research role 4",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated research role 4",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-4",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise4",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-title-5",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise5",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated research role 5",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated research role 5",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-5",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise5",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-title-6",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise6",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated research role 6",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated research role 6",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-6",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise6",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-title-7",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise7",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated research role 7",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated research role 7",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-7",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise7",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-title-8",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise8",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated research role 8",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated research role 8",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-8",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise8",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-title-9",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise9",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated research role 9",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated research role 9",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-9",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise9",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-title-10",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise10",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated research role 10",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated research role 10",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-10",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise10",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-title-11",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise11",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated research role 11",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated research role 11",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-11",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise11",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "java",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "p",
+              "revision": 1
+            },
+            "context": [],
+            "field": "skills",
+            "order": 0,
+            "kind": "statement",
+            "value": "Used Java.",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Used Java.",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          }
+        ],
+        "evidence": [],
+        "links": []
+      },
+      "relevantFactIds": [
+        "java"
+      ],
+      "negativeFactIds": [],
+      "expectedState": "supported",
+      "providerDecision": {
+        "requirementIndex": 0,
+        "state": "supported",
+        "factIds": [
+          "java"
+        ],
+        "explanation": "material-miss-under-budget controlled explanation.",
+        "question": ""
+      }
+    },
+    {
+      "id": "incomplete-cannot-assert-absence",
+      "language": "en",
+      "requirement": "AWS required.",
+      "document": {
+        "version": 2,
+        "id": "p",
+        "revision": 1,
+        "normalizationPolicy": "exact-alias-v1",
+        "entities": [
+          {
+            "id": "noise0",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "noise0",
+            "order": 0
+          },
+          {
+            "id": "noise1",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "noise1",
+            "order": 1
+          },
+          {
+            "id": "noise2",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "noise2",
+            "order": 2
+          },
+          {
+            "id": "noise3",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "noise3",
+            "order": 3
+          },
+          {
+            "id": "noise4",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "noise4",
+            "order": 4
+          },
+          {
+            "id": "noise5",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "noise5",
+            "order": 5
+          },
+          {
+            "id": "noise6",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "noise6",
+            "order": 6
+          },
+          {
+            "id": "noise7",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "noise7",
+            "order": 7
+          },
+          {
+            "id": "noise8",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "noise8",
+            "order": 8
+          },
+          {
+            "id": "noise9",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "noise9",
+            "order": 9
+          },
+          {
+            "id": "noise10",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "noise10",
+            "order": 10
+          },
+          {
+            "id": "noise11",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "noise11",
+            "order": 11
+          },
+          {
+            "id": "huge",
+            "revision": 1,
+            "kind": "experience",
+            "legacyId": "huge",
+            "order": 12
+          }
+        ],
+        "facts": [
+          {
+            "id": "noise-title-0",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise0",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated research role 0",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated research role 0",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-0",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise0",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-title-1",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise1",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated research role 1",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated research role 1",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-1",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise1",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-title-2",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise2",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated research role 2",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated research role 2",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-2",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise2",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-title-3",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise3",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated research role 3",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated research role 3",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-3",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise3",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-title-4",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise4",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated research role 4",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated research role 4",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-4",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise4",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-title-5",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise5",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated research role 5",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated research role 5",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-5",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise5",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-title-6",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise6",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated research role 6",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated research role 6",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-6",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise6",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-title-7",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise7",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated research role 7",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated research role 7",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-7",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise7",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-title-8",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise8",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated research role 8",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated research role 8",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-8",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise8",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-title-9",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise9",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated research role 9",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated research role 9",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-9",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise9",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-title-10",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise10",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated research role 10",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated research role 10",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-10",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise10",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-title-11",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise11",
+              "revision": 1
+            },
+            "context": [],
+            "field": "title",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated research role 11",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated research role 11",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "noise-11",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "noise11",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. Unrelated writing and planning. ",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          },
+          {
+            "id": "huge-text",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "huge",
+              "revision": 1
+            },
+            "context": [],
+            "field": "description",
+            "order": 0,
+            "kind": "statement",
+            "value": "Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. ",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. Research background. ",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "manual_edit",
+              "original": "user"
+            },
+            "approval": "approved",
+            "support": "unsupported"
+          }
+        ],
+        "evidence": [],
+        "links": []
+      },
+      "relevantFactIds": [],
+      "negativeFactIds": [],
+      "expectedState": "needs_clarification",
+      "providerDecision": {
+        "requirementIndex": 0,
+        "state": "not_evidenced",
+        "factIds": [],
+        "explanation": "incomplete-cannot-assert-absence controlled explanation.",
+        "question": ""
+      }
+    }
+  ]
+}

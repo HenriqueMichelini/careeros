@@ -1,3 +1,8 @@
+import {
+  hasQualificationEvidence,
+  type RequirementMatch,
+} from "../lib/qualificationEvidence"
+import RequirementEvidenceReview from "../components/RequirementEvidenceReview"
 import type { JobContext } from "../lib/jobContext"
 import JobContextReview from "../components/JobContextReview"
 import type { FieldDecision } from "../lib/fieldDecision"
@@ -95,7 +100,9 @@ function StatusRow({
 }
 
 export default function HomePage({ setPage }: Props) {
-  const { state, dispatch } = useStore()
+  const { state, dispatch, profileDocument } = useStore()
+  const [requirementMatches, setRequirementMatches] =
+    useState<RequirementMatch[]>([])
   const { t } = useI18n()
   const [jobContext, setJobContext] = useState<JobContext | null>(null)
   const [profileGaps, setProfileGaps] = useState<ProfileGap[]>([])
@@ -116,6 +123,7 @@ export default function HomePage({ setPage }: Props) {
   const requestId = useRef(0)
   const inputs = JSON.stringify([
     state.repository,
+    profileDocument,
     state.jobPosting,
     state.apiKey,
     state.typesafeKey,
@@ -124,6 +132,7 @@ export default function HomePage({ setPage }: Props) {
   useEffect(() => {
     setJobDecision(null)
     setJobContext(null)
+    setRequirementMatches([])
     setQualification({ state: "pending" })
     setDraft({ state: "pending" })
     setShowGapPrompt(false)
@@ -194,11 +203,7 @@ export default function HomePage({ setPage }: Props) {
   }
   const jobPosting = state.jobPosting
 
-  const hasRepo = !!(
-    state.repository.careerGoals ||
-    state.repository.experience.length ||
-    state.repository.skills
-  )
+  const hasRepo = hasQualificationEvidence(profileDocument)
   const hasPosting = jobPosting.trim().length > 0
   const canGenerate =
     hasRepo &&
@@ -223,10 +228,12 @@ export default function HomePage({ setPage }: Props) {
         state.apiKey,
         state.typesafeKey,
         true,
+        profileDocument ?? undefined,
       )
       if (id !== requestId.current) return
       setJobContext(analysis.jobContext)
       setProfileGaps(analysis.gaps)
+      setRequirementMatches(analysis.matches ?? [])
       setConfirmedGapIndices(new Set())
       setGapNotes({})
       setQualification({ state: "confirmation" })
@@ -271,6 +278,16 @@ export default function HomePage({ setPage }: Props) {
         state.cvLanguage,
         state.typesafeKey,
         jobContext,
+        profileGaps.flatMap((gap, index) =>
+          gapNotes[index]?.trim()
+            ? [
+                {
+                  requirement: gap.requirement,
+                  userContext: gapNotes[index].trim(),
+                },
+              ]
+            : [],
+        ),
       )
       if (id !== requestId.current) return
       setDraft({ state: "complete" })
@@ -360,6 +377,7 @@ export default function HomePage({ setPage }: Props) {
                 {t("jobContext.review")}
               </summary>
               <JobContextReview context={jobContext} />
+              <RequirementEvidenceReview matches={requirementMatches} />
             </details>
           )}
           <p className="mt-2 text-xs text-[var(--color-muted-fg)]">
@@ -673,6 +691,7 @@ export default function HomePage({ setPage }: Props) {
               </p>
             )}
             <JobContextReview context={jobContext} />
+            <RequirementEvidenceReview matches={requirementMatches} />
             <div className="space-y-3">
               {profileGaps.map((gap, index) => {
                 const checked = confirmedGapIndices.has(index)
@@ -739,7 +758,7 @@ export default function HomePage({ setPage }: Props) {
                       </span>
                     </label>
 
-                    {checked && (
+                    {
                       <div className="ml-7 mt-4">
                         <label
                           htmlFor={`gap-note-${index}`}
@@ -763,6 +782,7 @@ export default function HomePage({ setPage }: Props) {
                           }}
                           disabled={state.isGenerating}
                           rows={2}
+                          maxLength={2000}
                           placeholder={t("home.gapExamplePlaceholder")}
                           className="w-full resize-y p-3 text-xs leading-relaxed focus:outline-none"
                           style={{
@@ -773,7 +793,7 @@ export default function HomePage({ setPage }: Props) {
                           }}
                         />
                       </div>
-                    )}
+                    }
                   </div>
                 )
               })}
