@@ -63,6 +63,9 @@ func TestCorpusPreservesCapacityOmissionsAndControlledContracts(t *testing.T) {
 	if err = Validate(corpus.Cases); err != nil {
 		t.Fatal(err)
 	}
+	if err := Validate(corpus.Cases); err != nil {
+		t.Fatal(err)
+	}
 	for _, c := range corpus.Cases {
 		t.Run(c.ID, func(t *testing.T) { assertControlledCase(t, c) })
 	}
@@ -211,7 +214,7 @@ func TestStableCvMigrationRegressions(t *testing.T) {
 				t.Fatal(err)
 			}
 			want := 200
-			if c.Role == "rejection" {
+			if c.Role == "negative_control" {
 				want = 502
 			}
 			if run.Status != want || !run.NoStore {

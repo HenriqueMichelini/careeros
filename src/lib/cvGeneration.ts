@@ -566,20 +566,28 @@ export function createCuratedCv(
                     "location",
                     "professionalLinks",
                   ].includes(f.field)) ||
-                (selected.some(
-                  (source) =>
-                    source.owner?.id === f.owner.id ||
-                    source.context?.some((r) => r.id === f.owner.id),
-                ) &&
-                  ![
-                    "description",
-                    "responsibilities",
-                    "achievements",
-                    "highlights",
-                    "details",
-                    "skills",
-                    "competencies",
-                    "tools",
+                (f.owner.id !== document.id &&
+                  selected.some(
+                    (source) =>
+                      source.owner?.id === f.owner.id ||
+                      source.context?.some((r) => r.id === f.owner.id),
+                  ) &&
+                  [
+                    "title",
+                    "company",
+                    "startDate",
+                    "endDate",
+                    "current",
+                    "location",
+                    "name",
+                    "degree",
+                    "institution",
+                    "graduationDate",
+                    "issuer",
+                    "date",
+                    "credentialId",
+                    "url",
+                    "proficiency",
                   ].includes(f.field)),
             )
             .map((f) => ({

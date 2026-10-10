@@ -127,13 +127,32 @@
           "wording": []
         }
       ],
-      "gold": [],
+      "gold": [
+        {
+          "id": "metric-support",
+          "group": "summary",
+          "match": {
+            "text": "20%"
+          }
+        },
+        {
+          "id": "selected-source",
+          "group": "selected",
+          "match": {
+            "text": "^stable-impact$"
+          }
+        }
+      ],
       "forbidden": [
         "90%",
         "(?i)senior|sênior|expert|especialista"
       ],
       "notes": "Controlled migration regression: invalid output remains rejected; no live provider claim. English baseline failure remains unexplained.",
-      "role": "rejection"
+      "role": "negative_control",
+      "expectedFailures": [
+        "missing: metric-support",
+        "missing: selected-source"
+      ]
     },
     {
       "id": "en-stable-cv-unknown-reference",
@@ -190,13 +209,32 @@
           "wording": []
         }
       ],
-      "gold": [],
+      "gold": [
+        {
+          "id": "metric-support",
+          "group": "summary",
+          "match": {
+            "text": "20%"
+          }
+        },
+        {
+          "id": "selected-source",
+          "group": "selected",
+          "match": {
+            "text": "^stable-impact$"
+          }
+        }
+      ],
       "forbidden": [
         "90%",
         "(?i)senior|sênior|expert|especialista"
       ],
       "notes": "Controlled migration regression: invalid output remains rejected; no live provider claim. English baseline failure remains unexplained.",
-      "role": "rejection"
+      "role": "negative_control",
+      "expectedFailures": [
+        "missing: metric-support",
+        "missing: selected-source"
+      ]
     },
     {
       "id": "en-stable-cv-unsupported-metric",
@@ -253,13 +291,32 @@
           "wording": []
         }
       ],
-      "gold": [],
+      "gold": [
+        {
+          "id": "metric-support",
+          "group": "summary",
+          "match": {
+            "text": "20%"
+          }
+        },
+        {
+          "id": "selected-source",
+          "group": "selected",
+          "match": {
+            "text": "^stable-impact$"
+          }
+        }
+      ],
       "forbidden": [
         "90%",
         "(?i)senior|sênior|expert|especialista"
       ],
       "notes": "Controlled migration regression: invalid output remains rejected; no live provider claim. English baseline failure remains unexplained.",
-      "role": "rejection"
+      "role": "negative_control",
+      "expectedFailures": [
+        "missing: metric-support",
+        "missing: selected-source"
+      ]
     },
     {
       "id": "pt-stable-cv-metric",
@@ -387,13 +444,32 @@
           "wording": []
         }
       ],
-      "gold": [],
+      "gold": [
+        {
+          "id": "metric-support",
+          "group": "summary",
+          "match": {
+            "text": "20%"
+          }
+        },
+        {
+          "id": "selected-source",
+          "group": "selected",
+          "match": {
+            "text": "^stable-impact$"
+          }
+        }
+      ],
       "forbidden": [
         "90%",
         "(?i)senior|sênior|expert|especialista"
       ],
       "notes": "Controlled migration regression: invalid output remains rejected; no live provider claim. English baseline failure remains unexplained.",
-      "role": "rejection"
+      "role": "negative_control",
+      "expectedFailures": [
+        "missing: metric-support",
+        "missing: selected-source"
+      ]
     },
     {
       "id": "pt-stable-cv-unknown-reference",
@@ -450,13 +526,32 @@
           "wording": []
         }
       ],
-      "gold": [],
+      "gold": [
+        {
+          "id": "metric-support",
+          "group": "summary",
+          "match": {
+            "text": "20%"
+          }
+        },
+        {
+          "id": "selected-source",
+          "group": "selected",
+          "match": {
+            "text": "^stable-impact$"
+          }
+        }
+      ],
       "forbidden": [
         "90%",
         "(?i)senior|sênior|expert|especialista"
       ],
       "notes": "Controlled migration regression: invalid output remains rejected; no live provider claim. English baseline failure remains unexplained.",
-      "role": "rejection"
+      "role": "negative_control",
+      "expectedFailures": [
+        "missing: metric-support",
+        "missing: selected-source"
+      ]
     },
     {
       "id": "pt-stable-cv-unsupported-metric",
@@ -513,13 +608,32 @@
           "wording": []
         }
       ],
-      "gold": [],
+      "gold": [
+        {
+          "id": "metric-support",
+          "group": "summary",
+          "match": {
+            "text": "20%"
+          }
+        },
+        {
+          "id": "selected-source",
+          "group": "selected",
+          "match": {
+            "text": "^stable-impact$"
+          }
+        }
+      ],
       "forbidden": [
         "90%",
         "(?i)senior|sênior|expert|especialista"
       ],
       "notes": "Controlled migration regression: invalid output remains rejected; no live provider claim. English baseline failure remains unexplained.",
-      "role": "rejection"
+      "role": "negative_control",
+      "expectedFailures": [
+        "missing: metric-support",
+        "missing: selected-source"
+      ]
     }
   ]
 }

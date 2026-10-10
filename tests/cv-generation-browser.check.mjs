@@ -221,13 +221,22 @@ try {
     }
     throw new Error(`Timed out: ${expression}`)
   }
-  const openCv = async (repo, locale) => {
+  const openCv = async (repo, locale, withEvidence = false) => {
     await call("Page.navigate", { url: `http://127.0.0.1:${port}/` })
     await until(
       "document.readyState === 'complete' && !!document.querySelector('header button')",
     )
+    const seedEvidence = withEvidence ? `
+      const {migrateProfile}=await import('/src/lib/profileDocument.ts');
+      const doc=migrateProfile(${JSON.stringify(repo)},crypto.randomUUID());
+      const fact=doc.facts.find(f=>f.field==='description');
+      fact.support='supported';fact.approval='approved';
+      const evidence={id:crypto.randomUUID(),revision:1,excerpt:'ACCEPTED-EXCERPT '+fact.value,origin:'professional_information',approval:'approved'};
+      doc.evidence.push(evidence);doc.links.push({id:crypto.randomUUID(),kind:'supports',state:'active',from:{profileId:doc.id,id:fact.id,revision:fact.revision},to:{profileId:doc.id,id:evidence.id,revision:1}});
+      localStorage.setItem('careeros_profile_v2',JSON.stringify(doc));
+    ` : ""
     await evaluate(
-      `localStorage.removeItem('careeros_profile_v2'); localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_locale', ${JSON.stringify(locale)}); localStorage.setItem('careeros_cv_language', ${JSON.stringify(locale)}); localStorage.removeItem('careeros_curated_cv_v1'); localStorage.setItem('careeros_apikey','sk-synthetic'); localStorage.removeItem('careeros_cv_v1'); localStorage.removeItem('careeros_cv_preferences_v1'); location.reload()`,
+      `(async()=>{ localStorage.removeItem('careeros_profile_v2'); localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_locale', ${JSON.stringify(locale)}); localStorage.setItem('careeros_cv_language', ${JSON.stringify(locale)}); localStorage.removeItem('careeros_curated_cv_v1'); localStorage.setItem('careeros_apikey','sk-synthetic'); localStorage.removeItem('careeros_cv_v1'); localStorage.removeItem('careeros_cv_preferences_v1'); ${seedEvidence} location.reload(); })()`,
     )
     await until(
       "document.readyState === 'complete' && !!document.querySelector('header button')",
@@ -273,7 +282,7 @@ try {
         },
       ],
     }
-    await openCv(repo, fixture.locale)
+    await openCv(repo, fixture.locale, true)
     const generate = fixture.locale === "en" ? "Generate CV" : "Gerar currículo"
     const accept =
       fixture.locale === "en"
@@ -283,7 +292,10 @@ try {
     const original = await evaluate(savedProfileExpression)
     await click(generate)
     await until("!!document.querySelector('[data-generated-summary]')")
+    assert.ok(await evaluate("document.querySelector('[data-cv-generation]').textContent.includes('ACCEPTED-EXCERPT')"), "proposal exposes accepted original evidence")
+    assert.ok(await evaluate("document.querySelector('[data-cv-generation]').textContent.includes('professional_information')"), "proposal exposes stored evidence origin")
     const outbound = await evaluate("JSON.stringify(window.__outbound)")
+    assert.ok(!outbound.includes('ACCEPTED-EXCERPT'), "accepted evidence remains local")
     for (const secret of [
       "SECRET-",
       "PRIVATE-PROJECT-ID",
@@ -397,13 +409,15 @@ try {
     )
     const accepted = JSON.parse(acceptedRaw)
     assert.equal(accepted.version, 2)
+    assert.ok(await evaluate("document.querySelector('[data-cv-saved-support]').textContent.includes('ACCEPTED-EXCERPT') && document.querySelector('[data-cv-saved-support]').textContent.includes('professional_information')"), "saved sources expose original accepted evidence and origin")
+    assert.ok(!acceptedRaw.includes('SECRET-SALARY') && !acceptedRaw.includes('SECRET-TARGET') && !acceptedRaw.includes('SECRET-HEALTH'), "saved support excludes unrelated private fields")
     assert.ok(
       accepted.sources.every(
         (f) => f.reference?.id === f.id && f.reference.revision > 0,
       ),
     )
     await evaluate(
-      `(() => { const key='careeros_profile_v2'; const doc=JSON.parse(localStorage.getItem(key)); const fact=doc.facts.find(f=>f.id===${JSON.stringify(accepted.sources[0].id)});fact.revision++;fact.value='Changed source';doc.revision++;localStorage.setItem(key,JSON.stringify(doc));location.reload(); })()`,
+      `(async () => { const {editProfile,validateProfileDocument}=await import('/src/lib/profileDocument.ts'); const key='careeros_profile_v2'; const doc=JSON.parse(localStorage.getItem(key)); const next=editProfile(doc,{type:'fact',id:${JSON.stringify(accepted.sources[0].id)},patch:{value:'Changed source'}});if(!validateProfileDocument(next))throw new Error('invalid changed Profile fixture');localStorage.setItem(key,JSON.stringify(next));location.reload(); })()`,
     )
     await until("!!document.querySelector('header button')")
     await evaluate("document.querySelector('header button:last-child').click()")

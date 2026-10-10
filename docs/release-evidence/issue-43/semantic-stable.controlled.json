@@ -1,0 +1,717 @@
+{
+  "version": "semantic-quality-report-v2",
+  "mode": "controlled",
+  "started": "2026-10-10T01:29:49Z",
+  "commit": "unknown",
+  "fixtureVersion": "stable-cv-v1",
+  "fixtureHash": "7c212dab6d3790ae2769f03ad7095dcdf676a6002958bd7b4ad8433bb2f58175",
+  "fixturePath": "docs/evaluations/semantic-quality/cases.stable-cv.v1.json",
+  "sourceHashes": {
+    "backend/application-draft/main.go": "8e26f31b62a412b54507206f791cbffb2605595c4262e4faa53cbbbe30cb52df",
+    "backend/cv-generation/main.go": "48bc823f6a1936b5a72459d1764839f9faebe765cc6cfd0aa9cac3ff85205c6f",
+    "backend/profile-ingestion/main.go": "713ec2b4a4ad51e706fcd6953d8f643b7551cc83ad6a3d10723930039ee6aee8",
+    "backend/qualification-gaps/main.go": "97412d38248e6ef5ea93f36522acc115a1db14e0b14401e711c8d2d785764f2c",
+    "internal/fieldvalidation/decision.go": "ea91586b299eb51a97dc38ec236a24468deff5c4df24b5ac97f3b91af096701d",
+    "internal/fieldvalidation/questions.json": "8ca85f674db2cf8e3d9e8c14e3fab18ac3df9c8fdf1903f6dbbc6db7d8715b5c",
+    "internal/semanticeval/adapter.go": "0a792369829a5e0d2a1abf12c1285193434343fbeb50822ca147bf1f5a00b20e",
+    "internal/semanticeval/score.go": "67b6fd72f91cb6f664e4e34bfa427c1687296eefd4c83ecb4ff9ebc0c340237c",
+    "scripts/semantic-quality/main.go": "4b01932959399769efa5dccfa57dcfb8b06e3f7c3e7c2485e8ac70382009f476"
+  },
+  "scope": "local production HTTP handlers; synthetic inputs; no browser, deployment or universal factual guarantee",
+  "runs": [
+    {
+      "diagnostics": {
+        "version": "ai-diagnostics-v1",
+        "attemptId": "deb4a4f6d57a504cf800b620c76a2e24",
+        "workflow": "cv_generation",
+        "outcome": "completed",
+        "httpStatus": 200,
+        "durationMs": 0.53268,
+        "applicationResultReuse": false,
+        "stages": [
+          {
+            "name": "generation",
+            "version": "cv-policy-v2/schema-v2",
+            "outcome": "completed",
+            "durationMs": 0.42637,
+            "provider": {
+              "name": "openai",
+              "returnedModel": null,
+              "inputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "prefixCachedTokens": null,
+              "outputTokenCeiling": 4000,
+              "durationMs": 0.16191,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "statement_support_checks",
+            "version": "cv-heuristic-grounding-v1",
+            "outcome": "completed",
+            "durationMs": 0.14135,
+            "provider": null
+          }
+        ],
+        "accepted": null
+      },
+      "id": "en-stable-cv-metric",
+      "task": "cv_generation",
+      "split": "development",
+      "language": "en",
+      "mode": "controlled",
+      "role": "acceptance",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 4000,
+          "promptHash": "74f3df0d5bf1b1b6a95e86deb0592c2305f43ce0605d2dda2311a08131439b3f",
+          "schemaHash": "cf5bcf753414a752c685715784837407a685a7afeec7afc2ed561e90f1c0cc9d",
+          "requestHash": "000ab130c063c15a089ee35cf87ff11d478dbcedb2f4c6c7278aed9eecb23654",
+          "status": 200
+        }
+      ],
+      "output": {
+        "summary": [
+          {
+            "sourceIds": [
+              "stable-impact"
+            ],
+            "text": "Reduced latency by 20%."
+          }
+        ],
+        "selected": [
+          "stable-impact"
+        ]
+      },
+      "score": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      }
+    },
+    {
+      "diagnostics": {
+        "version": "ai-diagnostics-v1",
+        "attemptId": "bfb8e367fb557f0b3544150a3eca449e",
+        "workflow": "cv_generation",
+        "outcome": "rejected_output",
+        "httpStatus": 502,
+        "durationMs": 0.239971,
+        "applicationResultReuse": false,
+        "stages": [
+          {
+            "name": "generation",
+            "version": "cv-policy-v2/schema-v2",
+            "outcome": "rejected_output",
+            "durationMs": 0.21984,
+            "provider": {
+              "name": "openai",
+              "returnedModel": null,
+              "inputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "prefixCachedTokens": null,
+              "outputTokenCeiling": 4000,
+              "durationMs": 0.119409,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "statement_support_checks",
+            "version": "cv-heuristic-grounding-v1",
+            "outcome": "rejected_output",
+            "durationMs": 0.000289,
+            "provider": null
+          }
+        ],
+        "accepted": null
+      },
+      "id": "en-stable-cv-empty-summary",
+      "task": "cv_generation",
+      "split": "development",
+      "language": "en",
+      "mode": "controlled",
+      "role": "negative_control",
+      "status": 502,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 4000,
+          "promptHash": "74f3df0d5bf1b1b6a95e86deb0592c2305f43ce0605d2dda2311a08131439b3f",
+          "schemaHash": "cf5bcf753414a752c685715784837407a685a7afeec7afc2ed561e90f1c0cc9d",
+          "requestHash": "000ab130c063c15a089ee35cf87ff11d478dbcedb2f4c6c7278aed9eecb23654",
+          "status": 200
+        }
+      ],
+      "output": {
+        "error": "invalid_output"
+      },
+      "score": {
+        "expected": 2,
+        "observed": 0,
+        "matched": 0,
+        "covered": 0,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 0,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [
+          "metric-support",
+          "selected-source"
+        ],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [
+          "missing: metric-support",
+          "missing: selected-source",
+          "HTTP 502"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      }
+    },
+    {
+      "diagnostics": {
+        "version": "ai-diagnostics-v1",
+        "attemptId": "6a36f3e2bc7541987c1c487f891944bf",
+        "workflow": "cv_generation",
+        "outcome": "rejected_output",
+        "httpStatus": 502,
+        "durationMs": 0.25996,
+        "applicationResultReuse": false,
+        "stages": [
+          {
+            "name": "generation",
+            "version": "cv-policy-v2/schema-v2",
+            "outcome": "rejected_output",
+            "durationMs": 0.23323,
+            "provider": {
+              "name": "openai",
+              "returnedModel": null,
+              "inputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "prefixCachedTokens": null,
+              "outputTokenCeiling": 4000,
+              "durationMs": 0.13384,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "statement_support_checks",
+            "version": "cv-heuristic-grounding-v1",
+            "outcome": "rejected_output",
+            "durationMs": 0.0014,
+            "provider": null
+          }
+        ],
+        "accepted": null
+      },
+      "id": "en-stable-cv-unknown-reference",
+      "task": "cv_generation",
+      "split": "development",
+      "language": "en",
+      "mode": "controlled",
+      "role": "negative_control",
+      "status": 502,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 4000,
+          "promptHash": "74f3df0d5bf1b1b6a95e86deb0592c2305f43ce0605d2dda2311a08131439b3f",
+          "schemaHash": "cf5bcf753414a752c685715784837407a685a7afeec7afc2ed561e90f1c0cc9d",
+          "requestHash": "000ab130c063c15a089ee35cf87ff11d478dbcedb2f4c6c7278aed9eecb23654",
+          "status": 200
+        }
+      ],
+      "output": {
+        "error": "invalid_output"
+      },
+      "score": {
+        "expected": 2,
+        "observed": 0,
+        "matched": 0,
+        "covered": 0,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 0,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [
+          "metric-support",
+          "selected-source"
+        ],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [
+          "missing: metric-support",
+          "missing: selected-source",
+          "HTTP 502"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      }
+    },
+    {
+      "diagnostics": {
+        "version": "ai-diagnostics-v1",
+        "attemptId": "b9ed405ba796ed2abf3c4f44d8b2408f",
+        "workflow": "cv_generation",
+        "outcome": "rejected_output",
+        "httpStatus": 502,
+        "durationMs": 0.36094,
+        "applicationResultReuse": false,
+        "stages": [
+          {
+            "name": "generation",
+            "version": "cv-policy-v2/schema-v2",
+            "outcome": "rejected_output",
+            "durationMs": 0.3234,
+            "provider": {
+              "name": "openai",
+              "returnedModel": null,
+              "inputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "prefixCachedTokens": null,
+              "outputTokenCeiling": 4000,
+              "durationMs": 0.20355,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "statement_support_checks",
+            "version": "cv-heuristic-grounding-v1",
+            "outcome": "rejected_output",
+            "durationMs": 0.00751,
+            "provider": null
+          }
+        ],
+        "accepted": null
+      },
+      "id": "en-stable-cv-unsupported-metric",
+      "task": "cv_generation",
+      "split": "development",
+      "language": "en",
+      "mode": "controlled",
+      "role": "negative_control",
+      "status": 502,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 4000,
+          "promptHash": "74f3df0d5bf1b1b6a95e86deb0592c2305f43ce0605d2dda2311a08131439b3f",
+          "schemaHash": "cf5bcf753414a752c685715784837407a685a7afeec7afc2ed561e90f1c0cc9d",
+          "requestHash": "000ab130c063c15a089ee35cf87ff11d478dbcedb2f4c6c7278aed9eecb23654",
+          "status": 200
+        }
+      ],
+      "output": {
+        "error": "invalid_output"
+      },
+      "score": {
+        "expected": 2,
+        "observed": 0,
+        "matched": 0,
+        "covered": 0,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 0,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [
+          "metric-support",
+          "selected-source"
+        ],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [
+          "missing: metric-support",
+          "missing: selected-source",
+          "HTTP 502"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      }
+    },
+    {
+      "diagnostics": {
+        "version": "ai-diagnostics-v1",
+        "attemptId": "de80ba37d00f7607efd93908d4797c03",
+        "workflow": "cv_generation",
+        "outcome": "completed",
+        "httpStatus": 200,
+        "durationMs": 0.39426,
+        "applicationResultReuse": false,
+        "stages": [
+          {
+            "name": "generation",
+            "version": "cv-policy-v2/schema-v2",
+            "outcome": "completed",
+            "durationMs": 0.35863,
+            "provider": {
+              "name": "openai",
+              "returnedModel": null,
+              "inputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "prefixCachedTokens": null,
+              "outputTokenCeiling": 4000,
+              "durationMs": 0.12414,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "statement_support_checks",
+            "version": "cv-heuristic-grounding-v1",
+            "outcome": "completed",
+            "durationMs": 0.12032,
+            "provider": null
+          }
+        ],
+        "accepted": null
+      },
+      "id": "pt-stable-cv-metric",
+      "task": "cv_generation",
+      "split": "heldout",
+      "language": "pt-BR",
+      "mode": "controlled",
+      "role": "acceptance",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 4000,
+          "promptHash": "1ec5f5de952357e847d925ed1b6b87bd3d6f8484b4afc3d6eab2559b75c0a814",
+          "schemaHash": "cf5bcf753414a752c685715784837407a685a7afeec7afc2ed561e90f1c0cc9d",
+          "requestHash": "1aa837f91afbdb73a42a277a123215bff890ecefa4faefd0acf180a1e61e5321",
+          "status": 200
+        }
+      ],
+      "output": {
+        "summary": [
+          {
+            "sourceIds": [
+              "stable-impact"
+            ],
+            "text": "Reduzi a latência em 20%."
+          }
+        ],
+        "selected": [
+          "stable-impact"
+        ]
+      },
+      "score": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      }
+    },
+    {
+      "diagnostics": {
+        "version": "ai-diagnostics-v1",
+        "attemptId": "9b21fede7ef15181c0fa7be2c862a6fb",
+        "workflow": "cv_generation",
+        "outcome": "rejected_output",
+        "httpStatus": 502,
+        "durationMs": 0.28078,
+        "applicationResultReuse": false,
+        "stages": [
+          {
+            "name": "generation",
+            "version": "cv-policy-v2/schema-v2",
+            "outcome": "rejected_output",
+            "durationMs": 0.22324,
+            "provider": {
+              "name": "openai",
+              "returnedModel": null,
+              "inputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "prefixCachedTokens": null,
+              "outputTokenCeiling": 4000,
+              "durationMs": 0.13942,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "statement_support_checks",
+            "version": "cv-heuristic-grounding-v1",
+            "outcome": "rejected_output",
+            "durationMs": 0.0003,
+            "provider": null
+          }
+        ],
+        "accepted": null
+      },
+      "id": "pt-stable-cv-empty-summary",
+      "task": "cv_generation",
+      "split": "heldout",
+      "language": "pt-BR",
+      "mode": "controlled",
+      "role": "negative_control",
+      "status": 502,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 4000,
+          "promptHash": "1ec5f5de952357e847d925ed1b6b87bd3d6f8484b4afc3d6eab2559b75c0a814",
+          "schemaHash": "cf5bcf753414a752c685715784837407a685a7afeec7afc2ed561e90f1c0cc9d",
+          "requestHash": "1aa837f91afbdb73a42a277a123215bff890ecefa4faefd0acf180a1e61e5321",
+          "status": 200
+        }
+      ],
+      "output": {
+        "error": "invalid_output"
+      },
+      "score": {
+        "expected": 2,
+        "observed": 0,
+        "matched": 0,
+        "covered": 0,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 0,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [
+          "metric-support",
+          "selected-source"
+        ],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [
+          "missing: metric-support",
+          "missing: selected-source",
+          "HTTP 502"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      }
+    },
+    {
+      "diagnostics": {
+        "version": "ai-diagnostics-v1",
+        "attemptId": "ddf9634cae413eeecbffa424fce67c25",
+        "workflow": "cv_generation",
+        "outcome": "rejected_output",
+        "httpStatus": 502,
+        "durationMs": 0.26443,
+        "applicationResultReuse": false,
+        "stages": [
+          {
+            "name": "generation",
+            "version": "cv-policy-v2/schema-v2",
+            "outcome": "rejected_output",
+            "durationMs": 0.22385,
+            "provider": {
+              "name": "openai",
+              "returnedModel": null,
+              "inputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "prefixCachedTokens": null,
+              "outputTokenCeiling": 4000,
+              "durationMs": 0.12446,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "statement_support_checks",
+            "version": "cv-heuristic-grounding-v1",
+            "outcome": "rejected_output",
+            "durationMs": 0.00102,
+            "provider": null
+          }
+        ],
+        "accepted": null
+      },
+      "id": "pt-stable-cv-unknown-reference",
+      "task": "cv_generation",
+      "split": "heldout",
+      "language": "pt-BR",
+      "mode": "controlled",
+      "role": "negative_control",
+      "status": 502,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 4000,
+          "promptHash": "1ec5f5de952357e847d925ed1b6b87bd3d6f8484b4afc3d6eab2559b75c0a814",
+          "schemaHash": "cf5bcf753414a752c685715784837407a685a7afeec7afc2ed561e90f1c0cc9d",
+          "requestHash": "1aa837f91afbdb73a42a277a123215bff890ecefa4faefd0acf180a1e61e5321",
+          "status": 200
+        }
+      ],
+      "output": {
+        "error": "invalid_output"
+      },
+      "score": {
+        "expected": 2,
+        "observed": 0,
+        "matched": 0,
+        "covered": 0,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 0,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [
+          "metric-support",
+          "selected-source"
+        ],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [
+          "missing: metric-support",
+          "missing: selected-source",
+          "HTTP 502"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      }
+    },
+    {
+      "diagnostics": {
+        "version": "ai-diagnostics-v1",
+        "attemptId": "49759cc7827039583e3af9517135e428",
+        "workflow": "cv_generation",
+        "outcome": "rejected_output",
+        "httpStatus": 502,
+        "durationMs": 0.23279,
+        "applicationResultReuse": false,
+        "stages": [
+          {
+            "name": "generation",
+            "version": "cv-policy-v2/schema-v2",
+            "outcome": "rejected_output",
+            "durationMs": 0.21299,
+            "provider": {
+              "name": "openai",
+              "returnedModel": null,
+              "inputTokens": null,
+              "outputTokens": null,
+              "reasoningTokens": null,
+              "prefixCachedTokens": null,
+              "outputTokenCeiling": 4000,
+              "durationMs": 0.12621,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "statement_support_checks",
+            "version": "cv-heuristic-grounding-v1",
+            "outcome": "rejected_output",
+            "durationMs": 0.00406,
+            "provider": null
+          }
+        ],
+        "accepted": null
+      },
+      "id": "pt-stable-cv-unsupported-metric",
+      "task": "cv_generation",
+      "split": "heldout",
+      "language": "pt-BR",
+      "mode": "controlled",
+      "role": "negative_control",
+      "status": 502,
+      "noStore": true,
+      "calls": [
+        {
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 4000,
+          "promptHash": "1ec5f5de952357e847d925ed1b6b87bd3d6f8484b4afc3d6eab2559b75c0a814",
+          "schemaHash": "cf5bcf753414a752c685715784837407a685a7afeec7afc2ed561e90f1c0cc9d",
+          "requestHash": "1aa837f91afbdb73a42a277a123215bff890ecefa4faefd0acf180a1e61e5321",
+          "status": 200
+        }
+      ],
+      "output": {
+        "error": "invalid_output"
+      },
+      "score": {
+        "expected": 2,
+        "observed": 0,
+        "matched": 0,
+        "covered": 0,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 0,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [
+          "metric-support",
+          "selected-source"
+        ],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [
+          "missing: metric-support",
+          "missing: selected-source",
+          "HTTP 502"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      }
+    }
+  ]
+}

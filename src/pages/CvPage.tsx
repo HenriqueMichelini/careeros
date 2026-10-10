@@ -1153,6 +1153,9 @@ export default function CvPage() {
                               className="mt-1 border-l border-[var(--color-border)] pl-2 whitespace-pre-wrap break-words"
                             >
                               {e.excerpt}
+                              <span className="mt-1 block text-[10px] text-[var(--color-muted-fg)]">
+                                {e.origin}
+                              </span>
                             </blockquote>
                           ))}
                           {curated.summarySources
@@ -1251,6 +1254,9 @@ export default function CvPage() {
                                 className="mt-1 border-l border-[var(--color-border)] pl-2 whitespace-pre-wrap break-words"
                               >
                                 {e.excerpt}
+                                <span className="mt-1 block text-[10px] text-[var(--color-muted-fg)]">
+                                  {e.origin}
+                                </span>
                               </blockquote>
                             ))}
                             {pending.wording?.[f.id] && (

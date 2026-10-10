@@ -452,3 +452,25 @@ test("including an entry cannot implicitly promote aspirational protected qualif
     false,
   )
 })
+test("saved support context excludes unrelated private Profile fields", () => {
+  const doc = stableDocument()
+  doc.facts.push({
+    ...doc.facts[0],
+    id: "salary",
+    field: "currentSalary",
+    value: "PRIVATE-SALARY",
+  })
+  const facts = stableCvFacts(doc)
+  const saved = createCuratedCv(
+    profile,
+    facts,
+    {
+      summary: [{ sourceIds: ["skill-a"], text: facts[0].text }],
+      selected: ["skill-a"],
+    },
+    "en",
+    "balanced",
+    doc,
+  )
+  assert.ok(!JSON.stringify(saved).includes("PRIVATE-SALARY"))
+})

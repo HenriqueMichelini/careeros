@@ -438,7 +438,7 @@ try {
     await evaluate("document.querySelector('header button:last-child').click()")
     await until("document.querySelectorAll('nav button').length === 4")
     await evaluate("document.querySelectorAll('nav button')[2].click()")
-    await until("document.querySelector('.cv-font-controls input')?.value === '12'")
+    await until("document.querySelector('.cv-font-controls input')?.value === '14'")
   }
 
   await openCv(
