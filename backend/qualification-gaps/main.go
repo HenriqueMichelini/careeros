@@ -120,13 +120,15 @@ func (a app) check(w http.ResponseWriter, r *http.Request) {
 	decoder.DisallowUnknownFields()
 	var raw map[string]json.RawMessage
 	if err := decoder.Decode(&raw); err != nil {
-		writeError(w, 400, "input")
+		status, outcome = http.StatusBadRequest, "input"
+		writeError(w, status, outcome)
 		return
 	}
 	understand := false
 	if value, ok := raw["understandJob"]; ok {
 		if string(value) != "true" {
-			writeError(w, 400, "input")
+			status, outcome = http.StatusBadRequest, "input"
+			writeError(w, status, outcome)
 			return
 		}
 		understand = true
