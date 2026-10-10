@@ -97,4 +97,10 @@ heading. Both server and browser now reject Markdown prefixes after trimming;
 red/green HTTP and frontend regressions reproduce and prevent the mismatch.
 Existing Apply checklist, CV preview/PDF and Firefox PDF regressions passed with
 fixtures adapted to explicit acceptance and deterministic local identity.
-Final full suite and independent review follow-up are pending before merge.
+Final verification passed: the full Go suite (`go test ./...`), all 116 Node
+tests (`npm test`), TypeScript (`tsc --noEmit`) and the production Vite build.
+The final unchanged-code browser run passed, including cancellation of a newly
+generated draft restoring the complete previously accepted Application Draft.
+Standards and Spec review follow-ups against baseline
+`25329b0076567cb45b5f7e75f40f5591e0f25b57` found no remaining findings at source
+commit `87c5358`. The build retains its existing bundle-size advisory.
