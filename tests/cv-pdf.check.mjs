@@ -468,7 +468,7 @@ try {
     )
     await evaluate("window.print = () => { window.__printCalled = true }")
     await evaluate(
-      "Array.from(document.querySelectorAll('button')).find((button) => button.textContent.includes('Export A4 PDF')).click()",
+      "Array.from(document.querySelectorAll('button')).find((button) => button.textContent.includes('Save as PDF')).click()",
     )
     await until("!!document.querySelector('[role=alert]')")
     assert.equal(

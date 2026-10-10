@@ -23,8 +23,14 @@ writeFileSync(
     },
   ).outputText,
 )
-const { cvFacts, createCuratedCv, parseCuratedCv, validateCvResult } =
-  await import(path)
+const {
+  cvFacts,
+  stableCvFacts,
+  cvSupportStatus,
+  createCuratedCv,
+  parseCuratedCv,
+  validateCvResult,
+} = await import(path)
 const profile = {
   fullName: "Avery",
   email: "private@example.com",
@@ -207,5 +213,242 @@ test("CV language survives saved document reload and migrates legacy locale", ()
     parseCuratedCv(JSON.stringify({ ...legacy, locale: cvLanguage }))
       .cvLanguage,
     "pt-BR",
+  )
+})
+
+const stableDocument = () => ({
+  id: "profile-a",
+  revision: 1,
+  entities: [],
+  evidence: [],
+  links: [],
+  facts: [
+    {
+      id: "skill-a",
+      revision: 3,
+      owner: { profileId: "profile-a", id: "profile-a", revision: 1 },
+      context: [],
+      field: "skills",
+      order: 0,
+      kind: "legacy_block",
+      value: "Research, Design\nResearch",
+      assertion: "unknown",
+      intent: "unknown",
+      certainty: "unknown",
+      support: "unsupported",
+    },
+  ],
+})
+test("stable CV projection retains a whole legacy block and fact revision across unrelated edits", () => {
+  const doc = stableDocument()
+  const facts = stableCvFacts(doc)
+  assert.equal(facts.length, 1)
+  assert.equal(facts[0].id, "skill-a")
+  assert.equal(facts[0].text, "Research, Design\nResearch")
+  assert.deepEqual(facts[0].reference, {
+    profileId: "profile-a",
+    id: "skill-a",
+    revision: 3,
+  })
+  doc.revision++
+  doc.facts.unshift({
+    ...doc.facts[0],
+    id: "private",
+    field: "currentSalary",
+    value: "secret",
+  })
+  assert.deepEqual(stableCvFacts(doc), facts)
+})
+test("accepted stable CV retains revisions and evidence; changed live support never rewrites it", () => {
+  const doc = stableDocument()
+  doc.facts[0].support = "supported"
+  doc.evidence = [
+    {
+      id: "evidence-a",
+      revision: 1,
+      excerpt: "Original accepted Research and Design excerpt",
+      origin: "user submission",
+      approval: "approved",
+    },
+  ]
+  doc.links = [
+    {
+      kind: "supports",
+      state: "active",
+      from: { id: "skill-a", revision: 3 },
+      to: { id: "evidence-a", revision: 1 },
+    },
+  ]
+  const facts = stableCvFacts(doc)
+  const result = {
+    summary: [{ sourceIds: ["skill-a"], text: facts[0].text }],
+    selected: ["skill-a"],
+  }
+  const saved = createCuratedCv(profile, facts, result, "pt-BR", "compact", doc)
+  assert.equal(saved.version, 2)
+  const raw = JSON.stringify(saved)
+  assert.deepEqual(parseCuratedCv(raw), saved)
+  assert.equal(cvSupportStatus(saved, doc), "current")
+  doc.revision++
+  assert.equal(cvSupportStatus(saved, doc), "current")
+  doc.facts[0].revision++
+  doc.facts[0].value = "Edited"
+  assert.equal(cvSupportStatus(saved, doc), "stale")
+  assert.equal(JSON.stringify(saved), raw)
+  assert.equal(
+    saved.sources[0].evidence[0].excerpt,
+    "Original accepted Research and Design excerpt",
+  )
+  const legacy = createCuratedCv(
+    profile,
+    cvFacts(profile),
+    { summary: [{ sourceId: "f0", text: "Research" }], selected: ["f0"] },
+    "en",
+  )
+  assert.equal(cvSupportStatus(legacy, doc), "legacy")
+  assert.equal(
+    cvSupportStatus(saved, { ...doc, id: "another-profile" }),
+    "stale",
+  )
+})
+test("combined summary cites every fact of the same role; aspirations and unknowns stay qualified", () => {
+  const a = {
+    id: "impact-a",
+    section: "experience",
+    entryId: "role-a",
+    field: "achievements",
+    text: "Reduced wait by 20%.",
+  }
+  const b = { ...a, id: "impact-b", text: "Designed services." }
+  const result = {
+    summary: [
+      {
+        sourceIds: [a.id, b.id],
+        text: "Designed services and reduced wait by 20%.",
+      },
+    ],
+    selected: [a.id, b.id],
+  }
+  assert.ok(validateCvResult(result, [a, b]))
+  assert.ok(
+    !validateCvResult(
+      {
+        ...result,
+        summary: [
+          {
+            sourceIds: [a.id],
+            text: result.summary[0].text.replace("20%", "90%"),
+          },
+        ],
+      },
+      [a, b],
+    ),
+  )
+  assert.ok(!validateCvResult(result, [a, { ...b, entryId: "another-role" }]))
+  for (const text of [
+    "I hope to become certified in Java.",
+    "Talvez tenha experiência em Java.",
+  ]) {
+    const f = { ...a, text }
+    assert.ok(
+      !validateCvResult(
+        {
+          summary: [{ sourceIds: [a.id], text: "Certified in Java." }],
+          selected: [a.id],
+        },
+        [f],
+      ),
+    )
+  }
+  const doc = stableDocument()
+  Object.assign(doc.facts[0], {
+    kind: "statement",
+    value: "Go",
+    intent: "aspiration",
+    assertion: "affirmed",
+    certainty: "certain",
+  })
+  const facts = stableCvFacts(doc)
+  assert.ok(
+    !validateCvResult(
+      {
+        summary: [{ sourceIds: ["skill-a"], text: "Experienced in Go." }],
+        selected: ["skill-a"],
+      },
+      facts,
+    ),
+  )
+})
+test("only minimized stable facts leave the client; evidence and contact stay local", async () => {
+  const { generateCv } = await import(path)
+  const doc = stableDocument()
+  const facts = stableCvFacts(doc)
+  facts[0].evidence = [
+    {
+      id: "e",
+      revision: 1,
+      excerpt: "PRIVATE-EXCERPT",
+      origin: "professional_information",
+      approval: "approved",
+    },
+  ]
+  const originalFetch = globalThis.fetch
+  try {
+    globalThis.fetch = async (_, options) => {
+      const outbound = JSON.parse(options.body)
+      assert.equal(outbound.facts[0].reference.revision, 3)
+      assert.equal(outbound.facts[0].id, "skill-a")
+      assert.ok(!options.body.includes("PRIVATE-EXCERPT"))
+      assert.equal(outbound.facts[0].evidence, undefined)
+      return new Response(
+        JSON.stringify({
+          summary: [{ sourceIds: ["skill-a"], text: facts[0].text }],
+          selected: ["skill-a"],
+        }),
+      )
+    }
+    await generateCv(facts, "en", "sk-test", new AbortController().signal)
+    const tooHeavy = Array.from({ length: 501 }, (_, i) => ({
+      ...facts[0],
+      id: `s${i}`,
+    }))
+    await assert.rejects(
+      () => generateCv(tooHeavy, "en", "sk-test", new AbortController().signal),
+      /input/,
+    )
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+test("including an entry cannot implicitly promote aspirational protected qualifications", () => {
+  const facts = [
+    {
+      id: "details",
+      section: "education",
+      entryId: "school",
+      field: "details",
+      text: "Studied design.",
+    },
+    {
+      id: "degree",
+      section: "education",
+      entryId: "school",
+      field: "degree",
+      text: "PhD",
+      kind: "statement",
+      intent: "aspiration",
+      assertion: "affirmed",
+      certainty: "certain",
+    },
+  ]
+  assert.equal(
+    validateCvResult(
+      {
+        summary: [{ sourceIds: ["details"], text: "Studied design." }],
+        selected: ["details"],
+      },
+      facts,
+    ),
+    false,
   )
 })

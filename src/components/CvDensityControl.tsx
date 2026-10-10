@@ -51,6 +51,16 @@ export default function CvDensityControl({
           </span>
         </label>
       ))}
+      <p className="mb-3 text-xs leading-5" data-cv-density-status>
+        {appliedDensity
+          ? t("cv.densityApplied", {
+              density: t(`cv.density.${appliedDensity}`),
+            })
+          : t("cv.densityNoSnapshot")}
+        {appliedDensity !== density && (
+          <span className="mt-1 block">{t("cv.densityPending")}</span>
+        )}
+      </p>
       {saveError && (
         <p role="alert" className="mb-3 text-xs">
           {t("cv.saveError")}

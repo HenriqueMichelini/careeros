@@ -1,3 +1,9 @@
+import type {
+  ProfileDocument,
+  ProfileRef,
+  ProfileFact,
+  ProfileEvidence,
+} from "./profileDocument"
 import type { ProfessionalRepository } from "./types"
 import type { Locale } from "./i18n"
 import type { CvDensity } from "./cvPreferences"
@@ -10,17 +16,30 @@ export interface CvFact {
   entryId: string
   field: string
   text: string
+  reference?: ProfileRef
+  owner?: ProfileRef
+  kind?: ProfileFact["kind"]
+  assertion?: ProfileFact["assertion"]
+  intent?: ProfileFact["intent"]
+  certainty?: ProfileFact["certainty"]
+  support?: ProfileFact["support"]
+  evidence?: ProfileEvidence[]
+  context?: ProfileRef[]
 }
 export interface CvResult {
   summary: {
-    sourceId: string
+    sourceId?: string
+    sourceIds?: string[]
     text: string
   }[]
   selected: string[]
   wording?: Record<string, string>
 }
 export interface CuratedCv {
-  version: 1
+  version: 1 | 2
+  sourceProfileId?: string
+  summarySources?: CvResult["summary"]
+  context?: { reference: ProfileRef value: unknown }[]
   density?: CvDensity
   choices?: CvChoices
   repository: ProfessionalRepository
@@ -115,6 +134,66 @@ export function cvFacts(repo: ProfessionalRepository): CvFact[] {
       add("languages", l.id, field, l[field])
   return facts
 }
+// Canonical facts are indivisible, including migrated legacy blocks. IDs never
+// depend on position, spelling, or a compatibility-view split.
+export function stableCvFacts(doc: ProfileDocument): CvFact[] {
+  const allowed: Record<string, readonly string[]> = {
+    skills: ["skills", "competencies"],
+    tools: ["tools"],
+    experience: [
+      "title",
+      "company",
+      "startDate",
+      "endDate",
+      "current",
+      "description",
+      "responsibilities",
+      "achievements",
+    ],
+    projects: ["name", "description", "technologies", "highlights"],
+    education: ["degree", "institution", "graduationDate", "details"],
+    certifications: ["name", "issuer", "date"],
+    languages: ["name", "proficiency"],
+  }
+  return doc.facts.flatMap((f) => {
+    const entity = doc.entities.find((e) => e.id === f.owner.id)
+    const section =
+      entity?.kind ?? (f.field === "competencies" ? "skills" : f.field)
+    const text =
+      f.value === true ? "true" : typeof f.value === "string" ? f.value : ""
+    if (!allowed[section]?.includes(f.field) || !text.trim()) return []
+    const evidenceIds = doc.links
+      .filter(
+        (l) =>
+          l.kind === "supports" &&
+          l.state === "active" &&
+          l.from.id === f.id &&
+          l.from.revision === f.revision,
+      )
+      .map((l) => l.to.id)
+    return [
+      {
+        id: f.id,
+        section,
+        entryId: entity?.legacyId ?? "",
+        field: f.field,
+        text,
+        reference: { profileId: doc.id, id: f.id, revision: f.revision },
+        owner: structuredClone(f.owner),
+        context: structuredClone(f.context),
+        kind: f.kind,
+        assertion: f.assertion,
+        intent: f.intent,
+        certainty: f.certainty,
+        support: f.support,
+        evidence: structuredClone(
+          doc.evidence.filter((e) => evidenceIds.includes(e.id)),
+        ),
+      },
+    ]
+  })
+}
+
 // Numeric and explicit factual-strength guards complement cited sources and human review.
 export function groundedCvText(text: unknown, source: string): text is string {
   if (
@@ -176,6 +255,11 @@ export function groundedCvText(text: unknown, source: string): text is string {
     )
   )
     return false
+  // Legacy blocks have no inferred atomic qualifiers. Explicit aspirational or
+  // uncertain wording is retained verbatim rather than upgraded by paraphrasing.
+  const qualified =
+    /\b(?:hope|want|aspire|aspiring|plan|wish|might|maybe|perhaps|possibly|unknown|uncertain|talvez|espero|pretendo|desejo|incerto|desconhecido)\b/
+  if (qualified.test(input) && text !== source) return false
   const negatives = /\b(?:not|never|without|nao|nunca|sem)\b/
   if (negatives.test(input) && !negatives.test(output)) return false
   return true
@@ -202,7 +286,38 @@ export function validateCvResult(
   const selected = new Set(r.selected)
   if (
     selected.size !== r.selected.length ||
-    r.selected.some((id) => typeof id !== "string" || !byId.has(id))
+    r.selected.some(
+      (id) =>
+        typeof id !== "string" ||
+        !byId.has(id) ||
+        (byId.get(id)!.kind === "statement" &&
+          (byId.get(id)!.intent !== "actual" ||
+            byId.get(id)!.assertion !== "affirmed" ||
+            byId.get(id)!.certainty !== "certain")),
+    )
+  )
+    return false
+  if (
+    facts.some(
+      (f) =>
+        f.entryId &&
+        f.kind === "statement" &&
+        (f.intent !== "actual" ||
+          f.assertion !== "affirmed" ||
+          f.certainty !== "certain") &&
+        ![
+          "description",
+          "responsibilities",
+          "achievements",
+          "highlights",
+          "details",
+        ].includes(f.field) &&
+        r.selected.some(
+          (id) =>
+            byId.get(id)?.section === f.section &&
+            byId.get(id)?.entryId === f.entryId,
+        ),
+    )
   )
     return false
   if (
@@ -220,30 +335,156 @@ export function validateCvResult(
             "highlights",
             "details",
           ].includes(byId.get(id)!.field) ||
-          !groundedCvText(text, byId.get(id)!.text),
+          !groundedCvText(text, byId.get(id)!.text) ||
+          (byId.get(id)!.kind === "statement" &&
+            (byId.get(id)!.intent !== "actual" ||
+              byId.get(id)!.assertion !== "affirmed" ||
+              byId.get(id)!.certainty !== "certain") &&
+            text !== byId.get(id)!.text),
       ))
   )
     return false
-  return r.summary.every(
-    (s) =>
-      s &&
-      Object.keys(s).sort().join(",") === "sourceId,text" &&
-      typeof s.text === "string" &&
-      s.text.trim() !== "" &&
-      selected.has(s.sourceId) &&
-      substantive.has(byId.get(s.sourceId)!.field) &&
-      groundedCvText(s.text, byId.get(s.sourceId)!.text),
-  )
+  return r.summary.every((s) => {
+    if (
+      !s ||
+      !["sourceId,text", "sourceIds,text"].includes(
+        Object.keys(s).sort().join(","),
+      )
+    )
+      return false
+    const ids = summarySourceIds(s)
+    if (
+      !ids.length ||
+      ids.length > 12 ||
+      new Set(ids).size !== ids.length ||
+      ids.some(
+        (id) =>
+          typeof id !== "string" ||
+          !selected.has(id) ||
+          !substantive.has(byId.get(id)!.field),
+      )
+    )
+      return false
+    const sources = ids.map((id) => byId.get(id)!)
+    // Combining claims across employers/projects obscures ownership.
+    const owners = new Set(
+      sources.filter((f) => f.entryId).map((f) => `${f.section}:${f.entryId}`),
+    )
+    if (owners.size > 1) return false
+    if (
+      sources.some(
+        (f) =>
+          f.kind === "statement" &&
+          (f.intent !== "actual" ||
+            f.assertion !== "affirmed" ||
+            f.certainty !== "certain"),
+      ) &&
+      (sources.length !== 1 || s.text !== sources[0].text)
+    )
+      return false
+    return groundedCvText(s.text, sources.map((f) => f.text).join("\n"))
+  })
 }
+export function summarySourceIds(s: CvResult["summary"][number]): string[] {
+  return Array.isArray(s.sourceIds)
+    ? s.sourceIds
+    : typeof s.sourceId === "string"
+      ? [s.sourceId]
+      : []
+}
+
+export function cvSupportStatus(
+  saved: CuratedCv,
+  doc: ProfileDocument | null,
+): "legacy" | "current" | "stale" {
+  if (saved.version === 1) return "legacy"
+  if (!doc || doc.id !== saved.sourceProfileId) return "stale"
+  for (const source of saved.sources) {
+    const live = doc.facts.find((f) => f.id === source.reference?.id)
+    if (
+      !live ||
+      live.revision !== source.reference?.revision ||
+      live.support !== source.support ||
+      (live.value === true ? "true" : live.value) !== source.text ||
+      JSON.stringify(live.context) !== JSON.stringify(source.context ?? [])
+    )
+      return "stale"
+    const activeEvidence = doc.links.filter(
+      (l) =>
+        l.kind === "supports" &&
+        l.state === "active" &&
+        l.from.id === live.id &&
+        l.from.revision === live.revision,
+    )
+    if (activeEvidence.length !== (source.evidence?.length ?? 0)) return "stale"
+    if (
+      source.context?.some(
+        (r) =>
+          !doc.entities.some((e) => e.id === r.id && e.revision === r.revision),
+      )
+    )
+      return "stale"
+    for (const evidence of source.evidence ?? []) {
+      if (
+        !doc.evidence.some(
+          (e) =>
+            e.id === evidence.id &&
+            e.revision === evidence.revision &&
+            e.excerpt === evidence.excerpt,
+        ) ||
+        !doc.links.some(
+          (l) =>
+            l.kind === "supports" &&
+            l.state === "active" &&
+            l.from.id === live.id &&
+            l.from.revision === live.revision &&
+            l.to.id === evidence.id &&
+            l.to.revision === evidence.revision,
+        )
+      )
+        return "stale"
+    }
+  }
+  if (
+    saved.context?.some(
+      (c) =>
+        !doc.facts.some(
+          (f) =>
+            f.id === c.reference.id &&
+            f.revision === c.reference.revision &&
+            JSON.stringify(f.value) === JSON.stringify(c.value),
+        ),
+    )
+  )
+    return "stale"
+  return "current"
+}
+
 export function createCuratedCv(
   repo: ProfessionalRepository,
   facts: CvFact[],
   result: CvResult,
   cvLanguage: Locale,
   density: CvDensity = "balanced",
+  document?: ProfileDocument,
 ): CuratedCv {
   if (!validateCvResult(result, facts)) throw new Error("invalid_output")
   const selected = result.selected.map((id) => facts.find((f) => f.id === id)!)
+  if (
+    document &&
+    selected.some(
+      (f) =>
+        !f.reference ||
+        f.reference.profileId !== document.id ||
+        !document.facts.some(
+          (live) =>
+            live.id === f.reference!.id &&
+            live.revision === f.reference!.revision &&
+            (live.value === true ? "true" : live.value) === f.text,
+        ),
+    )
+  )
+    throw new Error("invalid_output")
   const content = selected.map((f) => ({
     ...f,
     text: result.wording?.[f.id] ?? f.text,
@@ -305,24 +546,68 @@ export function createCuratedCv(
   snapshot.currentSalary = ""
   snapshot.desiredSalary = ""
   return {
-    version: 1,
+    version: document ? 2 : 1,
+    ...(document
+      ? {
+          sourceProfileId: document.id,
+          summarySources: structuredClone(result.summary),
+          // Include original contact and protected entity metadata rendered implicitly.
+          context: document.facts
+            .filter(
+              (f) =>
+                (f.owner.id === document.id &&
+                  [
+                    "fullName",
+                    "email",
+                    "phone",
+                    "location",
+                    "professionalLinks",
+                  ].includes(f.field)) ||
+                (selected.some(
+                  (source) =>
+                    source.owner?.id === f.owner.id ||
+                    source.context?.some((r) => r.id === f.owner.id),
+                ) &&
+                  ![
+                    "description",
+                    "responsibilities",
+                    "achievements",
+                    "highlights",
+                    "details",
+                    "skills",
+                    "competencies",
+                    "tools",
+                  ].includes(f.field)),
+            )
+            .map((f) => ({
+              reference: {
+                profileId: document.id,
+                id: f.id,
+                revision: f.revision,
+              },
+              value: structuredClone(f.value),
+            })),
+        }
+      : {}),
     repository: snapshot,
     summary: result.summary.map((s) => s.text).join(" "),
-    sources: selected,
+    sources: structuredClone(selected),
     cvLanguage,
     density,
   }
 }
 export function parseCuratedCv(raw: string | null): CuratedCv | null {
   try {
-    const value = JSON.parse(raw || "null") as (CuratedCv & { locale?: Locale }) | null
+    const value = JSON.parse(raw || "null") as CuratedCv & {
+      locale?: Locale
+    } | null
     if (value && !value.cvLanguage && value.locale) {
       value.cvLanguage = value.locale
       delete value.locale
     }
     if (
       !value ||
-      value.version !== 1 ||
+      ![1, 2].includes(value.version) ||
       !["en", "pt-BR"].includes(value.cvLanguage) ||
       typeof value.summary !== "string" ||
       !Array.isArray(value.sources) ||
@@ -400,6 +685,52 @@ export function parseCuratedCv(raw: string | null): CuratedCv | null {
       )
     )
       return null
+    if (value.version === 2) {
+      const ref = (r: ProfileRef | undefined) =>
+        !!r &&
+        r.profileId === value.sourceProfileId &&
+        typeof r.id === "string" &&
+        !!r.id &&
+        Number.isSafeInteger(r.revision) &&
+        r.revision > 0
+      if (
+        typeof value.sourceProfileId !== "string" ||
+        !value.sourceProfileId ||
+        !Array.isArray(value.context) ||
+        value.context.some(
+          (c) => !c || !ref(c.reference) || c.value === undefined,
+        ) ||
+        value.sources.some(
+          (f) =>
+            !ref(f.reference) ||
+            f.reference!.id !== f.id ||
+            !ref(f.owner) ||
+            !Array.isArray(f.context) ||
+            f.context.some((r) => !ref(r)) ||
+            !["legacy_block", "statement"].includes(f.kind ?? "") ||
+            !Array.isArray(f.evidence) ||
+            f.evidence.some(
+              (e) =>
+                !e ||
+                typeof e.id !== "string" ||
+                !Number.isSafeInteger(e.revision) ||
+                e.revision < 1 ||
+                typeof e.excerpt !== "string" ||
+                typeof e.origin !== "string" ||
+                e.approval !== "approved",
+            ),
+        ) ||
+        !Array.isArray(value.summarySources) ||
+        !validateCvResult(
+          {
+            summary: value.summarySources,
+            selected: value.sources.map((f) => f.id),
+          },
+          value.sources,
+        )
+      )
+        return null
+    }
     value.density = ["compact", "balanced", "detailed"].includes(
       value.density || "",
     )
@@ -429,13 +760,42 @@ export async function generateCv(
     const group = JSON.stringify([f.section, f.entryId])
     if (f.entryId && !groups.has(group))
       groups.set(group, `entry${groups.size}`)
-    return { ...f, entryId: f.entryId ? groups.get(group)! : "" }
+    return {
+      id: f.id,
+      section: f.section,
+      entryId: f.entryId ? groups.get(group)! : "",
+      field: f.field,
+      text: f.text,
+      ...(f.reference
+        ? {
+            reference: f.reference,
+            owner: f.owner,
+            context: f.context,
+            kind: f.kind,
+            assertion: f.assertion,
+            intent: f.intent,
+            certainty: f.certainty,
+            support: f.support,
+          }
+        : {}),
+    }
   })
+  const body = JSON.stringify({ facts: outbound, cvLanguage, density })
+  if (
+    !facts.length ||
+    facts.length > 500 ||
+    new TextEncoder().encode(body).length > 128 * 1024 ||
+    facts.some(
+      (f) =>
+        new TextEncoder().encode(f.text).length > 12_288 || f.id.length > 100,
+    )
+  )
+    throw new CvGenerationError("input")
   try {
     response = await fetch("/api/cv/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-OpenAI-Api-Key": key },
-      body: JSON.stringify({ facts: outbound, cvLanguage, density }),
+      body,
       signal: requestSignal,
     })
   } catch (error) {

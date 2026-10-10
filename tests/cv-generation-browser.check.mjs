@@ -207,7 +207,11 @@ try {
       returnByValue: true,
       awaitPromise: true,
     })
-    if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text)
+    if (result.exceptionDetails)
+      throw new Error(
+        result.exceptionDetails.exception?.description ||
+          result.exceptionDetails.text,
+      )
     return result.result.value
   }
   const until = async (expression) => {
@@ -270,10 +274,7 @@ try {
       ],
     }
     await openCv(repo, fixture.locale)
-    const generate =
-      fixture.locale === "en"
-        ? "Generate CV"
-        : "Gerar currículo"
+    const generate = fixture.locale === "en" ? "Generate CV" : "Gerar currículo"
     const accept =
       fixture.locale === "en"
         ? "Accept and replace CV"
@@ -298,10 +299,7 @@ try {
     )
     await click(accept)
     await until("!!localStorage.getItem('careeros_curated_cv_v1')")
-    assert.equal(
-      await evaluate(savedProfileExpression),
-      original,
-    )
+    assert.equal(await evaluate(savedProfileExpression), original)
     await editSummary(
       fixture.locale === "en"
         ? "Edited professional summary."
@@ -393,6 +391,56 @@ try {
       await evaluate("localStorage.getItem('careeros_cv_v1')"),
       edited,
       "reload preserves accepted edits",
+    )
+    const acceptedRaw = await evaluate(
+      "localStorage.getItem('careeros_curated_cv_v1')",
+    )
+    const accepted = JSON.parse(acceptedRaw)
+    assert.equal(accepted.version, 2)
+    assert.ok(
+      accepted.sources.every(
+        (f) => f.reference?.id === f.id && f.reference.revision > 0,
+      ),
+    )
+    await evaluate(
+      `(() => { const key='careeros_profile_v2'; const doc=JSON.parse(localStorage.getItem(key)); const fact=doc.facts.find(f=>f.id===${JSON.stringify(accepted.sources[0].id)});fact.revision++;fact.value='Changed source';doc.revision++;localStorage.setItem(key,JSON.stringify(doc));location.reload(); })()`,
+    )
+    await until("!!document.querySelector('header button')")
+    await evaluate("document.querySelector('header button:last-child').click()")
+    await until("document.querySelectorAll('nav button').length===4")
+    await evaluate("document.querySelectorAll('nav button')[2].click()")
+    await until("!!document.querySelector('[data-cv-saved-support]')")
+    assert.ok(
+      await evaluate(
+        "!!document.querySelector('[data-cv-saved-support] [role=status]')",
+      ),
+      "changed Profile support is visible",
+    )
+    assert.equal(
+      await evaluate("localStorage.getItem('careeros_curated_cv_v1')"),
+      acceptedRaw,
+      "live edit preserves accepted snapshot and manual edits",
+    )
+    // A persisted v1 CV remains independent: never map positional IDs to live facts.
+    await evaluate(
+      `(() => {const saved=JSON.parse(localStorage.getItem('careeros_curated_cv_v1'));saved.version=1;delete saved.sourceProfileId;delete saved.context;delete saved.summarySources;saved.sources.forEach((f,i)=>{f.id='f'+i;delete f.reference;delete f.owner;delete f.evidence});localStorage.setItem('careeros_curated_cv_v1',JSON.stringify(saved));location.reload()})()`,
+    )
+    await until("!!document.querySelector('header button')")
+    await evaluate("document.querySelector('header button:last-child').click()")
+    await until("document.querySelectorAll('nav button').length===4")
+    await evaluate("document.querySelectorAll('nav button')[2].click()")
+    await until("!!document.querySelector('[data-cv-saved-support]')")
+    assert.equal(
+      await evaluate(
+        "!!document.querySelector('[data-cv-saved-support] [role=status]')",
+      ),
+      false,
+    )
+    assert.equal(
+      await evaluate("document.querySelector('textarea').value"),
+      fixture.locale === "en"
+        ? "Edited professional summary."
+        : "Resumo profissional editado.",
     )
     console.log(
       fixture.locale +
@@ -556,8 +604,7 @@ try {
   await click("Cancel / discard proposal")
 
   assert.equal(
-    JSON.parse(await evaluate(savedProfileExpression))
-      .experience.length,
+    JSON.parse(await evaluate(savedProfileExpression)).experience.length,
     19,
   )
   await evaluate(
@@ -594,7 +641,7 @@ try {
     await evaluate(
       "JSON.parse(localStorage.getItem('careeros_curated_cv_v1')).repository.experience[0].description.length",
     ),
-    long.experience[0].description.trim().length,
+    long.experience[0].description.length,
   )
   console.log(
     "Heavy 19-role source: later impact selected with complementary project, duplicates omitted, source intact; cancelled response ignored; actual oversized selected content surfaces overflow",
@@ -607,14 +654,10 @@ try {
       ["heavy", { ...heavy, fullName: fixture.repo.fullName }],
     ]) {
       await openCv(profile, fixture.locale)
-      const originalProfile = await evaluate(
-        savedProfileExpression,
-      )
+      const originalProfile = await evaluate(savedProfileExpression)
       const lengths = []
       const generate =
-        fixture.locale === "en"
-          ? "Generate CV"
-          : "Gerar currículo"
+        fixture.locale === "en" ? "Generate CV" : "Gerar currículo"
       const accept =
         fixture.locale === "en"
           ? "Accept and replace CV"
@@ -667,10 +710,7 @@ try {
           "document.querySelector('.cv-paper-content').textContent",
         )
         lengths.push(text.length)
-        assert.equal(
-          await evaluate(savedProfileExpression),
-          originalProfile,
-        )
+        assert.equal(await evaluate(savedProfileExpression), originalProfile)
         await call("Emulation.setDeviceMetricsOverride", {
           width: 390,
           height: 844,
@@ -718,7 +758,7 @@ try {
         if (size === "heavy" && density === "detailed") {
           await evaluate("window.__prints=0;window.print=()=>window.__prints++")
           await click(
-            fixture.locale === "en" ? "Export A4 PDF" : "Exportar PDF A4",
+            fixture.locale === "en" ? "Save as PDF" : "Salvar como PDF",
           )
           await pause(50)
           assert.equal(
@@ -841,10 +881,7 @@ try {
         await evaluate("document.querySelector('textarea').value"),
         "Manual wording stays until explicit replacement.",
       )
-      assert.equal(
-        await evaluate(savedProfileExpression),
-        originalProfile,
-      )
+      assert.equal(await evaluate(savedProfileExpression), originalProfile)
     }
   }
   await openCv({ ...blank, education: fixtures[0].repo.education }, "en")
@@ -865,7 +902,7 @@ try {
   await openCv(blank, "en")
   assert.ok(
     await evaluate(
-      "document.querySelector('[data-cv-generation] button').disabled",
+      "Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()==='Generate CV').disabled",
     ),
   )
   console.log(

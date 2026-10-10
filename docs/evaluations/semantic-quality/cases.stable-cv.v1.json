@@ -1,0 +1,525 @@
+{
+  "version": "stable-cv-v1",
+  "cases": [
+    {
+      "id": "en-stable-cv-metric",
+      "task": "cv_generation",
+      "language": "en",
+      "split": "development",
+      "tags": [
+        "metrics",
+        "factual_support",
+        "sparse",
+        "stable-revisions"
+      ],
+      "request": {
+        "cvLanguage": "en",
+        "facts": [
+          {
+            "id": "stable-impact",
+            "section": "experience",
+            "entryId": "e1",
+            "field": "achievements",
+            "text": "Reduced latency by 20%.",
+            "reference": {
+              "profileId": "profile-a",
+              "id": "stable-impact",
+              "revision": 3
+            },
+            "owner": {
+              "profileId": "profile-a",
+              "id": "role-a",
+              "revision": 1
+            },
+            "context": [],
+            "kind": "legacy_block",
+            "assertion": "unknown",
+            "intent": "unknown",
+            "certainty": "unknown",
+            "support": "unsupported"
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [
+            {
+              "text": "Reduced latency by 20%.",
+              "sourceIds": [
+                "stable-impact"
+              ]
+            }
+          ],
+          "selected": [
+            "stable-impact"
+          ],
+          "wording": []
+        }
+      ],
+      "gold": [
+        {
+          "id": "metric-support",
+          "group": "summary",
+          "match": {
+            "text": "20%"
+          }
+        },
+        {
+          "id": "selected-source",
+          "group": "selected",
+          "match": {
+            "text": "^stable-impact$"
+          }
+        }
+      ],
+      "forbidden": [
+        "90%",
+        "(?i)senior|sênior|expert|especialista"
+      ],
+      "notes": "Only the supplied 20% achievement can support the CV summary and selected fact. Client metadata retains e1 ownership.",
+      "role": "acceptance"
+    },
+    {
+      "id": "en-stable-cv-empty-summary",
+      "task": "cv_generation",
+      "language": "en",
+      "split": "development",
+      "tags": [
+        "metrics",
+        "factual_support",
+        "sparse",
+        "stable-revisions"
+      ],
+      "request": {
+        "cvLanguage": "en",
+        "facts": [
+          {
+            "id": "stable-impact",
+            "section": "experience",
+            "entryId": "e1",
+            "field": "achievements",
+            "text": "Reduced latency by 20%.",
+            "reference": {
+              "profileId": "profile-a",
+              "id": "stable-impact",
+              "revision": 3
+            },
+            "owner": {
+              "profileId": "profile-a",
+              "id": "role-a",
+              "revision": 1
+            },
+            "context": [],
+            "kind": "legacy_block",
+            "assertion": "unknown",
+            "intent": "unknown",
+            "certainty": "unknown",
+            "support": "unsupported"
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [],
+          "selected": [
+            "stable-impact"
+          ],
+          "wording": []
+        }
+      ],
+      "gold": [],
+      "forbidden": [
+        "90%",
+        "(?i)senior|sênior|expert|especialista"
+      ],
+      "notes": "Controlled migration regression: invalid output remains rejected; no live provider claim. English baseline failure remains unexplained.",
+      "role": "rejection"
+    },
+    {
+      "id": "en-stable-cv-unknown-reference",
+      "task": "cv_generation",
+      "language": "en",
+      "split": "development",
+      "tags": [
+        "metrics",
+        "factual_support",
+        "sparse",
+        "stable-revisions"
+      ],
+      "request": {
+        "cvLanguage": "en",
+        "facts": [
+          {
+            "id": "stable-impact",
+            "section": "experience",
+            "entryId": "e1",
+            "field": "achievements",
+            "text": "Reduced latency by 20%.",
+            "reference": {
+              "profileId": "profile-a",
+              "id": "stable-impact",
+              "revision": 3
+            },
+            "owner": {
+              "profileId": "profile-a",
+              "id": "role-a",
+              "revision": 1
+            },
+            "context": [],
+            "kind": "legacy_block",
+            "assertion": "unknown",
+            "intent": "unknown",
+            "certainty": "unknown",
+            "support": "unsupported"
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [
+            {
+              "text": "Reduced latency by 20%.",
+              "sourceIds": [
+                "missing"
+              ]
+            }
+          ],
+          "selected": [
+            "stable-impact"
+          ],
+          "wording": []
+        }
+      ],
+      "gold": [],
+      "forbidden": [
+        "90%",
+        "(?i)senior|sênior|expert|especialista"
+      ],
+      "notes": "Controlled migration regression: invalid output remains rejected; no live provider claim. English baseline failure remains unexplained.",
+      "role": "rejection"
+    },
+    {
+      "id": "en-stable-cv-unsupported-metric",
+      "task": "cv_generation",
+      "language": "en",
+      "split": "development",
+      "tags": [
+        "metrics",
+        "factual_support",
+        "sparse",
+        "stable-revisions"
+      ],
+      "request": {
+        "cvLanguage": "en",
+        "facts": [
+          {
+            "id": "stable-impact",
+            "section": "experience",
+            "entryId": "e1",
+            "field": "achievements",
+            "text": "Reduced latency by 20%.",
+            "reference": {
+              "profileId": "profile-a",
+              "id": "stable-impact",
+              "revision": 3
+            },
+            "owner": {
+              "profileId": "profile-a",
+              "id": "role-a",
+              "revision": 1
+            },
+            "context": [],
+            "kind": "legacy_block",
+            "assertion": "unknown",
+            "intent": "unknown",
+            "certainty": "unknown",
+            "support": "unsupported"
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [
+            {
+              "text": "Reduced latency by 90%.",
+              "sourceIds": [
+                "stable-impact"
+              ]
+            }
+          ],
+          "selected": [
+            "stable-impact"
+          ],
+          "wording": []
+        }
+      ],
+      "gold": [],
+      "forbidden": [
+        "90%",
+        "(?i)senior|sênior|expert|especialista"
+      ],
+      "notes": "Controlled migration regression: invalid output remains rejected; no live provider claim. English baseline failure remains unexplained.",
+      "role": "rejection"
+    },
+    {
+      "id": "pt-stable-cv-metric",
+      "task": "cv_generation",
+      "language": "pt-BR",
+      "split": "heldout",
+      "tags": [
+        "metrics",
+        "factual_support",
+        "sparse",
+        "stable-revisions"
+      ],
+      "request": {
+        "cvLanguage": "pt-BR",
+        "facts": [
+          {
+            "id": "stable-impact",
+            "section": "experience",
+            "entryId": "e1",
+            "field": "achievements",
+            "text": "Reduzi a latência em 20%.",
+            "reference": {
+              "profileId": "profile-a",
+              "id": "stable-impact",
+              "revision": 3
+            },
+            "owner": {
+              "profileId": "profile-a",
+              "id": "role-a",
+              "revision": 1
+            },
+            "context": [],
+            "kind": "legacy_block",
+            "assertion": "unknown",
+            "intent": "unknown",
+            "certainty": "unknown",
+            "support": "unsupported"
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [
+            {
+              "text": "Reduzi a latência em 20%.",
+              "sourceIds": [
+                "stable-impact"
+              ]
+            }
+          ],
+          "selected": [
+            "stable-impact"
+          ],
+          "wording": []
+        }
+      ],
+      "gold": [
+        {
+          "id": "metric-support",
+          "group": "summary",
+          "match": {
+            "text": "20%"
+          }
+        },
+        {
+          "id": "selected-source",
+          "group": "selected",
+          "match": {
+            "text": "^stable-impact$"
+          }
+        }
+      ],
+      "forbidden": [
+        "90%",
+        "(?i)senior|sênior|expert|especialista"
+      ],
+      "notes": "Only the supplied 20% achievement can support the CV summary and selected fact. Client metadata retains e1 ownership.",
+      "role": "acceptance"
+    },
+    {
+      "id": "pt-stable-cv-empty-summary",
+      "task": "cv_generation",
+      "language": "pt-BR",
+      "split": "heldout",
+      "tags": [
+        "metrics",
+        "factual_support",
+        "sparse",
+        "stable-revisions"
+      ],
+      "request": {
+        "cvLanguage": "pt-BR",
+        "facts": [
+          {
+            "id": "stable-impact",
+            "section": "experience",
+            "entryId": "e1",
+            "field": "achievements",
+            "text": "Reduzi a latência em 20%.",
+            "reference": {
+              "profileId": "profile-a",
+              "id": "stable-impact",
+              "revision": 3
+            },
+            "owner": {
+              "profileId": "profile-a",
+              "id": "role-a",
+              "revision": 1
+            },
+            "context": [],
+            "kind": "legacy_block",
+            "assertion": "unknown",
+            "intent": "unknown",
+            "certainty": "unknown",
+            "support": "unsupported"
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [],
+          "selected": [
+            "stable-impact"
+          ],
+          "wording": []
+        }
+      ],
+      "gold": [],
+      "forbidden": [
+        "90%",
+        "(?i)senior|sênior|expert|especialista"
+      ],
+      "notes": "Controlled migration regression: invalid output remains rejected; no live provider claim. English baseline failure remains unexplained.",
+      "role": "rejection"
+    },
+    {
+      "id": "pt-stable-cv-unknown-reference",
+      "task": "cv_generation",
+      "language": "pt-BR",
+      "split": "heldout",
+      "tags": [
+        "metrics",
+        "factual_support",
+        "sparse",
+        "stable-revisions"
+      ],
+      "request": {
+        "cvLanguage": "pt-BR",
+        "facts": [
+          {
+            "id": "stable-impact",
+            "section": "experience",
+            "entryId": "e1",
+            "field": "achievements",
+            "text": "Reduzi a latência em 20%.",
+            "reference": {
+              "profileId": "profile-a",
+              "id": "stable-impact",
+              "revision": 3
+            },
+            "owner": {
+              "profileId": "profile-a",
+              "id": "role-a",
+              "revision": 1
+            },
+            "context": [],
+            "kind": "legacy_block",
+            "assertion": "unknown",
+            "intent": "unknown",
+            "certainty": "unknown",
+            "support": "unsupported"
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [
+            {
+              "text": "Reduzi a latência em 20%.",
+              "sourceIds": [
+                "missing"
+              ]
+            }
+          ],
+          "selected": [
+            "stable-impact"
+          ],
+          "wording": []
+        }
+      ],
+      "gold": [],
+      "forbidden": [
+        "90%",
+        "(?i)senior|sênior|expert|especialista"
+      ],
+      "notes": "Controlled migration regression: invalid output remains rejected; no live provider claim. English baseline failure remains unexplained.",
+      "role": "rejection"
+    },
+    {
+      "id": "pt-stable-cv-unsupported-metric",
+      "task": "cv_generation",
+      "language": "pt-BR",
+      "split": "heldout",
+      "tags": [
+        "metrics",
+        "factual_support",
+        "sparse",
+        "stable-revisions"
+      ],
+      "request": {
+        "cvLanguage": "pt-BR",
+        "facts": [
+          {
+            "id": "stable-impact",
+            "section": "experience",
+            "entryId": "e1",
+            "field": "achievements",
+            "text": "Reduzi a latência em 20%.",
+            "reference": {
+              "profileId": "profile-a",
+              "id": "stable-impact",
+              "revision": 3
+            },
+            "owner": {
+              "profileId": "profile-a",
+              "id": "role-a",
+              "revision": 1
+            },
+            "context": [],
+            "kind": "legacy_block",
+            "assertion": "unknown",
+            "intent": "unknown",
+            "certainty": "unknown",
+            "support": "unsupported"
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [
+            {
+              "text": "Reduced latency by 90%.",
+              "sourceIds": [
+                "stable-impact"
+              ]
+            }
+          ],
+          "selected": [
+            "stable-impact"
+          ],
+          "wording": []
+        }
+      ],
+      "gold": [],
+      "forbidden": [
+        "90%",
+        "(?i)senior|sênior|expert|especialista"
+      ],
+      "notes": "Controlled migration regression: invalid output remains rejected; no live provider claim. English baseline failure remains unexplained.",
+      "role": "rejection"
+    }
+  ]
+}
