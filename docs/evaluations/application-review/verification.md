@@ -124,3 +124,10 @@ and a valid mixed-source statement pass. Ordinary greetings stay citation-free.
 
 Full checks passed before review; focused handler/type/acceptance checks and
 browser/export regressions were repeated after these changes.
+
+Final review of `ad0d207...746d9b6`: Standards 0 remaining findings; Spec 0
+remaining findings. Final full Go/Node suites, TypeScript and production build
+passed after the source-domain fix, as did repeated EN/PT Chrome browser/PDF
+and Firefox signature/export checks. The committed cover evidence was refreshed
+from that final browser run; all four PDFs are one A4 page with corrected locale
+text. Build warnings remain the existing Vite config-loader/chunk-size notices.
