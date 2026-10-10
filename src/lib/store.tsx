@@ -49,6 +49,7 @@ interface AppState {
   repository: ProfessionalRepository
   profileError: ProfileStorageCode | null
   generatedMaterials: GeneratedMaterials | null
+  lastAcceptedMaterials: GeneratedMaterials | null
   typesafeKey: string
   apiKey: string
   isReviewingRepo: boolean
@@ -98,7 +99,8 @@ function reducer(state: AppState, action: Action): AppState {
     case "SET_REPO":
       return { ...state, repository: action.payload }
     case "SET_MATERIALS":
-      return { ...state, generatedMaterials: action.payload }
+      return { ...state, generatedMaterials: action.payload,
+        lastAcceptedMaterials: action.payload.acceptedResume ? action.payload : state.lastAcceptedMaterials }
     case "SET_TYPESAFE_KEY":
       return { ...state, typesafeKey: action.payload }
     case "SET_API_KEY":
@@ -188,6 +190,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     repository: emptyProfileView(),
     profileError: null,
     generatedMaterials: null,
+    lastAcceptedMaterials: null,
     typesafeKey: readSetting("careeros_typesafe_key"),
     apiKey: readSetting("careeros_apikey"),
     isReviewingRepo: false,

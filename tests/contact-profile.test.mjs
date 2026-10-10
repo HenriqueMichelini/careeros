@@ -6,12 +6,12 @@ import { join } from "node:path"
 import ts from "typescript"
 
 const temp = mkdtempSync(join(tmpdir(), "careeros-contact-"))
-for (const name of ["profile", "cover-letter", "fieldDecision", "jobContext", "qualificationEvidence", "ai"]) {
+for (const name of ["profile", "cover-letter", "fieldDecision", "jobContext", "qualificationEvidence", "resumeReview", "ai"]) {
   const source = readFileSync(new URL(`../src/lib/${name}.ts`, import.meta.url), "utf8")
   const compiled = ts.transpileModule(source, {
     compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
   }).outputText.replace(/from ['"]\.\/jobContext['"]/g, 'from "./jobContext.mjs"').replace(/from ['"]\.\/fieldDecision['"]/g, 'from "./fieldDecision.mjs"').replace(/from ['"]\.\/cover-letter['"]/g, 'from "./cover-letter.mjs"').replace(/from ['"]\.\/profile['"]/g, 'from "./profile.mjs"')
-  writeFileSync(join(temp, `${name}.mjs`), compiled.replace(/import fields from [^\n]+\n/, 'const fields = '+readFileSync(new URL("../internal/qualificationmatching/fields.json", import.meta.url),"utf8")+';\n').replaceAll('"./qualificationEvidence"', '"./qualificationEvidence.mjs"'))
+  writeFileSync(join(temp, `${name}.mjs`), compiled.replace(/import fields from [^\n]+\n/, 'const fields = '+readFileSync(new URL("../internal/qualificationmatching/fields.json", import.meta.url),"utf8")+';\n').replaceAll('"./qualificationEvidence"', '"./qualificationEvidence.mjs"').replaceAll('"./resumeReview"', '"./resumeReview.mjs"'))
 }
 const { withContactFields, careerProfile, cvQualifications, validQualifications } = await import(join(temp, "profile.mjs"))
 const { findProfileGaps, generateMaterials } = await import(join(temp, "ai.mjs"))
@@ -183,7 +183,8 @@ test("draft requests use approved canonical evidence and preserve coverage discl
         jobTitle: null,
         company: null,
         jobSummary: "Role",
-        resume: "Resume",
+        resume: "## Technical Skills\n- Javascript",
+        resumeReview: {version:"resume-review-v1", check:"not_needed", claims:[{section:"skills",kind:"bullet",text:"Javascript",sources:[{profileId:doc.id,id:"skill",revision:1}],state:"unsupported",concerns:["protected_fact_or_qualifier_changed"]}], facts:doc.facts.map(f=>({...f,section:"profile",evidence:doc.evidence}))},
         coverLetter: {
           greeting: "Dear team,",
           body: "I build systems.",
