@@ -1,3 +1,9 @@
+import {
+  qualificationProjection,
+  parseRequirementMatches,
+  type RequirementMatch,
+} from "./qualificationEvidence"
+import type { ProfileDocument } from "./profileDocument"
 import { parseJobContext, type JobContext } from "./jobContext"
 import { parseFieldDecision, type FieldDecision } from "./fieldDecision"
 import {
@@ -51,6 +57,10 @@ export async function generateMaterials(
   cvLanguage: Locale = "en",
   typesafeKey: string = "",
   jobContext?: JobContext,
+  qualificationAnswers: {
+ requirement: string
+ userContext: string
+ }[] = [],
 ): Promise<GeneratedMaterials> {
   if (!validQualifications(repo)) throw new ApplicationDraftError("input")
   let response: Response
@@ -69,6 +79,7 @@ export async function generateMaterials(
         confirmedQualifications,
         cvLanguage,
         ...(jobContext ? { jobContext } : {}),
+        ...(qualificationAnswers.length ? { qualificationAnswers } : {}),
       }),
       signal: AbortSignal.timeout(30_000),
     })
@@ -128,6 +139,7 @@ export async function generateMaterials(
 }
 
 interface QualificationAnalysis {
+  matches?: RequirementMatch[]
   gaps: ProfileGap[]
   jobContext: JobContext
 }
@@ -143,6 +155,7 @@ export function findProfileGaps(
   apiKey: string,
   typesafeKey: string,
   understandJob: true,
+  profileDocument?: ProfileDocument,
 ): Promise<QualificationAnalysis>
 export async function findProfileGaps(
   repo: ProfessionalRepository,
@@ -150,6 +163,7 @@ export async function findProfileGaps(
   apiKey: string,
   typesafeKey: string = "",
   understandJob = false,
+  profileDocument?: ProfileDocument,
 ): Promise<ProfileGap[] | QualificationAnalysis> {
   if (!validQualifications(repo)) throw new QualificationGapsError("input")
   let response: Response
@@ -166,8 +180,11 @@ export async function findProfileGaps(
         qualifications: cvQualifications(repo),
         jobPosting,
         ...(understandJob ? { understandJob: true } : {}),
+        ...(profileDocument
+          ? { profileEvidence: qualificationProjection(profileDocument) }
+          : {}),
       }),
-      signal: AbortSignal.timeout(30_000),
+      signal: AbortSignal.timeout(profileDocument ? 55_000 : 30_000),
     })
   } catch (error) {
     throw new QualificationGapsError(
@@ -180,6 +197,7 @@ export async function findProfileGaps(
     error?: unknown
     gaps?: unknown
     jobContext?: unknown
+    matches?: unknown
   } | null
   checkJobDecision(payload)
   if (!response.ok) {
@@ -202,7 +220,7 @@ export async function findProfileGaps(
   if (
     !payload ||
     !Array.isArray(payload.gaps) ||
-    payload.gaps.length > 5 ||
+    payload.gaps.length > (profileDocument ? 100 : 5) ||
     payload.gaps.some((gap) => {
       if (!gap || typeof gap !== "object") return true
       const value = gap as Record<string, unknown>
@@ -219,7 +237,21 @@ export async function findProfileGaps(
   if (understandJob) {
     const context = parseJobContext(payload.jobContext, jobPosting)
     if (!context) throw new QualificationGapsError("invalid_output")
-    return { gaps: payload.gaps as ProfileGap[], jobContext: context }
+    const matches = profileDocument
+      ? parseRequirementMatches(
+          payload.matches ??
+            (context.job.qualifications.length === 0 ? [] : null),
+          qualificationProjection(profileDocument),
+          context.job.qualifications,
+        )
+      : undefined
+    if (profileDocument && !matches)
+      throw new QualificationGapsError("invalid_output")
+    return {
+      gaps: payload.gaps as ProfileGap[],
+      jobContext: context,
+      matches: matches ?? undefined,
+    }
   }
   return payload.gaps as ProfileGap[]
 }

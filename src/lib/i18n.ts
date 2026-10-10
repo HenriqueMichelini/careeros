@@ -159,7 +159,7 @@ const messages = {
     "home.generating": "Generating...",
     "home.checkingRequirements": "Checking requirements...",
     "home.checkingRequirementsNote":
-      "Looking for job requirements your profile may not mention yet.",
+      "Checking each qualification against approved Profile evidence.",
     "home.generateMaterials": "Generate Materials",
     "home.generatingNote":
       "Analyzing opportunity and tailoring your application — this may take 20–40 seconds.",
@@ -170,9 +170,21 @@ const messages = {
     "home.viewPreviousResults": "View Previous Results →",
     "home.generationFailed":
       "Generation failed. Check your API key and try again.",
+    "requirementEvidence.title": "Requirement support",
+    "requirementEvidence.supported": "Supported",
+    "requirementEvidence.partially_supported": "Partially supported",
+    "requirementEvidence.not_evidenced": "Not evidenced in your Profile",
+    "requirementEvidence.needs_clarification": "Needs clarification",
+    "requirementEvidence.incomplete":
+      "Incomplete analysis: {{count}} Profile facts were excluded by the context limit. This does not establish absence of a qualification.",
+    "requirementEvidence.inspect": "Inspect Profile evidence and context",
+    "requirementEvidence.traceability":
+      "Review the cited facts alongside their role/project context and any conflicting evidence. References show origin, not proof of truth.",
+    "requirementEvidence.cited": "Cited support",
     "jobContext.review": "Review job understanding",
     "jobContext.source": "Original posting excerpt",
-    "jobContext.disclosure": "Check the details used for tailoring. Source excerpts show where an interpretation came from; they do not guarantee it is correct.",
+    "jobContext.disclosure":
+      "Check the details used for tailoring. Source excerpts show where an interpretation came from; they do not guarantee it is correct.",
     "jobContext.jobTitle": "Role",
     "jobContext.company": "Company",
     "jobContext.seniority": "Seniority",
@@ -184,8 +196,10 @@ const messages = {
     "jobContext.required": "Explicitly required",
     "jobContext.preferred": "Explicitly preferred",
     "jobContext.unspecified": "Importance not specified",
-    "jobContext.edit": "To correct an interpretation, go back, edit the original posting and analyze again.",
-    "jobContext.stale": "This job context could not be verified for the current inputs. Your posting is preserved. Analyze again to continue.",
+    "jobContext.edit":
+      "To correct an interpretation, go back, edit the original posting and analyze again.",
+    "jobContext.stale":
+      "This job context could not be verified for the current inputs. Your posting is preserved. Analyze again to continue.",
     "home.jobErrorCapacity":
       "This job posting exceeds the preparation capacity. Try a smaller portion and submit again. Your text and saved Profile are unchanged.",
     "home.gapErrorInput":
@@ -213,18 +227,18 @@ const messages = {
     "home.draftErrorInvalidOutput":
       "Application generation returned an incomplete result. Try again.",
     "home.gapPromptEyebrow": "Quick profile check",
-    "home.gapPromptTitle": "Did we miss something?",
+    "home.gapPromptTitle": "Review qualification support",
     "home.gapPromptDescription":
-      "I couldn't find these job requirements in your profile. Sometimes we forget to mention things we know. Do any of these sound familiar?",
+      "Review partial or uncertain support and requirements without Profile evidence. Confirm only qualifications you have, or supply an answer without checking the box.",
     "home.gapTypeSkill": "Skill",
     "home.gapTypeExperience": "Experience",
     "home.gapConfirmSkill": "I have this skill",
     "home.gapConfirmExperience": "I have this experience",
-    "home.gapExampleLabel": "Where have you used it? (optional)",
+    "home.gapExampleLabel": "Your answer or factual context (optional)",
     "home.gapExamplePlaceholder":
       "Add a quick example or context to help tailor your application.",
     "home.gapPromptPrivacyNote":
-      "Only the items you confirm will be used for this application. Your saved profile won't change.",
+      "Selected qualifications and supplied answers are used for this application only. A checkbox adds no examples, duration or outcomes. Your saved Profile stays unchanged.",
     "home.backToPosting": "Back to posting",
     "home.generateWithoutThese": "Generate without these",
     "home.generateWithConfirmed": "Generate with {{count}} selected",
@@ -942,7 +956,7 @@ const messages = {
     "home.generating": "Gerando...",
     "home.checkingRequirements": "Conferindo requisitos...",
     "home.checkingRequirementsNote":
-      "Procurando requisitos da vaga que talvez ainda não estejam no seu perfil.",
+      "Conferindo cada qualificação com as evidências aprovadas do Perfil.",
     "home.generateMaterials": "Gerar materiais",
     "home.generatingNote":
       "Analisando a oportunidade e personalizando sua candidatura — isso pode levar de 20 a 40 segundos.",
@@ -953,9 +967,22 @@ const messages = {
     "home.viewPreviousResults": "Ver resultados anteriores →",
     "home.generationFailed":
       "Falha ao gerar. Verifique sua chave API e tente novamente.",
+    "requirementEvidence.title": "Evidências dos requisitos",
+    "requirementEvidence.supported": "Com evidência",
+    "requirementEvidence.partially_supported": "Com evidência parcial",
+    "requirementEvidence.not_evidenced": "Sem evidência no seu Perfil",
+    "requirementEvidence.needs_clarification": "Precisa de esclarecimento",
+    "requirementEvidence.incomplete":
+      "Análise incompleta: {{count}} fatos do Perfil foram excluídos pelo limite de contexto. Isso não demonstra ausência de qualificação.",
+    "requirementEvidence.inspect":
+      "Inspecionar evidências e contexto do Perfil",
+    "requirementEvidence.traceability":
+      "Revise os fatos citados com seu contexto de cargo/projeto e possíveis contradições. Referências mostram a origem, não comprovam a veracidade.",
+    "requirementEvidence.cited": "Evidência citada",
     "jobContext.review": "Revisar entendimento da vaga",
     "jobContext.source": "Trecho original da vaga",
-    "jobContext.disclosure": "Confira os detalhes usados na personalização. Os trechos mostram a origem de uma interpretação; não garantem que esteja correta.",
+    "jobContext.disclosure":
+      "Confira os detalhes usados na personalização. Os trechos mostram a origem de uma interpretação; não garantem que esteja correta.",
     "jobContext.jobTitle": "Cargo",
     "jobContext.company": "Empresa",
     "jobContext.seniority": "Senioridade",
@@ -967,8 +994,10 @@ const messages = {
     "jobContext.required": "Explicitamente obrigatório",
     "jobContext.preferred": "Explicitamente desejável",
     "jobContext.unspecified": "Importância não especificada",
-    "jobContext.edit": "Para corrigir uma interpretação, volte, edite o texto original da vaga e analise novamente.",
-    "jobContext.stale": "Não foi possível verificar o contexto da vaga para os dados atuais. Seu texto foi preservado. Analise novamente para continuar.",
+    "jobContext.edit":
+      "Para corrigir uma interpretação, volte, edite o texto original da vaga e analise novamente.",
+    "jobContext.stale":
+      "Não foi possível verificar o contexto da vaga para os dados atuais. Seu texto foi preservado. Analise novamente para continuar.",
     "home.jobErrorCapacity":
       "Esta vaga excede a capacidade de preparação. Tente um trecho menor e envie novamente. Seu texto e Perfil salvo permanecem inalterados.",
     "home.gapErrorInput":
@@ -996,18 +1025,18 @@ const messages = {
     "home.draftErrorInvalidOutput":
       "A geração retornou um resultado incompleto. Tente novamente.",
     "home.gapPromptEyebrow": "Revisão rápida do perfil",
-    "home.gapPromptTitle": "Faltou alguma coisa?",
+    "home.gapPromptTitle": "Revise as evidências de qualificação",
     "home.gapPromptDescription":
-      "Não encontrei estes requisitos da vaga no seu perfil. Às vezes esquecemos de mencionar algo que sabemos. Algum deles parece familiar?",
+      "Revise evidências parciais ou incertas e requisitos sem evidência no Perfil. Confirme apenas qualificações que você tem, ou forneça uma resposta sem marcar a caixa.",
     "home.gapTypeSkill": "Habilidade",
     "home.gapTypeExperience": "Experiência",
     "home.gapConfirmSkill": "Tenho esta habilidade",
     "home.gapConfirmExperience": "Tenho esta experiência",
-    "home.gapExampleLabel": "Onde você usou isso? (opcional)",
+    "home.gapExampleLabel": "Sua resposta ou contexto factual (opcional)",
     "home.gapExamplePlaceholder":
       "Dê um exemplo rápido ou contexto para personalizar sua candidatura.",
     "home.gapPromptPrivacyNote":
-      "Somente os itens confirmados serão usados nesta candidatura. Seu perfil salvo não será alterado.",
+      "Qualificações selecionadas e respostas fornecidas valem apenas para esta candidatura. A caixa não acrescenta exemplos, duração ou resultados. Seu Perfil salvo permanece igual.",
     "home.backToPosting": "Voltar à vaga",
     "home.generateWithoutThese": "Gerar sem incluir estes itens",
     "home.generateWithConfirmed": "Gerar com {{count}} selecionado(s)",
