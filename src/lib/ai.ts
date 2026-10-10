@@ -58,9 +58,10 @@ export async function generateMaterials(
   typesafeKey: string = "",
   jobContext?: JobContext,
   qualificationAnswers: {
- requirement: string
- userContext: string
- }[] = [],
+    requirement: string
+    userContext: string
+  }[] = [],
+  profileDocument?: ProfileDocument,
 ): Promise<GeneratedMaterials> {
   if (!validQualifications(repo)) throw new ApplicationDraftError("input")
   let response: Response
@@ -78,6 +79,9 @@ export async function generateMaterials(
         jobPosting,
         confirmedQualifications,
         cvLanguage,
+        ...(profileDocument
+          ? { profileEvidence: qualificationProjection(profileDocument) }
+          : {}),
         ...(jobContext ? { jobContext } : {}),
         ...(qualificationAnswers.length ? { qualificationAnswers } : {}),
       }),
@@ -127,6 +131,22 @@ export async function generateMaterials(
     })
   )
     throw new ApplicationDraftError("invalid_output")
+  if (payload.contextSelection !== undefined) {
+    const c = payload.contextSelection
+    if (
+      !c ||
+      c.version !== "application-context-v1" ||
+      !Array.isArray(c.sources) ||
+      c.sources.some((s) => typeof s !== "string" || !s.trim()) ||
+      ![c.budgetExcluded, c.relevanceExcluded, c.bytes].every(
+        (n) => Number.isSafeInteger(n) && n >= 0,
+      ) ||
+      c.bytes > 24 * 1024 ||
+      typeof c.complete !== "boolean" ||
+      c.complete !== (c.budgetExcluded === 0)
+    )
+      throw new ApplicationDraftError("invalid_output")
+  }
   const fullName = repo.fullName?.trim() || ""
   const coverLetter = completeCoverLetter(payload.coverLetter, fullName)
   if (coverLetter === null) throw new ApplicationDraftError("invalid_output")

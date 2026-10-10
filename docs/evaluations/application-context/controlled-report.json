@@ -1,0 +1,2194 @@
+{
+  "candidateRecall": [
+    {
+      "baselineApprovedCandidateRecall": 1,
+      "id": "explicit-support",
+      "materialMisses": [],
+      "negativeMisses": [],
+      "providerEnvelopeBytes": 5588,
+      "relevant": 1,
+      "retrieved": 1,
+      "selection": {
+        "Sources": [
+          "p/java@1"
+        ],
+        "BudgetExcluded": 0,
+        "RelevanceExcluded": 0,
+        "Complete": true
+      },
+      "status": 200
+    },
+    {
+      "baselineApprovedCandidateRecall": 1,
+      "id": "composite-partial",
+      "materialMisses": [],
+      "negativeMisses": [],
+      "providerEnvelopeBytes": 5603,
+      "relevant": 1,
+      "retrieved": 1,
+      "selection": {
+        "Sources": [
+          "p/java@1"
+        ],
+        "BudgetExcluded": 0,
+        "RelevanceExcluded": 0,
+        "Complete": true
+      },
+      "status": 200
+    },
+    {
+      "baselineApprovedCandidateRecall": 1,
+      "id": "missing-not-lacking",
+      "materialMisses": [],
+      "negativeMisses": [],
+      "providerEnvelopeBytes": 5594,
+      "relevant": 0,
+      "retrieved": 0,
+      "selection": {
+        "Sources": [
+          "p/java@1"
+        ],
+        "BudgetExcluded": 0,
+        "RelevanceExcluded": 0,
+        "Complete": true
+      },
+      "status": 200
+    },
+    {
+      "baselineApprovedCandidateRecall": 1,
+      "id": "aspiration",
+      "materialMisses": [],
+      "negativeMisses": [],
+      "providerEnvelopeBytes": 5612,
+      "relevant": 1,
+      "retrieved": 1,
+      "selection": {
+        "Sources": [
+          "p/wish@1"
+        ],
+        "BudgetExcluded": 0,
+        "RelevanceExcluded": 0,
+        "Complete": true
+      },
+      "status": 200
+    },
+    {
+      "baselineApprovedCandidateRecall": 1,
+      "id": "negation",
+      "materialMisses": [],
+      "negativeMisses": [],
+      "providerEnvelopeBytes": 5601,
+      "relevant": 1,
+      "retrieved": 1,
+      "selection": {
+        "Sources": [
+          "p/no@1"
+        ],
+        "BudgetExcluded": 0,
+        "RelevanceExcluded": 0,
+        "Complete": true
+      },
+      "status": 200
+    },
+    {
+      "baselineApprovedCandidateRecall": 1,
+      "id": "approximate-duration",
+      "materialMisses": [],
+      "negativeMisses": [],
+      "providerEnvelopeBytes": 5680,
+      "relevant": 1,
+      "retrieved": 1,
+      "selection": {
+        "Sources": [
+          "p/java@1"
+        ],
+        "BudgetExcluded": 0,
+        "RelevanceExcluded": 0,
+        "Complete": true
+      },
+      "status": 200
+    },
+    {
+      "baselineApprovedCandidateRecall": 1,
+      "id": "related-technology",
+      "materialMisses": [],
+      "negativeMisses": [],
+      "providerEnvelopeBytes": 5623,
+      "relevant": 1,
+      "retrieved": 1,
+      "selection": {
+        "Sources": [
+          "p/spring@1"
+        ],
+        "BudgetExcluded": 0,
+        "RelevanceExcluded": 0,
+        "Complete": true
+      },
+      "status": 200
+    },
+    {
+      "baselineApprovedCandidateRecall": 1,
+      "id": "technology-similarity",
+      "materialMisses": [],
+      "negativeMisses": [],
+      "providerEnvelopeBytes": 5594,
+      "relevant": 1,
+      "retrieved": 1,
+      "selection": {
+        "Sources": [
+          "p/js@1"
+        ],
+        "BudgetExcluded": 0,
+        "RelevanceExcluded": 0,
+        "Complete": true
+      },
+      "status": 200
+    },
+    {
+      "baselineApprovedCandidateRecall": 1,
+      "id": "contrasting-employers",
+      "materialMisses": [],
+      "negativeMisses": [],
+      "providerEnvelopeBytes": 9953,
+      "relevant": 4,
+      "retrieved": 4,
+      "selection": {
+        "Sources": [
+          "p/a-company@1",
+          "p/a-title@1",
+          "p/a-period@1",
+          "p/a-java@1",
+          "p/b-company@1",
+          "p/b-title@1",
+          "p/b-period@1",
+          "p/b-aws@1"
+        ],
+        "BudgetExcluded": 0,
+        "RelevanceExcluded": 0,
+        "Complete": true
+      },
+      "status": 200
+    },
+    {
+      "baselineApprovedCandidateRecall": 1,
+      "id": "project-not-employment",
+      "materialMisses": [],
+      "negativeMisses": [],
+      "providerEnvelopeBytes": 6295,
+      "relevant": 2,
+      "retrieved": 2,
+      "selection": {
+        "Sources": [
+          "p/p-name@1",
+          "p/p-java@1"
+        ],
+        "BudgetExcluded": 0,
+        "RelevanceExcluded": 0,
+        "Complete": true
+      },
+      "status": 200
+    },
+    {
+      "baselineApprovedCandidateRecall": 1,
+      "id": "portuguese-negative",
+      "materialMisses": [],
+      "negativeMisses": [],
+      "providerEnvelopeBytes": 5646,
+      "relevant": 1,
+      "retrieved": 1,
+      "selection": {
+        "Sources": [
+          "p/no@1"
+        ],
+        "BudgetExcluded": 0,
+        "RelevanceExcluded": 0,
+        "Complete": true
+      },
+      "status": 200
+    },
+    {
+      "baselineApprovedCandidateRecall": 1,
+      "id": "material-miss-under-budget",
+      "materialMisses": [],
+      "negativeMisses": [],
+      "providerEnvelopeBytes": 5587,
+      "relevant": 1,
+      "retrieved": 1,
+      "selection": {
+        "Sources": [
+          "p/java@1"
+        ],
+        "BudgetExcluded": 0,
+        "RelevanceExcluded": 24,
+        "Complete": true
+      },
+      "status": 200
+    },
+    {
+      "baselineApprovedCandidateRecall": 1,
+      "id": "incomplete-cannot-assert-absence",
+      "materialMisses": [],
+      "negativeMisses": [],
+      "providerEnvelopeBytes": 4956,
+      "relevant": 0,
+      "retrieved": 0,
+      "selection": {
+        "Sources": [],
+        "BudgetExcluded": 0,
+        "RelevanceExcluded": 25,
+        "Complete": true
+      },
+      "status": 200
+    }
+  ],
+  "fieldResults": [
+    {
+      "baseline": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "jobSummary",
+      "id": "en-draft-sparse",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "resume",
+      "id": "en-draft-sparse",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 1,
+        "observed": 2,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 1,
+        "labelPrecision": 0.5,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [
+          "draft[0]"
+        ],
+        "unmatchedUnits": [
+          {
+            "content": "Dear hiring team,",
+            "field": "coverLetter.greeting",
+            "location": "draft[0]",
+            "owner": "",
+            "text": "Dear hiring team,"
+          }
+        ],
+        "failures": [
+          "unmatched: draft[0]"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 1,
+        "observed": 2,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 1,
+        "labelPrecision": 0.5,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [
+          "draft[0]"
+        ],
+        "unmatchedUnits": [
+          {
+            "content": "Dear hiring team,",
+            "field": "coverLetter.greeting",
+            "location": "draft[0]",
+            "owner": "",
+            "text": "Dear hiring team,"
+          }
+        ],
+        "failures": [
+          "unmatched: draft[0]"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "coverLetter",
+      "id": "en-draft-sparse",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "applicationAnswers",
+      "id": "en-draft-sparse",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "jobSummary",
+      "id": "pt-draft-sparse",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "resume",
+      "id": "pt-draft-sparse",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 1,
+        "observed": 2,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 1,
+        "labelPrecision": 0.5,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [
+          "draft[0]"
+        ],
+        "unmatchedUnits": [
+          {
+            "content": "Prezada equipe de contratação,",
+            "field": "coverLetter.greeting",
+            "location": "draft[0]",
+            "owner": "",
+            "text": "Prezada equipe de contratação,"
+          }
+        ],
+        "failures": [
+          "unmatched: draft[0]"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 1,
+        "observed": 2,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 1,
+        "labelPrecision": 0.5,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [
+          "draft[0]"
+        ],
+        "unmatchedUnits": [
+          {
+            "content": "Prezada equipe de contratação,",
+            "field": "coverLetter.greeting",
+            "location": "draft[0]",
+            "owner": "",
+            "text": "Prezada equipe de contratação,"
+          }
+        ],
+        "failures": [
+          "unmatched: draft[0]"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "coverLetter",
+      "id": "pt-draft-sparse",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "applicationAnswers",
+      "id": "pt-draft-sparse",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "jobSummary",
+      "id": "en-draft-relationships",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 3,
+        "observed": 3,
+        "matched": 3,
+        "covered": 3,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 3,
+        "observed": 3,
+        "matched": 3,
+        "covered": 3,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "resume",
+      "id": "en-draft-relationships",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 2,
+        "observed": 4,
+        "matched": 3,
+        "covered": 2,
+        "unsupportedClaimCandidates": 1,
+        "labelPrecision": 0.75,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [
+          "draft[0]"
+        ],
+        "unmatchedUnits": [
+          {
+            "content": "Dear hiring team,",
+            "field": "coverLetter.greeting",
+            "location": "draft[0]",
+            "owner": "",
+            "text": "Dear hiring team,"
+          }
+        ],
+        "failures": [
+          "unmatched: draft[0]"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 2,
+        "observed": 4,
+        "matched": 3,
+        "covered": 2,
+        "unsupportedClaimCandidates": 1,
+        "labelPrecision": 0.75,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [
+          "draft[0]"
+        ],
+        "unmatchedUnits": [
+          {
+            "content": "Dear hiring team,",
+            "field": "coverLetter.greeting",
+            "location": "draft[0]",
+            "owner": "",
+            "text": "Dear hiring team,"
+          }
+        ],
+        "failures": [
+          "unmatched: draft[0]"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "coverLetter",
+      "id": "en-draft-relationships",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "applicationAnswers",
+      "id": "en-draft-relationships",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "jobSummary",
+      "id": "en-draft-invented-management",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 3,
+        "observed": 3,
+        "matched": 3,
+        "covered": 3,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 3,
+        "observed": 3,
+        "matched": 3,
+        "covered": 3,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "resume",
+      "id": "en-draft-invented-management",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 2,
+        "observed": 5,
+        "matched": 3,
+        "covered": 2,
+        "unsupportedClaimCandidates": 2,
+        "labelPrecision": 0.6,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 1,
+        "missing": [],
+        "unmatched": [
+          "draft[0]",
+          "draft[4]"
+        ],
+        "unmatchedUnits": [
+          {
+            "content": "Dear hiring team,",
+            "field": "coverLetter.greeting",
+            "location": "draft[0]",
+            "owner": "",
+            "text": "Dear hiring team,"
+          },
+          {
+            "content": "I managed ten engineers",
+            "field": "coverLetter",
+            "location": "draft[4]",
+            "owner": "",
+            "text": "I managed ten engineers"
+          }
+        ],
+        "failures": [
+          "forbidden: (?i)I managed ten engineers|gerenciei dez engenheiros",
+          "unmatched: draft[0]",
+          "unmatched: draft[4]"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 2,
+        "observed": 5,
+        "matched": 3,
+        "covered": 2,
+        "unsupportedClaimCandidates": 2,
+        "labelPrecision": 0.6,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 1,
+        "missing": [],
+        "unmatched": [
+          "draft[0]",
+          "draft[4]"
+        ],
+        "unmatchedUnits": [
+          {
+            "content": "Dear hiring team,",
+            "field": "coverLetter.greeting",
+            "location": "draft[0]",
+            "owner": "",
+            "text": "Dear hiring team,"
+          },
+          {
+            "content": "I managed ten engineers",
+            "field": "coverLetter",
+            "location": "draft[4]",
+            "owner": "",
+            "text": "I managed ten engineers"
+          }
+        ],
+        "failures": [
+          "forbidden: (?i)I managed ten engineers|gerenciei dez engenheiros",
+          "unmatched: draft[0]",
+          "unmatched: draft[4]"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "coverLetter",
+      "id": "en-draft-invented-management",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "applicationAnswers",
+      "id": "en-draft-invented-management",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "jobSummary",
+      "id": "en-draft-requirement-as-skill",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 3,
+        "observed": 3,
+        "matched": 3,
+        "covered": 3,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 3,
+        "observed": 3,
+        "matched": 3,
+        "covered": 3,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "resume",
+      "id": "en-draft-requirement-as-skill",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 2,
+        "observed": 5,
+        "matched": 3,
+        "covered": 2,
+        "unsupportedClaimCandidates": 2,
+        "labelPrecision": 0.6,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 1,
+        "missing": [],
+        "unmatched": [
+          "draft[0]",
+          "draft[4]"
+        ],
+        "unmatchedUnits": [
+          {
+            "content": "Dear hiring team,",
+            "field": "coverLetter.greeting",
+            "location": "draft[0]",
+            "owner": "",
+            "text": "Dear hiring team,"
+          },
+          {
+            "content": "I use AWS",
+            "field": "coverLetter",
+            "location": "draft[4]",
+            "owner": "",
+            "text": "I use AWS"
+          }
+        ],
+        "failures": [
+          "forbidden: (?i)(?:I (?:know|use|have experience (?:in|with)) AWS|(?:Tenho|possuo) experiência (?:em|com) AWS)",
+          "unmatched: draft[0]",
+          "unmatched: draft[4]"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 2,
+        "observed": 5,
+        "matched": 3,
+        "covered": 2,
+        "unsupportedClaimCandidates": 2,
+        "labelPrecision": 0.6,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 1,
+        "missing": [],
+        "unmatched": [
+          "draft[0]",
+          "draft[4]"
+        ],
+        "unmatchedUnits": [
+          {
+            "content": "Dear hiring team,",
+            "field": "coverLetter.greeting",
+            "location": "draft[0]",
+            "owner": "",
+            "text": "Dear hiring team,"
+          },
+          {
+            "content": "I use AWS",
+            "field": "coverLetter",
+            "location": "draft[4]",
+            "owner": "",
+            "text": "I use AWS"
+          }
+        ],
+        "failures": [
+          "forbidden: (?i)(?:I (?:know|use|have experience (?:in|with)) AWS|(?:Tenho|possuo) experiência (?:em|com) AWS)",
+          "unmatched: draft[0]",
+          "unmatched: draft[4]"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "coverLetter",
+      "id": "en-draft-requirement-as-skill",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "applicationAnswers",
+      "id": "en-draft-requirement-as-skill",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "jobSummary",
+      "id": "en-draft-transferred-metric",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 3,
+        "observed": 3,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 0.6666666666666666,
+        "completeness": 0.6666666666666666,
+        "duplicates": 0,
+        "relationshipErrors": 1,
+        "forbiddenAdditions": 0,
+        "missing": [
+          "resume-metric"
+        ],
+        "unmatched": [
+          "draft[1]"
+        ],
+        "unmatchedUnits": [
+          {
+            "content": "At {entity} I reduced latency by 20%",
+            "field": "resume",
+            "location": "draft[1]",
+            "owner": "Atlas",
+            "text": "At Atlas I reduced latency by 20%"
+          }
+        ],
+        "failures": [
+          "missing: resume-metric",
+          "unmatched: draft[1]"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 3,
+        "observed": 3,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 0.6666666666666666,
+        "completeness": 0.6666666666666666,
+        "duplicates": 0,
+        "relationshipErrors": 1,
+        "forbiddenAdditions": 0,
+        "missing": [
+          "resume-metric"
+        ],
+        "unmatched": [
+          "draft[1]"
+        ],
+        "unmatchedUnits": [
+          {
+            "content": "At {entity} I reduced latency by 20%",
+            "field": "resume",
+            "location": "draft[1]",
+            "owner": "Atlas",
+            "text": "At Atlas I reduced latency by 20%"
+          }
+        ],
+        "failures": [
+          "missing: resume-metric",
+          "unmatched: draft[1]"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "resume",
+      "id": "en-draft-transferred-metric",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 2,
+        "observed": 4,
+        "matched": 3,
+        "covered": 2,
+        "unsupportedClaimCandidates": 1,
+        "labelPrecision": 0.75,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [
+          "draft[0]"
+        ],
+        "unmatchedUnits": [
+          {
+            "content": "Dear hiring team,",
+            "field": "coverLetter.greeting",
+            "location": "draft[0]",
+            "owner": "",
+            "text": "Dear hiring team,"
+          }
+        ],
+        "failures": [
+          "unmatched: draft[0]"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 2,
+        "observed": 4,
+        "matched": 3,
+        "covered": 2,
+        "unsupportedClaimCandidates": 1,
+        "labelPrecision": 0.75,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [
+          "draft[0]"
+        ],
+        "unmatchedUnits": [
+          {
+            "content": "Dear hiring team,",
+            "field": "coverLetter.greeting",
+            "location": "draft[0]",
+            "owner": "",
+            "text": "Dear hiring team,"
+          }
+        ],
+        "failures": [
+          "unmatched: draft[0]"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "coverLetter",
+      "id": "en-draft-transferred-metric",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "applicationAnswers",
+      "id": "en-draft-transferred-metric",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "jobSummary",
+      "id": "pt-draft-relationships",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 3,
+        "observed": 3,
+        "matched": 3,
+        "covered": 3,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 3,
+        "observed": 3,
+        "matched": 3,
+        "covered": 3,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "resume",
+      "id": "pt-draft-relationships",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 2,
+        "observed": 4,
+        "matched": 3,
+        "covered": 2,
+        "unsupportedClaimCandidates": 1,
+        "labelPrecision": 0.75,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [
+          "draft[0]"
+        ],
+        "unmatchedUnits": [
+          {
+            "content": "Prezada equipe de contratação,",
+            "field": "coverLetter.greeting",
+            "location": "draft[0]",
+            "owner": "",
+            "text": "Prezada equipe de contratação,"
+          }
+        ],
+        "failures": [
+          "unmatched: draft[0]"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 2,
+        "observed": 4,
+        "matched": 3,
+        "covered": 2,
+        "unsupportedClaimCandidates": 1,
+        "labelPrecision": 0.75,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [
+          "draft[0]"
+        ],
+        "unmatchedUnits": [
+          {
+            "content": "Prezada equipe de contratação,",
+            "field": "coverLetter.greeting",
+            "location": "draft[0]",
+            "owner": "",
+            "text": "Prezada equipe de contratação,"
+          }
+        ],
+        "failures": [
+          "unmatched: draft[0]"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "coverLetter",
+      "id": "pt-draft-relationships",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "applicationAnswers",
+      "id": "pt-draft-relationships",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "jobSummary",
+      "id": "pt-draft-invented-management",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 3,
+        "observed": 3,
+        "matched": 3,
+        "covered": 3,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 3,
+        "observed": 3,
+        "matched": 3,
+        "covered": 3,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "resume",
+      "id": "pt-draft-invented-management",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 2,
+        "observed": 5,
+        "matched": 3,
+        "covered": 2,
+        "unsupportedClaimCandidates": 2,
+        "labelPrecision": 0.6,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 1,
+        "missing": [],
+        "unmatched": [
+          "draft[0]",
+          "draft[4]"
+        ],
+        "unmatchedUnits": [
+          {
+            "content": "Prezada equipe de contratação,",
+            "field": "coverLetter.greeting",
+            "location": "draft[0]",
+            "owner": "",
+            "text": "Prezada equipe de contratação,"
+          },
+          {
+            "content": "Gerenciei dez engenheiros",
+            "field": "coverLetter",
+            "location": "draft[4]",
+            "owner": "",
+            "text": "Gerenciei dez engenheiros"
+          }
+        ],
+        "failures": [
+          "forbidden: (?i)I managed ten engineers|gerenciei dez engenheiros",
+          "unmatched: draft[0]",
+          "unmatched: draft[4]"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 2,
+        "observed": 5,
+        "matched": 3,
+        "covered": 2,
+        "unsupportedClaimCandidates": 2,
+        "labelPrecision": 0.6,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 1,
+        "missing": [],
+        "unmatched": [
+          "draft[0]",
+          "draft[4]"
+        ],
+        "unmatchedUnits": [
+          {
+            "content": "Prezada equipe de contratação,",
+            "field": "coverLetter.greeting",
+            "location": "draft[0]",
+            "owner": "",
+            "text": "Prezada equipe de contratação,"
+          },
+          {
+            "content": "Gerenciei dez engenheiros",
+            "field": "coverLetter",
+            "location": "draft[4]",
+            "owner": "",
+            "text": "Gerenciei dez engenheiros"
+          }
+        ],
+        "failures": [
+          "forbidden: (?i)I managed ten engineers|gerenciei dez engenheiros",
+          "unmatched: draft[0]",
+          "unmatched: draft[4]"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "coverLetter",
+      "id": "pt-draft-invented-management",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "applicationAnswers",
+      "id": "pt-draft-invented-management",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "jobSummary",
+      "id": "pt-draft-requirement-as-skill",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 3,
+        "observed": 3,
+        "matched": 3,
+        "covered": 3,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 3,
+        "observed": 3,
+        "matched": 3,
+        "covered": 3,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "resume",
+      "id": "pt-draft-requirement-as-skill",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 2,
+        "observed": 5,
+        "matched": 3,
+        "covered": 2,
+        "unsupportedClaimCandidates": 2,
+        "labelPrecision": 0.6,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 1,
+        "missing": [],
+        "unmatched": [
+          "draft[0]",
+          "draft[4]"
+        ],
+        "unmatchedUnits": [
+          {
+            "content": "Prezada equipe de contratação,",
+            "field": "coverLetter.greeting",
+            "location": "draft[0]",
+            "owner": "",
+            "text": "Prezada equipe de contratação,"
+          },
+          {
+            "content": "Tenho experiência em AWS",
+            "field": "coverLetter",
+            "location": "draft[4]",
+            "owner": "",
+            "text": "Tenho experiência em AWS"
+          }
+        ],
+        "failures": [
+          "forbidden: (?i)(?:I (?:know|use|have experience (?:in|with)) AWS|(?:Tenho|possuo) experiência (?:em|com) AWS)",
+          "unmatched: draft[0]",
+          "unmatched: draft[4]"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 2,
+        "observed": 5,
+        "matched": 3,
+        "covered": 2,
+        "unsupportedClaimCandidates": 2,
+        "labelPrecision": 0.6,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 1,
+        "missing": [],
+        "unmatched": [
+          "draft[0]",
+          "draft[4]"
+        ],
+        "unmatchedUnits": [
+          {
+            "content": "Prezada equipe de contratação,",
+            "field": "coverLetter.greeting",
+            "location": "draft[0]",
+            "owner": "",
+            "text": "Prezada equipe de contratação,"
+          },
+          {
+            "content": "Tenho experiência em AWS",
+            "field": "coverLetter",
+            "location": "draft[4]",
+            "owner": "",
+            "text": "Tenho experiência em AWS"
+          }
+        ],
+        "failures": [
+          "forbidden: (?i)(?:I (?:know|use|have experience (?:in|with)) AWS|(?:Tenho|possuo) experiência (?:em|com) AWS)",
+          "unmatched: draft[0]",
+          "unmatched: draft[4]"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "coverLetter",
+      "id": "pt-draft-requirement-as-skill",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "applicationAnswers",
+      "id": "pt-draft-requirement-as-skill",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "jobSummary",
+      "id": "pt-draft-transferred-metric",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 3,
+        "observed": 3,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 0.6666666666666666,
+        "completeness": 0.6666666666666666,
+        "duplicates": 0,
+        "relationshipErrors": 1,
+        "forbiddenAdditions": 0,
+        "missing": [
+          "resume-metric"
+        ],
+        "unmatched": [
+          "draft[1]"
+        ],
+        "unmatchedUnits": [
+          {
+            "content": "Na {entity} reduzi a latência em 20%",
+            "field": "resume",
+            "location": "draft[1]",
+            "owner": "Atlas",
+            "text": "Na Atlas reduzi a latência em 20%"
+          }
+        ],
+        "failures": [
+          "missing: resume-metric",
+          "unmatched: draft[1]"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 3,
+        "observed": 3,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 0.6666666666666666,
+        "completeness": 0.6666666666666666,
+        "duplicates": 0,
+        "relationshipErrors": 1,
+        "forbiddenAdditions": 0,
+        "missing": [
+          "resume-metric"
+        ],
+        "unmatched": [
+          "draft[1]"
+        ],
+        "unmatchedUnits": [
+          {
+            "content": "Na {entity} reduzi a latência em 20%",
+            "field": "resume",
+            "location": "draft[1]",
+            "owner": "Atlas",
+            "text": "Na Atlas reduzi a latência em 20%"
+          }
+        ],
+        "failures": [
+          "missing: resume-metric",
+          "unmatched: draft[1]"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "resume",
+      "id": "pt-draft-transferred-metric",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 2,
+        "observed": 4,
+        "matched": 3,
+        "covered": 2,
+        "unsupportedClaimCandidates": 1,
+        "labelPrecision": 0.75,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [
+          "draft[0]"
+        ],
+        "unmatchedUnits": [
+          {
+            "content": "Prezada equipe de contratação,",
+            "field": "coverLetter.greeting",
+            "location": "draft[0]",
+            "owner": "",
+            "text": "Prezada equipe de contratação,"
+          }
+        ],
+        "failures": [
+          "unmatched: draft[0]"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 2,
+        "observed": 4,
+        "matched": 3,
+        "covered": 2,
+        "unsupportedClaimCandidates": 1,
+        "labelPrecision": 0.75,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [
+          "draft[0]"
+        ],
+        "unmatchedUnits": [
+          {
+            "content": "Prezada equipe de contratação,",
+            "field": "coverLetter.greeting",
+            "location": "draft[0]",
+            "owner": "",
+            "text": "Prezada equipe de contratação,"
+          }
+        ],
+        "failures": [
+          "unmatched: draft[0]"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "coverLetter",
+      "id": "pt-draft-transferred-metric",
+      "status": 200
+    },
+    {
+      "baseline": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "currentControlledReplay": {
+        "expected": 1,
+        "observed": 1,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      },
+      "field": "applicationAnswers",
+      "id": "pt-draft-transferred-metric",
+      "status": 200
+    }
+  ],
+  "fixtureHashes": {
+    "baseline": "54dcbc2d520d9f896a06aa838bce9d11386ac78b01a62875221f0692a82e1d17",
+    "outputs": "b46dc852078c0e76fe9e0eeddcdba09514a41c75e43967383a4fdf5a08af3550",
+    "retrieval": "6caa5ddf5077785da0a3865a23b9956ccb72080748e688c6b15479c9b1be2684"
+  },
+  "limitations": "Replays fixed outputs, including known bad outputs. Candidate labels are inherited from #45; baseline full approved candidate set has no retrieval omissions. Field metrics use #34 clause labels; unsupported candidates require adjudication. No live inference, billing, latency, quality or token improvement is established.",
+  "mode": "controlled-offline",
+  "tokens": null
+}

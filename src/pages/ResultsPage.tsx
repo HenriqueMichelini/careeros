@@ -173,6 +173,17 @@ export default function ResultsPage({ setPage }: Props) {
 
   return (
     <div className="results-page max-w-6xl mx-auto px-6 py-10">
+      {materials.contextSelection && (
+        <p
+          role="status"
+          className="mb-6 text-sm"
+          style={{ color: "var(--color-muted-fg)" }}
+        >
+          {materials.contextSelection.complete
+            ? t("results.contextSelected")
+            : t("results.contextLimited")}
+        </p>
+      )}
       {/* Header */}
       <div className="results-page-header mb-10 grid items-start gap-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-8">
         <div className="min-w-0">

@@ -66,6 +66,16 @@ export interface ProfessionalRepository {
 }
 
 export interface GeneratedMaterials {
+  contextSelection?: {
+    version: "application-context-v1"
+    sources: string[]
+    budgetExcluded: number
+    relevanceExcluded: number
+    complete: boolean
+    bytes: number
+  }
+
+
   cvLanguage?: import("./i18n").Locale
   // null means the Job Posting did not supply this metadata.
   jobTitle: string | null

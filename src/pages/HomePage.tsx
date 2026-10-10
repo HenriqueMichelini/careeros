@@ -288,6 +288,7 @@ export default function HomePage({ setPage }: Props) {
               ]
             : [],
         ),
+        profileDocument ?? undefined,
       )
       if (id !== requestId.current) return
       setDraft({ state: "complete" })
