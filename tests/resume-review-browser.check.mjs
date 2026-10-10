@@ -310,7 +310,9 @@ try {
       await evaluate(
         `window.__pending=[];window.fetch=(url,options)=>new Promise((resolve,reject)=>window.__pending.push({url,options,resolve,reject}))`,
       )
-      await evaluate(`{ const el=document.querySelector('main select');el.value=${JSON.stringify(locale)};el.dispatchEvent(new Event('change',{bubbles:true})) }`)
+      await evaluate(
+        `{ const el=document.querySelector('main select');el.value=${JSON.stringify(locale)};el.dispatchEvent(new Event('change',{bubbles:true})) }`,
+      )
       await pause(50)
       await fill("Java developer. AWS required.")
       await generate()
@@ -332,14 +334,130 @@ try {
       const fixture = reviewedDraftFixture(
         {
           ...materials,
+          coverLetter:
+            locale === "pt-BR"
+              ? {
+                  greeting: "Prezada equipe,",
+                  body: "Eu uso Research.",
+                  closing: "Atenciosamente,",
+                }
+              : materials.coverLetter,
           resume: "## Technical Skills\n- Research\n- Invented result of 40%",
         },
         input,
       )
       fixture.resumeReview.claims[1].state = "unsupported"
       fixture.resumeReview.claims[1].concerns = ["invented_number"]
+      const bodyClaim = fixture.artifactReview.claims.find(
+        (c) => c.field === "body",
+      )
+      bodyClaim.state = "unsupported"
+      bodyClaim.concerns = ["stronger_claim"]
+      const answerClaim = fixture.artifactReview.claims.find(
+        (c) => c.field === "applicationAnswers",
+      )
+      answerClaim.state = "unsupported"
+      answerClaim.concerns = ["Required answer omits Java."]
       await respond(fixture)
       await until("!!document.querySelector('.results-tabs')")
+      await until("!!document.querySelector('.artifact-review')")
+      const artifactButton = (label) =>
+        `Array.from(document.querySelectorAll('.artifact-review button')).find(b=>b.textContent.trim()===${JSON.stringify(label)})`
+      const acceptArtifacts =
+        locale === "en"
+          ? "Accept application materials"
+          : "Aceitar materiais da candidatura"
+      assert.equal(
+        await evaluate(artifactButton(acceptArtifacts) + ".disabled"),
+        true,
+      )
+      await evaluate(
+        "document.querySelectorAll('.results-tabs button')[2].click()",
+      )
+      assert.equal(
+        await evaluate(
+          "Array.from(document.querySelectorAll('.results-other-actions button')).every(b=>b.disabled)",
+        ),
+        true,
+      )
+      const correctArtifact =
+        locale === "en" ? "Supply correction" : "Fornecer correção"
+      const useArtifact =
+        locale === "en"
+          ? "Use my statement as evidence"
+          : "Usar minha afirmação como evidência"
+      for (const replacement of [
+        locale === "en"
+          ? "I use Research for personal projects."
+          : "Eu uso Research em projetos pessoais.",
+        locale === "en" ? "I use Java." : "Eu uso Java.",
+      ]) {
+        await evaluate(artifactButton(correctArtifact) + ".click()")
+        await evaluate(
+          `{const el=document.querySelector('.artifact-review textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(el,${JSON.stringify(replacement)});el.dispatchEvent(new Event('input',{bubbles:true}))}`,
+        )
+        await pause(40)
+        await evaluate(artifactButton(useArtifact) + ".click()")
+      }
+      await until(
+        artifactButton(acceptArtifacts) +
+          " && !" +
+          artifactButton(acceptArtifacts) +
+          ".disabled",
+      )
+      await evaluate(artifactButton(acceptArtifacts) + ".click()")
+      await evaluate(
+        "window.__artifactCopy='';Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async t=>window.__artifactCopy=t}})",
+      )
+      await evaluate(
+        "document.querySelector('.results-other-actions button').click()",
+      )
+      const completedCover = await evaluate(
+        "document.querySelector('.results-cover-print').textContent",
+      )
+      assert.equal(await evaluate("window.__artifactCopy"), completedCover)
+      assert.ok(
+        completedCover.includes(
+          locale === "en" ? "personal projects" : "projetos pessoais",
+        ),
+      )
+      await evaluate(
+        "window.__printed=false;window.print=()=>window.__printed=true;Array.from(document.querySelectorAll('.results-other-actions button')).find(b=>b.textContent.includes('PDF')).click()",
+      )
+      await until("window.__printed===true")
+      assert.equal(
+        await evaluate(
+          "document.querySelector('.results-print-root').textContent",
+        ),
+        completedCover,
+      )
+      const coverPdf = await call("Page.printToPDF", {
+        printBackground: true,
+        preferCSSPageSize: true,
+      })
+      writeFileSync(
+        join(work, `cover-${locale}-${width}.pdf`),
+        Buffer.from(coverPdf.data, "base64"),
+      )
+      await evaluate("window.dispatchEvent(new Event('afterprint'))")
+      const coverShot = await call("Page.captureScreenshot", {
+        format: "png",
+        captureBeyondViewport: true,
+      })
+      writeFileSync(
+        join(work, `cover-${locale}-${width}.png`),
+        Buffer.from(coverShot.data, "base64"),
+      )
+      await evaluate(
+        "document.querySelectorAll('.results-tabs button')[3].click()",
+      )
+      await evaluate(
+        "document.querySelector('.results-other-actions button').click()",
+      )
+      assert.equal(
+        await evaluate("window.__artifactCopy"),
+        locale === "en" ? "I use Java." : "Eu uso Java.",
+      )
       await evaluate(
         "document.querySelectorAll('.results-tabs button')[1].click()",
       )
@@ -354,8 +472,14 @@ try {
         ),
         true,
       )
-      const pendingShot = await call('Page.captureScreenshot', {format:'png',captureBeyondViewport:true})
-      writeFileSync(join(work,`pending-${locale}-${width}.png`),Buffer.from(pendingShot.data,'base64'))
+      const pendingShot = await call("Page.captureScreenshot", {
+        format: "png",
+        captureBeyondViewport: true,
+      })
+      writeFileSync(
+        join(work, `pending-${locale}-${width}.png`),
+        Buffer.from(pendingShot.data, "base64"),
+      )
       const accept = locale === "en" ? "Accept resume" : "Aceitar currículo"
       const correct =
         locale === "en" ? "Supply correction" : "Fornecer correção"
@@ -504,33 +628,85 @@ try {
       // complete previous accepted result, not just the resume string.
       await evaluate("document.querySelectorAll('nav button')[0].click()")
       await until("!!document.querySelector('main textarea')")
-      await generate();await until('window.__pending.length === 1');await respond({gaps:[]});await until('window.__pending.length === 1')
-      await respond({...materials,jobTitle:'Replacement draft',resume:'## Technical Skills\n- Research'})
+      await generate()
+      await until("window.__pending.length === 1")
+      await respond({ gaps: [] })
+      await until("window.__pending.length === 1")
+      await respond({
+        ...materials,
+        jobTitle: "Replacement draft",
+        resume: "## Technical Skills\n- Research",
+      })
       await until("!!document.querySelector('.results-tabs')")
-      await evaluate("document.querySelectorAll('.results-tabs button')[1].click()")
+      await evaluate(
+        "document.querySelectorAll('.results-tabs button')[1].click()",
+      )
       await until("!!document.querySelector('.resume-review')")
-      const restore = locale === 'en' ? 'Restore previous accepted draft' : 'Restaurar rascunho aceito anterior'
-      assert.equal(await evaluate(`Array.from(document.querySelectorAll('button')).some(b=>b.textContent.trim()===${JSON.stringify(restore)})`),true)
-      await evaluate(`Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()===${JSON.stringify(restore)}).click()`)
+      const restore =
+        locale === "en"
+          ? "Restore previous accepted draft"
+          : "Restaurar rascunho aceito anterior"
+      assert.equal(
+        await evaluate(
+          `Array.from(document.querySelectorAll('button')).some(b=>b.textContent.trim()===${JSON.stringify(restore)})`,
+        ),
+        true,
+      )
+      await evaluate(
+        `Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()===${JSON.stringify(restore)}).click()`,
+      )
       await until("!!document.querySelector('.cv-paper')")
-      assert.equal(await evaluate("document.querySelector('.cv-paper-content').textContent"),before)
-      assert.ok(!(await evaluate("document.querySelector('h1').textContent")).includes('Replacement draft'))
+      assert.equal(
+        await evaluate(
+          "document.querySelector('.cv-paper-content').textContent",
+        ),
+        before,
+      )
+      assert.ok(
+        !(await evaluate("document.querySelector('h1').textContent")).includes(
+          "Replacement draft",
+        ),
+      )
     }
   }
   // Actual accepted-content overflow is measured before opening the print dialog.
   await evaluate("document.querySelectorAll('nav button')[0].click()")
   await until("!!document.querySelector('main textarea')")
-  await generate();await until('window.__pending.length === 1');await respond({gaps:[]});await until('window.__pending.length === 1')
-  await respond({...materials,resume:'## Professional Summary\n'+('Long draft detail. '.repeat(450))+'END-MARKER'})
+  await generate()
+  await until("window.__pending.length === 1")
+  await respond({ gaps: [] })
+  await until("window.__pending.length === 1")
+  await respond({
+    ...materials,
+    resume:
+      "## Professional Summary\n" +
+      "Long draft detail. ".repeat(450) +
+      "END-MARKER",
+  })
   await until("!!document.querySelector('.results-tabs')")
+  await evaluate(
+    "Array.from(document.querySelectorAll('.artifact-review button')).find(b=>b.textContent.trim()==='Aceitar materiais da candidatura').click()",
+  )
   await evaluate("document.querySelectorAll('.results-tabs button')[1].click()")
   await until("!!document.querySelector('.resume-review')")
-  await evaluate(button('Aceitar currículo')+'.click()')
+  await evaluate(button("Aceitar currículo") + ".click()")
   await until("!!document.querySelector('.cv-paper-content')")
-  assert.ok((await evaluate("document.querySelector('.cv-paper-content').textContent")).includes('END-MARKER'))
-  await evaluate("window.__printed=false;Array.from(document.querySelectorAll('.results-resume-actions button')).find(b=>b.textContent.includes('PDF')).click()")
-  await until("!!document.querySelector('.results-toolbar-advice [role=alert]')")
-  assert.equal(await evaluate('window.__printed'),false,'overflowing accepted content must not open print')
+  assert.ok(
+    (
+      await evaluate("document.querySelector('.cv-paper-content').textContent")
+    ).includes("END-MARKER"),
+  )
+  await evaluate(
+    "window.__printed=false;Array.from(document.querySelectorAll('.results-resume-actions button')).find(b=>b.textContent.includes('PDF')).click()",
+  )
+  await until(
+    "!!document.querySelector('.results-toolbar-advice [role=alert]')",
+  )
+  assert.equal(
+    await evaluate("window.__printed"),
+    false,
+    "overflowing accepted content must not open print",
+  )
   // Stale Profile keeps the source snapshot but blocks copy and PDF.
   await evaluate("document.querySelectorAll('nav button')[1].click()")
   await until("!!document.querySelector('aside nav')")
@@ -550,9 +726,28 @@ try {
     ),
     true,
   )
-  assert.ok((await evaluate("document.querySelector('.cv-paper-content').textContent")).includes('END-MARKER'))
+  assert.ok(
+    (
+      await evaluate("document.querySelector('.cv-paper-content').textContent")
+    ).includes("END-MARKER"),
+  )
+  await evaluate("document.querySelectorAll('.results-tabs button')[2].click()")
+  await until("!!document.querySelector('.artifact-review [role=alert]')")
+  assert.equal(
+    await evaluate(
+      "Array.from(document.querySelectorAll('.results-other-actions button')).every(b=>b.disabled)",
+    ),
+    true,
+  )
+  assert.ok(
+    (
+      await evaluate(
+        "document.querySelector('.results-cover-print').textContent",
+      )
+    ).includes("I led useful service work"),
+  )
   console.log(
-    `Resume review browser checks passed (EN/PT, 390/1440px). Artifacts: ${work}`,
+    `Resume and application review browser checks passed (EN/PT, 390/1440px). Artifacts: ${work}`,
   )
 } finally {
   socket?.close()

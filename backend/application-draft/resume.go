@@ -266,8 +266,21 @@ func resumeApplicationDocument(in request) (profiledocument.Document, []qualific
 	doc := *in.ProfileEvidence
 	doc.Facts = slices.Clone(doc.Facts)
 	temporary := []qualificationmatching.Fact{}
+	type applicationEvidence struct {
+		ID, Requirement, UserContext, Field string
+		Order                               int
+	}
+	entries := []applicationEvidence{}
 	for i, q := range in.Confirmed {
-		id := fmt.Sprintf("application-confirmation-%d", i)
+		entries = append(entries, applicationEvidence{fmt.Sprintf("application-confirmation-%d", i), q.Requirement, q.UserContext, "skills", i})
+	}
+	for i, q := range in.Answers {
+		if strings.TrimSpace(q.UserContext) != "" {
+			entries = append(entries, applicationEvidence{fmt.Sprintf("application-answer-%d", i), q.Requirement, q.UserContext, "additionalInfo", i})
+		}
+	}
+	for _, q := range entries {
+		id := q.ID
 		for _, f := range doc.Facts {
 			if f.ID == id {
 				return doc, nil, errors.New("reserved application fact ID")
@@ -277,8 +290,11 @@ func resumeApplicationDocument(in request) (profiledocument.Document, []qualific
 		if q.UserContext != "" {
 			text += " — " + q.UserContext
 		}
+		if q.Field == "additionalInfo" {
+			text = q.UserContext
+		}
 		value, _ := json.Marshal(text)
-		f := profiledocument.Fact{ID: id, Revision: 1, Owner: profiledocument.Reference{ProfileID: doc.ID, ID: doc.ID, Revision: doc.Revision}, Context: []profiledocument.Reference{}, Field: "skills", Order: int64(i), Kind: "statement", Value: value, Assertion: "affirmed", Intent: "actual", Certainty: "certain", Temporal: profiledocument.Temporal{Precision: "unknown"}, Normalization: profiledocument.Normalization{Observed: text, Policy: profiledocument.NormalizationPolicy}, Origin: profiledocument.Origin{Kind: "manual_edit", Original: "user"}, Approval: "approved", Support: "unsupported"}
+		f := profiledocument.Fact{ID: id, Revision: 1, Owner: profiledocument.Reference{ProfileID: doc.ID, ID: doc.ID, Revision: doc.Revision}, Context: []profiledocument.Reference{}, Field: q.Field, Order: int64(q.Order), Kind: "statement", Value: value, Assertion: "affirmed", Intent: "actual", Certainty: "certain", Temporal: profiledocument.Temporal{Precision: "unknown"}, Normalization: profiledocument.Normalization{Observed: text, Policy: profiledocument.NormalizationPolicy}, Origin: profiledocument.Origin{Kind: "manual_edit", Original: "user"}, Approval: "approved", Support: "unsupported"}
 		doc.Facts = append(doc.Facts, f)
 		temporary = append(temporary, qualificationmatching.Fact{Fact: f, Section: "application", Evidence: []profiledocument.Evidence{}})
 	}

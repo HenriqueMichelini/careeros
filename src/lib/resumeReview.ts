@@ -121,7 +121,9 @@ export function removeResumeClaim(
 }
 function isResumeStatementText(text: unknown): text is string {
   return (
-    typeof text === "string" && !!text.trim() && text.length <= 2000 &&
+    typeof text === "string" &&
+    !!text.trim() &&
+    text.length <= 2000 &&
     !/[\r\n*`]/.test(text) &&
     !/^(?:#{1,6}\s|[-•]\s|\d+[.)]\s)/.test(text.trim())
   )
@@ -133,8 +135,7 @@ export function correctResume(
 ): ResumeReview {
   const original = review.claims[index]
   const text = evidence.trim()
-  if (!original || !isResumeStatementText(text))
-    throw new Error("input")
+  if (!original || !isResumeStatementText(text)) throw new Error("input")
   const next = structuredClone(review)
   // The person explicitly supplies and owns the complete replacement assertion.
   // Old references remain audit history only; they never support the new claim.
@@ -162,9 +163,13 @@ export function parseResumeReview(
   language: Locale,
   markdown: string,
   confirmations: {
- requirement: string
- userContext: string
-}[] = [],
+    requirement: string
+    userContext: string
+  }[] = [],
+  answers: {
+    requirement: string
+    userContext: string
+  }[] = [],
 ): ResumeReview | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null
   const r = value as ResumeReview
@@ -184,7 +189,7 @@ export function parseResumeReview(
     ids.add(fact.id)
     const live = [
       ...doc.facts,
-      ...applicationResumeFacts(doc, confirmations),
+      ...applicationResumeFacts(doc, confirmations, answers),
     ].find((f) => f.id === fact.id)
     if (!live) return null
     for (const key of Object.keys(live) as Array<keyof ProfileFact>) {
@@ -279,19 +284,46 @@ export function parseResumeReview(
 export function applicationResumeFacts(
   doc: ProfileDocument,
   confirmations: {
- requirement: string
- userContext: string
-}[],
+    requirement: string
+    userContext: string
+  }[],
+  answers: {
+    requirement: string
+    userContext: string
+  }[] = [],
 ): ProfileFact[] {
-  return confirmations.map((q, i) => {
-    const text = q.requirement + (q.userContext ? " — " + q.userContext : "")
-    return {
+  const entries = [
+    ...confirmations.map((q, i) => ({
+      ...q,
       id: `application-confirmation-${i}`,
+      field: "skills",
+      order: i,
+    })),
+    ...answers.flatMap((q, i) =>
+      q.userContext.trim()
+        ? [
+            {
+              ...q,
+              id: `application-answer-${i}`,
+              field: "additionalInfo",
+              order: i,
+            },
+          ]
+        : [],
+    ),
+  ]
+  return entries.map((q) => {
+    const text =
+      q.field === "additionalInfo"
+        ? q.userContext
+        : q.requirement + (q.userContext ? " — " + q.userContext : "")
+    return {
+      id: q.id,
       revision: 1,
       owner: { profileId: doc.id, id: doc.id, revision: doc.revision },
       context: [],
-      field: "skills",
-      order: i,
+      field: q.field,
+      order: q.order,
       kind: "statement",
       value: text,
       assertion: "affirmed",

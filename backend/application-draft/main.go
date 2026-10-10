@@ -35,6 +35,7 @@ type qualificationAnswer struct {
 	UserContext string `json:"userContext"`
 }
 type request struct {
+	ReviewArtifacts bool                              `json:"reviewArtifacts,omitempty"`
 	ReviewResume    bool                              `json:"reviewResume,omitempty"`
 	SelectedFactIDs []string                          `json:"selectedFactIds,omitempty"`
 	ProfileEvidence *profiledocument.Document         `json:"-"`
@@ -52,6 +53,7 @@ type qualification struct {
 	UserContext string `json:"userContext"`
 }
 type result struct {
+	ArtifactReview     *artifactReview   `json:"artifactReview,omitempty"`
 	ResumeReview       *resumeReview     `json:"resumeReview,omitempty"`
 	ContextSelection   *contextSelection `json:"contextSelection,omitempty"`
 	JobTitle           *string           `json:"jobTitle"`
@@ -127,7 +129,7 @@ func (a app) generate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	in.ProfileEvidence = evidence
-	if (in.ReviewResume && evidence == nil) || len(in.SelectedFactIDs) > 500 {
+	if ((in.ReviewResume || in.ReviewArtifacts) && evidence == nil) || len(in.SelectedFactIDs) > 500 {
 		status, outcome = 400, "input"
 		writeError(w, status, outcome)
 		return
@@ -225,7 +227,7 @@ func (a app) call(parent context.Context, key string, in request) (res result, c
 	}
 	var resumeDoc profiledocument.Document
 	resumeSelected := append([]string{}, selection.Sources...)
-	if in.ReviewResume {
+	if in.ReviewResume || in.ReviewArtifacts {
 		var temporary []qualificationmatching.Fact
 		resumeDoc, temporary, err = resumeApplicationDocument(in)
 		if err != nil {
@@ -309,6 +311,9 @@ func (a app) call(parent context.Context, key string, in request) (res result, c
 	var tail any
 	if d.Decode(&tail) != io.EOF || !valid(empty) {
 		return result{}, "invalid_output", errors.New("invalid output")
+	}
+	if in.ReviewArtifacts {
+		empty.ArtifactReview = a.reviewArtifacts(parent, key, in, empty, resumeDoc, resumeSelected)
 	}
 	empty.ResumeReview = review
 	empty.ContextSelection = &selection
@@ -417,6 +422,9 @@ func exactFields(raw json.RawMessage, expected ...string) bool {
 	return true
 }
 func completeInputShape(raw map[string]json.RawMessage) bool {
+	if value, ok := raw["reviewArtifacts"]; ok && !jsonBoolean(value) {
+		return false
+	}
 	if value, ok := raw["reviewResume"]; ok && !jsonBoolean(value) {
 		return false
 	}
@@ -451,7 +459,7 @@ func completeInputShape(raw map[string]json.RawMessage) bool {
 	}
 
 	for key := range raw {
-		if key != "reviewResume" && key != "selectedFactIds" && key != "repository" && key != "jobPosting" && key != "confirmedQualifications" && key != "qualifications" && key != "cvLanguage" && key != "jobContext" && key != "qualificationAnswers" {
+		if key != "reviewArtifacts" && key != "reviewResume" && key != "selectedFactIds" && key != "repository" && key != "jobPosting" && key != "confirmedQualifications" && key != "qualifications" && key != "cvLanguage" && key != "jobContext" && key != "qualificationAnswers" {
 			return false
 		}
 	}

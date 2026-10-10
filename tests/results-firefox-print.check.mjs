@@ -170,7 +170,7 @@ try {
   await until("!!document.querySelector('[role=dialog]')")
   await evaluate("Array.from(document.querySelectorAll('[role=dialog] button')).at(-2).click()")
   await until(
-    "document.querySelectorAll('nav button').length === 4 && document.body.textContent.includes('Product Lead')",
+    "!!document.querySelector('.results-tabs')",
   )
   await evaluate(
     "Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'Résumé').click()",
@@ -226,6 +226,8 @@ try {
   // The signed letter is the shared source for visible content, copy, and print.
   await call("browsingContext.setViewport", { context, viewport: { width: 390, height: 844 } })
   await evaluate("Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'Cover Letter').click()")
+  await until("!!document.querySelector('.artifact-review')")
+  await evaluate("Array.from(document.querySelectorAll('.artifact-review button')).find(b=>b.textContent.trim()==='Accept application materials').click()")
   await until("!!document.querySelector('.results-content pre')")
   const completed = "Dear team,\n\nI led useful service work.\n\nSincerely,\nÉrica Müller"
   assert.equal(await evaluate("document.querySelector('.results-content pre').textContent"), completed)
@@ -276,8 +278,10 @@ try {
   await evaluate("Array.from(document.querySelectorAll('button')).find(el => /Gerar materiais/i.test(el.textContent) && !el.disabled).click()")
   await until("!!document.querySelector('[role=dialog]')")
   await evaluate("Array.from(document.querySelectorAll('[role=dialog] button')).at(-2).click()")
-  await until("document.body.textContent.includes('Liderança')")
+  await until("!!document.querySelector('.results-tabs')")
   await evaluate("Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'Carta de apresentação').click()")
+  await until("!!document.querySelector('.artifact-review')")
+  await evaluate("Array.from(document.querySelectorAll('.artifact-review button')).find(b=>b.textContent.trim()==='Aceitar materiais da candidatura').click()")
   await until("!!document.querySelector('.results-content pre')")
   assert.equal(await evaluate("document.querySelector('.results-content pre').textContent"), "Prezada equipe,\n\nMinha experiência atende aos requisitos da vaga.\n\nAtenciosamente,")
   assert.equal(await evaluate("document.body.textContent.includes('Adicione seu nome completo ao Perfil')"), true)

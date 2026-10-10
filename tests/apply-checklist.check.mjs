@@ -274,6 +274,10 @@ try {
       `window.__pending.shift().resolve(new Response(${JSON.stringify(JSON.stringify(body))}, { status: ${status}, headers: { 'Content-Type': 'application/json' } }))`,
     )
     await pause(70)
+    if (body.artifactReview && status === 200) {
+      await until("!!document.querySelector('.artifact-review')")
+      await evaluate("Array.from(document.querySelectorAll('.artifact-review button')).find(b=>/^(Accept application materials|Aceitar materiais da candidatura)$/.test(b.textContent.trim())).click()")
+    }
     if (
       body.gaps?.length === 0 &&
       !inspectOnly &&
