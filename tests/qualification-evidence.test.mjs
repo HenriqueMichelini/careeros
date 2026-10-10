@@ -19,7 +19,7 @@ writeFileSync(
       module: ts.ModuleKind.ESNext,
       target: ts.ScriptTarget.ES2022,
     },
-  }).outputText,
+  }).outputText.replace(/import fields from [^\n]+\n/, 'const fields = '+readFileSync(new URL('../internal/qualificationmatching/fields.json', import.meta.url),'utf8')+';\n'),
 )
 const { qualificationProjection, hasQualificationEvidence } = await import(
   target

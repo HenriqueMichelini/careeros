@@ -1039,6 +1039,34 @@ try {
             "document.querySelector('[role=dialog] button').click()",
           )
         }
+        const contrasted = { ...repo, experience: [...repo.experience, { ...repo.experience[0], id: "contrasting", company: "Summit", title: "Analyst", startDate: "2015", endDate: "2017" }] }
+        await evaluate(`(async () => {
+          const { migrateProfile } = await import('/src/lib/profileDocument.ts');
+          const doc = migrateProfile(${JSON.stringify(contrasted)}, crypto.randomUUID());
+          const role = doc.entities.find(e => e.kind === 'experience' && e.legacyId === 'job');
+          const skill = doc.facts.find(f => f.field === 'skills');
+          skill.context = [{profileId: doc.id, id: role.id, revision: role.revision}];
+          localStorage.setItem('careeros_profile_v2', JSON.stringify(doc));
+          location.reload();
+        })()`)
+        await until("document.readyState === 'complete' && !!document.querySelector('header button')")
+        await clickApply()
+        await evaluate("window.__pending = []; window.fetch = (url, options) => new Promise(resolve => window.__pending.push({url, options, resolve}))")
+        await fill('Java developer. AWS required.')
+        await generate()
+        await respond({gaps: []}, 200, true)
+        await evaluate("document.querySelector('[data-requirement-state] summary').click()")
+        const linked = await evaluate("document.querySelector('[data-linked-context]').textContent")
+        assert.ok(linked.includes('Harbor Works') && linked.includes('Product Lead') && linked.includes('2021'))
+        assert.ok(!linked.includes('Summit'), 'linked skill must retain its actual employer')
+        const owners = await evaluate("Array.from(document.querySelectorAll('[data-evidence-owner] h4')).map(el => el.textContent)")
+        assert.ok(owners.some(text => text.includes('Summit') && text.includes('Analyst') && text.includes('2015')))
+        assert.ok(owners.some(text => text.includes('Harbor Works') && text.includes('Product Lead')))
+        await evaluate("document.querySelector('[role=dialog]').scrollTop = document.querySelector('[data-linked-context]').offsetTop - document.querySelector('[role=dialog]').offsetTop")
+        await pause(250)
+        const contextShot = await call("Page.captureScreenshot", {format: "png"})
+        writeFileSync(join(work, `linked-context-${locale}.png`), Buffer.from(contextShot.data, "base64"))
+        await evaluate("document.querySelector('[role=dialog] button').click()")
         // Approved evidence in every sparse section can start Apply, with all
         // key/posting/in-progress guards still active. No provider is contacted.
         for (const section of [

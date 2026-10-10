@@ -1,22 +1,6 @@
 import type { ProfileDocument } from "./profileDocument"
 
-const fields: Record<string, readonly string[]> = {
-  profile: ["skills", "competencies", "tools"],
-  experience: [
-    "company",
-    "title",
-    "startDate",
-    "endDate",
-    "current",
-    "description",
-    "responsibilities",
-    "achievements",
-  ],
-  projects: ["name", "description", "technologies", "highlights"],
-  education: ["degree", "institution", "graduationDate", "details"],
-  certifications: ["name", "issuer", "date"],
-  languages: ["name", "proficiency"],
-}
+import fields from "../../internal/qualificationmatching/fields.json"
 // A transient, valid Profile subdocument. Approved professional facts and existing migrated blocks with unknown provenance and
 // their active accepted evidence leave the browser; no saved Profile is changed.
 export function qualificationProjection(doc: ProfileDocument): ProfileDocument {
@@ -26,8 +10,10 @@ export function qualificationProjection(doc: ProfileDocument): ProfileDocument {
     return (
       (f.approval === "approved" ||
         (f.kind === "legacy_block" && f.origin.kind === "existing_profile")) &&
-      fields[kind]?.includes(f.field) &&
-      (typeof f.value === "string" ? !!f.value.trim() : typeof f.value === "boolean")
+      (fields as Record<string, string[]>)[kind]?.includes(f.field) &&
+      (typeof f.value === "string"
+        ? !!f.value.trim()
+        : typeof f.value === "boolean")
     )
   })
   const ids = new Set(facts.map((f) => f.id))
@@ -45,17 +31,27 @@ export function qualificationProjection(doc: ProfileDocument): ProfileDocument {
   })
 }
 export function hasQualificationEvidence(doc: ProfileDocument | null): boolean {
-  return !!doc && qualificationProjection(doc).facts.some(f => typeof f.value === "string" ? !!f.value.trim() : f.value === true)
+  return (
+    !!doc &&
+    qualificationProjection(doc).facts.some((f) =>
+      typeof f.value === "string" ? !!f.value.trim() : f.value === true,
+    )
+  )
 }
 
 export interface QualificationFact {
   id: string
   revision: number
   owner: {
- profileId: string
- id: string
- revision: number
- }
+    profileId: string
+    id: string
+    revision: number
+  }
+  context: {
+    profileId: string
+    id: string
+    revision: number
+  }[]
   field: string
   value: string | boolean
   section: string
@@ -63,14 +59,14 @@ export interface QualificationFact {
   intent: string
   certainty: string
   temporal: {
- wording: string
- precision: string
- }
+    wording: string
+    precision: string
+  }
   evidence: {
- id: string
- revision: number
- excerpt: string
- }[]
+    id: string
+    revision: number
+    excerpt: string
+  }[]
 }
 export interface RequirementMatch {
   requirementIndex: number
@@ -137,6 +133,8 @@ export function parseRequirementMatches(
           )) ||
         JSON.stringify(original.value) !== JSON.stringify(fact.value) ||
         JSON.stringify(original.owner) !== JSON.stringify(fact.owner) ||
+        JSON.stringify(original.context) !== JSON.stringify(fact.context) ||
+        JSON.stringify(original.temporal) !== JSON.stringify(fact.temporal) ||
         original.field !== fact.field ||
         original.assertion !== fact.assertion ||
         original.intent !== fact.intent ||

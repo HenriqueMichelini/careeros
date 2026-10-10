@@ -170,6 +170,8 @@ const messages = {
     "home.viewPreviousResults": "View Previous Results →",
     "home.generationFailed":
       "Generation failed. Check your API key and try again.",
+    "requirementEvidence.linkedContext": "Linked role/project",
+    "requirementEvidence.contextUnavailable": "Context identity not available in selected evidence",
     "requirementEvidence.title": "Requirement support",
     "requirementEvidence.supported": "Supported",
     "requirementEvidence.partially_supported": "Partially supported",
@@ -967,6 +969,8 @@ const messages = {
     "home.viewPreviousResults": "Ver resultados anteriores →",
     "home.generationFailed":
       "Falha ao gerar. Verifique sua chave API e tente novamente.",
+    "requirementEvidence.linkedContext": "Cargo/projeto vinculado",
+    "requirementEvidence.contextUnavailable": "Identidade do contexto indisponível nas evidências selecionadas",
     "requirementEvidence.title": "Evidências dos requisitos",
     "requirementEvidence.supported": "Com evidência",
     "requirementEvidence.partially_supported": "Com evidência parcial",

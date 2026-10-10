@@ -43,7 +43,8 @@ experience. References and lexical matches do not prove semantic truth.
 
 The bilingual Apply review displays all four states, original job importance,
 explanations, focused questions, incomplete-coverage warnings, selected facts,
-identity/period context and accepted excerpts. A checkbox confirms only a
+identity/period context and accepted excerpts. Facts are grouped by their owner,
+and profile-level facts display their linked role/project identities explicitly. A checkbox confirms only a
 qualification. Users can supply an answer without checking it, including a
 negative answer. Answers and confirmations stay transient and application-only;
 the draft prompt distinguishes answers from positive confirmations. Saving facts
@@ -65,7 +66,9 @@ bounded strict contracts and never alter the saved Profile.
   unconfirmed negative answers, unchanged saved Profile, deliberate retries,
   field gate failures, and ordinary application/Results transitions. At 390px in
   both languages each sparse section independently starts Apply, while posting,
-  key and in-progress guards remain active. A rerun on unchanged product code
+  key and in-progress guards remain active. A two-employer case verifies that a
+  profile-level skill linked to Harbor retains that relationship and remains
+  distinct from Summit, including titles and dates. A rerun on unchanged product code
   resolved an intermittent pre-existing native keyboard-navigation failure.
 - Reproduce labeled evaluation with:
   GOCACHE=/tmp/careeros-go-cache go run ./scripts/qualification-evidence -output /tmp/qualification-evidence-report.json.
@@ -97,3 +100,11 @@ provider operation are unmeasured here; no credentials or paid calls were used.
 Source references alone cannot detect every semantically incorrect explanation
 or unsupported relationship. Explicit user inspection remains required before
 continuing. The broader scoped Application Draft projection belongs to #46.
+
+## Independent review
+
+The first Standards review found no hard violations and one nonblocking field-
+policy duplication concern. The first Spec review identified a P2: the flat
+inspector did not make fact-to-role/project relationships visible. The correction
+groups facts by owner, renders linked context identities, adds a bilingual
+two-employer browser case and shares the allowlist through fields.json.

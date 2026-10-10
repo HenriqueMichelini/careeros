@@ -11,7 +11,7 @@ for (const name of ["profile", "cover-letter", "fieldDecision", "jobContext", "q
   const compiled = ts.transpileModule(source, {
     compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
   }).outputText.replace(/from ['"]\.\/jobContext['"]/g, 'from "./jobContext.mjs"').replace(/from ['"]\.\/fieldDecision['"]/g, 'from "./fieldDecision.mjs"').replace(/from ['"]\.\/cover-letter['"]/g, 'from "./cover-letter.mjs"').replace(/from ['"]\.\/profile['"]/g, 'from "./profile.mjs"')
-  writeFileSync(join(temp, `${name}.mjs`), compiled.replaceAll('"./qualificationEvidence"', '"./qualificationEvidence.mjs"'))
+  writeFileSync(join(temp, `${name}.mjs`), compiled.replace(/import fields from [^\n]+\n/, 'const fields = '+readFileSync(new URL("../internal/qualificationmatching/fields.json", import.meta.url),"utf8")+';\n').replaceAll('"./qualificationEvidence"', '"./qualificationEvidence.mjs"'))
 }
 const { withContactFields, careerProfile, cvQualifications, validQualifications } = await import(join(temp, "profile.mjs"))
 const { findProfileGaps, generateMaterials } = await import(join(temp, "ai.mjs"))

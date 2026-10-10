@@ -3,6 +3,7 @@
 package qualificationmatching
 
 import (
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"professional-information-repo/internal/jobcontext"
@@ -15,13 +16,15 @@ import (
 const Version = "qualification-evidence-v1"
 const DefaultBudget = 16 << 10
 
-var allowed = map[string][]string{
-	"profile":        {"skills", "competencies", "tools"},
-	"experience":     {"company", "title", "startDate", "endDate", "current", "description", "responsibilities", "achievements"},
-	"projects":       {"name", "description", "technologies", "highlights"},
-	"education":      {"degree", "institution", "graduationDate", "details"},
-	"certifications": {"name", "issuer", "date"}, "languages": {"name", "proficiency"},
-}
+//go:embed fields.json
+var fieldsJSON []byte
+var allowed = func() map[string][]string {
+	var fields map[string][]string
+	if err := json.Unmarshal(fieldsJSON, &fields); err != nil {
+		panic(err)
+	}
+	return fields
+}()
 
 type Fact struct {
 	profiledocument.Fact
