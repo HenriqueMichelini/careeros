@@ -1,3 +1,4 @@
+import { jobContextFixture } from "./job-context-fixtures.mjs"
 // Browser regression for the Profile CV and an Application Draft resume.
 // Uses synthetic API responses; no provider request is made.
 import assert from "node:assert/strict"
@@ -213,7 +214,7 @@ try {
   await evaluate("document.querySelectorAll('header nav button')[0].click()")
   await until("!!document.querySelector('textarea')")
   await evaluate(
-    `window.fetch = async (url) => new Response(JSON.stringify(String(url).includes('qualification-gaps') ? { gaps: [] } : ${JSON.stringify(materials)}), { status: 200, headers: { 'Content-Type': 'application/json' } }); const el = document.querySelector('textarea'); Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(el, 'A long synthetic job posting for a product lead at Harbor Works.'); el.dispatchEvent(new Event('input', { bubbles: true }))`,
+    `window.__jobContextFixture = (JOB_CONTEXT_FIXTURE); window.fetch = async (url) => new Response(JSON.stringify(String(url).includes('qualification-gaps') ? { gaps: [], jobContext: window.__jobContextFixture } : ${JSON.stringify(materials)}), { status: 200, headers: { 'Content-Type': 'application/json' } }); const el = document.querySelector('textarea'); Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(el, 'A long synthetic job posting for a product lead at Harbor Works.'); el.dispatchEvent(new Event('input', { bubbles: true }))`.replaceAll("JOB_CONTEXT_FIXTURE", JSON.stringify(jobContextFixture(""))),
   )
   await until(
     "Array.from(document.querySelectorAll('button')).some(el => /Generate/i.test(el.textContent) && !el.disabled)",
@@ -221,6 +222,8 @@ try {
   await evaluate(
     "Array.from(document.querySelectorAll('button')).find(el => /Generate/i.test(el.textContent) && !el.disabled).click()",
   )
+  await until("!!document.querySelector('[role=dialog]')")
+  await evaluate("Array.from(document.querySelectorAll('[role=dialog] button')).at(-2).click()")
   await until(
     "document.querySelectorAll('nav button').length === 4 && document.body.textContent.includes('Product Lead')",
   )
@@ -423,8 +426,10 @@ try {
       "- English: Fluent",
     ].join("\n"),
   }
-  await evaluate(`window.fetch = async (url) => new Response(JSON.stringify(String(url).includes('qualification-gaps') ? { gaps: [] } : ${JSON.stringify(denseMaterials)}), { status: 200, headers: { 'Content-Type': 'application/json' } })`)
+  await evaluate(`window.__jobContextFixture = (JOB_CONTEXT_FIXTURE); window.fetch = async (url) => new Response(JSON.stringify(String(url).includes('qualification-gaps') ? { gaps: [], jobContext: window.__jobContextFixture } : ${JSON.stringify(denseMaterials)}), { status: 200, headers: { 'Content-Type': 'application/json' } })`.replaceAll("JOB_CONTEXT_FIXTURE", JSON.stringify(jobContextFixture(""))))
   await evaluate("Array.from(document.querySelectorAll('button')).find(el => /Generate/i.test(el.textContent) && !el.disabled).click()")
+  await until("!!document.querySelector('[role=dialog]')")
+  await evaluate("Array.from(document.querySelectorAll('[role=dialog] button')).at(-2).click()")
   await until("document.querySelector('h1')?.textContent.includes('Product Lead')")
   await evaluate("Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'Résumé').click()")
   await until("document.querySelector('.cv-paper-content')?.textContent.includes('evidence-based product decisions 5')")
@@ -467,8 +472,10 @@ try {
     ...materials,
     resume: `## Professional Summary\n${"Long draft detail. ".repeat(2500)}END-MARKER`,
   }
-  await evaluate(`window.fetch = async (url) => new Response(JSON.stringify(String(url).includes('qualification-gaps') ? { gaps: [] } : ${JSON.stringify(longMaterials)}), { status: 200, headers: { 'Content-Type': 'application/json' } })`)
+  await evaluate(`window.__jobContextFixture = (JOB_CONTEXT_FIXTURE); window.fetch = async (url) => new Response(JSON.stringify(String(url).includes('qualification-gaps') ? { gaps: [], jobContext: window.__jobContextFixture } : ${JSON.stringify(longMaterials)}), { status: 200, headers: { 'Content-Type': 'application/json' } })`.replaceAll("JOB_CONTEXT_FIXTURE", JSON.stringify(jobContextFixture(""))))
   await evaluate("Array.from(document.querySelectorAll('button')).find(el => /Generate/i.test(el.textContent) && !el.disabled).click()")
+  await until("!!document.querySelector('[role=dialog]')")
+  await evaluate("Array.from(document.querySelectorAll('[role=dialog] button')).at(-2).click()")
   await until("document.querySelector('h1')?.textContent.includes('Product Lead')")
   await evaluate("Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'Résumé').click()")
   await until("document.querySelector('[role=status]')?.textContent.includes('extends beyond')")

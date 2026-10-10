@@ -1,3 +1,4 @@
+import { jobContextFixture } from "./job-context-fixtures.mjs"
 // Firefox regression for the Results résumé print layout. Uses synthetic data.
 import assert from "node:assert/strict"
 import { spawn, execFileSync } from "node:child_process"
@@ -156,7 +157,7 @@ try {
   await evaluate("document.querySelector('header button:last-child').click()")
   await until("document.querySelectorAll('nav button').length === 4")
   await evaluate(
-    "window.fetch = async (url) => new Response(JSON.stringify(String(url).includes('qualification-gaps') ? { gaps: [] } : {jobTitle:'Product Lead',company:'Harbor Works',jobSummary:'Lead product work.',resume:'# Avery Morgan\\n\\navery@example.com\\n\\n## Professional Summary\\nProduct leader focused on useful services.\\n\\n## Technical Skills\\n- Research\\n- Figma\\n\\n## Professional Experience\\n### Product Lead · Harbor Works\\n2021 — 2024\\n- Improved onboarding.\\n\\n## Education\\n### BSc Design\\nEast College · 2018\\n\\n## Certifications\\n- Research Certificate\\n\\n## Languages\\n- English: Fluent',coverLetter:{greeting:'Dear team,',body:'I led useful service work.',closing:'Sincerely,'},applicationAnswers:'1. I led a platform.'}), { status: 200, headers: { 'Content-Type': 'application/json' } }); const el = document.querySelector('textarea'); Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(el, 'A long synthetic job posting for a product lead at Harbor Works.'); el.dispatchEvent(new Event('input', { bubbles: true }))",
+    "window.__jobContextFixture = (JOB_CONTEXT_FIXTURE); window.fetch = async (url) => new Response(JSON.stringify(String(url).includes('qualification-gaps') ? { gaps: [], jobContext: window.__jobContextFixture } : {jobTitle:'Product Lead',company:'Harbor Works',jobSummary:'Lead product work.',resume:'# Avery Morgan\\n\\navery@example.com\\n\\n## Professional Summary\\nProduct leader focused on useful services.\\n\\n## Technical Skills\\n- Research\\n- Figma\\n\\n## Professional Experience\\n### Product Lead · Harbor Works\\n2021 — 2024\\n- Improved onboarding.\\n\\n## Education\\n### BSc Design\\nEast College · 2018\\n\\n## Certifications\\n- Research Certificate\\n\\n## Languages\\n- English: Fluent',coverLetter:{greeting:'Dear team,',body:'I led useful service work.',closing:'Sincerely,'},applicationAnswers:'1. I led a platform.'}), { status: 200, headers: { 'Content-Type': 'application/json' } }); const el = document.querySelector('textarea'); Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(el, 'A long synthetic job posting for a product lead at Harbor Works.'); el.dispatchEvent(new Event('input', { bubbles: true }))".replaceAll("JOB_CONTEXT_FIXTURE", JSON.stringify(jobContextFixture(""))),
   )
   await until(
     "Array.from(document.querySelectorAll('button')).some(el => /Generate/i.test(el.textContent) && !el.disabled)",
@@ -164,6 +165,8 @@ try {
   await evaluate(
     "Array.from(document.querySelectorAll('button')).find(el => /Generate/i.test(el.textContent) && !el.disabled).click()",
   )
+  await until("!!document.querySelector('[role=dialog]')")
+  await evaluate("Array.from(document.querySelectorAll('[role=dialog] button')).at(-2).click()")
   await until(
     "document.querySelectorAll('nav button').length === 4 && document.body.textContent.includes('Product Lead')",
   )
@@ -264,9 +267,11 @@ try {
   await until("!!document.querySelector('header button')")
   await evaluate("document.querySelector('header button:last-child').click()")
   await until("document.querySelectorAll('nav button').length === 4")
-  await evaluate("window.fetch = async url => new Response(JSON.stringify(String(url).includes('qualification-gaps') ? {gaps:[]} : {jobTitle:'Liderança',company:'Harbor Works',jobSummary:'Liderar produto.',resume:'Resume',coverLetter:{greeting:'Prezada equipe,',body:'Minha experiência atende aos requisitos da vaga.',closing:'Atenciosamente,'},applicationAnswers:'Answers'}), {status:200}); const el=document.querySelector('textarea'); Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(el,'Uma vaga de liderança de produto com experiência em pesquisa.'); el.dispatchEvent(new Event('input',{bubbles:true}))")
+  await evaluate("window.__jobContextFixture = (JOB_CONTEXT_FIXTURE); window.fetch = async url => new Response(JSON.stringify(String(url).includes('qualification-gaps') ? {gaps:[], jobContext: window.__jobContextFixture} : {jobTitle:'Liderança',company:'Harbor Works',jobSummary:'Liderar produto.',resume:'Resume',coverLetter:{greeting:'Prezada equipe,',body:'Minha experiência atende aos requisitos da vaga.',closing:'Atenciosamente,'},applicationAnswers:'Answers'}), {status:200}); const el=document.querySelector('textarea'); Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(el,'Uma vaga de liderança de produto com experiência em pesquisa.'); el.dispatchEvent(new Event('input',{bubbles:true}))".replaceAll("JOB_CONTEXT_FIXTURE", JSON.stringify(jobContextFixture(""))))
   await until("Array.from(document.querySelectorAll('button')).some(el => /Gerar materiais/i.test(el.textContent) && !el.disabled)")
   await evaluate("Array.from(document.querySelectorAll('button')).find(el => /Gerar materiais/i.test(el.textContent) && !el.disabled).click()")
+  await until("!!document.querySelector('[role=dialog]')")
+  await evaluate("Array.from(document.querySelectorAll('[role=dialog] button')).at(-2).click()")
   await until("document.body.textContent.includes('Liderança')")
   await evaluate("Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'Carta de apresentação').click()")
   await until("!!document.querySelector('.results-content pre')")
