@@ -34,6 +34,7 @@ type qualificationAnswer struct {
 	UserContext string `json:"userContext"`
 }
 type request struct {
+	SelectedFactIDs []string                          `json:"selectedFactIds,omitempty"`
 	ProfileEvidence *profiledocument.Document         `json:"-"`
 	Answers         []qualificationAnswer             `json:"qualificationAnswers,omitempty"`
 	JobContext      json.RawMessage                   `json:"jobContext,omitempty"`
@@ -95,14 +96,16 @@ func (a app) generate(w http.ResponseWriter, r *http.Request) {
 	d := json.NewDecoder(r.Body)
 	var raw map[string]json.RawMessage
 	if d.Decode(&raw) != nil {
-		writeError(w, 400, "input")
+		status, outcome = 400, "input"
+		writeError(w, status, outcome)
 		return
 	}
 	var evidence *profiledocument.Document
 	if value, ok := raw["profileEvidence"]; ok {
 		doc, err := qualificationmatching.Projection(value)
 		if err != nil {
-			writeError(w, 400, "input")
+			status, outcome = 400, "input"
+			writeError(w, status, outcome)
 			return
 		}
 		evidence = &doc
@@ -121,6 +124,27 @@ func (a app) generate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	in.ProfileEvidence = evidence
+	if len(in.SelectedFactIDs) > 500 {
+		status, outcome = 400, "input"
+		writeError(w, status, outcome)
+		return
+	}
+	for _, id := range in.SelectedFactIDs {
+		found := false
+		if evidence != nil {
+			for _, f := range evidence.Facts {
+				if f.ID == id {
+					found = true
+					break
+				}
+			}
+		}
+		if !found {
+			status, outcome = 400, "input"
+			writeError(w, status, outcome)
+			return
+		}
+	}
 	var trailing any
 	if d.Decode(&trailing) != io.EOF || strings.TrimSpace(in.JobPosting) == "" || len(in.JobPosting) > 30<<10 || !profilevalidation.Valid(in.Profile, 12<<10) || len(in.Answers) > 100 || len(in.Confirmed) > 100 || (len(in.JobContext) == 0 && len(in.Confirmed) > 25) ||
 		(in.Qualifications != nil && !profilevalidation.ValidQualifications(*in.Qualifications)) {
@@ -350,6 +374,21 @@ func exactFields(raw json.RawMessage, expected ...string) bool {
 	return true
 }
 func completeInputShape(raw map[string]json.RawMessage) bool {
+	if ids, ok := raw["selectedFactIds"]; ok {
+		if !jsonArray(ids) {
+			return false
+		}
+		var values []json.RawMessage
+		if json.Unmarshal(ids, &values) != nil {
+			return false
+		}
+		for _, v := range values {
+			if !jsonString(v) {
+				return false
+			}
+		}
+	}
+
 	if value, ok := raw["qualificationAnswers"]; ok {
 		if !jsonArray(value) {
 			return false
@@ -366,7 +405,7 @@ func completeInputShape(raw map[string]json.RawMessage) bool {
 	}
 
 	for key := range raw {
-		if key != "repository" && key != "jobPosting" && key != "confirmedQualifications" && key != "qualifications" && key != "cvLanguage" && key != "jobContext" && key != "qualificationAnswers" {
+		if key != "selectedFactIds" && key != "repository" && key != "jobPosting" && key != "confirmedQualifications" && key != "qualifications" && key != "cvLanguage" && key != "jobContext" && key != "qualificationAnswers" {
 			return false
 		}
 	}

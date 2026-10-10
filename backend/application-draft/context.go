@@ -3,9 +3,9 @@ package applicationdraft
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
-	"unicode"
 
 	"professional-information-repo/internal/profiledocument"
 	"professional-information-repo/internal/qualificationmatching"
@@ -30,18 +30,9 @@ type contextUnit struct {
 // Lexical selection is a candidate heuristic, never semantic support. Keep
 // negative and uncertain evidence conservatively, even without a lexical hit.
 func relevance(value, job string) int {
-	words := func(s string) map[string]bool {
-		out := map[string]bool{}
-		for _, w := range strings.FieldsFunc(strings.ToLower(s), func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsNumber(r) && r != '+' && r != '#' }) {
-			if len(w) > 1 {
-				out[w] = true
-			}
-		}
-		return out
-	}
-	terms := words(job)
+	terms := qualificationmatching.LexicalTerms(job)
 	score := 0
-	for w := range words(value) {
+	for w := range qualificationmatching.LexicalTerms(value) {
 		if terms[w] {
 			score++
 		}
@@ -94,6 +85,9 @@ func draftProjection(in request, job string) ([]any, contextSelection) {
 			for _, f := range group {
 				refs = append(refs, fmt.Sprintf("%s/%s@%d", doc.ID, f.ID, f.Revision))
 				score += relevance(string(f.Value), job)
+				if slices.Contains(in.SelectedFactIDs, f.ID) {
+					score += 20000
+				}
 				// Skills and formal qualifications are useful structured candidates even
 				// when terminology differs. Their inclusion does not establish a match.
 				if f.Field == "skills" || f.Field == "competencies" || f.Field == "tools" {

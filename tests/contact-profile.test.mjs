@@ -206,8 +206,10 @@ test("draft requests use approved canonical evidence and preserve coverage discl
       undefined,
       [],
       doc,
+      ["skill"],
     )
     assert.equal(sent.profileEvidence.facts[0].id, "skill")
+    assert.deepEqual(sent.selectedFactIds,["skill"])
     assert.deepEqual(result.contextSelection, contextSelection)
     assert.ok(result.coverLetter.endsWith("Ada Lovelace"))
     assert.equal(JSON.stringify(doc), before)

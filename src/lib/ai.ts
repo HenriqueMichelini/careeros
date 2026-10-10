@@ -62,6 +62,7 @@ export async function generateMaterials(
     userContext: string
   }[] = [],
   profileDocument?: ProfileDocument,
+  selectedFactIds: string[] = [],
 ): Promise<GeneratedMaterials> {
   if (!validQualifications(repo)) throw new ApplicationDraftError("input")
   let response: Response
@@ -80,7 +81,10 @@ export async function generateMaterials(
         confirmedQualifications,
         cvLanguage,
         ...(profileDocument
-          ? { profileEvidence: qualificationProjection(profileDocument) }
+          ? {
+              profileEvidence: qualificationProjection(profileDocument),
+              selectedFactIds: [...new Set(selectedFactIds)],
+            }
           : {}),
         ...(jobContext ? { jobContext } : {}),
         ...(qualificationAnswers.length ? { qualificationAnswers } : {}),

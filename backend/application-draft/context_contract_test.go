@@ -118,3 +118,39 @@ func TestDraftRejectsPrivateCanonicalEvidenceBeforeProvider(t *testing.T) {
 		t.Fatalf("%d %s", w.Code, w.Body.String())
 	}
 }
+
+func TestDraftRetainsAssessedParaphraseWithoutLexicalOverlap(t *testing.T) {
+	raw, _ := os.ReadFile("../../docs/evaluations/qualification-evidence/cases.json")
+	var corpus struct {
+		Cases []struct {
+			ID       string
+			Document json.RawMessage
+		}
+	}
+	json.Unmarshal(raw, &corpus)
+	var input map[string]any
+	json.Unmarshal([]byte(syntheticDraftInput), &input)
+	for _, c := range corpus.Cases {
+		if c.ID == "project-not-employment" {
+			input["profileEvidence"] = c.Document
+		}
+	}
+	input["jobPosting"] = "Ruby development required."
+	input["selectedFactIds"] = []string{"p-java"}
+	data, _ := json.Marshal(input)
+	client := &http.Client{Transport: providerTransport(func(r *http.Request) (*http.Response, error) {
+		body, _ := io.ReadAll(r.Body)
+		if !strings.Contains(string(body), "p-java") || !strings.Contains(string(body), "p-name") {
+			t.Error("assessed evidence and project context lost")
+		}
+		return providerDraft("I use Java."), nil
+	})}
+	req := httptest.NewRequest("POST", "/api/application-draft", strings.NewReader(string(data)))
+	req.Header.Set("X-OpenAI-Api-Key", "sk-test")
+	req.Header.Set("X-TypeSafe-Api-Key", "synthetic")
+	w := httptest.NewRecorder()
+	applicationdraft.NewHandlerWithClient(client).ServeHTTP(w, req)
+	if w.Code != 200 {
+		t.Fatalf("%d %s", w.Code, w.Body.String())
+	}
+}
