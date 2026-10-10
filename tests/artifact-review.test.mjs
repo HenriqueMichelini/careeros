@@ -48,6 +48,7 @@ const review = {
       state: "supported",
       concerns: [],
       nonfactual: false,
+      scope: "career",
     },
     {
       field: "greeting",
@@ -57,6 +58,7 @@ const review = {
       state: "supported",
       concerns: [],
       nonfactual: true,
+      scope: "nonfactual",
     },
     {
       field: "body",
@@ -66,6 +68,7 @@ const review = {
       state: "uncertain",
       concerns: ["missing_citations"],
       nonfactual: false,
+      scope: "career",
     },
     {
       field: "applicationAnswers",
@@ -75,9 +78,12 @@ const review = {
       state: "supported",
       concerns: [],
       nonfactual: false,
+      scope: "career",
     },
   ],
 }
+review.claims[0].scope = "job"
+review.claims[3].sources = [{ profileId: "p", id: "skill", revision: 1 }]
 test("one unresolved artifact blocks whole-draft acceptance; corrections own evidence and signature", () => {
   assert.throws(() => acceptArtifacts(review, doc), /unresolved/)
   const corrected = correctArtifact(
@@ -109,6 +115,7 @@ test("missing required answer cannot be removed to bypass its concern", () => {
 test("parser rejects incomplete coverage and forged job citations", () => {
   const raw = structuredClone(review)
   raw.claims[3].state = "uncertain"
+  raw.claims[3].sources = []
   const output = {
     jobTitle: null,
     company: null,
@@ -154,4 +161,31 @@ test("parser rejects incomplete coverage and forged job citations", () => {
     ),
     null,
   )
+})
+
+test("EN/PT candidate and employer assertions cannot use the wrong source family", () => {
+  for (const text of ["I use Java.", "Eu uso Java."]) {
+    const wrong = structuredClone(review)
+    wrong.claims[2] = {
+      ...wrong.claims[2],
+      text,
+      state: "supported",
+      scope: "career",
+      concerns: [],
+      jobSources: review.claims[0].jobSources,
+    }
+    assert.throws(() => acceptArtifacts(wrong, doc), /unresolved/)
+  }
+  for (const text of ["The employer uses Java.", "A empresa usa Java."]) {
+    const wrong = structuredClone(review)
+    wrong.claims[2] = {
+      ...wrong.claims[2],
+      text,
+      state: "supported",
+      scope: "job",
+      concerns: [],
+      sources: review.claims[3].sources,
+    }
+    assert.throws(() => acceptArtifacts(wrong, doc), /unresolved/)
+  }
 })

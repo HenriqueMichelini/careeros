@@ -23,8 +23,11 @@ saved-name signature remain outside generation/support assertions. An independen
 bounded check returns supported/uncertain/unsupported judgments, selected Profile
 fact/revision references, and exact UTF-8 byte ranges/quotes from the original Job
 Posting. Ordinary greetings and nonfactual connective wording need no citations.
-Candidate assertions need career support, employer/role assertions need Job Posting
-support, and mixed statements need both. The checker is fallible; references are
+Each independent judgment classifies its assertion scope as career, job, mixed or
+nonfactual. Server and browser both enforce the appropriate citation family:
+candidate assertions need career support, employer/role assertions need Job Posting
+support, and mixed statements need both. Scope classification is itself fallible;
+wrong-domain citations cannot upgrade a correctly classified factual assertion. The checker is fallible; references are
 traceability rather than semantic proof.
 
 The resume's existing guards are reused for career assertions: missing/stale
@@ -105,3 +108,19 @@ legacy controls do not exercise the new support call; the new HTTP/browser contr
 above do. The saved report is local `/tmp/issue-48-semantic-controlled.json`.
 No live provider accuracy, cost/latency improvement or deployed behavior was measured.
 The milestone's final release gate remains #52.
+
+## Independent review and remediation
+
+Standards: no documented-standard violation; one duplicated source-display smell.
+The career source/context display is now shared by both review panels, retaining
+identity, referenced ownership, education, proficiency and accepted excerpts.
+
+Spec: one source-domain enforcement finding. An either-source test could allow a
+candidate assertion with Job Posting citations alone (or an employer assertion
+with Profile citations alone). The support response now explicitly classifies
+assertion scope. Required citation families are enforced by both server and
+frontend acceptance. EN/PT wrong-domain regressions, missing-source mixed claims
+and a valid mixed-source statement pass. Ordinary greetings stay citation-free.
+
+Full checks passed before review; focused handler/type/acceptance checks and
+browser/export regressions were repeated after these changes.

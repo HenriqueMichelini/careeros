@@ -26,6 +26,7 @@ export interface ArtifactClaim {
   state: "supported" | "uncertain" | "unsupported"
   concerns: string[]
   nonfactual: boolean
+  scope: "career" | "job" | "mixed" | "nonfactual" | "unknown" | "user"
   removed?: boolean
   userSupport?: {
     original: string
@@ -67,12 +68,32 @@ function fieldText(claims: ArtifactClaim[], field: ArtifactField) {
     .map((c) => c.text)
     .join("\n\n")
 }
+export function artifactClaimResolved(c: ArtifactClaim): boolean {
+  if (c.state !== "supported" || c.concerns.length) return false
+  if (c.userSupport)
+    return (
+      c.scope === "user" &&
+      c.userSupport.evidence === c.text &&
+      !c.sources.length &&
+      !c.jobSources.length
+    )
+  if (
+    !["career", "job", "mixed", "nonfactual"].includes(c.scope) ||
+    c.nonfactual !== (c.scope === "nonfactual")
+  )
+    return false
+  if ((c.scope === "career" || c.scope === "mixed") && !c.sources.length)
+    return false
+  if ((c.scope === "job" || c.scope === "mixed") && !c.jobSources.length)
+    return false
+  return true
+}
 export function acceptArtifacts(
   review: ArtifactReview,
   doc: ProfileDocument | null,
 ): AcceptedArtifacts {
   if (!artifactsCurrent(review, doc)) throw Error("stale")
-  if (review.claims.some((c) => !c.removed && c.state !== "supported"))
+  if (review.claims.some((c) => !c.removed && !artifactClaimResolved(c)))
     throw Error("unresolved")
   const text = (field: ArtifactField) => fieldText(review.claims, field)
   if (!text("jobSummary") || !text("applicationAnswers"))
@@ -116,6 +137,7 @@ export function correctArtifact(
     concerns: [],
     removed: false,
     nonfactual: false,
+    scope: "user",
     userSupport: {
       original: original.userSupport?.original ?? original.text,
       evidence: text,
@@ -208,6 +230,7 @@ export function parseArtifactReview(
       c.text.length > 20000 ||
       !["supported", "uncertain", "unsupported"].includes(c.state) ||
       typeof c.nonfactual !== "boolean" ||
+      !["career", "job", "mixed", "nonfactual", "unknown"].includes(c.scope) ||
       !Array.isArray(c.concerns) ||
       c.concerns.some((s) => typeof s !== "string" || s.length > 1000) ||
       !Array.isArray(c.sources) ||
@@ -220,9 +243,7 @@ export function parseArtifactReview(
       return null
     if (
       c.state === "supported" &&
-      (r.check !== "complete" ||
-        c.concerns.length ||
-        (!c.nonfactual && !c.sources.length && !c.jobSources.length))
+      (r.check !== "complete" || c.concerns.length || !artifactClaimResolved(c))
     )
       return null
     if (

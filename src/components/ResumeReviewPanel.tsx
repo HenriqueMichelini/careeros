@@ -1,3 +1,4 @@
+import CareerSourceSupport from "./CareerSourceSupport"
 import { useState } from "react"
 import { useI18n } from "../lib/store"
 import {
@@ -78,7 +79,11 @@ export default function ResumeReviewPanel({
                     className="space-y-2 border p-3 border-[var(--color-border)]"
                   >
                     <p className="text-xs uppercase tracking-wide">
-                      {t(claim.userSupport ? "resumeReview.userAuthored" : ("resumeReview." + claim.state) as TranslationKey)}
+                      {t(
+                        claim.userSupport
+                          ? "resumeReview.userAuthored"
+                          : ("resumeReview." + claim.state) as TranslationKey,
+                      )}
                     </p>
                     <p className="text-sm whitespace-pre-wrap break-words">
                       {claim.text}
@@ -88,8 +93,16 @@ export default function ResumeReviewPanel({
                         {claim.concerns.map((concern, i) => (
                           <li key={i}>
                             {t("resumeReview.concern")}:{" "}
-                            {t(("resumeReview.reason." + concern) as TranslationKey) === "resumeReview.reason." + concern
-                              ? concern : t(("resumeReview.reason." + concern) as TranslationKey)}
+                            {t(
+                              ("resumeReview.reason." +
+                                concern) as TranslationKey,
+                            ) ===
+                            "resumeReview.reason." + concern
+                              ? concern
+                              : t(
+                                  ("resumeReview.reason." +
+                                    concern) as TranslationKey,
+                                )}
                           </li>
                         ))}
                       </ul>
@@ -104,47 +117,11 @@ export default function ResumeReviewPanel({
                           {claim.userSupport.evidence}
                         </p>
                       ) : (
-                        claim.sources.map((ref, i) => {
-                          const fact = draft.facts.find(
-                            (f) =>
-                              f.id === ref.id && f.revision === ref.revision,
-                          )
-                          return (
-                            <div key={i} className="mt-2 break-words">
-                              <p className="text-xs">
-                                {ref.id} · {t("resumeReview.revision")}{" "}
-                                {ref.revision}
-                              </p>
-                              {fact ? (
-                                <>
-                                  <p className="whitespace-pre-wrap">
-                                    {String(fact.value)}
-                                  </p>
-                                  <p className="text-xs text-[var(--color-muted-fg)]">
-                                    {t("resumeReview.context")}: {draft.facts.filter(f =>
-                                      (f.owner.id !== draft.sourceSnapshot.id && (f.owner.id === fact.owner.id || fact.context.some(c => c.id === f.owner.id))) &&
-                                      ["company", "title", "startDate", "endDate", "name", "institution", "degree", "proficiency"].includes(f.field)
-                                    ).map(f => String(f.value)).join(" · ") || t("resumeReview.generalContext")}
-                                  </p>
-                                  {fact.evidence.map((e) => (
-                                    <blockquote
-                                      key={e.id}
-                                      className="ml-3 border-l pl-3 whitespace-pre-wrap border-[var(--color-border)]"
-                                    >
-                                      {e.excerpt}
-                                    </blockquote>
-                                  ))}
-                                </>
-                              ) : (
-                                <p>
-                                  {t(
-                                    "resumeReview.reason.invalid_or_stale_citation",
-                                  )}
-                                </p>
-                              )}
-                            </div>
-                          )
-                        })
+                        <CareerSourceSupport
+                          sources={claim.sources}
+                          facts={draft.facts}
+                          profileId={draft.sourceSnapshot.id}
+                        />
                       )}
                     </details>
                     <div className="flex flex-wrap gap-2">

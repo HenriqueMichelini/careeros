@@ -53,6 +53,13 @@ func TestArtifactSupportGuardsAndAnswerOmission(t *testing.T) {
 		{"metric", "I improved throughput by 40%.", true, "", nil, "invented_number"},
 		{"proficiency", "I am fluent in Java.", true, "", nil, "stronger_claim"},
 		{"missing career support", "I use Java.", false, "", nil, "missing_citations"},
+		{"Portuguese candidate using only job evidence", "Eu uso Java.", false, "Java developer.", nil, "missing_career_support"},
+		{"employer using only career evidence", "The employer uses Java.", true, "", nil, "missing_job_support"},
+		{"employer Portuguese using only career evidence", "A empresa usa Java.", true, "", nil, "missing_job_support"},
+		{"mixed missing career", "I use Java for this role.", false, "Java developer.", nil, "missing_career_support"},
+		{"mixed missing job", "Eu uso Java para esta vaga.", true, "", nil, "missing_job_support"},
+		{"mixed supported", "I use Java and am interested in the Java developer role.", true, "Java developer.", nil, "mixed_supported"},
+		{"candidate using only job evidence", "I use Java.", false, "Java developer.", nil, "missing_career_support"},
 		{"forged job excerpt", "I use Java.", true, "Invented employer", nil, "invalid_job_citation"},
 		{"Portuguese field omission", "Eu uso Java.", true, "", []string{"A resposta obrigatória omite Java."}, "A resposta obrigatória omite Java."},
 	} {
@@ -101,7 +108,14 @@ func TestArtifactSupportGuardsAndAnswerOmission(t *testing.T) {
 						}
 						jobs = append(jobs, map[string]any{"start": 0, "end": 15, "quote": quote})
 					}
-					judgments = append(judgments, map[string]any{"index": i, "state": "supported", "reason": "Controlled judgment.", "nonfactual": nonfactual, "sources": refs, "jobSources": jobs})
+					scope := artifactScope(b.Field)
+					if b.Field == "body" && strings.HasPrefix(tc.name, "employer") {
+						scope = "job"
+					}
+					if b.Field == "body" && strings.HasPrefix(tc.name, "mixed") {
+						scope = "mixed"
+					}
+					judgments = append(judgments, map[string]any{"index": i, "state": "supported", "reason": "Controlled judgment.", "nonfactual": nonfactual, "scope": scope, "sources": refs, "jobSources": jobs})
 				}
 				concerns := tc.concerns
 				if concerns == nil {
@@ -111,7 +125,19 @@ func TestArtifactSupportGuardsAndAnswerOmission(t *testing.T) {
 			})}
 			w := httptest.NewRecorder()
 			applicationdraft.NewHandlerWithClient(client).ServeHTTP(w, req)
-			if w.Code != 200 || !strings.Contains(w.Body.String(), tc.want) {
+			if tc.want == "mixed_supported" {
+				var result struct {
+					ArtifactReview struct {
+						Claims []struct{ Field, State string }
+					}
+				}
+				json.Unmarshal(w.Body.Bytes(), &result)
+				for _, c := range result.ArtifactReview.Claims {
+					if c.Field == "body" && c.State != "supported" {
+						t.Fatalf("valid mixed support lost: %d %s", w.Code, w.Body.String())
+					}
+				}
+			} else if w.Code != 200 || !strings.Contains(w.Body.String(), tc.want) {
 				t.Fatalf("guard missing: %d %s", w.Code, w.Body.String())
 			}
 		})
@@ -170,7 +196,7 @@ func TestApplicationAnswerEvidenceStaysRequestLocal(t *testing.T) {
 						posting := input["jobPosting"].(string)
 						jobs = append(jobs, map[string]any{"start": 0, "end": len(posting), "quote": posting})
 					}
-					judgments = append(judgments, map[string]any{"index": i, "state": "supported", "reason": "Exact supplied answer.", "nonfactual": b.Field == "greeting", "sources": refs, "jobSources": jobs})
+					judgments = append(judgments, map[string]any{"index": i, "state": "supported", "reason": "Exact supplied answer.", "nonfactual": b.Field == "greeting", "scope": artifactScope(b.Field), "sources": refs, "jobSources": jobs})
 				}
 				return completionResponse(map[string]any{"judgments": judgments, "answerConcerns": []string{}}), nil
 			})}
@@ -199,4 +225,14 @@ func TestApplicationAnswerEvidenceStaysRequestLocal(t *testing.T) {
 			}
 		})
 	}
+}
+
+func artifactScope(field string) string {
+	if field == "greeting" {
+		return "nonfactual"
+	}
+	if field == "body" || field == "applicationAnswers" {
+		return "career"
+	}
+	return "job"
 }

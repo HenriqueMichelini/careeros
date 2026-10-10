@@ -1,8 +1,10 @@
+import CareerSourceSupport from "./CareerSourceSupport"
 import { useState } from "react"
 import { useI18n } from "../lib/store"
 import type { ProfileDocument } from "../lib/profileDocument"
 import {
   acceptArtifacts,
+  artifactClaimResolved,
   artifactsCurrent,
   correctArtifact,
   removeArtifactClaim,
@@ -33,7 +35,7 @@ export default function ArtifactReviewPanel({
   const ready =
     current &&
     index === null &&
-    draft.claims.every((c) => c.removed || c.state === "supported")
+    draft.claims.every((c) => c.removed || artifactClaimResolved(c))
   const button =
     "border px-3 py-2 text-xs disabled:opacity-40 border-[var(--color-border)]"
   return (
@@ -97,44 +99,11 @@ export default function ArtifactReviewPanel({
                         </p>
                       ) : (
                         <>
-                          {c.sources.map((ref, n) => {
-                            const f = draft.facts.find(
-                              (f) =>
-                                f.id === ref.id && f.revision === ref.revision,
-                            )
-                            return (
-                              <div key={n} className="mt-2">
-                                <p>
-                                  {ref.id} · {t("resumeReview.revision")}{" "}
-                                  {ref.revision}: {String(f?.value ?? "")}
-                                </p>
-                                <p>
-                                  {draft.facts
-                                    .filter(
-                                      (x) =>
-                                        x.owner.id === f?.owner.id &&
-                                        [
-                                          "company",
-                                          "title",
-                                          "name",
-                                          "startDate",
-                                          "endDate",
-                                        ].includes(x.field),
-                                    )
-                                    .map((x) => String(x.value))
-                                    .join(" · ")}
-                                </p>
-                                {f?.evidence.map((e) => (
-                                  <blockquote
-                                    key={e.id}
-                                    className="border-l pl-3"
-                                  >
-                                    {e.excerpt}
-                                  </blockquote>
-                                ))}
-                              </div>
-                            )
-                          })}
+                          <CareerSourceSupport
+                            sources={c.sources}
+                            facts={draft.facts}
+                            profileId={draft.sourceSnapshot.id}
+                          />
                           {c.jobSources.map((s, n) => (
                             <blockquote
                               key={n}

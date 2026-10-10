@@ -146,6 +146,12 @@ export function reviewedDraftFixture(body, input) {
                       state: "supported",
                       concerns: [],
                       nonfactual: field === "greeting",
+                      scope:
+                        field === "greeting"
+                          ? "nonfactual"
+                          : ["body", "applicationAnswers"].includes(field)
+                            ? "career"
+                            : "job",
                       sources: ["body", "applicationAnswers"].includes(field)
                         ? [
                             {
