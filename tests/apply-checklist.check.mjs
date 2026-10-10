@@ -1,3 +1,4 @@
+import { reviewedDraftFixture } from "./reviewed-resume-fixture.mjs"
 import { jobContextFixture } from "./job-context-fixtures.mjs"
 import { savedProfileExpression } from "./profile-browser-storage.mjs"
 import { keyboardFlow } from "./keyboard-flow.mjs"
@@ -268,6 +269,7 @@ try {
         }),
       )
     }
+    if (body.resume && !body.resumeReview && status === 200) body = reviewedDraftFixture(body, await evaluate("JSON.parse(window.__pending[0].options.body)"))
     await evaluate(
       `window.__pending.shift().resolve(new Response(${JSON.stringify(JSON.stringify(body))}, { status: ${status}, headers: { 'Content-Type': 'application/json' } }))`,
     )
@@ -584,6 +586,11 @@ try {
             `document.querySelectorAll('.results-tabs button')[${index}].click()`,
           )
           await pause(100)
+          if (target === "resume") {
+            await until("!!document.querySelector('.resume-review')")
+            await evaluate("Array.from(document.querySelectorAll('.resume-review button')).find(b => /^(Accept resume|Aceitar currículo)$/.test(b.textContent.trim())).click()")
+            await until("!!document.querySelector('.cv-paper')")
+          }
           await evaluate(
             "window.__printed = null; window.print = () => { window.__printed = document.querySelector('.results-print-root').textContent; window.dispatchEvent(new Event('afterprint')); }",
           )

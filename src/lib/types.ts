@@ -66,6 +66,8 @@ export interface ProfessionalRepository {
 }
 
 export interface GeneratedMaterials {
+  resumeReview?: import("./resumeReview").ResumeReview
+  acceptedResume?: import("./resumeReview").AcceptedResume
   contextSelection?: {
     version: "application-context-v1"
     sources: string[]
@@ -74,7 +76,6 @@ export interface GeneratedMaterials {
     complete: boolean
     bytes: number
   }
-
 
   cvLanguage?: import("./i18n").Locale
   // null means the Job Posting did not supply this metadata.
@@ -88,7 +89,7 @@ export interface GeneratedMaterials {
 }
 
 export interface ProfileGap {
-  kind: 'skill' | 'experience'
+  kind: "skill" | "experience"
   requirement: string
   details: string
 }
@@ -99,4 +100,4 @@ export interface ConfirmedQualification {
   userContext: string
 }
 
-export type Page = 'landing' | 'home' | 'repository' | 'cv' | 'results'
+export type Page = "landing" | "home" | "repository" | "cv" | "results"

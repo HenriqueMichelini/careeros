@@ -1,15 +1,19 @@
+import ResumeReviewPanel from "../components/ResumeReviewPanel"
+import { resumeReviewCurrent } from "../lib/resumeReview"
 import { useEffect, useRef, useState } from "react"
 import { useI18n, useStore } from "../lib/store"
 import { Page } from "../lib/types"
 import { TranslationKey } from "../lib/i18n"
-import { parseResumeHeader } from "../lib/resume"
 import GeneratedResumePreview from "../components/GeneratedResumePreview"
 
 type Tab = "summary" | "resume" | "cover" | "answers"
 type PdfTarget = "resume" | "cover"
 const A4_HEIGHT_PX = (297 * 96) / 25.4
 
-const TABS: { id: Tab; labelKey: TranslationKey }[] = [
+const TABS: {
+ id: Tab
+ labelKey: TranslationKey
+}[] = [
   { id: "summary", labelKey: "results.summary" },
   { id: "resume", labelKey: "results.resume" },
   { id: "cover", labelKey: "results.coverLetter" },
@@ -46,7 +50,7 @@ interface Props {
 }
 
 export default function ResultsPage({ setPage }: Props) {
-  const { state } = useStore()
+  const { state, dispatch, profileDocument } = useStore()
   const { t } = useI18n()
   const [activeTab, setActiveTab] = useState<Tab>("summary")
   const [copied, setCopied] = useState(false)
@@ -58,7 +62,10 @@ export default function ResultsPage({ setPage }: Props) {
   useEffect(() => {
     return () => printCleanupRef.current?.()
   }, [])
-  useEffect(() => setPdfOverflow(false), [activeTab, materials?.resume, materials?.coverLetter])
+  useEffect(
+    () => setPdfOverflow(false),
+    [activeTab, materials?.resume, materials?.coverLetter],
+  )
 
   if (!materials) {
     return (
@@ -96,37 +103,61 @@ export default function ResultsPage({ setPage }: Props) {
     )
   }
 
+  const acceptedResume = materials.acceptedResume
+  const resumeUsable =
+    !!acceptedResume && resumeReviewCurrent(acceptedResume, profileDocument)
+  const resumeContent = acceptedResume?.markdown ?? ""
+  const resumeIdentity = acceptedResume?.identityProfile ?? state.repository
+
   const tabContent: Record<Tab, string> = {
     summary: materials.jobSummary,
-    resume: materials.resume,
+    resume: resumeContent,
     cover: materials.coverLetter,
     answers: materials.applicationAnswers,
   }
 
   function handleCopy() {
-    copyToClipboard(tabContent[activeTab])
+    if (activeTab === "resume" && !resumeUsable) return
+    const text =
+      activeTab === "resume"
+        ? [
+            resumeIdentity.fullName,
+            resumeIdentity.email,
+            resumeIdentity.phone,
+            resumeIdentity.location,
+            resumeIdentity.professionalLinks,
+            resumeContent,
+          ]
+            .filter(Boolean)
+            .join("\n\n")
+        : tabContent[activeTab]
+    copyToClipboard(text)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
 
   async function savePdf(target: PdfTarget) {
-    if (!materials) return
+    if (!materials || (target === "resume" && !resumeUsable)) return
     await document.fonts.ready
     let printContent: HTMLElement
     if (target === "resume") {
-      const paper = resumePreviewRef.current?.querySelector<HTMLElement>(".cv-paper")
+      const paper =
+        resumePreviewRef.current?.querySelector<HTMLElement>(".cv-paper")
       if (!paper) return
       const measure = paper.cloneNode(true) as HTMLElement
       measure.classList.add("cv-export-measure")
       measure.style.zoom = "1"
       document.body.append(measure)
-      const height = measure.querySelector<HTMLElement>(".cv-paper-content")?.getBoundingClientRect().height ?? 0
+      const height =
+        measure
+          .querySelector<HTMLElement>(".cv-paper-content")
+          ?.getBoundingClientRect().height ?? 0
       measure.remove()
       if (height > A4_HEIGHT_PX - 4) {
         setPdfOverflow(true)
         return
       }
-      printContent = paper.cloneNode(true) as HTMLElement
+      printContent = (paper.cloneNode(true) as HTMLElement)
     } else {
       const cover = document.querySelector<HTMLElement>(".results-cover-print")
       if (!cover) return
@@ -140,7 +171,7 @@ export default function ResultsPage({ setPage }: Props) {
         setPdfOverflow(true)
         return
       }
-      printContent = cover.cloneNode(true) as HTMLElement
+      printContent = (cover.cloneNode(true) as HTMLElement)
     }
     setPdfOverflow(false)
     printCleanupRef.current?.()
@@ -148,12 +179,24 @@ export default function ResultsPage({ setPage }: Props) {
     printRoot.className = "results-print-root"
     printRoot.append(printContent)
     document.body.append(printRoot)
-    const printClass = target === "resume" ? "results-print-resume" : "results-print-cover"
-    document.body.classList.remove("results-print-resume", "results-print-cover")
+    const printClass =
+      target === "resume" ? "results-print-resume" : "results-print-cover"
+    document.body.classList.remove(
+      "results-print-resume",
+      "results-print-cover",
+    )
     document.body.classList.add(printClass)
     const previousTitle = document.title
-    const name = state.repository.fullName.trim() || parseResumeHeader(materials.resume).name || materials.company || "CareerOS"
-    document.title = `${name} - ${target === "resume" ? "Resume" : "Cover Letter"}`
+    const name =
+      (target === "resume"
+        ? resumeIdentity
+        : state.repository
+      ).fullName.trim() ||
+      materials.company ||
+      "CareerOS"
+    document.title = `${name} - ${
+      target === "resume" ? "Resume" : "Cover Letter"
+    }`
     const finish = () => {
       window.removeEventListener("afterprint", finish)
       document.body.classList.remove(printClass)
@@ -334,74 +377,139 @@ export default function ResultsPage({ setPage }: Props) {
           </div>
         ) : activeTab === "resume" ? (
           <div>
-            <div className="results-toolbar mb-6 border-b pb-4" style={{ borderColor: "var(--color-border)" }}>
-              <div className="results-resume-actions flex min-h-10 items-center justify-end gap-3">
-              <button
-                onClick={() => savePdf("resume")}
-                className="inline-flex items-center gap-2 bg-[var(--color-accent)] px-3 py-1.5 text-xs uppercase tracking-widest text-white transition-opacity hover:opacity-85"
-                style={{ fontFamily: "var(--font-mono)" }}
-              >
-                <svg aria-hidden="true" width="15" height="16" viewBox="0 0 20 22" fill="none" stroke="currentColor" strokeWidth="1.7">
-                  <path d="M4 1.5h8l4 4V19a1.5 1.5 0 0 1-1.5 1.5h-10A1.5 1.5 0 0 1 3 19V3a1.5 1.5 0 0 1 1-1.5Z" />
-                  <path d="M12 1.5V6h4M6 15.5h8M6 12.5h8" />
-                </svg>
-                {t("results.savePdf")}
-              </button>
-              </div>
-            </div>
-            <div className="results-toolbar-advice mb-4 text-xs leading-relaxed text-[var(--color-muted-fg)]">
-              <p className="results-pdf-help">{t("results.pdfHelp")}</p>
-              {pdfOverflow && <p role="alert" className="mt-2 text-[var(--color-accent)]">{t("results.pdfOverflow")}</p>}
-            </div>
-            <div ref={resumePreviewRef}>
-              <GeneratedResumePreview
-                cvLanguage={materials.cvLanguage}
-                resume={materials.resume}
-                profile={state.repository}
-                onEditProfile={() => setPage("repository")}
+            {materials.resumeReview ? (
+              <ResumeReviewPanel
+                review={materials.resumeReview}
+                accepted={acceptedResume}
+                document={profileDocument}
+                onAccept={(review, accepted) =>
+                  dispatch({
+                    type: "SET_MATERIALS",
+                    payload: {
+                      ...materials,
+                      resumeReview: review,
+                      acceptedResume: accepted,
+                    },
+                  })
+                }
               />
-            </div>
-          </div>
-        ) : (
-          <div>
-            <div className="results-toolbar mb-6 border-b pb-4" style={{ borderColor: "var(--color-border)" }}>
-            <div className="results-other-actions flex min-h-10 items-center justify-end gap-3">
-              <button
-                onClick={handleCopy}
-                className="bg-[var(--color-fg)] px-3 py-1.5 text-xs uppercase tracking-widest text-white transition-opacity hover:opacity-85"
-                style={{ fontFamily: "var(--font-mono)" }}
-              >
-                {copied ? t("common.copied") : t("common.copyText")}
-              </button>
-              {activeTab === "cover" && (
+            ) : (
+              <p role="alert" className="mb-6">
+                {t("resumeReview.legacy")}
+              </p>
+            )}
+            <div
+              className="results-toolbar mb-6 border-b pb-4"
+              style={{ borderColor: "var(--color-border)" }}
+            >
+              <div className="results-resume-actions flex min-h-10 items-center justify-end gap-3">
                 <button
-                  onClick={() => savePdf("cover")}
-                  className="inline-flex items-center gap-2 bg-[var(--color-accent)] px-3 py-1.5 text-xs uppercase tracking-widest text-white transition-opacity hover:opacity-85"
+                  onClick={handleCopy}
+                  disabled={!resumeUsable}
+                  className="border px-3 py-1.5 text-xs disabled:opacity-40 border-[var(--color-border)]"
+                >
+                  {copied ? t("common.copied") : t("common.copyText")}
+                </button>
+                <button
+                  disabled={!resumeUsable}
+                  onClick={() => savePdf("resume")}
+                  className="inline-flex items-center gap-2 bg-[var(--color-accent)] px-3 py-1.5 text-xs uppercase tracking-widest text-white transition-opacity hover:opacity-85 disabled:opacity-40"
                   style={{ fontFamily: "var(--font-mono)" }}
                 >
-                  <svg aria-hidden="true" width="15" height="16" viewBox="0 0 20 22" fill="none" stroke="currentColor" strokeWidth="1.7">
+                  <svg
+                    aria-hidden="true"
+                    width="15"
+                    height="16"
+                    viewBox="0 0 20 22"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                  >
                     <path d="M4 1.5h8l4 4V19a1.5 1.5 0 0 1-1.5 1.5h-10A1.5 1.5 0 0 1 3 19V3a1.5 1.5 0 0 1 1-1.5Z" />
                     <path d="M12 1.5V6h4M6 15.5h8M6 12.5h8" />
                   </svg>
                   {t("results.savePdf")}
                 </button>
+              </div>
+            </div>
+            <div className="results-toolbar-advice mb-4 text-xs leading-relaxed text-[var(--color-muted-fg)]">
+              <p className="results-pdf-help">{t("results.pdfHelp")}</p>
+              {pdfOverflow && (
+                <p role="alert" className="mt-2 text-[var(--color-accent)]">
+                  {t("results.pdfOverflow")}
+                </p>
               )}
             </div>
+            {acceptedResume && (
+              <div ref={resumePreviewRef}>
+                <GeneratedResumePreview
+                  cvLanguage={acceptedResume.cvLanguage}
+                  resume={resumeContent}
+                  profile={resumeIdentity}
+                  onEditProfile={() => setPage("repository")}
+                />
+              </div>
+            )}
+          </div>
+        ) : (
+          <div>
+            <div
+              className="results-toolbar mb-6 border-b pb-4"
+              style={{ borderColor: "var(--color-border)" }}
+            >
+              <div className="results-other-actions flex min-h-10 items-center justify-end gap-3">
+                <button
+                  onClick={handleCopy}
+                  className="bg-[var(--color-fg)] px-3 py-1.5 text-xs uppercase tracking-widest text-white transition-opacity hover:opacity-85"
+                  style={{ fontFamily: "var(--font-mono)" }}
+                >
+                  {copied ? t("common.copied") : t("common.copyText")}
+                </button>
+                {activeTab === "cover" && (
+                  <button
+                    onClick={() => savePdf("cover")}
+                    className="inline-flex items-center gap-2 bg-[var(--color-accent)] px-3 py-1.5 text-xs uppercase tracking-widest text-white transition-opacity hover:opacity-85"
+                    style={{ fontFamily: "var(--font-mono)" }}
+                  >
+                    <svg
+                      aria-hidden="true"
+                      width="15"
+                      height="16"
+                      viewBox="0 0 20 22"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                    >
+                      <path d="M4 1.5h8l4 4V19a1.5 1.5 0 0 1-1.5 1.5h-10A1.5 1.5 0 0 1 3 19V3a1.5 1.5 0 0 1 1-1.5Z" />
+                      <path d="M12 1.5V6h4M6 15.5h8M6 12.5h8" />
+                    </svg>
+                    {t("results.savePdf")}
+                  </button>
+                )}
+              </div>
             </div>
             {activeTab === "cover" && (
               <div className="results-toolbar-advice mb-4 text-xs leading-relaxed text-[var(--color-muted-fg)]">
                 <p>{t("results.pdfHelp")}</p>
-                {(materials.coverLetterHasSignature === false || (materials.coverLetterHasSignature === undefined && !state.repository.fullName?.trim())) && (
+                {(materials.coverLetterHasSignature === false ||
+                  (materials.coverLetterHasSignature === undefined &&
+                    !state.repository.fullName?.trim())) && (
                   <p className="mt-2">{t("results.coverSignatureMissing")}</p>
                 )}
-                {pdfOverflow && <p role="alert" className="mt-2 text-[var(--color-accent)]">{t("results.coverPdfOverflow")}</p>}
+                {pdfOverflow && (
+                  <p role="alert" className="mt-2 text-[var(--color-accent)]">
+                    {t("results.coverPdfOverflow")}
+                  </p>
+                )}
               </div>
             )}
             <MarkdownContent content={tabContent[activeTab]} />
           </div>
         )}
       </div>
-      <div className="results-cover-print" aria-hidden="true">{materials.coverLetter}</div>
+      <div className="results-cover-print" aria-hidden="true">
+        {materials.coverLetter}
+      </div>
     </div>
   )
 }

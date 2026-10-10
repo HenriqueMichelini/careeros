@@ -1,3 +1,4 @@
+import { parseResumeReview } from "./resumeReview"
 import {
   qualificationProjection,
   parseRequirementMatches,
@@ -83,6 +84,7 @@ export async function generateMaterials(
         ...(profileDocument
           ? {
               profileEvidence: qualificationProjection(profileDocument),
+              reviewResume: true,
               selectedFactIds: [...new Set(selectedFactIds)],
             }
           : {}),
@@ -151,11 +153,24 @@ export async function generateMaterials(
     )
       throw new ApplicationDraftError("invalid_output")
   }
+  const resumeReview = profileDocument
+    ? parseResumeReview(
+        payload.resumeReview,
+        profileDocument,
+        repo,
+        cvLanguage,
+        payload.resume!,
+        confirmedQualifications,
+      )
+    : undefined
+  if (profileDocument && !resumeReview)
+    throw new ApplicationDraftError("invalid_output")
   const fullName = repo.fullName?.trim() || ""
   const coverLetter = completeCoverLetter(payload.coverLetter, fullName)
   if (coverLetter === null) throw new ApplicationDraftError("invalid_output")
   return {
     ...payload,
+    resumeReview: resumeReview ?? undefined,
     cvLanguage,
     coverLetter,
     coverLetterHasSignature: !!fullName,

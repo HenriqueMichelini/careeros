@@ -175,7 +175,8 @@ const messages = {
       "Generation failed. Check your API key and try again.",
     "jobContext.review": "Review job understanding",
     "jobContext.source": "Original posting excerpt",
-    "jobContext.disclosure": "Check the details used for tailoring. Source excerpts show where an interpretation came from; they do not guarantee it is correct.",
+    "jobContext.disclosure":
+      "Check the details used for tailoring. Source excerpts show where an interpretation came from; they do not guarantee it is correct.",
     "jobContext.jobTitle": "Role",
     "jobContext.company": "Company",
     "jobContext.seniority": "Seniority",
@@ -187,8 +188,10 @@ const messages = {
     "jobContext.required": "Explicitly required",
     "jobContext.preferred": "Explicitly preferred",
     "jobContext.unspecified": "Importance not specified",
-    "jobContext.edit": "To correct an interpretation, go back, edit the original posting and analyze again.",
-    "jobContext.stale": "This job context could not be verified for the current inputs. Your posting is preserved. Analyze again to continue.",
+    "jobContext.edit":
+      "To correct an interpretation, go back, edit the original posting and analyze again.",
+    "jobContext.stale":
+      "This job context could not be verified for the current inputs. Your posting is preserved. Analyze again to continue.",
     "home.jobErrorCapacity":
       "This job posting exceeds the preparation capacity. Try a smaller portion and submit again. Your text and saved Profile are unchanged.",
     "home.gapErrorInput":
@@ -762,8 +765,59 @@ const messages = {
     "results.noResultsDescription":
       "Go to Apply, paste a job opportunity, and click Generate Materials.",
     "results.goToApply": "Go to Apply",
-    "results.contextSelected": "Drafted from selected career evidence. Relevance selection may miss useful information; review each material before use.",
-    "results.contextLimited": "Some career evidence did not fit the draft context budget. Review every material for missing information and unsupported claims before use.",
+    "resumeReview.context": "Context",
+    "resumeReview.generalContext": "General career information",
+    "resumeReview.cancel": "Cancel",
+    "resumeReview.title": "Review resume evidence",
+    "resumeReview.limits":
+      "Support checks can be wrong. References show sources, not proof of truth. Only this resume is checked; review the other draft materials separately.",
+    "resumeReview.stale":
+      "Your Profile changed. The previous resume and its sources are preserved. Generate a new draft before accepting, copying or exporting.",
+    "resumeReview.edit": "Review wording",
+    "resumeReview.unavailable":
+      "The support check was unavailable. Nothing was accepted. Remove unresolved wording or supply your own correction. No automatic retry was made.",
+    "resumeReview.supported": "Supported by cited evidence",
+    "resumeReview.uncertain": "Uncertain support",
+    "resumeReview.unsupported": "Unsupported assertion",
+    "resumeReview.concern": "Concern",
+    "resumeReview.support": "View original support",
+    "resumeReview.userAuthored": "Your supplied assertion",
+    "resumeReview.revision": "revision",
+    "resumeReview.correct": "Supply correction",
+    "resumeReview.remove": "Remove statement",
+    "resumeReview.correctionLabel": "Your corrected factual statement",
+    "resumeReview.correctionHelp":
+      "Write only what you can personally support. Using this correction records the complete statement as your supplied evidence for this draft only. It replaces the old citations and does not change your Profile.",
+    "resumeReview.correctionError":
+      "Use one plain-text statement, without formatting, up to 2,000 characters.",
+    "resumeReview.useCorrection": "Use my statement as evidence",
+    "resumeReview.acceptHelp":
+      "Accept the resume only after reviewing its wording and original support. Resolve every uncertain or unsupported statement first.",
+    "resumeReview.accept": "Accept resume",
+    "resumeReview.reset": "Restore draft wording",
+    "resumeReview.lastAccepted":
+      "The preview and export actions still use your last accepted resume. Pending edits are not included.",
+    "resumeReview.accepted":
+      "Accepted resume. Preview, copy and PDF use this wording.",
+    "resumeReview.legacy":
+      "This older resume has no claim-level review. Generate a new draft to review and export its resume. Other materials remain available.",
+    "resumeReview.reason.missing_citations": "No supporting fact was cited.",
+    "resumeReview.reason.invalid_or_stale_citation":
+      "A cited fact is missing, stale or outside the selected evidence.",
+    "resumeReview.reason.invalidated_support":
+      "The cited support was invalidated.",
+    "resumeReview.reason.protected_fact_or_qualifier_changed":
+      "A protected fact, negation or qualifier changed.",
+    "resumeReview.reason.cross_owner_combination":
+      "This statement combines evidence from different roles or projects.",
+    "resumeReview.reason.invented_number":
+      "A numeric outcome or date is absent from the cited facts.",
+    "resumeReview.reason.stronger_claim":
+      "This wording adds unsupported seniority or proficiency.",
+    "results.contextSelected":
+      "Drafted from selected career evidence. Relevance selection may miss useful information; review each material before use.",
+    "results.contextLimited":
+      "Some career evidence did not fit the draft context budget. Review every material for missing information and unsupported claims before use.",
     "results.generatedApplication": "Generated Application",
     "results.applicationMaterials": "Application Materials",
     "results.newApplication": "New Application",
@@ -961,7 +1015,8 @@ const messages = {
       "Falha ao gerar. Verifique sua chave API e tente novamente.",
     "jobContext.review": "Revisar entendimento da vaga",
     "jobContext.source": "Trecho original da vaga",
-    "jobContext.disclosure": "Confira os detalhes usados na personalização. Os trechos mostram a origem de uma interpretação; não garantem que esteja correta.",
+    "jobContext.disclosure":
+      "Confira os detalhes usados na personalização. Os trechos mostram a origem de uma interpretação; não garantem que esteja correta.",
     "jobContext.jobTitle": "Cargo",
     "jobContext.company": "Empresa",
     "jobContext.seniority": "Senioridade",
@@ -973,8 +1028,10 @@ const messages = {
     "jobContext.required": "Explicitamente obrigatório",
     "jobContext.preferred": "Explicitamente desejável",
     "jobContext.unspecified": "Importância não especificada",
-    "jobContext.edit": "Para corrigir uma interpretação, volte, edite o texto original da vaga e analise novamente.",
-    "jobContext.stale": "Não foi possível verificar o contexto da vaga para os dados atuais. Seu texto foi preservado. Analise novamente para continuar.",
+    "jobContext.edit":
+      "Para corrigir uma interpretação, volte, edite o texto original da vaga e analise novamente.",
+    "jobContext.stale":
+      "Não foi possível verificar o contexto da vaga para os dados atuais. Seu texto foi preservado. Analise novamente para continuar.",
     "home.jobErrorCapacity":
       "Esta vaga excede a capacidade de preparação. Tente um trecho menor e envie novamente. Seu texto e Perfil salvo permanecem inalterados.",
     "home.gapErrorInput":
@@ -1555,8 +1612,60 @@ const messages = {
     "results.noResultsDescription":
       "Acesse Aplicar, cole uma oportunidade e clique em Gerar materiais.",
     "results.goToApply": "Ir para Aplicar",
-    "results.contextSelected": "Gerado com evidências profissionais selecionadas. A seleção pode deixar informações úteis de fora; revise cada material antes de usar.",
-    "results.contextLimited": "Algumas evidências profissionais não couberam no limite de contexto. Revise cada material para identificar omissões e afirmações sem suporte antes de usar.",
+    "resumeReview.context": "Contexto",
+    "resumeReview.generalContext": "Informações profissionais gerais",
+    "resumeReview.cancel": "Cancelar",
+    "resumeReview.title": "Revisar evidências do currículo",
+    "resumeReview.limits":
+      "As verificações podem errar. Referências indicam fontes, não comprovam a veracidade. Apenas este currículo é verificado; revise os outros materiais separadamente.",
+    "resumeReview.stale":
+      "Seu Perfil mudou. O currículo anterior e suas fontes foram preservados. Gere um novo rascunho antes de aceitar, copiar ou exportar.",
+    "resumeReview.edit": "Revisar texto",
+    "resumeReview.unavailable":
+      "A verificação de suporte ficou indisponível. Nada foi aceito. Remova o texto pendente ou forneça sua correção. Não houve tentativa automática.",
+    "resumeReview.supported": "Com suporte nas evidências citadas",
+    "resumeReview.uncertain": "Suporte incerto",
+    "resumeReview.unsupported": "Afirmação sem suporte",
+    "resumeReview.concern": "Pendência",
+    "resumeReview.support": "Ver suporte original",
+    "resumeReview.userAuthored": "Afirmação fornecida por você",
+    "resumeReview.revision": "revisão",
+    "resumeReview.correct": "Fornecer correção",
+    "resumeReview.remove": "Remover afirmação",
+    "resumeReview.correctionLabel": "Sua afirmação factual corrigida",
+    "resumeReview.correctionHelp":
+      "Escreva apenas o que você pode sustentar pessoalmente. Usar esta correção registra a afirmação completa como evidência fornecida por você apenas neste rascunho. Ela substitui as citações anteriores e não altera seu Perfil.",
+    "resumeReview.correctionError":
+      "Use uma afirmação em texto simples, sem formatação, com até 2.000 caracteres.",
+    "resumeReview.useCorrection": "Usar minha afirmação como evidência",
+    "resumeReview.acceptHelp":
+      "Aceite o currículo após revisar o texto e seu suporte original. Resolva primeiro todas as afirmações incertas ou sem suporte.",
+    "resumeReview.accept": "Aceitar currículo",
+    "resumeReview.reset": "Restaurar texto do rascunho",
+    "resumeReview.lastAccepted":
+      "A prévia e as exportações ainda usam seu último currículo aceito. As edições pendentes não estão incluídas.",
+    "resumeReview.accepted":
+      "Currículo aceito. Prévia, cópia e PDF usam este texto.",
+    "resumeReview.legacy":
+      "Este currículo anterior não tem revisão por afirmação. Gere um novo rascunho para revisar e exportar o currículo. Os outros materiais continuam disponíveis.",
+    "resumeReview.reason.missing_citations":
+      "Nenhum fato de suporte foi citado.",
+    "resumeReview.reason.invalid_or_stale_citation":
+      "Um fato citado está ausente, desatualizado ou fora das evidências selecionadas.",
+    "resumeReview.reason.invalidated_support":
+      "O suporte citado foi invalidado.",
+    "resumeReview.reason.protected_fact_or_qualifier_changed":
+      "Um fato protegido, uma negação ou uma ressalva foi alterado.",
+    "resumeReview.reason.cross_owner_combination":
+      "Esta afirmação combina evidências de cargos ou projetos diferentes.",
+    "resumeReview.reason.invented_number":
+      "Um resultado numérico ou uma data não consta nos fatos citados.",
+    "resumeReview.reason.stronger_claim":
+      "Este texto acrescenta senioridade ou proficiência sem suporte.",
+    "results.contextSelected":
+      "Gerado com evidências profissionais selecionadas. A seleção pode deixar informações úteis de fora; revise cada material antes de usar.",
+    "results.contextLimited":
+      "Algumas evidências profissionais não couberam no limite de contexto. Revise cada material para identificar omissões e afirmações sem suporte antes de usar.",
     "results.generatedApplication": "Candidatura gerada",
     "results.applicationMaterials": "Materiais de candidatura",
     "results.newApplication": "Nova candidatura",
