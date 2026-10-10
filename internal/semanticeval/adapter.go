@@ -22,17 +22,25 @@ import (
 func Hash(raw []byte) string { h := sha256.Sum256(raw); return hex.EncodeToString(h[:]) }
 
 type Call struct {
-	Provider            string `json:"provider"`
-	Model               string `json:"model"`
-	Reasoning           any    `json:"reasoning"`
-	MaxCompletionTokens any    `json:"maxCompletionTokens,omitempty"`
-	PromptHash          string `json:"promptHash"`
-	SchemaHash          string `json:"schemaHash"`
-	RequestHash         string `json:"requestHash"`
-	Status              int    `json:"status"`
-	ReturnedModel       string `json:"returnedModel,omitempty"`
+	InstructionPrefixHash string  `json:"first256InstructionCharactersHash"`
+	Provider              string  `json:"provider"`
+	Model                 string  `json:"model"`
+	Reasoning             any     `json:"reasoning"`
+	MaxCompletionTokens   any     `json:"maxCompletionTokens,omitempty"`
+	PromptHash            string  `json:"promptHash"`
+	SchemaHash            string  `json:"schemaHash"`
+	RequestHash           string  `json:"requestHash"`
+	Status                int     `json:"status"`
+	ReturnedModel         string  `json:"returnedModel,omitempty"`
+	DurationMS            float64 `json:"durationMs"`
+	InputTokens           *int64  `json:"inputTokens"`
+	OutputTokens          *int64  `json:"outputTokens"`
+	ReasoningTokens       *int64  `json:"reasoningTokensSubsetOfOutput"`
+	CachedTokens          *int64  `json:"cachedTokensSubsetOfInput"`
+	CacheWriteTokens      *int64  `json:"cacheWriteTokensSubsetOfInput"`
 }
 type RunResult struct {
+	Steps           []RunResult            `json:"steps,omitempty"`
 	Diagnostics     *aidiagnostics.Attempt `json:"diagnostics,omitempty"`
 	ID              string                 `json:"id"`
 	Task            string                 `json:"task"`
@@ -53,6 +61,9 @@ type transport struct {
 	calls     []Call
 	index     int
 	outputs   []json.RawMessage
+	config    *Configuration
+	budget    *Budget
+	envelopes []json.RawMessage
 }
 
 const openAIHost = "api.openai.com"
@@ -72,36 +83,57 @@ func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if err = json.Unmarshal(raw, &body); err != nil {
 		return nil, err
 	}
-	t.calls = append(t.calls, providerCall(host, raw, body))
-	if t.mode == "live" {
-		return t.liveResponse(req, host)
+	if t.budget != nil {
+		if t.budget.Used >= t.budget.Limit {
+			return nil, fmt.Errorf("provider call budget exhausted")
+		}
+		t.budget.Used++
 	}
-	return t.controlledResponse(host, body)
+	if t.config != nil && host == openAIHost {
+		body["model"] = t.config.Model
+		body["reasoning_effort"] = t.config.Reasoning
+		raw, err = json.Marshal(body)
+		if err != nil {
+			return nil, err
+		}
+		req = req.Clone(req.Context())
+		req.Body = io.NopCloser(bytes.NewReader(raw))
+		req.ContentLength = int64(len(raw))
+	}
+	t.calls = append(t.calls, providerCall(host, raw, body))
+	started := time.Now()
+	var response *http.Response
+	if t.mode == "live" {
+		response, err = http.DefaultTransport.RoundTrip(req)
+	} else {
+		response, err = t.controlledResponse(host, body)
+	}
+	if err == nil {
+		err = t.captureResponse(response, host)
+	}
+	t.calls[len(t.calls)-1].DurationMS = float64(time.Since(started).Microseconds()) / 1000
+	return response, err
 }
 func providerCall(host string, raw []byte, body map[string]any) Call {
 	digest := func(value any) string { encoded, _ := json.Marshal(value); return Hash(encoded) }
 	model, _ := body["model"].(string)
 	call := Call{Provider: host, Model: model, Reasoning: body["reasoning_effort"], MaxCompletionTokens: body["max_completion_tokens"], PromptHash: digest(body["messages"]), SchemaHash: digest(body["response_format"]), RequestHash: Hash(raw)}
+	if messages, ok := body["messages"].([]any); ok && len(messages) > 0 {
+		if message, ok := messages[0].(map[string]any); ok {
+			if content, ok := message["content"].(string); ok {
+				prefix := []rune(content)
+				call.InstructionPrefixHash = Hash([]byte(string(prefix[:min(256, len(prefix))])))
+			}
+		}
+	}
 	if host == typeSafeHost {
 		call.PromptHash = digest(body["questions"])
 		call.SchemaHash = call.PromptHash
 	}
 	return call
 }
-func (t *transport) liveResponse(req *http.Request, host string) (*http.Response, error) {
-	response, err := http.DefaultTransport.RoundTrip(req)
-	if err != nil {
-		return nil, err
-	}
+func (t *transport) captureResponse(response *http.Response, host string) error {
 	t.calls[len(t.calls)-1].Status = response.StatusCode
-	if response.StatusCode == http.StatusOK && host == openAIHost {
-		if err = t.captureCompletion(response); err != nil {
-			return nil, err
-		}
-	}
-	return response, nil
-}
-func (t *transport) captureCompletion(response *http.Response) error {
 	body, err := io.ReadAll(io.LimitReader(response.Body, (1<<20)+1))
 	response.Body.Close()
 	if err != nil {
@@ -110,13 +142,28 @@ func (t *transport) captureCompletion(response *http.Response) error {
 	response.Body = io.NopCloser(bytes.NewReader(body))
 	var envelope struct {
 		Model   string          `json:"model"`
+		Usage   json.RawMessage `json:"usage"`
 		Choices json.RawMessage `json:"choices"`
 	}
 	if json.Unmarshal(body, &envelope) != nil {
 		return nil
 	}
-	t.calls[len(t.calls)-1].ReturnedModel = envelope.Model
-	if len(envelope.Choices) > 0 {
+	call := &t.calls[len(t.calls)-1]
+	call.ReturnedModel = safeEvaluationModel(envelope.Model)
+	inputKey, outputKey := "prompt_tokens", "completion_tokens"
+	if host == typeSafeHost {
+		inputKey, outputKey = "input_tokens", "output_tokens"
+	}
+	call.InputTokens, call.OutputTokens, call.ReasoningTokens, call.CachedTokens = aidiagnostics.Usage(envelope.Usage, inputKey, outputKey)
+	var usage struct {
+		Prompt struct {
+			Writes *int64 `json:"cache_write_tokens"`
+		} `json:"prompt_tokens_details"`
+	}
+	if json.Unmarshal(envelope.Usage, &usage) == nil && usage.Prompt.Writes != nil && *usage.Prompt.Writes >= 0 {
+		call.CacheWriteTokens = usage.Prompt.Writes
+	}
+	if len(envelope.Choices) > 0 && t.mode == "live" {
 		t.outputs = append(t.outputs, envelope.Choices)
 	}
 	return nil
@@ -129,7 +176,11 @@ func (t *transport) controlledResponse(host string, body map[string]any) (*http.
 		if t.index >= len(t.responses) {
 			return nil, fmt.Errorf("controlled response sequence exhausted")
 		}
-		response = map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": string(t.responses[t.index])}}}}
+		envelope := map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]string{"content": string(t.responses[t.index])}}}}
+		if t.index < len(t.envelopes) {
+			_ = json.Unmarshal(t.envelopes[t.index], &envelope)
+		}
+		response = envelope
 		t.index++
 	}
 	encoded, _ := json.Marshal(response)
@@ -162,6 +213,10 @@ func controlledDecision(body map[string]any) any {
 // Run invokes the same public HTTP contracts used by the application. Controlled
 // responses exercise parsing, grounding and filtering; they measure no model.
 func Run(c Case, mode, openAIKey, typeSafeKey string) (RunResult, error) {
+	return run(c, mode, openAIKey, typeSafeKey, nil, nil)
+}
+
+func run(c Case, mode, openAIKey, typeSafeKey string, config *Configuration, budget *Budget) (RunResult, error) {
 	result := RunResult{ID: c.ID, Task: c.Task, Split: c.Split, Language: c.Language, Mode: mode, Role: c.Role}
 	if mode != "controlled" && mode != "live" {
 		return result, fmt.Errorf("unknown evidence mode")
@@ -169,7 +224,13 @@ func Run(c Case, mode, openAIKey, typeSafeKey string) (RunResult, error) {
 	if mode == "live" && (openAIKey == "" || (c.Task != "cv_generation" && typeSafeKey == "")) {
 		return result, fmt.Errorf("live provider credentials required")
 	}
-	t := &transport{mode: mode, responses: c.Provider}
+	if budget != nil {
+		if budget.Used >= budget.Limit || budget.WorkflowLimit > 0 && budget.Workflows >= budget.WorkflowLimit {
+			return result, fmt.Errorf("evaluation budget exhausted")
+		}
+		budget.Workflows++
+	}
+	t := &transport{mode: mode, responses: c.Provider, config: config, budget: budget, envelopes: c.ProviderEnvelopes}
 	client := &http.Client{Transport: t, Timeout: 55 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	var handler http.Handler
 	var path string
