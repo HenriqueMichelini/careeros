@@ -79,6 +79,41 @@ export interface RequirementMatch {
   complete: boolean
   excluded: number
 }
+function matchesProfileFact(
+  fact: QualificationFact,
+  doc: ProfileDocument,
+): boolean {
+  const original = doc.facts.find(
+    (f) => f.id === fact.id && f.revision === fact.revision,
+  )
+  return !(
+    !original ||
+    (original.approval !== "approved" &&
+      !(
+        original.kind === "legacy_block" &&
+        original.origin.kind === "existing_profile"
+      )) ||
+    JSON.stringify(original.value) !== JSON.stringify(fact.value) ||
+    JSON.stringify(original.owner) !== JSON.stringify(fact.owner) ||
+    JSON.stringify(original.context) !== JSON.stringify(fact.context) ||
+    JSON.stringify(original.temporal) !== JSON.stringify(fact.temporal) ||
+    original.field !== fact.field ||
+    original.assertion !== fact.assertion ||
+    original.intent !== fact.intent ||
+    original.certainty !== fact.certainty ||
+    !Array.isArray(fact.evidence) ||
+    fact.evidence.some(
+      (e) =>
+        !doc.evidence.some(
+          (o) =>
+            o.id === e.id &&
+            o.revision === e.revision &&
+            o.excerpt === e.excerpt,
+        ),
+    )
+  )
+}
+
 export function parseRequirementMatches(
   value: unknown,
   doc: ProfileDocument,
@@ -120,37 +155,7 @@ export function parseRequirementMatches(
     seen.add(m.requirementIndex)
     const ids = new Set<string>()
     for (const fact of m.facts) {
-      const original = doc.facts.find(
-        (f) => f.id === fact.id && f.revision === fact.revision,
-      )
-      if (
-        !original ||
-        ids.has(fact.id) ||
-        (original.approval !== "approved" &&
-          !(
-            original.kind === "legacy_block" &&
-            original.origin.kind === "existing_profile"
-          )) ||
-        JSON.stringify(original.value) !== JSON.stringify(fact.value) ||
-        JSON.stringify(original.owner) !== JSON.stringify(fact.owner) ||
-        JSON.stringify(original.context) !== JSON.stringify(fact.context) ||
-        JSON.stringify(original.temporal) !== JSON.stringify(fact.temporal) ||
-        original.field !== fact.field ||
-        original.assertion !== fact.assertion ||
-        original.intent !== fact.intent ||
-        original.certainty !== fact.certainty ||
-        !Array.isArray(fact.evidence) ||
-        fact.evidence.some(
-          (e) =>
-            !doc.evidence.some(
-              (o) =>
-                o.id === e.id &&
-                o.revision === e.revision &&
-                o.excerpt === e.excerpt,
-            ),
-        )
-      )
-        return null
+      if (ids.has(fact.id) || !matchesProfileFact(fact, doc)) return null
       ids.add(fact.id)
     }
     if (

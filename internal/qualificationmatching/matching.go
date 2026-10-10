@@ -3,11 +3,12 @@
 package qualificationmatching
 
 import (
-	_ "embed"
+	_ "embed" // Embeds the shared qualification field policy.
 	"encoding/json"
 	"errors"
 	"professional-information-repo/internal/jobcontext"
 	"professional-information-repo/internal/profiledocument"
+	"slices"
 	"sort"
 	"strings"
 	"unicode"
@@ -67,12 +68,7 @@ func Projection(raw []byte) (profiledocument.Document, error) {
 				kind = e.Kind
 			}
 		}
-		permitted := false
-		for _, field := range allowed[kind] {
-			if field == f.Field {
-				permitted = true
-			}
-		}
+		permitted := slices.Contains(allowed[kind], f.Field)
 		if !permitted || (f.Approval != "approved" && !(f.Kind == "legacy_block" && f.Origin.Kind == "existing_profile")) {
 			return doc, errors.New("private or unapproved fact")
 		}

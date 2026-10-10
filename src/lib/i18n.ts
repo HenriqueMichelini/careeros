@@ -1,3 +1,5 @@
+import qualificationMessages from "./qualificationMessages.json"
+
 export const SUPPORTED_LOCALES = ["en", "pt-BR"] as const
 
 export type Locale = typeof SUPPORTED_LOCALES[number]
@@ -5,6 +7,7 @@ export type TranslationValue = string | number
 
 const messages = {
   en: {
+    ...qualificationMessages.en,
     "profile.facts.context": "Context",
     "profile.facts.removeContext": "Remove context",
     "profile.facts.title": "Fact details and context",
@@ -170,23 +173,9 @@ const messages = {
     "home.viewPreviousResults": "View Previous Results →",
     "home.generationFailed":
       "Generation failed. Check your API key and try again.",
-    "requirementEvidence.linkedContext": "Linked role/project",
-    "requirementEvidence.contextUnavailable": "Context identity not available in selected evidence",
-    "requirementEvidence.title": "Requirement support",
-    "requirementEvidence.supported": "Supported",
-    "requirementEvidence.partially_supported": "Partially supported",
-    "requirementEvidence.not_evidenced": "Not evidenced in your Profile",
-    "requirementEvidence.needs_clarification": "Needs clarification",
-    "requirementEvidence.incomplete":
-      "Incomplete analysis: {{count}} Profile facts were excluded by the context limit. This does not establish absence of a qualification.",
-    "requirementEvidence.inspect": "Inspect Profile evidence and context",
-    "requirementEvidence.traceability":
-      "Review the cited facts alongside their role/project context and any conflicting evidence. References show origin, not proof of truth.",
-    "requirementEvidence.cited": "Cited support",
     "jobContext.review": "Review job understanding",
     "jobContext.source": "Original posting excerpt",
-    "jobContext.disclosure":
-      "Check the details used for tailoring. Source excerpts show where an interpretation came from; they do not guarantee it is correct.",
+    "jobContext.disclosure": "Check the details used for tailoring. Source excerpts show where an interpretation came from; they do not guarantee it is correct.",
     "jobContext.jobTitle": "Role",
     "jobContext.company": "Company",
     "jobContext.seniority": "Seniority",
@@ -198,10 +187,8 @@ const messages = {
     "jobContext.required": "Explicitly required",
     "jobContext.preferred": "Explicitly preferred",
     "jobContext.unspecified": "Importance not specified",
-    "jobContext.edit":
-      "To correct an interpretation, go back, edit the original posting and analyze again.",
-    "jobContext.stale":
-      "This job context could not be verified for the current inputs. Your posting is preserved. Analyze again to continue.",
+    "jobContext.edit": "To correct an interpretation, go back, edit the original posting and analyze again.",
+    "jobContext.stale": "This job context could not be verified for the current inputs. Your posting is preserved. Analyze again to continue.",
     "home.jobErrorCapacity":
       "This job posting exceeds the preparation capacity. Try a smaller portion and submit again. Your text and saved Profile are unchanged.",
     "home.gapErrorInput":
@@ -804,6 +791,7 @@ const messages = {
       "This cover letter exceeds one A4 page. Generate a shorter draft before saving it as PDF.",
   },
   "pt-BR": {
+    ...qualificationMessages["pt-BR"],
     "profile.facts.context": "Contexto",
     "profile.facts.removeContext": "Remover contexto",
     "profile.facts.title": "Detalhes e contexto dos fatos",
@@ -969,24 +957,9 @@ const messages = {
     "home.viewPreviousResults": "Ver resultados anteriores →",
     "home.generationFailed":
       "Falha ao gerar. Verifique sua chave API e tente novamente.",
-    "requirementEvidence.linkedContext": "Cargo/projeto vinculado",
-    "requirementEvidence.contextUnavailable": "Identidade do contexto indisponível nas evidências selecionadas",
-    "requirementEvidence.title": "Evidências dos requisitos",
-    "requirementEvidence.supported": "Com evidência",
-    "requirementEvidence.partially_supported": "Com evidência parcial",
-    "requirementEvidence.not_evidenced": "Sem evidência no seu Perfil",
-    "requirementEvidence.needs_clarification": "Precisa de esclarecimento",
-    "requirementEvidence.incomplete":
-      "Análise incompleta: {{count}} fatos do Perfil foram excluídos pelo limite de contexto. Isso não demonstra ausência de qualificação.",
-    "requirementEvidence.inspect":
-      "Inspecionar evidências e contexto do Perfil",
-    "requirementEvidence.traceability":
-      "Revise os fatos citados com seu contexto de cargo/projeto e possíveis contradições. Referências mostram a origem, não comprovam a veracidade.",
-    "requirementEvidence.cited": "Evidência citada",
     "jobContext.review": "Revisar entendimento da vaga",
     "jobContext.source": "Trecho original da vaga",
-    "jobContext.disclosure":
-      "Confira os detalhes usados na personalização. Os trechos mostram a origem de uma interpretação; não garantem que esteja correta.",
+    "jobContext.disclosure": "Confira os detalhes usados na personalização. Os trechos mostram a origem de uma interpretação; não garantem que esteja correta.",
     "jobContext.jobTitle": "Cargo",
     "jobContext.company": "Empresa",
     "jobContext.seniority": "Senioridade",
@@ -998,10 +971,8 @@ const messages = {
     "jobContext.required": "Explicitamente obrigatório",
     "jobContext.preferred": "Explicitamente desejável",
     "jobContext.unspecified": "Importância não especificada",
-    "jobContext.edit":
-      "Para corrigir uma interpretação, volte, edite o texto original da vaga e analise novamente.",
-    "jobContext.stale":
-      "Não foi possível verificar o contexto da vaga para os dados atuais. Seu texto foi preservado. Analise novamente para continuar.",
+    "jobContext.edit": "Para corrigir uma interpretação, volte, edite o texto original da vaga e analise novamente.",
+    "jobContext.stale": "Não foi possível verificar o contexto da vaga para os dados atuais. Seu texto foi preservado. Analise novamente para continuar.",
     "home.jobErrorCapacity":
       "Esta vaga excede a capacidade de preparação. Tente um trecho menor e envie novamente. Seu texto e Perfil salvo permanecem inalterados.",
     "home.gapErrorInput":

@@ -110,3 +110,10 @@ groups facts by owner, renders linked context identities, adds a bilingual
 two-employer browser case and shares the allowlist through fields.json.
 
 Both correction reviews reported no remaining actionable findings.
+
+The first PR SonarCloud analysis failed its duplication gate on repeated
+translation-key structure. The messages were moved unchanged into a JSON
+resource, and canonical fact validation was extracted into a named helper.
+Both independent correction reviews found no actionable issues. The full Go
+and Node suites, TypeScript check, frozen evaluation replay (13/13 controlled
+final decisions), and EN/PT browser flows at 1440px and 390px passed again.
