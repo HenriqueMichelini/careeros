@@ -39,7 +39,10 @@ export interface CuratedCv {
   version: 1 | 2
   sourceProfileId?: string
   summarySources?: CvResult["summary"]
-  context?: { reference: ProfileRef value: unknown }[]
+  context?: {
+    reference: ProfileRef
+    value: unknown
+  }[]
   density?: CvDensity
   choices?: CvChoices
   repository: ProfessionalRepository
