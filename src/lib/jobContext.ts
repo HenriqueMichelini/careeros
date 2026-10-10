@@ -1,5 +1,5 @@
 export const JOB_CONTEXT_VERSION =
-  "job-context-v1/prompt-v1/schema-v1/gpt-6-luna/none/jev-rubric-v1/policy-v1"
+  "job-context-v2/prompt-v1/schema-v1/gpt-6-luna/none/jev-rubric-v1/policy-v1"
 export interface OriginalExcerpt {
   start: number
   end: number

@@ -1,14 +1,19 @@
 import {
+  qualificationProjection,
   hasQualificationEvidence,
   type RequirementMatch,
 } from "../lib/qualificationEvidence"
 import RequirementEvidenceReview from "../components/RequirementEvidenceReview"
-import type { JobContext } from "../lib/jobContext"
+import {
+  JOB_CONTEXT_VERSION,
+  parseJobContext,
+  type JobContext,
+} from "../lib/jobContext"
 import JobContextReview from "../components/JobContextReview"
 import type { FieldDecision } from "../lib/fieldDecision"
 import type { TranslationKey } from "../lib/i18n"
 import LanguageSelector from "../components/LanguageSelector"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { useI18n, useStore } from "../lib/store"
 import {
   ApplicationDraftError,
@@ -20,6 +25,7 @@ import {
 import { ConfirmedQualification, Page, ProfileGap } from "../lib/types"
 
 interface Props {
+  active: boolean
   setPage: (p: Page) => void
 }
 
@@ -99,7 +105,7 @@ function StatusRow({
   )
 }
 
-export default function HomePage({ setPage }: Props) {
+export default function HomePage({ setPage, active }: Props) {
   const { state, dispatch, profileDocument } = useStore()
   const [requirementMatches, setRequirementMatches] =
     useState<RequirementMatch[]>([])
@@ -121,26 +127,60 @@ export default function HomePage({ setPage }: Props) {
     kind: "request_rephrasing" | "reject_attack"
   } | null>(null)
   const requestId = useRef(0)
-  const inputs = JSON.stringify([
-    state.repository,
-    profileDocument,
+  const controller = useRef<AbortController | null>(null)
+  // Match citations include exact Profile document/owner revisions, even when a
+  // manual edit changes only private fields. Recheck those matches conservatively;
+  // the separately retained job-only context has no Profile dependency.
+  const analysisKey = JSON.stringify([
+    JOB_CONTEXT_VERSION,
+    "qualification-evidence-v2/prompt-v2/schema-v1/gpt-6-luna/none",
+    profileDocument
+      ? qualificationProjection(profileDocument)
+      : state.repository,
     state.jobPosting,
+    state.applicationRevision,
+  ])
+  const completedKey = useRef<string | null>(null)
+  const jobKey = JSON.stringify([state.jobPosting, state.applicationRevision])
+  const inputs = JSON.stringify([
+    analysisKey,
     state.apiKey,
     state.typesafeKey,
     state.cvLanguage,
   ])
+  function cancelRequest() {
+    requestId.current += 1
+    controller.current?.abort()
+    controller.current = null
+    dispatch({ type: "SET_GENERATING", payload: false })
+    setQualification((current) =>
+      current.state === "processing" ? { state: "pending" } : current,
+    )
+    setDraft((current) =>
+      current.state === "processing" ? { state: "pending" } : current,
+    )
+  }
   useEffect(() => {
-    setJobDecision(null)
     setJobContext(null)
+    setJobDecision(null)
+  }, [jobKey])
+  useEffect(() => {
+    setRevisionRequiredFor(null)
+  }, [state.applicationRevision])
+  useEffect(() => {
+    completedKey.current = null
     setRequirementMatches([])
+    setProfileGaps([])
+    setConfirmedGapIndices(new Set())
+    setGapNotes({})
     setQualification({ state: "pending" })
-    setDraft({ state: "pending" })
     setShowGapPrompt(false)
-    return () => {
-      requestId.current += 1
-      dispatch({ type: "SET_GENERATING", payload: false })
-    }
-  }, [inputs, dispatch])
+  }, [analysisKey])
+  useLayoutEffect(() => {
+    cancelRequest()
+    setDraft({ state: "pending" })
+    return cancelRequest
+  }, [inputs, active, dispatch])
   const isCheckingRequirements = qualification.state === "processing"
   const failure = qualification.error || draft.error
   const jobOutcome =
@@ -164,6 +204,8 @@ export default function HomePage({ setPage }: Props) {
         : "")
 
   function recordFailure(error: unknown, step: "qualification" | "draft") {
+    if (error instanceof QualificationGapsError && error.jobContext)
+      setJobContext(error.jobContext)
     if (error instanceof JobPostingValidationError) {
       setJobDecision(error.decision)
       if (
@@ -186,7 +228,7 @@ export default function HomePage({ setPage }: Props) {
         ? error.code as keyof typeof draftErrorTranslationKeys
         : "outage"
     if (code === "job_context_stale") {
-      setJobContext(null)
+      completedKey.current = null
       setShowGapPrompt(false)
       setQualification({ state: "failed", error: code })
       setDraft({ state: "pending" })
@@ -213,9 +255,31 @@ export default function HomePage({ setPage }: Props) {
     jobPosting.trim() !== revisionRequiredFor?.text &&
     !state.isGenerating
 
-  async function handleGenerate() {
+  async function handleGenerate(discardAnalysis = false) {
     if (!canGenerate) return
+    if (discardAnalysis) {
+      completedKey.current = null
+      setJobContext(null)
+      setShowGapPrompt(false)
+    }
+    if (
+      !discardAnalysis &&
+      completedKey.current === analysisKey &&
+      jobContext
+    ) {
+      if (!parseJobContext(jobContext, jobPosting)) {
+        recordFailure(
+          new QualificationGapsError("job_context_stale"),
+          "qualification",
+        )
+        return
+      }
+      setShowGapPrompt(true)
+      setQualification({ state: "confirmation" })
+      return
+    }
     setJobDecision(null)
+    controller.current = new AbortController()
     const id = ++requestId.current
     dispatch({ type: "SET_GENERATING", payload: true })
     setQualification({ state: "processing" })
@@ -229,8 +293,11 @@ export default function HomePage({ setPage }: Props) {
         state.typesafeKey,
         true,
         profileDocument ?? undefined,
+        controller.current.signal,
+        discardAnalysis ? undefined : (jobContext ?? undefined),
       )
       if (id !== requestId.current) return
+      completedKey.current = analysisKey
       setJobContext(analysis.jobContext)
       setProfileGaps(analysis.gaps)
       setRequirementMatches(analysis.matches ?? [])
@@ -265,6 +332,7 @@ export default function HomePage({ setPage }: Props) {
         : []
 
     setJobDecision(null)
+    controller.current = new AbortController()
     const id = ++requestId.current
     setQualification({ state: "complete" })
     setDraft({ state: "processing" })
@@ -290,6 +358,7 @@ export default function HomePage({ setPage }: Props) {
         ),
         profileDocument ?? undefined,
         requirementMatches.flatMap((match) => match.factIds),
+        controller.current.signal,
       )
       if (id !== requestId.current) return
       setDraft({ state: "complete" })
@@ -313,6 +382,9 @@ export default function HomePage({ setPage }: Props) {
       return next
     })
   }
+
+  // Keep the session hooks mounted across navigation, without inactive controls.
+  if (!active) return null
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-14">
@@ -528,7 +600,7 @@ export default function HomePage({ setPage }: Props) {
           )}
 
           <button
-            onClick={handleGenerate}
+            onClick={() => handleGenerate()}
             disabled={!canGenerate}
             className="w-full py-4 text-sm uppercase tracking-[0.2em] font-bold transition-colors"
             style={{
@@ -547,6 +619,25 @@ export default function HomePage({ setPage }: Props) {
                 : t("home.generateMaterials")}
           </button>
 
+          {state.isGenerating && (
+            <button
+              type="button"
+              onClick={cancelRequest}
+              className="mt-3 underline"
+            >
+              {t("home.cancel")}
+            </button>
+          )}
+          {failure === "job_context_stale" && (
+            <button
+              type="button"
+              className="mt-3 underline"
+              onClick={() => handleGenerate(true)}
+              disabled={!canGenerate}
+            >
+              {t("home.reanalyze")}
+            </button>
+          )}
           {state.isGenerating && (
             <p
               className="text-xs text-center mt-3 leading-relaxed"
@@ -617,7 +708,7 @@ export default function HomePage({ setPage }: Props) {
         </div>
       </div>
 
-      {showGapPrompt && jobContext && (
+      {active && showGapPrompt && jobContext && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 p-4"
           onMouseDown={(event) => {
@@ -661,15 +752,16 @@ export default function HomePage({ setPage }: Props) {
               </div>
               <button
                 type="button"
-                onClick={dismissConfirmation}
-                disabled={state.isGenerating}
+                onClick={
+                  state.isGenerating ? cancelRequest : dismissConfirmation
+                }
                 className="text-xs uppercase tracking-[0.12em] pt-1 transition-opacity hover:opacity-60 disabled:opacity-40"
                 style={{
                   fontFamily: "var(--font-mono)",
                   color: "var(--color-muted-fg)",
                 }}
               >
-                {t("home.backToPosting")}
+                {t(state.isGenerating ? "home.cancel" : "home.backToPosting")}
               </button>
             </div>
 

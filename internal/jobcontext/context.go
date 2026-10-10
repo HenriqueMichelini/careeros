@@ -13,10 +13,9 @@ import (
 
 	"professional-information-repo/internal/fieldvalidation"
 	"professional-information-repo/internal/preprocessing"
-	"professional-information-repo/internal/profilevalidation"
 )
 
-const Version = "job-context-v1/prompt-v1/schema-v1/gpt-6-luna/none/jev-rubric-v1/policy-v1"
+const Version = "job-context-v2/prompt-v1/schema-v1/gpt-6-luna/none/jev-rubric-v1/policy-v1"
 
 type Reference struct {
 	SegmentID  string `json:"segmentId"`
@@ -65,10 +64,10 @@ type Context struct {
 	Job      ResolvedJob `json:"job"`
 }
 
-// InputsID invalidates the joint qualification/extraction result when any input
-// to that call changes. It is an identity checksum, not an authentication token.
-func InputsID(p profilevalidation.Profile, q *profilevalidation.Qualifications) string {
-	data, _ := json.Marshal([]any{p, q, Version, preprocessing.RulesVersion, preprocessing.StructureVersion, preprocessing.PlanningVersion, preprocessing.RepetitionVersion, "bounds-v1", fieldvalidation.Model})
+// InputsID identifies job-only policy dependencies. SourceID separately binds the
+// exact original and preparation. Neither checksum authenticates client artifacts.
+func InputsID() string {
+	data, _ := json.Marshal([]any{Version, preprocessing.RulesVersion, preprocessing.StructureVersion, preprocessing.PlanningVersion, preprocessing.RepetitionVersion, "bounds-v1", fieldvalidation.Model})
 	sum := sha256.Sum256(data)
 	return hex.EncodeToString(sum[:])
 }

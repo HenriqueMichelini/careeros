@@ -1,23 +1,23 @@
-import { useState } from 'react'
-import { StoreProvider } from './lib/store'
-import { Page } from './lib/types'
-import Layout from './components/Layout'
-import HomePage from './pages/HomePage'
-import RepositoryPage from './pages/RepositoryPage'
-import ResultsPage from './pages/ResultsPage'
-import CvPage from './pages/CvPage'
-import LandingPage from './pages/LandingPage'
+import { useState } from "react"
+import { StoreProvider } from "./lib/store"
+import { Page } from "./lib/types"
+import Layout from "./components/Layout"
+import HomePage from "./pages/HomePage"
+import RepositoryPage from "./pages/RepositoryPage"
+import ResultsPage from "./pages/ResultsPage"
+import CvPage from "./pages/CvPage"
+import LandingPage from "./pages/LandingPage"
 
 function AppInner() {
-  const [page, setPage] = useState<Page>('landing')
+  const [page, setPage] = useState<Page>("landing")
 
   return (
     <Layout page={page} setPage={setPage}>
-      {page === 'landing' && <LandingPage setPage={setPage} />}
-      {page === 'home' && <HomePage setPage={setPage} />}
-      {page === 'repository' && <RepositoryPage />}
-      {page === 'cv' && <CvPage />}
-      {page === 'results' && <ResultsPage setPage={setPage} />}
+      {page === "landing" && <LandingPage setPage={setPage} />}
+      {page === "repository" && <RepositoryPage />}
+      {page === "cv" && <CvPage />}
+      {page === "results" && <ResultsPage setPage={setPage} />}
+      <HomePage setPage={setPage} active={page === "home"} />
     </Layout>
   )
 }

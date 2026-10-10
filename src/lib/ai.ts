@@ -38,7 +38,10 @@ function checkJobDecision(payload: unknown) {
 }
 
 export class QualificationGapsError extends Error {
-  constructor(public readonly code: string) {
+  constructor(
+    public readonly code: string,
+    public readonly jobContext?: JobContext,
+  ) {
     super(code)
     this.name = "QualificationGapsError"
   }
@@ -65,6 +68,7 @@ export async function generateMaterials(
   }[] = [],
   profileDocument?: ProfileDocument,
   selectedFactIds: string[] = [],
+  signal?: AbortSignal,
 ): Promise<GeneratedMaterials> {
   if (!validQualifications(repo)) throw new ApplicationDraftError("input")
   let response: Response
@@ -93,9 +97,12 @@ export async function generateMaterials(
         ...(jobContext ? { jobContext } : {}),
         ...(qualificationAnswers.length ? { qualificationAnswers } : {}),
       }),
-      signal: AbortSignal.timeout(30_000),
+      signal: signal
+        ? AbortSignal.any([signal, AbortSignal.timeout(30_000)])
+        : AbortSignal.timeout(30_000),
     })
   } catch (error) {
+    signal?.throwIfAborted()
     throw new ApplicationDraftError(
       error instanceof DOMException && error.name === "TimeoutError"
         ? "timeout"
@@ -106,6 +113,7 @@ export async function generateMaterials(
     error?: unknown
     coverLetter?: unknown
   } & Partial<Omit<GeneratedMaterials, "coverLetter">> | null
+  signal?.throwIfAborted()
   checkJobDecision(payload)
   const known = new Set([
     "input",
@@ -213,6 +221,8 @@ export function findProfileGaps(
   typesafeKey: string,
   understandJob: true,
   profileDocument?: ProfileDocument,
+  signal?: AbortSignal,
+  jobContext?: JobContext,
 ): Promise<QualificationAnalysis>
 export async function findProfileGaps(
   repo: ProfessionalRepository,
@@ -221,6 +231,8 @@ export async function findProfileGaps(
   typesafeKey: string = "",
   understandJob = false,
   profileDocument?: ProfileDocument,
+  signal?: AbortSignal,
+  jobContext?: JobContext,
 ): Promise<ProfileGap[] | QualificationAnalysis> {
   if (!validQualifications(repo)) throw new QualificationGapsError("input")
   let response: Response
@@ -237,13 +249,20 @@ export async function findProfileGaps(
         qualifications: cvQualifications(repo),
         jobPosting,
         ...(understandJob ? { understandJob: true } : {}),
+        ...(jobContext ? { jobContext } : {}),
         ...(profileDocument
           ? { profileEvidence: qualificationProjection(profileDocument) }
           : {}),
       }),
-      signal: AbortSignal.timeout(profileDocument ? 55_000 : 30_000),
+      signal: signal
+        ? AbortSignal.any([
+            signal,
+            AbortSignal.timeout(profileDocument ? 55_000 : 30_000),
+          ])
+        : AbortSignal.timeout(profileDocument ? 55_000 : 30_000),
     })
   } catch (error) {
+    signal?.throwIfAborted()
     throw new QualificationGapsError(
       error instanceof DOMException && error.name === "TimeoutError"
         ? "timeout"
@@ -256,6 +275,7 @@ export async function findProfileGaps(
     jobContext?: unknown
     matches?: unknown
   } | null
+  signal?.throwIfAborted()
   checkJobDecision(payload)
   if (!response.ok) {
     const known = new Set([
@@ -272,6 +292,7 @@ export async function findProfileGaps(
       typeof payload?.error === "string" && known.has(payload.error)
         ? payload.error
         : "outage",
+      parseJobContext(payload?.jobContext, jobPosting) ?? undefined,
     )
   }
   if (

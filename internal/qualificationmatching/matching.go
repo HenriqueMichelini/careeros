@@ -14,7 +14,7 @@ import (
 	"unicode"
 )
 
-const Version = "qualification-evidence-v1"
+const Version = "qualification-evidence-v2"
 const DefaultBudget = 16 << 10
 
 //go:embed fields.json

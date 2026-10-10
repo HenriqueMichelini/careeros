@@ -209,7 +209,7 @@ func (a app) call(parent context.Context, key string, in request) (res result, c
 	var contextData []byte
 	if in.JobContext != nil {
 		artifact, err := jobcontext.DecodeContext(in.JobContext)
-		if err != nil || jobcontext.Validate(source, jobcontext.InputsID(in.Profile, in.Qualifications), artifact) != nil {
+		if err != nil || jobcontext.Validate(source, jobcontext.InputsID(), artifact) != nil {
 			return empty, "job_context_stale", errors.New("job context requires reanalysis")
 		}
 		contextData, _ = json.Marshal(artifact)

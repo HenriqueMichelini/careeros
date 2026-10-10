@@ -226,6 +226,9 @@ try {
   )
   await until("!!document.querySelector('[role=dialog]')")
   await evaluate("Array.from(document.querySelectorAll('[role=dialog] button')).at(-2).click()")
+  // The current Application Draft contract requires explicit artifact acceptance.
+  await until("!!document.querySelector('.artifact-review')")
+  await evaluate("Array.from(document.querySelectorAll('.artifact-review button')).find(b=>b.textContent.trim()==='Accept application materials').click()")
   await until(
     "document.querySelectorAll('nav button').length === 4 && document.body.textContent.includes('Product Lead')",
   )
@@ -435,6 +438,9 @@ try {
   await evaluate("Array.from(document.querySelectorAll('button')).find(el => /Generate/i.test(el.textContent) && !el.disabled).click()")
   await until("!!document.querySelector('[role=dialog]')")
   await evaluate("Array.from(document.querySelectorAll('[role=dialog] button')).at(-2).click()")
+  // The current Application Draft contract requires explicit artifact acceptance.
+  await until("!!document.querySelector('.artifact-review')")
+  await evaluate("Array.from(document.querySelectorAll('.artifact-review button')).find(b=>b.textContent.trim()==='Accept application materials').click()")
   await until("document.querySelector('h1')?.textContent.includes('Product Lead')")
   await evaluate("Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'Résumé').click()")
   await evaluate("Array.from(document.querySelectorAll('.resume-review button')).find(b => b.textContent.trim() === 'Accept resume')?.click()")
@@ -482,6 +488,9 @@ try {
   await evaluate("Array.from(document.querySelectorAll('button')).find(el => /Generate/i.test(el.textContent) && !el.disabled).click()")
   await until("!!document.querySelector('[role=dialog]')")
   await evaluate("Array.from(document.querySelectorAll('[role=dialog] button')).at(-2).click()")
+  // The current Application Draft contract requires explicit artifact acceptance.
+  await until("!!document.querySelector('.artifact-review')")
+  await evaluate("Array.from(document.querySelectorAll('.artifact-review button')).find(b=>b.textContent.trim()==='Accept application materials').click()")
   await until("document.querySelector('h1')?.textContent.includes('Product Lead')")
   await evaluate("Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'Résumé').click()")
   await evaluate("Array.from(document.querySelectorAll('.resume-review button')).find(b => b.textContent.trim() === 'Accept resume')?.click()")
