@@ -63,6 +63,9 @@ func TestCorpusPreservesCapacityOmissionsAndControlledContracts(t *testing.T) {
 	if err = Validate(corpus.Cases); err != nil {
 		t.Fatal(err)
 	}
+	if err := Validate(corpus.Cases); err != nil {
+		t.Fatal(err)
+	}
 	for _, c := range corpus.Cases {
 		t.Run(c.ID, func(t *testing.T) { assertControlledCase(t, c) })
 	}
@@ -190,5 +193,36 @@ func TestIdenticalRequestsCannotLeakIntoHeldoutSplit(t *testing.T) {
 	heldout.Request = json.RawMessage(`{"cvLanguage":"en", "facts":[]}`)
 	if err := Validate([]Case{c, heldout}); err == nil {
 		t.Fatal("identical request appears on both sides of split")
+	}
+}
+
+func TestStableCvMigrationRegressions(t *testing.T) {
+	raw, err := os.ReadFile("../../docs/evaluations/semantic-quality/cases.stable-cv.v1.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var corpus struct {
+		Cases []Case `json:"cases"`
+	}
+	if err := json.Unmarshal(raw, &corpus); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range corpus.Cases {
+		t.Run(c.ID, func(t *testing.T) {
+			run, err := Run(c, "controlled", "", "")
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := 200
+			if c.Role == "negative_control" {
+				want = 502
+			}
+			if run.Status != want || !run.NoStore {
+				t.Fatalf("status %d expected %d: %s", run.Status, want, run.Output)
+			}
+			if want == 200 && run.Score.Matched != run.Score.Expected {
+				t.Fatalf("missing supported claims: %+v", run.Score)
+			}
+		})
 	}
 }

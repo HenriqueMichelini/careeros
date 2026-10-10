@@ -189,3 +189,28 @@ func TestCvLanguageIsExplicitAndValidated(t *testing.T) {
 	})}}
 	_, _ = a.call(t.Context(), "sk-test", request{Locale: "pt-BR", Facts: facts})
 }
+
+func TestStableGenerationThroughHandler(t *testing.T) {
+	for _, language := range []string{"en", "pt-BR"} {
+		t.Run(language, func(t *testing.T) {
+			input := `{"cvLanguage":"` + language + `","facts":[{"id":"stable-skill","section":"skills","entryId":"","field":"skills","text":"Research and Design","reference":{"profileId":"profile-a","id":"stable-skill","revision":3},"owner":{"profileId":"profile-a","id":"profile-a","revision":1},"kind":"legacy_block","assertion":"unknown","intent":"unknown","certainty":"unknown","support":"unsupported"}]}`
+			handler := NewHandlerWithClient(&http.Client{Transport: roundTrip(func(r *http.Request) (*http.Response, error) {
+				var payload map[string]any
+				json.NewDecoder(r.Body).Decode(&payload)
+				format := payload["response_format"].(map[string]any)
+				if format["type"] != "json_schema" {
+					t.Error("provider-enforced schema missing")
+				}
+				data, _ := json.Marshal(map[string]any{"choices": []any{map[string]any{"finish_reason": "stop", "message": map[string]any{"content": `{"summary":[{"sourceIds":["stable-skill"],"text":"Research and Design"}],"selected":["stable-skill"],"wording":[]}`}}}})
+				return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(string(data)))}, nil
+			})})
+			req := httptest.NewRequest("POST", "/api/cv/generate", strings.NewReader(input))
+			req.Header.Set("X-OpenAI-Api-Key", "sk-test")
+			w := httptest.NewRecorder()
+			handler.ServeHTTP(w, req)
+			if w.Code != 200 || !strings.Contains(w.Body.String(), `"sourceIds":["stable-skill"]`) {
+				t.Fatalf("%d %s", w.Code, w.Body.String())
+			}
+		})
+	}
+}

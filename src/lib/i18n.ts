@@ -64,12 +64,21 @@ const messages = {
       "Pending setting: generate and accept a proposal to apply it. Current content and edits stay until you choose replacement.",
     "cv.proposedWording": "Proposed wording",
     "cv.resetToSnapshot": "Reset to saved CV source",
+    "cv.supportLegacy":
+      "Saved CV uses legacy source IDs. Its original snapshot and edits are preserved; live Profile support cannot be checked.",
+    "cv.supportStale":
+      "Profile support has changed. This saved CV and your edits remain unchanged; review the original sources before reuse.",
+    "cv.supportCurrent":
+      "Referenced Profile revisions are unchanged. Review wording for accuracy before reuse.",
+    "cv.sourceRevision": "revision {{revision}}",
+    "cv.sourceCaution":
+      "Source links show traceability, not proof that wording is faithful. Compare each claim with its original support.",
     "cv.generateTitle": "General-purpose CV",
     "cv.generatePolicy":
       "Select relevant experience, impact and complementary qualifications from your Profile. Review the proposed summary and included facts before replacing your CV.",
     "cv.generatePrivacyTitle": "What is sent to OpenAI?",
     "cv.generatePrivacy":
-      "Professional skills, tools, experience (roles, employers, dates and supporting details), projects and qualifications. Contact details, career goals, salary, employment status, additional information, credential IDs and links are excluded. Review professional fields for sensitive information first. Generated prose uses the selected CV language; original source facts remain available for review.",
+      "Professional skills, tools, experience (roles, employers, dates and supporting details), projects and qualifications, with stable fact revisions and context. Accepted evidence excerpts stay on this browser. Contact details, career goals, salary, employment status, additional information, credential IDs and links are excluded. Review professional fields for sensitive information first. Generated prose uses the selected CV language; original source facts remain available for review.",
     "cv.generateInsufficient":
       "Add professional skills, an experience description, an achievement or project details in Profile first. Goals and contact information alone cannot establish experience.",
     "cv.generateKey":
@@ -822,12 +831,21 @@ const messages = {
       "Configuração pendente: gere e aceite uma proposta para aplicar. Conteúdo e edições atuais ficam até você escolher substituí-los.",
     "cv.proposedWording": "Texto proposto",
     "cv.resetToSnapshot": "Restaurar fonte salva do CV",
+    "cv.supportLegacy":
+      "O CV salvo usa IDs de fontes antigos. O retrato original e suas edições foram preservados; não é possível verificar o apoio no Perfil atual.",
+    "cv.supportStale":
+      "O apoio no Perfil mudou. Este CV salvo e suas edições continuam iguais; revise as fontes originais antes de reutilizar.",
+    "cv.supportCurrent":
+      "As revisões referenciadas do Perfil continuam iguais. Revise a precisão do texto antes de reutilizar.",
+    "cv.sourceRevision": "revisão {{revision}}",
+    "cv.sourceCaution":
+      "Os vínculos mostram rastreabilidade, não provam a fidelidade do texto. Compare cada afirmação com o apoio original.",
     "cv.generateTitle": "Currículo geral",
     "cv.generatePolicy":
       "Selecione experiência relevante, impacto e qualificações complementares do Perfil. Revise o resumo proposto e os fatos incluídos antes de substituir seu CV.",
     "cv.generatePrivacyTitle": "O que é enviado à OpenAI?",
     "cv.generatePrivacy":
-      "Habilidades, ferramentas, experiência (cargos, empresas, datas e detalhes), projetos e qualificações profissionais. Contato, objetivos, salário, situação de emprego, informações adicionais, IDs de credenciais e links são excluídos. Revise os campos profissionais para remover dados sensíveis antes. O texto gerado usa o idioma selecionado para o currículo; fatos originais permanecem disponíveis para revisão.",
+      "Habilidades, ferramentas, experiência (cargos, empresas, datas e detalhes), projetos e qualificações profissionais, com revisões estáveis dos fatos e contexto. Os trechos de evidência aceitos ficam neste navegador. Contato, objetivos, salário, situação de emprego, informações adicionais, IDs de credenciais e links são excluídos. Revise os campos profissionais para remover dados sensíveis antes. O texto gerado usa o idioma selecionado para o currículo; fatos originais permanecem disponíveis para revisão.",
     "cv.generateInsufficient":
       "Adicione habilidades profissionais, descrição de experiência, conquista ou detalhes de projeto no Perfil. Objetivos e contato não comprovam experiência.",
     "cv.generateKey":

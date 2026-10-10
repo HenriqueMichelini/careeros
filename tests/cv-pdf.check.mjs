@@ -438,7 +438,7 @@ try {
     await evaluate("document.querySelector('header button:last-child').click()")
     await until("document.querySelectorAll('nav button').length === 4")
     await evaluate("document.querySelectorAll('nav button')[2].click()")
-    await until("document.querySelector('.cv-font-controls input')?.value === '12'")
+    await until("document.querySelector('.cv-font-controls input')?.value === '14'")
   }
 
   await openCv(
@@ -468,7 +468,7 @@ try {
     )
     await evaluate("window.print = () => { window.__printCalled = true }")
     await evaluate(
-      "Array.from(document.querySelectorAll('button')).find((button) => button.textContent.includes('Export A4 PDF')).click()",
+      "Array.from(document.querySelectorAll('button')).find((button) => button.textContent.includes('Save as PDF')).click()",
     )
     await until("!!document.querySelector('[role=alert]')")
     assert.equal(

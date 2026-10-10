@@ -175,7 +175,7 @@ try {
     "document.readyState === 'complete' && !!document.querySelector('header button')",
   )
   await evaluate(
-    `localStorage.removeItem('careeros_profile_v2'); localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_apikey', 'synthetic-test-key'); location.reload()`,
+    `localStorage.removeItem('careeros_profile_v2'); localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_apikey', 'synthetic-test-key'); localStorage.setItem('careeros_typesafe_key', 'synthetic-typesafe'); location.reload()`,
   )
   await until(
     "document.readyState === 'complete' && !!document.querySelector('header button')",
@@ -367,8 +367,9 @@ try {
     "{ const select = document.querySelector('select'); select.value = 'pt-BR'; select.dispatchEvent(new Event('change', { bubbles: true })) }",
   )
   await until(
-    "document.querySelector('.cv-paper-content section h3')?.textContent.trim() === 'Resumo profissional'",
+    "document.documentElement.lang === 'pt-BR'",
   )
+  assert.deepEqual(await evaluate("Array.from(document.querySelectorAll('.cv-paper-content section h3')).map(el=>el.textContent.trim())"), base, "site language preserves accepted document language")
   const generatedPt = await evaluate(
     "Array.from(document.querySelectorAll('.cv-paper-content section h3')).map(el => el.textContent.trim())",
   )
@@ -386,7 +387,7 @@ try {
   assert.deepEqual(
     basePt,
     generatedPt,
-    "Portuguese headings should match without translating professional text",
+    "CV headings should match the independent document language without translating professional text",
   )
   assert.ok(await evaluate("document.querySelector('.cv-paper').getBoundingClientRect().width <= document.querySelector('.cv-preview-slot').getBoundingClientRect().width + 1"), "CV preview must fit the narrow slot")
   await evaluate(

@@ -1,7 +1,9 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import {
   CURATED_CV_KEY,
-  cvFacts,
+  stableCvFacts,
+  cvSupportStatus,
+  summarySourceIds,
   createCuratedCv,
   parseCuratedCv,
   generateCv,
@@ -30,6 +32,37 @@ import {
   professionalLinkLabel,
   professionalLinkTarget,
 } from "../lib/cv"
+
+function sourceEntryLabel(
+  repo: CuratedCv["repository"],
+  section: string,
+  id: string,
+): string {
+  if (!id) return ""
+  if (section === "experience") {
+    const e = repo.experience.find((e) => e.id === id)
+    return e
+      ? [e.title, e.company, e.startDate, e.endDate].filter(Boolean).join(" · ")
+      : ""
+  }
+  if (section === "projects")
+    return repo.projects.find((e) => e.id === id)?.name ?? ""
+  if (section === "education") {
+    const e = repo.education.find((e) => e.id === id)
+    return e
+      ? [e.degree, e.institution, e.graduationDate].filter(Boolean).join(" · ")
+      : ""
+  }
+  if (section === "certifications") {
+    const e = repo.certifications.find((e) => e.id === id)
+    return e ? [e.name, e.issuer, e.date].filter(Boolean).join(" · ") : ""
+  }
+  if (section === "languages") {
+    const e = repo.languages.find((e) => e.id === id)
+    return e ? [e.name, e.proficiency].filter(Boolean).join(" · ") : ""
+  }
+  return ""
+}
 
 function lines(value: string, splitCommas = true) {
   return value
@@ -85,7 +118,7 @@ function CvLink({ value }: { value: string }) {
 
 export default function CvPage() {
   const preferences = useCvPreferences()
-  const { state } = useStore()
+  const { state, profileDocument } = useStore()
   const { t } = useI18n()
   const [curated, setCurated] = useState<CuratedCv | null>(() => {
     try {
@@ -95,7 +128,8 @@ export default function CvPage() {
     }
   })
   const documentLanguage = curated?.cvLanguage ?? state.cvLanguage
-  const cvT: typeof t = (key, values) => translate(documentLanguage, key, values)
+  const cvT: typeof t = (key, values) =>
+    translate(documentLanguage, key, values)
   const repo = curated?.repository ?? state.repository
   const { education, certifications, languages } = cvQualifications(repo)
   const previewSlotRef = useRef<HTMLDivElement>(null)
@@ -119,8 +153,15 @@ export default function CvPage() {
   const pendingRevision = useRef("")
   const controller = useRef<AbortController | null>(null)
   const requestId = useRef(0)
-  const liveFacts = useMemo(() => cvFacts(state.repository), [state.repository])
+  const liveFacts = useMemo(
+    () => (profileDocument ? stableCvFacts(profileDocument) : []),
+    [profileDocument],
+  )
+  const supportStatus = curated
+    ? cvSupportStatus(curated, profileDocument)
+    : null
   const revision = JSON.stringify([
+    profileDocument,
     state.repository,
     choices,
     curated,
@@ -187,16 +228,17 @@ export default function CvPage() {
       setPending(null)
       return
     }
-    const saved = createCuratedCv(
-      state.repository,
-      liveFacts,
-      pending,
-      state.cvLanguage,
-      preferences.density,
-    )
-    // Preserve the valid previous document if storage cannot accept its replacement.
-    const nextChoices = { ...emptyCvChoices(), summary: saved.summary }
     try {
+      const saved = createCuratedCv(
+        state.repository,
+        liveFacts,
+        pending,
+        state.cvLanguage,
+        preferences.density,
+        profileDocument ?? undefined,
+      )
+      // Preserve the valid previous document if storage cannot accept its replacement.
+      const nextChoices = { ...emptyCvChoices(), summary: saved.summary }
       localStorage.setItem(
         CURATED_CV_KEY,
         JSON.stringify({ ...saved, choices: nextChoices }),
@@ -798,7 +840,9 @@ export default function CvPage() {
                     <p className="mb-2 text-[10px] uppercase tracking-widest text-[var(--color-muted-fg)]">
                       {cvT("common.sampleContent")}
                     </p>
-                    <h4 className="font-semibold">{cvT("cv.sampleJobTitle")}</h4>
+                    <h4 className="font-semibold">
+                      {cvT("cv.sampleJobTitle")}
+                    </h4>
                     <p className="mt-1 text-[var(--color-muted-fg)]">
                       2021 — {cvT("common.present")}
                     </p>
@@ -1053,89 +1097,197 @@ export default function CvPage() {
             saveError={preferences.saveError}
           >
             <div data-cv-generation>
-            {!state.apiKey && (
-              <p className="mb-3 text-xs">{t("cv.generateKey")}</p>
-            )}
-            {curated && (
-              <p className="mb-3 text-xs">{t("cv.generatedSnapshot")}</p>
-            )}
-            {generation && (
-              <p role="status" className="mt-2 text-xs">
-                {t("cv.generateProgress")}
-              </p>
-            )}
-            {(generation || pending) && (
-              <button
-                type="button"
-                onClick={cancelGeneration}
-                className="mt-2 text-xs underline"
-              >
-                {t("cv.generateCancel")}
-              </button>
-            )}
-            {generationError && (
-              <p role="alert" className="mt-3 text-xs">
-                {t(
-                  ({
-                    input: "cv.generateErrorInput",
-                    key: "cv.generateKey",
-                    rate_limit: "cv.generateErrorRate",
-                    timeout: "cv.generateErrorTimeout",
-                    invalid_output: "cv.generateErrorOutput",
-                    save: "cv.saveError",
-                  } as const)[(generationError as "input")] ||
-                    "cv.generateErrorOutage",
-                )}
-              </p>
-            )}
-            {pending && (
-              <div className="mt-4 border-t border-[var(--color-border)] pt-3">
-                <p className="mb-2 text-xs font-semibold">
-                  {t("cv.generateReview")}
-                </p>
-                <p className="mb-3 text-xs leading-5" data-generated-summary>
-                  {pending.summary.map((s) => s.text).join(" ")}
-                </p>
-                <details className="mb-3 text-xs leading-5">
-                  <summary>
-                    {t("cv.generateSources", {
-                      count: pending.selected.length,
-                    })}
-                  </summary>
-                  <ul className="list-disc pl-4">
-                    {liveFacts
-                      .filter((f) => pending.selected.includes(f.id))
-                      .map((f) => (
+              {!state.apiKey && (
+                <p className="mb-3 text-xs">{t("cv.generateKey")}</p>
+              )}
+              {curated && (
+                <div className="mb-3 text-xs leading-5" data-cv-saved-support>
+                  <p>{t("cv.generatedSnapshot")}</p>
+                  <p
+                    role={supportStatus === "stale" ? "status" : undefined}
+                    className="mt-2"
+                  >
+                    {t(
+                      supportStatus === "legacy"
+                        ? "cv.supportLegacy"
+                        : supportStatus === "stale"
+                          ? "cv.supportStale"
+                          : "cv.supportCurrent",
+                    )}
+                  </p>
+                  <details className="mt-2">
+                    <summary>
+                      {t("cv.generateSources", {
+                        count: curated.sources.length,
+                      })}
+                    </summary>
+                    <p className="my-2">{t("cv.sourceCaution")}</p>
+                    <ul className="space-y-3">
+                      {curated.sources.map((f) => (
                         <li key={f.id}>
-                          {sectionLabels[(f.section as CvSection)]}: {f.text}
-                          {pending.wording?.[f.id] && (
-                            <p className="mt-1 font-semibold">
-                              {t("cv.proposedWording")}: {pending.wording[f.id]}
+                          <p>
+                            {sectionLabels[(f.section as CvSection)]} ·{" "}
+                            {f.field}
+                          </p>
+                          <p>
+                            {sourceEntryLabel(
+                              curated.repository,
+                              f.section,
+                              f.entryId,
+                            )}
+                          </p>
+                          <p className="whitespace-pre-wrap break-words">
+                            {f.text}
+                          </p>
+                          {f.reference && (
+                            <p className="break-all text-[10px]">
+                              {f.reference.id} ·{" "}
+                              {t("cv.sourceRevision", {
+                                revision: f.reference.revision,
+                              })}
                             </p>
                           )}
-                          {pending.summary
-                            .filter((s) => s.sourceId === f.id)
-                            .map((s, index) => (
+                          {f.evidence?.map((e) => (
+                            <blockquote
+                              key={e.id}
+                              className="mt-1 border-l border-[var(--color-border)] pl-2 whitespace-pre-wrap break-words"
+                            >
+                              {e.excerpt}
+                              <span className="mt-1 block text-[10px] text-[var(--color-muted-fg)]">
+                                {e.origin}
+                              </span>
+                            </blockquote>
+                          ))}
+                          {curated.summarySources
+                            ?.filter((part) =>
+                              summarySourceIds(part).includes(f.id),
+                            )
+                            .map((part, index) => (
                               <p key={index} className="mt-1 font-semibold">
-                                {t("cv.professionalProfile")}: {s.text}
+                                {t("cv.professionalProfile")}: {part.text}
                               </p>
                             ))}
                         </li>
                       ))}
-                  </ul>
-                </details>
-                <p className="mb-3 text-xs leading-5">
-                  {t("cv.generateReplaceNote")}
+                    </ul>
+                  </details>
+                </div>
+              )}
+              {generation && (
+                <p role="status" className="mt-2 text-xs">
+                  {t("cv.generateProgress")}
                 </p>
+              )}
+              {(generation || pending) && (
                 <button
                   type="button"
-                  onClick={acceptGeneration}
-                  className="w-full bg-[var(--color-accent)] p-2 text-xs text-white"
+                  onClick={cancelGeneration}
+                  className="mt-2 text-xs underline"
                 >
-                  {t("cv.generateAccept")}
+                  {t("cv.generateCancel")}
                 </button>
-              </div>
-            )}
+              )}
+              {generationError && (
+                <p role="alert" className="mt-3 text-xs">
+                  {t(
+                    ({
+                      input: "cv.generateErrorInput",
+                      key: "cv.generateKey",
+                      rate_limit: "cv.generateErrorRate",
+                      timeout: "cv.generateErrorTimeout",
+                      invalid_output: "cv.generateErrorOutput",
+                      save: "cv.saveError",
+                    } as const)[(generationError as "input")] ||
+                      "cv.generateErrorOutage",
+                  )}
+                </p>
+              )}
+              {pending && (
+                <div className="mt-4 border-t border-[var(--color-border)] pt-3">
+                  <p className="mb-2 text-xs font-semibold">
+                    {t("cv.generateReview")}
+                  </p>
+                  <p className="mb-3 text-xs leading-5" data-generated-summary>
+                    {pending.summary.map((s) => s.text).join(" ")}
+                  </p>
+                  <p className="mb-3 text-xs leading-5">
+                    {t("cv.sourceCaution")}
+                  </p>
+                  <details className="mb-3 text-xs leading-5">
+                    <summary>
+                      {t("cv.generateSources", {
+                        count: pending.selected.length,
+                      })}
+                    </summary>
+                    <ul className="list-disc pl-4">
+                      {liveFacts
+                        .filter((f) => pending.selected.includes(f.id))
+                        .map((f) => (
+                          <li key={f.id}>
+                            <p>
+                              {sectionLabels[(f.section as CvSection)]} ·{" "}
+                              {f.field}
+                            </p>
+                            <p className="whitespace-pre-wrap break-words">
+                              {f.text}
+                            </p>
+                            {f.reference && (
+                              <p className="break-all text-[10px] text-[var(--color-muted-fg)]">
+                                {f.reference.id} ·{" "}
+                                {t("cv.sourceRevision", {
+                                  revision: f.reference.revision,
+                                })}
+                              </p>
+                            )}
+                            {f.entryId && (
+                              <p>
+                                {sourceEntryLabel(
+                                  state.repository,
+                                  f.section,
+                                  f.entryId,
+                                )}
+                              </p>
+                            )}
+                            {f.evidence?.map((e) => (
+                              <blockquote
+                                key={e.id}
+                                className="mt-1 border-l border-[var(--color-border)] pl-2 whitespace-pre-wrap break-words"
+                              >
+                                {e.excerpt}
+                                <span className="mt-1 block text-[10px] text-[var(--color-muted-fg)]">
+                                  {e.origin}
+                                </span>
+                              </blockquote>
+                            ))}
+                            {pending.wording?.[f.id] && (
+                              <p className="mt-1 font-semibold">
+                                {t("cv.proposedWording")}:{" "}
+                                {pending.wording[f.id]}
+                              </p>
+                            )}
+                            {pending.summary
+                              .filter((s) => summarySourceIds(s).includes(f.id))
+                              .map((s, index) => (
+                                <p key={index} className="mt-1 font-semibold">
+                                  {t("cv.professionalProfile")}: {s.text}
+                                </p>
+                              ))}
+                          </li>
+                        ))}
+                    </ul>
+                  </details>
+                  <p className="mb-3 text-xs leading-5">
+                    {t("cv.generateReplaceNote")}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={acceptGeneration}
+                    className="w-full bg-[var(--color-accent)] p-2 text-xs text-white"
+                  >
+                    {t("cv.generateAccept")}
+                  </button>
+                </div>
+              )}
             </div>
           </CvDensityControl>
           <div className="mb-4 border border-[var(--color-border)] bg-[var(--color-card)] p-5">
@@ -1176,9 +1328,7 @@ export default function CvPage() {
                 >
                   <label
                     className={`flex items-center gap-2 text-xs font-semibold leading-5 ${
-                      sectionHasContent(section)
-                        ? ""
-                        : "text-[#D9A300]"
+                      sectionHasContent(section) ? "" : "text-[#D9A300]"
                     }`}
                     title={
                       sectionHasContent(section)
