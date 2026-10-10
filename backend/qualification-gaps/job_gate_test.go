@@ -237,10 +237,17 @@ func TestApplyProvidersReceiveSamePreparedPosting(t *testing.T) {
 					return classified("job_with_context", "none"), nil
 				}
 				var payload struct{ Messages []struct{ Content string } }
-				if json.NewDecoder(r.Body).Decode(&payload) != nil || len(payload.Messages) != 1 {
+				if json.NewDecoder(r.Body).Decode(&payload) != nil || len(payload.Messages) < 1 {
 					t.Fatal("invalid provider envelope")
 				}
-				if !strings.Contains(payload.Messages[0].Content, "JOB POSTING:\n"+expected) {
+				postingPreserved := strings.Contains(payload.Messages[0].Content, "JOB POSTING:\n"+expected)
+				if endpoint.path == "/api/application-draft" {
+					var data struct {
+						JobPosting string `json:"jobPosting"`
+					}
+					postingPreserved = len(payload.Messages) == 2 && json.Unmarshal([]byte(payload.Messages[1].Content), &data) == nil && data.JobPosting == expected
+				}
+				if !postingPreserved {
 					t.Fatalf("provider did not receive complete normalized posting: %q", payload.Messages[0].Content)
 				}
 				if endpoint.path == "/api/qualification-gaps" {

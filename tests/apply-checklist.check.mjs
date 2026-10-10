@@ -434,6 +434,7 @@ try {
       assert.equal(await evaluate(savedProfileExpression), unchangedProfile)
       // Short postings preserve explicit unknowns through qualification confirmation, Results and print.
       const shortDraft = {
+        contextSelection: { version: "application-context-v1", sources: ["fixture/fact@1"], budgetExcluded: 1, relevanceExcluded: 0, complete: false, bytes: 100 },
         jobTitle: "Java developer",
         company: null,
         jobSummary: "AWS required.",
@@ -535,6 +536,7 @@ try {
           jobTitle: unknownTitle ? null : shortDraft.jobTitle,
         })
         await until("!!document.querySelector('.results-page')")
+        assert.ok(await evaluate(`document.querySelector('.results-page [role="status"]').textContent.includes(${JSON.stringify(locale === "en" ? "context budget" : "limite de contexto")})`))
         const unknownLabel = locale === "en" ? "Not provided" : "Não informado"
         assert.ok(
           (

@@ -153,3 +153,68 @@ test("model signatures and incomplete structures fail safely rather than duplica
     }
   } finally { globalThis.fetch = originalFetch }
 })
+
+test("draft requests use approved canonical evidence and preserve coverage disclosure with local identity", async () => {
+  const doc = JSON.parse(
+    readFileSync(
+      new URL("../internal/profiledocument/fixtures.json", import.meta.url),
+    ),
+  )[0].document
+  const repo = {
+    ...withContactFields(oldProfile),
+    fullName: "Ada Lovelace",
+    currentSalary: "PRIVATE_SALARY",
+  }
+  const originalFetch = globalThis.fetch
+  let sent
+  const contextSelection = {
+    version: "application-context-v1",
+    sources: ["p/skill@1"],
+    budgetExcluded: 1,
+    relevanceExcluded: 0,
+    complete: false,
+    bytes: 100,
+  }
+  globalThis.fetch = async (_, options) => {
+    sent = JSON.parse(options.body)
+    return {
+      ok: true,
+      json: async () => ({
+        jobTitle: null,
+        company: null,
+        jobSummary: "Role",
+        resume: "Resume",
+        coverLetter: {
+          greeting: "Dear team,",
+          body: "I build systems.",
+          closing: "Sincerely,",
+        },
+        applicationAnswers: "Answers",
+        contextSelection,
+      }),
+    }
+  }
+  try {
+    const before = JSON.stringify(doc)
+    const result = await generateMaterials(
+      repo,
+      "Java required.",
+      "test-key",
+      [],
+      "en",
+      "synthetic",
+      undefined,
+      [],
+      doc,
+      ["skill"],
+    )
+    assert.equal(sent.profileEvidence.facts[0].id, "skill")
+    assert.deepEqual(sent.selectedFactIds,["skill"])
+    assert.deepEqual(result.contextSelection, contextSelection)
+    assert.ok(result.coverLetter.endsWith("Ada Lovelace"))
+    assert.equal(JSON.stringify(doc), before)
+    assert.ok(!JSON.stringify(sent).includes("Ada Lovelace"))
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})

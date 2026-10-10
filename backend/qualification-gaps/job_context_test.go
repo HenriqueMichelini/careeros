@@ -201,7 +201,7 @@ func TestReusingJobContextRequiresExactSourceVersionsAndWholeOriginalGate(t *tes
 				calls++
 				var payload struct{ Messages []struct{ Content string } }
 				json.NewDecoder(r.Body).Decode(&payload)
-				if !strings.Contains(payload.Messages[0].Content, "UNAUTHENTICATED SOURCE-BACKED JOB CONTEXT") || !strings.Contains(payload.Messages[0].Content, "Independently assess") {
+				if len(payload.Messages) != 2 || !strings.Contains(payload.Messages[0].Content, "Independently assess") || !strings.Contains(payload.Messages[1].Content, `"jobContext"`) {
 					t.Fatal("client interpretation trusted")
 				}
 				content := `{"jobTitle":null,"company":null,"jobSummary":"AWS required.","resume":"Java","applicationAnswers":"I use Java.","coverLetter":{"greeting":"Dear team,","body":"I use Java.","closing":"Sincerely,"}}`

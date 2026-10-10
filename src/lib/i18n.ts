@@ -762,6 +762,8 @@ const messages = {
     "results.noResultsDescription":
       "Go to Apply, paste a job opportunity, and click Generate Materials.",
     "results.goToApply": "Go to Apply",
+    "results.contextSelected": "Drafted from selected career evidence. Relevance selection may miss useful information; review each material before use.",
+    "results.contextLimited": "Some career evidence did not fit the draft context budget. Review every material for missing information and unsupported claims before use.",
     "results.generatedApplication": "Generated Application",
     "results.applicationMaterials": "Application Materials",
     "results.newApplication": "New Application",
@@ -1553,6 +1555,8 @@ const messages = {
     "results.noResultsDescription":
       "Acesse Aplicar, cole uma oportunidade e clique em Gerar materiais.",
     "results.goToApply": "Ir para Aplicar",
+    "results.contextSelected": "Gerado com evidências profissionais selecionadas. A seleção pode deixar informações úteis de fora; revise cada material antes de usar.",
+    "results.contextLimited": "Algumas evidências profissionais não couberam no limite de contexto. Revise cada material para identificar omissões e afirmações sem suporte antes de usar.",
     "results.generatedApplication": "Candidatura gerada",
     "results.applicationMaterials": "Materiais de candidatura",
     "results.newApplication": "Nova candidatura",

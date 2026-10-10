@@ -75,7 +75,9 @@ func Projection(raw []byte) (profiledocument.Document, error) {
 	}
 	return doc, nil
 }
-func words(s string) map[string]bool {
+
+// LexicalTerms returns mechanical tokens, not inferred skills or support.
+func LexicalTerms(s string) map[string]bool {
 	out := map[string]bool{}
 	for _, word := range strings.FieldsFunc(strings.ToLower(s), func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsNumber(r) && r != '+' && r != '#' }) {
 		if len(word) > 1 {
@@ -120,14 +122,14 @@ func Select(doc profiledocument.Document, requirement string, index, budget int)
 		}
 		groups[key] = append(groups[key], fact)
 	}
-	terms := words(requirement)
+	terms := LexicalTerms(requirement)
 	score := func(group []Fact) int {
 		score := 0
 		for _, f := range group {
 			if f.Assertion == "negated" || f.Intent == "aspiration" || f.Certainty == "uncertain" {
 				score += 10000
 			}
-			for word := range words(string(f.Value)) {
+			for word := range LexicalTerms(string(f.Value)) {
 				if terms[word] {
 					score++
 				}

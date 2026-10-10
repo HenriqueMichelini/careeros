@@ -35,7 +35,7 @@ func draftResponse() string {
 	return `{"choices":[{"finish_reason":"stop","message":{"content":` + string(encoded) + `}}]}`
 }
 
-func TestProviderUsesOpenAIAndFullPopulatedProfile(t *testing.T) {
+func TestProviderUsesOpenAIAndProfessionalProjection(t *testing.T) {
 	in := request{JobPosting: "Senior engineer role", Profile: profilevalidation.Profile{CareerGoals: "leadership", Skills: "Go", Competencies: "systems", Tools: "Docker", EmploymentStatus: "employed", CurrentSalary: "salary", DesiredSalary: "target", AdditionalInfo: "extra", Experience: []profilevalidation.Experience{{ID: "id", Company: "company", Title: "engineer", StartDate: "2020", EndDate: "2022", Location: "location", Description: "description", Responsibilities: "responsibilities", Achievements: "achievement"}}, Projects: []profilevalidation.Project{{ID: "project-id", Name: "project", Description: "project detail", Technologies: "Go", URL: "url", Highlights: "highlight"}}}, Confirmed: []qualification{{Kind: "skill", Requirement: "Kubernetes", UserContext: "used it"}}}
 	in.Qualifications = &profilevalidation.Qualifications{Education: []profilevalidation.Education{{ID: "private-education-id", Degree: "BSc", Institution: "Example University"}}}
 	calls := 0
@@ -51,11 +51,11 @@ func TestProviderUsesOpenAIAndFullPopulatedProfile(t *testing.T) {
 				Content string `json:"content"`
 			} `json:"messages"`
 		}
-		if json.Unmarshal(body, &payload) != nil || payload.Model != model || len(payload.Messages) != 1 {
+		if json.Unmarshal(body, &payload) != nil || payload.Model != model || len(payload.Messages) != 2 {
 			t.Fatal("incorrect provider request")
 		}
-		for _, want := range []string{"leadership", "Go", "company", "location", "salary", "target", "extra", "project-id", "Kubernetes", "used it", "BSc", "Example University"} {
-			if !strings.Contains(payload.Messages[0].Content, want) {
+		for _, want := range []string{"Go", "company", "project-id", "Kubernetes", "used it", "BSc", "Example University"} {
+			if !strings.Contains(payload.Messages[1].Content, want) {
 				t.Errorf("full profile or confirmed context missing %q", want)
 			}
 		}
@@ -163,16 +163,16 @@ func TestSyntheticDraftOutboundBodyUsesApprovedProfileAndConfirmation(t *testing
 		if json.Unmarshal(body, &payload) != nil || json.Unmarshal(body, &topLevel) != nil ||
 			len(topLevel) != 5 || payload.Model != model || payload.ReasoningEffort != "none" ||
 			payload.MaxTokens != 8000 || payload.ResponseFormat.Type != "json_schema" ||
-			len(payload.Messages) != 1 || payload.Messages[0].Role != "user" {
+			len(payload.Messages) != 2 || payload.Messages[0].Role != "system" || payload.Messages[1].Role != "user" {
 			t.Fatal("bad provider body")
 		}
-		prompt := payload.Messages[0].Content
-		for _, forbidden := range []string{`"currentSalary"`, `"desiredSalary"`, `"additionalInfo"`, `"projects"`, `"tools"`, `"location":"San Francisco"`, `"url"`} {
+		prompt := payload.Messages[1].Content
+		for _, forbidden := range []string{`"currentSalary"`, `"desiredSalary"`, `"additionalInfo"`, `"location":"San Francisco"`, `"url"`} {
 			if strings.Contains(prompt, forbidden) {
 				t.Errorf("forbidden field %s in provider prompt", forbidden)
 			}
 		}
-		for _, allowed := range []string{`"careerGoals":"Lead data projects"`, `"skills":"SQL, dashboard design"`, `"competencies":"Clear communication"`, `"employmentStatus":"employed-full-time"`, `"title":"Data Analyst"`, `"company":"Northstar Analytics"`, `"achievements":"Reduced report preparation time"`, "QUALIFICATION ONLY SYNTHETIC POSTING", `"kind":"skill"`, `"requirement":"Kubernetes"`, `"userContext":"Confirmed for this role only"`} {
+		for _, allowed := range []string{`"skills":"SQL, dashboard design"`, `"competencies":"Clear communication"`, `"title":"Data Analyst"`, `"company":"Northstar Analytics"`, `"achievements":"Reduced report preparation time"`, "QUALIFICATION ONLY SYNTHETIC POSTING", `"kind":"skill"`, `"requirement":"Kubernetes"`, `"userContext":"Confirmed for this role only"`} {
 			if !strings.Contains(prompt, allowed) {
 				t.Errorf("approved content missing: %s", allowed)
 			}

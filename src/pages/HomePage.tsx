@@ -288,6 +288,8 @@ export default function HomePage({ setPage }: Props) {
               ]
             : [],
         ),
+        profileDocument ?? undefined,
+        requirementMatches.flatMap((match) => match.factIds),
       )
       if (id !== requestId.current) return
       setDraft({ state: "complete" })
