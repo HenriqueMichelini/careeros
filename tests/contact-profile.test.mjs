@@ -6,11 +6,11 @@ import { join } from "node:path"
 import ts from "typescript"
 
 const temp = mkdtempSync(join(tmpdir(), "careeros-contact-"))
-for (const name of ["profile", "cover-letter", "fieldDecision", "ai"]) {
+for (const name of ["profile", "cover-letter", "fieldDecision", "jobContext", "ai"]) {
   const source = readFileSync(new URL(`../src/lib/${name}.ts`, import.meta.url), "utf8")
   const compiled = ts.transpileModule(source, {
     compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
-  }).outputText.replace(/from ['"]\.\/fieldDecision['"]/g, 'from "./fieldDecision.mjs"').replace(/from ['"]\.\/cover-letter['"]/g, 'from "./cover-letter.mjs"').replace(/from ['"]\.\/profile['"]/g, 'from "./profile.mjs"')
+  }).outputText.replace(/from ['"]\.\/jobContext['"]/g, 'from "./jobContext.mjs"').replace(/from ['"]\.\/fieldDecision['"]/g, 'from "./fieldDecision.mjs"').replace(/from ['"]\.\/cover-letter['"]/g, 'from "./cover-letter.mjs"').replace(/from ['"]\.\/profile['"]/g, 'from "./profile.mjs"')
   writeFileSync(join(temp, `${name}.mjs`), compiled)
 }
 const { withContactFields, careerProfile, cvQualifications, validQualifications } = await import(join(temp, "profile.mjs"))

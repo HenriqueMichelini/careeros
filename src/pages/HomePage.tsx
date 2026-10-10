@@ -1,3 +1,5 @@
+import type { JobContext } from "../lib/jobContext"
+import JobContextReview from "../components/JobContextReview"
 import type { FieldDecision } from "../lib/fieldDecision"
 import type { TranslationKey } from "../lib/i18n"
 import LanguageSelector from "../components/LanguageSelector"
@@ -24,6 +26,7 @@ const gapErrorTranslationKeys = {
   timeout: "home.gapErrorTimeout",
   invalid_output: "home.gapErrorInvalidOutput",
   capacity: "home.jobErrorCapacity",
+  job_context_stale: "jobContext.stale",
 } as const
 
 const draftErrorTranslationKeys = {
@@ -34,6 +37,7 @@ const draftErrorTranslationKeys = {
   timeout: "home.draftErrorTimeout",
   invalid_output: "home.draftErrorInvalidOutput",
   capacity: "home.jobErrorCapacity",
+  job_context_stale: "jobContext.stale",
 } as const
 
 type StepState = "pending" | "ready" | "processing" | "confirmation" | "complete" | "failed"
@@ -93,6 +97,7 @@ function StatusRow({
 export default function HomePage({ setPage }: Props) {
   const { state, dispatch } = useStore()
   const { t } = useI18n()
+  const [jobContext, setJobContext] = useState<JobContext | null>(null)
   const [profileGaps, setProfileGaps] = useState<ProfileGap[]>([])
   const [confirmedGapIndices, setConfirmedGapIndices] = useState<Set<number>>(
     new Set(),
@@ -104,7 +109,10 @@ export default function HomePage({ setPage }: Props) {
   })
   const [draft, setDraft] = useState<RequestStep>({ state: "pending" })
   const [jobDecision, setJobDecision] = useState<FieldDecision | null>(null)
-  const [revisionRequiredFor, setRevisionRequiredFor] = useState<{ text: string; kind: "request_rephrasing" | "reject_attack" } | null>(null)
+  const [revisionRequiredFor, setRevisionRequiredFor] = useState<{
+    text: string
+    kind: "request_rephrasing" | "reject_attack"
+  } | null>(null)
   const requestId = useRef(0)
   const inputs = JSON.stringify([
     state.repository,
@@ -115,6 +123,7 @@ export default function HomePage({ setPage }: Props) {
   ])
   useEffect(() => {
     setJobDecision(null)
+    setJobContext(null)
     setQualification({ state: "pending" })
     setDraft({ state: "pending" })
     setShowGapPrompt(false)
@@ -125,21 +134,37 @@ export default function HomePage({ setPage }: Props) {
   }, [inputs, dispatch])
   const isCheckingRequirements = qualification.state === "processing"
   const failure = qualification.error || draft.error
-  const jobOutcome = jobDecision?.outcome || (revisionRequiredFor?.text === state.jobPosting.trim() ? { kind: revisionRequiredFor.kind } : null)
+  const jobOutcome =
+    jobDecision?.outcome ||
+    (revisionRequiredFor?.text === state.jobPosting.trim()
+      ? { kind: revisionRequiredFor.kind }
+      : null)
   const validationMessage = jobOutcome
-    ? t((jobOutcome.kind === "service_failure" ? `field.failure.${jobOutcome.reason}` : `jobField.${jobOutcome.kind}`) as TranslationKey)
+    ? t(
+        (jobOutcome.kind === "service_failure"
+          ? `field.failure.${jobOutcome.reason}`
+          : `jobField.${jobOutcome.kind}`) as TranslationKey,
+      )
     : ""
-  const failureMessage = validationMessage || (qualification.error
-    ? t(gapErrorTranslationKeys[qualification.error])
-    : draft.error
-      ? t(draftErrorTranslationKeys[draft.error])
-      : "")
+  const failureMessage =
+    validationMessage ||
+    (qualification.error
+      ? t(gapErrorTranslationKeys[qualification.error])
+      : draft.error
+        ? t(draftErrorTranslationKeys[draft.error])
+        : "")
 
   function recordFailure(error: unknown, step: "qualification" | "draft") {
     if (error instanceof JobPostingValidationError) {
       setJobDecision(error.decision)
-      if (error.decision.outcome.kind === "request_rephrasing" || error.decision.outcome.kind === "reject_attack") {
-        setRevisionRequiredFor({ text: state.jobPosting.trim(), kind: error.decision.outcome.kind })
+      if (
+        error.decision.outcome.kind === "request_rephrasing" ||
+        error.decision.outcome.kind === "reject_attack"
+      ) {
+        setRevisionRequiredFor({
+          text: state.jobPosting.trim(),
+          kind: error.decision.outcome.kind,
+        })
       }
       setShowGapPrompt(false)
       setQualification({ state: "pending" })
@@ -151,6 +176,13 @@ export default function HomePage({ setPage }: Props) {
       error instanceof ApplicationDraftError
         ? error.code as keyof typeof draftErrorTranslationKeys
         : "outage"
+    if (code === "job_context_stale") {
+      setJobContext(null)
+      setShowGapPrompt(false)
+      setQualification({ state: "failed", error: code })
+      setDraft({ state: "pending" })
+      return
+    }
     const update = step === "qualification" ? setQualification : setDraft
     update({ state: "failed", error: code })
   }
@@ -169,8 +201,12 @@ export default function HomePage({ setPage }: Props) {
   )
   const hasPosting = jobPosting.trim().length > 0
   const canGenerate =
-    hasRepo && hasPosting && !!state.apiKey && !!state.typesafeKey.trim() &&
-    jobPosting.trim() !== revisionRequiredFor?.text && !state.isGenerating
+    hasRepo &&
+    hasPosting &&
+    !!state.apiKey &&
+    !!state.typesafeKey.trim() &&
+    jobPosting.trim() !== revisionRequiredFor?.text &&
+    !state.isGenerating
 
   async function handleGenerate() {
     if (!canGenerate) return
@@ -179,38 +215,22 @@ export default function HomePage({ setPage }: Props) {
     dispatch({ type: "SET_GENERATING", payload: true })
     setQualification({ state: "processing" })
     setDraft({ state: "pending" })
-    let step: "qualification" | "draft" = "qualification"
+    const step = "qualification" as const
     try {
-      const gaps = await findProfileGaps(
+      const analysis = await findProfileGaps(
         state.repository,
         jobPosting,
         state.apiKey,
         state.typesafeKey,
+        true,
       )
       if (id !== requestId.current) return
-      if (gaps.length > 0) {
-        setProfileGaps(gaps)
-        setConfirmedGapIndices(new Set())
-        setGapNotes({})
-        setQualification({ state: "confirmation" })
-        setShowGapPrompt(true)
-        return
-      }
-      setQualification({ state: "complete" })
-      step = "draft"
-      setDraft({ state: "processing" })
-      const materials = await generateMaterials(
-        state.repository,
-        jobPosting,
-        state.apiKey,
-        [],
-        state.cvLanguage,
-        state.typesafeKey,
-      )
-      if (id !== requestId.current) return
-      setDraft({ state: "complete" })
-      dispatch({ type: "SET_MATERIALS", payload: materials })
-      setPage("results")
+      setJobContext(analysis.jobContext)
+      setProfileGaps(analysis.gaps)
+      setConfirmedGapIndices(new Set())
+      setGapNotes({})
+      setQualification({ state: "confirmation" })
+      setShowGapPrompt(true)
     } catch (error) {
       if (id === requestId.current) recordFailure(error, step)
     } finally {
@@ -220,7 +240,7 @@ export default function HomePage({ setPage }: Props) {
   }
 
   async function generateFromGapPrompt(useConfirmedQualifications: boolean) {
-    if (state.isGenerating) return
+    if (state.isGenerating || !jobContext) return
 
     const confirmedQualifications: ConfirmedQualification[] =
       useConfirmedQualifications
@@ -250,6 +270,7 @@ export default function HomePage({ setPage }: Props) {
         confirmedQualifications,
         state.cvLanguage,
         state.typesafeKey,
+        jobContext,
       )
       if (id !== requestId.current) return
       setDraft({ state: "complete" })
@@ -333,20 +354,44 @@ export default function HomePage({ setPage }: Props) {
             onFocus={(e) => (e.target.style.borderColor = "var(--color-fg)")}
             onBlur={(e) => (e.target.style.borderColor = "var(--color-border)")}
           />
-          <p className="mt-2 text-xs text-[var(--color-muted-fg)]">{t("home.postingLimit")}</p>
+          {jobContext && (
+            <details className="mt-3 text-sm">
+              <summary className="cursor-pointer">
+                {t("jobContext.review")}
+              </summary>
+              <JobContextReview context={jobContext} />
+            </details>
+          )}
+          <p className="mt-2 text-xs text-[var(--color-muted-fg)]">
+            {t("home.postingLimit")}
+          </p>
           <details className="mt-3 text-xs">
             <summary className="cursor-pointer">{t("field.settings")}</summary>
-            <label htmlFor="job-typesafe-key" className="block mt-2">{t("field.typesafeKey")}</label>
-            <input id="job-typesafe-key" type="password" autoComplete="off" value={state.typesafeKey}
-              onChange={event => dispatch({ type: "SET_TYPESAFE_KEY", payload: event.target.value })}
-              className="w-full p-2 border border-[var(--color-border)] bg-[var(--color-card)]" />
+            <label htmlFor="job-typesafe-key" className="block mt-2">
+              {t("field.typesafeKey")}
+            </label>
+            <input
+              id="job-typesafe-key"
+              type="password"
+              autoComplete="off"
+              value={state.typesafeKey}
+              onChange={(event) =>
+                dispatch({
+                  type: "SET_TYPESAFE_KEY",
+                  payload: event.target.value,
+                })
+              }
+              className="w-full p-2 border border-[var(--color-border)] bg-[var(--color-card)]"
+            />
             <p className="mt-2">{t("jobField.disclosure")}</p>
           </details>
           <details id="job-input-use-rule" className="mt-3 text-xs">
             <summary className="cursor-pointer">{t("field.ruleTitle")}</summary>
             <p className="mt-2">{t("field.rule")}</p>
           </details>
-          {!state.typesafeKey.trim() && <p className="mt-2 text-xs">{t("jobField.typesafeMissing")}</p>}
+          {!state.typesafeKey.trim() && (
+            <p className="mt-2 text-xs">{t("jobField.typesafeMissing")}</p>
+          )}
           <div
             className="flex justify-between items-center mt-2 text-xs"
             style={{
@@ -373,7 +418,9 @@ export default function HomePage({ setPage }: Props) {
         {/* Sidebar */}
         <div className="pt-6">
           <div className="mb-6">
-            <p className="mb-2 text-xs text-[var(--color-muted-fg)]">{t("language.cv")}</p>
+            <p className="mb-2 text-xs text-[var(--color-muted-fg)]">
+              {t("language.cv")}
+            </p>
             <LanguageSelector kind="cv" />
           </div>
           <p
@@ -442,7 +489,21 @@ export default function HomePage({ setPage }: Props) {
               className="text-sm mb-4 break-words"
               style={{ color: "var(--color-status-error)" }}
             >
-              {failureMessage} {jobOutcome?.kind === "reject_attack" && <a href="#job-input-use-rule" className="underline" onClick={() => { const rule = document.querySelector<HTMLDetailsElement>("#job-input-use-rule"); if (rule) rule.open = true }}>{t("field.ruleTitle")}</a>}
+              {failureMessage}{" "}
+              {jobOutcome?.kind === "reject_attack" && (
+                <a
+                  href="#job-input-use-rule"
+                  className="underline"
+                  onClick={() => {
+                    const rule = document.querySelector<HTMLDetailsElement>(
+                      "#job-input-use-rule",
+                    )
+                    if (rule) rule.open = true
+                  }}
+                >
+                  {t("field.ruleTitle")}
+                </a>
+              )}
             </p>
           )}
 
@@ -536,7 +597,7 @@ export default function HomePage({ setPage }: Props) {
         </div>
       </div>
 
-      {showGapPrompt && (
+      {showGapPrompt && jobContext && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 p-4"
           onMouseDown={(event) => {
@@ -549,7 +610,9 @@ export default function HomePage({ setPage }: Props) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="profile-gap-title"
-            aria-describedby="profile-gap-description"
+            aria-describedby={
+              profileGaps.length ? "profile-gap-description" : undefined
+            }
             className="w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 sm:p-8"
             style={{
               backgroundColor: "var(--color-card)",
@@ -566,14 +629,14 @@ export default function HomePage({ setPage }: Props) {
                     color: "var(--color-accent)",
                   }}
                 >
-                  {t("home.gapPromptEyebrow")}
+                  {t("home.jobPosting")}
                 </p>
                 <h2
                   id="profile-gap-title"
                   className="text-4xl font-bold uppercase tracking-tight leading-none"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
-                  {t("home.gapPromptTitle")}
+                  {t("jobContext.review")}
                 </h2>
               </div>
               <button
@@ -590,13 +653,15 @@ export default function HomePage({ setPage }: Props) {
               </button>
             </div>
 
-            <p
-              id="profile-gap-description"
-              className="text-sm leading-relaxed mb-6 max-w-xl"
-              style={{ color: "var(--color-muted-fg)" }}
-            >
-              {t("home.gapPromptDescription")}
-            </p>
+            {profileGaps.length > 0 && (
+              <p
+                id="profile-gap-description"
+                className="text-sm leading-relaxed mb-6 max-w-xl"
+                style={{ color: "var(--color-muted-fg)" }}
+              >
+                {t("home.gapPromptDescription")}
+              </p>
+            )}
 
             {failureMessage && (
               <p
@@ -607,6 +672,7 @@ export default function HomePage({ setPage }: Props) {
                 {failureMessage}
               </p>
             )}
+            <JobContextReview context={jobContext} />
             <div className="space-y-3">
               {profileGaps.map((gap, index) => {
                 const checked = confirmedGapIndices.has(index)
@@ -713,12 +779,14 @@ export default function HomePage({ setPage }: Props) {
               })}
             </div>
 
-            <p
-              className="text-xs leading-relaxed mt-5"
-              style={{ color: "var(--color-muted-fg)" }}
-            >
-              {t("home.gapPromptPrivacyNote")}
-            </p>
+            {profileGaps.length > 0 && (
+              <p
+                className="text-xs leading-relaxed mt-5"
+                style={{ color: "var(--color-muted-fg)" }}
+              >
+                {t("home.gapPromptPrivacyNote")}
+              </p>
+            )}
 
             <div
               className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 mt-7 pt-5 border-t"
@@ -735,11 +803,16 @@ export default function HomePage({ setPage }: Props) {
                   color: "var(--color-muted-fg)",
                 }}
               >
-                {t("home.generateWithoutThese")}
+                {t(
+                  profileGaps.length
+                    ? "home.generateWithoutThese"
+                    : "home.generateMaterials",
+                )}
               </button>
               <button
                 type="button"
                 onClick={() => void generateFromGapPrompt(true)}
+                hidden={!profileGaps.length}
                 disabled={state.isGenerating || confirmedGapIndices.size === 0}
                 className="text-xs uppercase tracking-[0.12em] px-4 py-3 transition-opacity hover:opacity-75 disabled:opacity-40"
                 style={{

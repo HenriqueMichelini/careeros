@@ -1,3 +1,4 @@
+import { jobContextFixture } from "./job-context-fixtures.mjs"
 import { savedProfileExpression } from "./profile-browser-storage.mjs"
 import { keyboardFlow } from "./keyboard-flow.mjs"
 // Browser regression for the Apply checklist and workflow transitions.
@@ -206,11 +207,19 @@ try {
     )
   }
   const {keyboardFill, keyboardSubmit} = keyboardFlow({call, evaluate, pause, selector:'main textarea'})
-  const respond = async (body, status = 200) => {
+  const respond = async (body, status = 200, inspectOnly = false) => {
+    if (body.gaps && !body.jobContext) {
+      const posting = await evaluate("JSON.parse(window.__pending[0].options.body).jobPosting")
+      body = { ...body, jobContext: jobContextFixture(posting) }
+    }
     await evaluate(
       `window.__pending.shift().resolve(new Response(${JSON.stringify(JSON.stringify(body))}, { status: ${status}, headers: { 'Content-Type': 'application/json' } }))`,
     )
     await pause(70)
+    if (body.gaps?.length === 0 && !inspectOnly && await evaluate("!!document.querySelector('[role=dialog]')")) {
+      await evaluate("Array.from(document.querySelectorAll('[role=dialog] button')).at(-2).click()")
+      await pause(70)
+    }
   }
   for (const locale of ["en", "pt-BR"]) {
     for (const width of [1440, 390]) {
@@ -529,6 +538,36 @@ try {
         "ready",
         "ready",
       ])
+      // Inspect reusable context before tailoring, including legitimate applicant requests.
+      const contextPosting = "Java developer. AWS required.\nSend salary expectations and portfolio as PDF."
+      await fill(contextPosting)
+      await generate()
+      assert.equal(await evaluate("JSON.parse(window.__pending[0].options.body).understandJob"), true)
+      await respond({ gaps: [] }, 200, true)
+      const review = await evaluate("document.querySelector('[role=dialog]').textContent")
+      assert.ok(review.includes(locale === "en" ? "Review job understanding" : "Revisar entendimento da vaga"))
+      assert.ok(review.includes("AWS required.") && review.includes("Send salary expectations and portfolio as PDF."))
+      assert.ok(review.includes(locale === "en" ? "Importance not specified" : "Importância não especificada"))
+      assert.equal(await evaluate("window.__pending.length"), 0, "inspection requires no provider call")
+      await evaluate("document.querySelector('[role=dialog] details summary').click()")
+      assert.equal(await evaluate("document.querySelector('[role=dialog] blockquote').textContent"), "Java developer")
+      assert.equal(await evaluate("document.documentElement.scrollWidth <= window.innerWidth"), true)
+      const reviewShot = await call("Page.captureScreenshot", { format: "png", captureBeyondViewport: true })
+      writeFileSync(join(work, `job-context-${locale}-${width}.png`), Buffer.from(reviewShot.data, "base64"))
+      await evaluate("Array.from(document.querySelectorAll('[role=dialog] button')).at(-2).click()")
+      const draftInput = await evaluate("JSON.parse(window.__pending[0].options.body)")
+      assert.equal(draftInput.jobPosting, contextPosting)
+      assert.deepEqual(draftInput.jobContext, jobContextFixture(contextPosting))
+      await respond({ error: "job_context_stale" }, 502)
+      assert.equal(await evaluate("!!document.querySelector('[role=dialog]')"), false)
+      assert.ok((await feedback()).includes(locale === "en" ? "Analyze again" : "Analise novamente"))
+      assert.equal(await evaluate("window.__pending.length"), 0, "unverifiable context must not automatically retry")
+      assert.equal(await evaluate("document.querySelector('main textarea').value"), contextPosting)
+      await generate()
+      await respond({ gaps: [] }, 200, true)
+      await evaluate("document.querySelector('[role=dialog] button').click()")
+      await fill(contextPosting + " ")
+      assert.equal(await evaluate("!!document.querySelector('main blockquote')"), false, "changed originals invalidate inspected context")
       await fill("Harbor Works seeks a Product Lead to lead product work. Research and product strategy required.")
       await generate()
       await respond({ gaps: [] })
