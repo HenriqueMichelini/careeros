@@ -1056,6 +1056,7 @@ try {
         await generate()
         await respond({gaps: []}, 200, true)
         await evaluate("document.querySelector('[data-requirement-state] summary').click()")
+        await until("document.querySelector('[data-requirement-state] details').open && document.querySelector('[data-linked-context]').offsetHeight > 0")
         const linked = await evaluate("document.querySelector('[data-linked-context]').textContent")
         assert.ok(linked.includes('Harbor Works') && linked.includes('Product Lead') && linked.includes('2021'))
         assert.ok(!linked.includes('Summit'), 'linked skill must retain its actual employer')

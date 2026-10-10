@@ -108,3 +108,5 @@ policy duplication concern. The first Spec review identified a P2: the flat
 inspector did not make fact-to-role/project relationships visible. The correction
 groups facts by owner, renders linked context identities, adds a bilingual
 two-employer browser case and shares the allowlist through fields.json.
+
+Both correction reviews reported no remaining actionable findings.
