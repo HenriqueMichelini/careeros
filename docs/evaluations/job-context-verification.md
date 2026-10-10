@@ -63,6 +63,13 @@ original gate; obsolete artifacts never trigger an automatic repair/retry.
   recovers deliberately from stale context, invalidates changed originals, preserves
   Profile and source across field decisions/cancellation/failure, and reaches
   rendered Results/controlled print paths.
+- `node tests/cv-shared-preview.check.mjs`: passed shared Profile/Apply A4 preview,
+  section order, fit and overflow behavior with synthetic API responses.
+- `node tests/results-firefox-print.check.mjs`: passed actual Firefox Save to PDF
+  (one page), signed cover display/copy/PDF, narrow layout and signature overflow.
+  Its preexisting fixture needed a synthetic TypeSafe key to reach Apply's gate.
+- Code review against `54d6d3b`: independent Standards and Spec reviewers reported
+  zero actionable findings; controlled evidence limits were preserved.
 - Visual inspection: Portuguese 390px review contains readable metadata, source
   excerpts, qualifications, Application Requirements and no horizontal overflow.
 
