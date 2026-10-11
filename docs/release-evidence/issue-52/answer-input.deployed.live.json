@@ -1,0 +1,340 @@
+{
+  "revision": "0e96c485e913c397e43c1d6d79c1dc304ce9d7c5",
+  "deployId": "6acc0c3d6cdd740009552853",
+  "started": "2026-10-11T22:25:17.993353+00:00",
+  "workflowLimit": 2,
+  "automaticRetries": 0,
+  "results": [
+    {
+      "origin": "https://beamish-bavarois-333d03.netlify.app",
+      "path": "/api/application-draft",
+      "status": 200,
+      "clientHttpMs": 10053,
+      "cacheControl": "no-store",
+      "cacheStatus": "\"Netlify Durable\"; fwd=bypass",
+      "requestId": "01M4PH41683WAWZ18V9RABVZNY",
+      "contentType": "application/json; charset=utf-8",
+      "payloadHash": "e8b74985e4e830f283d46ac594bf20d597d2cd3fbf2eb135286c8e78b1939e1f",
+      "publicClientOutcome": {
+        "origin": "https://beamish-bavarois-333d03.netlify.app",
+        "parsed": false,
+        "profileUnchanged": true,
+        "error": "invalid_output"
+      },
+      "handlerMs": 8993.754313,
+      "diagnosticAttemptId": "92cabd6e02a4a1e01bb8d22468d67921",
+      "browserMs": null,
+      "functionLogPrivacy": "Observed two entries contain metadata and usage only, without inputs, generated prose or keys; provider retention not inspected",
+      "generatedAnswerItemCount": 3,
+      "artifactClaimOutcomes": [
+        {
+          "field": "jobTitle",
+          "state": "supported",
+          "concerns": [],
+          "careerReferences": []
+        },
+        {
+          "field": "jobSummary",
+          "state": "supported",
+          "concerns": [],
+          "careerReferences": []
+        },
+        {
+          "field": "greeting",
+          "state": "supported",
+          "concerns": [],
+          "careerReferences": []
+        },
+        {
+          "field": "body",
+          "state": "unsupported",
+          "concerns": [
+            "invalid_or_stale_citation"
+          ],
+          "careerReferences": [
+            {
+              "profileId": "p",
+              "id": "p",
+              "revision": 1
+            }
+          ]
+        },
+        {
+          "field": "applicationAnswers",
+          "state": "unsupported",
+          "concerns": [
+            "A pergunta 2, “Você tem conhecimento de Java?”, não é respondida diretamente: dizer que usa Java para desenvolver APIs não confirma explicitamente o conhecimento solicitado.",
+            "A pergunta 3 solicita experiência relevante para a vaga, mas a resposta apenas repete o uso de Java para desenvolver APIs e não explica sua relevância para a vaga.",
+            "invalid_or_stale_citation"
+          ],
+          "careerReferences": [
+            {
+              "profileId": "p",
+              "id": "p",
+              "revision": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "origin": "https://6acc0c3d6cdd740009552853--beamish-bavarois-333d03.netlify.app",
+      "path": "/api/application-draft",
+      "status": 200,
+      "clientHttpMs": 7544,
+      "cacheControl": "no-store",
+      "cacheStatus": "\"Netlify Durable\"; fwd=bypass",
+      "requestId": "01M4PH4B09KMNSJADT9Q2QQM67",
+      "contentType": "application/json; charset=utf-8",
+      "payloadHash": "e8b74985e4e830f283d46ac594bf20d597d2cd3fbf2eb135286c8e78b1939e1f",
+      "publicClientOutcome": {
+        "origin": "https://6acc0c3d6cdd740009552853--beamish-bavarois-333d03.netlify.app",
+        "parsed": false,
+        "profileUnchanged": true,
+        "error": "invalid_output"
+      },
+      "handlerMs": 7040.783312,
+      "diagnosticAttemptId": "333878dbf4251553a6dea3730af93cf5",
+      "browserMs": null,
+      "functionLogPrivacy": "Observed two entries contain metadata and usage only, without inputs, generated prose or keys; provider retention not inspected",
+      "generatedAnswerItemCount": 5,
+      "artifactClaimOutcomes": [
+        {
+          "field": "jobTitle",
+          "state": "supported",
+          "concerns": [],
+          "careerReferences": []
+        },
+        {
+          "field": "jobSummary",
+          "state": "supported",
+          "concerns": [],
+          "careerReferences": []
+        },
+        {
+          "field": "greeting",
+          "state": "supported",
+          "concerns": [],
+          "careerReferences": []
+        },
+        {
+          "field": "body",
+          "state": "unsupported",
+          "concerns": [
+            "invalid_or_stale_citation"
+          ],
+          "careerReferences": [
+            {
+              "profileId": "p",
+              "id": "p",
+              "revision": 1
+            }
+          ]
+        },
+        {
+          "field": "applicationAnswers",
+          "state": "unsupported",
+          "concerns": [
+            "invalid_or_stale_citation"
+          ],
+          "careerReferences": [
+            {
+              "profileId": "p",
+              "id": "p",
+              "revision": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "scope": "Two authorized direct HTTPS checks, followed by offline actual public-client replay; not live browser acceptance/save/export/PDF evidence",
+  "autoPublishing": "locked; specific completed build manually published with user authorization",
+  "acceptedResultCost": null,
+  "providerAccountBilling": null,
+  "broaderQualityComparison": "unverified; reused diagnostic input, not held-out",
+  "observedDiagnostics": [
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "92cabd6e02a4a1e01bb8d22468d67921",
+      "workflow": "application_draft",
+      "outcome": "complete",
+      "httpStatus": 200,
+      "durationMs": 8993.754313,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 199.281892,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": 1080,
+            "outputTokens": 108,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 199.105763,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "generation",
+          "version": "application-draft-policy-v2/context-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 8793.382714,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 1417,
+            "outputTokens": 218,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 1414,
+            "outputTokenCeiling": 8000,
+            "durationMs": 3069.262586,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.261417,
+          "provider": null
+        },
+        {
+          "name": "resume_support",
+          "version": "resume-support-openai-v1/number-guard-v2",
+          "outcome": "complete",
+          "durationMs": 1494.126279,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 482,
+            "outputTokens": 64,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 4000,
+            "durationMs": 1493.863568,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "artifact_support",
+          "version": "artifact-support-openai-v3/prepared-citations-v1/number-guard-v2/answer-input-v1",
+          "outcome": "complete",
+          "durationMs": 4229.08208,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 1378,
+            "outputTokens": 575,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 8000,
+            "durationMs": 4227.245003,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "333878dbf4251553a6dea3730af93cf5",
+      "workflow": "application_draft",
+      "outcome": "complete",
+      "httpStatus": 200,
+      "durationMs": 7040.783312,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 111.260026,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": 1080,
+            "outputTokens": 108,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 111.123192,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "generation",
+          "version": "application-draft-policy-v2/context-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 6928.854518,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 1417,
+            "outputTokens": 258,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 1414,
+            "outputTokenCeiling": 8000,
+            "durationMs": 2719.98258,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.240959,
+          "provider": null
+        },
+        {
+          "name": "resume_support",
+          "version": "resume-support-openai-v1/number-guard-v2",
+          "outcome": "complete",
+          "durationMs": 1124.257,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 486,
+            "outputTokens": 63,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 4000,
+            "durationMs": 1124.146509,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "artifact_support",
+          "version": "artifact-support-openai-v3/prepared-citations-v1/number-guard-v2/answer-input-v1",
+          "outcome": "complete",
+          "durationMs": 3083.866654,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 1451,
+            "outputTokens": 452,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 8000,
+            "durationMs": 3081.631854,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        }
+      ],
+      "accepted": null
+    }
+  ]
+}

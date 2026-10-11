@@ -647,3 +647,66 @@ test("captured shortened qualification source IDs remain rejected", () => {
     "invalid_output",
   )
 })
+
+test("invalid career citations remain inspectable without authorizing acceptance", async () => {
+  const fixture = JSON.parse(
+    readFileSync(
+      new URL(
+        "../docs/release-evidence/issue-52/invalid-job-citation.controlled.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  ).cases[0]
+  const doc = fixture.request.profileEvidence
+  const before = structuredClone(doc)
+  const valid = { profileId: "p", id: "skill", revision: 1 }
+  const variants = [
+    [{ profileId: "p", id: "p", revision: 1 }],
+    [valid, { profileId: "p", id: "skill", revision: 99 }],
+    [valid, { profileId: "other", id: "skill", revision: 1 }],
+    [valid, { profileId: "p", id: "missing", revision: 1 }],
+    [valid, valid],
+  ]
+  for (const refs of variants) {
+    const provider = structuredClone(fixture.provider)
+    for (const judgment of provider[2].judgments) {
+      if (judgment.sources.length) judgment.sources = refs
+      if (judgment.jobSources.length)
+        judgment.jobSources = [
+          {
+            start: 0,
+            end: new TextEncoder().encode(fixture.request.jobPosting).length,
+            quote: fixture.request.jobPosting,
+          },
+        ]
+    }
+    const result = await viaHandler("pt-reviewed-draft", provider, () =>
+      generateMaterials(
+        profileView(doc),
+        fixture.request.jobPosting,
+        "sk-controlled",
+        [],
+        "pt-BR",
+        "controlled",
+        undefined,
+        [],
+        doc,
+      ),
+    )
+    const claims = result.artifactReview.claims.filter(
+      (c) => c.field === "body" || c.field === "applicationAnswers",
+    )
+    assert.ok(claims.length >= 2)
+    for (const claim of claims) {
+      assert.equal(claim.state, "unsupported")
+      assert.ok(claim.concerns.includes("invalid_or_stale_citation"))
+      assert.deepEqual(claim.sources, refs.length === 1 ? [] : [valid])
+    }
+    assert.throws(
+      () => acceptArtifacts(result.artifactReview, doc),
+      /unresolved/,
+    )
+    assert.deepEqual(doc, before)
+  }
+})

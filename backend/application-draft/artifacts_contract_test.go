@@ -296,6 +296,7 @@ func TestArtifactSupportReceivesExactPreparedJobCitations(t *testing.T) {
 		if json.Unmarshal([]byte(envelope.Messages[1].Content), &payload) != nil || len(payload.JobCitations) < 2 {
 			t.Fatal("support request lacks occurrence-specific prepared job citations")
 		}
+		assertCareerCitationCatalog(t, []byte(envelope.Messages[1].Content))
 		covered := ""
 		for _, s := range payload.JobCitations {
 			if s.Start != len(covered) || s.End <= s.Start || s.End > len(posting) || s.Quote != posting[s.Start:s.End] {
@@ -433,4 +434,16 @@ func temporaryContextName(answers []map[string]string) string {
 		return "absent temporary context"
 	}
 	return "negative temporary context"
+}
+
+func assertCareerCitationCatalog(t *testing.T, data []byte) {
+	t.Helper()
+	var payload struct{ CareerCitations []map[string]any }
+	if err := json.Unmarshal(data, &payload); err != nil {
+		t.Fatal(err)
+	}
+	want := []map[string]any{{"profileId": "p", "id": "skill", "revision": float64(1)}}
+	if !reflect.DeepEqual(payload.CareerCitations, want) {
+		t.Fatalf("career citation catalog must identify selected facts, not their owner: %+v", payload.CareerCitations)
+	}
 }

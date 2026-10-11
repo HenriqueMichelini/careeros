@@ -387,3 +387,51 @@ policy is unchanged. This correction is a testable request-contract improvement,
 not a confirmed cause or live resolution of the fallible review failures.
 Deployed verification requires fresh publication/provider authorization; all
 earlier attempt limits are exhausted. The remaining full #52 gates stay open.
+
+## Deployed explicit-answer checks and career-reference recovery
+
+The user authorized publishing build `0e96c485e913c397e43c1d6d79c1dc304ce9d7c5`
+(deploy `6acc0c3d6cdd740009552853`) and two further draft checks without retries.
+Publication was verified as locked. Published and immutable preview returned
+HTTP 200/no-store in 10,053 ms and 7,544 ms; handler durations were 8,994 ms and
+7,041 ms. Both public-client replays rejected the response as `invalid_output`.
+Profile snapshots remained unchanged. No output was accepted.
+
+In both outputs the artifact reviewer cited owner `p` instead of fact `skill`
+for career assertions. The backend correctly marked those claims unsupported
+with `invalid_or_stale_citation`, but forwarded the invalid source objects,
+which made the entire review unreadable to the client. Job citations remained
+exact. Preview had no additional answer concerns; published output still
+reported deficiencies for supplemental generated questions. These two cases
+do not prove semantic omission review is fixed. The unchanged generation policy
+still produced three/five items for one explicit posting question.
+
+[Explicit-answer deployed evidence](issue-52/answer-input.deployed.live.json)
+retains revision/origin, request hashes, separate timings, observed usage,
+claim outcomes and client rejection. The two inspected Netlify log entries
+contained metadata/usage without input, generated prose or keys. This is not
+provider retention or billing verification, live browser acceptance, durable
+save, export or PDF evidence. Both approved attempts are used.
+
+A subsequent connected production-handler/public-client regression reproduced
+the rejection for an owner ID, stale revision, foreign Profile, unknown fact and
+duplicate reference. The correction keeps the raw-reference validation and its
+unsupported concern, but returns only distinct selected current career fact
+references. It neither repairs a reference nor changes unsupported state to
+supported. Mixed valid/invalid lists retain their valid references; invalid-only
+lists become empty. The regression now parses the review while still rejecting
+artifact acceptance and preserving the Profile. This mirrors the earlier exact
+job-citation response handling without weakening the client parser.
+
+The same boundary correction supplies `careerCitations` containing exact
+references to the selected facts, including request-local answer facts when
+present. Its policy distinguishes those fact references from owner/context IDs.
+A public-handler assertion failed with the missing catalog, then passed with
+the literal selected fact reference. References remain traceability, not
+semantic proof; raw invalid provider references are still checked and blocked.
+The support diagnostic version is
+`artifact-support-openai-v4/prepared-citations-v1/number-guard-v2/answer-input-v1/career-citations-v1`.
+The catalog duplicates existing reference metadata and may increase token use;
+the existing serialized-envelope limit remains enforced. These latest changes
+have no live evidence yet. They do not resolve qualification source-ID
+reliability, full semantic quality or accepted-result cost. Issue #52 stays open.
