@@ -289,6 +289,31 @@ try {
       await pause(70)
     }
   }
+  // Analysis is session-reused after #49. Both fresh and reused paths require
+  // deliberate confirmation before generating another draft.
+  const startDraft = async () => {
+    await generate()
+    await until(
+      "!!document.querySelector('[role=dialog]') || window.__pending.length === 1",
+    )
+    if (await evaluate("window.__pending.length === 1")) {
+      assert.ok(
+        (await evaluate("window.__pending[0].url")).includes(
+          "qualification-gaps",
+        ),
+      )
+      await respond({ gaps: [] })
+    } else {
+      assert.equal(await evaluate("window.__pending.length"), 0)
+      await evaluate(
+        "Array.from(document.querySelectorAll('[role=dialog] button')).at(-2).click()",
+      )
+    }
+    await until("window.__pending.length === 1")
+    assert.ok(
+      (await evaluate("window.__pending[0].url")).includes("application-draft"),
+    )
+  }
   const button = (label) =>
     `Array.from(document.querySelectorAll('.resume-review button')).find(b => b.textContent.trim() === ${JSON.stringify(label)})`
   await clickApply()
@@ -315,18 +340,7 @@ try {
       )
       await pause(50)
       await fill("Java developer. AWS required.")
-      await generate()
-      await until("window.__pending.length === 1")
-      await respond({ gaps: [] })
-      await until(
-        "!!document.querySelector('[role=dialog]') || window.__pending.length === 1",
-      )
-      if (await evaluate("!!document.querySelector('[role=dialog]')")) {
-        await evaluate(
-          "Array.from(document.querySelectorAll('[role=dialog] button')).at(-2).click()",
-        )
-      }
-      await until("window.__pending.length === 1")
+      await startDraft()
       const input = await evaluate(
         "JSON.parse(window.__pending[0].options.body)",
       )
@@ -601,10 +615,7 @@ try {
       // A failed generation keeps the previous accepted resume accessible.
       await evaluate("document.querySelectorAll('nav button')[0].click()")
       await until("!!document.querySelector('main textarea')")
-      await generate()
-      await until("window.__pending.length === 1")
-      await respond({ gaps: [] })
-      await until("window.__pending.length === 1")
+      await startDraft()
       await respond({ error: "invalid_output" }, 502)
       await until("!!document.querySelector('[role=alert]')")
       await evaluate("document.querySelectorAll('nav button')[3].click()")
@@ -628,10 +639,7 @@ try {
       // complete previous accepted result, not just the resume string.
       await evaluate("document.querySelectorAll('nav button')[0].click()")
       await until("!!document.querySelector('main textarea')")
-      await generate()
-      await until("window.__pending.length === 1")
-      await respond({ gaps: [] })
-      await until("window.__pending.length === 1")
+      await startDraft()
       await respond({
         ...materials,
         jobTitle: "Replacement draft",
@@ -672,10 +680,7 @@ try {
   // Actual accepted-content overflow is measured before opening the print dialog.
   await evaluate("document.querySelectorAll('nav button')[0].click()")
   await until("!!document.querySelector('main textarea')")
-  await generate()
-  await until("window.__pending.length === 1")
-  await respond({ gaps: [] })
-  await until("window.__pending.length === 1")
+  await startDraft()
   await respond({
     ...materials,
     resume:

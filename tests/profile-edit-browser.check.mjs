@@ -1,3 +1,4 @@
+import { withIngestionLedger } from "./ingestion-fixtures.mjs"
 import { savedProfileExpression } from "./profile-browser-storage.mjs"
 
 // Browser regression for raw professional-information review and explicit apply.
@@ -217,7 +218,9 @@ try {
     await evaluate(
       `document.querySelectorAll('aside nav button')[${sections.indexOf(name)}].click()`,
     )
-    await until(`document.querySelector('[data-profile-content]')?.dataset.profileContent===${JSON.stringify(name)}`)
+    await until(
+      `document.querySelector('[data-profile-content]')?.dataset.profileContent===${JSON.stringify(name)}`,
+    )
   }
   const reload = async (name) => {
     await evaluate("location.reload()")
@@ -373,7 +376,9 @@ try {
         `document.querySelector('[data-fact-details]').open=true; document.querySelector('[data-fact-id="${fact.id}"]').open=true`,
       )
       const choose = async (index, value) => {
-        await until(`document.querySelectorAll('[data-fact-id="${fact.id}"] select')[${index}] instanceof HTMLSelectElement`)
+        await until(
+          `document.querySelectorAll('[data-fact-id="${fact.id}"] select')[${index}] instanceof HTMLSelectElement`,
+        )
         await evaluate(
           `(()=>{const e=document.querySelectorAll('[data-fact-id="${fact.id}"] select')[${index}];Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(e,${JSON.stringify(value)});e.dispatchEvent(new Event('change',{bubbles:true}))})()`,
         )
@@ -429,7 +434,9 @@ try {
       const screenshot = await call("Page.captureScreenshot", {
         format: "png",
         captureBeyondViewport: true,
-        clip: await evaluate("(()=>{const r=document.querySelector('[data-fact-details]').getBoundingClientRect();return {x:r.left+scrollX,y:r.top+scrollY,width:r.width,height:Math.min(1000,r.height),scale:1}})()"),
+        clip: await evaluate(
+          "(()=>{const r=document.querySelector('[data-fact-details]').getBoundingClientRect();return {x:r.left+scrollX,y:r.top+scrollY,width:r.width,height:Math.min(1000,r.height),scale:1}})()",
+        ),
       })
       writeFileSync(
         join(work, `manual-${locale}-${width}.png`),
@@ -463,7 +470,18 @@ try {
         unplacedOperationCount: 0,
       }
       await evaluate(
-        `window.fetch=async()=>new Response(JSON.stringify(${JSON.stringify(proposal)}),{status:200})`,
+        `window.fetch=async(url,options)=>{const req=JSON.parse(options.body);const raw=${JSON.stringify(withIngestionLedger(proposal))};raw.continuation={sourceId:${JSON.stringify(
+          createHash("sha256")
+            .update(
+              JSON.stringify([
+                "normalization-v1",
+                "structure-v1",
+                "professional_information",
+                source,
+              ]),
+            )
+            .digest("hex"),
+        )},index:req.portion.index,total:1,bytes:req.portion.bytes,regions:[[{Start:0,End:new TextEncoder().encode(req.input).length}]],remaining:null,planComplete:true,processed:true};return new Response(JSON.stringify(raw),{status:200})}`,
       )
       await fill(source)
       const review =
@@ -490,7 +508,8 @@ try {
         "localStorage.getItem('careeros_profile_v2')",
       )
       await section("profile")
-      await evaluate(`${byText(apply)}.click()`)
+      // Current continuation UI invalidates stale proposals immediately.
+      await until(`${byText(apply)} === undefined`)
       await until("!!document.querySelector('[role=alert]')")
       assert.equal(
         await evaluate("localStorage.getItem('careeros_profile_v2')"),

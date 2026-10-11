@@ -1,0 +1,474 @@
+{
+  "scope": "Direct published HTTPS Function requests; not live browser or local provider evidence",
+  "origin": "https://beamish-bavarois-333d03.netlify.app",
+  "revision": "4e48cb8a9106a78f58a5fde7c412475650dbb794",
+  "deployId": "6acbb7959a691d0009a0176d",
+  "automaticRetries": 0,
+  "workflowLimit": 5,
+  "started": "2026-10-11T16:37:27.146876+00:00",
+  "results": [
+    {
+      "path": "/api/profile/ingest",
+      "case": "en-fact",
+      "status": 200,
+      "clientHttpMs": 5730,
+      "cacheControl": "no-store",
+      "cacheStatus": "\"Netlify Durable\"; fwd=bypass",
+      "requestId": "01M4NX73G0VQT9WQTKT1SHA6NT",
+      "contentType": "application/json; charset=utf-8",
+      "payloadHash": "b5e33785ee47a35920ed7690a85fd2b8a8d350c6600defcdbd8dcbbaa6c593ed",
+      "preflight": "pass",
+      "functionLogPrivacy": "Observed log contains metadata only; no input, output prose or keys.",
+      "handlerMs": 4908.346866,
+      "providerMs": [
+        {
+          "stage": "field_validation",
+          "ms": 192.023939
+        },
+        {
+          "stage": "extraction",
+          "ms": 3003.222052
+        },
+        {
+          "stage": "reconciliation",
+          "ms": 1711.737507
+        }
+      ],
+      "browserMs": null,
+      "errorCategory": null,
+      "responseFields": [
+        "claims",
+        "coverage",
+        "decision",
+        "operations",
+        "outcomes",
+        "skippedClaims",
+        "unplacedOperationCount",
+        "unresolvedClaimIds",
+        "unverifiedClaimCount"
+      ],
+      "diagnosticAttemptId": "788486a77e9d5cc3e669c3102a26c737"
+    },
+    {
+      "path": "/api/cv/generate",
+      "case": "en-stable-cv-metric",
+      "status": 200,
+      "clientHttpMs": 2302,
+      "cacheControl": "no-store",
+      "cacheStatus": "\"Netlify Durable\"; fwd=bypass",
+      "requestId": "01M4NX79306KE9V1M0MHAH1ATC",
+      "contentType": "application/json; charset=utf-8",
+      "payloadHash": "fc8ab024b5a8214de4efa267e731abcc9981e3f867b3dfd5c971d813be9ec542",
+      "preflight": "pass",
+      "functionLogPrivacy": "Observed log contains metadata only; no input, output prose or keys.",
+      "handlerMs": 1768.460666,
+      "providerMs": [
+        {
+          "stage": "generation",
+          "ms": 1767.963245
+        }
+      ],
+      "browserMs": null,
+      "errorCategory": null,
+      "responseFields": [
+        "selected",
+        "summary"
+      ],
+      "diagnosticAttemptId": "b5a1929c35f704d12a7d64b91d1128fe"
+    },
+    {
+      "path": "/api/qualification-gaps",
+      "case": "pt-evidence-matching",
+      "status": 200,
+      "clientHttpMs": 1058,
+      "cacheControl": "no-store",
+      "cacheStatus": "\"Netlify Durable\"; fwd=bypass",
+      "requestId": "01M4NX7BAV8NXZDG701G0C2GAA",
+      "contentType": "application/json; charset=utf-8",
+      "payloadHash": "d090e9ef9ee0b896e5b020c3c8816b06bcadb23e1be41b3434f59367349a0192",
+      "preflight": "pass",
+      "functionLogPrivacy": "Observed log contains metadata only; no input, output prose or keys.",
+      "handlerMs": 220.089312,
+      "providerMs": [
+        {
+          "stage": "field_validation",
+          "ms": 219.037036
+        }
+      ],
+      "browserMs": null,
+      "errorCategory": null,
+      "responseFields": [
+        "decision"
+      ],
+      "diagnosticAttemptId": "06f5d7b2914baf1d1e0678d756e1fa5c"
+    },
+    {
+      "path": "/api/application-draft",
+      "case": "pt-reviewed-draft",
+      "status": 200,
+      "clientHttpMs": 11717,
+      "cacheControl": "no-store",
+      "cacheStatus": "\"Netlify Durable\"; fwd=bypass",
+      "requestId": "01M4NX7CBZN1ZZRTWT6FNGBXQ5",
+      "contentType": "application/json; charset=utf-8",
+      "payloadHash": "f93d7a95f6362b6fb5525f65c6b86f1b9a080004e8d81c0c5fbd670f0927b9dc",
+      "preflight": "pass",
+      "functionLogPrivacy": "Observed log contains metadata only; no input, output prose or keys.",
+      "handlerMs": 11168.461525,
+      "providerMs": [
+        {
+          "stage": "field_validation",
+          "ms": 196.059882
+        },
+        {
+          "stage": "generation",
+          "ms": 4861.671846
+        },
+        {
+          "stage": "resume_support",
+          "ms": 1865.610751
+        },
+        {
+          "stage": "artifact_support",
+          "ms": 4241.745041
+        }
+      ],
+      "browserMs": null,
+      "errorCategory": null,
+      "responseFields": [
+        "applicationAnswers",
+        "artifactReview",
+        "company",
+        "contextSelection",
+        "coverLetter",
+        "jobSummary",
+        "jobTitle",
+        "resume",
+        "resumeReview"
+      ],
+      "diagnosticAttemptId": "719e012cf64648544d2a5001b5ecca2c"
+    },
+    {
+      "path": "/api/profile/review",
+      "case": "en-section",
+      "status": 200,
+      "clientHttpMs": 2923,
+      "cacheControl": "no-store",
+      "cacheStatus": "\"Netlify Durable\"; fwd=bypass",
+      "requestId": "01M4NX7QTCK38QG049XCXDT176",
+      "contentType": "application/json; charset=utf-8",
+      "payloadHash": "3118d13846b8214e320a0bc109129f072bb68ad2f6f1764f3866336a9413920d",
+      "preflight": "pass",
+      "functionLogPrivacy": "Observed log contains metadata only; no input, output prose or keys.",
+      "handlerMs": 2698.779021,
+      "providerMs": [
+        {
+          "stage": "section_review",
+          "ms": 1431.035408
+        },
+        {
+          "stage": "section_support_check",
+          "ms": 1266.374941
+        }
+      ],
+      "browserMs": null,
+      "errorCategory": null,
+      "responseFields": [
+        "patches",
+        "profileId",
+        "revision",
+        "section",
+        "summary"
+      ],
+      "diagnosticAttemptId": "bfd21e677a4c7eb95b0cab9e3ee94762"
+    }
+  ],
+  "observedDiagnostics": [
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "788486a77e9d5cc3e669c3102a26c737",
+      "workflow": "profile_ingestion",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 4908.346866,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.06605,
+          "provider": null
+        },
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 192.21226,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": 1016,
+            "outputTokens": 97,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 192.023939,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "extraction",
+          "version": "profile-claims-prompt-v5/schema-v2/source-resolution-v1/portions-v1/clarifications-v1",
+          "outcome": "completed",
+          "durationMs": 3003.426232,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 960,
+            "outputTokens": 159,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 6000,
+            "durationMs": 3003.222052,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "reconciliation",
+          "version": "profile-operations-prompt-v4/schema-v3/dispositions-v1/clarifications-v1",
+          "outcome": "completed",
+          "durationMs": 1712.148188,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 1967,
+            "outputTokens": 106,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 6000,
+            "durationMs": 1711.737507,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "candidate_retrieval",
+          "version": "lexical-projection-v3/stable-facts-v1",
+          "outcome": "completed",
+          "durationMs": 0.02934,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "b5a1929c35f704d12a7d64b91d1128fe",
+      "workflow": "cv_generation",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 1768.460666,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "generation",
+          "version": "cv-policy-v2/schema-v2",
+          "outcome": "completed",
+          "durationMs": 1768.342579,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 846,
+            "outputTokens": 42,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 4000,
+            "durationMs": 1767.963245,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "statement_support_checks",
+          "version": "cv-heuristic-grounding-v1",
+          "outcome": "completed",
+          "durationMs": 0.149047,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "06f5d7b2914baf1d1e0678d756e1fa5c",
+      "workflow": "qualification_gaps",
+      "outcome": "request_information",
+      "httpStatus": 200,
+      "durationMs": 220.089312,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "request_information",
+          "durationMs": 219.207059,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": 1046,
+            "outputTokens": 114,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 219.037036,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "719e012cf64648544d2a5001b5ecca2c",
+      "workflow": "application_draft",
+      "outcome": "complete",
+      "httpStatus": 200,
+      "durationMs": 11168.461525,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 196.41203,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": 1064,
+            "outputTokens": 108,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 196.059882,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "generation",
+          "version": "application-draft-policy-v2/context-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 10971.01437,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 1393,
+            "outputTokens": 343,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 8000,
+            "durationMs": 4861.671846,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.208072,
+          "provider": null
+        },
+        {
+          "name": "resume_support",
+          "version": "resume-support-openai-v1",
+          "outcome": "complete",
+          "durationMs": 1865.732764,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 439,
+            "outputTokens": 40,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 4000,
+            "durationMs": 1865.610751,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "artifact_support",
+          "version": "artifact-support-openai-v1",
+          "outcome": "complete",
+          "durationMs": 4242.413207,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 1171,
+            "outputTokens": 542,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 8000,
+            "durationMs": 4241.745041,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "bfd21e677a4c7eb95b0cab9e3ee94762",
+      "workflow": "profile_review",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 2698.779021,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "section_review",
+          "version": "profile-section-proposal-v1",
+          "outcome": "completed",
+          "durationMs": 1431.220945,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 491,
+            "outputTokens": 64,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 6000,
+            "durationMs": 1431.035408,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "section_support_check",
+          "version": "profile-section-proposal-v1",
+          "outcome": "completed",
+          "durationMs": 1266.479842,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 462,
+            "outputTokens": 26,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 6000,
+            "durationMs": 1266.374941,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        }
+      ],
+      "accepted": null
+    }
+  ]
+}
