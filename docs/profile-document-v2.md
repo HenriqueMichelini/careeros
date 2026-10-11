@@ -2,7 +2,7 @@
 
 Issue #36 introduces an expand-phase boundary. `careeros_profile_v2` contains the only editable, authoritative Profile. A successful atomic `localStorage.setItem` installs the authority after the candidate passes validation. The unchanged `careeros_repo` key is the recovery snapshot of pre-migration data. No subsequent Profile writes update that key. A malformed v2 document never falls back silently to an older snapshot.
 
-`src/lib/profileDocument.ts` defines migration, validation, compatibility projection and whole-field replacement. `internal/profiledocument/contract.json` defines the shared wire shape; both TypeScript and Go evaluate its small schema subset and separately validate domain references. `fixtures.json` is the common positive/negative parity corpus. The stateless section-review handler validates bounded canonical snapshots with the Go contract. Other HTTP workflow contracts continue receiving `careerProfile` and qualification views; no provider, account, database or synchronization is added.
+`src/lib/profileDocument.ts` defines lossless legacy import, validation, derived compatibility views and explicit canonical edit commands. The transitional whole-Profile replacement API was retired in #51. `internal/profiledocument/contract.json` defines the shared wire shape; both TypeScript and Go evaluate its small schema subset and separately validate domain references. `fixtures.json` is the common positive/negative parity corpus. The stateless section-review handler validates bounded canonical snapshots with the Go contract. Active ingestion and section Review receive versioned documents; CV generation receives stable fact references; requirement analysis and Application Draft generation receive scoped fact/evidence projections alongside compatibility views; no provider, account, database or synchronization is added.
 
 ## Identity and meaning
 
@@ -41,3 +41,12 @@ The store preserves a canonical draft separately from the durable document, so q
 ## Section rewrite proposals (#38)
 
 `src/lib/sectionReview.ts` builds selected-section snapshots, validates bounded revisioned patches and applies only explicitly accepted proposals. `applyProfileProposal` saves atomically before advancing the store or clearing review. Each nonempty fact retains an individually referenced patch; cross-owner or changed-qualifier consolidation is rejected. Unsupported sources remain unsupported. Edited wording becomes user authored with unknown semantic qualifiers and invalidated excerpt support; unchanged accepted AI wording retains approved excerpts. Correcting a source conservatively invalidates shared excerpt support, preserving the excerpts for inspection. See `docs/release-evidence/2026-10-09-section-profile-proposals.md` for scope, verifier approval and evidence limits.
+
+
+## Contract phase (#51)
+
+The store keeps the canonical document as its editable state and derives a memoized presentation view. It exposes manual canonical commands and explicit section/ingestion acceptance transactions. There is no `SET_REPO`, `saveRepository`, whole-Profile replacement, or legacy-key writer. The durable revision and optimistic canonical typing draft remain separate so failures retain both the last saved document and recoverable unsaved edits; neither is a parallel editable legacy Profile.
+
+Accepted ingestion calculates a transient presentation preview for existing bounds, duplicate/identity rules and proposal wording. `previewIngestion` has no storage access and is not a writer. Only approved destinations become explicit canonical commands in `editProfileBatch`; unrelated facts retain their order, identity, qualifiers and evidence. One accepted transaction advances the document revision once. New entry order follows the reviewed preview. Canonical corrections invalidate shared excerpt support, and accepted evidence is attached only after canonical ownership and revisions are settled.
+
+The legacy importer remains available at startup for browsers that never visited earlier migration versions, and for the read-only recovery display when migration cannot persist. Original `careeros_repo` bytes are retained. Old curated CVs remain readable through the existing versioned reader and independent saved snapshot; cleanup does not regenerate or delete them. Legacy-compatible HTTP and presentation reads remain supported.

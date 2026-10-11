@@ -45,7 +45,7 @@ const {
   migrateProfile,
   profileView,
   validateProfileDocument,
-  replaceProfileView,
+  editProfileBatch,
   editProfile,
 } = await import(join(temp, "profileDocument.mjs"))
 const { sectionReviewRequest, validateSectionProposal, applySectionProposal } =
@@ -111,7 +111,7 @@ test("migration persists one authority, retains recovery, reloads and refuses st
   const doc = await openProfile(s, lock)
   assert.equal(s.getItem(LEGACY_KEY), raw)
   assert.deepEqual(await openProfile(s, lock), doc)
-  const next = replaceProfileView(doc, { ...profileView(doc), skills: "Go" })
+  const next = editProfile(doc, {type: "field", ownerId: doc.id, field: "skills", value: "Go"})
   await saveProfile(s, doc, next, lock)
   assert.equal(s.getItem(LEGACY_KEY), raw)
   await assert.rejects(
@@ -137,10 +137,7 @@ test("absent and empty fields remain safe; entry ordering and identities survive
     },
     "p",
   )
-  const next = replaceProfileView(doc, {
-    ...profileView(doc),
-    languages: profileView(doc).languages.toReversed(),
-  })
+  const next = editProfile(doc, {type: "reorder", kind: "languages", ids: doc.entities.filter(e => e.kind === "languages").toReversed().map(e => e.id)})
   assert.deepEqual(
     profileView(next).languages.map((l) => l.id),
     ["a", "b"],
@@ -195,15 +192,12 @@ test("whole-field corrections retain fact identity, increment revision and inval
     state: "active",
   })
   assert.equal(validateProfileDocument(doc), true)
-  const unchanged = replaceProfileView(doc, {
-    ...profileView(doc),
-    tools: "Docker",
-  })
+  const unchanged = editProfile(doc, {type: "field", ownerId: doc.id, field: "tools", value: "Docker"})
   assert.equal(
     unchanged.facts.find((f) => f.id === fact.id).support,
     "supported",
   )
-  const changed = replaceProfileView(doc, { ...profileView(doc), skills: "Go" })
+  const changed = editProfile(doc, {type: "field", ownerId: doc.id, field: "skills", value: "Go"})
   const replacement = changed.facts.find((f) => f.id === fact.id)
   assert.equal(replacement.revision, 2)
   assert.equal(replacement.support, "invalidated")
@@ -245,10 +239,7 @@ test("failed saves retain the previous canonical document and permit an explicit
   const s = storage({ [LEGACY_KEY]: JSON.stringify(legacy) })
   const doc = await openProfile(s, lock)
   const raw = s.getItem(PROFILE_KEY)
-  const candidate = replaceProfileView(doc, {
-    ...profileView(doc),
-    skills: "Go",
-  })
+  const candidate = editProfile(doc, {type: "field", ownerId: doc.id, field: "skills", value: "Go"})
   const write = s.setItem
   s.setItem = () => {
     throw new Error("quota")
@@ -282,10 +273,7 @@ test("a changed role context invalidates dependent evidence instead of silently 
     to: { profileId: "p", id: "excerpt", revision: 1 },
     state: "active",
   })
-  const updated = replaceProfileView(doc, {
-    ...profileView(doc),
-    experience: [{ ...profileView(doc).experience[0], title: "Designer" }],
-  })
+  const updated = editProfile(doc, {type: "field", ownerId: doc.entities[0].id, field: "title", value: "Designer"})
   assert.equal(
     updated.facts.find((f) => f.id === fact.id).support,
     "invalidated",
@@ -323,7 +311,7 @@ test("concurrent migrations agree on one authority and competing revisions canno
     saveProfile(
       s,
       a,
-      replaceProfileView(a, { ...profileView(a), skills }),
+      editProfile(a, {type: "field", ownerId: a.id, field: "skills", value: skills}),
       serialized,
     ),
   )
@@ -356,7 +344,7 @@ test("removal keeps approved excerpts and invalidates historical links to remove
     to: { profileId: "p", id: "e", revision: 1 },
     state: "active",
   })
-  const next = replaceProfileView(doc, { ...profileView(doc), experience: [] })
+  const next = editProfile(doc, {type: "remove_entity", id: doc.entities[0].id})
   assert.equal(validateProfileDocument(next), true)
   assert.equal(next.links[0].state, "invalidated")
   assert.equal(next.evidence[0].excerpt, "Dev at A")
@@ -410,7 +398,7 @@ test("a typed context-link correction also invalidates support when no inline co
       state: "active",
     },
   )
-  const next = replaceProfileView(doc, { ...profileView(doc), experience: [] })
+  const next = editProfile(doc, {type: "remove_entity", id: doc.entities[0].id})
   assert.equal(
     next.facts.find((fact) => fact.id === f.id).support,
     "invalidated",
@@ -455,10 +443,7 @@ test("compatibility field enumeration does not revise an unchanged career entity
     to: { profileId: "p", id: "title-evidence", revision: 1 },
     state: "active",
   })
-  const next = replaceProfileView(doc, {
-    ...profileView(doc),
-    skills: "Docker",
-  })
+  const next = editProfile(doc, {type: "field", ownerId: doc.id, field: "skills", value: "Docker"})
   assert.equal(next.entities[0].revision, doc.entities[0].revision)
   assert.equal(next.facts.find((f) => f.id === title.id).support, "supported")
 })
@@ -1535,4 +1520,33 @@ test("a repeated clarification excerpt keeps both independently accepted origins
   const c={...ingestionClaim("c1",source),supportingSources:[{source,origin:"clarification_answer"}]}
   const next=applyIngestionDocument(doc,doc,source,ingestionResult([c],[ingestionOp()]))
   assert.deepEqual(next.evidence.map(e=>e.origin),["professional_information","clarification_answer"])
+})
+
+test("accepted ingestion preserves unrelated statement identity and meaning", () => {
+  let doc = migrateProfile(
+    { skills: "", tools: "Maybe Rust someday" },
+    "canonical-only",
+  )
+  const tools = doc.facts.find((f) => f.field === "tools")
+  tools.kind = "statement"
+  tools.assertion = "affirmed"
+  tools.intent = "aspiration"
+  tools.certainty = "uncertain"
+  const next = applyIngestionDocument(
+    doc,
+    doc,
+    "I use Java",
+    ingestionResult([ingestionClaim("c1", "I use Java")], [
+      ingestionOp({ value: "Java" }),
+    ]),
+  )
+  const retained = next.facts.find((f) => f.id === tools.id)
+  assert.deepEqual(
+    {
+      ...retained,
+      owner: { ...retained.owner, revision: tools.owner.revision },
+    },
+    tools,
+  )
+  assert.equal(next.revision, doc.revision + 1)
 })

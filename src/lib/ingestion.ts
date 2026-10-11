@@ -1208,7 +1208,8 @@ export function previewValues(
   return { before, after: fieldResult(before, selected) }
 }
 
-export function applyIngestion(
+// Calculate a transient presentation preview; persistence uses canonical commands.
+export function previewIngestion(
   profile: ProfessionalRepository,
   snapshot: string,
   ops: IngestionOperation[],

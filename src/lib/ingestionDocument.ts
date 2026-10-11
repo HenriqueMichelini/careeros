@@ -1,5 +1,5 @@
 import {
-  applyIngestion,
+  previewIngestion,
   beforeValue,
   IngestionError,
   validateIngestionResult,
@@ -9,7 +9,8 @@ import {
 import {
   normalizeTerm,
   profileView,
-  replaceProfileView,
+  editProfileBatch,
+  type ProfileEdit,
   validateProfileDocument,
   type ProfileDocument,
 } from "./profileDocument"
@@ -62,11 +63,78 @@ export function applyIngestionDocument(
     if (!protectedSupported(op.proposedValue ?? op.value, source))
       throw new IngestionError("invalid_output")
   }
-  const updated = applyIngestion(view, JSON.stringify(view), result.operations)
-  const next = replaceProfileView(doc, updated, {
-    kind: "accepted_proposal",
-    original: "unknown",
-  })
+  const updated = previewIngestion(
+    view,
+    JSON.stringify(view),
+    result.operations,
+  )
+  // The presentation preview verifies existing ingestion bounds and identities.
+  // Only approved destinations become canonical commands; unrelated facts are
+  // never reconstructed from a view or passed through the legacy importer.
+  const edits: ProfileEdit[] = []
+  const touched = new Set<string>()
+  for (const op of approved) {
+    if (op.entryId.startsWith("new:")) continue
+    const owner = op.entryId
+      ? doc.entities.find(
+          (e) => e.kind === op.target && e.legacyId === op.entryId,
+        )?.id
+      : doc.id
+    if (!owner) throw new IngestionError("stale")
+    const key = owner + "/" + op.field
+    if (touched.has(key)) continue
+    touched.add(key)
+    const value = op.entryId
+      ? (updated[
+          (op.target as keyof typeof updated)
+        ] as unknown as Record<string, string | boolean>[]).find(
+          (e) => e.id === op.entryId,
+        )?.[op.field]
+      : updated[(op.field as keyof typeof updated)]
+    if (typeof value !== "string" && typeof value !== "boolean")
+      throw new IngestionError("invalid_output")
+    edits.push({ type: "field", ownerId: owner, field: op.field, value })
+  }
+  for (const kind of [
+    "experience",
+    "projects",
+    "education",
+    "certifications",
+    "languages",
+  ] as const) {
+    const existing = new Set(
+      doc.entities.filter((e) => e.kind === kind).map((e) => e.legacyId),
+    )
+    const fresh = updated[kind].filter((e) => !existing.has(e.id))
+    for (const entry of fresh) {
+      const { id, ...values } = entry
+      edits.push({
+        type: "add_entity",
+        kind,
+        legacyId: id,
+        values,
+      })
+    }
+  }
+  const next = editProfileBatch(doc, edits)
+  for (const kind of [
+    "experience",
+    "projects",
+    "education",
+    "certifications",
+    "languages",
+  ] as const) {
+    const ids = updated[kind].map(
+      (entry) =>
+        next.entities.find((e) => e.kind === kind && e.legacyId === entry.id)!
+          .id,
+    )
+    next.entities
+      .filter((e) => e.kind === kind)
+      .forEach((e) => {
+        e.order = ids.indexOf(e.id)
+      })
+  }
   const ref = (id: string, revision: number) => ({
     profileId: next.id,
     id,
@@ -183,6 +251,7 @@ export function applyIngestionDocument(
     }
     if (old && JSON.stringify(old.value) === JSON.stringify(fact.value))
       continue
+    fact.origin = { kind: "accepted_proposal", original: "unknown" }
     // Every edit is user-authored; it cannot inherit an AI support claim.
     if (
       ops.some(
