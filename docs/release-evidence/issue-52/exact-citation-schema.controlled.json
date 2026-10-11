@@ -1,0 +1,39 @@
+{
+  "scope": "Offline standard JSON Schema validation against actual production-handler schema and recorded synthetic judgments; no provider calls or semantic-quality claims",
+  "baseline": "b988d040762803245dc8429e2b89afa60c54d5fa",
+  "sourceHashes": {
+    "backend/application-draft/artifacts.go": "e0a4d47aca2f263a39eee1fdccad6b927e41dfff954e14a1980cd7986f80125d",
+    "backend/application-draft/artifact_citations.go": "4493c2910285d3a4cbb5b8ff0b923124a67709f0278810c98c16a2f3784b4872",
+    "backend/application-draft/artifacts_contract_test.go": "6785e5236f4c0a23930ad37ed64777a68ce7dca1332837c774dc0b0c1ebabacb"
+  },
+  "cases": [
+    {
+      "case": "recorded invalid title tuple (start 0, end 20, short quote)",
+      "oldSchemaAllowed": true,
+      "newSchemaAllowed": false
+    },
+    {
+      "case": "controlled selection of exact supplied catalog tuple",
+      "newSchemaAllowed": true,
+      "meaning": "structural selection only; not live acceptance or semantic proof"
+    },
+    {
+      "case": "owner ID substituted for exact selected fact ID",
+      "newSchemaAllowed": false
+    },
+    {
+      "case": "inconsistent scope and nonfactual flag",
+      "newSchemaAllowed": true,
+      "remainingGuard": "existing server consistency check leaves review unavailable"
+    },
+    {
+      "case": "job title with no job citation",
+      "newSchemaAllowed": true,
+      "remainingGuard": "existing server marks missing job support unsupported"
+    }
+  ],
+  "formatBytes": 1388,
+  "requestEnvelopeBytes": 7561,
+  "providerCallsMade": 0,
+  "liveVerification": "not authorized or performed for v6"
+}
