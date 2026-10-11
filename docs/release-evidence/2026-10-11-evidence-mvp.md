@@ -309,3 +309,46 @@ unsupported `40%` within a numbered answer and numeric literal content remain
 blocked. Accepted wording is unchanged, and semantic/support checks remain
 required. Both support-stage diagnostic versions record `number-guard-v2`.
 This correctness change also awaits authorized live/deployed verification.
+
+## Deployed prepared-citation and numbered-answer checks
+
+The user subsequently authorized publishing completed build `257e42d7392b000cf1fe044a03cf98727ea5fbeb`
+(Netlify deploy `6acc0845801e9100089339ae`) and exactly two synthetic draft
+requests, with no retries. The identified build was manually published and
+auto-publishing remained locked. Both requests used the preflighted Portuguese
+Java posting and sole approved synthetic fact “Uso Java para desenvolver APIs.”
+The same diagnostic input was reused; these are not held-out quality cases.
+
+| Check | Published app | Immutable PR #98 preview |
+| --- | --- | --- |
+| HTTP / client duration | 200 / 11,822 ms | 200 / 10,647 ms |
+| Handler duration | 10,849 ms | 9,888 ms |
+| Actual public-client parsing / resume acceptance | pass / pass | pass / pass |
+| Exact job citations / invalid citation concerns | pass / 0 | pass / 0 |
+| Ordered answer markers / invented-number concerns | present / 0 | present / 0 |
+| Artifact acceptance | blocked: answer concerns | blocked: answer concerns |
+| Profile unchanged in client replay | pass | pass |
+
+The title, summary and cover-letter blocks were supported in both responses.
+The remaining blocker was `applicationAnswers`: the published response's
+concerns acknowledged the requested answer was present and that the missing
+background categories were not requested; the preview concern acknowledged
+the answer was present but treated absent temporary `qualificationAnswers`
+as an inability to assess sufficiency. Neither response was accepted by the
+artifact acceptance function. There were five numbered items in the published
+output and three in preview despite only one explicit posting question. These
+observations preserve the unresolved answer-review and draft-fidelity gate.
+They do not justify overriding an unsupported judgment or automatically retrying.
+
+[Deployed check metadata](issue-52/citation-catalog.deployed.live.json) records
+origins, exact revision/deploy, request hashes, separate HTTP/handler/provider
+durations, observed token usage and public-client outcomes. Both requests
+returned `no-store`. The two observed Netlify invocation entries under Deploy
+Preview #98 contained metadata and usage, without inputs, generated prose or
+keys; this limited log inspection does not establish provider retention policy.
+Direct HTTPS results were replayed offline through the actual public client
+and acceptance functions; no live browser acceptance, durable save, export or
+PDF check is claimed for these attempts. Provider account billing and
+accepted-result cost remain unavailable. No general quality or latency
+improvement is established by two reused cases. Both approved attempts are
+used; issue #52 remains open with the full acceptance scope unchanged.
