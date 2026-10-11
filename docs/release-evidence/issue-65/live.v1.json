@@ -1,0 +1,258 @@
+{
+  "version": "semantic-quality-report-v2",
+  "mode": "live",
+  "started": "2026-10-11T16:14:46Z",
+  "commit": "e1a5c8c25aabec7f9b0e1e6e17c3798aff16a04b",
+  "fixtureVersion": "cv-reliability-v1",
+  "fixtureHash": "bf320deaa3cc573084acf293421988749b34ac875f495636c9e5d2ffa0740e32",
+  "fixturePath": "docs/evaluations/semantic-quality/cases.cv-reliability.v1.json",
+  "sourceHashes": {
+    "backend/application-draft/main.go": "9b2932507fa45de9f5395127a36d4a97e36c5ae71d08ee1e6bab2fa6d389453f",
+    "backend/cv-generation/main.go": "48bc823f6a1936b5a72459d1764839f9faebe765cc6cfd0aa9cac3ff85205c6f",
+    "backend/profile-ingestion/main.go": "713ec2b4a4ad51e706fcd6953d8f643b7551cc83ad6a3d10723930039ee6aee8",
+    "backend/qualification-gaps/main.go": "bf37b95032c04dbb131766155923b4e5206324d4b432488a4500656cb5dc51d6",
+    "internal/fieldvalidation/decision.go": "ea91586b299eb51a97dc38ec236a24468deff5c4df24b5ac97f3b91af096701d",
+    "internal/fieldvalidation/questions.json": "8ca85f674db2cf8e3d9e8c14e3fab18ac3df9c8fdf1903f6dbbc6db7d8715b5c",
+    "internal/semanticeval/adapter.go": "344b352856db65653ad24868874faa7e083270a16626d7af9fd87f588ac64cda",
+    "internal/semanticeval/score.go": "7af9f884272c99a4bb66a8e0fd2245811d6449a7b10198d64912a77e189b2d35",
+    "scripts/semantic-quality/main.go": "4b01932959399769efa5dccfa57dcfb8b06e3f7c3e7c2485e8ac70382009f476"
+  },
+  "scope": "local production HTTP handlers; synthetic inputs; no browser, deployment or universal factual guarantee",
+  "runs": [
+    {
+      "diagnostics": {
+        "version": "ai-diagnostics-v1",
+        "attemptId": "93680ea0fa70e32f7d8415448f89630d",
+        "workflow": "cv_generation",
+        "outcome": "completed",
+        "httpStatus": 200,
+        "durationMs": 2141.407593,
+        "applicationResultReuse": false,
+        "stages": [
+          {
+            "name": "generation",
+            "version": "cv-policy-v2/schema-v2",
+            "outcome": "completed",
+            "durationMs": 2141.293814,
+            "provider": {
+              "name": "openai",
+              "returnedModel": "gpt-6-luna",
+              "inputTokens": 791,
+              "outputTokens": 42,
+              "reasoningTokens": 0,
+              "prefixCachedTokens": 0,
+              "outputTokenCeiling": 4000,
+              "durationMs": 2141.052784,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "statement_support_checks",
+            "version": "cv-heuristic-grounding-v1",
+            "outcome": "completed",
+            "durationMs": 0.10319,
+            "provider": null
+          }
+        ],
+        "accepted": null
+      },
+      "id": "en-reliability-legacy-metric",
+      "task": "cv_generation",
+      "split": "development",
+      "language": "en",
+      "mode": "live",
+      "role": "acceptance",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "first256InstructionCharactersHash": "eae8e177b6ed83686c7917fdefc0b8d371142780cfeea0d8941ca57409aadbde",
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 4000,
+          "promptHash": "271bced33b81136731b9471f557a855590678864cc776da16df34573f3ac1ade",
+          "schemaHash": "cf5bcf753414a752c685715784837407a685a7afeec7afc2ed561e90f1c0cc9d",
+          "requestHash": "05f9c4cd1389ebfb80175168d56130ae7236c7ac1830fb3e6016355f25a0e1d5",
+          "status": 200,
+          "returnedModel": "gpt-6-luna",
+          "durationMs": 2140.841,
+          "inputTokens": 791,
+          "outputTokens": 42,
+          "reasoningTokensSubsetOfOutput": 0,
+          "cachedTokensSubsetOfInput": 0,
+          "cacheWriteTokensSubsetOfInput": 0
+        }
+      ],
+      "output": {
+        "summary": [
+          {
+            "sourceIds": [
+              "f0"
+            ],
+            "text": "Reduced latency by 20%."
+          }
+        ],
+        "selected": [
+          "f0"
+        ]
+      },
+      "providerOutputs": [
+        [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"selected\":[\"f0\"],\"summary\":[{\"sourceIds\":[\"f0\"],\"text\":\"Reduced latency by 20%.\"}],\"wording\":[]}",
+              "refusal": null,
+              "annotations": []
+            },
+            "finish_reason": "stop"
+          }
+        ]
+      ],
+      "score": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 2,
+        "covered": 2,
+        "unsupportedClaimCandidates": 0,
+        "labelPrecision": 1,
+        "completeness": 1,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [],
+        "unmatched": [],
+        "unmatchedUnits": [],
+        "failures": [],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      }
+    },
+    {
+      "diagnostics": {
+        "version": "ai-diagnostics-v1",
+        "attemptId": "cdd6deefd8f0225caf4c261362fe7ca2",
+        "workflow": "cv_generation",
+        "outcome": "completed",
+        "httpStatus": 200,
+        "durationMs": 1516.299279,
+        "applicationResultReuse": false,
+        "stages": [
+          {
+            "name": "generation",
+            "version": "cv-policy-v2/schema-v2",
+            "outcome": "completed",
+            "durationMs": 1516.268599,
+            "provider": {
+              "name": "openai",
+              "returnedModel": "gpt-6-luna",
+              "inputTokens": 796,
+              "outputTokens": 46,
+              "reasoningTokens": 0,
+              "prefixCachedTokens": 0,
+              "outputTokenCeiling": 4000,
+              "durationMs": 1516.00379,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "statement_support_checks",
+            "version": "cv-heuristic-grounding-v1",
+            "outcome": "completed",
+            "durationMs": 0.1436,
+            "provider": null
+          }
+        ],
+        "accepted": null
+      },
+      "id": "pt-reliability-legacy-metric",
+      "task": "cv_generation",
+      "split": "development",
+      "language": "pt-BR",
+      "mode": "live",
+      "role": "acceptance",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "first256InstructionCharactersHash": "eae8e177b6ed83686c7917fdefc0b8d371142780cfeea0d8941ca57409aadbde",
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 4000,
+          "promptHash": "a2929e7e96424ba9c5e9968a6f67e7d29ada3edd8b748e77468070f295e46db8",
+          "schemaHash": "cf5bcf753414a752c685715784837407a685a7afeec7afc2ed561e90f1c0cc9d",
+          "requestHash": "94dafb5b7d1406ad8ea48b1fbe906d1003f0a40d8f58eed668a90ea7268a9c09",
+          "status": 200,
+          "returnedModel": "gpt-6-luna",
+          "durationMs": 1515.829,
+          "inputTokens": 796,
+          "outputTokens": 46,
+          "reasoningTokensSubsetOfOutput": 0,
+          "cachedTokensSubsetOfInput": 0,
+          "cacheWriteTokensSubsetOfInput": 0
+        }
+      ],
+      "output": {
+        "summary": [
+          {
+            "sourceIds": [
+              "f0"
+            ],
+            "text": "Reduziu a latência em 20%."
+          }
+        ],
+        "selected": [
+          "f0"
+        ]
+      },
+      "providerOutputs": [
+        [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"selected\":[\"f0\"],\"summary\":[{\"sourceIds\":[\"f0\"],\"text\":\"Reduziu a latência em 20%.\"}],\"wording\":[]}",
+              "refusal": null,
+              "annotations": []
+            },
+            "finish_reason": "stop"
+          }
+        ]
+      ],
+      "score": {
+        "expected": 2,
+        "observed": 2,
+        "matched": 1,
+        "covered": 1,
+        "unsupportedClaimCandidates": 1,
+        "labelPrecision": 0.5,
+        "completeness": 0.5,
+        "duplicates": 0,
+        "relationshipErrors": 0,
+        "forbiddenAdditions": 0,
+        "missing": [
+          "supported-summary"
+        ],
+        "unmatched": [
+          "summary[0]"
+        ],
+        "unmatchedUnits": [
+          {
+            "location": "summary[0]",
+            "sourceIds": "[\"f0\"]",
+            "text": "Reduziu a latência em 20%."
+          }
+        ],
+        "failures": [
+          "missing: supported-summary",
+          "unmatched: summary[0]"
+        ],
+        "humanReview": "pending: unmatched units need source-grounded adjudication"
+      }
+    }
+  ]
+}

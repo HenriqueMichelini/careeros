@@ -226,7 +226,8 @@ try {
     await until(
       "document.readyState === 'complete' && !!document.querySelector('header button')",
     )
-    const seedEvidence = withEvidence ? `
+    const seedEvidence = withEvidence
+      ? `
       const {migrateProfile}=await import('/src/lib/profileDocument.ts');
       const doc=migrateProfile(${JSON.stringify(repo)},crypto.randomUUID());
       const fact=doc.facts.find(f=>f.field==='description');
@@ -234,7 +235,8 @@ try {
       const evidence={id:crypto.randomUUID(),revision:1,excerpt:'ACCEPTED-EXCERPT '+fact.value,origin:'professional_information',approval:'approved'};
       doc.evidence.push(evidence);doc.links.push({id:crypto.randomUUID(),kind:'supports',state:'active',from:{profileId:doc.id,id:fact.id,revision:fact.revision},to:{profileId:doc.id,id:evidence.id,revision:1}});
       localStorage.setItem('careeros_profile_v2',JSON.stringify(doc));
-    ` : ""
+    `
+      : ""
     await evaluate(
       `(async()=>{ localStorage.removeItem('careeros_profile_v2'); localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_locale', ${JSON.stringify(locale)}); localStorage.setItem('careeros_cv_language', ${JSON.stringify(locale)}); localStorage.removeItem('careeros_curated_cv_v1'); localStorage.setItem('careeros_apikey','sk-synthetic'); localStorage.removeItem('careeros_cv_v1'); localStorage.removeItem('careeros_cv_preferences_v1'); ${seedEvidence} location.reload(); })()`,
     )
@@ -292,10 +294,23 @@ try {
     const original = await evaluate(savedProfileExpression)
     await click(generate)
     await until("!!document.querySelector('[data-generated-summary]')")
-    assert.ok(await evaluate("document.querySelector('[data-cv-generation]').textContent.includes('ACCEPTED-EXCERPT')"), "proposal exposes accepted original evidence")
-    assert.ok(await evaluate("document.querySelector('[data-cv-generation]').textContent.includes('professional_information')"), "proposal exposes stored evidence origin")
+    assert.ok(
+      await evaluate(
+        "document.querySelector('[data-cv-generation]').textContent.includes('ACCEPTED-EXCERPT')",
+      ),
+      "proposal exposes accepted original evidence",
+    )
+    assert.ok(
+      await evaluate(
+        "document.querySelector('[data-cv-generation]').textContent.includes('professional_information')",
+      ),
+      "proposal exposes stored evidence origin",
+    )
     const outbound = await evaluate("JSON.stringify(window.__outbound)")
-    assert.ok(!outbound.includes('ACCEPTED-EXCERPT'), "accepted evidence remains local")
+    assert.ok(
+      !outbound.includes("ACCEPTED-EXCERPT"),
+      "accepted evidence remains local",
+    )
     for (const secret of [
       "SECRET-",
       "PRIVATE-PROJECT-ID",
@@ -337,6 +352,54 @@ try {
       await evaluate("localStorage.getItem('careeros_cv_v1')"),
       edited,
     )
+    // Invalid server and client results must preserve the accepted source
+    // snapshot and edits byte for byte, with no silent retry.
+    const acceptedBeforeFailure = await evaluate(
+      "localStorage.getItem('careeros_curated_cv_v1')",
+    )
+    for (const defect of [
+      "server-rejection",
+      "empty-summary",
+      "missing-reference",
+      "unknown-reference",
+      "metric",
+    ]) {
+      await evaluate(`window.__failureCalls=0;window.fetch=async(url,options)=>{
+        window.__failureCalls++;
+        const facts=JSON.parse(options.body).facts;
+        const source=facts.find(f=>f.field==='achievements');
+        let summary=[{sourceIds:[source.id],text:source.text}];
+        const defect=${JSON.stringify(defect)};
+        if(defect==='server-rejection')return new Response(JSON.stringify({error:'invalid_output'}),{status:502});
+        if(defect==='empty-summary')summary=[];
+        if(defect==='missing-reference')summary=[{text:source.text}];
+        if(defect==='unknown-reference')summary[0].sourceIds=['unknown'];
+        if(defect==='metric')summary[0].text='Reduced latency by 90%.';
+        return new Response(JSON.stringify({summary,selected:[source.id]}),{status:200});
+      }`)
+      await click(generate)
+      await until(
+        "!!document.querySelector('[data-cv-generation] [role=alert]')",
+      )
+      await pause(100)
+      assert.equal(await evaluate("window.__failureCalls"), 1, defect)
+      assert.equal(
+        await evaluate("!!document.querySelector('[data-generated-summary]')"),
+        false,
+        defect,
+      )
+      assert.equal(
+        await evaluate("localStorage.getItem('careeros_curated_cv_v1')"),
+        acceptedBeforeFailure,
+        defect,
+      )
+      assert.equal(
+        await evaluate("localStorage.getItem('careeros_cv_v1')"),
+        edited,
+        defect,
+      )
+    }
+    await controlled()
     await call("Emulation.setDeviceMetricsOverride", {
       width: 390,
       height: 844,
@@ -409,8 +472,18 @@ try {
     )
     const accepted = JSON.parse(acceptedRaw)
     assert.equal(accepted.version, 2)
-    assert.ok(await evaluate("document.querySelector('[data-cv-saved-support]').textContent.includes('ACCEPTED-EXCERPT') && document.querySelector('[data-cv-saved-support]').textContent.includes('professional_information')"), "saved sources expose original accepted evidence and origin")
-    assert.ok(!acceptedRaw.includes('SECRET-SALARY') && !acceptedRaw.includes('SECRET-TARGET') && !acceptedRaw.includes('SECRET-HEALTH'), "saved support excludes unrelated private fields")
+    assert.ok(
+      await evaluate(
+        "document.querySelector('[data-cv-saved-support]').textContent.includes('ACCEPTED-EXCERPT') && document.querySelector('[data-cv-saved-support]').textContent.includes('professional_information')",
+      ),
+      "saved sources expose original accepted evidence and origin",
+    )
+    assert.ok(
+      !acceptedRaw.includes("SECRET-SALARY") &&
+        !acceptedRaw.includes("SECRET-TARGET") &&
+        !acceptedRaw.includes("SECRET-HEALTH"),
+      "saved support excludes unrelated private fields",
+    )
     assert.ok(
       accepted.sources.every(
         (f) => f.reference?.id === f.id && f.reference.revision > 0,

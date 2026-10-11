@@ -214,3 +214,47 @@ func TestStableGenerationThroughHandler(t *testing.T) {
 		})
 	}
 }
+
+func TestSparseSummaryIsRequiredByOutboundProviderContract(t *testing.T) {
+	// Observe the public handler's actual outbound request, rather than invoking
+	// its schema builder. Restoring the baseline JSON-object contract fails here.
+	handler := NewHandlerWithClient(&http.Client{Transport: roundTrip(func(r *http.Request) (*http.Response, error) {
+		var body struct {
+			Format struct {
+				Type   string `json:"type"`
+				Schema struct {
+					Strict bool `json:"strict"`
+					Schema struct {
+						Properties map[string]struct {
+							MinItems int `json:"minItems"`
+							Items    struct {
+								Required   []string `json:"required"`
+								Properties map[string]struct {
+									MinItems int `json:"minItems"`
+								} `json:"properties"`
+							} `json:"items"`
+						} `json:"properties"`
+					} `json:"schema"`
+				} `json:"json_schema"`
+			} `json:"response_format"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatal(err)
+		}
+		summary := body.Format.Schema.Schema.Properties["summary"]
+		if body.Format.Type != "json_schema" || !body.Format.Schema.Strict || summary.MinItems != 1 || summary.Items.Properties["sourceIds"].MinItems != 1 {
+			t.Fatal("provider contract permits the baseline empty-summary/missing-citation failure")
+		}
+		if strings.Join(summary.Items.Required, ",") != "sourceIds,text" {
+			t.Fatalf("missing required citation/text: %v", summary.Items.Required)
+		}
+		return &http.Response{StatusCode: 500, Body: io.NopCloser(strings.NewReader(""))}, nil
+	})})
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest("POST", "/api/cv/generate", strings.NewReader(`{"cvLanguage":"en","facts":[{"id":"java","section":"skills","entryId":"","field":"skills","text":"Java"}]}`))
+	req.Header.Set("X-OpenAI-Api-Key", "sk-controlled")
+	handler.ServeHTTP(rec, req)
+	if rec.Code != 502 {
+		t.Fatalf("handler did not reach controlled provider: %d", rec.Code)
+	}
+}

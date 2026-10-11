@@ -226,3 +226,42 @@ func TestStableCvMigrationRegressions(t *testing.T) {
 		})
 	}
 }
+
+// The reliability corpus includes the captured PT empty-summary response and
+// controlled EN analogues; the uncaptured historical EN cause stays unknown.
+func TestCvReliabilityThroughProductionHandler(t *testing.T) {
+	raw, err := os.ReadFile("../../docs/evaluations/semantic-quality/cases.cv-reliability.v1.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var corpus struct {
+		Cases []Case `json:"cases"`
+	}
+	if err := json.Unmarshal(raw, &corpus); err != nil {
+		t.Fatal(err)
+	}
+	if err := Validate(corpus.Cases); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range corpus.Cases {
+		t.Run(c.ID, func(t *testing.T) {
+			run, err := Run(c, "controlled", "", "")
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := 200
+			if c.Role == "negative_control" {
+				want = 502
+			}
+			if run.Status != want || !run.NoStore || len(run.Calls) != 1 {
+				t.Fatalf("contract/no-retry regression: %+v", run)
+			}
+			if want == 200 && len(run.Score.Failures) != 0 {
+				t.Fatalf("supported output rejected: %+v", run.Score)
+			}
+			if want == 502 && string(run.Output) != "{\"error\":\"invalid_output\"}\n" {
+				t.Fatalf("wrong failure: %s", run.Output)
+			}
+		})
+	}
+}
