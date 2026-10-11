@@ -1,0 +1,429 @@
+{
+  "revision": "31e65fcb3f96873735beb001222ccdab8d70f0cd",
+  "deployId": "6acc0e1cc1a92c00087d9654",
+  "started": "2026-10-11T22:40:56.881446+00:00",
+  "workflowLimit": 2,
+  "automaticRetries": 0,
+  "results": [
+    {
+      "origin": "https://beamish-bavarois-333d03.netlify.app",
+      "path": "/api/application-draft",
+      "status": 200,
+      "clientHttpMs": 11790,
+      "cacheControl": "no-store",
+      "cacheStatus": "\"Netlify Durable\"; fwd=bypass",
+      "requestId": "01M4PJ0P2GYPFNCRP5KD5GRYM9",
+      "contentType": "application/json; charset=utf-8",
+      "payloadHash": "e8b74985e4e830f283d46ac594bf20d597d2cd3fbf2eb135286c8e78b1939e1f",
+      "publicClientOutcome": {
+        "origin": "https://beamish-bavarois-333d03.netlify.app",
+        "parsed": true,
+        "profileUnchanged": true,
+        "resumeAcceptable": true,
+        "artifactsAcceptable": false,
+        "artifactError": "unresolved",
+        "claims": [
+          {
+            "field": "jobTitle",
+            "state": "uncertain",
+            "concerns": [
+              "check_unavailable"
+            ]
+          },
+          {
+            "field": "jobSummary",
+            "state": "uncertain",
+            "concerns": [
+              "check_unavailable"
+            ]
+          },
+          {
+            "field": "greeting",
+            "state": "uncertain",
+            "concerns": [
+              "check_unavailable"
+            ]
+          },
+          {
+            "field": "body",
+            "state": "uncertain",
+            "concerns": [
+              "check_unavailable"
+            ]
+          },
+          {
+            "field": "applicationAnswers",
+            "state": "uncertain",
+            "concerns": [
+              "check_unavailable"
+            ]
+          }
+        ]
+      },
+      "handlerMs": 10624.480925,
+      "diagnosticAttemptId": "fe999cccbf5d24d74566e8c491636c6d",
+      "browserMs": null,
+      "functionLogPrivacy": "Observed two entries contain metadata and usage only, without inputs, generated prose or keys; provider retention not inspected",
+      "generatedAnswerItemCount": 5,
+      "artifactCheck": "unavailable",
+      "artifactClaimOutcomes": [
+        {
+          "field": "jobTitle",
+          "state": "uncertain",
+          "concerns": [
+            "check_unavailable"
+          ],
+          "careerReferences": [],
+          "jobCitationCount": 0
+        },
+        {
+          "field": "jobSummary",
+          "state": "uncertain",
+          "concerns": [
+            "check_unavailable"
+          ],
+          "careerReferences": [],
+          "jobCitationCount": 0
+        },
+        {
+          "field": "greeting",
+          "state": "uncertain",
+          "concerns": [
+            "check_unavailable"
+          ],
+          "careerReferences": [],
+          "jobCitationCount": 0
+        },
+        {
+          "field": "body",
+          "state": "uncertain",
+          "concerns": [
+            "check_unavailable"
+          ],
+          "careerReferences": [],
+          "jobCitationCount": 0
+        },
+        {
+          "field": "applicationAnswers",
+          "state": "uncertain",
+          "concerns": [
+            "check_unavailable"
+          ],
+          "careerReferences": [],
+          "jobCitationCount": 0
+        }
+      ],
+      "returnedJobCitationsExact": true
+    },
+    {
+      "origin": "https://6acc0e1cc1a92c00087d9654--beamish-bavarois-333d03.netlify.app",
+      "path": "/api/application-draft",
+      "status": 200,
+      "clientHttpMs": 8754,
+      "cacheControl": "no-store",
+      "cacheStatus": "\"Netlify Durable\"; fwd=bypass",
+      "requestId": "01M4PJ11JV0G8RA03TRN58DNW9",
+      "contentType": "application/json; charset=utf-8",
+      "payloadHash": "e8b74985e4e830f283d46ac594bf20d597d2cd3fbf2eb135286c8e78b1939e1f",
+      "publicClientOutcome": {
+        "origin": "https://6acc0e1cc1a92c00087d9654--beamish-bavarois-333d03.netlify.app",
+        "parsed": true,
+        "profileUnchanged": true,
+        "resumeAcceptable": true,
+        "artifactsAcceptable": false,
+        "artifactError": "unresolved",
+        "claims": [
+          {
+            "field": "jobTitle",
+            "state": "unsupported",
+            "concerns": [
+              "O título da vaga não foi verificado contra o anúncio fornecido.",
+              "changed_job_metadata",
+              "missing_citations",
+              "missing_job_support"
+            ]
+          },
+          {
+            "field": "jobSummary",
+            "state": "supported",
+            "concerns": []
+          },
+          {
+            "field": "greeting",
+            "state": "supported",
+            "concerns": []
+          },
+          {
+            "field": "body",
+            "state": "supported",
+            "concerns": []
+          },
+          {
+            "field": "applicationAnswers",
+            "state": "supported",
+            "concerns": []
+          }
+        ]
+      },
+      "handlerMs": 8235.345936,
+      "diagnosticAttemptId": "1abfe67ca00cce76935913bd7c8119a1",
+      "browserMs": null,
+      "functionLogPrivacy": "Observed two entries contain metadata and usage only, without inputs, generated prose or keys; provider retention not inspected",
+      "generatedAnswerItemCount": 5,
+      "artifactCheck": "complete",
+      "artifactClaimOutcomes": [
+        {
+          "field": "jobTitle",
+          "state": "unsupported",
+          "concerns": [
+            "O título da vaga não foi verificado contra o anúncio fornecido.",
+            "changed_job_metadata",
+            "missing_citations",
+            "missing_job_support"
+          ],
+          "careerReferences": [],
+          "jobCitationCount": 0
+        },
+        {
+          "field": "jobSummary",
+          "state": "supported",
+          "concerns": [],
+          "careerReferences": [],
+          "jobCitationCount": 1
+        },
+        {
+          "field": "greeting",
+          "state": "supported",
+          "concerns": [],
+          "careerReferences": [],
+          "jobCitationCount": 0
+        },
+        {
+          "field": "body",
+          "state": "supported",
+          "concerns": [],
+          "careerReferences": [
+            {
+              "profileId": "p",
+              "id": "skill",
+              "revision": 1
+            }
+          ],
+          "jobCitationCount": 1
+        },
+        {
+          "field": "applicationAnswers",
+          "state": "supported",
+          "concerns": [],
+          "careerReferences": [
+            {
+              "profileId": "p",
+              "id": "skill",
+              "revision": 1
+            }
+          ],
+          "jobCitationCount": 1
+        }
+      ],
+      "returnedJobCitationsExact": true
+    }
+  ],
+  "scope": "Two authorized direct HTTPS checks followed by offline actual public-client replay; not live browser acceptance/save/export/PDF evidence",
+  "autoPublishing": "locked; specific approved build manually published",
+  "providerCallsObserved": 8,
+  "workflowAttemptsUsed": 2,
+  "workflowAttemptsRemaining": 0,
+  "diagnostics": [
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "fe999cccbf5d24d74566e8c491636c6d",
+      "workflow": "application_draft",
+      "outcome": "unavailable",
+      "httpStatus": 200,
+      "durationMs": 10624.480925,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 330.707207,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": 1080,
+            "outputTokens": 108,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 330.522309,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "generation",
+          "version": "application-draft-policy-v2/context-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 10292.71174,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 1417,
+            "outputTokens": 423,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 1414,
+            "outputTokenCeiling": 8000,
+            "durationMs": 4268.29426,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.737409,
+          "provider": null
+        },
+        {
+          "name": "resume_support",
+          "version": "resume-support-openai-v1/number-guard-v2",
+          "outcome": "complete",
+          "durationMs": 1673.621388,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 518,
+            "outputTokens": 71,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 4000,
+            "durationMs": 1673.470954,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "artifact_support",
+          "version": "artifact-support-openai-v4/prepared-citations-v1/number-guard-v2/answer-input-v1/career-citations-v1",
+          "outcome": "unavailable",
+          "durationMs": 4349.101052,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 1574,
+            "outputTokens": 575,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 8000,
+            "durationMs": 4348.717396,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "1abfe67ca00cce76935913bd7c8119a1",
+      "workflow": "application_draft",
+      "outcome": "complete",
+      "httpStatus": 200,
+      "durationMs": 8235.345936,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 151.501656,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": 1080,
+            "outputTokens": 108,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 151.308459,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "generation",
+          "version": "application-draft-policy-v2/context-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 8083.033674,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 1417,
+            "outputTokens": 283,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 1414,
+            "outputTokenCeiling": 8000,
+            "durationMs": 2857.036267,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.276966,
+          "provider": null
+        },
+        {
+          "name": "resume_support",
+          "version": "resume-support-openai-v1/number-guard-v2",
+          "outcome": "complete",
+          "durationMs": 1745.052297,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 486,
+            "outputTokens": 61,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 4000,
+            "durationMs": 1744.927723,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "artifact_support",
+          "version": "artifact-support-openai-v4/prepared-citations-v1/number-guard-v2/answer-input-v1/career-citations-v1",
+          "outcome": "complete",
+          "durationMs": 3480.167401,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 1577,
+            "outputTokens": 441,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 8000,
+            "durationMs": 3476.646896,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        }
+      ],
+      "accepted": null
+    }
+  ],
+  "acceptedResultCost": null,
+  "billedCost": null,
+  "providerRetentionVerified": false,
+  "limitations": [
+    "Previously reused diagnostic case, not a fresh held-out quality evaluation",
+    "Published unavailable support-check cause cannot be inferred from sanitized response or metadata logs",
+    "Preview career references are current and exact; this does not prove general provider citation reliability",
+    "Both runs produced five answer items for one explicit posting question; generation policy unchanged"
+  ]
+}
