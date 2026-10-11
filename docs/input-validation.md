@@ -1,6 +1,6 @@
 # Field-aware input validation
 
-Status: #29–#33 implemented on the reviewed branch; Milestone #1 acceptance failed review on 2026-10-08. Local omission-feedback remediation is in progress; provider-backed proposal and deployment verification remain outstanding.
+Status as of 2026-10-11: #29–#33 and milestone #1 are closed following the bounded omission-feedback remediation and authorized field-validation checks on 2026-10-08. The earlier failed audit remains historical evidence, superseded within that bounded scope by [release evidence](release-evidence/2026-10-08-field-validation-release.md) and [protected-preview browser evidence](release-evidence/2026-10-08-field-validation-browser.md). This does not establish current redesigned-MVP deployment or broad provider quality; see the [MVP integration gate](release-evidence/2026-10-11-evidence-mvp.md).
 
 This document records agreed decisions for handling pasted content in CareerOS's AI-powered fields. The user approved the five-ticket breakdown, which is published under the [Field-aware input validation milestone](https://github.com/HenriqueMichelini/careeros/milestone/1). Implementation and evidence are recorded in the ticket documents and [combined verification report](evaluations/field-validation-integration-results.md). Closed tickets do not establish milestone acceptance or deployment readiness.
 

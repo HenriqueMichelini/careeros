@@ -1,5 +1,16 @@
 # Backend v1 requirements
 
+## Current implementation — 2026-10-11
+
+The dated requirements and acceptance notes below describe the original three-workflow release. The current implementation exposes five fixed routes: `/api/profile/review` (section proposals), `/api/profile/ingest` (ingestion, continuation and clarification), `/api/cv/generate`, `/api/qualification-gaps`, and `/api/application-draft`. See [the MVP integration gate](release-evidence/2026-10-11-evidence-mvp.md) for current coverage and unresolved release checks.
+
+Profile v2 is the browser-local authority; legacy storage is an untouched recovery snapshot. Proposed changes remain transient until explicit Apply and acknowledged durable save. Only approved evidence excerpts persist. Application answers remain request-local, and each generated artifact requires support review and acceptance. Stable IDs, revisions, hashes and excerpt checks provide traceability and stale-result detection, not semantic truth or authorization to bypass whole-original Jev classification.
+
+There are no accounts, backend Profile storage, automatic provider retries or model fallbacks. OpenAI generation and TypeSafe field classification remain separate. The #65 sparse-CV correction is covered by EN/PT handler/client/browser regressions; retained historical failures, PT exact-label misses and #50 language/ownership/continuation failures remain evidence, not resolved quality claims.
+
+## Original requirements and dated acceptance
+
+
 This document records the agreed design for a backend serving the existing CareerOS frontend. Domain terms are defined in [CONTEXT.md](../CONTEXT.md).
 
 ## Goal and scope
