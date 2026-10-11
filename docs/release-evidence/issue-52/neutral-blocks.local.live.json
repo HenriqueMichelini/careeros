@@ -1,0 +1,838 @@
+{
+  "scope": "Four specifically authorized local production-handler attempts, no automatic retries; not deployed or browser tests",
+  "baseline": "bf0a1c044b225a1e49da658facd65f9cdd0d29fe",
+  "sourceHashes": {
+    "backend/application-draft/artifacts.go": "0ca89b867ce26b930c178e7b8dd41dbbfe150109aac72893bb4815683079c32a",
+    "backend/application-draft/artifacts_contract_test.go": "28ded3f98934ab8bce06706b3d453f3eabb2c87722cc740f782f36ffc05c9a85"
+  },
+  "workflowAttemptsUsed": 4,
+  "workflowAttemptsRemaining": 0,
+  "providerCallsObserved": 16,
+  "results": [
+    {
+      "attempt": 1,
+      "requestVersion": "artifact-support-openai-v4",
+      "status": 200,
+      "handlerMs": 8895,
+      "providerCallsObserved": 4,
+      "artifactCheck": "unavailable",
+      "publicClientOfflineReplay": {
+        "origin": "local-production-handler-attempt-1",
+        "parsed": true,
+        "profileUnchanged": true,
+        "resumeAcceptable": true,
+        "artifactsAcceptable": false,
+        "artifactError": "unresolved",
+        "claims": [
+          {
+            "field": "jobTitle",
+            "state": "uncertain",
+            "concerns": [
+              "check_unavailable"
+            ]
+          },
+          {
+            "field": "jobSummary",
+            "state": "uncertain",
+            "concerns": [
+              "check_unavailable"
+            ]
+          },
+          {
+            "field": "greeting",
+            "state": "uncertain",
+            "concerns": [
+              "check_unavailable"
+            ]
+          },
+          {
+            "field": "body",
+            "state": "uncertain",
+            "concerns": [
+              "check_unavailable"
+            ]
+          },
+          {
+            "field": "applicationAnswers",
+            "state": "uncertain",
+            "concerns": [
+              "check_unavailable"
+            ]
+          }
+        ]
+      },
+      "generatedAnswerItemCount": 1,
+      "artifactJudgmentMetadata": [
+        {
+          "index": 0,
+          "state": "supported",
+          "scope": "job",
+          "nonfactual": false,
+          "careerReferences": [],
+          "jobSources": [
+            {
+              "end": 24,
+              "quote": "Desenvolvedor Java",
+              "start": 0
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "state": "supported",
+          "scope": "job",
+          "nonfactual": false,
+          "careerReferences": [],
+          "jobSources": [
+            {
+              "end": 24,
+              "quote": "Desenvolvedor Java",
+              "start": 0
+            },
+            {
+              "end": 68,
+              "quote": "Responsabilidades: desenvolver aplicações em Java.",
+              "start": 25
+            },
+            {
+              "end": 112,
+              "quote": "Requisito obrigatório: conhecimento de Java.",
+              "start": 69
+            },
+            {
+              "end": 163,
+              "quote": "Responda em português: como você usa Java?",
+              "start": 113
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "state": "supported",
+          "scope": "nonfactual",
+          "nonfactual": false,
+          "careerReferences": [],
+          "jobSources": []
+        },
+        {
+          "index": 3,
+          "state": "unsupported",
+          "scope": "mixed",
+          "nonfactual": false,
+          "careerReferences": [
+            {
+              "id": "skill",
+              "profileId": "p",
+              "revision": 1
+            }
+          ],
+          "jobSources": [
+            {
+              "end": 68,
+              "quote": "Responsabilidades: desenvolver aplicações em Java.",
+              "start": 25
+            },
+            {
+              "end": 112,
+              "quote": "Requisito obrigatório: conhecimento de Java.",
+              "start": 69
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "state": "supported",
+          "scope": "mixed",
+          "nonfactual": false,
+          "careerReferences": [
+            {
+              "id": "skill",
+              "profileId": "p",
+              "revision": 1
+            }
+          ],
+          "jobSources": [
+            {
+              "end": 163,
+              "quote": "Responda em português: como você usa Java?",
+              "start": 113
+            }
+          ]
+        }
+      ],
+      "usage": [
+        {
+          "host": "api.typesafe.ai",
+          "status": 200,
+          "model": "jev-1.13.0",
+          "usage": {
+            "input_tokens": 1080,
+            "output_tokens": 108
+          }
+        },
+        {
+          "host": "api.openai.com",
+          "status": 200,
+          "model": "gpt-6-luna",
+          "usage": {
+            "completion_tokens": 188,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 1417,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cache_write_tokens": 1414,
+              "cached_tokens": 0
+            },
+            "total_tokens": 1605
+          }
+        },
+        {
+          "host": "api.openai.com",
+          "status": 200,
+          "model": "gpt-6-luna",
+          "usage": {
+            "completion_tokens": 58,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 482,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cache_write_tokens": 0,
+              "cached_tokens": 0
+            },
+            "total_tokens": 540
+          }
+        },
+        {
+          "host": "api.openai.com",
+          "status": 200,
+          "model": "gpt-6-luna",
+          "usage": {
+            "completion_tokens": 441,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 1395,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cache_write_tokens": 1392,
+              "cached_tokens": 0
+            },
+            "total_tokens": 1836
+          }
+        }
+      ]
+    },
+    {
+      "attempt": 2,
+      "requestVersion": "artifact-support-openai-v4",
+      "status": 200,
+      "handlerMs": 9269,
+      "providerCallsObserved": 4,
+      "artifactCheck": "complete",
+      "publicClientOfflineReplay": {
+        "origin": "local-production-handler-attempt-2",
+        "parsed": true,
+        "profileUnchanged": true,
+        "resumeAcceptable": false,
+        "resumeError": "unresolved",
+        "artifactsAcceptable": false,
+        "artifactError": "unresolved",
+        "claims": [
+          {
+            "field": "jobTitle",
+            "state": "unsupported",
+            "concerns": [
+              "O título da vaga é uma afirmação sobre o cargo e não há trecho de anúncio associado ao bloco; as referências do bloco não comprovam a afirmação.",
+              "changed_job_metadata",
+              "missing_citations",
+              "missing_job_support"
+            ]
+          },
+          {
+            "field": "jobSummary",
+            "state": "unsupported",
+            "concerns": [
+              "As afirmações sobre responsabilidades e exigência da vaga não têm trechos de anúncio associados ao bloco. A alegação de que a candidatura pede resposta em português também não está comprovada por fonte vinculada.",
+              "missing_citations",
+              "missing_job_support"
+            ]
+          },
+          {
+            "field": "greeting",
+            "state": "supported",
+            "concerns": []
+          },
+          {
+            "field": "body",
+            "state": "supported",
+            "concerns": []
+          },
+          {
+            "field": "applicationAnswers",
+            "state": "supported",
+            "concerns": []
+          }
+        ]
+      },
+      "generatedAnswerItemCount": 3,
+      "artifactJudgmentMetadata": [
+        {
+          "index": 0,
+          "state": "uncertain",
+          "scope": "job",
+          "nonfactual": false,
+          "careerReferences": [],
+          "jobSources": []
+        },
+        {
+          "index": 1,
+          "state": "uncertain",
+          "scope": "job",
+          "nonfactual": false,
+          "careerReferences": [],
+          "jobSources": []
+        },
+        {
+          "index": 2,
+          "state": "supported",
+          "scope": "nonfactual",
+          "nonfactual": true,
+          "careerReferences": [],
+          "jobSources": []
+        },
+        {
+          "index": 3,
+          "state": "supported",
+          "scope": "mixed",
+          "nonfactual": false,
+          "careerReferences": [
+            {
+              "id": "skill",
+              "profileId": "p",
+              "revision": 1
+            }
+          ],
+          "jobSources": [
+            {
+              "end": 163,
+              "quote": "Desenvolvedor Java. Responsabilidades: desenvolver aplicações em Java. Requisito obrigatório: conhecimento de Java. Responda em português: como você usa Java?",
+              "start": 0
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "state": "supported",
+          "scope": "mixed",
+          "nonfactual": false,
+          "careerReferences": [
+            {
+              "id": "skill",
+              "profileId": "p",
+              "revision": 1
+            }
+          ],
+          "jobSources": [
+            {
+              "end": 163,
+              "quote": "Desenvolvedor Java. Responsabilidades: desenvolver aplicações em Java. Requisito obrigatório: conhecimento de Java. Responda em português: como você usa Java?",
+              "start": 0
+            }
+          ]
+        }
+      ],
+      "usage": [
+        {
+          "host": "api.typesafe.ai",
+          "status": 200,
+          "model": "jev-1.13.0",
+          "usage": {
+            "input_tokens": 1080,
+            "output_tokens": 108
+          }
+        },
+        {
+          "host": "api.openai.com",
+          "status": 200,
+          "model": "gpt-6-luna",
+          "usage": {
+            "completion_tokens": 230,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 1417,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cache_write_tokens": 0,
+              "cached_tokens": 1414
+            },
+            "total_tokens": 1647
+          }
+        },
+        {
+          "host": "api.openai.com",
+          "status": 200,
+          "model": "gpt-6-luna",
+          "usage": {
+            "completion_tokens": 71,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 482,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cache_write_tokens": 0,
+              "cached_tokens": 0
+            },
+            "total_tokens": 553
+          }
+        },
+        {
+          "host": "api.openai.com",
+          "status": 200,
+          "model": "gpt-6-luna",
+          "usage": {
+            "completion_tokens": 480,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 1481,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cache_write_tokens": 1478,
+              "cached_tokens": 0
+            },
+            "total_tokens": 1961
+          }
+        }
+      ]
+    },
+    {
+      "attempt": 3,
+      "requestVersion": "artifact-support-openai-v5/neutral-blocks-v1",
+      "status": 200,
+      "handlerMs": 7336,
+      "providerCallsObserved": 4,
+      "artifactCheck": "complete",
+      "publicClientOfflineReplay": {
+        "origin": "local-production-handler-attempt-3",
+        "parsed": true,
+        "profileUnchanged": true,
+        "resumeAcceptable": true,
+        "artifactsAcceptable": false,
+        "artifactError": "unresolved",
+        "claims": [
+          {
+            "field": "jobTitle",
+            "state": "unsupported",
+            "concerns": [
+              "changed_job_metadata",
+              "invalid_job_citation"
+            ]
+          },
+          {
+            "field": "jobSummary",
+            "state": "supported",
+            "concerns": []
+          },
+          {
+            "field": "greeting",
+            "state": "supported",
+            "concerns": []
+          },
+          {
+            "field": "body",
+            "state": "supported",
+            "concerns": []
+          },
+          {
+            "field": "applicationAnswers",
+            "state": "supported",
+            "concerns": []
+          }
+        ]
+      },
+      "generatedAnswerItemCount": 1,
+      "artifactJudgmentMetadata": [
+        {
+          "index": 0,
+          "state": "supported",
+          "scope": "job",
+          "nonfactual": false,
+          "careerReferences": [],
+          "jobSources": [
+            {
+              "end": 20,
+              "quote": "Desenvolvedor Java",
+              "start": 0
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "state": "supported",
+          "scope": "job",
+          "nonfactual": false,
+          "careerReferences": [],
+          "jobSources": [
+            {
+              "end": 163,
+              "quote": "Desenvolvedor Java. Responsabilidades: desenvolver aplicações em Java. Requisito obrigatório: conhecimento de Java. Responda em português: como você usa Java?",
+              "start": 0
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "state": "supported",
+          "scope": "nonfactual",
+          "nonfactual": true,
+          "careerReferences": [],
+          "jobSources": []
+        },
+        {
+          "index": 3,
+          "state": "supported",
+          "scope": "mixed",
+          "nonfactual": false,
+          "careerReferences": [
+            {
+              "id": "skill",
+              "profileId": "p",
+              "revision": 1
+            }
+          ],
+          "jobSources": [
+            {
+              "end": 163,
+              "quote": "Desenvolvedor Java. Responsabilidades: desenvolver aplicações em Java. Requisito obrigatório: conhecimento de Java. Responda em português: como você usa Java?",
+              "start": 0
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "state": "supported",
+          "scope": "mixed",
+          "nonfactual": false,
+          "careerReferences": [
+            {
+              "id": "skill",
+              "profileId": "p",
+              "revision": 1
+            }
+          ],
+          "jobSources": [
+            {
+              "end": 163,
+              "quote": "Desenvolvedor Java. Responsabilidades: desenvolver aplicações em Java. Requisito obrigatório: conhecimento de Java. Responda em português: como você usa Java?",
+              "start": 0
+            }
+          ]
+        }
+      ],
+      "usage": [
+        {
+          "host": "api.typesafe.ai",
+          "status": 200,
+          "model": "jev-1.13.0",
+          "usage": {
+            "input_tokens": 1080,
+            "output_tokens": 108
+          }
+        },
+        {
+          "host": "api.openai.com",
+          "status": 200,
+          "model": "gpt-6-luna",
+          "usage": {
+            "completion_tokens": 189,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 1417,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cache_write_tokens": 0,
+              "cached_tokens": 1414
+            },
+            "total_tokens": 1606
+          }
+        },
+        {
+          "host": "api.openai.com",
+          "status": 200,
+          "model": "gpt-6-luna",
+          "usage": {
+            "completion_tokens": 53,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 486,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cache_write_tokens": 0,
+              "cached_tokens": 0
+            },
+            "total_tokens": 539
+          }
+        },
+        {
+          "host": "api.openai.com",
+          "status": 200,
+          "model": "gpt-6-luna",
+          "usage": {
+            "completion_tokens": 423,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 1317,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cache_write_tokens": 1314,
+              "cached_tokens": 0
+            },
+            "total_tokens": 1740
+          }
+        }
+      ]
+    },
+    {
+      "attempt": 4,
+      "requestVersion": "artifact-support-openai-v5/neutral-blocks-v1",
+      "status": 200,
+      "handlerMs": 8070,
+      "providerCallsObserved": 4,
+      "artifactCheck": "complete",
+      "publicClientOfflineReplay": {
+        "origin": "local-production-handler-attempt-4",
+        "parsed": true,
+        "profileUnchanged": true,
+        "resumeAcceptable": true,
+        "artifactsAcceptable": false,
+        "artifactError": "unresolved",
+        "claims": [
+          {
+            "field": "jobTitle",
+            "state": "unsupported",
+            "concerns": [
+              "changed_job_metadata",
+              "invalid_job_citation"
+            ]
+          },
+          {
+            "field": "jobSummary",
+            "state": "supported",
+            "concerns": []
+          },
+          {
+            "field": "greeting",
+            "state": "supported",
+            "concerns": []
+          },
+          {
+            "field": "body",
+            "state": "supported",
+            "concerns": []
+          },
+          {
+            "field": "applicationAnswers",
+            "state": "supported",
+            "concerns": []
+          }
+        ]
+      },
+      "generatedAnswerItemCount": 1,
+      "artifactJudgmentMetadata": [
+        {
+          "index": 0,
+          "state": "supported",
+          "scope": "job",
+          "nonfactual": false,
+          "careerReferences": [],
+          "jobSources": [
+            {
+              "end": 16,
+              "quote": "Desenvolvedor Java",
+              "start": 0
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "state": "supported",
+          "scope": "job",
+          "nonfactual": false,
+          "careerReferences": [],
+          "jobSources": [
+            {
+              "end": 163,
+              "quote": "Desenvolvedor Java. Responsabilidades: desenvolver aplicações em Java. Requisito obrigatório: conhecimento de Java. Responda em português: como você usa Java?",
+              "start": 0
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "state": "supported",
+          "scope": "nonfactual",
+          "nonfactual": true,
+          "careerReferences": [],
+          "jobSources": []
+        },
+        {
+          "index": 3,
+          "state": "supported",
+          "scope": "mixed",
+          "nonfactual": false,
+          "careerReferences": [
+            {
+              "id": "skill",
+              "profileId": "p",
+              "revision": 1
+            }
+          ],
+          "jobSources": [
+            {
+              "end": 163,
+              "quote": "Desenvolvedor Java. Responsabilidades: desenvolver aplicações em Java. Requisito obrigatório: conhecimento de Java. Responda em português: como você usa Java?",
+              "start": 0
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "state": "supported",
+          "scope": "mixed",
+          "nonfactual": false,
+          "careerReferences": [
+            {
+              "id": "skill",
+              "profileId": "p",
+              "revision": 1
+            }
+          ],
+          "jobSources": [
+            {
+              "end": 163,
+              "quote": "Desenvolvedor Java. Responsabilidades: desenvolver aplicações em Java. Requisito obrigatório: conhecimento de Java. Responda em português: como você usa Java?",
+              "start": 0
+            }
+          ]
+        }
+      ],
+      "usage": [
+        {
+          "host": "api.typesafe.ai",
+          "status": 200,
+          "model": "jev-1.13.0",
+          "usage": {
+            "input_tokens": 1080,
+            "output_tokens": 108
+          }
+        },
+        {
+          "host": "api.openai.com",
+          "status": 200,
+          "model": "gpt-6-luna",
+          "usage": {
+            "completion_tokens": 187,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 1417,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cache_write_tokens": 0,
+              "cached_tokens": 1414
+            },
+            "total_tokens": 1604
+          }
+        },
+        {
+          "host": "api.openai.com",
+          "status": 200,
+          "model": "gpt-6-luna",
+          "usage": {
+            "completion_tokens": 57,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 486,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cache_write_tokens": 0,
+              "cached_tokens": 0
+            },
+            "total_tokens": 543
+          }
+        },
+        {
+          "host": "api.openai.com",
+          "status": 200,
+          "model": "gpt-6-luna",
+          "usage": {
+            "completion_tokens": 425,
+            "completion_tokens_details": {
+              "accepted_prediction_tokens": 0,
+              "audio_tokens": 0,
+              "reasoning_tokens": 0,
+              "rejected_prediction_tokens": 0
+            },
+            "prompt_tokens": 1316,
+            "prompt_tokens_details": {
+              "audio_tokens": 0,
+              "cache_write_tokens": 1313,
+              "cached_tokens": 0
+            },
+            "total_tokens": 1741
+          }
+        }
+      ]
+    }
+  ],
+  "clientReplayNote": "Recorded provider responses replayed offline through current production handler to preserve wire object ordering, then passed through actual public client. No provider calls in replay. Initial JSON map reserialization was unsuitable for exact client contract replay.",
+  "causeBoundary": "First local v4 run rejected inconsistent nonfactual flag/scope. Cannot establish this as the cause of earlier deployed unavailable response. Second local v4 run treated empty block source arrays as missing evidence. Neutral input removes unfinished judgments but both v5 runs still invented title offsets.",
+  "inconsistentScopeReplay": "Recorded v4 inconsistency remains unavailable when replayed through v5; guards unchanged",
+  "billedCost": null,
+  "acceptedResultCost": null,
+  "providerRetentionVerified": false,
+  "qualityLimit": "Repeated diagnostic input; not held-out or statistically reliable before/after comparison"
+}

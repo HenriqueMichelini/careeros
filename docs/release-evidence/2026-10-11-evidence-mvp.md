@@ -477,3 +477,56 @@ Standards and Spec patch reviews, GitGuardian and Netlify preview checks before
 merge. SonarQube analysis remained queued with no result at merge; GitHub's
 main-branch rules query was empty and protection lookup returned 404. No Sonar
 pass is claimed. Issue #52 remains open.
+
+
+## Local support diagnosis and neutral review input
+
+After the deployed allowance was exhausted, the user authorized up to four
+local production-handler workflow attempts with the same synthetic posting and
+sole career fact. Exactly four were used without retries (16 provider calls).
+Two used v4 and two used the request correction described below. No deployment
+was published or called under this local-only authorization.
+
+Private raw-response capture identified a specific failure in the first local
+v4 run: a greeting judgment had `scope: nonfactual` but `nonfactual: false`.
+The existing consistency guard correctly left the entire artifact review
+unavailable. This does not establish the cause of the earlier deployed
+unavailable response, whose raw provider output was not captured. The second
+v4 run returned complete judgments but rejected title/summary support because
+sources were not associated with those blocks, despite supplied catalogs.
+
+The review request had included unfinished public response placeholders:
+empty source arrays, uncertain state, unknown scope, false nonfactual flag and
+`check_unavailable`. The correction sends only explicit index, field and exact
+generated text for each block. The policy asks the independent reviewer to
+select sources from the existing catalogs, including for titles/summaries,
+and explains that absent preassigned sources are not missing evidence. Public
+response shapes, source checks, scope consistency, acceptance gates, model,
+reasoning, provider count and envelope bounds remain unchanged. The diagnostic
+version is now `artifact-support-openai-v5/prepared-citations-v1/number-guard-v2/answer-input-v1/career-citations-v1/neutral-blocks-v1`.
+
+The public-handler request regression failed on the old placeholder objects and
+then passed with the literal expected indexed text blocks. Replaying the first
+recorded inconsistent judgment through the corrected handler still leaves the
+review unavailable. This verifies the request contract and preserved guard;
+it does not prove that placeholders caused the model failures.
+
+Both subsequent v5 local runs produced complete reviews with supported summary,
+greeting, body and answers, but invented title citation offsets instead of
+copying the supplied exact catalog entry. Both titles remained unsupported with
+`invalid_job_citation` and `changed_job_metadata`. No citation was repaired or
+acceptance overridden. All four recorded provider response sets were replayed
+offline through the production handler and actual public client: all parsed,
+all preserved Profile snapshots, and all blocked artifact acceptance. Resumes
+were acceptable in runs 1, 3 and 4; run 2 remained unresolved. Replaying through
+the handler preserves response object order; reserializing decoded Go maps
+had initially made the client replay unsuitable and was corrected offline.
+
+[Local diagnostic evidence](issue-52/neutral-blocks.local.live.json) retains
+bounded outcomes, synthetic citation metadata, usage and source hashes without
+keys or full provider prose. This small repeated-input before/after diagnostic
+is not a quality benchmark or causal proof. Go, all 129 Node tests and TypeScript
+checks pass. The first sandboxed Node invocation could not spawn Go; the full
+suite passed when rerun with subprocess access. No attempts remain under this
+allowance. Qualification reliability, exact citation selection, full deployed
+artifact acceptance, held-out quality and accepted-result cost remain open.
