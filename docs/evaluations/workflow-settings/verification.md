@@ -54,7 +54,9 @@ No frontend behavior changed, so no new browser/PDF evidence is claimed.
 
 Independent review against user-approved baseline
 `f61ac2fe218bce914ca6cf47e14fc96e404fda57`: no actionable findings through
-`a3a575c`. Updated sequence accounting and final/union output handling follow
+`06fdc50`. Final live evidence contains no credentials or authorization headers.
+Original-to-reviewed linkage, unchanged evidence, all calls/attempts, and
+fixture/source hashes were independently verified. Updated sequence accounting and final/union output handling follow
 repository standards and preserve documented workflow/provider boundaries.
 
 ## Spec
@@ -67,7 +69,13 @@ was reduced to 14 cases and no extra repeats to keep all initial/answer and
 continuation legs inside 60 HTTP attempts. Natural stable-prefix usage remains
 observable without padding or retention changes.
 
-The previous implementation review had Standards 0 findings and Spec 0 remaining
-implementation findings. The live comparison, field review and decision are now
-recorded, with a final review of the evidence before PR merge. Controlled success
-is kept distinct from the live measurement throughout.
+Final independent Spec review through `06fdc50` verified all 42 source-review
+annotations, unchanged outputs/scores, counters, completion/acceptance, durations,
+price components and hashes. No actionable findings remain. It confirmed that
+blocked/unavailable paths and the small sample support conservative retention,
+not a claim of certified quality or savings.
+
+Summary: Standards **0** findings; Spec **0** actionable findings. The full source
+change and final live evidence were reviewed against the approved baseline.
+Targeted evaluator/runner tests passed again after live evidence was recorded.
+Controlled success remains distinct from live measurement throughout.
