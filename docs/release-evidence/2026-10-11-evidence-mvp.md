@@ -435,3 +435,45 @@ The catalog duplicates existing reference metadata and may increase token use;
 the existing serialized-envelope limit remains enforced. These latest changes
 have no live evidence yet. They do not resolve qualification source-ID
 reliability, full semantic quality or accepted-result cost. Issue #52 stays open.
+
+
+## Deployed career-citation checks
+
+PR #101 merged as `cfa8bc270b0a8df2b3979294bf3fe22482fa50f9`. The user then
+authorized publishing its build `31e65fcb3f96873735beb001222ccdab8d70f0cd`
+(deploy `6acc0e1cc1a92c00087d9654`) and exactly two synthetic draft checks,
+without retries. Netlify confirmed this build as published and locked.
+
+Published and immutable preview returned HTTP 200/no-store in 11,790 ms and
+8,754 ms; handler durations were 10,624 ms and 8,235 ms. Both responses parsed
+through the actual public client in an offline replay, and both resumes passed
+its acceptance checks. Artifact acceptance remained unresolved. Profile
+snapshots remained unchanged; no output was saved, exported or accepted in a
+live browser.
+
+Published artifact support was unavailable: every block remained uncertain with
+`check_unavailable`. Provider HTTP 200/completed metadata does not establish a
+valid complete support judgment. The sanitized response and metadata logs do
+not identify which contract check failed; no raw provider response was captured.
+Preview support was complete and returned current exact career references for
+the body and application answers. Its title block was unsupported with missing
+job citations/support and changed metadata concerns, although the generated
+title matched the posting. This is a false rejection observation, not permission
+to manufacture citations or override the judgment. Other preview blocks were
+supported, with exact returned original job excerpts and no answer concerns.
+
+[Career-citation deployed evidence](issue-52/career-citations.deployed.live.json)
+records the separate HTTP/handler/stage timings, revision/origins, request
+hashes, observed provider usage and public-client outcomes. The inspected two
+function entries exposed metadata/usage without inputs, generated prose or
+keys. Provider retention and billed/accepted-result costs remain unverified.
+Eight provider calls were observed across the two authorized workflow attempts;
+both attempts are used. Both outputs contained five answer items for one
+explicit posting question. Reusing this diagnostic case is not held-out quality
+verification, and the general qualification/review reliability gates remain open.
+
+The exact PR #101 head passed Go, all 129 Node tests, TypeScript, independent
+Standards and Spec patch reviews, GitGuardian and Netlify preview checks before
+merge. SonarQube analysis remained queued with no result at merge; GitHub's
+main-branch rules query was empty and protection lookup returned 404. No Sonar
+pass is claimed. Issue #52 remains open.
