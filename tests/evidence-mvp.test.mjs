@@ -584,3 +584,66 @@ test("fresh empty canonical Profile accepts the first bounded ingestion request"
     assert.equal(rejected.error, "input")
   }
 })
+
+test("captured invalid job citations remain inspectable and cannot be accepted", async () => {
+  const fixture = JSON.parse(
+    readFileSync(
+      new URL(
+        "../docs/release-evidence/issue-52/invalid-job-citation.controlled.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  ).cases[0]
+  const doc = fixture.request.profileEvidence
+  const before = structuredClone(doc)
+  const result = await viaHandler("pt-reviewed-draft", fixture.provider, () =>
+    generateMaterials(
+      profileView(doc),
+      fixture.request.jobPosting,
+      "sk-controlled",
+      [],
+      "pt-BR",
+      "controlled",
+      undefined,
+      [],
+      doc,
+    ),
+  )
+  assert.ok(
+    result.artifactReview.claims.some(
+      (c) =>
+        c.state === "unsupported" &&
+        c.concerns.includes("invalid_job_citation"),
+    ),
+  )
+  for (const c of result.artifactReview.claims)
+    for (const s of c.jobSources)
+      assert.equal(
+        new TextDecoder("utf-8", { fatal: true }).decode(
+          new TextEncoder()
+            .encode(fixture.request.jobPosting)
+            .slice(s.start, s.end),
+        ),
+        s.quote,
+      )
+  assert.throws(() => acceptArtifacts(result.artifactReview, doc), /unresolved/)
+  assert.deepEqual(doc, before)
+})
+
+test("captured shortened qualification source IDs remain rejected", () => {
+  const fixture = JSON.parse(
+    readFileSync(
+      new URL(
+        "../docs/release-evidence/issue-52/truncated-job-source.controlled.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  ).cases[0]
+  assert.equal(
+    handler("pt-evidence-matching", fixture.request, fixture.provider, 502)
+      .error,
+    "invalid_output",
+  )
+})

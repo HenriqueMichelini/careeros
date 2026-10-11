@@ -1,0 +1,448 @@
+{
+  "version": "issue52-invalid-job-citation-v1",
+  "cases": [
+    {
+      "id": "pt-invalid-job-citation",
+      "task": "application_draft",
+      "language": "pt-BR",
+      "split": "heldout",
+      "tags": [
+        "sparse",
+        "unknown_metadata",
+        "factual_support",
+        "requirement_coverage"
+      ],
+      "request": {
+        "jobPosting": "Desenvolvedor Java. Responsabilidades: desenvolver aplicações em Java. Requisito obrigatório: conhecimento de Java. Responda em português: como você usa Java?",
+        "repository": {
+          "careerGoals": "",
+          "skills": "Java",
+          "competencies": "",
+          "tools": "",
+          "employmentStatus": "",
+          "currentSalary": "",
+          "desiredSalary": "",
+          "additionalInfo": "",
+          "experience": [],
+          "projects": []
+        },
+        "confirmedQualifications": [],
+        "cvLanguage": "pt-BR",
+        "profileEvidence": {
+          "version": 2,
+          "id": "p",
+          "revision": 1,
+          "normalizationPolicy": "exact-alias-v1",
+          "entities": [],
+          "facts": [
+            {
+              "id": "skill",
+              "revision": 1,
+              "owner": {
+                "profileId": "p",
+                "id": "p",
+                "revision": 1
+              },
+              "context": [],
+              "field": "skills",
+              "order": 0,
+              "kind": "statement",
+              "value": "Java",
+              "assertion": "affirmed",
+              "intent": "actual",
+              "certainty": "certain",
+              "temporal": {
+                "wording": "",
+                "precision": "unknown"
+              },
+              "normalization": {
+                "observed": "Java",
+                "canonical": null,
+                "policy": "exact-alias-v1"
+              },
+              "origin": {
+                "kind": "accepted_proposal",
+                "original": "unknown"
+              },
+              "approval": "approved",
+              "support": "supported"
+            }
+          ],
+          "evidence": [
+            {
+              "id": "e",
+              "revision": 1,
+              "excerpt": "I use Java.",
+              "origin": "submitted career notes",
+              "approval": "approved"
+            }
+          ],
+          "links": [
+            {
+              "id": "support",
+              "kind": "supports",
+              "from": {
+                "profileId": "p",
+                "id": "skill",
+                "revision": 1
+              },
+              "to": {
+                "profileId": "p",
+                "id": "e",
+                "revision": 1
+              },
+              "state": "active"
+            }
+          ]
+        },
+        "reviewResume": true,
+        "reviewArtifacts": true
+      },
+      "provider": [
+        {
+          "applicationAnswers": "**Como você usa Java?** Tenho conhecimento de Java, conforme informado no meu perfil.",
+          "company": null,
+          "coverLetter": {
+            "body": "Tenho conhecimento de Java, alinhado ao requisito obrigatório para a vaga de Desenvolvedor Java. Gostaria de contribuir para o desenvolvimento de aplicações em Java e conversar sobre como minhas qualificações podem atender às necessidades da equipe.",
+            "closing": "Atenciosamente,",
+            "greeting": "Olá, equipe de contratação,"
+          },
+          "jobSummary": "Vaga de Desenvolvedor Java com responsabilidade de desenvolver aplicações em Java. Conhecimento de Java é obrigatório.",
+          "jobTitle": "Desenvolvedor Java",
+          "resume": [
+            {
+              "kind": "paragraph",
+              "section": "summary",
+              "sources": [
+                {
+                  "id": "skill",
+                  "profileId": "p",
+                  "revision": 1
+                }
+              ],
+              "text": "Conhecimento de Java."
+            },
+            {
+              "kind": "bullet",
+              "section": "skills",
+              "sources": [
+                {
+                  "id": "skill",
+                  "profileId": "p",
+                  "revision": 1
+                }
+              ],
+              "text": "Java"
+            }
+          ]
+        },
+        {
+          "judgments": [
+            {
+              "index": 0,
+              "reason": "El hecho afirma Java como habilidad real; «Conhecimento de Java» es una paráfrasis fiel.",
+              "state": "supported"
+            },
+            {
+              "index": 1,
+              "reason": "Java figura como habilidad afirmada en los hechos.",
+              "state": "supported"
+            }
+          ]
+        },
+        {
+          "answerConcerns": [],
+          "judgments": [
+            {
+              "index": 0,
+              "jobSources": [
+                {
+                  "end": 17,
+                  "quote": "Desenvolvedor Java",
+                  "start": 0
+                }
+              ],
+              "nonfactual": false,
+              "reason": "O título corresponde ao título informado na vaga.",
+              "scope": "job",
+              "sources": [],
+              "state": "supported"
+            },
+            {
+              "index": 1,
+              "jobSources": [
+                {
+                  "end": 98,
+                  "quote": "Desenvolvedor Java. Responsabilidades: desenvolver aplicações em Java. Requisito obrigatório: conhecimento de Java.",
+                  "start": 0
+                }
+              ],
+              "nonfactual": false,
+              "reason": "O resumo reproduz corretamente o cargo, a responsabilidade e o requisito da vaga.",
+              "scope": "job",
+              "sources": [],
+              "state": "supported"
+            },
+            {
+              "index": 2,
+              "jobSources": [],
+              "nonfactual": true,
+              "reason": "Saudação comum, sem afirmação factual.",
+              "scope": "nonfactual",
+              "sources": [],
+              "state": "supported"
+            },
+            {
+              "index": 3,
+              "jobSources": [
+                {
+                  "end": 17,
+                  "quote": "Desenvolvedor Java",
+                  "start": 0
+                },
+                {
+                  "end": 98,
+                  "quote": "Desenvolvedor Java. Responsabilidades: desenvolver aplicações em Java. Requisito obrigatório: conhecimento de Java.",
+                  "start": 0
+                }
+              ],
+              "nonfactual": false,
+              "reason": "O conhecimento de Java é apoiado pelo perfil; o requisito e a responsabilidade de desenvolver aplicações em Java constam da vaga. A intenção de contribuir e conversar não é apresentada como experiência já realizada.",
+              "scope": "mixed",
+              "sources": [
+                {
+                  "id": "skill",
+                  "profileId": "p",
+                  "revision": 1
+                }
+              ],
+              "state": "supported"
+            },
+            {
+              "index": 4,
+              "jobSources": [
+                {
+                  "end": 116,
+                  "quote": "Responda em português: como você usa Java?",
+                  "start": 99
+                }
+              ],
+              "nonfactual": false,
+              "reason": "O perfil sustenta conhecimento de Java, mas não afirma como a pessoa o usa; essa resposta não responde à pergunta específica da vaga.",
+              "scope": "mixed",
+              "sources": [
+                {
+                  "id": "skill",
+                  "profileId": "p",
+                  "revision": 1
+                }
+              ],
+              "state": "unsupported"
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "job-title",
+          "group": "draft",
+          "match": {
+            "field": "^jobTitle$",
+            "text": "^(?:Java developer|Desenvolvedor Java)$"
+          },
+          "source": "Job Posting: explicit Java role"
+        },
+        {
+          "id": "unknown-company",
+          "group": "draft",
+          "match": {
+            "field": "^company$",
+            "text": "^null$"
+          },
+          "source": "Job Posting: company absent"
+        },
+        {
+          "id": "job-role",
+          "group": "draft",
+          "match": {
+            "field": "^jobSummary$",
+            "text": "^(?:Java developer|Desenvolvedor Java|Seeking a Java developer|Oportunidade para Desenvolvedor Java)$"
+          },
+          "source": "Job Posting: explicit Java role"
+        },
+        {
+          "id": "aws-requirement",
+          "group": "draft",
+          "match": {
+            "field": "^jobSummary$",
+            "text": "^(?:AWS required|AWS obrigatório|AWS is required|AWS indicada como requisito obrigatório)$"
+          },
+          "source": "Job Posting: AWS required, not candidate skill"
+        },
+        {
+          "id": "resume-java",
+          "group": "draft",
+          "match": {
+            "field": "^resume$",
+            "text": "^(?:Java|I use Java|Eu uso Java)$"
+          },
+          "source": "Profile.skills=Java"
+        },
+        {
+          "id": "cover-java",
+          "group": "draft",
+          "match": {
+            "field": "^coverLetter$",
+            "text": "^(?:I use Java|Eu uso Java|Java is listed among my skills|Tenho conhecimento em Java)$"
+          },
+          "source": "Profile.skills=Java"
+        },
+        {
+          "id": "answers-java",
+          "group": "draft",
+          "match": {
+            "field": "^applicationAnswers$",
+            "text": "^(?:I use Java|Eu uso Java|Java experience: Java is listed among my skills|Java skill: Java|Habilidade Java: Java)$"
+          },
+          "source": "Profile.skills=Java"
+        },
+        {
+          "id": "cover-role-interest",
+          "group": "draft",
+          "match": {
+            "field": "^coverLetter$",
+            "text": "^(?:I am interested in the Java Developer opportunity|interesse na oportunidade de Desenvolvedor Java)$"
+          },
+          "source": "Rhetorical application intent; no career achievement",
+          "optional": true
+        },
+        {
+          "id": "cover-requirement",
+          "group": "draft",
+          "match": {
+            "field": "^coverLetter$",
+            "text": "^(?:I understand that AWS is required for the role|AWS is required for the role|A descrição informa AWS como requisito obrigatório)$"
+          },
+          "source": "Job Posting: AWS requirement, not candidate experience",
+          "optional": true
+        },
+        {
+          "id": "unknowns-coverLetter",
+          "group": "draft",
+          "match": {
+            "field": "^coverLetter$",
+            "text": "^(?:(?:AWS experience|Relevant projects|Education|Certifications|Languages): Not provided|(?:Experiência profissional|Formação acadêmica|Certificações): Não informad[ao]s?|(?:Requisito técnico informado: )?AWS é obrigatório|Vaga: Desenvolvedor Java)$"
+          },
+          "source": "Profile: absent experience/qualifications; Job Posting: explicit role/AWS",
+          "optional": true
+        },
+        {
+          "id": "unknowns-applicationAnswers",
+          "group": "draft",
+          "match": {
+            "field": "^applicationAnswers$",
+            "text": "^(?:(?:AWS experience|Relevant projects|Education|Certifications|Languages): Not provided|(?:Experiência profissional|Formação acadêmica|Certificações): Não informad[ao]s?|(?:Requisito técnico informado: )?AWS é obrigatório|Vaga: Desenvolvedor Java)$"
+          },
+          "source": "Profile: absent experience/qualifications; Job Posting: explicit role/AWS",
+          "optional": true
+        },
+        {
+          "id": "unknowns-jobSummary",
+          "group": "draft",
+          "match": {
+            "field": "^jobSummary$",
+            "text": "^(?:(?:AWS experience|Relevant projects|Education|Certifications|Languages): Not provided|(?:Experiência profissional|Formação acadêmica|Certificações): Não informad[ao]s?|(?:Requisito técnico informado: )?AWS é obrigatório|Vaga: Desenvolvedor Java)$"
+          },
+          "source": "Profile: absent experience/qualifications; Job Posting: explicit role/AWS",
+          "optional": true
+        },
+        {
+          "id": "unknown-employer-salutation",
+          "group": "draft",
+          "match": {
+            "field": "^coverLetter\\.greeting$",
+            "text": "^(?:Dear hiring team,|Prezada equipe de contratação,|À equipe de contratação,)$"
+          },
+          "source": "Job Posting: employer absent; use generic hiring team",
+          "optional": true
+        },
+        {
+          "id": "resumeReview-complete",
+          "group": "resumeReview",
+          "match": {
+            "check": "^complete$"
+          }
+        },
+        {
+          "id": "artifactReview-complete",
+          "group": "artifactReview",
+          "match": {
+            "check": "^complete$"
+          }
+        },
+        {
+          "id": "resume-supported",
+          "group": "resumeReview",
+          "match": {
+            "state": "^supported$",
+            "text": "Java"
+          }
+        },
+        {
+          "id": "artifact-jobTitle",
+          "group": "artifactReview",
+          "match": {
+            "state": "^supported$",
+            "field": "^jobTitle$",
+            "concerns": "^\\[\\]$"
+          }
+        },
+        {
+          "id": "artifact-jobSummary",
+          "group": "artifactReview",
+          "match": {
+            "state": "^supported$",
+            "field": "^jobSummary$",
+            "concerns": "^\\[\\]$"
+          }
+        },
+        {
+          "id": "artifact-greeting",
+          "group": "artifactReview",
+          "match": {
+            "state": "^supported$",
+            "field": "^greeting$",
+            "concerns": "^\\[\\]$"
+          }
+        },
+        {
+          "id": "artifact-body",
+          "group": "artifactReview",
+          "match": {
+            "state": "^supported$",
+            "field": "^body$",
+            "concerns": "^\\[\\]$"
+          }
+        },
+        {
+          "id": "artifact-applicationAnswers",
+          "group": "artifactReview",
+          "match": {
+            "state": "^supported$",
+            "field": "^applicationAnswers$",
+            "concerns": "^\\[\\]$"
+          }
+        }
+      ],
+      "forbidden": [
+        "(?i)AWS expert|AWS certified|certificad[oa] em AWS",
+        "(?i)Acme|90%|five years|cinco anos",
+        "(?i)I managed ten engineers|gerenciei dez engenheiros",
+        "(?i)(?:I (?:know|use|have experience (?:in|with)) AWS|(?:Tenho|possuo) experiência (?:em|com) AWS)"
+      ],
+      "notes": "Captured synthetic live draft/support output; inaccurate model-generated byte offsets must remain unsupported but inspectable.",
+      "sourceId": "pt-draft-sparse",
+      "role": "acceptance"
+    }
+  ]
+}

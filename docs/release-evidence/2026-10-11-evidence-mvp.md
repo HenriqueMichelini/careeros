@@ -175,3 +175,34 @@ violations or actionable smells; Spec found no remaining implementation defects.
 Both original test-coverage findings were fixed. Spec explicitly retains the
 unmet release checks above. No prompt/model/schema setting was tuned to these
 held-out results.
+
+## Supplemental diagnosis after PR #93
+
+The user approved up to six further minimized synthetic local production-handler
+attempts with private response capture. The first qualification attempt passed;
+a deliberate diagnostic repetition failed because the provider shortened two
+64-character segment IDs. The existing resolver correctly rejected them before
+requirement matching. The captured response is retained in
+[truncated-job-source.controlled.json](issue-52/truncated-job-source.controlled.json)
+and replayed as a rejection regression. No guess repairs source references.
+
+A captured draft exposed another integration defect: the backend marked wrong
+UTF-8 job-citation offsets unsupported but returned the malformed citation
+objects. The client consequently rejected the whole review, preventing inspection.
+The correction retains `invalid_job_citation` and unsupported state while returning
+only valid job citation objects. It does not move offsets, invent references or
+accept claims. The captured production support response in
+[invalid-job-citation.controlled.json](issue-52/invalid-job-citation.controlled.json)
+reproduced `ApplicationDraftError: invalid_output` before the fix; afterward the
+actual public client opens the review and explicit artifact acceptance still fails.
+The Profile remains unchanged. This is contract recovery, not a semantic-quality
+or model-accuracy improvement; these captured cases are now regression fixtures.
+
+
+Four of the six diagnostic workflow attempts were used, with no automatic retry.
+A fresh post-fix draft returned 200 and parsed through the actual public client;
+unsupported artifact claims remained unaccepted. Metadata and per-stage usage
+are retained in [local diagnostic checks](issue-52/local-diagnosis.live.json).
+This supplemental correction still requires deployed verification. The release
+gate remains open for provider source-ID reliability, faithful complete drafts
+and unavailable accepted-result cost.

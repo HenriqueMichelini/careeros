@@ -145,7 +145,7 @@ func (a app) reviewArtifacts(parent context.Context, key string, in request, out
 		c.Nonfactual = j.Nonfactual
 		c.Scope = j.Scope
 		c.Sources = j.Sources
-		c.JobSources = j.JobSources
+		c.JobSources = []jobSupport{}
 		c.Concerns = []string{}
 		if j.State != "supported" {
 			c.Concerns = append(c.Concerns, j.Reason)
@@ -183,11 +183,14 @@ func (a app) reviewArtifacts(parent context.Context, key string, in request, out
 			if s.Start < 0 || s.End <= s.Start || s.End > len(in.JobPosting) || !utf8.ValidString(in.JobPosting[:s.Start]) || !utf8.ValidString(in.JobPosting[:s.End]) || s.Quote != in.JobPosting[s.Start:s.End] {
 				c.Concerns = append(c.Concerns, "invalid_job_citation")
 			} else {
+				// Keep valid excerpts inspectable without forwarding malformed
+				// provider offsets. Invalid citations remain an unsupported concern.
+				c.JobSources = append(c.JobSources, s)
 				sourceTexts = append(sourceTexts, s.Quote)
 			}
 		}
 		sourceText := strings.Join(sourceTexts, "\n")
-		if (c.Field == "company" || c.Field == "jobTitle") && !strings.Contains(strings.ToLower(strings.Join(jobQuotes(j.JobSources), "\n")), strings.ToLower(c.Text)) {
+		if (c.Field == "company" || c.Field == "jobTitle") && !strings.Contains(strings.ToLower(strings.Join(jobQuotes(c.JobSources), "\n")), strings.ToLower(c.Text)) {
 			c.Concerns = append(c.Concerns, "changed_job_metadata")
 		}
 		if !c.Nonfactual {
