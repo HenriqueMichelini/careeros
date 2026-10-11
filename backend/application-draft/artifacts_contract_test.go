@@ -51,6 +51,10 @@ func TestArtifactSupportGuardsAndAnswerOmission(t *testing.T) {
 	}{
 		{"leadership", "I led ten engineers.", true, "", nil, "stronger_claim"},
 		{"metric", "I improved throughput by 40%.", true, "", nil, "invented_number"},
+		{"numbered supported answers", "I use Java.", true, "", nil, "numbered_supported"},
+		{"numbered invented metric", "I use Java.", true, "", nil, "invented_number"},
+		{"literal numbered content", "I use Java.", true, "", nil, "invented_number"},
+		{"indented numbered content", "I use Java.", true, "", nil, "invented_number"},
 		{"proficiency", "I am fluent in Java.", true, "", nil, "stronger_claim"},
 		{"missing career support", "I use Java.", false, "", nil, "missing_citations"},
 		{"Portuguese candidate using only job evidence", "Eu uso Java.", false, "Java developer.", nil, "missing_career_support"},
@@ -83,6 +87,16 @@ func TestArtifactSupportGuardsAndAnswerOmission(t *testing.T) {
 				if calls == 1 {
 					draft := structuredDraft([]any{citedClaim("Java")})
 					draft["coverLetter"].(map[string]string)["body"] = tc.body
+					switch tc.name {
+					case "numbered supported answers":
+						draft["applicationAnswers"] = "1. I use Java.\n2. I use Java."
+					case "numbered invented metric":
+						draft["applicationAnswers"] = "1. I improved throughput by 40%."
+					case "literal numbered content":
+						draft["applicationAnswers"] = "```text\n1. I use Java.\n```"
+					case "indented numbered content":
+						draft["applicationAnswers"] = "    1. I use Java."
+					}
 					if tc.name == "Portuguese field omission" {
 						draft["applicationAnswers"] = "Minha experiência se concentra em sistemas."
 					}
@@ -148,7 +162,7 @@ func TestArtifactSupportGuardsAndAnswerOmission(t *testing.T) {
 			})}
 			w := httptest.NewRecorder()
 			applicationdraft.NewHandlerWithClient(client).ServeHTTP(w, req)
-			if tc.want == "mixed_supported" {
+			if tc.want == "mixed_supported" || tc.want == "numbered_supported" {
 				var result struct {
 					ArtifactReview struct {
 						Claims []struct{ Field, State string }
@@ -156,8 +170,8 @@ func TestArtifactSupportGuardsAndAnswerOmission(t *testing.T) {
 				}
 				json.Unmarshal(w.Body.Bytes(), &result)
 				for _, c := range result.ArtifactReview.Claims {
-					if c.Field == "body" && c.State != "supported" {
-						t.Fatalf("valid mixed support lost: %d %s", w.Code, w.Body.String())
+					if (tc.want == "mixed_supported" && c.Field == "body" || tc.want == "numbered_supported" && c.Field == "applicationAnswers") && c.State != "supported" {
+						t.Fatalf("valid artifact support lost: %d %s", w.Code, w.Body.String())
 					}
 				}
 			} else if w.Code != 200 || !strings.Contains(w.Body.String(), tc.want) {
@@ -258,4 +272,92 @@ func artifactScope(field string) string {
 		return "career"
 	}
 	return "job"
+}
+
+// The provider chooses existing source objects; it must not calculate UTF-8
+// offsets from prose. Public response citations retain their original contract.
+func TestArtifactSupportReceivesExactPreparedJobCitations(t *testing.T) {
+	posting := "Desenvolvedor Java. Café com experiência.\r\nDesenvolvedor Java. https://example.test/Cafe%CC%81"
+	req := reviewedRequest(t)
+	var input map[string]any
+	json.NewDecoder(req.Body).Decode(&input)
+	input["jobPosting"] = posting
+	input["reviewArtifacts"] = true
+	data, _ := json.Marshal(input)
+	req = httptest.NewRequest("POST", "/api/application-draft", strings.NewReader(string(data)))
+	req.Header.Set("X-OpenAI-Api-Key", "sk-synthetic")
+	req.Header.Set("X-TypeSafe-Api-Key", "synthetic")
+	calls := 0
+	client := &http.Client{Transport: providerTransport(func(r *http.Request) (*http.Response, error) {
+		calls++
+		if calls == 1 {
+			draft := structuredDraft([]any{citedClaim("I use Java.")})
+			draft["jobSummary"] = "Desenvolvedor Java."
+			return completionResponse(draft), nil
+		}
+		if calls == 2 {
+			return completionResponse(map[string]any{"judgments": []any{map[string]any{"index": 0, "state": "supported", "reason": "Faithful."}}}), nil
+		}
+		var envelope struct{ Messages []struct{ Content string } }
+		json.NewDecoder(r.Body).Decode(&envelope)
+		var payload struct {
+			Blocks       []struct{ Field, Text string }
+			JobCitations []struct {
+				Start int    `json:"start"`
+				End   int    `json:"end"`
+				Quote string `json:"quote"`
+			}
+		}
+		if json.Unmarshal([]byte(envelope.Messages[1].Content), &payload) != nil || len(payload.JobCitations) < 2 {
+			t.Fatal("support request lacks occurrence-specific prepared job citations")
+		}
+		covered := ""
+		for _, s := range payload.JobCitations {
+			if s.Start != len(covered) || s.End <= s.Start || s.End > len(posting) || s.Quote != posting[s.Start:s.End] {
+				t.Fatalf("catalog does not preserve exact original bytes: %+v", payload.JobCitations)
+			}
+			covered += s.Quote
+		}
+		if covered != posting {
+			t.Fatal("job citation catalog omitted original source")
+		}
+		judgments := []any{}
+		for i, b := range payload.Blocks {
+			refs := []any{}
+			jobs := []any{}
+			if b.Field == "jobSummary" {
+				jobs = append(jobs, payload.JobCitations[0])
+			}
+			if b.Field == "body" || b.Field == "applicationAnswers" {
+				refs = append(refs, map[string]any{"profileId": "p", "id": "skill", "revision": 1})
+			}
+			judgments = append(judgments, map[string]any{"index": i, "state": "supported", "reason": "Exact supplied evidence.", "nonfactual": b.Field == "greeting", "scope": artifactScope(b.Field), "sources": refs, "jobSources": jobs})
+		}
+		return completionResponse(map[string]any{"judgments": judgments, "answerConcerns": []string{}}), nil
+	})}
+	w := httptest.NewRecorder()
+	applicationdraft.NewHandlerWithClient(client).ServeHTTP(w, req)
+	var result struct {
+		ArtifactReview struct {
+			Check  string
+			Claims []struct {
+				Field, State string
+				JobSources   []struct {
+					Start, End int
+					Quote      string
+				}
+			}
+		}
+	}
+	if json.Unmarshal(w.Body.Bytes(), &result) != nil || w.Code != 200 || result.ArtifactReview.Check != "complete" {
+		t.Fatalf("%d %s", w.Code, w.Body.String())
+	}
+	for _, c := range result.ArtifactReview.Claims {
+		if c.Field == "jobSummary" && (c.State != "supported" || len(c.JobSources) == 0 || !strings.Contains(c.JobSources[0].Quote, "Café")) {
+			t.Fatalf("exact prepared support lost: %s", w.Body.String())
+		}
+	}
+	if calls != 3 {
+		t.Fatalf("want three bounded calls, got %d", calls)
+	}
 }
