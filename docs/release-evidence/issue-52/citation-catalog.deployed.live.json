@@ -1,0 +1,317 @@
+{
+  "revision": "257e42d7392b000cf1fe044a03cf98727ea5fbeb",
+  "deployId": "6acc0845801e9100089339ae",
+  "started": "2026-10-11T22:10:15.386571+00:00",
+  "workflowLimit": 2,
+  "automaticRetries": 0,
+  "results": [
+    {
+      "origin": "https://beamish-bavarois-333d03.netlify.app",
+      "path": "/api/application-draft",
+      "status": 200,
+      "clientHttpMs": 11822,
+      "cacheControl": "no-store",
+      "cacheStatus": "\"Netlify Durable\"; fwd=bypass",
+      "requestId": "01M4PG8FQTTABT5ZCJ03R86SZ1",
+      "contentType": "application/json; charset=utf-8",
+      "payloadHash": "e8b74985e4e830f283d46ac594bf20d597d2cd3fbf2eb135286c8e78b1939e1f",
+      "publicClientOutcome": {
+        "origin": "https://beamish-bavarois-333d03.netlify.app",
+        "parsed": true,
+        "profileUnchanged": true,
+        "resumeAcceptable": true,
+        "artifactsAcceptable": false,
+        "artifactError": "unresolved",
+        "claims": [
+          {
+            "field": "jobTitle",
+            "state": "supported",
+            "concerns": []
+          },
+          {
+            "field": "jobSummary",
+            "state": "supported",
+            "concerns": []
+          },
+          {
+            "field": "greeting",
+            "state": "supported",
+            "concerns": []
+          },
+          {
+            "field": "body",
+            "state": "supported",
+            "concerns": []
+          },
+          {
+            "field": "body",
+            "state": "supported",
+            "concerns": []
+          },
+          {
+            "field": "applicationAnswers",
+            "state": "unsupported",
+            "concerns": [
+              "A aplicação não informa experiência profissional detalhada, formação acadêmica, certificações ou idiomas; o anúncio não os exige explicitamente, portanto não são requisitos omitidos identificáveis.",
+              "A resposta solicitada em português sobre como usa Java está presente em applicationAnswers."
+            ]
+          }
+        ]
+      },
+      "handlerMs": 10849.329712,
+      "diagnosticAttemptId": "c79b378628b6717a13739b250e35a8ee",
+      "functionLogPrivacy": "Observed two invocation entries contain metadata/usage only, with no inputs, generated prose or keys; provider retention not inspected",
+      "browserMs": null,
+      "generatedAnswerItemCount": 5,
+      "jobCitationsExact": true,
+      "invalidCitationConcerns": 0,
+      "inventedNumberConcerns": 0
+    },
+    {
+      "origin": "https://6acc0845801e9100089339ae--beamish-bavarois-333d03.netlify.app",
+      "path": "/api/application-draft",
+      "status": 200,
+      "clientHttpMs": 10647,
+      "cacheControl": "no-store",
+      "cacheStatus": "\"Netlify Durable\"; fwd=bypass",
+      "requestId": "01M4PG8V94F5J9Y5RA94K9057V",
+      "contentType": "application/json; charset=utf-8",
+      "payloadHash": "e8b74985e4e830f283d46ac594bf20d597d2cd3fbf2eb135286c8e78b1939e1f",
+      "publicClientOutcome": {
+        "origin": "https://6acc0845801e9100089339ae--beamish-bavarois-333d03.netlify.app",
+        "parsed": true,
+        "profileUnchanged": true,
+        "resumeAcceptable": true,
+        "artifactsAcceptable": false,
+        "artifactError": "unresolved",
+        "claims": [
+          {
+            "field": "jobTitle",
+            "state": "supported",
+            "concerns": []
+          },
+          {
+            "field": "jobSummary",
+            "state": "supported",
+            "concerns": []
+          },
+          {
+            "field": "greeting",
+            "state": "supported",
+            "concerns": []
+          },
+          {
+            "field": "body",
+            "state": "supported",
+            "concerns": []
+          },
+          {
+            "field": "applicationAnswers",
+            "state": "unsupported",
+            "concerns": [
+              "A resposta obrigatória em português sobre como usa Java está presente, mas não há uma resposta fornecida para avaliar quanto à suficiência; qualificationAnswers está ausente."
+            ]
+          }
+        ]
+      },
+      "handlerMs": 9888.377257,
+      "diagnosticAttemptId": "d7359cdc98c3b2fd5e7cf5ae87c5824e",
+      "functionLogPrivacy": "Observed two invocation entries contain metadata/usage only, with no inputs, generated prose or keys; provider retention not inspected",
+      "browserMs": null,
+      "generatedAnswerItemCount": 3,
+      "jobCitationsExact": true,
+      "invalidCitationConcerns": 0,
+      "inventedNumberConcerns": 0
+    }
+  ],
+  "scope": "Direct HTTPS published and immutable PR98 preview requests, followed by offline actual public-client replay; not live browser acceptance or PDF verification",
+  "autoPublishing": "locked; specific completed build manually published with user authorization",
+  "preflight": "Exact synthetic handler request preflighted; downstream support envelopes depend on live generation outputs",
+  "acceptedResultCost": null,
+  "providerAccountBilling": null,
+  "broaderQualityComparison": "unverified; same diagnostic input reused, not held-out",
+  "observedDiagnostics": [
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "c79b378628b6717a13739b250e35a8ee",
+      "workflow": "application_draft",
+      "outcome": "complete",
+      "httpStatus": 200,
+      "durationMs": 10849.329712,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 199.547971,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": 1080,
+            "outputTokens": 108,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 199.368748,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "generation",
+          "version": "application-draft-policy-v2/context-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 10648.749262,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 1417,
+            "outputTokens": 259,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 8000,
+            "durationMs": 3730.206116,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.311144,
+          "provider": null
+        },
+        {
+          "name": "resume_support",
+          "version": "resume-support-openai-v1/number-guard-v2",
+          "outcome": "complete",
+          "durationMs": 2283.600533,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 482,
+            "outputTokens": 72,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 4000,
+            "durationMs": 2283.457882,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "artifact_support",
+          "version": "artifact-support-openai-v2/prepared-citations-v1/number-guard-v2",
+          "outcome": "complete",
+          "durationMs": 4634.000483,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 1253,
+            "outputTokens": 564,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 8000,
+            "durationMs": 4632.00341,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "d7359cdc98c3b2fd5e7cf5ae87c5824e",
+      "workflow": "application_draft",
+      "outcome": "complete",
+      "httpStatus": 200,
+      "durationMs": 9888.377257,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 143.812245,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": 1080,
+            "outputTokens": 108,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 143.659734,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "generation",
+          "version": "application-draft-policy-v2/context-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 9744.003434,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 1417,
+            "outputTokens": 356,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 1414,
+            "outputTokenCeiling": 8000,
+            "durationMs": 3539.525157,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.247211,
+          "provider": null
+        },
+        {
+          "name": "resume_support",
+          "version": "resume-support-openai-v1/number-guard-v2",
+          "outcome": "complete",
+          "durationMs": 2099.216966,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 516,
+            "outputTokens": 106,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 4000,
+            "durationMs": 2099.065886,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "artifact_support",
+          "version": "artifact-support-openai-v2/prepared-citations-v1/number-guard-v2",
+          "outcome": "complete",
+          "durationMs": 4104.508515,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 1168,
+            "outputTokens": 515,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 8000,
+            "durationMs": 4102.645073,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        }
+      ],
+      "accepted": null
+    }
+  ]
+}
