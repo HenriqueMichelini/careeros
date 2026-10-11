@@ -297,6 +297,7 @@ func TestArtifactSupportReceivesExactPreparedJobCitations(t *testing.T) {
 			t.Fatal("support request lacks occurrence-specific prepared job citations")
 		}
 		assertCareerCitationCatalog(t, []byte(envelope.Messages[1].Content))
+		assertNeutralArtifactBlocks(t, []byte(envelope.Messages[1].Content))
 		covered := ""
 		for _, s := range payload.JobCitations {
 			if s.Start != len(covered) || s.End <= s.Start || s.End > len(posting) || s.Quote != posting[s.Start:s.End] {
@@ -445,5 +446,22 @@ func assertCareerCitationCatalog(t *testing.T, data []byte) {
 	want := []map[string]any{{"profileId": "p", "id": "skill", "revision": float64(1)}}
 	if !reflect.DeepEqual(payload.CareerCitations, want) {
 		t.Fatalf("career citation catalog must identify selected facts, not their owner: %+v", payload.CareerCitations)
+	}
+}
+
+func assertNeutralArtifactBlocks(t *testing.T, data []byte) {
+	t.Helper()
+	var payload struct{ Blocks []map[string]any }
+	if json.Unmarshal(data, &payload) != nil {
+		t.Fatal("invalid support payload")
+	}
+	want := []map[string]any{
+		{"index": float64(0), "field": "jobSummary", "text": "Desenvolvedor Java."},
+		{"index": float64(1), "field": "greeting", "text": "Dear team,"},
+		{"index": float64(2), "field": "body", "text": "I use Java."},
+		{"index": float64(3), "field": "applicationAnswers", "text": "I use Java."},
+	}
+	if !reflect.DeepEqual(payload.Blocks, want) {
+		t.Fatalf("review input must contain indexed text blocks without unfinished judgments or empty source lists: %#v", payload.Blocks)
 	}
 }
