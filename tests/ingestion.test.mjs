@@ -27,7 +27,7 @@ const profileCompiled = ts.transpileModule(
 writeFileSync(join(tmpdir(), `careeros-profile-${process.pid}.mjs`), profileCompiled)
 const output = join(tmpdir(), "careeros-ingestion-" + process.pid + ".mjs")
 writeFileSync(output, compiled)
-const { validateIngestionResult, applyIngestion, beforeValue, afterValue, previewValues, validProfile, ingestProfile } =
+const { validateIngestionResult, previewIngestion, beforeValue, afterValue, previewValues, validProfile, ingestProfile } =
   await import(output)
 
 const profile = () => ({
@@ -92,7 +92,7 @@ test("expanded Profile validates and Quick Add preserves structured qualificatio
     certifications: [], languages: [{ id: "lang1", name: "English", proficiency: "Fluent" }],
   }
   assert.equal(validProfile(expanded), true)
-  const next = applyIngestion(expanded, JSON.stringify(expanded), [op()])
+  const next = previewIngestion(expanded, JSON.stringify(expanded), [op()])
   assert.deepEqual(next.education, expanded.education)
   assert.deepEqual(next.languages, expanded.languages)
   assert.equal(next.skills, "React\nTypeScript")
@@ -183,7 +183,7 @@ test("applies edited in-place facts while preserving IDs and unrelated fields", 
       approved: false,
     }),
   ]
-  const next = applyIngestion(before, JSON.stringify(before), operations)
+  const next = previewIngestion(before, JSON.stringify(before), operations)
   assert.equal(next.skills, "React\nTypeScript at Acme")
   assert.equal(next.experience[0].achievements, "Built search\nImproved search")
   assert.equal(next.experience[0].id, "e1")
@@ -196,24 +196,24 @@ test("applies edited in-place facts while preserving IDs and unrelated fields", 
 test("repeat adds, explicit removal, and new IDs", () => {
   const before = profile()
   assert.equal(
-    applyIngestion(before, JSON.stringify(before), [op({ value: "React" })])
+    previewIngestion(before, JSON.stringify(before), [op({ value: "React" })])
       .skills,
     "React",
   )
   assert.equal(
-    applyIngestion({ ...before, skills: "Built payment APIs." }, JSON.stringify({ ...before, skills: "Built payment APIs." }), [op({ value: "Built payment APIs" })]).skills,
+    previewIngestion({ ...before, skills: "Built payment APIs." }, JSON.stringify({ ...before, skills: "Built payment APIs." }), [op({ value: "Built payment APIs" })]).skills,
     "Built payment APIs.",
   )
   assert.equal(
-    applyIngestion({ ...before, skills: "• Built payment APIs" }, JSON.stringify({ ...before, skills: "• Built payment APIs" }), [op({ value: "Built payment APIs." })]).skills,
+    previewIngestion({ ...before, skills: "• Built payment APIs" }, JSON.stringify({ ...before, skills: "• Built payment APIs" }), [op({ value: "Built payment APIs." })]).skills,
     "• Built payment APIs",
   )
   assert.equal(
-    applyIngestion({ ...before, skills: "Built payment APIs" }, JSON.stringify({ ...before, skills: "Built payment APIs" }), [op({ value: "Built payment API" })]).skills,
+    previewIngestion({ ...before, skills: "Built payment APIs" }, JSON.stringify({ ...before, skills: "Built payment APIs" }), [op({ value: "Built payment API" })]).skills,
     "Built payment APIs\nBuilt payment API",
   )
   assert.equal(
-    applyIngestion(before, JSON.stringify(before), [
+    previewIngestion(before, JSON.stringify(before), [
       op({ action: "remove", value: "" }),
     ]).skills,
     "",
@@ -232,13 +232,13 @@ test("repeat adds, explicit removal, and new IDs", () => {
       value: "Lead",
     }),
   ]
-  const next = applyIngestion(before, JSON.stringify(before), operations)
+  const next = previewIngestion(before, JSON.stringify(before), operations)
   assert.equal(next.experience.length, 2)
   assert.notEqual(next.experience[1].id, "e1")
   assert.equal(next.experience[1].company, "Beta")
   assert.throws(
     () =>
-      applyIngestion(before, JSON.stringify(before), operations.slice(0, 1)),
+      previewIngestion(before, JSON.stringify(before), operations.slice(0, 1)),
     /incomplete/,
   )
 })
@@ -255,7 +255,7 @@ test("related claims create one detailed experience and one project", () => {
     op({ claimId: "c6", target: "projects", entryId: "new:c5", field: "description", value: "Inventory project for small shops." }),
     op({ claimId: "c7", target: "projects", entryId: "new:c5", field: "highlights", value: "Added audit trails with Go." }),
   ]
-  const next = applyIngestion(before, JSON.stringify(before), operations)
+  const next = previewIngestion(before, JSON.stringify(before), operations)
   assert.equal(next.experience.length, 2)
   assert.equal(next.experience[1].description, "Backend engineer for payment systems.")
   assert.equal(next.experience[1].responsibilities, "Built payment APIs.")
@@ -277,7 +277,7 @@ test("two approved new entries cannot save the same project twice", () => {
     op({ target: "projects", entryId: "new:c1", field: "name", value: "Harbor" }),
     op({ claimId: "c2", target: "projects", entryId: "new:c2", field: "name", value: "Harbor" }),
   ]
-  assert.throws(() => applyIngestion(before, JSON.stringify(before), operations), /incomplete/)
+  assert.throws(() => previewIngestion(before, JSON.stringify(before), operations), /incomplete/)
   assert.equal(before.projects.length, 1)
 })
 
@@ -285,7 +285,7 @@ test("reviewed updates can enrich sparse saved entries without replacing unrelat
   const before = profile()
   before.experience[0].description = "Software engineer."
   before.projects[0].description = "Inventory project."
-  const next = applyIngestion(before, JSON.stringify(before), [
+  const next = previewIngestion(before, JSON.stringify(before), [
     op({ target: "experience", entryId: before.experience[0].id, field: "description", action: "update", value: "Backend engineer developing payment APIs and integration tests." }),
     op({ target: "experience", entryId: before.experience[0].id, field: "responsibilities", value: "Built transactional APIs." }),
     op({ target: "projects", entryId: before.projects[0].id, field: "description", action: "update", value: "Inventory platform for small shops." }),
@@ -305,13 +305,13 @@ test("stale or invalid patches do not mutate the Profile", () => {
   const before = profile()
   assert.throws(
     () =>
-      applyIngestion({ ...before, skills: "Changed" }, JSON.stringify(before), [
+      previewIngestion({ ...before, skills: "Changed" }, JSON.stringify(before), [
         op(),
       ]),
     /stale/,
   )
   assert.throws(() =>
-    applyIngestion(before, JSON.stringify(before), [
+    previewIngestion(before, JSON.stringify(before), [
       op({
         target: "employmentStatus",
         field: "employmentStatus",
@@ -326,11 +326,11 @@ test("preview includes preceding approved changes and matches boolean apply", ()
   const before=profile()
   const operations=[op({value:"TypeScript"}),op({value:"Go"})]
   assert.deepEqual(previewValues(before,operations,1),{before:"React\nTypeScript",after:"React\nTypeScript\nGo"})
-  assert.equal(applyIngestion(before,JSON.stringify(before),operations).skills,previewValues(before,operations,1).after)
+  assert.equal(previewIngestion(before,JSON.stringify(before),operations).skills,previewValues(before,operations,1).after)
   const current=op({target:"experience",entryId:"e1",field:"current",value:"true"})
   assert.deepEqual(previewValues(before,[current],0),{before:"false",after:"true"})
-  assert.equal(applyIngestion(before,JSON.stringify(before),[current]).experience[0].current,true)
-  assert.throws(() => applyIngestion(before,JSON.stringify(before),[{...current,value:"maybe"}]))
+  assert.equal(previewIngestion(before,JSON.stringify(before),[current]).experience[0].current,true)
+  assert.throws(() => previewIngestion(before,JSON.stringify(before),[{...current,value:"maybe"}]))
   const removal={...current,action:"remove",value:""}
   assert.equal(previewValues(before,[removal],0).after,"false")
 })
@@ -338,7 +338,7 @@ test("preview includes preceding approved changes and matches boolean apply", ()
 test("legacy saved employment status is preserved by Quick Add", () => {
   const before={...profile(),employmentStatus:"Employed — Full-time"}
   assert.equal(validProfile(before),true)
-  assert.equal(applyIngestion(before,JSON.stringify(before),[op()]).employmentStatus,"Employed — Full-time")
+  assert.equal(previewIngestion(before,JSON.stringify(before),[op()]).employmentStatus,"Employed — Full-time")
 })
 
 test("Quick Add supplies the complete Profile for server-side minimal comparison projection", async () => {
@@ -347,7 +347,7 @@ test("Quick Add supplies the complete Profile for server-side minimal comparison
     phone: "+1 555 0100", location: "London", professionalLinks: "example.test/ada",
   }
   assert.equal(validProfile(before), true)
-  const updated = applyIngestion(before, JSON.stringify(before), [op()])
+  const updated = previewIngestion(before, JSON.stringify(before), [op()])
   assert.equal(updated.email, before.email)
   assert.equal(updated.professionalLinks, before.professionalLinks)
   const originalFetch = globalThis.fetch
@@ -379,10 +379,10 @@ test("structured destinations are reviewed, edited and applied atomically with s
   const raw = review({claims, operations: operations.map(({approved,...operation})=>operation)})
   const result = validateIngestionResult(raw,"TypeScript",before)
   assert.ok(result.operations.every(operation=>!operation.approved))
-  assert.deepEqual(applyIngestion(before,JSON.stringify(before),result.operations),before)
+  assert.deepEqual(previewIngestion(before,JSON.stringify(before),result.operations),before)
   const approved = result.operations.map(operation=>({...operation,approved:true}))
   approved[4].value="Advanced"
-  const next=applyIngestion(before,JSON.stringify(before),approved)
+  const next=previewIngestion(before,JSON.stringify(before),approved)
   assert.equal(next.email,"new@example.test")
   assert.equal(next.education[0].graduationDate,"2021")
   assert.equal(next.education[0].details,"Existing detail")
@@ -391,8 +391,8 @@ test("structured destinations are reviewed, edited and applied atomically with s
   assert.equal(next.languages[0].id,"english")
   assert.equal(next.certifications[0].name,"Cloud Certificate")
   assert.equal(before.email,"old@example.test")
-  assert.throws(()=>applyIngestion(next,JSON.stringify(next),approved),/incomplete/)
-  assert.throws(()=>applyIngestion(before,JSON.stringify(before),[...approved,op({target:"languages",entryId:"new:c1",field:"proficiency",value:"Native"})]),/incomplete/)
+  assert.throws(()=>previewIngestion(next,JSON.stringify(next),approved),/incomplete/)
+  assert.throws(()=>previewIngestion(before,JSON.stringify(before),[...approved,op({target:"languages",entryId:"new:c1",field:"proficiency",value:"Native"})]),/incomplete/)
   assert.equal(before.certifications.length,0)
   assert.throws(()=>validateIngestionResult({...raw, operations:[{...raw.operations[0],finding:"conflict"}]},"TypeScript",before),/invalid_output/)
 })
@@ -400,10 +400,10 @@ test("structured destinations are reviewed, edited and applied atomically with s
 test("new education and languages require reviewed identities and repeat pastes do not duplicate entries", () => {
   const before={...profile(),fullName:"",email:"",phone:"",location:"",professionalLinks:"",education:[],certifications:[],languages:[]}
   const operations=[op({target:"education",entryId:"new:c1",field:"degree",value:"MSc"}),op({target:"education",entryId:"new:c1",field:"institution",value:"South"}),op({target:"languages",entryId:"new:c1",field:"name",value:"Portuguese"}),op({target:"languages",entryId:"new:c1",field:"proficiency",value:"Native"})]
-  const next=applyIngestion(before,JSON.stringify(before),operations)
+  const next=previewIngestion(before,JSON.stringify(before),operations)
   assert.equal(next.education[0].degree,"MSc")
   assert.equal(next.languages[0].name,"Portuguese")
-  assert.throws(()=>applyIngestion(next,JSON.stringify(next),operations),/incomplete/)
+  assert.throws(()=>previewIngestion(next,JSON.stringify(next),operations),/incomplete/)
   assert.equal(next.education.length,1)
 })
 
@@ -424,18 +424,18 @@ test("client accepts exactly 30,000 UTF-8 bytes and rejects oversized mixed Unic
 test("professional link additions preserve existing and multiple approved links", () => {
   const before={...profile(),fullName:"",email:"",phone:"",location:"",professionalLinks:"https://linkedin.test/ada",education:[],certifications:[],languages:[]}
   const ops=[op({target:"professionalLinks",field:"professionalLinks",value:"https://github.test/ada"}),op({target:"professionalLinks",field:"professionalLinks",value:"https://portfolio.test/ada"}),op({target:"professionalLinks",field:"professionalLinks",value:"https://github.test/ada"})]
-  assert.equal(applyIngestion(before,JSON.stringify(before),ops).professionalLinks,"https://linkedin.test/ada\nhttps://github.test/ada\nhttps://portfolio.test/ada")
-  assert.equal(applyIngestion(before,JSON.stringify(before),[{...ops[0],action:"update"}]).professionalLinks,"https://github.test/ada")
+  assert.equal(previewIngestion(before,JSON.stringify(before),ops).professionalLinks,"https://linkedin.test/ada\nhttps://github.test/ada\nhttps://portfolio.test/ada")
+  assert.equal(previewIngestion(before,JSON.stringify(before),[{...ops[0],action:"update"}]).professionalLinks,"https://github.test/ada")
 })
 
 test("same-name certifications from distinct issuers are preserved and exact repeats are rejected", () => {
   const before={...profile(),fullName:"",email:"",phone:"",location:"",professionalLinks:"",education:[],certifications:[{id:"a",name:"Cloud Fundamentals",issuer:"Issuer A",date:"",credentialId:"",url:""}],languages:[]}
   const ops=[op({target:"certifications",entryId:"new:c1",field:"name",value:"Cloud Fundamentals"}),op({target:"certifications",entryId:"new:c1",field:"issuer",value:"Issuer B"})]
-  const next=applyIngestion(before,JSON.stringify(before),ops)
+  const next=previewIngestion(before,JSON.stringify(before),ops)
   assert.equal(next.certifications.length,2)
   assert.equal(next.certifications[0].id,"a")
   assert.equal(next.certifications[1].issuer,"Issuer B")
-  assert.throws(()=>applyIngestion(next,JSON.stringify(next),ops),/incomplete/)
+  assert.throws(()=>previewIngestion(next,JSON.stringify(next),ops),/incomplete/)
 })
 
 test("separate stints at the same employer and title apply without losing the batch", () => {
@@ -448,7 +448,7 @@ test("separate stints at the same employer and title apply without losing the ba
     ...Object.entries({ company: "Acme", title: "Engineer", startDate: "2024-01", endDate: "2025-12" })
       .map(([field, value]) => op({ target: "experience", entryId: "new:c1", field, value })),
   ]
-  const next = applyIngestion(before, snapshot, operations)
+  const next = previewIngestion(before, snapshot, operations)
   assert.equal(next.skills, "React\nTypeScript")
   assert.equal(next.experience.length, 2)
   assert.deepEqual(next.experience[0], before.experience[0])
@@ -456,7 +456,7 @@ test("separate stints at the same employer and title apply without losing the ba
   assert.equal(next.experience[1].startDate, "2024-01")
   assert.equal(next.experience[1].endDate, "2025-12")
   assert.equal(JSON.stringify(before), snapshot)
-  assert.throws(() => applyIngestion(next, JSON.stringify(next), operations), /incomplete/)
+  assert.throws(() => previewIngestion(next, JSON.stringify(next), operations), /incomplete/)
   assert.equal(next.experience.length, 2)
 })
 
@@ -470,11 +470,11 @@ test("Experience duplicate protection distinguishes dates and still rejects matc
       ...Object.entries({ company: " ACME ", title: "engineer", startDate, endDate })
         .map(([field, value]) => op({ target: "experience", entryId: "new:c1", field, value })),
     ]
-    assert.throws(() => applyIngestion(before, snapshot, operations), /incomplete/)
+    assert.throws(() => previewIngestion(before, snapshot, operations), /incomplete/)
     assert.equal(JSON.stringify(before), snapshot)
     for (const [field, value] of [["startDate", "2024-01"], ["endDate", "2025-12"]]) {
       const changedPeriod = operations.map(item => item.field === field ? { ...item, value } : item)
-      assert.equal(applyIngestion(before, snapshot, changedPeriod).experience.length, 2)
+      assert.equal(previewIngestion(before, snapshot, changedPeriod).experience.length, 2)
     }
   }
 })

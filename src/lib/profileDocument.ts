@@ -441,121 +441,6 @@ export function validateProfileDocument(
   )
 }
 
-function entitySnapshot(doc: ProfileDocument, id: string, kind: EntityKind) {
-  const fields = Object.fromEntries([
-    ...entityFields[kind].map((field) => [
-      field,
-      field === "current" ? false : "",
-    ]),
-    ...doc.facts
-      .filter((f) => f.owner.id === id)
-      .map((f) => [f.field, f.value]),
-  ])
-  return Object.entries(fields).sort(([left], [right]) =>
-    left < right ? -1 : left > right ? 1 : 0,
-  )
-}
-
-// Transitional whole-field edits invalidate support; wording changes never inherit evidence.
-export function replaceProfileView(
-  doc: ProfileDocument,
-  next: ProfessionalRepository,
-  origin: ProfileOrigin = { kind: "manual_edit", original: "user" },
-): ProfileDocument {
-  if (!validateProfileDocument(doc) || !validView(next))
-    throw new ProfileValidationError("Invalid Profile edit")
-  const candidate = migrateProfile(next, doc.id)
-  candidate.revision = doc.revision + 1
-  candidate.evidence = structuredClone(doc.evidence)
-  candidate.links = structuredClone(doc.links)
-  const oldEntities = new Map(
-    doc.entities.map((e) => [JSON.stringify([e.kind, e.legacyId]), e]),
-  )
-  for (const e of candidate.entities) {
-    const previous = oldEntities.get(JSON.stringify([e.kind, e.legacyId]))
-    const generatedId = e.id
-    if (previous) {
-      e.id = previous.id
-      const before = entitySnapshot(doc, previous.id, e.kind)
-      const after = entitySnapshot(candidate, generatedId, e.kind)
-      e.revision =
-        previous.revision +
-        (JSON.stringify(before) === JSON.stringify(after) ? 0 : 1)
-    }
-    for (const f of candidate.facts.filter((f) => f.owner.id === generatedId))
-      f.owner = { profileId: doc.id, id: e.id, revision: e.revision }
-  }
-  for (let i = 0; i < candidate.facts.length; i++) {
-    const f = candidate.facts[i]
-    if (f.owner.id === doc.id) f.owner.revision = candidate.revision
-    const previous = doc.facts.find(
-      (old) => old.owner.id === f.owner.id && old.field === f.field,
-    )
-    if (
-      previous &&
-      JSON.stringify(previous.value) === JSON.stringify(f.value)
-    ) {
-      candidate.facts[i] = {
-        ...structuredClone(previous),
-        owner: f.owner,
-        order: f.order,
-      }
-    } else {
-      if (previous) {
-        f.id = previous.id
-        f.revision = previous.revision + 1
-      }
-      f.origin = origin
-      f.approval = origin.kind === "ai_review" ? "unreviewed" : "approved"
-      f.support =
-        previous?.support === "supported" || previous?.support === "invalidated"
-          ? "invalidated"
-          : "unsupported"
-    }
-  }
-  const revisions = new Map([
-    [doc.id, candidate.revision],
-    ...candidate.entities.map((e) => [e.id, e.revision] as [string, number]),
-    ...candidate.facts.map((f) => [f.id, f.revision] as [string, number]),
-    ...candidate.evidence.map((e) => [e.id, e.revision] as [string, number]),
-  ])
-  for (const l of candidate.links)
-    if ([l.from, l.to].some((r) => revisions.get(r.id) !== r.revision))
-      l.state = "invalidated"
-  for (const f of candidate.facts) {
-    const previous = doc.facts.find((old) => old.id === f.id)
-    const contextChanged =
-      (previous &&
-        previous.owner.revision !== f.owner.revision &&
-        f.owner.id !== doc.id) ||
-      f.context.some((r) => revisions.get(r.id) !== r.revision) ||
-      candidate.links.some(
-        (l) =>
-          l.from.id === f.id &&
-          l.kind !== "supports" &&
-          l.state === "invalidated" &&
-          doc.links.some((old) => old.id === l.id && old.state === "active"),
-      )
-    if (contextChanged) {
-      if (f.support === "supported") f.support = "invalidated"
-      for (const l of candidate.links)
-        if (l.from.id === f.id) l.state = "invalidated"
-    }
-    f.context = f.context.filter((r) => revisions.get(r.id) === r.revision)
-    if (
-      f.support === "supported" &&
-      !candidate.links.some(
-        (l) =>
-          l.kind === "supports" && l.state === "active" && l.from.id === f.id,
-      )
-    )
-      f.support = "invalidated"
-  }
-  if (!validateProfileDocument(candidate))
-    throw new ProfileValidationError("Invalid replacement")
-  return candidate
-}
-
 export type ProfileEdit = {
   type: "field"
   ownerId: string
@@ -909,6 +794,22 @@ export function editProfile(
   }
   if (!validateProfileDocument(next))
     throw new ProfileValidationError("Invalid manual edit")
+  return next
+}
+
+// Apply explicit commands as one durable transaction. Intermediate documents
+// never escape this function; root ownership follows the single saved revision.
+export function editProfileBatch(
+  doc: ProfileDocument,
+  edits: ProfileEdit[],
+): ProfileDocument {
+  let next = structuredClone(doc)
+  for (const edit of edits) next = editProfile(next, edit)
+  next.revision = doc.revision + 1
+  for (const fact of next.facts)
+    if (fact.owner.id === next.id) fact.owner.revision = next.revision
+  if (!validateProfileDocument(next))
+    throw new ProfileValidationError("Invalid Profile transaction")
   return next
 }
 

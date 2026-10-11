@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useReducer,
   useRef,
   useState,
@@ -17,9 +18,7 @@ import {
   emptyProfileView,
   migrateProfile,
   profileView,
-  replaceProfileView,
   type ProfileDocument,
-  type ProfileOrigin,
 } from "./profileDocument"
 import {
   applySectionProposal,
@@ -46,7 +45,6 @@ import {
 interface AppState {
   uiLocale: Locale
   cvLanguage: Locale
-  repository: ProfessionalRepository
   profileError: ProfileStorageCode | null
   generatedMaterials: GeneratedMaterials | null
   lastAcceptedMaterials: GeneratedMaterials | null
@@ -68,9 +66,6 @@ type Action = { type: "NEW_APPLICATION" } | {
 } | {
   type: "SET_UI_LOCALE"
   payload: Locale
-} | {
-  type: "SET_REPO"
-  payload: ProfessionalRepository
 } | {
   type: "SET_MATERIALS"
   payload: GeneratedMaterials
@@ -103,8 +98,6 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, uiLocale: action.payload }
     case "SET_CV_LANGUAGE":
       return { ...state, cvLanguage: action.payload }
-    case "SET_REPO":
-      return { ...state, repository: action.payload }
     case "SET_MATERIALS":
       return {
         ...state,
@@ -164,7 +157,7 @@ function loadCvLanguage(): Locale {
 }
 
 const StoreContext = createContext<{
-  state: AppState
+  state: AppState & { repository: ProfessionalRepository }
   dispatch: (action: Action) => Promise<boolean>
   profileDocument: ProfileDocument | null
   editCanonicalProfile: (edit: ProfileEdit) => Promise<boolean>
@@ -179,10 +172,6 @@ const StoreContext = createContext<{
     edits: Record<string, string>,
     removals: string[],
   ) => Promise<boolean>
-  saveRepository: (
-    repo: ProfessionalRepository,
-    origin?: ProfileOrigin,
-  ) => Promise<boolean>
 } | null>(null)
 
 export function StoreProvider({ children }: { children: ReactNode }) {
@@ -192,7 +181,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const documentRef = useRef<ProfileDocument | null>(null)
   const queue = useRef<Promise<boolean>>(Promise.resolve(true))
   const failed = useRef(false)
-  const draft = useRef(emptyProfileView())
   const [ready, setReady] = useState(false)
   const [profileError, setProfileError] = useState<ProfileStorageCode | null>(
     null,
@@ -200,7 +188,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, rawDispatch] = useReducer(reducer, {
     uiLocale: getInitialLocale(),
     cvLanguage: loadCvLanguage(),
-    repository: emptyProfileView(),
     profileError: null,
     generatedMaterials: null,
     lastAcceptedMaterials: null,
@@ -222,8 +209,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         optimisticDocument.current = doc
         setProfileDocument(doc)
         documentRef.current = doc
-        draft.current = profileView(doc)
-        rawDispatch({ type: "SET_REPO", payload: draft.current })
         setReady(true)
       })
       .catch((error) => {
@@ -238,8 +223,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             )
             optimisticDocument.current = recovered
             setProfileDocument(recovered)
-            draft.current = profileView(recovered)
-            rawDispatch({ type: "SET_REPO", payload: draft.current })
           }
         } catch {
           /* Malformed originals are retained for download. */
@@ -281,8 +264,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
       optimisticDocument.current = candidate
       setProfileDocument(candidate)
-      draft.current = profileView(candidate)
-      rawDispatch({ type: "SET_REPO", payload: draft.current })
       const saving = queue.current.then(async () => {
         if (failed.current || !documentRef.current) return false
         try {
@@ -317,8 +298,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           documentRef.current = candidate
           optimisticDocument.current = candidate
           setProfileDocument(candidate)
-          draft.current = profileView(candidate)
-          rawDispatch({ type: "SET_REPO", payload: draft.current })
           return true
         } catch (error) {
           setProfileError(
@@ -355,25 +334,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       ),
     [persistProposal],
   )
-  const saveRepository = useCallback(
-    (
-      repo: ProfessionalRepository,
-      origin: ProfileOrigin = { kind: "manual_edit", original: "user" },
-    ) => updateCanonical((doc) => replaceProfileView(doc, repo, origin)),
-    [updateCanonical],
-  )
-  const dispatch = useCallback(
-    async (action: Action) => {
-      if (action.type === "SET_REPO") return saveRepository(action.payload)
-      rawDispatch(action)
-      return true
-    },
-    [saveRepository],
-  )
+  const dispatch = useCallback(async (action: Action) => {
+    rawDispatch(action)
+    return true
+  }, [])
 
   function downloadRecovery() {
     const data: Record<string, unknown> = {
-      unsavedProfile: draft.current,
+      unsavedProfile: optimisticDocument.current
+        ? profileView(optimisticDocument.current)
+        : null,
       unsavedCanonicalProfile: optimisticDocument.current,
     }
     for (const key of [LEGACY_KEY, PROFILE_KEY]) {
@@ -410,12 +380,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     writeSetting("careeros_cv_language", state.cvLanguage)
   }, [state.cvLanguage])
 
+  const repository = useMemo(
+    () => (profileDocument ? profileView(profileDocument) : emptyProfileView()),
+    [profileDocument],
+  )
+
   return (
     <StoreContext.Provider
       value={{
-        state: { ...state, profileError },
+        state: { ...state, profileError, repository },
         dispatch,
-        saveRepository,
         profileDocument,
         editCanonicalProfile,
         applyProfileProposal,
