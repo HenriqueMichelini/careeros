@@ -474,3 +474,222 @@ test("saved support context excludes unrelated private Profile fields", () => {
   )
   assert.ok(!JSON.stringify(saved).includes("PRIVATE-SALARY"))
 })
+
+test("EN/PT production-handler results reach client acceptance without changing protected facts", async () => {
+  const { execFileSync } = await import("node:child_process")
+  const { generateCv } = await import(path)
+  const root = new URL("..", import.meta.url).pathname
+  const outputPath = join(
+    mkdtempSync(join(tmpdir(), "cv-reliability-")),
+    "controlled.json",
+  )
+  // Reuse #34's keyless adapter; consume fresh production HTTP output, not a
+  // second hand-written client response or a stale committed report.
+  execFileSync(
+    "go",
+    [
+      "run",
+      "./scripts/semantic-quality",
+      "--fixtures",
+      "docs/evaluations/semantic-quality/cases.cv-reliability.v1.json",
+      "--split",
+      "all",
+      "--output",
+      outputPath,
+    ],
+    {
+      cwd: root,
+      env: { ...process.env, GOCACHE: "/tmp/careeros-go-cache" },
+      stdio: "pipe",
+    },
+  )
+  const report = JSON.parse(readFileSync(outputPath, "utf8"))
+  const corpus = JSON.parse(
+    readFileSync(
+      new URL(
+        "../docs/evaluations/semantic-quality/cases.cv-reliability.v1.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  )
+  const originalFetch = globalThis.fetch
+  try {
+    for (const c of corpus.cases) {
+      const run = report.runs.find((r) => r.id === c.id)
+      const facts = c.request.facts.map((f) => ({ ...f, evidence: [] }))
+      let calls = 0
+      globalThis.fetch = async () => {
+        calls++
+        return new Response(JSON.stringify(run.output), { status: run.status })
+      }
+      if (c.role === "negative_control") {
+        await assert.rejects(
+          () =>
+            generateCv(
+              facts,
+              c.language,
+              "sk-controlled",
+              new AbortController().signal,
+            ),
+          /invalid_output/,
+          c.id,
+        )
+        assert.equal(calls, 1, c.id)
+        continue
+      }
+      const result = await generateCv(
+        facts,
+        c.language,
+        "sk-controlled",
+        new AbortController().signal,
+      )
+      assert.equal(calls, 1, c.id)
+      assert.ok(validateCvResult(result, facts), c.id)
+      assert.ok(result.summary.length > 0, c.id)
+      const repo = {
+        ...structuredClone(profile),
+        skills: "",
+        tools: "",
+        competencies: "",
+        experience: [],
+        projects: [],
+        education: [],
+        certifications: [],
+        languages: [],
+      }
+      for (const f of facts) {
+        if (!f.entryId) {
+          repo[f.field] = f.text
+          continue
+        }
+        let entry = repo[f.section].find((e) => e.id === f.entryId)
+        if (!entry) {
+          const defaults = {
+            experience: {
+              title: "",
+              company: "",
+              startDate: "",
+              endDate: "",
+              current: false,
+              location: "",
+              description: "",
+              responsibilities: "",
+              achievements: "",
+            },
+            projects: {
+              name: "",
+              description: "",
+              technologies: "",
+              url: "",
+              highlights: "",
+            },
+            education: {
+              degree: "",
+              institution: "",
+              location: "",
+              graduationDate: "",
+              details: "",
+            },
+            certifications: {
+              name: "",
+              issuer: "",
+              date: "",
+              credentialId: "",
+              url: "",
+            },
+            languages: { name: "", proficiency: "" },
+          }
+          entry = { id: f.entryId, ...defaults[f.section] }
+          repo[f.section].push(entry)
+        }
+        entry[f.field] = f.text
+      }
+      const original = structuredClone(repo)
+      const doc = facts[0].reference
+        ? {
+            id: "synthetic-profile",
+            revision: 1,
+            entities: [],
+            evidence: [],
+            links: [],
+            facts: facts.map((f) => ({ ...f, value: f.text, revision: 1 })),
+          }
+        : undefined
+      for (const density of ["compact", "balanced", "detailed"]) {
+        const saved = createCuratedCv(
+          repo,
+          facts,
+          result,
+          c.language,
+          density,
+          doc,
+        )
+        assert.equal(saved.cvLanguage, c.language)
+        assert.equal(saved.density, density)
+        assert.deepEqual(parseCuratedCv(JSON.stringify(saved)), saved, c.id)
+        assert.deepEqual(repo, original, c.id)
+        assert.deepEqual(
+          saved.sources.map((f) => f.text),
+          result.selected.map((id) => facts.find((f) => f.id === id).text),
+          c.id,
+        )
+        if (c.id.endsWith("heavy")) {
+          assert.equal(saved.repository.experience.length, 1)
+          assert.equal(saved.repository.experience[0].company, "Harbor 18")
+          assert.equal(saved.repository.experience[0].startDate, "2021")
+          assert.equal(saved.repository.experience[0].endDate, "2024")
+          assert.equal(saved.repository.education[0].degree, "BSc Design")
+          assert.equal(
+            saved.repository.certifications[0].name,
+            "Design Certificate",
+          )
+          assert.equal(
+            saved.repository.languages[0].proficiency,
+            "Intermediate",
+          )
+          assert.equal(saved.repository.projects[0].technologies, "Python")
+          assert.match(saved.summary, /20%/)
+          assert.ok(!saved.repository.projects[0].highlights.includes("20%"))
+        }
+      }
+    }
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
+test("retained authorized EN/PT live summaries also pass client validation and acceptance", () => {
+  const live = JSON.parse(
+    readFileSync(
+      new URL(
+        "../docs/release-evidence/issue-65/live.v1.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  )
+  const corpus = JSON.parse(
+    readFileSync(
+      new URL(
+        "../docs/evaluations/semantic-quality/cases.cv-reliability.v1.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  )
+  assert.equal(live.runs.length, 2)
+  for (const run of live.runs) {
+    const c = corpus.cases.find((c) => c.id === run.id)
+    assert.equal(run.status, 200)
+    assert.equal(run.calls.length, 1)
+    assert.ok(validateCvResult(run.output, c.request.facts), run.id)
+    const repo = structuredClone(profile)
+    repo.experience[0].id = "e1"
+    repo.experience[0].achievements = c.request.facts[0].text
+    const saved = createCuratedCv(repo, c.request.facts, run.output, c.language)
+    assert.deepEqual(parseCuratedCv(JSON.stringify(saved)), saved)
+    assert.equal(saved.sources[0].text, c.request.facts[0].text)
+    assert.match(saved.summary, /20%/)
+  }
+})
