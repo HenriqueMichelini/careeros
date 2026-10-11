@@ -87,6 +87,15 @@ func proposalShape(raw []byte) bool {
 func documentMatchesProfile(doc profiledocument.Document, p profilevalidation.Profile) bool {
 	var view map[string]any
 	_ = json.Unmarshal(mustJSON(p), &view)
+	// Optional contact strings disappear when Profile is marshaled with
+	// omitempty, but the canonical document can retain explicit empty fields.
+	// Compare their actual values rather than treating an omitted empty string
+	// as a disagreement with a freshly migrated Profile.
+	view["fullName"] = p.FullName
+	view["email"] = p.Email
+	view["phone"] = p.Phone
+	view["location"] = p.Location
+	view["professionalLinks"] = p.ProfessionalLinks
 	for _, f := range doc.Facts {
 		var value any
 		_ = json.Unmarshal(f.Value, &value)

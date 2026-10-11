@@ -508,7 +508,8 @@ try {
         "localStorage.getItem('careeros_profile_v2')",
       )
       await section("profile")
-      await evaluate(`${byText(apply)}.click()`)
+      // Current continuation UI invalidates stale proposals immediately.
+      await until(`${byText(apply)} === undefined`)
       await until("!!document.querySelector('[role=alert]')")
       assert.equal(
         await evaluate("localStorage.getItem('careeros_profile_v2')"),
