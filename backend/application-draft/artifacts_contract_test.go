@@ -5,20 +5,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	applicationdraft "professional-information-repo/backend/application-draft"
+	"reflect"
 	"strings"
 	"testing"
 )
 
 func TestRemainingArtifactsHaveIndependentFieldSupport(t *testing.T) {
-	req := reviewedRequest(t)
-	var input map[string]any
-	json.NewDecoder(req.Body).Decode(&input)
-	input["reviewArtifacts"] = true
-	data, _ := json.Marshal(input)
-	req.Body = http.NoBody
-	req = httptest.NewRequest("POST", "/api/application-draft", strings.NewReader(string(data)))
-	req.Header.Set("X-OpenAI-Api-Key", "sk-synthetic")
-	req.Header.Set("X-TypeSafe-Api-Key", "synthetic")
+	req := artifactRequest(t, nil)
 	calls := 0
 	client := &http.Client{Transport: providerTransport(func(r *http.Request) (*http.Response, error) {
 		calls++
@@ -278,15 +271,7 @@ func artifactScope(field string) string {
 // offsets from prose. Public response citations retain their original contract.
 func TestArtifactSupportReceivesExactPreparedJobCitations(t *testing.T) {
 	posting := "Desenvolvedor Java. Café com experiência.\r\nDesenvolvedor Java. https://example.test/Cafe%CC%81"
-	req := reviewedRequest(t)
-	var input map[string]any
-	json.NewDecoder(req.Body).Decode(&input)
-	input["jobPosting"] = posting
-	input["reviewArtifacts"] = true
-	data, _ := json.Marshal(input)
-	req = httptest.NewRequest("POST", "/api/application-draft", strings.NewReader(string(data)))
-	req.Header.Set("X-OpenAI-Api-Key", "sk-synthetic")
-	req.Header.Set("X-TypeSafe-Api-Key", "synthetic")
+	req := artifactRequest(t, map[string]any{"jobPosting": posting})
 	calls := 0
 	client := &http.Client{Transport: providerTransport(func(r *http.Request) (*http.Response, error) {
 		calls++
@@ -360,4 +345,92 @@ func TestArtifactSupportReceivesExactPreparedJobCitations(t *testing.T) {
 	if calls != 3 {
 		t.Fatalf("want three bounded calls, got %d", calls)
 	}
+}
+
+func artifactRequest(t *testing.T, overrides map[string]any) *http.Request {
+	t.Helper()
+	var input map[string]any
+	json.NewDecoder(reviewedRequest(t).Body).Decode(&input)
+	input["reviewArtifacts"] = true
+	for key, value := range overrides {
+		if value == nil {
+			delete(input, key)
+		} else {
+			input[key] = value
+		}
+	}
+	data, _ := json.Marshal(input)
+	req := httptest.NewRequest("POST", "/api/application-draft", strings.NewReader(string(data)))
+	req.Header.Set("X-OpenAI-Api-Key", "sk-synthetic")
+	req.Header.Set("X-TypeSafe-Api-Key", "synthetic")
+	return req
+}
+
+func assertExplicitAnswerInput(t *testing.T, r *http.Request, temporary []map[string]string) {
+	t.Helper()
+	var envelope struct{ Messages []struct{ Content string } }
+	json.NewDecoder(r.Body).Decode(&envelope)
+	var payload struct {
+		ApplicationAnswers   string
+		QualificationAnswers []map[string]string
+		Blocks               []struct{ Field, Text string }
+	}
+	if json.Unmarshal([]byte(envelope.Messages[1].Content), &payload) != nil || payload.ApplicationAnswers != "1. I use Java." {
+		t.Fatal("review must receive the generated answers explicitly, independently of optional temporary answers")
+	}
+	if !reflect.DeepEqual(payload.QualificationAnswers, temporary) {
+		t.Fatal("temporary answer context was lost or confused with generated answers")
+	}
+	answerBlocks := 0
+	for _, block := range payload.Blocks {
+		if block.Field == "applicationAnswers" {
+			answerBlocks++
+			if block.Text != payload.ApplicationAnswers {
+				t.Fatal("omission assessment and claim assessment receive different generated answers")
+			}
+		}
+	}
+	if answerBlocks != 1 {
+		t.Fatal("expected exactly one generated answer claim block")
+	}
+}
+
+func TestArtifactSupportSeparatesGeneratedAndTemporaryAnswers(t *testing.T) {
+	for _, temporary := range [][]map[string]string{nil, {{"requirement": "AWS", "userContext": "I do not use AWS."}}} {
+		t.Run(temporaryContextName(temporary), func(t *testing.T) {
+			overrides := map[string]any{"qualificationAnswers": nil}
+			if len(temporary) > 0 {
+				overrides["qualificationAnswers"] = temporary
+			}
+			req := artifactRequest(t, overrides)
+			calls := 0
+			client := &http.Client{Transport: providerTransport(func(r *http.Request) (*http.Response, error) {
+				calls++
+				switch calls {
+				case 1:
+					draft := structuredDraft([]any{citedClaim("I use Java.")})
+					draft["applicationAnswers"] = "1. I use Java."
+					return completionResponse(draft), nil
+				case 2:
+					return completionResponse(map[string]any{"judgments": []any{map[string]any{"index": 0, "state": "supported", "reason": "Faithful."}}}), nil
+				default:
+					assertExplicitAnswerInput(t, r, temporary)
+					// Transport-contract test only: no simulated semantic certification.
+					return completionResponse(map[string]any{"judgments": []any{}, "answerConcerns": []string{}}), nil
+				}
+			})}
+			w := httptest.NewRecorder()
+			applicationdraft.NewHandlerWithClient(client).ServeHTTP(w, req)
+			if w.Code != 200 || calls != 3 || !strings.Contains(w.Body.String(), `"check":"unavailable"`) {
+				t.Fatalf("incomplete judgments must remain unavailable: calls=%d status=%d %s", calls, w.Code, w.Body.String())
+			}
+		})
+	}
+}
+
+func temporaryContextName(answers []map[string]string) string {
+	if len(answers) == 0 {
+		return "absent temporary context"
+	}
+	return "negative temporary context"
 }
