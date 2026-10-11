@@ -1,0 +1,357 @@
+{
+  "scope": "Direct published HTTPS Function requests; not live browser or local provider evidence",
+  "origin": "https://beamish-bavarois-333d03.netlify.app",
+  "revision": "e8042eed72736b43456abe2303c7dd85ad837136",
+  "deployId": "6acbbe6c6e768b0008a9f948",
+  "automaticRetries": 0,
+  "workflowLimit": 3,
+  "started": "2026-10-11T16:54:34.692606+00:00",
+  "results": [
+    {
+      "path": "/api/profile/ingest",
+      "case": "en-fact",
+      "status": 200,
+      "clientHttpMs": 5344,
+      "cacheControl": "no-store",
+      "cacheStatus": "\"Netlify Durable\"; fwd=bypass",
+      "requestId": "01M4NY6EZ7TJCZC1RDFWFTXHME",
+      "contentType": "application/json; charset=utf-8",
+      "payloadHash": "f9451e6b62d5c77467e0da58836f3e3d4f972a45a64f24d3e4238154f8299655",
+      "preflight": "pass",
+      "functionLogPrivacy": "Observed content-free metadata; bounded three-request observation.",
+      "handlerMs": 4389.784722,
+      "providerMs": [
+        {
+          "stage": "field_validation",
+          "ms": 191.359654
+        },
+        {
+          "stage": "extraction",
+          "ms": 2695.779597
+        },
+        {
+          "stage": "reconciliation",
+          "ms": 1500.413997
+        }
+      ],
+      "browserMs": null,
+      "errorCategory": null,
+      "responseFields": [
+        "claims",
+        "coverage",
+        "decision",
+        "operations",
+        "outcomes",
+        "skippedClaims",
+        "unplacedOperationCount",
+        "unresolvedClaimIds",
+        "unverifiedClaimCount"
+      ],
+      "diagnosticAttemptId": "c8432263a4e8b0da7003b955b0c0f3bf"
+    },
+    {
+      "path": "/api/qualification-gaps",
+      "case": "pt-evidence-matching",
+      "status": 502,
+      "clientHttpMs": 3526,
+      "cacheControl": "no-store",
+      "cacheStatus": "\"Netlify Durable\"; fwd=bypass",
+      "requestId": "01M4NY6M5P1PJCFE7JVT48XZJK",
+      "contentType": "application/json; charset=utf-8",
+      "payloadHash": "3d9ea3f91536fe126f7d061759d557de9077fa34bee88c269d876844e4cc0a9d",
+      "preflight": "pass",
+      "functionLogPrivacy": "Observed content-free metadata; bounded three-request observation.",
+      "handlerMs": 2703.841673,
+      "providerMs": [
+        {
+          "stage": "field_validation",
+          "ms": 177.843284
+        },
+        {
+          "stage": "qualification_matching",
+          "ms": 2524.26917
+        }
+      ],
+      "browserMs": null,
+      "errorCategory": "invalid_output",
+      "responseFields": [
+        "error"
+      ],
+      "diagnosticAttemptId": "a412b27f4cb94962e5dd435f5e7adfe2"
+    },
+    {
+      "path": "/api/application-draft",
+      "case": "pt-reviewed-draft",
+      "status": 200,
+      "clientHttpMs": 10194,
+      "cacheControl": "no-store",
+      "cacheStatus": "\"Netlify Durable\"; fwd=bypass",
+      "requestId": "01M4NY6QKX1RPDQ7Q3JC2EYWEZ",
+      "contentType": "application/json; charset=utf-8",
+      "payloadHash": "4cad1ba2a8c2254ccbc4ca57b6c3148f9204532dcdde5262d5a41f8f726b85e1",
+      "preflight": "pass",
+      "functionLogPrivacy": "Observed content-free metadata; bounded three-request observation.",
+      "handlerMs": 9065.974124,
+      "providerMs": [
+        {
+          "stage": "field_validation",
+          "ms": 208.934028
+        },
+        {
+          "stage": "generation",
+          "ms": 3180.218588
+        },
+        {
+          "stage": "resume_support",
+          "ms": 1665.417685
+        },
+        {
+          "stage": "artifact_support",
+          "ms": 4008.510787
+        }
+      ],
+      "browserMs": null,
+      "errorCategory": null,
+      "responseFields": [
+        "applicationAnswers",
+        "artifactReview",
+        "company",
+        "contextSelection",
+        "coverLetter",
+        "jobSummary",
+        "jobTitle",
+        "resume",
+        "resumeReview"
+      ],
+      "diagnosticAttemptId": "c76beb2fb093c1563d759f90da069347"
+    }
+  ],
+  "observedDiagnostics": [
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "c8432263a4e8b0da7003b955b0c0f3bf",
+      "workflow": "profile_ingestion",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 4389.784722,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.073885,
+          "provider": null
+        },
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 191.540545,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": 1016,
+            "outputTokens": 97,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 191.359654,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "extraction",
+          "version": "profile-claims-prompt-v5/schema-v2/source-resolution-v1/portions-v1/clarifications-v1",
+          "outcome": "completed",
+          "durationMs": 2695.961786,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 960,
+            "outputTokens": 159,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 6000,
+            "durationMs": 2695.779597,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "reconciliation",
+          "version": "profile-operations-prompt-v4/schema-v3/dispositions-v1/clarifications-v1",
+          "outcome": "completed",
+          "durationMs": 1500.739093,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 1967,
+            "outputTokens": 107,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 1964,
+            "outputTokenCeiling": 6000,
+            "durationMs": 1500.413997,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "candidate_retrieval",
+          "version": "lexical-projection-v3/stable-facts-v1",
+          "outcome": "completed",
+          "durationMs": 0.024173,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "a412b27f4cb94962e5dd435f5e7adfe2",
+      "workflow": "qualification_gaps",
+      "outcome": "rejected_output",
+      "httpStatus": 502,
+      "durationMs": 2703.841673,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 178.039292,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": 1080,
+            "outputTokens": 108,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 177.843284,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "qualification_matching",
+          "version": "job-context-v2/prompt-v1/schema-v1/gpt-6-luna/none/jev-rubric-v1/policy-v1",
+          "outcome": "rejected_output",
+          "durationMs": 2524.902403,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 1027,
+            "outputTokens": 285,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 8000,
+            "durationMs": 2524.26917,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.277212,
+          "provider": null
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "attemptId": "c76beb2fb093c1563d759f90da069347",
+      "workflow": "application_draft",
+      "outcome": "complete",
+      "httpStatus": 200,
+      "durationMs": 9065.974124,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 209.107833,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": 1080,
+            "outputTokens": 108,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 208.934028,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "generation",
+          "version": "application-draft-policy-v2/context-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 8855.840074,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 1407,
+            "outputTokens": 210,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 1150,
+            "outputTokenCeiling": 8000,
+            "durationMs": 3180.218588,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.265842,
+          "provider": null
+        },
+        {
+          "name": "resume_support",
+          "version": "resume-support-openai-v1",
+          "outcome": "complete",
+          "durationMs": 1665.794248,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 471,
+            "outputTokens": 47,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 4000,
+            "durationMs": 1665.417685,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "artifact_support",
+          "version": "artifact-support-openai-v1",
+          "outcome": "complete",
+          "durationMs": 4008.977464,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 1042,
+            "outputTokens": 443,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 8000,
+            "durationMs": 4008.510787,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        }
+      ],
+      "accepted": null
+    }
+  ]
+}

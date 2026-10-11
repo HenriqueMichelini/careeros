@@ -95,8 +95,7 @@ publication of the already completed `4e48cb8` build. Netlify deploy
 Functions. This replaces the stale public `31371b4` build for the release test.
 The PR #93 preview at `58e7d00` is deploy `6acbba88e46b80000846119a`,
 origin `https://deploy-preview-93--beamish-bavarois-333d03.netlify.app`.
-Its team access protection remains enabled. Exact-head deployment of the later
-empty-Profile fix remains unverified.
+Its team access protection remains enabled. At that initial check the later empty-Profile fix was not deployed; see the corrected-build confirmation below.
 
 Five published HTTPS requests used the authorized minimized synthetic payloads,
 reviewed locally before dispatch; credentials stayed process-local. No automatic
@@ -131,6 +130,48 @@ comparison baseline; these tiny single attempts cannot establish an improvement.
 
 Netlify reports operational-credit mode: published sites remain live while
 production deploys and Agent Runners are paused. No plan or billing change was
-made. Remaining release checks are corrected-head preview/published ingestion,
-completed live qualification/draft browser flow, and broader provider quality.
+made. At that point the remaining checks included corrected-head ingestion and
+completed live qualification/draft browser flow, plus broader provider quality.
 Issue #52 must remain open while these cases are unmet.
+
+
+## Corrected-build confirmation and final status
+
+The user separately approved publication of `e8042ee` and six additional
+synthetic workflow attempts. Deploy `6acbbe6c6e768b0008a9f948` is published and
+locked. Its immutable PR #93 preview permalink was used for fresh browser
+storage; Netlify exposes the published preview build's operational logs under
+Deploy Preview #93. All six authorized attempts were used, without retries.
+
+The complete credential-free requests and exact provider payload preflight
+were reviewed locally before dispatch. Both ingestion checks used `I use Java`
+against an empty canonical Profile; job checks used only a synthetic Portuguese
+Java developer role, Java responsibility/qualification and one Java application
+question. Runtime browser reference IDs are generated separately; live provider
+generation/support payloads depend on their actual preceding results, so the
+controlled preflight is not a claim of byte-identical dynamic provider outputs.
+
+| Route | Published HTTPS result | Fresh browser result |
+| --- | --- | --- |
+| First ingestion | 200; proposed supported Java | 200; Java explicitly approved and durably saved |
+| Qualification | 502 `invalid_output`; no downstream acceptance | 200; source-backed job review and Java support; company/seniority/location unknown |
+| Application Draft | 200; supported Java resume, unresolved artifact claims/citations and redundant Q&A | 200 at handler; client rejected incomplete result; no artifacts accepted |
+
+See [published corrected checks](issue-52/published.corrected.live.json) and
+[preview corrected checks](issue-52/preview.corrected.live.json) for origins,
+revision, separated timing, provider usage and bounded content-free operational
+log observations. Published client HTTP times were 5344/3526/10194 ms;
+handler times were 4389.785/2703.842/9065.974 ms. Browser handler times were
+3485.989/4008.735/11724.121 ms, not measured browser durations. Keys were
+cleared through app controls after checks and verified absent after reload.
+
+The reproducible empty-Profile integration defect is fixed and verified live.
+Qualification reliability, complete accepted live drafts and actual accepted-result
+cost remain unmet/unavailable. These sparse attempts are not a quality improvement
+claim. Keep #52 open; do not declare milestone 4 or the MVP release gate complete.
+
+Independent immutable review of `4e48cb8...e8042ee`: Standards found zero hard
+violations or actionable smells; Spec found no remaining implementation defects.
+Both original test-coverage findings were fixed. Spec explicitly retains the
+unmet release checks above. No prompt/model/schema setting was tuned to these
+held-out results.
