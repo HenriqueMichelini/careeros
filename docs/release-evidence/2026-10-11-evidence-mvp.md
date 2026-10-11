@@ -274,7 +274,7 @@ The model is instructed to copy the applicable objects, without calculating,
 shortening, combining or repairing them. No second normalizer or source mapper
 is introduced. The same prepared source used by generation reaches support.
 The support diagnostic policy version is now
-`artifact-support-openai-v2/prepared-citations-v1`.
+`artifact-support-openai-v2/prepared-citations-v1/number-guard-v2`.
 
 The public response and provider response schemas are unchanged. Existing
 UTF-8 bounds, exact quote, career/job scope, metadata, numeric and semantic
@@ -297,3 +297,15 @@ provider-call authorizations are exhausted. The earlier diagnostic cases are
 retained as regression evidence and cannot serve as held-out proof of this
 prompt change. Issue #52 remains open pending separately authorized deployed
 verification and its other unresolved release gates.
+
+
+The same captured draft also exposed a deterministic false rejection: ordered
+answer labels such as `1.` and `2.` were counted as invented career numbers.
+A separate public-handler regression reproduced `invented_number` on supported
+numbered answers before the fix. Numeric guards now use shared syntax
+classification to exclude ordered-list markers while preserving numbers in
+prose and literal blocks. The supported numbered-answer regression passes;
+unsupported `40%` within a numbered answer and numeric literal content remain
+blocked. Accepted wording is unchanged, and semantic/support checks remain
+required. Both support-stage diagnostic versions record `number-guard-v2`.
+This correctness change also awaits authorized live/deployed verification.

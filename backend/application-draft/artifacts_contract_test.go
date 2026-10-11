@@ -51,6 +51,10 @@ func TestArtifactSupportGuardsAndAnswerOmission(t *testing.T) {
 	}{
 		{"leadership", "I led ten engineers.", true, "", nil, "stronger_claim"},
 		{"metric", "I improved throughput by 40%.", true, "", nil, "invented_number"},
+		{"numbered supported answers", "I use Java.", true, "", nil, "numbered_supported"},
+		{"numbered invented metric", "I use Java.", true, "", nil, "invented_number"},
+		{"literal numbered content", "I use Java.", true, "", nil, "invented_number"},
+		{"indented numbered content", "I use Java.", true, "", nil, "invented_number"},
 		{"proficiency", "I am fluent in Java.", true, "", nil, "stronger_claim"},
 		{"missing career support", "I use Java.", false, "", nil, "missing_citations"},
 		{"Portuguese candidate using only job evidence", "Eu uso Java.", false, "Java developer.", nil, "missing_career_support"},
@@ -83,6 +87,16 @@ func TestArtifactSupportGuardsAndAnswerOmission(t *testing.T) {
 				if calls == 1 {
 					draft := structuredDraft([]any{citedClaim("Java")})
 					draft["coverLetter"].(map[string]string)["body"] = tc.body
+					switch tc.name {
+					case "numbered supported answers":
+						draft["applicationAnswers"] = "1. I use Java.\n2. I use Java."
+					case "numbered invented metric":
+						draft["applicationAnswers"] = "1. I improved throughput by 40%."
+					case "literal numbered content":
+						draft["applicationAnswers"] = "```text\n1. I use Java.\n```"
+					case "indented numbered content":
+						draft["applicationAnswers"] = "    1. I use Java."
+					}
 					if tc.name == "Portuguese field omission" {
 						draft["applicationAnswers"] = "Minha experiência se concentra em sistemas."
 					}
@@ -148,7 +162,7 @@ func TestArtifactSupportGuardsAndAnswerOmission(t *testing.T) {
 			})}
 			w := httptest.NewRecorder()
 			applicationdraft.NewHandlerWithClient(client).ServeHTTP(w, req)
-			if tc.want == "mixed_supported" {
+			if tc.want == "mixed_supported" || tc.want == "numbered_supported" {
 				var result struct {
 					ArtifactReview struct {
 						Claims []struct{ Field, State string }
@@ -156,8 +170,8 @@ func TestArtifactSupportGuardsAndAnswerOmission(t *testing.T) {
 				}
 				json.Unmarshal(w.Body.Bytes(), &result)
 				for _, c := range result.ArtifactReview.Claims {
-					if c.Field == "body" && c.State != "supported" {
-						t.Fatalf("valid mixed support lost: %d %s", w.Code, w.Body.String())
+					if (tc.want == "mixed_supported" && c.Field == "body" || tc.want == "numbered_supported" && c.Field == "applicationAnswers") && c.State != "supported" {
+						t.Fatalf("valid artifact support lost: %d %s", w.Code, w.Body.String())
 					}
 				}
 			} else if w.Code != 200 || !strings.Contains(w.Body.String(), tc.want) {
