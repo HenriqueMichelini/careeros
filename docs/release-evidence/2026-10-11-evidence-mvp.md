@@ -228,3 +228,36 @@ have deployed evidence. Provider source-ID reliability, faithful complete live
 application drafts and actual accepted-result cost remain unresolved; #52
 stays open and the MVP/milestone release gate is not certified. PRs #93 and #94
 are merged into `main`; the milestone branch is synchronized with those merges.
+
+
+## Remaining authorized local diagnosis
+
+After the credential vault was unlocked, the final two of the six authorized
+local diagnostic attempts ran at `0c0a331` with unchanged provider settings.
+The credential-free handler requests and controlled outbound envelopes were
+preflighted before dispatch; actual later support requests depend on preceding
+live outputs. The new sole approved synthetic fact was “Uso Java para desenvolver
+APIs.”, against the same Portuguese Java posting and its one explicit question.
+There were no retries. All six local diagnostic attempts are now used.
+
+Both handlers returned 200/no-store and both responses parsed through the actual
+public clients. Qualification matched the approved Java fact and preserved
+unknown company, seniority and location. The generated answer now explained how
+Java is used, but the draft added four unrequested questions. Inspection found
+that the unchanged generation policy explicitly requests 5–6 application answers;
+this observation is distinct from a provider inventing that count independently.
+No prompt, model or schema was tuned during these diagnostic checks.
+
+The resume passed public acceptance; artifact acceptance remained blocked by
+invalid job citations and unresolved support concerns. The local acceptance
+operation did not save or export output, and the Profile remained unchanged.
+This distinguishes absence of answer support in the earlier sparse Profile from
+the remaining citation and draft-fidelity problems. One successful qualification
+attempt cannot resolve the earlier source-ID reliability failure.
+
+[Final local diagnostic metadata](issue-52/final-local-diagnosis.live.json)
+retains separated timing/usage and client outcomes. Full synthetic provider
+responses stayed private. Inherited fixture scorer labels were inapplicable to
+the changed input and are not presented as semantic quality measurements.
+These checks add no deployed/browser evidence or accepted-result billing data.
+Issue #52 remains open with its full acceptance scope and release gate intact.
