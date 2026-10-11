@@ -1,11 +1,24 @@
-# Verification at a3a575c
+# Verification — issue #50
 
-Issue #50 remains open pending authorized live measurement. The implementation
-is on milestone-2 branch `codex/ai-quality-and-efficiency`, targeting `main`.
-No production model setting changed. No real provider call has occurred: the
-first invocation failed opening the inaccessible credential vault before any
-request or key read. The zero-byte output was removed; no provider evidence was
-discarded. The user must unlock the vault or provide readable credential files.
+The implementation and evidence use milestone-2 branch
+`codex/ai-quality-and-efficiency`, targeting `main`. No production model setting
+changed. After the user unlocked the vault, one authorized synthetic matrix
+completed: 42 logical results, 51 HTTP attempts, 132 provider dispatches, no retry
+or fallback. The earlier inaccessible-vault invocation dispatched zero calls.
+
+Every live result has an agent-assisted per-field source review. Offline replay
+preserves original outputs/calls and links to the original SHA-256. Independently
+recalculated fixture and source hashes match the saved live report; every call
+and HTTP attempt reconciles with its corresponding result/step, and all 42 review
+indices occur exactly once. The compiler revision is `4c22c9a`; exact source
+hashes identify the compared implementation.
+
+[The measured decision](decision.md) retains current fixed settings. Current is
+not certified correct: language drift, an unsupported ownership addition and a
+real continuation omission remain explicit. Neither candidate demonstrates the
+required full-workflow improvement. All total/completed/accepted-result prices
+remain null because validation pricing is unavailable; partial estimates and
+returned cache usage are distinguished from billing or savings. #65 stays open.
 
 ## Controlled verification
 
@@ -54,7 +67,7 @@ was reduced to 14 cases and no extra repeats to keep all initial/answer and
 continuation legs inside 60 HTTP attempts. Natural stable-prefix usage remains
 observable without padding or retention changes.
 
-Summary: Standards 0 findings; Spec 0 remaining implementation findings. Fresh
-provider comparison, source-grounded per-field/language review, and the final
-accuracy-first decision remain explicit evidence gates before issue closure and
-PR merge. Controlled success cannot substitute for those gates.
+The previous implementation review had Standards 0 findings and Spec 0 remaining
+implementation findings. The live comparison, field review and decision are now
+recorded, with a final review of the evidence before PR merge. Controlled success
+is kept distinct from the live measurement throughout.

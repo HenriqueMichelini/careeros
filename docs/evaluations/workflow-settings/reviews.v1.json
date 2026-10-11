@@ -1,0 +1,1196 @@
+[
+  {
+    "index": 0,
+    "review": {
+      "accepted": true,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Java claim and skills addition are source-supported. No unsupported detail or omission observed.",
+      "fields": [
+        {
+          "field": "claims[0].text / meaning / source",
+          "assessment": "supported",
+          "source": "cases.v1.json: en-fact.request.input = I use Java; empty profile",
+          "finding": "Uses Java preserves the explicit first-person skill; source excerpt exact; no experience level, employer, or duration added."
+        },
+        {
+          "field": "operations[0].value / target",
+          "assessment": "complete",
+          "source": "cases.v1.json: en-fact.request.input = I use Java; empty profile",
+          "finding": "Adds Java to empty skills with the returned claim ID."
+        },
+        {
+          "field": "outcomes[0].reason",
+          "assessment": "supported",
+          "source": "cases.v1.json: en-fact.request.input = I use Java; empty profile",
+          "finding": "English explanation accurately relates explicit use and empty skills."
+        }
+      ]
+    }
+  },
+  {
+    "index": 1,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Java claim and skills addition are source-supported. Reject: Spanish explanation in an English workflow.",
+      "fields": [
+        {
+          "field": "claims[0].text / meaning / source",
+          "assessment": "supported",
+          "source": "cases.v1.json: en-fact.request.input = I use Java; empty profile",
+          "finding": "Uses Java preserves the explicit first-person skill; source excerpt exact; no experience level, employer, or duration added."
+        },
+        {
+          "field": "operations[0].value / target",
+          "assessment": "complete",
+          "source": "cases.v1.json: en-fact.request.input = I use Java; empty profile",
+          "finding": "Adds Java to empty skills with the returned claim ID."
+        },
+        {
+          "field": "outcomes[0].reason",
+          "assessment": "language_drift",
+          "source": "cases.v1.json: en-fact.request.input = I use Java; empty profile",
+          "finding": "Spanish: La fuente afirma que usa Java."
+        }
+      ]
+    }
+  },
+  {
+    "index": 2,
+    "review": {
+      "accepted": true,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Java claim and skills addition are source-supported. No unsupported detail or omission observed.",
+      "fields": [
+        {
+          "field": "claims[0].text / meaning / source",
+          "assessment": "supported",
+          "source": "cases.v1.json: en-fact.request.input = I use Java; empty profile",
+          "finding": "Uses Java preserves the explicit first-person skill; source excerpt exact; no experience level, employer, or duration added."
+        },
+        {
+          "field": "operations[0].value / target",
+          "assessment": "complete",
+          "source": "cases.v1.json: en-fact.request.input = I use Java; empty profile",
+          "finding": "Adds Java to empty skills with the returned claim ID."
+        },
+        {
+          "field": "outcomes[0].reason",
+          "assessment": "supported",
+          "source": "cases.v1.json: en-fact.request.input = I use Java; empty profile",
+          "finding": "English explanation accurately relates explicit use and empty skills."
+        }
+      ]
+    }
+  },
+  {
+    "index": 3,
+    "review": {
+      "accepted": true,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "20% latency reduction and stable selection retained; no new achievement or ownership added.",
+      "fields": [
+        {
+          "field": "summary[0].text",
+          "assessment": "supported",
+          "source": "cases.v1.json: en-stable-cv-metric.request.facts[0]",
+          "finding": "Preserves Reduced latency by 20%. Source-authored legacy statement remains a CV proposal, not newly verified evidence."
+        },
+        {
+          "field": "summary[0].sourceIds / selected",
+          "assessment": "complete",
+          "source": "stable-impact; owner role-a; no other facts",
+          "finding": "Only stable-impact selected and attributed; metric not attached to an invented employer."
+        }
+      ]
+    }
+  },
+  {
+    "index": 4,
+    "review": {
+      "accepted": true,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "20% latency reduction and stable selection retained; no new achievement or ownership added.",
+      "fields": [
+        {
+          "field": "summary[0].text",
+          "assessment": "supported",
+          "source": "cases.v1.json: en-stable-cv-metric.request.facts[0]",
+          "finding": "Preserves Reduced latency by 20%. Source-authored legacy statement remains a CV proposal, not newly verified evidence."
+        },
+        {
+          "field": "summary[0].sourceIds / selected",
+          "assessment": "complete",
+          "source": "stable-impact; owner role-a; no other facts",
+          "finding": "Only stable-impact selected and attributed; metric not attached to an invented employer."
+        }
+      ]
+    }
+  },
+  {
+    "index": 5,
+    "review": {
+      "accepted": true,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "20% latency reduction and stable selection retained; no new achievement or ownership added.",
+      "fields": [
+        {
+          "field": "summary[0].text",
+          "assessment": "supported",
+          "source": "cases.v1.json: en-stable-cv-metric.request.facts[0]",
+          "finding": "Preserves Reduced latency by 20%. Explicit unsupported/unknown qualifiers match source metadata; awkward CV prose is not an invented career fact."
+        },
+        {
+          "field": "summary[0].sourceIds / selected",
+          "assessment": "complete",
+          "source": "stable-impact; owner role-a; no other facts",
+          "finding": "Only stable-impact selected and attributed; metric not attached to an invented employer."
+        }
+      ]
+    }
+  },
+  {
+    "index": 6,
+    "review": {
+      "accepted": true,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Initial question preserves ambiguity; final claim incorporates authorized answer with both origins, and Java destination is supported. Regex claim mismatch is a valid paraphrase, not a factual omission.",
+      "fields": [
+        {
+          "field": "steps[0].claims[0].text / question / operations",
+          "assessment": "supported",
+          "source": "It used Java.",
+          "finding": "Unspecified subject retained; asks what It refers to and proposes no premature addition."
+        },
+        {
+          "field": "claims[0].text / supportingSources",
+          "assessment": "supported",
+          "source": "It used Java. + I used Java at Acme.",
+          "finding": "Used Java at Acme retains answer detail and original/clarification_answer origins. Regex expects different first-person wording."
+        },
+        {
+          "field": "operations[0].value / target",
+          "assessment": "complete",
+          "source": "I used Java at Acme.; empty skills",
+          "finding": "Java added to skills; Acme remains in claim rather than invented experience entry."
+        },
+        {
+          "field": "outcomes[0].reason",
+          "assessment": "imprecise",
+          "source": "Original + clarification answer",
+          "finding": "English reason cites the original alone; the combined original and answer support the proposed skill. No additional assertion."
+        }
+      ]
+    }
+  },
+  {
+    "index": 7,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Answer did not resolve claim: Java skill and Acme context omitted despite a clear user answer.",
+      "fields": [
+        {
+          "field": "steps[0].claims[0].question",
+          "assessment": "supported",
+          "source": "It used Java.",
+          "finding": "Asks for subject and involvement without assigning to candidate."
+        },
+        {
+          "field": "claims[0].text / question",
+          "assessment": "material_omission",
+          "source": "I used Java at Acme.",
+          "finding": "Repeats unidentified It and requests clarification again; does not incorporate answer."
+        },
+        {
+          "field": "operations",
+          "assessment": "material_omission",
+          "source": "I used Java at Acme.; empty skills",
+          "finding": "No Java skills destination; no forbidden addition observed."
+        }
+      ]
+    }
+  },
+  {
+    "index": 8,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Answer leg returned HTTP 502 invalid_output; no final Profile Proposal. Initial ambiguity handled, but completed-result quality unavailable.",
+      "fields": [
+        {
+          "field": "steps[0].claims[0].question / operations",
+          "assessment": "supported",
+          "source": "It used Java.",
+          "finding": "Asks referent/involvement and makes no premature addition."
+        },
+        {
+          "field": "steps[1].providerOutputs[0] / output.error",
+          "assessment": "failure",
+          "source": "I used Java at Acme.",
+          "finding": "Provider continues unresolved subject and does not incorporate supported personal use; backend rejects source contract. No final Java fact/destination."
+        }
+      ]
+    }
+  },
+  {
+    "index": 9,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Initial Jev request_information produced no claim/question; runner stops with synthetic 409 and never sends correction answer. Downstream correction not measured.",
+      "fields": [
+        {
+          "field": "steps[0].output.decision",
+          "assessment": "blocked",
+          "source": "My email may be old@example.test.",
+          "finding": "Jev requests a professional fact; uncertain email is not accepted for ingestion."
+        },
+        {
+          "field": "claims / operations",
+          "assessment": "unmeasured",
+          "source": "Use new@example.test instead; old@example.test is obsolete.",
+          "finding": "Answer leg was not dispatched; no correction proposal, no bypass, and no factual addition."
+        }
+      ]
+    }
+  },
+  {
+    "index": 10,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Initial Jev request_information produced no claim/question; runner stops with synthetic 409 and never sends correction answer. Downstream correction not measured.",
+      "fields": [
+        {
+          "field": "steps[0].output.decision",
+          "assessment": "blocked",
+          "source": "My email may be old@example.test.",
+          "finding": "Jev requests a professional fact; uncertain email is not accepted for ingestion."
+        },
+        {
+          "field": "claims / operations",
+          "assessment": "unmeasured",
+          "source": "Use new@example.test instead; old@example.test is obsolete.",
+          "finding": "Answer leg was not dispatched; no correction proposal, no bypass, and no factual addition."
+        }
+      ]
+    }
+  },
+  {
+    "index": 11,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Initial uncertain email retained without a question; runner cannot send answer and marks incomplete. Correction remains unmeasured.",
+      "fields": [
+        {
+          "field": "steps[0].claims[0].text / meaning",
+          "assessment": "supported",
+          "source": "My email may be old@example.test.; existing email old@example.test",
+          "finding": "Uncertainty retained; no invented current email."
+        },
+        {
+          "field": "steps[0].claims[0].question / operations",
+          "assessment": "incomplete",
+          "source": "Frozen deliberate answer: Use new@example.test instead; old@example.test is obsolete.",
+          "finding": "Question empty, no operation; no answer dispatch. No fabricated correction to bypass initial question requirement."
+        }
+      ]
+    }
+  },
+  {
+    "index": 12,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "All 35 facts and all 35 tool additions retained across both portions; reject explanation language drift. Frozen skills-only destination labels undercount valid tools placement.",
+      "fields": [
+        {
+          "field": "claims[0..34].text / source / meaning",
+          "assessment": "complete",
+          "source": "I use Tool00 for services. through I use Tool34 for services.",
+          "finding": "Every named tool and services context retained once; no seniority, employer, or proficiency added."
+        },
+        {
+          "field": "operations[0..34].value / target",
+          "assessment": "supported",
+          "source": "Same 35 source lines; empty profile.tools",
+          "finding": "Tool00..Tool34 each added once to tools. Historical frozen labels require skills; tools is a valid semantic destination, so 35 regex misses are not source omissions."
+        },
+        {
+          "field": "steps[0].outcomes[*].reason",
+          "assessment": "language_drift",
+          "source": "English input, first 22 tool statements",
+          "finding": "Reasons are Spanish despite English workflow."
+        },
+        {
+          "field": "steps[1].outcomes[*].reason",
+          "assessment": "language_drift",
+          "source": "English input, final 13 tool statements",
+          "finding": "Reasons are Portuguese despite English workflow."
+        }
+      ]
+    }
+  },
+  {
+    "index": 13,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "All 35 facts and all 35 tool additions retained across both portions; reject explanation language drift. Frozen skills-only destination labels undercount valid tools placement.",
+      "fields": [
+        {
+          "field": "claims[0..34].text / source / meaning",
+          "assessment": "complete",
+          "source": "I use Tool00 for services. through I use Tool34 for services.",
+          "finding": "Every named tool and services context retained once; no seniority, employer, or proficiency added."
+        },
+        {
+          "field": "operations[0..34].value / target",
+          "assessment": "supported",
+          "source": "Same 35 source lines; empty profile.tools",
+          "finding": "Tool00..Tool34 each added once to tools. Historical frozen labels require skills; tools is a valid semantic destination, so 35 regex misses are not source omissions."
+        },
+        {
+          "field": "steps[0].outcomes[*].reason",
+          "assessment": "language_drift",
+          "source": "English input, first 22 tool statements",
+          "finding": "Reasons are Spanish despite English workflow."
+        },
+        {
+          "field": "steps[1].outcomes[*].reason",
+          "assessment": "language_drift",
+          "source": "English input, final 13 tool statements",
+          "finding": "Reasons are Portuguese despite English workflow."
+        }
+      ]
+    }
+  },
+  {
+    "index": 14,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "First continuation portion hit the unchanged 24-second provider timeout. Second portion not dispatched; usage for the timed-out call unavailable.",
+      "fields": [
+        {
+          "field": "steps[0].output.error",
+          "assessment": "failure",
+          "source": "35 frozen English Tool00..Tool34 lines",
+          "finding": "HTTP 504 timeout at 24253 ms; no parsed claims or operations. This is a runtime failure, not evidence of factual accuracy."
+        },
+        {
+          "field": "claims / operations",
+          "assessment": "unmeasured",
+          "source": "Both frozen continuation portions",
+          "finding": "No completed output; full 35-fact denominator retained."
+        }
+      ]
+    }
+  },
+  {
+    "index": 15,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Jev requested more posting detail; matching and understanding were not dispatched. No completed comparison on this sparse posting.",
+      "fields": [
+        {
+          "field": "decision.outcome",
+          "assessment": "blocked",
+          "source": "Java required.",
+          "finding": "request_information / responsibilities_or_qualifications; no gate bypass."
+        },
+        {
+          "field": "matches / jobUnderstanding",
+          "assessment": "unmeasured",
+          "source": "Approved Java fact p/skill@1, excerpt I use Java.",
+          "finding": "No matching output; do not score absent assertions as perfect quality."
+        }
+      ]
+    }
+  },
+  {
+    "index": 16,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Jev requested more posting detail; matching and understanding were not dispatched. No completed comparison on this sparse posting.",
+      "fields": [
+        {
+          "field": "decision.outcome",
+          "assessment": "blocked",
+          "source": "Java required.",
+          "finding": "request_information / responsibilities_or_qualifications; no gate bypass."
+        },
+        {
+          "field": "matches / jobUnderstanding",
+          "assessment": "unmeasured",
+          "source": "Approved Java fact p/skill@1, excerpt I use Java.",
+          "finding": "No matching output; do not score absent assertions as perfect quality."
+        }
+      ]
+    }
+  },
+  {
+    "index": 17,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Jev requested more posting detail; matching and understanding were not dispatched. No completed comparison on this sparse posting.",
+      "fields": [
+        {
+          "field": "decision.outcome",
+          "assessment": "blocked",
+          "source": "Java required.",
+          "finding": "request_information / responsibilities_or_qualifications; no gate bypass."
+        },
+        {
+          "field": "matches / jobUnderstanding",
+          "assessment": "unmeasured",
+          "source": "Approved Java fact p/skill@1, excerpt I use Java.",
+          "finding": "No matching output; do not score absent assertions as perfect quality."
+        }
+      ]
+    }
+  },
+  {
+    "index": 18,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Draft text preserves sparse Java/AWS uncertainty, but independent artifact support remains unsupported. No accepted end-to-end result.",
+      "fields": [
+        {
+          "field": "jobTitle / company / jobSummary",
+          "assessment": "citation_failure",
+          "source": "Java developer. AWS required. Answer: how do you use Java?",
+          "finding": "Role and AWS requirement present; employer remains null. Returned job citations have invalid offsets; review marks title and summary unsupported."
+        },
+        {
+          "field": "resume / resumeReview.claims[*]",
+          "assessment": "complete",
+          "source": "p/skill@1 = Java; excerpt I use Java.",
+          "finding": "Only Java skill is stated; independent resume review supported, no invented work history."
+        },
+        {
+          "field": "coverLetter.greeting / closing",
+          "assessment": "nonfactual",
+          "source": "Application drafting context",
+          "finding": "Conventional English greeting/closing; no candidate fact asserted."
+        },
+        {
+          "field": "coverLetter.body",
+          "assessment": "unsupported_support_check",
+          "source": "Java skill and posting AWS required; no AWS candidate evidence",
+          "finding": "Does not claim AWS experience. Invalid job citations keep support unresolved despite source-consistent prose."
+        },
+        {
+          "field": "applicationAnswers",
+          "assessment": "uncertainty_with_review_concerns",
+          "source": "Question how do you use Java?; excerpt I use Java.; no projects/AWS evidence",
+          "finding": "Java question is answered at skill level with use-context unknown; no fabricated use detail. Additional AWS answers disclose unknowns. Support review flags failure to state known use. Keep concern explicit; numbered list is not an invented achievement metric."
+        },
+        {
+          "field": "artifactReview.claims[*].state / concerns",
+          "assessment": "not_accepted",
+          "source": "Same exact source facts and posting",
+          "finding": "Independent review completed but body/answers unsupported and title/summary citations invalid."
+        }
+      ]
+    }
+  },
+  {
+    "index": 19,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Draft text preserves sparse Java/AWS uncertainty, but independent artifact support remains unsupported. No accepted end-to-end result.",
+      "fields": [
+        {
+          "field": "jobTitle / company / jobSummary",
+          "assessment": "supported",
+          "source": "Java developer. AWS required. Answer: how do you use Java?",
+          "finding": "Role and AWS requirement present; employer remains null. Job citations supported by review."
+        },
+        {
+          "field": "resume / resumeReview.claims[*]",
+          "assessment": "complete",
+          "source": "p/skill@1 = Java; excerpt I use Java.",
+          "finding": "Only Java skill is stated; independent resume review supported, no invented work history."
+        },
+        {
+          "field": "coverLetter.greeting / closing",
+          "assessment": "nonfactual",
+          "source": "Application drafting context",
+          "finding": "Conventional English greeting/closing; no candidate fact asserted."
+        },
+        {
+          "field": "coverLetter.body",
+          "assessment": "unsupported_support_check",
+          "source": "Java skill and posting AWS required; no AWS candidate evidence",
+          "finding": "Does not claim AWS experience. Review raises applicant-intent/use objections; these are recorded judgments, not proof of fabricated career history."
+        },
+        {
+          "field": "applicationAnswers",
+          "assessment": "uncertainty_with_review_concerns",
+          "source": "Question how do you use Java?; excerpt I use Java.; no projects/AWS evidence",
+          "finding": "Java question is answered at skill level with use-context unknown; no fabricated use detail. Additional AWS/project answers disclose unknowns. Support review flags failure to state known use. Keep concern explicit; numbered list is not an invented achievement metric."
+        },
+        {
+          "field": "artifactReview.claims[*].state / concerns",
+          "assessment": "not_accepted",
+          "source": "Same exact source facts and posting",
+          "finding": "Independent review completed but body/answers unsupported. No assumption that a finished support check means acceptance."
+        }
+      ]
+    }
+  },
+  {
+    "index": 20,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Generation and resume support completed, but artifact review was unavailable at the unchanged workflow deadline. No accepted full draft.",
+      "fields": [
+        {
+          "field": "jobTitle / company / jobSummary",
+          "assessment": "supported",
+          "source": "Java developer. AWS required. Answer: how do you use Java?",
+          "finding": "Role, AWS, and requested Java answer retained; company remains null."
+        },
+        {
+          "field": "resume / resumeReview",
+          "assessment": "complete",
+          "source": "p/skill@1 Java; I use Java.",
+          "finding": "Java only; independent resume support completed and supported."
+        },
+        {
+          "field": "coverLetter.body / applicationAnswers",
+          "assessment": "source_consistent_but_unverified",
+          "source": "I use Java.; no project or AWS evidence",
+          "finding": "Explicitly states I use Java and does not invent development tasks, projects, or AWS experience. Extra questions acknowledge unknowns."
+        },
+        {
+          "field": "coverLetter.greeting / closing",
+          "assessment": "nonfactual",
+          "source": "Application drafting context",
+          "finding": "Conventional English wording."
+        },
+        {
+          "field": "artifactReview.check / claims[*]",
+          "assessment": "unavailable",
+          "source": "Same sparse approved facts and posting",
+          "finding": "check_unavailable: all artifact claims uncertain; HTTP 200 does not mean complete or accepted support."
+        }
+      ]
+    }
+  },
+  {
+    "index": 21,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Java fact and skills destination supported. Reject English claim text on Portuguese input.",
+      "fields": [
+        {
+          "field": "claims[0].text / meaning / source",
+          "assessment": "language_drift",
+          "source": "Eu uso Java; empty profile",
+          "finding": "Uses Java. is English."
+        },
+        {
+          "field": "operations[0].value / target",
+          "assessment": "complete",
+          "source": "Eu uso Java; empty skills",
+          "finding": "Java added to skills with returned claim ID."
+        },
+        {
+          "field": "outcomes[0].reason",
+          "assessment": "supported",
+          "source": "Eu uso Java; empty skills",
+          "finding": "Portuguese explanation relates explicit use and absent skill."
+        }
+      ]
+    }
+  },
+  {
+    "index": 22,
+    "review": {
+      "accepted": true,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Java fact and skills destination supported. Portuguese claim and explanation retained.",
+      "fields": [
+        {
+          "field": "claims[0].text / meaning / source",
+          "assessment": "supported",
+          "source": "Eu uso Java; empty profile",
+          "finding": "Usa Java. preserves explicit personal use; no added level or history."
+        },
+        {
+          "field": "operations[0].value / target",
+          "assessment": "complete",
+          "source": "Eu uso Java; empty skills",
+          "finding": "Java added to skills with returned claim ID."
+        },
+        {
+          "field": "outcomes[0].reason",
+          "assessment": "supported",
+          "source": "Eu uso Java; empty skills",
+          "finding": "Portuguese explanation relates explicit use and absent skill."
+        }
+      ]
+    }
+  },
+  {
+    "index": 23,
+    "review": {
+      "accepted": true,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Java fact and skills destination supported. Portuguese claim and explanation retained.",
+      "fields": [
+        {
+          "field": "claims[0].text / meaning / source",
+          "assessment": "supported",
+          "source": "Eu uso Java; empty profile",
+          "finding": "Usa Java. preserves explicit personal use; no added level or history."
+        },
+        {
+          "field": "operations[0].value / target",
+          "assessment": "complete",
+          "source": "Eu uso Java; empty skills",
+          "finding": "Java added to skills with returned claim ID."
+        },
+        {
+          "field": "outcomes[0].reason",
+          "assessment": "supported",
+          "source": "Eu uso Java; empty skills",
+          "finding": "Portuguese explanation relates explicit use and absent skill."
+        }
+      ]
+    }
+  },
+  {
+    "index": 24,
+    "review": {
+      "accepted": true,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Portuguese 20% latency statement and stable selection retained; no new achievement or owner.",
+      "fields": [
+        {
+          "field": "summary[0].text",
+          "assessment": "supported",
+          "source": "Reduzi a latência em 20%.; legacy block, unsupported, unknown certainty",
+          "finding": "Metric retained in Portuguese. Original source-authored legacy assertion preserved."
+        },
+        {
+          "field": "summary[0].sourceIds / selected",
+          "assessment": "complete",
+          "source": "stable-impact; owner role-a",
+          "finding": "Only stable-impact selected; no employer or different owner introduced."
+        }
+      ]
+    }
+  },
+  {
+    "index": 25,
+    "review": {
+      "accepted": true,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Portuguese 20% latency statement and stable selection retained; no new achievement or owner.",
+      "fields": [
+        {
+          "field": "summary[0].text",
+          "assessment": "supported",
+          "source": "Reduzi a latência em 20%.; legacy block, unsupported, unknown certainty",
+          "finding": "Metric retained in Portuguese. Explicit uncertainty follows source metadata; no assertion of newly verified evidence."
+        },
+        {
+          "field": "summary[0].sourceIds / selected",
+          "assessment": "complete",
+          "source": "stable-impact; owner role-a",
+          "finding": "Only stable-impact selected; no employer or different owner introduced."
+        }
+      ]
+    }
+  },
+  {
+    "index": 26,
+    "review": {
+      "accepted": true,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Portuguese 20% latency statement and stable selection preserved without new fact.",
+      "fields": [
+        {
+          "field": "summary[0].text",
+          "assessment": "supported",
+          "source": "Reduzi a latência em 20%.",
+          "finding": "Exact Portuguese source statement; legacy support remains unverified."
+        },
+        {
+          "field": "summary[0].sourceIds / selected",
+          "assessment": "complete",
+          "source": "stable-impact; owner role-a",
+          "finding": "Only stable-impact selected; no invented employer or owner."
+        }
+      ]
+    }
+  },
+  {
+    "index": 27,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Unsupported ownership addition: Java proposed as the user skill before subject clarification. English claim and Spanish explanation also drift from Portuguese; answer leg not sent.",
+      "fields": [
+        {
+          "field": "steps[0].claims[0].text / question",
+          "assessment": "language_drift_and_missing_question",
+          "source": "Ele usou Java.",
+          "finding": "A person referred to as Ele used Java is English; subject remains unidentified and question is empty."
+        },
+        {
+          "field": "steps[0].operations[0].value / target",
+          "assessment": "unsupported_assertion",
+          "source": "Ele usou Java.; empty user profile; answer not yet dispatched",
+          "finding": "Adds Java to user skills without evidence that Ele refers to the user. Curated forbidden regex count zero misses this ownership error."
+        },
+        {
+          "field": "steps[0].outcomes[0].reason",
+          "assessment": "language_drift",
+          "source": "Portuguese original",
+          "finding": "Spanish explanation repeats third-person source while justifying user skill addition."
+        },
+        {
+          "field": "final clarification result",
+          "assessment": "unmeasured",
+          "source": "Frozen answer Eu usei Java na Acme.",
+          "finding": "No actual unresolved question, so runner stops with 409 instead of sending answer."
+        }
+      ]
+    }
+  },
+  {
+    "index": 28,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Answer origin retained but actual personal Java/Acme content not incorporated; asks the original question again in English.",
+      "fields": [
+        {
+          "field": "steps[0].claims[0].text / question",
+          "assessment": "language_drift",
+          "source": "Ele usou Java.",
+          "finding": "English Someone used Java and Who does Ele refer to; no premature operation."
+        },
+        {
+          "field": "claims[0].text / supportingSources / question",
+          "assessment": "material_omission",
+          "source": "Eu usei Java na Acme.",
+          "finding": "Records clarification_answer source but repeats Ele usou Java and English subject question, omitting personal use and Acme."
+        },
+        {
+          "field": "operations",
+          "assessment": "material_omission",
+          "source": "Eu usei Java na Acme.; empty skills",
+          "finding": "No Java destination despite deliberate answer; no invented skill on initial leg."
+        }
+      ]
+    }
+  },
+  {
+    "index": 29,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Portuguese initial question handled subject ambiguity, but answer leg failed source contract with HTTP 502 invalid_output. No final Java/Acme proposal.",
+      "fields": [
+        {
+          "field": "steps[0].claims[0].text / question / operations",
+          "assessment": "supported",
+          "source": "Ele usou Java.",
+          "finding": "Portuguese unspecified-person claim and subject question; no premature skill."
+        },
+        {
+          "field": "steps[1].providerOutputs[0] / output.error",
+          "assessment": "failure",
+          "source": "Eu usei Java na Acme.",
+          "finding": "Provider includes answer text but keeps subject unresolved and returns invalid source linkage; backend rejects before reconciliation. Personal Java/Acme fact and destination absent."
+        }
+      ]
+    }
+  },
+  {
+    "index": 30,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Initial uncertainty is preserved but no question is returned; runner stops before deliberate correction answer. No completed correction proposal.",
+      "fields": [
+        {
+          "field": "steps[0].claims[0].text / meaning",
+          "assessment": "language_drift",
+          "source": "Meu email pode ser old@example.test.",
+          "finding": "Email may be old@example.test is English."
+        },
+        {
+          "field": "steps[0].outcomes[0] / operations",
+          "assessment": "supported",
+          "source": "Existing profile email old@example.test; uncertain original",
+          "finding": "No change is proposed; unresolved disposition does not confirm old address or invent a new one."
+        },
+        {
+          "field": "steps[0].claims[0].question / final correction",
+          "assessment": "unmeasured",
+          "source": "Frozen answer Use new@example.test; old@example.test está obsoleto.",
+          "finding": "Empty question prevents answer dispatch. New email and replacement quality not observed."
+        }
+      ]
+    }
+  },
+  {
+    "index": 31,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Initial uncertainty is preserved but no question is returned; runner stops before deliberate correction answer. No completed correction proposal.",
+      "fields": [
+        {
+          "field": "steps[0].claims[0].text / meaning",
+          "assessment": "supported",
+          "source": "Meu email pode ser old@example.test.",
+          "finding": "Portuguese claim preserves may-be uncertainty and existing address."
+        },
+        {
+          "field": "steps[0].outcomes[0] / operations",
+          "assessment": "supported",
+          "source": "Existing profile email old@example.test; uncertain original",
+          "finding": "No change is proposed; unresolved disposition does not confirm old address or invent a new one."
+        },
+        {
+          "field": "steps[0].claims[0].question / final correction",
+          "assessment": "unmeasured",
+          "source": "Frozen answer Use new@example.test; old@example.test está obsoleto.",
+          "finding": "Empty question prevents answer dispatch. New email and replacement quality not observed."
+        }
+      ]
+    }
+  },
+  {
+    "index": 32,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Initial uncertainty is preserved but no question is returned; runner stops before deliberate correction answer. No completed correction proposal.",
+      "fields": [
+        {
+          "field": "steps[0].claims[0].text / meaning",
+          "assessment": "supported",
+          "source": "Meu email pode ser old@example.test.",
+          "finding": "Portuguese claim preserves may-be uncertainty and existing address."
+        },
+        {
+          "field": "steps[0].outcomes[0] / operations",
+          "assessment": "supported",
+          "source": "Existing profile email old@example.test; uncertain original",
+          "finding": "No change is proposed; unresolved disposition does not confirm old address or invent a new one."
+        },
+        {
+          "field": "steps[0].claims[0].question / final correction",
+          "assessment": "unmeasured",
+          "source": "Frozen answer Use new@example.test; old@example.test está obsoleto.",
+          "finding": "Empty question prevents answer dispatch. New email and replacement quality not observed."
+        }
+      ]
+    }
+  },
+  {
+    "index": 33,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Tool09 fact and operation omitted after support_source rejection; reject English claim texts on Portuguese input. Valid tools destinations are not semantic omissions.",
+      "fields": [
+        {
+          "field": "claims[*].text / source",
+          "assessment": "material_omission_and_language_drift",
+          "source": "Uso Tool00 em serviços. through Uso Tool34 em serviços.",
+          "finding": "English Uses ToolNN in services throughout. Tool09 rejected as support_source and absent from returned claims; 34/35 facts."
+        },
+        {
+          "field": "operations[*].value / target",
+          "assessment": "material_omission",
+          "source": "Same 35 Portuguese source lines; empty tools",
+          "finding": "Valid tools placement rather than frozen skills labels. Tool09 addition truly missing; other 34 supported."
+        },
+        {
+          "field": "steps[*].outcomes[*].reason",
+          "assessment": "supported",
+          "source": "Same source lines and empty tools",
+          "finding": "Portuguese reasons correctly describe absent tools. Skipped Tool09 retained in step evidence."
+        }
+      ]
+    }
+  },
+  {
+    "index": 34,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "All 35 tool facts and operations retained; reject English claim texts on Portuguese input. Valid tools destinations are not semantic omissions.",
+      "fields": [
+        {
+          "field": "claims[*].text / source",
+          "assessment": "language_drift",
+          "source": "Uso Tool00 em serviços. through Uso Tool34 em serviços.",
+          "finding": "English Uses ToolNN in services throughout. All 35 exact tool names and service contexts retained."
+        },
+        {
+          "field": "operations[*].value / target",
+          "assessment": "complete",
+          "source": "Same 35 Portuguese source lines; empty tools",
+          "finding": "Valid tools placement rather than frozen skills labels. All 35 tool additions supported, no extra factual detail."
+        },
+        {
+          "field": "steps[*].outcomes[*].reason",
+          "assessment": "supported",
+          "source": "Same source lines and empty tools",
+          "finding": "Portuguese reasons correctly describe absent tools. No observed omission or unsupported career assertion."
+        }
+      ]
+    }
+  },
+  {
+    "index": 35,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "First Portuguese continuation portion times out at unchanged provider deadline; no second portion or completed claims.",
+      "fields": [
+        {
+          "field": "steps[0].output.error",
+          "assessment": "failure",
+          "source": "35 frozen Portuguese tool lines",
+          "finding": "HTTP 504 timeout; reached Jev and extraction dispatch counted, unavailable timed-out usage retained null."
+        },
+        {
+          "field": "claims / operations",
+          "assessment": "unmeasured",
+          "source": "Both frozen continuation portions",
+          "finding": "No completed output; full denominator retained rather than treating absent output as precision success."
+        }
+      ]
+    }
+  },
+  {
+    "index": 36,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Jev asks for more posting detail; Portuguese matching and understanding not dispatched.",
+      "fields": [
+        {
+          "field": "decision.outcome",
+          "assessment": "blocked",
+          "source": "Java obrigatório.",
+          "finding": "request_information / responsibilities_or_qualifications; no gate bypass."
+        },
+        {
+          "field": "matches / jobUnderstanding",
+          "assessment": "unmeasured",
+          "source": "Approved Java fact p/skill@1; I use Java.",
+          "finding": "No downstream output; cannot compare matching quality on this sparse fixture."
+        }
+      ]
+    }
+  },
+  {
+    "index": 37,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Jev asks for more posting detail; Portuguese matching and understanding not dispatched.",
+      "fields": [
+        {
+          "field": "decision.outcome",
+          "assessment": "blocked",
+          "source": "Java obrigatório.",
+          "finding": "request_information / responsibilities_or_qualifications; no gate bypass."
+        },
+        {
+          "field": "matches / jobUnderstanding",
+          "assessment": "unmeasured",
+          "source": "Approved Java fact p/skill@1; I use Java.",
+          "finding": "No downstream output; cannot compare matching quality on this sparse fixture."
+        }
+      ]
+    }
+  },
+  {
+    "index": 38,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Jev asks for more posting detail; Portuguese matching and understanding not dispatched.",
+      "fields": [
+        {
+          "field": "decision.outcome",
+          "assessment": "blocked",
+          "source": "Java obrigatório.",
+          "finding": "request_information / responsibilities_or_qualifications; no gate bypass."
+        },
+        {
+          "field": "matches / jobUnderstanding",
+          "assessment": "unmeasured",
+          "source": "Approved Java fact p/skill@1; I use Java.",
+          "finding": "No downstream output; cannot compare matching quality on this sparse fixture."
+        }
+      ]
+    }
+  },
+  {
+    "index": 39,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Portuguese Java answer is present, unlike the historical omission, but artifact support has invalid citations.",
+      "fields": [
+        {
+          "field": "jobTitle / company / jobSummary",
+          "assessment": "citation_failure",
+          "source": "Desenvolvedor Java. AWS obrigatório. Responda em português: como você usa Java?",
+          "finding": "Role and AWS retained, company null. Summary job offsets invalid; title supported."
+        },
+        {
+          "field": "resume / resumeReview.claims[*]",
+          "assessment": "complete",
+          "source": "p/skill@1 Java; I use Java.",
+          "finding": "Portuguese rendering of Java use/skill, independent resume review supported; no work history invented."
+        },
+        {
+          "field": "coverLetter.greeting / closing",
+          "assessment": "nonfactual",
+          "source": "Portuguese application context",
+          "finding": "Conventional Portuguese salutation/closing."
+        },
+        {
+          "field": "coverLetter.body",
+          "assessment": "unsupported_support_check",
+          "source": "Java skill/use, posting AWS requirement; no AWS evidence",
+          "finding": "Source-consistent Java statement and explicit AWS uncertainty; invalid job citations prevent support. Conventional application interest is not counted as fabricated career history."
+        },
+        {
+          "field": "applicationAnswers: Java/AWS",
+          "assessment": "known_fact_present_context_unknown",
+          "source": "I use Java.; no task/project/AWS evidence",
+          "finding": "Uso Java is explicitly present in Portuguese; no invented how-use context or AWS qualification. Review flags incomplete how-use; unknown additional education/certification/language details remain unknown."
+        },
+        {
+          "field": "applicationAnswers: language preference",
+          "assessment": "unknowns_preserved",
+          "source": "cvLanguage pt-BR and job asks Portuguese; no personal language preference fact",
+          "finding": "No languages or certifications claimed; absence of supplied detail remains explicit."
+        },
+        {
+          "field": "artifactReview.claims[*].concerns",
+          "assessment": "not_accepted",
+          "source": "Same exact source facts and posting",
+          "finding": "Invalid citations retained. Numbered-answer invented_number flags are not invented achievement metrics; provider concerns do not alone prove factual fabrication."
+        }
+      ]
+    }
+  },
+  {
+    "index": 40,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Portuguese Java answer is present, unlike the historical omission, but artifact support has invalid citations.",
+      "fields": [
+        {
+          "field": "jobTitle / company / jobSummary",
+          "assessment": "citation_failure",
+          "source": "Desenvolvedor Java. AWS obrigatório. Responda em português: como você usa Java?",
+          "finding": "Role and AWS retained, company null. Summary job offsets invalid; title supported."
+        },
+        {
+          "field": "resume / resumeReview.claims[*]",
+          "assessment": "complete",
+          "source": "p/skill@1 Java; I use Java.",
+          "finding": "Portuguese rendering of Java use/skill, independent resume review supported; no work history invented."
+        },
+        {
+          "field": "coverLetter.greeting / closing",
+          "assessment": "nonfactual",
+          "source": "Portuguese application context",
+          "finding": "Conventional Portuguese salutation/closing."
+        },
+        {
+          "field": "coverLetter.body",
+          "assessment": "unsupported_support_check",
+          "source": "Java skill/use, posting AWS requirement; no AWS evidence",
+          "finding": "Source-consistent Java statement and explicit AWS uncertainty; invalid job citations prevent support. Conventional application interest is not counted as fabricated career history."
+        },
+        {
+          "field": "applicationAnswers: Java/AWS",
+          "assessment": "known_fact_present_context_unknown",
+          "source": "I use Java.; no task/project/AWS evidence",
+          "finding": "Uso Java is explicitly present in Portuguese; no invented how-use context or AWS qualification. Review flags incomplete how-use and AWS answer."
+        },
+        {
+          "field": "applicationAnswers: language preference",
+          "assessment": "context_supported",
+          "source": "cvLanguage pt-BR and job asks Portuguese; no personal language preference fact",
+          "finding": "The answer is scoped to this application, whose explicit cvLanguage is pt-BR. This supports the chosen application language, not a general personal language fact; provider objection is retained without counting a fabricated career claim."
+        },
+        {
+          "field": "artifactReview.claims[*].concerns",
+          "assessment": "not_accepted",
+          "source": "Same exact source facts and posting",
+          "finding": "Invalid citations retained. Numbered-answer invented_number flags are not invented achievement metrics; provider concerns do not alone prove factual fabrication."
+        }
+      ]
+    }
+  },
+  {
+    "index": 41,
+    "review": {
+      "accepted": false,
+      "method": "agent-assisted source review; synthetic evaluation acceptance only",
+      "reason": "Portuguese Java answer present and sparse unknowns preserved, but artifact support unavailable at workflow deadline. No complete accepted draft.",
+      "fields": [
+        {
+          "field": "jobTitle / company / jobSummary",
+          "assessment": "source_consistent_but_unverified",
+          "source": "Desenvolvedor Java. AWS obrigatório. Responda em português: como você usa Java?",
+          "finding": "Role, AWS and requested answer retained; company unknown."
+        },
+        {
+          "field": "resume / resumeReview",
+          "assessment": "complete",
+          "source": "p/skill@1 Java; I use Java.",
+          "finding": "Only Java skill; independent resume support complete and supported."
+        },
+        {
+          "field": "coverLetter.body / applicationAnswers",
+          "assessment": "source_consistent_but_unverified",
+          "source": "I use Java.; no projects/tasks/AWS evidence",
+          "finding": "Uso Java explicitly present; development context and AWS remain unknown. No invented proficiency, projects, or AWS qualification."
+        },
+        {
+          "field": "coverLetter.greeting / closing",
+          "assessment": "nonfactual",
+          "source": "Portuguese application context",
+          "finding": "Conventional salutation and closing."
+        },
+        {
+          "field": "artifactReview.check / claims[*]",
+          "assessment": "unavailable",
+          "source": "Same approved source and posting",
+          "finding": "Workflow transport_failure; check unavailable and all artifacts uncertain. No automatic retry or assumption of acceptance."
+        }
+      ]
+    }
+  }
+]

@@ -159,11 +159,17 @@ mode, authorization and credential flags. New output files are required in every
 mode. Source and fixture hashes identify the exact workflow even for an
 uncommitted evaluation; compiler VCS metadata records the starting commit.
 
-## Current execution status
+## Completed execution and decision
 
-The first authorized live invocation stopped while opening the inaccessible
-credential vault, before reading keys or dispatching any provider request.
-Fresh provider comparison and source-grounded output adjudication remain pending
-until the user unlocks the vault or supplies readable credential-file paths.
-Controlled success is not live model, cache, latency, cost or factual-quality
-evidence. Current production settings remain unchanged.
+After the user unlocked the vault, the authorized live matrix completed with
+42 logical results, 51 HTTP attempts and 132 provider calls, with no retries.
+`live.v1.json` preserves the original evidence. `reviews.v1.json` annotates every
+result against its synthetic sources; `reviewed.v1.json` is an offline derivation
+linked to the original SHA-256. Original outputs, calls and curated scores are
+unchanged by review.
+
+[The configuration decision](decision.md) retains current fixed settings:
+neither candidate demonstrated the required end-to-end quality/runtime benefit.
+It records language drift, unsupported ownership, omissions, incomplete support,
+cache usage, latency, and unavailable total/accepted-result cost explicitly.
+Current quality is not certified by retaining its settings; #65 remains open.
