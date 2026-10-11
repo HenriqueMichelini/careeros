@@ -206,3 +206,25 @@ are retained in [local diagnostic checks](issue-52/local-diagnosis.live.json).
 This supplemental correction still requires deployed verification. The release
 gate remains open for provider source-ID reliability, faithful complete drafts
 and unavailable accepted-result cost.
+
+
+## Supplemental deployed confirmation
+
+The user approved publication of `1c46de8` (deploy
+`6acbc1dbcfef520008b975b5`) and two further synthetic draft checks. This build
+is published and locked. Both the published origin and immutable PR #94 preview
+origin returned 200/no-store and parsed through the actual public client.
+Invalid job citations remained unsupported concerns, valid excerpts remained
+inspectable, and neither output could be accepted. Both authorized attempts
+were used without retry. These were direct HTTPS responses replayed through the
+public client, not a live browser interaction. The previously observed actual
+browser failure is preserved above rather than relabeled as passing.
+
+[Final deployed draft checks](issue-52/citation-fix.deployed.live.json) record
+origins/revision, request hashes/IDs, measured HTTP duration, separated handler
+and provider timing/token usage, bounded content-free operational logs and
+client parse/acceptance outcomes. Thus both identified integration corrections
+have deployed evidence. Provider source-ID reliability, faithful complete live
+application drafts and actual accepted-result cost remain unresolved; #52
+stays open and the MVP/milestone release gate is not certified. PRs #93 and #94
+are merged into `main`; the milestone branch is synchronized with those merges.
