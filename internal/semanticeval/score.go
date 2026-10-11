@@ -18,20 +18,23 @@ type Atom struct {
 	Source   string            `json:"source,omitempty"`
 }
 type Case struct {
-	ID               string            `json:"id"`
-	Task             string            `json:"task"`
-	Language         string            `json:"language"`
-	Split            string            `json:"split"`
-	Tags             []string          `json:"tags"`
-	SourceID         string            `json:"sourceId,omitempty"`
-	Request          json.RawMessage   `json:"request"`
-	Provider         []json.RawMessage `json:"provider"`
-	Gold             []Atom            `json:"gold"`
-	Forbidden        []string          `json:"forbidden"`
-	Notes            string            `json:"notes"`
-	Entities         []string          `json:"entities,omitempty"`
-	ExpectedFailures []string          `json:"expectedFailures,omitempty"`
-	Role             string            `json:"role,omitempty"`
+	SequenceOutput    string            `json:"sequenceOutput,omitempty"`
+	Steps             []Case            `json:"steps,omitempty"`
+	ID                string            `json:"id"`
+	Task              string            `json:"task"`
+	Language          string            `json:"language"`
+	Split             string            `json:"split"`
+	Tags              []string          `json:"tags"`
+	SourceID          string            `json:"sourceId,omitempty"`
+	Request           json.RawMessage   `json:"request"`
+	Provider          []json.RawMessage `json:"provider"`
+	ProviderEnvelopes []json.RawMessage `json:"providerEnvelopes,omitempty"`
+	Gold              []Atom            `json:"gold"`
+	Forbidden         []string          `json:"forbidden"`
+	Notes             string            `json:"notes"`
+	Entities          []string          `json:"entities,omitempty"`
+	ExpectedFailures  []string          `json:"expectedFailures,omitempty"`
+	Role              string            `json:"role,omitempty"`
 }
 type Result struct {
 	Expected              int                 `json:"expected"`
@@ -204,6 +207,18 @@ func ratio(numerator, denominator int) float64 {
 
 func outputUnits(group string, output map[string]any) []map[string]string {
 	switch group {
+	case "resumeReview", "artifactReview":
+		review, ok := output[group].(map[string]any)
+		if !ok {
+			return nil
+		}
+		units := []map[string]string{{"check": fmt.Sprint(review["check"])}}
+		if claims, ok := review["claims"].([]any); ok {
+			for _, claim := range claims {
+				units = append(units, valueFields(claim))
+			}
+		}
+		return units
 	case "draft":
 		return draftUnits(output)
 	case "wording":
@@ -343,6 +358,22 @@ func Validate(cases []Case) error {
 		ids[c.ID] = true
 		if err := validateCase(c); err != nil {
 			return err
+		}
+		if len(c.Steps) > 0 {
+			if c.SequenceOutput != "" && c.SequenceOutput != "union" && c.SequenceOutput != "final" {
+				return fmt.Errorf("invalid sequence output in %s", c.ID)
+			}
+			if c.Task != "profile_ingestion" || len(c.Steps) > 256 {
+				return fmt.Errorf("invalid continuation in %s", c.ID)
+			}
+			for _, step := range c.Steps {
+				if step.Task != c.Task || step.Language != c.Language || step.Split != c.Split || len(step.Steps) > 0 {
+					return fmt.Errorf("continuation metadata mismatch in %s", c.ID)
+				}
+			}
+			if err := Validate(c.Steps); err != nil {
+				return err
+			}
 		}
 		key, err := requestKey(c)
 		if err != nil {
