@@ -14,8 +14,9 @@ qualification analysis, resume and artifact acceptance seams in `tests/evidence-
 fixed workflow configuration was selected and never used to tune it. These
 cases do not run a model or substitute for a single live browser journey.
 Existing controlled browser checks exercise the actual rendered UI separately.
-No production prompt, model, safety gate, normalizer or persistence contract was
-changed. Verification exposed an empty-contact comparison defect: canonical
+The initial verification left production prompts, models, safety gates,
+normalization and persistence contracts unchanged. The later citation-catalog
+correction is recorded separately below. Verification exposed an empty-contact comparison defect: canonical
 empty fields disagreed with omitted optional fields in the ingestion request.
 The fix compares actual contact strings; all five nonempty mismatches still
 fail before any provider call. The public-handler regression was red before
@@ -261,3 +262,38 @@ responses stayed private. Inherited fixture scorer labels were inapplicable to
 the changed input and are not presented as semantic quality measurements.
 These checks add no deployed/browser evidence or accepted-result billing data.
 Issue #52 remains open with its full acceptance scope and release gate intact.
+
+
+## Prepared artifact citation catalog
+
+The remaining live artifact failures included incorrect UTF-8 byte offsets.
+The support policy previously required the model to calculate those offsets from
+prose. The bounded correction supplies `jobCitations` assembled from the shared
+prepared source's occurrence-specific original ranges and exact original text.
+The model is instructed to copy the applicable objects, without calculating,
+shortening, combining or repairing them. No second normalizer or source mapper
+is introduced. The same prepared source used by generation reaches support.
+The support diagnostic policy version is now
+`artifact-support-openai-v2/prepared-citations-v1`.
+
+The public response and provider response schemas are unchanged. Existing
+UTF-8 bounds, exact quote, career/job scope, metadata, numeric and semantic
+support checks still apply; catalog membership alone is not proof of support.
+This change does not repair a returned invalid citation or automatically retry
+it. The existing malformed-citation regression still blocks acceptance.
+
+The new public-handler test failed before the change because no prepared
+citations were supplied, then passed with exact whole-original coverage for
+Portuguese accents, CRLF, repeated text and a protected URL. A controlled
+support response copies a supplied excerpt and retains its exact public
+citation. All Go tests, all 128 Node tests and TypeScript checks pass.
+
+The catalog repeats source excerpts in the provider envelope, so token use and
+runtime may increase. The existing serialized-envelope limit still returns an
+unavailable review before the support call when exceeded. No additional source
+is sent, no provider/model or safety policy changes, and no saved Profile write
+is added. Live quality, latency and cost impact are unverified: all prior
+provider-call authorizations are exhausted. The earlier diagnostic cases are
+retained as regression evidence and cannot serve as held-out proof of this
+prompt change. Issue #52 remains open pending separately authorized deployed
+verification and its other unresolved release gates.

@@ -313,7 +313,7 @@ func (a app) call(parent context.Context, key string, in request) (res result, c
 		return result{}, "invalid_output", errors.New("invalid output")
 	}
 	if in.ReviewArtifacts {
-		empty.ArtifactReview = a.reviewArtifacts(parent, key, in, empty, resumeDoc, resumeSelected)
+		empty.ArtifactReview = a.reviewArtifacts(parent, key, in, empty, resumeDoc, resumeSelected, source)
 	}
 	empty.ResumeReview = review
 	empty.ContextSelection = &selection
