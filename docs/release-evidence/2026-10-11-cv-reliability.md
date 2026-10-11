@@ -121,3 +121,18 @@ fixture/scorer identity; current successful attempts never replace old failures.
 No production behavior changed in this patch. No deployment verification or
 additional provider attempts were performed. The original EN rejection remains
 unexplained; the retained Portuguese exact-label miss remains visible.
+
+## Independent review
+
+The implement skill's code-review workflow reviewed immutable implementation
+commit `7ac402828d20e3eadc5eab2aabf242e5dc28c8db` against the confirmed baseline
+`e1a5c8c25aabec7f9b0e1e6e17c3798aff16a04b`, using separate agents:
+
+- Standards: no actionable findings; no hard documented-standard violations or
+  actionable baseline smell concerns.
+- Spec: no findings; evidence boundaries, retained PT label miss and unknown
+  historical EN cause are preserved. Issue/PR publication is the remaining
+  completion step outside the immutable patch review.
+
+Totals: Standards 0, Spec 0. This final documentation addition records the review;
+it changes no tested behavior or retained evidence.
