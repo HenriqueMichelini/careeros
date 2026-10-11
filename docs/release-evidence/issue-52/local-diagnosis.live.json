@@ -1,0 +1,622 @@
+{
+  "scope": "Authorized minimized synthetic local production-handler diagnostics; not deployed verification",
+  "authorizedWorkflowLimit": 6,
+  "attemptedWorkflows": 4,
+  "automaticRetries": 0,
+  "runs": [
+    {
+      "id": "diagnose52-pt-evidence-matching",
+      "task": "qualification_gaps",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "first256InstructionCharactersHash": "",
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "schemaHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "requestHash": "64206e9d43e1f22b37512b2b67b58f04f0cf9dcafa47e6a6cf1a64ef441c0de1",
+          "status": 200,
+          "returnedModel": "jev-1.13.0",
+          "durationMs": 290.607,
+          "inputTokens": 1080,
+          "outputTokens": 108,
+          "reasoningTokensSubsetOfOutput": null,
+          "cachedTokensSubsetOfInput": null,
+          "cacheWriteTokensSubsetOfInput": null
+        },
+        {
+          "first256InstructionCharactersHash": "28995d1a7470cdd34f4c6f18c8736398ba7da0dac31d5a26b8fa39792a210a22",
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 8000,
+          "promptHash": "769e879c017ce097d0a6e5a6ae68ff7825e263bfb0eade01d8884123bc9a1277",
+          "schemaHash": "6d3b71b0a212b4481b99ce861765ead15730bb434aade4a17fc7f5b50a721d76",
+          "requestHash": "66efaee95fcf34fafaf2b410375a6643b279866805d13fe5930e4639f088018b",
+          "status": 200,
+          "returnedModel": "gpt-6-luna",
+          "durationMs": 3472.282,
+          "inputTokens": 1027,
+          "outputTokens": 289,
+          "reasoningTokensSubsetOfOutput": 0,
+          "cachedTokensSubsetOfInput": 0,
+          "cacheWriteTokensSubsetOfInput": 1024
+        },
+        {
+          "first256InstructionCharactersHash": "ca6ac2f146d749e2f6a07cf10ab283d79b96becebc1e7f2dccc456d194cacc89",
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 8000,
+          "promptHash": "1d891f82ba29c7acfe34b2d809477d047b6eac693d00eedc2c00d3d7dd9cd9f7",
+          "schemaHash": "cdabd64085e4cdea0e51e4c1e769f134904cbe454df4cfedfc57b37687b2b6db",
+          "requestHash": "9d3df26b951f6ba248e611202f71366f023c76a04930fabc423a30e8a50c4e32",
+          "status": 200,
+          "returnedModel": "gpt-6-luna",
+          "durationMs": 1945.308,
+          "inputTokens": 671,
+          "outputTokens": 89,
+          "reasoningTokensSubsetOfOutput": 0,
+          "cachedTokensSubsetOfInput": 0,
+          "cacheWriteTokensSubsetOfInput": 0
+        }
+      ],
+      "diagnostics": {
+        "version": "ai-diagnostics-v1",
+        "attemptId": "91631c3334d06aa65c7d88d27da9f45f",
+        "workflow": "qualification_gaps",
+        "outcome": "completed",
+        "httpStatus": 200,
+        "durationMs": 5710.395859,
+        "applicationResultReuse": false,
+        "stages": [
+          {
+            "name": "field_validation",
+            "version": "jev-rubric-v1/policy-v1",
+            "outcome": "completed",
+            "durationMs": 290.924637,
+            "provider": {
+              "name": "typesafe",
+              "returnedModel": "jev-1.13.0",
+              "inputTokens": 1080,
+              "outputTokens": 108,
+              "reasoningTokens": null,
+              "prefixCachedTokens": null,
+              "outputTokenCeiling": null,
+              "durationMs": 290.750788,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "qualification_matching",
+            "version": "job-context-v2/prompt-v1/schema-v1/gpt-6-luna/none/jev-rubric-v1/policy-v1",
+            "outcome": "completed",
+            "durationMs": 5418.891432,
+            "provider": {
+              "name": "openai",
+              "returnedModel": "gpt-6-luna",
+              "inputTokens": 1027,
+              "outputTokens": 289,
+              "reasoningTokens": 0,
+              "prefixCachedTokens": 0,
+              "outputTokenCeiling": 8000,
+              "durationMs": 3472.542226,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "mechanical_preparation",
+            "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+            "outcome": "completed",
+            "durationMs": 0.279419,
+            "provider": null
+          },
+          {
+            "name": "requirement_evidence",
+            "version": "qualification-evidence-v2",
+            "outcome": "completed",
+            "durationMs": 1945.676577,
+            "provider": {
+              "name": "openai",
+              "returnedModel": "gpt-6-luna",
+              "inputTokens": 671,
+              "outputTokens": 89,
+              "reasoningTokens": 0,
+              "prefixCachedTokens": 0,
+              "outputTokenCeiling": 8000,
+              "durationMs": 1945.503947,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          }
+        ],
+        "accepted": null
+      }
+    },
+    {
+      "id": "diagnose52-pt-reviewed-draft",
+      "task": "application_draft",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "first256InstructionCharactersHash": "",
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "schemaHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "requestHash": "64206e9d43e1f22b37512b2b67b58f04f0cf9dcafa47e6a6cf1a64ef441c0de1",
+          "status": 200,
+          "returnedModel": "jev-1.13.0",
+          "durationMs": 244.401,
+          "inputTokens": 1080,
+          "outputTokens": 108,
+          "reasoningTokensSubsetOfOutput": null,
+          "cachedTokensSubsetOfInput": null,
+          "cacheWriteTokensSubsetOfInput": null
+        },
+        {
+          "first256InstructionCharactersHash": "f5c73ceb5554896c54957373fad297e36e494dde913ecef64f2c943f12ef105e",
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 8000,
+          "promptHash": "769c6e7e9af4be758bc55211d04737f5b3339f6cd68cb01b1deb71db7fdf3ab4",
+          "schemaHash": "1cfe575e386a4755acdc9ff44d43e73860d8e591f21659a40c6ab05dcf75d7fc",
+          "requestHash": "3476b2c9bdaa21280ad34e8b48f615cff8f3e24c1cf1c4cc1722fee6d9f19f7d",
+          "status": 200,
+          "returnedModel": "gpt-6-luna",
+          "durationMs": 3172.255,
+          "inputTokens": 1407,
+          "outputTokens": 197,
+          "reasoningTokensSubsetOfOutput": 0,
+          "cachedTokensSubsetOfInput": 0,
+          "cacheWriteTokensSubsetOfInput": 1404
+        },
+        {
+          "first256InstructionCharactersHash": "dee13999bad13867b92a7a17ad978dc7bfb0aa4eaa1c761665528d1c829ee5f2",
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 4000,
+          "promptHash": "c9d7c684c85d738f533b8652a47091f50a6704675b8f9c304bfb2872b1b3b5c4",
+          "schemaHash": "62e9341952024605e43d0439cb26c67ec2bce454fd18db49d307312f0766d1de",
+          "requestHash": "2dfb5120a2862f29fdf818aceb9a2109fe7700e761054a38db44dd7bd2308ee0",
+          "status": 200,
+          "returnedModel": "gpt-6-luna",
+          "durationMs": 1939.658,
+          "inputTokens": 471,
+          "outputTokens": 64,
+          "reasoningTokensSubsetOfOutput": 0,
+          "cachedTokensSubsetOfInput": 0,
+          "cacheWriteTokensSubsetOfInput": 0
+        },
+        {
+          "first256InstructionCharactersHash": "bbfb40239eba6e6ba91c2106616b80959e927de800ca76aa481b11eb5b4ccae0",
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 8000,
+          "promptHash": "a4e233d830c5cf5d4805fb795e4e05182778ae300178304fc2e10f004f88e78f",
+          "schemaHash": "a8b62152f6a45d3c61f9aff2d351a8af1fce63930ec2e0349b78ff0b3e873a44",
+          "requestHash": "47faa3cbc299f5b13c937effdcc42a77415ea2958187204a0070c238a71ca7e6",
+          "status": 200,
+          "returnedModel": "gpt-6-luna",
+          "durationMs": 4151.41,
+          "inputTokens": 1029,
+          "outputTokens": 404,
+          "reasoningTokensSubsetOfOutput": 0,
+          "cachedTokensSubsetOfInput": 0,
+          "cacheWriteTokensSubsetOfInput": 1026
+        }
+      ],
+      "diagnostics": {
+        "version": "ai-diagnostics-v1",
+        "attemptId": "55c3a39aff50227dcdc319f64c12c3dc",
+        "workflow": "application_draft",
+        "outcome": "complete",
+        "httpStatus": 200,
+        "durationMs": 9509.914005,
+        "applicationResultReuse": false,
+        "stages": [
+          {
+            "name": "field_validation",
+            "version": "jev-rubric-v1/policy-v1",
+            "outcome": "completed",
+            "durationMs": 244.610752,
+            "provider": {
+              "name": "typesafe",
+              "returnedModel": "jev-1.13.0",
+              "inputTokens": 1080,
+              "outputTokens": 108,
+              "reasoningTokens": null,
+              "prefixCachedTokens": null,
+              "outputTokenCeiling": null,
+              "durationMs": 244.488842,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "generation",
+            "version": "application-draft-policy-v2/context-v1/schema-v1",
+            "outcome": "completed",
+            "durationMs": 9264.851513,
+            "provider": {
+              "name": "openai",
+              "returnedModel": "gpt-6-luna",
+              "inputTokens": 1407,
+              "outputTokens": 197,
+              "reasoningTokens": 0,
+              "prefixCachedTokens": 0,
+              "outputTokenCeiling": 8000,
+              "durationMs": 3172.454276,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "mechanical_preparation",
+            "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+            "outcome": "completed",
+            "durationMs": 0.20084,
+            "provider": null
+          },
+          {
+            "name": "resume_support",
+            "version": "resume-support-openai-v1",
+            "outcome": "complete",
+            "durationMs": 1939.884142,
+            "provider": {
+              "name": "openai",
+              "returnedModel": "gpt-6-luna",
+              "inputTokens": 471,
+              "outputTokens": 64,
+              "reasoningTokens": 0,
+              "prefixCachedTokens": 0,
+              "outputTokenCeiling": 4000,
+              "durationMs": 1939.766683,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "artifact_support",
+            "version": "artifact-support-openai-v1",
+            "outcome": "complete",
+            "durationMs": 4151.931185,
+            "provider": {
+              "name": "openai",
+              "returnedModel": "gpt-6-luna",
+              "inputTokens": 1029,
+              "outputTokens": 404,
+              "reasoningTokens": 0,
+              "prefixCachedTokens": 0,
+              "outputTokenCeiling": 8000,
+              "durationMs": 4151.593635,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          }
+        ],
+        "accepted": null
+      }
+    },
+    {
+      "id": "diagnose52-pt-evidence-matching",
+      "task": "qualification_gaps",
+      "status": 502,
+      "noStore": true,
+      "calls": [
+        {
+          "first256InstructionCharactersHash": "",
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "schemaHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "requestHash": "64206e9d43e1f22b37512b2b67b58f04f0cf9dcafa47e6a6cf1a64ef441c0de1",
+          "status": 200,
+          "returnedModel": "jev-1.13.0",
+          "durationMs": 301.432,
+          "inputTokens": 1080,
+          "outputTokens": 108,
+          "reasoningTokensSubsetOfOutput": null,
+          "cachedTokensSubsetOfInput": null,
+          "cacheWriteTokensSubsetOfInput": null
+        },
+        {
+          "first256InstructionCharactersHash": "28995d1a7470cdd34f4c6f18c8736398ba7da0dac31d5a26b8fa39792a210a22",
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 8000,
+          "promptHash": "769e879c017ce097d0a6e5a6ae68ff7825e263bfb0eade01d8884123bc9a1277",
+          "schemaHash": "6d3b71b0a212b4481b99ce861765ead15730bb434aade4a17fc7f5b50a721d76",
+          "requestHash": "66efaee95fcf34fafaf2b410375a6643b279866805d13fe5930e4639f088018b",
+          "status": 200,
+          "returnedModel": "gpt-6-luna",
+          "durationMs": 2910.455,
+          "inputTokens": 1027,
+          "outputTokens": 285,
+          "reasoningTokensSubsetOfOutput": 0,
+          "cachedTokensSubsetOfInput": 1024,
+          "cacheWriteTokensSubsetOfInput": 0
+        }
+      ],
+      "diagnostics": {
+        "version": "ai-diagnostics-v1",
+        "attemptId": "a5db80022cceee56dfa020e87dbab62e",
+        "workflow": "qualification_gaps",
+        "outcome": "rejected_output",
+        "httpStatus": 502,
+        "durationMs": 3213.539014,
+        "applicationResultReuse": false,
+        "stages": [
+          {
+            "name": "field_validation",
+            "version": "jev-rubric-v1/policy-v1",
+            "outcome": "completed",
+            "durationMs": 301.686729,
+            "provider": {
+              "name": "typesafe",
+              "returnedModel": "jev-1.13.0",
+              "inputTokens": 1080,
+              "outputTokens": 108,
+              "reasoningTokens": null,
+              "prefixCachedTokens": null,
+              "outputTokenCeiling": null,
+              "durationMs": 301.551539,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "qualification_matching",
+            "version": "job-context-v2/prompt-v1/schema-v1/gpt-6-luna/none/jev-rubric-v1/policy-v1",
+            "outcome": "rejected_output",
+            "durationMs": 2911.294436,
+            "provider": {
+              "name": "openai",
+              "returnedModel": "gpt-6-luna",
+              "inputTokens": 1027,
+              "outputTokens": 285,
+              "reasoningTokens": 0,
+              "prefixCachedTokens": 1024,
+              "outputTokenCeiling": 8000,
+              "durationMs": 2910.774368,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "mechanical_preparation",
+            "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+            "outcome": "completed",
+            "durationMs": 0.205599,
+            "provider": null
+          }
+        ],
+        "accepted": null
+      }
+    },
+    {
+      "id": "diagnose52-pt-reviewed-draft",
+      "task": "application_draft",
+      "status": 200,
+      "noStore": true,
+      "calls": [
+        {
+          "first256InstructionCharactersHash": "",
+          "provider": "api.typesafe.ai",
+          "model": "jev-1.13.0",
+          "reasoning": null,
+          "promptHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "schemaHash": "3481f2a6210c343f98549ca812943998860fb34b8e3d9124c00e21d622e6413e",
+          "requestHash": "64206e9d43e1f22b37512b2b67b58f04f0cf9dcafa47e6a6cf1a64ef441c0de1",
+          "status": 200,
+          "returnedModel": "jev-1.13.0",
+          "durationMs": 299.179,
+          "inputTokens": 1080,
+          "outputTokens": 108,
+          "reasoningTokensSubsetOfOutput": null,
+          "cachedTokensSubsetOfInput": null,
+          "cacheWriteTokensSubsetOfInput": null
+        },
+        {
+          "first256InstructionCharactersHash": "f5c73ceb5554896c54957373fad297e36e494dde913ecef64f2c943f12ef105e",
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 8000,
+          "promptHash": "769c6e7e9af4be758bc55211d04737f5b3339f6cd68cb01b1deb71db7fdf3ab4",
+          "schemaHash": "1cfe575e386a4755acdc9ff44d43e73860d8e591f21659a40c6ab05dcf75d7fc",
+          "requestHash": "3476b2c9bdaa21280ad34e8b48f615cff8f3e24c1cf1c4cc1722fee6d9f19f7d",
+          "status": 200,
+          "returnedModel": "gpt-6-luna",
+          "durationMs": 2941.403,
+          "inputTokens": 1407,
+          "outputTokens": 195,
+          "reasoningTokensSubsetOfOutput": 0,
+          "cachedTokensSubsetOfInput": 1404,
+          "cacheWriteTokensSubsetOfInput": 0
+        },
+        {
+          "first256InstructionCharactersHash": "dee13999bad13867b92a7a17ad978dc7bfb0aa4eaa1c761665528d1c829ee5f2",
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 4000,
+          "promptHash": "c50274cd5610ae4eeee8dd582f55779b1969f596d63f7395e6c2f854bf0dc4b9",
+          "schemaHash": "62e9341952024605e43d0439cb26c67ec2bce454fd18db49d307312f0766d1de",
+          "requestHash": "2ecbafc97a857b5eb5d6e42cc4951b3e98d873831bcc3cec70fb611a064da599",
+          "status": 200,
+          "returnedModel": "gpt-6-luna",
+          "durationMs": 1967.353,
+          "inputTokens": 490,
+          "outputTokens": 82,
+          "reasoningTokensSubsetOfOutput": 0,
+          "cachedTokensSubsetOfInput": 0,
+          "cacheWriteTokensSubsetOfInput": 0
+        },
+        {
+          "first256InstructionCharactersHash": "bbfb40239eba6e6ba91c2106616b80959e927de800ca76aa481b11eb5b4ccae0",
+          "provider": "api.openai.com",
+          "model": "gpt-6-luna",
+          "reasoning": "none",
+          "maxCompletionTokens": 8000,
+          "promptHash": "cf8e0b5c70bbe467b41fddbea4ca6575508518a33cec40589b329c0ef9aa6cdd",
+          "schemaHash": "a8b62152f6a45d3c61f9aff2d351a8af1fce63930ec2e0349b78ff0b3e873a44",
+          "requestHash": "273caf152f7e7756f44b9e2f1888a233cce90c9758acaf734812a733061ca5e6",
+          "status": 200,
+          "returnedModel": "gpt-6-luna",
+          "durationMs": 3815.906,
+          "inputTokens": 1008,
+          "outputTokens": 423,
+          "reasoningTokensSubsetOfOutput": 0,
+          "cachedTokensSubsetOfInput": 0,
+          "cacheWriteTokensSubsetOfInput": 0
+        }
+      ],
+      "diagnostics": {
+        "version": "ai-diagnostics-v1",
+        "attemptId": "f9860af9c264eb1afd9a2fdeb58dfa6d",
+        "workflow": "application_draft",
+        "outcome": "complete",
+        "httpStatus": 200,
+        "durationMs": 9032.28037,
+        "applicationResultReuse": false,
+        "stages": [
+          {
+            "name": "field_validation",
+            "version": "jev-rubric-v1/policy-v1",
+            "outcome": "completed",
+            "durationMs": 299.44706,
+            "provider": {
+              "name": "typesafe",
+              "returnedModel": "jev-1.13.0",
+              "inputTokens": 1080,
+              "outputTokens": 108,
+              "reasoningTokens": null,
+              "prefixCachedTokens": null,
+              "outputTokenCeiling": null,
+              "durationMs": 299.29447,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "generation",
+            "version": "application-draft-policy-v2/context-v1/schema-v1",
+            "outcome": "completed",
+            "durationMs": 8732.207821,
+            "provider": {
+              "name": "openai",
+              "returnedModel": "gpt-6-luna",
+              "inputTokens": 1407,
+              "outputTokens": 195,
+              "reasoningTokens": 0,
+              "prefixCachedTokens": 1404,
+              "outputTokenCeiling": 8000,
+              "durationMs": 2941.669313,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "mechanical_preparation",
+            "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+            "outcome": "completed",
+            "durationMs": 0.22134,
+            "provider": null
+          },
+          {
+            "name": "resume_support",
+            "version": "resume-support-openai-v1",
+            "outcome": "complete",
+            "durationMs": 1967.66196,
+            "provider": {
+              "name": "openai",
+              "returnedModel": "gpt-6-luna",
+              "inputTokens": 490,
+              "outputTokens": 82,
+              "reasoningTokens": 0,
+              "prefixCachedTokens": 0,
+              "outputTokenCeiling": 4000,
+              "durationMs": 1967.48449,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "artifact_support",
+            "version": "artifact-support-openai-v1",
+            "outcome": "complete",
+            "durationMs": 3822.157418,
+            "provider": {
+              "name": "openai",
+              "returnedModel": "gpt-6-luna",
+              "inputTokens": 1008,
+              "outputTokens": 423,
+              "reasoningTokens": 0,
+              "prefixCachedTokens": 0,
+              "outputTokenCeiling": 8000,
+              "durationMs": 3821.771548,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          }
+        ],
+        "accepted": null
+      }
+    }
+  ],
+  "correctedDraftClient": {
+    "parsed": true,
+    "accepted": false,
+    "concerns": [
+      {
+        "field": "jobTitle",
+        "state": "unsupported",
+        "concerns": [
+          "changed_job_metadata",
+          "invalid_job_citation"
+        ]
+      },
+      {
+        "field": "jobSummary",
+        "state": "unsupported",
+        "concerns": [
+          "invalid_job_citation"
+        ]
+      },
+      {
+        "field": "greeting",
+        "state": "supported",
+        "concerns": []
+      },
+      {
+        "field": "body",
+        "state": "unsupported",
+        "concerns": [
+          "invalid_job_citation"
+        ]
+      },
+      {
+        "field": "applicationAnswers",
+        "state": "unsupported",
+        "concerns": [
+          "A afirmação de conhecimento em Java é apoiada pelo perfil, mas a resposta não explica como a pessoa usa Java.",
+          "A resposta à pergunta “como você usa Java?” apenas afirma conhecimento; não explica como Java é usado. A resposta deve estar em português, o que está atendido.",
+          "invalid_job_citation"
+        ]
+      }
+    ]
+  }
+}

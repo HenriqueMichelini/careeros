@@ -1,0 +1,161 @@
+{
+  "version": "issue52-truncated-job-source-v1",
+  "cases": [
+    {
+      "id": "pt-truncated-job-source-id",
+      "task": "qualification_gaps",
+      "language": "pt-BR",
+      "split": "heldout",
+      "tags": [
+        "short_posting",
+        "requirement_coverage"
+      ],
+      "request": {
+        "jobPosting": "Desenvolvedor Java. Responsabilidades: desenvolver aplicações em Java. Requisito obrigatório: conhecimento de Java. Responda em português: como você usa Java?",
+        "repository": {
+          "careerGoals": "",
+          "skills": "Java",
+          "competencies": "",
+          "tools": "",
+          "employmentStatus": "",
+          "currentSalary": "",
+          "desiredSalary": "",
+          "additionalInfo": "",
+          "experience": [],
+          "projects": []
+        },
+        "understandJob": true,
+        "profileEvidence": {
+          "version": 2,
+          "id": "p",
+          "revision": 1,
+          "normalizationPolicy": "exact-alias-v1",
+          "entities": [],
+          "facts": [
+            {
+              "id": "skill",
+              "revision": 1,
+              "owner": {
+                "profileId": "p",
+                "id": "p",
+                "revision": 1
+              },
+              "context": [],
+              "field": "skills",
+              "order": 0,
+              "kind": "statement",
+              "value": "Java",
+              "assertion": "affirmed",
+              "intent": "actual",
+              "certainty": "certain",
+              "temporal": {
+                "wording": "",
+                "precision": "unknown"
+              },
+              "normalization": {
+                "observed": "Java",
+                "canonical": null,
+                "policy": "exact-alias-v1"
+              },
+              "origin": {
+                "kind": "accepted_proposal",
+                "original": "unknown"
+              },
+              "approval": "approved",
+              "support": "supported"
+            }
+          ],
+          "evidence": [
+            {
+              "id": "e",
+              "revision": 1,
+              "excerpt": "I use Java.",
+              "origin": "submitted career notes",
+              "approval": "approved"
+            }
+          ],
+          "links": [
+            {
+              "id": "support",
+              "kind": "supports",
+              "from": {
+                "profileId": "p",
+                "id": "skill",
+                "revision": 1
+              },
+              "to": {
+                "profileId": "p",
+                "id": "e",
+                "revision": 1
+              },
+              "state": "active"
+            }
+          ]
+        }
+      },
+      "provider": [
+        {
+          "gaps": [],
+          "job": {
+            "applicationRequirements": [
+              {
+                "importance": "unspecified",
+                "source": {
+                  "occurrence": 0,
+                  "quote": "Responda em português: como você usa Java?",
+                  "segmentId": "dec2cb85042986fe53caa38e04c7eb7041f5f8916cfbdce9391c640fe1e19e07"
+                }
+              }
+            ],
+            "company": null,
+            "jobTitle": {
+              "occurrence": 0,
+              "quote": "Desenvolvedor Java",
+              "segmentId": "dec2cb85042986fe53caa38e04c7eb7041f5f8916cfbdce9391c640fe1e19e07"
+            },
+            "location": null,
+            "qualifications": [
+              {
+                "importance": "required",
+                "source": {
+                  "occurrence": 0,
+                  "quote": "Requisito obrigatório: conhecimento de Java.",
+                  "segmentId": "dec2cb85042986fe53caa38e04c7eb7041f5f8916cfbdce9391c640fe1e07"
+                }
+              }
+            ],
+            "responsibilities": [
+              {
+                "importance": "unspecified",
+                "source": {
+                  "occurrence": 0,
+                  "quote": "Responsabilidades: desenvolver aplicações em Java.",
+                  "segmentId": "dec2cb85042986fe53caa38e04c7eb7041f5f8916cfbdce9391c640fe1e07"
+                }
+              }
+            ],
+            "seniority": null
+          }
+        }
+      ],
+      "gold": [
+        {
+          "id": "java-match",
+          "group": "matches",
+          "match": {
+            "state": "^supported$",
+            "factIds": "skill",
+            "requirementIndex": "^0$",
+            "explanation": "^Java is an approved affirmative skill\\.$"
+          }
+        }
+      ],
+      "forbidden": [
+        "(?i)\\b(?:Kubernetes|senior)\\b"
+      ],
+      "notes": "Captured synthetic provider response with shortened source IDs; preserve rejection, never repair references by guess.",
+      "sourceId": "pt-short-job",
+      "role": "acceptance"
+    }
+  ]
+}
