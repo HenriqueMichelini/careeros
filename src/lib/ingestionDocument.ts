@@ -95,13 +95,14 @@ export function applyIngestionDocument(
       throw new IngestionError("invalid_output")
     edits.push({ type: "field", ownerId: owner, field: op.field, value })
   }
-  for (const kind of [
+  const entityKinds = [
     "experience",
     "projects",
     "education",
     "certifications",
     "languages",
-  ] as const) {
+  ] as const
+  for (const kind of entityKinds) {
     const existing = new Set(
       doc.entities.filter((e) => e.kind === kind).map((e) => e.legacyId),
     )
@@ -117,13 +118,7 @@ export function applyIngestionDocument(
     }
   }
   const next = editProfileBatch(doc, edits)
-  for (const kind of [
-    "experience",
-    "projects",
-    "education",
-    "certifications",
-    "languages",
-  ] as const) {
+  for (const kind of entityKinds) {
     const ids = updated[kind].map(
       (entry) =>
         next.entities.find((e) => e.kind === kind && e.legacyId === entry.id)!

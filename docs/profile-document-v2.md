@@ -32,7 +32,7 @@ Public-boundary tests cover lossless migration, absent/empty values, entry order
 
 ## Canonical manual editing (#37)
 
-Existing Profile forms now call `editProfile` through the store's `editCanonicalProfile` queue. Commands name the field owner, fact, entity or typed context explicitly; manual forms never replace a compatibility view. `replaceProfileView` remains only for transitional AI writers pending their migration tickets.
+Existing Profile forms now call `editProfile` through the store's `editCanonicalProfile` queue. Commands name the field owner, fact, entity or typed context explicitly; manual forms never replace a compatibility view. Accepted AI writers now use canonical transactions as well; #51 removed `replaceProfileView`.
 
 Manual corrections retain the affected fact ID, revise its user authorship and approval, and invalidate old excerpt support. Explicit assertion/intent/certainty/date precision remain available without inferring semantics from narrative or decomposing a migrated block. Employer/role/project/period identity changes invalidate dependent support. Typed corrections preserve unrelated links and inline references; context removal never reassigns evidence. Entry ordering does not alter meaning revisions. Moving into an occupied field is rejected atomically; remove the destination fact explicitly first.
 
