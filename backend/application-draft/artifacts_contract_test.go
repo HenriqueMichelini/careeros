@@ -361,3 +361,59 @@ func TestArtifactSupportReceivesExactPreparedJobCitations(t *testing.T) {
 		t.Fatalf("want three bounded calls, got %d", calls)
 	}
 }
+
+func TestArtifactSupportSeparatesGeneratedAndTemporaryAnswers(t *testing.T) {
+	for _, context := range []string{"", "I do not use AWS."} {
+		t.Run(context, func(t *testing.T) {
+			req := reviewedRequest(t)
+			var input map[string]any
+			json.NewDecoder(req.Body).Decode(&input)
+			input["reviewArtifacts"] = true
+			delete(input, "qualificationAnswers")
+			if context != "" {
+				input["qualificationAnswers"] = []any{map[string]string{"requirement": "AWS", "userContext": context}}
+			}
+			data, _ := json.Marshal(input)
+			req = httptest.NewRequest("POST", "/api/application-draft", strings.NewReader(string(data)))
+			req.Header.Set("X-OpenAI-Api-Key", "sk-synthetic")
+			req.Header.Set("X-TypeSafe-Api-Key", "synthetic")
+			calls := 0
+			client := &http.Client{Transport: providerTransport(func(r *http.Request) (*http.Response, error) {
+				calls++
+				if calls == 1 {
+					draft := structuredDraft([]any{citedClaim("I use Java.")})
+					draft["applicationAnswers"] = "1. I use Java."
+					return completionResponse(draft), nil
+				}
+				if calls == 2 {
+					return completionResponse(map[string]any{"judgments": []any{map[string]any{"index": 0, "state": "supported", "reason": "Faithful."}}}), nil
+				}
+				var envelope struct{ Messages []struct{ Content string } }
+				json.NewDecoder(r.Body).Decode(&envelope)
+				var payload struct {
+					ApplicationAnswers   string
+					QualificationAnswers []struct{ Requirement, UserContext string }
+					Blocks               []struct{ Field, Text string }
+				}
+				if json.Unmarshal([]byte(envelope.Messages[1].Content), &payload) != nil || payload.ApplicationAnswers != "1. I use Java." {
+					t.Fatal("review must receive the generated answers explicitly, independently of optional temporary answers")
+				}
+				if context == "" && len(payload.QualificationAnswers) != 0 || context != "" && (len(payload.QualificationAnswers) != 1 || payload.QualificationAnswers[0].Requirement != "AWS" || payload.QualificationAnswers[0].UserContext != context) {
+					t.Fatal("temporary answer context was lost or confused with generated answers")
+				}
+				for _, b := range payload.Blocks {
+					if b.Field == "applicationAnswers" && b.Text != payload.ApplicationAnswers {
+						t.Fatal("omission assessment and claim assessment receive different generated answers")
+					}
+				}
+				// Transport-contract test only: no simulated semantic certification.
+				return completionResponse(map[string]any{"judgments": []any{}, "answerConcerns": []string{}}), nil
+			})}
+			w := httptest.NewRecorder()
+			applicationdraft.NewHandlerWithClient(client).ServeHTTP(w, req)
+			if w.Code != 200 || calls != 3 || !strings.Contains(w.Body.String(), `"check":"unavailable"`) {
+				t.Fatalf("incomplete judgments must remain unavailable: calls=%d status=%d %s", calls, w.Code, w.Body.String())
+			}
+		})
+	}
+}

@@ -352,3 +352,38 @@ PDF check is claimed for these attempts. Provider account billing and
 accepted-result cost remain unavailable. No general quality or latency
 improvement is established by two reused cases. Both approved attempts are
 used; issue #52 remains open with the full acceptance scope unchanged.
+
+## Explicit answer-review input correction
+
+Following the two deployed failures, local inspection found an ambiguous
+support-request boundary: the policy asked the reviewer to assess
+`applicationAnswers`, but only the generic claim blocks contained that generated
+text, alongside a separate optional `qualificationAnswers` source field.
+The request now supplies the exact generated `applicationAnswers` explicitly
+as well as its unchanged claim block. The policy distinguishes generated output
+from optional temporary candidate context and requires answer concerns to
+identify an actual missing or incorrect employer-requested answer. Successful
+answers and unrelated missing background categories are not omission concerns.
+Genuine omissions, insufficient answers, contradictions and wrong language
+remain concerns; approved career facts and temporary source context remain
+subject to the existing support guards. No unsupported judgment is discarded
+or changed after the provider responds.
+
+The public-handler transport regression failed with absent explicit generated
+answers before the correction, then passed both without temporary answers and
+with separate negative temporary context. It verifies exact output/source
+separation, not semantic model accuracy. Incomplete judgments still leave the
+review unavailable. Existing omission, unsupported metric and citation guards
+continue to pass. Full Go, all 128 Node tests and TypeScript checks pass.
+Offline preflight captured all four current handler provider envelopes using
+recorded preceding responses and the same minimized synthetic input, with no
+network calls. Actual live downstream envelopes depend on generated outputs.
+
+The support diagnostic version is now
+`artifact-support-openai-v3/prepared-citations-v1/number-guard-v2/answer-input-v1`.
+The extra field duplicates existing generated text and can increase token use;
+the existing envelope bound remains enforced. Generation's existing 5–6 answer
+policy is unchanged. This correction is a testable request-contract improvement,
+not a confirmed cause or live resolution of the fallible review failures.
+Deployed verification requires fresh publication/provider authorization; all
+earlier attempt limits are exhausted. The remaining full #52 gates stay open.
