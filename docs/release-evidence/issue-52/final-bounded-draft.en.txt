@@ -1,0 +1,97 @@
+CAREEROS
+APPLY
+PROFILE
+CV
+RESULTS
+English
+Português
+API KEY ✓
+
+Drafted from selected career evidence. Relevance selection may miss useful information; review each material before use.
+
+GENERATED APPLICATION
+
+APPLICATION MATERIALS
+NEW APPLICATION
+SUMMARY
+RÉSUMÉ
+COVER LETTER
+APPLICATION Q&A
+Review application evidence
+
+Support checks can be wrong. References show sources, not proof of truth. Each artifact has its own review; accept all materials to complete the draft review.
+
+The support check was unavailable. Nothing was accepted. Remove unresolved wording or supply your own correction. No automatic retry was made.
+
+View all wording and support
+
+ROLE · UNCERTAIN SUPPORT
+
+Kotlin Developer
+
+Concern: check_unavailable
+
+View original support
+Supply correction
+Remove statement
+
+JOB SUMMARY · UNCERTAIN SUPPORT
+
+Kotlin Developer role focused on building APIs using Kotlin. Kotlin is required, and applicants are asked to explain how they use Kotlin in English.
+
+Concern: check_unavailable
+
+View original support
+Supply correction
+Remove statement
+
+GREETING · UNCERTAIN SUPPORT
+
+Dear Hiring Team,
+
+Concern: check_unavailable
+
+View original support
+Supply correction
+Remove statement
+
+COVER LETTER · UNCERTAIN SUPPORT
+
+I use Kotlin to build APIs, which aligns with your need for a Kotlin Developer to build APIs using Kotlin. I would welcome the opportunity to discuss this experience and how it fits the role.
+
+Concern: check_unavailable
+
+View original support
+Supply correction
+Remove statement
+
+APPLICATION ANSWERS · UNCERTAIN SUPPORT
+
+- Kotlin: I use Kotlin to build APIs.
+- API development: My Kotlin experience is specifically in building APIs.
+- Required qualification: Kotlin is a required skill for this role, and I use it to build APIs.
+- Application requirement: I can explain my use of Kotlin in English.
+
+Concern: check_unavailable
+
+View original support
+Supply correction
+
+Resolve material concerns to accept the summary, cover letter and answers together. Supported wording needs no individual confirmation.
+
+Accept application materials
+Restore draft wording
+
+ROLE
+
+Not provided
+
+COMPANY
+
+Not provided
+
+MATERIALS
+
+Résumé + Cover Letter + Q&A
+
+ROLE SUMMARY

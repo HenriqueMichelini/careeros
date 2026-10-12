@@ -1,0 +1,225 @@
+{
+  "candidate": "956f5c66e3eeb6fc059d2f9c516edd01160e2444",
+  "integration": "2698c72feaacff8b1d882a6f8a84698687df2f9b",
+  "deploy": "6acc5ef0e46b8000081596c0",
+  "previewOrigin": "https://6acc5ef0e46b8000081596c0--beamish-bavarois-333d03.netlify.app/",
+  "publishedOrigin": "https://beamish-bavarois-333d03.netlify.app/",
+  "publication": "Published & locked; auto-publishing remains locked",
+  "authorization": {
+    "workflowAttemptCap": 4,
+    "providerCallCap": 14,
+    "retries": 0,
+    "stopAfterBatch": true
+  },
+  "preflight": {
+    "sha256": "ceffad8c38a2c13a84b2f516312cb61748aebe28bfe86c9b4b123db6c8ff9995",
+    "kind": "Offline controlled production-handler envelopes; not captured actual browser requests",
+    "difference": "Browser manual-edit origin, IDs, revisions and unsupported metadata differ from canonical approved fixture. Actual generated prose and jobContext were not known before submission."
+  },
+  "englishInput": {
+    "fact": "I use Kotlin to build APIs.",
+    "posting": "Kotlin Developer.\nBuild APIs using Kotlin.\nKotlin is required.\nExplain how you use Kotlin in English.",
+    "cvLanguage": "en",
+    "extraQualificationAnswers": []
+  },
+  "ledger": [
+    {
+      "id": "Q-EN",
+      "startedAt": "2026-10-12T04:29:19.542Z",
+      "status": "usable_with_partial_support",
+      "observedAt": "2026-10-12T04:29:59.699Z",
+      "observedElapsedUpperBoundMs": 40156
+    },
+    {
+      "id": "D-EN",
+      "startedAt": "2026-10-12T04:29:59.719Z",
+      "status": "artifact_support_check_unavailable",
+      "observedAt": "2026-10-12T04:32:37.586Z"
+    },
+    {
+      "id": "Q-PT",
+      "status": "skipped_existing_profile_content",
+      "reason": "Published Profile contains unrelated skills and competencies. Preserved without editing or sending."
+    },
+    {
+      "id": "D-PT",
+      "status": "skipped_dependency"
+    }
+  ],
+  "diagnostics": [
+    {
+      "version": "ai-diagnostics-v1",
+      "workflow": "qualification_gaps",
+      "outcome": "completed",
+      "httpStatus": 200,
+      "durationMs": 6381.106118,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 212.928308,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": 1062,
+            "outputTokens": 108,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 212.750395,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "qualification_matching",
+          "version": "job-context-v2/prompt-v1/schema-v1/gpt-6-luna/none/jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 6167.26059,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 1137,
+            "outputTokens": 367,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 8000,
+            "durationMs": 3174.295624,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.164526,
+          "provider": null
+        },
+        {
+          "name": "requirement_evidence",
+          "version": "qualification-evidence-v2",
+          "outcome": "completed",
+          "durationMs": 2992.252528,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 990,
+            "outputTokens": 194,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 8000,
+            "durationMs": 2991.521515,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        }
+      ],
+      "accepted": null
+    },
+    {
+      "version": "ai-diagnostics-v1",
+      "workflow": "application_draft",
+      "outcome": "provider_failure",
+      "httpStatus": 200,
+      "durationMs": 6375.614972,
+      "applicationResultReuse": false,
+      "stages": [
+        {
+          "name": "field_validation",
+          "version": "jev-rubric-v1/policy-v1",
+          "outcome": "completed",
+          "durationMs": 221.134094,
+          "provider": {
+            "name": "typesafe",
+            "returnedModel": "jev-1.13.0",
+            "inputTokens": 1062,
+            "outputTokens": 108,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": null,
+            "durationMs": 220.967537,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "generation",
+          "version": "application-draft-policy-v2/context-v1/schema-v1",
+          "outcome": "completed",
+          "durationMs": 6153.45493,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 2038,
+            "outputTokens": 323,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 8000,
+            "durationMs": 3207.719016,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "mechanical_preparation",
+          "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+          "outcome": "completed",
+          "durationMs": 0.184202,
+          "provider": null
+        },
+        {
+          "name": "resume_support",
+          "version": "resume-support-openai-v1/number-guard-v2/strength-guard-v2/review-language-v1",
+          "outcome": "complete",
+          "durationMs": 2459.988881,
+          "provider": {
+            "name": "openai",
+            "returnedModel": "gpt-6-luna",
+            "inputTokens": 643,
+            "outputTokens": 63,
+            "reasoningTokens": 0,
+            "prefixCachedTokens": 0,
+            "outputTokenCeiling": 4000,
+            "durationMs": 2459.846183,
+            "httpStatus": 200,
+            "completion": "completed"
+          }
+        },
+        {
+          "name": "artifact_support",
+          "version": "artifact-support-openai-v6/prepared-citations-v1/number-guard-v2/answer-input-v1/career-citations-v1/neutral-blocks-v1/exact-schema-v1/strength-guard-v2",
+          "outcome": "provider_failure",
+          "durationMs": 484.649725,
+          "provider": {
+            "name": "openai",
+            "returnedModel": null,
+            "inputTokens": null,
+            "outputTokens": null,
+            "reasoningTokens": null,
+            "prefixCachedTokens": null,
+            "outputTokenCeiling": 8000,
+            "durationMs": 484.356334,
+            "httpStatus": 400,
+            "completion": "provider_failure"
+          }
+        }
+      ],
+      "accepted": null
+    }
+  ],
+  "providerDispatchesObserved": 7,
+  "acceptedArtifacts": 0,
+  "acceptedResultCost": null,
+  "billingVerified": false,
+  "cleanup": "Preview OpenAI and TypeSafe keys cleared through UI; absence verified after reload. Existing published Profile and credentials preserved.",
+  "limits": [
+    "No actual browser HTTP payload capture or exact client request duration. Ledger elapsed values are observation upper bounds.",
+    "No accepted copy/PDF result; copy and PDF disabled while resume concerns unresolved.",
+    "Portuguese published workflow skipped because unrelated existing Profile content was present. No published provider calls.",
+    "Viewed logs contain stages, timings, usage and platform request metadata; no source prose, prompts or credentials observed. Provider retention unverified.",
+    "No response body for artifact reviewer HTTP 400 captured; root cause unproven. No retry or runtime patch in this batch."
+  ]
+}

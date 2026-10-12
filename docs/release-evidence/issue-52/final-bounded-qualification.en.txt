@@ -1,0 +1,130 @@
+CAREEROS
+APPLY
+PROFILE
+CV
+RESULTS
+English
+Português
+API KEY ✓
+
+STEP 01 — OPPORTUNITY INPUT
+
+FIND YOUR
+NEXT ROLE
+
+Paste a job posting URL, full job description, or any text about the opportunity. The AI will analyze it and generate tailored application materials from your profile.
+
+JOB POSTING OR DESCRIPTION
+Review job understanding
+
+Job Posting limit: 30,720 UTF-8 bytes.
+
+TypeSafe validation settings
+CareerOS input-use terms
+101 characters
+Clear
+
+CV language
+
+English
+Português
+
+CHECKLIST
+
+API KEY · READY
+Configured — ready to attempt a request; not yet validated by the provider.
+PROFILE · READY
+Repository ready
+POSTING · READY
+101 characters
+GENERATE MATERIALS
+
+OUTPUT
+
+01
+Tailored Résumé
+02
+Cover Letter
+03
+Application Q&A
+
+JOB POSTING OR DESCRIPTION
+
+REVIEW JOB UNDERSTANDING
+BACK TO POSTING
+
+Review partial or uncertain support and requirements without Profile evidence. Confirm only qualifications you have, or supply an answer without checking the box.
+
+Check the details used for tailoring. Source excerpts show where an interpretation came from; they do not guarantee it is correct.
+
+Role
+Kotlin Developer
+Original posting excerpt
+Company
+Not supplied
+Seniority
+Not supplied
+Location
+Not supplied
+Responsibilities
+
+Build APIs using Kotlin.
+
+Importance not specified
+
+Original posting excerpt
+Qualifications
+
+Kotlin is required.
+
+Explicitly required
+
+Original posting excerpt
+
+Build APIs using Kotlin.
+
+Importance not specified
+
+Original posting excerpt
+Application Requirements
+
+Explain how you use Kotlin in English.
+
+Importance not specified
+
+Original posting excerpt
+
+To correct an interpretation, go back, edit the original posting and analyze again.
+
+Requirement support
+
+Kotlin is required.
+
+Partially supported · Explicitly required
+
+The posting explicitly requires Kotlin. The approved profile fact says “I use Kotlin to build APIs,” which directly supports using Kotlin, but its legacy semantics are unreviewed and its support is marked unsupported. It does not establish proficiency or duration.
+
+Inspect Profile evidence and context
+
+Build APIs using Kotlin.
+
+Partially supported · Importance not specified
+
+The posting asks for building APIs using Kotlin. The profile states “I use Kotlin to build APIs,” which matches that activity, but the legacy fact’s semantics are unreviewed and its support is marked unsupported. No specific API examples or duration are established.
+
+Inspect Profile evidence and context
+Kotlin is required.
+SKILL
+The posting explicitly requires Kotlin. The approved profile fact says “I use Kotlin to build APIs,” which directly supports using Kotlin, but its legacy semantics are unreviewed and its support is marked unsupported. It does not establish proficiency or duration.
+I have this skill
+YOUR ANSWER OR FACTUAL CONTEXT (OPTIONAL)
+Build APIs using Kotlin.
+SKILL
+The posting asks for building APIs using Kotlin. The profile states “I use Kotlin to build APIs,” which matches that activity, but the legacy fact’s semantics are unreviewed and its support is marked unsupported. No specific API examples or duration are established.
+I have this skill
+YOUR ANSWER OR FACTUAL CONTEXT (OPTIONAL)
+
+Selected qualifications and supplied answers are used for this application only. A checkbox adds no examples, duration or outcomes. Your saved Profile stays unchanged.
+
+GENERATE WITHOUT THESE
+GENERATE WITH 0 SELECTED
