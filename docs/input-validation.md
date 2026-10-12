@@ -1,10 +1,36 @@
 # Field-aware input validation
 
-Status as of 2026-10-11: #29–#33 and milestone #1 are closed following the bounded omission-feedback remediation and authorized field-validation checks on 2026-10-08. The earlier failed audit remains historical evidence, superseded within that bounded scope by [release evidence](release-evidence/2026-10-08-field-validation-release.md) and [protected-preview browser evidence](release-evidence/2026-10-08-field-validation-browser.md). This does not establish current redesigned-MVP deployment or broad provider quality; see the [MVP integration gate](release-evidence/2026-10-11-evidence-mvp.md).
+Status as of 2026-10-12: #29–#33 and milestone #1 are closed following the bounded omission-feedback remediation and authorized field-validation checks on 2026-10-08. The earlier failed audit remains historical evidence, superseded within that bounded scope by [release evidence](release-evidence/2026-10-08-field-validation-release.md) and [protected-preview browser evidence](release-evidence/2026-10-08-field-validation-browser.md). The redesigned-MVP release gate #52 remains open: the latest English check completed ingestion and qualification, but the browser did not display the completed backend draft; Portuguese published-browser testing is pending. See the [MVP integration gate](release-evidence/2026-10-11-evidence-mvp.md) for these observations and the unverified broader provider, acceptance and PDF coverage.
 
-This document records agreed decisions for handling pasted content in CareerOS's AI-powered fields. The user approved the five-ticket breakdown, which is published under the [Field-aware input validation milestone](https://github.com/HenriqueMichelini/careeros/milestone/1). Implementation and evidence are recorded in the ticket documents and [combined verification report](evaluations/field-validation-integration-results.md). Closed tickets do not establish milestone acceptance or deployment readiness.
+This document records agreed decisions for handling pasted content in CareerOS's AI-powered fields. The user approved the five-ticket breakdown, which is published under the [Field-aware input validation milestone](https://github.com/HenriqueMichelini/careeros/milestone/1). Implementation and evidence are recorded in the ticket documents and [combined verification report](evaluations/field-validation-integration-results.md). Ticket closure alone does not establish broader deployment readiness; the milestone's bounded acceptance and retained failures are recorded separately above.
 
 Domain terms are defined in [CONTEXT.md](../CONTEXT.md).
+
+## Current implementation
+
+The [Netlify route configuration](../netlify.toml) exposes five fixed workflows:
+`/api/profile/review`, `/api/profile/ingest`, `/api/cv/generate`,
+`/api/qualification-gaps`, and `/api/application-draft`. Section review and general
+CV generation use saved structured Profile sources. Ingestion, requirement
+analysis and Application Draft classify the complete original pasted professional
+information or Job Posting with TypeSafe Jev before downstream AI extraction or
+generation. Deterministic preparation does not replace that field decision.
+
+The shared [classifier](../internal/fieldvalidation/decision.go) pins
+`jev-1.13.0`; OpenAI remains the separate generation provider. This implements the
+field policy without establishing universal attack detection or semantic truth.
+Approved excerpts persist in the browser-local Profile; complete pastes remain
+session-only and the backend remains stateless. Current operational-log
+observations and unverified retention are bounded by the release evidence above.
+
+[Apply readiness](../src/pages/HomePage.tsx) checks for a nonblank posting,
+available Profile evidence and keys, a revised input after a blocking decision,
+and no request in progress. It no longer requires more than 30 characters. The
+server still decides field sufficiency. Application Draft represents missing
+`jobTitle` and `company` as `null`, while blank strings are invalid. Both the
+[handler](../backend/application-draft/main.go) and
+[client](../src/lib/ai.ts) enforce this contract. Readiness, field acceptance and
+HTTP 200 do not establish supported generated claims or accepted browser output.
 
 ## Agreed decisions
 
@@ -46,7 +72,7 @@ Evaluate whether the text attempts to redirect, manipulate, or override CareerOS
 
 "Java developer. AWS required." contains a usable role and requirement and may proceed despite omitting the company name and other details. A full advertisement is not required for this example. Missing information must remain unknown rather than be invented.
 
-Input length alone does not establish whether job information is usable. The existing frontend rule requiring more than 30 characters must be revisited to support meaningful short submissions.
+Input length alone does not establish whether job information is usable. The frontend now accepts a nonblank posting for validation, including meaningful short submissions; classification still determines whether it supplies enough job context.
 
 ### Request job context when only a title is supplied
 
@@ -68,11 +94,19 @@ If Add professional information contains a useful fact such as "I use Java" amon
 
 The attack-blocking and rephrasing rules still apply to the entire Field Submission. This decision permits recovering useful facts from ordinary noise; it does not permit processing valid portions of a submission blocked for an instruction attack or awaiting rephrasing.
 
-## Existing contract implications
+## Historical contract implications — original interview
+
+The following observation predates implementation. The current readiness and
+nullable-metadata contracts are described above; this original planning record
+is retained without treating its pending decisions as current status.
 
 The current Apply screen uses a length check for posting readiness (`src/pages/HomePage.tsx`). Application Draft response validation currently requires non-empty job-title and company strings (`src/lib/ai.ts` and `backend/application-draft/main.go`), and the generation instructions prohibit placeholders. These contracts need review so genuinely missing information can remain unknown without invented facts. The representation of unknown values remains undecided; no application code has changed during this interview.
 
-## Evaluation and integration details
+## Historical evaluation and integration plan
+
+These planning tasks preceded the selected Jev classifier and bounded milestone
+acceptance. They preserve the original evaluation scope; current provider choice,
+contracts and remaining release gates are recorded above.
 
 - Compare provider candidates and establish evidence for distinguishing a detected instruction attack from wording that requires rephrasing. Jev remains a candidate.
 - Establish the actual supporting input-use terms and reference for the confirmed-attack notice, using the agreed prohibition without inventing unrelated legal rules.
