@@ -6,14 +6,20 @@ All native prerequisites (#33, #50, #51, #62, #65) were closed before work began
 This is a verification deliverable, not certification of arbitrary provider output.
 Deployment checks found failures; this report does not declare the MVP release gate complete.
 
-**Latest checkpoint, 2026-10-12:** PR #110 merged the multiline-citation correction
-as `cb670b31fb36f94eea63202a38b5d78e5293e109`. The separately authorized candidate
-`2e8c5038cb8f8aa69daac23fa9af4cdf76ae550e` is now published and locked. The frozen
-Ruby/CLI English browser check completed ingestion and qualification; the draft
-backend completed but the browser displayed unavailable. No generated application
-output was accepted, copied or exported. Portuguese published-browser coverage
-awaits a separate empty browser profile. See the final checkpoint below; dated
-deployment and failure records remain historical evidence. **#52 remains open.**
+**Latest checkpoint, 2026-10-12:** The approved candidate
+`2e8c5038cb8f8aa69daac23fa9af4cdf76ae550e` remains published and locked. The frozen
+English-preview / Portuguese-published batch is now fully spent: six workflows,
+six TypeSafe and fourteen OpenAI dispatches, with no retries. Portuguese generation
+reached browser review; the separately supported CV was accepted and copied.
+Application artifacts remain unaccepted because displayed citation coverage and
+question fidelity are incomplete. The CV claim matches copy, but section-heading
+wording differs. The actual sparse CV PDF is one inspected A4 page and matches
+the frozen preview. At 390px, pointer copy matched; Enter showed “Copied” while
+the clipboard read stayed empty, leaving keyboard transfer unverified.
+Both test profiles' temporary keys were cleared and absence verified on a fresh
+load. The English backend/browser discrepancy is retained. See the final
+Portuguese checkpoint; dated failures and pending records remain historical
+evidence. **#52 remains open.**
 
 ## Scope and evidence rules
 
@@ -973,3 +979,198 @@ discrepancy, exact actual-payload trace, Portuguese published-browser coverage,
 generated-output acceptance/copy/PDF and broader held-out provider quality/cost
 comparison remain incomplete. Actual charge and accepted-result cost are null;
 no accepted generated application result exists for that denominator.
+
+### Frozen Portuguese published-browser checkpoint, 2026-10-12
+
+This checkpoint completes only the three Portuguese workflows reserved by the
+frozen batch above. The user connected a separate empty **CareerOS Test** Chrome
+profile and confirmed reconnection. Its initial Profile required information,
+identity/contact fields were blank, and both API-key readiness signals were
+missing before the approved temporary credentials were entered. The previously
+observed production Profile and credentials in the other browser were preserved.
+Netlify was rechecked at the approved deploy: **Published & locked**, source
+`2e8c5038cb8f8aa69daac23fa9af4cdf76ae550e`, with automatic publishing still locked.
+No replacement candidate, prompt/model/schema tuning or billing change occurred.
+
+The exact approved 46-byte source was:
+
+```text
+Uso Ruby para manter ferramentas CLI internas.
+```
+
+The exact approved posting was 132 UTF-8 bytes (128 characters):
+
+```text
+Desenvolvedor Ruby.
+Mantenha ferramentas CLI internas usando Ruby.
+Ruby é obrigatório.
+Explique como você usa Ruby em português.
+```
+
+Site and CV language were set to Portuguese before the job workflow. The
+preflight hash and its controlled-versus-actual boundaries remain unchanged.
+Actual browser HTTP bodies were not captured; visible source, language, posting
+citations and approved career evidence were inspected before dependent requests.
+This remains incomplete evidence for exact actual outbound payloads.
+
+[Ingestion review](issue-52/frozen-ruby-ingestion.pt.txt) displayed one claim and
+two unselected proposals: Ruby in Skills and Tools & Technologies. The claim
+heading was English, “Uses Ruby to maintain internal CLI tools.”, inside the
+Portuguese UI; its comparison explanation and approved source were Portuguese.
+Only Skills was selected and explicitly applied. The saved **Ruby** fact retained
+the complete approved excerpt, affirmed/actual/certain qualifications, unknown
+date and no role/project/period association. The duplicate Tools proposal stayed
+unselected. The source survived reload. The saved fact ID is
+`443f3684-ce67-44b8-98dd-be63562af8a9`; downstream review displayed revision 2.
+[Before](issue-52/frozen-ruby-fact-before.pt.txt) and
+[after](issue-52/frozen-ruby-fact-after.pt.txt) rendered expanded skill metadata
+were identical across qualification and generation. This is a rendered fact
+comparison, not a full saved Profile JSON comparison. See the
+[source observation](issue-52/frozen-ruby-source.pt.jpg).
+
+[Qualification review](issue-52/frozen-ruby-qualification.pt.txt) retained the
+role, duty, mandatory Ruby requirement and Portuguese application request, with
+company/seniority/location unspecified. It marked Ruby **partial**, reasoning
+that the source establishes Ruby use but not ability to explain that use in
+Portuguese. That blends the separate application-language request into the Ruby
+qualification; this observation is not counted as a clean matching success.
+All original excerpts and the career fact were inspected. No extra qualification
+was selected and the temporary answer remained empty before the single
+“Gerar sem incluir estes itens” submission. See the
+[qualification observation](issue-52/frozen-ruby-qualification.pt.jpg).
+
+The single draft request reached generated-material review in the browser.
+[The full rendered review](issue-52/frozen-ruby-materials.pt.txt) contains
+Portuguese prose for all five artifact blocks. All five displayed supported
+badges, but inspection of their expanded original support found unresolved gaps:
+
+- The job title “Desenvolvedor Ruby” cites “Desenvolvedor Ruby.” correctly.
+- The job summary discusses CLI maintenance, mandatory Ruby and the Portuguese
+  explanation request. Its support display contains four repetitions of only
+  “Desenvolvedor Ruby.”. The other facts exist in the posting but are absent from
+  this field's displayed citations. Their presence elsewhere cannot establish
+  this field's citation coverage. The exact response and root cause are unverified.
+- The neutral greeting has no factual source requirement. The cover paragraph
+  cites the approved career fact/excerpt and original CLI duty.
+- Q&A contains three generated prompts for one explicit posting application
+  request, including unrequested Ruby-eligibility and responsibility questions.
+  Its job excerpts repeat the CLI duty; the explicit mandatory-requirement and
+  Portuguese-request lines are not shown in that block's job citations.
+
+The [citation observation](issue-52/frozen-ruby-materials.pt.jpg) shows the richer
+summary beside its repeated title-only excerpts. **No application artifact was
+accepted.** A supported badge or HTTP 200 is not an independent semantic judgment.
+The richer draft's question fidelity and displayed claim support remain unmet.
+No edit, regeneration or retry was used to turn this observation into a pass.
+
+The [separate CV review](issue-52/frozen-ruby-cv-review.pt.txt) contains the bounded
+claim “Ruby: manutenção de ferramentas CLI internas.” and cites the approved
+revision-2 fact with its exact Portuguese source. This claim was judged supported
+and the CV alone was accepted using Enter on “Aceitar currículo”. The browser
+then displayed the accepted status and enabled copy/PDF. The
+[accepted CV observation](issue-52/frozen-ruby-cv-accepted.pt.jpg) shows one sparse
+Skills section, body size 14 px and the UI's one-page-A4 fit message. Identity and
+contact remained blank; no name, employer, date or metric was invented.
+
+[Preview text](issue-52/frozen-ruby-cv-preview.pt.txt) and actual
+[clipboard text](issue-52/frozen-ruby-cv-copy.pt.txt) contain the same claim.
+Their Portuguese section headings differ: **HABILIDADES TÉCNICAS** in preview and
+**Competências Técnicas** in copied Markdown. This is a wording difference beyond
+capitalization; full display/copy consistency is not established. The original
+source mappings use `cv.skillsCompetencies` in `i18n.ts` and a separate heading in
+`resumeReview.ts`. No heading correction was applied to the frozen candidate.
+
+Clicking the actual Save as PDF control opened Chrome's print flow (the tab title
+changed to “CareerOS - Resume”). The connector exposes the product page but not
+the native Save dialog. The user saved that accepted CV using the requested A4,
+no-margin, no-header/footer settings. The actual
+[17,000-byte PDF](issue-52/frozen-ruby-cv.pt.pdf), SHA-256
+`7fdd13658a5f926f0fc38bd9c51ae8b39ea566e2a60ffe31f13674f2c1cf0621`, has one page
+at 594.95996 × 841.91998 points (A4 within one point). Its selectable text contains
+the exact approved claim once. All extracted words are inside the page bounds.
+The [complete rendered page](issue-52/frozen-ruby-cv-page-1.pt.png) was inspected:
+no clipping, overlap, missing accents, extra page, product UI or browser header/
+footer. [The PDF check](issue-52/frozen-ruby-cv-pdf-check.pt.json) records these
+measurements. The PDF heading matches the frozen preview and retains its wording
+difference from copied Markdown. This verifies only this sparse accepted CV,
+including its intentionally blank identity, and does not establish heavier page
+fit or an export pass for the later local correction.
+
+The accepted Results view was then checked at a 390 × 844 viewport. Document
+client and scroll widths were both 390px. Enter on the copy control displayed
+“Copiado!”, but the subsequent clipboard read was empty; the later pointer click
+copied the exact 72-character desktop Markdown. Thus keyboard activation was
+observed, while keyboard clipboard transfer remains unverified. The
+[390px observation](issue-52/frozen-ruby-cv-390.pt.jpg) shows the supported CV,
+copy/PDF controls, fit status and scaled preview. The viewport was reset and the
+clipboard cleared afterward. This does not certify a complete mobile or keyboard
+journey through all workflows.
+
+| Portuguese workflow | Handler status / duration | TypeSafe / OpenAI dispatches | OpenAI input / output tokens |
+| --- | --- | --- | --- |
+| Ingestion | 200 / 6,413.798680 ms | 1 / 2 | 2,928 / 308 |
+| Qualification | 200 / 6,735.730357 ms | 1 / 2 | 1,923 / 434 |
+| Application Draft | 200 / 12,524.276988 ms; browser review displayed | 1 / 3 | 4,452 / 1,026 |
+| Portuguese total | Three workflows; no retry | 3 / 7 | 9,303 / 1,768 |
+| Combined frozen EN/PT batch | Six workflows; no retry | 6 / 14 | 18,723 / 3,761 |
+
+Portuguese TypeSafe usage was 3,165 input / 313 output tokens, for combined
+TypeSafe totals of 6,313 / 626. Every observed OpenAI call returned `gpt-6-luna`
+with zero reasoning tokens; every TypeSafe call returned `jev-1.13.0`.
+Output-token ceilings total 48,000 for Portuguese and 96,000 for the complete
+batch. **All approved provider allowance is spent; none remains for a retry or
+diagnostic.** Handler duration is distinct from unavailable browser latency.
+Observed usage is not an actual charge. A single sparse result cannot establish
+semantic improvement against the retained baseline. Actual charge and accepted
+application-result cost remain null: only the CV was accepted, while the complete
+application denominator remains zero.
+
+Netlify's main/production log scope exposed the three matching invocation times
+and content-free diagnostic records. Its endpoint link still names Deploy Preview
+#110, the completed build approved for publication. The viewed logs showed
+stage/version/model/usage/duration and platform request metadata, without source
+prose, prompts, generated prose or credentials. Netlify states that function logs
+are retained for 24 hours; actual backend/provider retention was not verified.
+Both temporary keys were cleared through the test Profile UI, in-process values
+were overwritten and the browser clipboard was cleared. Missing OpenAI and
+TypeSafe readiness was verified in a separate fresh tab of the same disposable
+profile, preserving the accepted CV print tab. See
+[cleanup observation](issue-52/frozen-published-keys-cleared.pt.jpg).
+
+After recording the frozen result, the local generated-resume preview was changed
+to display each accepted Markdown heading verbatim, using translated labels only
+when a heading is absent. This preserves the client/backend reviewed-text
+contract and aligns the preview with copied Markdown and its print clone. An
+initial attempt to change only the client renderer was rejected by four existing
+production-handler/client tests; that attempted change was removed. No generated
+claim, evidence, server heading policy or historical observation was rewritten.
+The preview correction is not published in the locked candidate and has no fresh
+live provider or actual exported-PDF verification. The frozen mismatch above
+remains the observed deployed behavior.
+
+For the final local correction, all 132 existing Node tests, TypeScript and the
+production build passed. The first Node invocation failed before its Go-backed
+integration cases because Go selected the chat directory for VCS stamping.
+Process-local `GIT_DIR` and `GIT_WORK_TREE` directed stamping to the actual
+worktree; no global configuration or `-buildvcs=false` workaround was used for
+these product tests. Go backend source was unchanged. Generated `dist` files
+were restored after build and are excluded from the commit. The existing Vite
+configuration/chunk-size advisories remain.
+
+[Structured Portuguese evidence](issue-52/frozen-portuguese-publication.live.json)
+records all three operational diagnostics, reviewed decisions, combined usage,
+cleanup scope and artifact hashes. The earlier English snapshot remains a dated
+partial checkpoint; its reserved Portuguese allowance is now spent as recorded
+here. This checkpoint records the frozen published runtime. Existing
+controlled suite results are retained without implying deployed verification of
+later previews. The accompanying local heading correction is described separately
+above; it does not change the frozen batch's runtime or observations.
+
+**Release gate: not passed; #52 remains open.** All thirteen original criteria
+and closed native prerequisites are preserved. Remaining gates include the
+English backend/browser discrepancy, actual outbound-payload capture, artifact
+citation/question fidelity, full display/copy/PDF consistency, broader held-out
+live quality/cost comparison, keyboard clipboard transfer and remaining
+unexercised release cases. The new
+Portuguese observation narrows the browser-coverage gap without waiving these
+requirements.

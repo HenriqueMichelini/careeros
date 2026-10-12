@@ -1,0 +1,127 @@
+CAREEROS
+APLICAR
+PERFIL
+CURRÍCULO
+RESULTADOS
+English
+Português
+CHAVE API ✓
+
+ETAPA 01 — DADOS DA OPORTUNIDADE
+
+ENCONTRE SUA
+PRÓXIMA VAGA
+
+Cole a URL de uma vaga, a descrição completa ou qualquer texto sobre a oportunidade. A IA fará a análise e criará materiais personalizados a partir do seu perfil.
+
+VAGA OU DESCRIÇÃO
+Revisar entendimento da vaga
+
+Limite da vaga: 30.720 bytes UTF-8.
+
+Configurações de validação TypeSafe
+Termos de uso de entradas do CareerOS
+128 caracteres
+Limpar
+
+Idioma do currículo
+
+English
+Português
+
+CHECKLIST
+
+CHAVE API · PRONTO
+Configurada — pronta para tentar uma solicitação; ainda não validada pelo provedor.
+PERFIL · PRONTO
+Repositório pronto
+VAGA · PRONTO
+128 caracteres
+GERAR MATERIAIS
+
+SAÍDA
+
+01
+Currículo personalizado
+02
+Carta de apresentação
+03
+Perguntas e respostas
+
+VAGA OU DESCRIÇÃO
+
+REVISAR ENTENDIMENTO DA VAGA
+VOLTAR À VAGA
+
+Revise evidências parciais ou incertas e requisitos sem evidência no Perfil. Confirme apenas qualificações que você tem, ou forneça uma resposta sem marcar a caixa.
+
+Confira os detalhes usados na personalização. Os trechos mostram a origem de uma interpretação; não garantem que esteja correta.
+
+Cargo
+Desenvolvedor Ruby
+Trecho original da vaga
+Desenvolvedor Ruby
+Empresa
+Não informado
+Senioridade
+Não informado
+Localização
+Não informado
+Responsabilidades
+
+Mantenha ferramentas CLI internas usando Ruby.
+
+Importância não especificada
+
+Trecho original da vaga
+Mantenha ferramentas CLI internas usando Ruby.
+Qualificações
+
+Ruby é obrigatório.
+
+Explicitamente obrigatório
+
+Trecho original da vaga
+Ruby é obrigatório.
+Requisitos da candidatura
+
+Explique como você usa Ruby em português.
+
+Importância não especificada
+
+Trecho original da vaga
+Explique como você usa Ruby em português.
+
+Para corrigir uma interpretação, volte, edite o texto original da vaga e analise novamente.
+
+Evidências dos requisitos
+
+Ruby é obrigatório.
+
+Com evidência parcial · Explicitamente obrigatório
+
+O requisito é explícito e obrigatório: Ruby. O perfil afirma o uso de Ruby para manter ferramentas CLI internas, o que corresponde ao uso de Ruby para essa finalidade descrito no anúncio. O anúncio também pede que a pessoa explique esse uso em português; o fato aprovado confirma o uso, mas não demonstra que a explicação possa ser feita em português. Não há evidência de proficiência ou duração específica.
+
+Inspecionar evidências e contexto do Perfil
+
+Revise os fatos citados com seu contexto de cargo/projeto e possíveis contradições. Referências mostram a origem, não comprovam a veracidade.
+
+Perfil
+
+Habilidades · Evidência citada
+
+Ruby
+
+Afirmado · Real · Certo
+
+Uso Ruby para manter ferramentas CLI internas.
+Ruby é obrigatório.
+HABILIDADE
+O requisito é explícito e obrigatório: Ruby. O perfil afirma o uso de Ruby para manter ferramentas CLI internas, o que corresponde ao uso de Ruby para essa finalidade descrito no anúncio. O anúncio também pede que a pessoa explique esse uso em português; o fato aprovado confirma o uso, mas não demonstra que a explicação possa ser feita em português. Não há evidência de proficiência ou duração específica.
+Tenho esta habilidade
+SUA RESPOSTA OU CONTEXTO FACTUAL (OPCIONAL)
+
+Qualificações selecionadas e respostas fornecidas valem apenas para esta candidatura. A caixa não acrescenta exemplos, duração ou resultados. Seu Perfil salvo permanece igual.
+
+GERAR SEM INCLUIR ESTES ITENS
+GERAR COM 0 SELECIONADO(S)

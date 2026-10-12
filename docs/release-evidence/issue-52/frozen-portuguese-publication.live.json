@@ -1,0 +1,667 @@
+{
+  "version": "frozen-portuguese-publication-v1",
+  "date": "2026-10-12",
+  "authorization": {
+    "approvedFrozenBatch": true,
+    "limits": {
+      "workflows": 6,
+      "providerDispatches": 20,
+      "typeSafe": 6,
+      "openAI": 14,
+      "retries": 0,
+      "openAIOutputTokenCeilingTotal": 96000
+    },
+    "retries": 0,
+    "remainingProviderAllowance": 0,
+    "candidateReplaced": false,
+    "promptModelSchemaTuningDuringBatch": false
+  },
+  "candidate": {
+    "sourceHead": "2e8c5038cb8f8aa69daac23fa9af4cdf76ae550e",
+    "netlifyDeploy": "6acd0bb9787613642a1bdc53",
+    "publishedOrigin": "https://beamish-bavarois-333d03.netlify.app/",
+    "publication": "Published & locked verified in Netlify for the approved deploy",
+    "autoPublishing": "locked",
+    "billingChange": false
+  },
+  "preflight": {
+    "sha256": "af7d25cf2c58b6851eeec0bf904c471edbae92ad0f2beccf6dc8743e1f0a91aa",
+    "bytes": 331495,
+    "offlineOnly": true,
+    "actualBrowserHTTPPayloadsCaptured": false,
+    "futureDependentPayloadsAreNotExactLiveBytes": true,
+    "validation": "frozen-release-preflight.controlled.json"
+  },
+  "browserPreparation": {
+    "browser": "Chrome",
+    "profileName": "CareerOS Test",
+    "origin": "https://beamish-bavarois-333d03.netlify.app/",
+    "uiLanguage": "pt-BR",
+    "initialOpenAIKeyAbsent": true,
+    "initialTypeSafeKeyAbsent": true,
+    "initialProfileChecklist": "action required: add your information",
+    "initialIdentityFieldsEmpty": true,
+    "source": "Uso Ruby para manter ferramentas CLI internas.",
+    "posting": "Desenvolvedor Ruby.\nMantenha ferramentas CLI internas usando Ruby.\nRuby é obrigatório.\nExplique como você usa Ruby em português.",
+    "verifiedPublishedDeploy": "6acd0bb9787613642a1bdc53",
+    "autoPublishing": "locked"
+  },
+  "portuguese": {
+    "usage": {
+      "workflows": 3,
+      "providerDispatches": 10,
+      "openAIDispatches": 7,
+      "openAIInputTokens": 9303,
+      "openAIOutputTokens": 1768,
+      "openAIOutputTokenCeilings": 48000,
+      "typeSafeDispatches": 3,
+      "typeSafeInputTokens": 3165,
+      "typeSafeOutputTokens": 313
+    },
+    "events": [
+      {
+        "language": "pt-BR",
+        "workflow": "profile_ingestion",
+        "origin": "https://beamish-bavarois-333d03.netlify.app/",
+        "startedAt": "2026-10-12T22:10:48.138Z",
+        "providerDispatchCap": 3,
+        "inputBytes": 46,
+        "input": "Uso Ruby para manter ferramentas CLI internas.",
+        "actualHTTPPayloadCaptured": false,
+        "retryCount": 0,
+        "dispatchStatus": "clicked once",
+        "browserOutcome": "one claim, two proposals; explicit review displayed",
+        "reviewedClaim": "Uses Ruby to maintain internal CLI tools.",
+        "comparisonExplanation": "Afirmou que usa Ruby para manter ferramentas CLI internas; o perfil não contém fatos existentes que indiquem duplicidade.",
+        "selectedFields": [
+          "skills"
+        ],
+        "unselectedFields": [
+          "tools"
+        ],
+        "appliedFields": [
+          "skills"
+        ],
+        "unappliedFields": [
+          "tools"
+        ],
+        "savedSkill": "Ruby",
+        "savedExcerpt": "Uso Ruby para manter ferramentas CLI internas.",
+        "savedOrigin": "accepted proposal; original origin unknown",
+        "savedQualification": {
+          "assertion": "affirmed",
+          "intent": "actual",
+          "certainty": "certain",
+          "datePrecision": "unknown",
+          "role": null,
+          "project": null,
+          "period": null
+        },
+        "persistedEvidenceMatches": true,
+        "savedFactId": "443f3684-ce67-44b8-98dd-be63562af8a9",
+        "diagnostic": {
+          "version": "ai-diagnostics-v1",
+          "attemptId": "6de312f1b4e509a537d130ade66eee1a",
+          "workflow": "profile_ingestion",
+          "outcome": "completed",
+          "httpStatus": 200,
+          "durationMs": 6413.79868,
+          "applicationResultReuse": false,
+          "stages": [
+            {
+              "name": "mechanical_preparation",
+              "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+              "outcome": "completed",
+              "durationMs": 0.120665,
+              "provider": null
+            },
+            {
+              "name": "field_validation",
+              "version": "jev-rubric-v1/policy-v1",
+              "outcome": "completed",
+              "durationMs": 243.885381,
+              "provider": {
+                "name": "typesafe",
+                "returnedModel": "jev-1.13.0",
+                "inputTokens": 1021,
+                "outputTokens": 97,
+                "reasoningTokens": null,
+                "prefixCachedTokens": null,
+                "outputTokenCeiling": null,
+                "durationMs": 243.71658,
+                "httpStatus": 200,
+                "completion": "completed"
+              }
+            },
+            {
+              "name": "extraction",
+              "version": "profile-claims-prompt-v5/schema-v2/source-resolution-v1/portions-v1/clarifications-v1",
+              "outcome": "completed",
+              "durationMs": 3666.817308,
+              "provider": {
+                "name": "openai",
+                "returnedModel": "gpt-6-luna",
+                "inputTokens": 966,
+                "outputTokens": 170,
+                "reasoningTokens": 0,
+                "prefixCachedTokens": 0,
+                "outputTokenCeiling": 6000,
+                "durationMs": 3666.628255,
+                "httpStatus": 200,
+                "completion": "completed"
+              }
+            },
+            {
+              "name": "reconciliation",
+              "version": "profile-operations-prompt-v4/schema-v3/dispositions-v1/clarifications-v1",
+              "outcome": "completed",
+              "durationMs": 2500.357857,
+              "provider": {
+                "name": "openai",
+                "returnedModel": "gpt-6-luna",
+                "inputTokens": 1962,
+                "outputTokens": 138,
+                "reasoningTokens": 0,
+                "prefixCachedTokens": 0,
+                "outputTokenCeiling": 6000,
+                "durationMs": 2499.842657,
+                "httpStatus": 200,
+                "completion": "completed"
+              }
+            },
+            {
+              "name": "candidate_retrieval",
+              "version": "lexical-projection-v3/stable-facts-v1",
+              "outcome": "completed",
+              "durationMs": 0.035074,
+              "provider": null
+            }
+          ],
+          "accepted": null
+        }
+      },
+      {
+        "language": "pt-BR",
+        "workflow": "qualification_gaps",
+        "origin": "https://beamish-bavarois-333d03.netlify.app/",
+        "startedAt": "2026-10-12T22:14:28.756Z",
+        "providerDispatchCap": 3,
+        "jobPosting": "Desenvolvedor Ruby.\nMantenha ferramentas CLI internas usando Ruby.\nRuby é obrigatório.\nExplique como você usa Ruby em português.",
+        "jobPostingBytes": 132,
+        "actualHTTPPayloadCaptured": false,
+        "persistedSkill": "Ruby",
+        "savedFactId": "443f3684-ce67-44b8-98dd-be63562af8a9",
+        "sourceExcerpt": "Uso Ruby para manter ferramentas CLI internas.",
+        "cvLanguage": "pt-BR",
+        "uiDispatch": "Gerar materiais click",
+        "retryCount": 0,
+        "dispatchStatus": "clicked once",
+        "qualificationOutcome": "partial Ruby evidence; matcher also considered Portuguese application explanation; no supplemental qualifications or answers selected",
+        "reason": "O requisito é explícito e obrigatório: Ruby. O perfil afirma o uso de Ruby para manter ferramentas CLI internas, o que corresponde ao uso de Ruby para essa finalidade descrito no anúncio. O anúncio também pede que a pessoa explique esse uso em português; o fato aprovado confirma o uso, mas não demonstra que a explicação possa ser feita em português. Não há evidência de proficiência ou duração específica.",
+        "unknownMetadata": [
+          "company",
+          "seniority",
+          "location"
+        ],
+        "applicationRequirement": "Explique como você usa Ruby em português.",
+        "cvLanguageControl": {
+          "selectedLabel": "Português",
+          "value": "pt-BR"
+        },
+        "diagnostic": {
+          "version": "ai-diagnostics-v1",
+          "attemptId": "7b3134b279c721fab0a9f22cab419326",
+          "workflow": "qualification_gaps",
+          "outcome": "completed",
+          "httpStatus": 200,
+          "durationMs": 6735.730357,
+          "applicationResultReuse": false,
+          "stages": [
+            {
+              "name": "field_validation",
+              "version": "jev-rubric-v1/policy-v1",
+              "outcome": "completed",
+              "durationMs": 232.443,
+              "provider": {
+                "name": "typesafe",
+                "returnedModel": "jev-1.13.0",
+                "inputTokens": 1072,
+                "outputTokens": 108,
+                "reasoningTokens": null,
+                "prefixCachedTokens": null,
+                "outputTokenCeiling": null,
+                "durationMs": 232.250434,
+                "httpStatus": 200,
+                "completion": "completed"
+              }
+            },
+            {
+              "name": "qualification_matching",
+              "version": "job-context-v2/prompt-v1/schema-v1/gpt-6-luna/none/jev-rubric-v1/policy-v1",
+              "outcome": "completed",
+              "durationMs": 6502.328046,
+              "provider": {
+                "name": "openai",
+                "returnedModel": "gpt-6-luna",
+                "inputTokens": 1161,
+                "outputTokens": 296,
+                "reasoningTokens": 0,
+                "prefixCachedTokens": 0,
+                "outputTokenCeiling": 8000,
+                "durationMs": 3166.415629,
+                "httpStatus": 200,
+                "completion": "completed"
+              }
+            },
+            {
+              "name": "mechanical_preparation",
+              "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+              "outcome": "completed",
+              "durationMs": 0.240736,
+              "provider": null
+            },
+            {
+              "name": "requirement_evidence",
+              "version": "qualification-evidence-v2",
+              "outcome": "completed",
+              "durationMs": 3335.121697,
+              "provider": {
+                "name": "openai",
+                "returnedModel": "gpt-6-luna",
+                "inputTokens": 762,
+                "outputTokens": 138,
+                "reasoningTokens": 0,
+                "prefixCachedTokens": 0,
+                "outputTokenCeiling": 8000,
+                "durationMs": 3334.923178,
+                "httpStatus": 200,
+                "completion": "completed"
+              }
+            }
+          ],
+          "accepted": null
+        }
+      },
+      {
+        "language": "pt-BR",
+        "workflow": "application_draft",
+        "origin": "https://beamish-bavarois-333d03.netlify.app/",
+        "startedAt": "2026-10-12T22:16:38.927Z",
+        "providerDispatchCap": 4,
+        "jobPosting": "Desenvolvedor Ruby.\nMantenha ferramentas CLI internas usando Ruby.\nRuby é obrigatório.\nExplique como você usa Ruby em português.",
+        "actualHTTPPayloadCaptured": false,
+        "sourceExcerpt": "Uso Ruby para manter ferramentas CLI internas.",
+        "savedFactId": "443f3684-ce67-44b8-98dd-be63562af8a9",
+        "cvLanguage": "pt-BR",
+        "qualificationAcceptedForDraft": true,
+        "supplementalQualifications": [],
+        "supplementalAnswer": "",
+        "uiDispatch": "Gerar sem incluir estes itens click",
+        "retryCount": 0,
+        "dispatchStatus": "clicked once",
+        "browserOutcome": "generated application review displayed",
+        "accepted": false,
+        "artifactReview": {
+          "status": "unaccepted: incomplete displayed citation coverage",
+          "jobTitle": "Desenvolvedor Ruby",
+          "jobSummary": "A posição de Desenvolvedor Ruby envolve manter ferramentas CLI internas usando Ruby, requisito obrigatório. A candidatura solicita uma explicação, em português, sobre o uso de Ruby.",
+          "displayedJobSummaryCitations": "four repeated Desenvolvedor Ruby. excerpts; other posting facts are not shown in this field’s citations",
+          "displayedAnswerJobCitations": "repeated Mantenha ferramentas CLI internas usando Ruby. excerpts",
+          "displayedCareerCitation": {
+            "factId": "443f3684-ce67-44b8-98dd-be63562af8a9",
+            "revision": 2,
+            "value": "Ruby",
+            "excerpt": "Uso Ruby para manter ferramentas CLI internas."
+          },
+          "allGeneratedProsePortuguese": true
+        },
+        "screenshotLimit": "full-page screenshot timed out; text review retained; viewport captures used",
+        "resumeReview": {
+          "claim": "Ruby: manutenção de ferramentas CLI internas.",
+          "sourceFactId": "443f3684-ce67-44b8-98dd-be63562af8a9",
+          "sourceRevision": 2,
+          "sourceExcerpt": "Uso Ruby para manter ferramentas CLI internas.",
+          "decision": "supported by the exact approved excerpt",
+          "applicationArtifactsAccepted": false
+        },
+        "resumeAccepted": true,
+        "resumeAcceptanceInteraction": "Enter on Aceitar currículo",
+        "copied": true,
+        "artifactsAccepted": false,
+        "copyText": "## Competências Técnicas\n- Ruby: manutenção de ferramentas CLI internas.",
+        "resumePreviewText": "HABILIDADES TÉCNICAS\n\nRuby: manutenção de ferramentas CLI internas.",
+        "resumeCopyCheck": {
+          "claimTextMatches": true,
+          "previewHeading": "HABILIDADES TÉCNICAS",
+          "copyHeading": "Competências Técnicas",
+          "headingWordingMatches": false,
+          "actualPDFExported": true
+        },
+        "savedSkillEvidenceUnchanged": true,
+        "profileComparisonScope": "rendered Habilidades e tecnologias text, expanded fact details; no full Profile JSON comparison",
+        "actualPDFExport": {
+          "status": "native Chrome PDF saved by user and inspected",
+          "file": "issue-52-portuguese-cv.pdf",
+          "sha256": "7fdd13658a5f926f0fc38bd9c51ae8b39ea566e2a60ffe31f13674f2c1cf0621",
+          "pages": 1,
+          "a4": true,
+          "claimMatchesDisplayAndCopy": true,
+          "headingMatchesPreview": true,
+          "headingMatchesCopy": false
+        },
+        "diagnostic": {
+          "version": "ai-diagnostics-v1",
+          "attemptId": "327197ddbf36fedd83157ec0f6395f8f",
+          "workflow": "application_draft",
+          "outcome": "complete",
+          "httpStatus": 200,
+          "durationMs": 12524.276988,
+          "applicationResultReuse": false,
+          "stages": [
+            {
+              "name": "field_validation",
+              "version": "jev-rubric-v1/policy-v1",
+              "outcome": "completed",
+              "durationMs": 184.325743,
+              "provider": {
+                "name": "typesafe",
+                "returnedModel": "jev-1.13.0",
+                "inputTokens": 1072,
+                "outputTokens": 108,
+                "reasoningTokens": null,
+                "prefixCachedTokens": null,
+                "outputTokenCeiling": null,
+                "durationMs": 184.159803,
+                "httpStatus": 200,
+                "completion": "completed"
+              }
+            },
+            {
+              "name": "generation",
+              "version": "application-draft-policy-v2/context-v1/schema-v1",
+              "outcome": "completed",
+              "durationMs": 12338.916186,
+              "provider": {
+                "name": "openai",
+                "returnedModel": "gpt-6-luna",
+                "inputTokens": 2073,
+                "outputTokens": 309,
+                "reasoningTokens": 0,
+                "prefixCachedTokens": 0,
+                "outputTokenCeiling": 8000,
+                "durationMs": 4397.334454,
+                "httpStatus": 200,
+                "completion": "completed"
+              }
+            },
+            {
+              "name": "mechanical_preparation",
+              "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+              "outcome": "completed",
+              "durationMs": 0.903811,
+              "provider": null
+            },
+            {
+              "name": "resume_support",
+              "version": "resume-support-openai-v1/number-guard-v2/strength-guard-v2/review-language-v1",
+              "outcome": "complete",
+              "durationMs": 2006.900981,
+              "provider": {
+                "name": "openai",
+                "returnedModel": "gpt-6-luna",
+                "inputTokens": 624,
+                "outputTokens": 41,
+                "reasoningTokens": 0,
+                "prefixCachedTokens": 0,
+                "outputTokenCeiling": 4000,
+                "durationMs": 2006.762029,
+                "httpStatus": 200,
+                "completion": "completed"
+              }
+            },
+            {
+              "name": "artifact_support",
+              "version": "artifact-support-openai-v7/prepared-citations-v1/number-guard-v2/answer-input-v1/career-citations-v1/neutral-blocks-v1/range-schema-v2/strength-guard-v2",
+              "outcome": "complete",
+              "durationMs": 5932.843605,
+              "provider": {
+                "name": "openai",
+                "returnedModel": "gpt-6-luna",
+                "inputTokens": 1755,
+                "outputTokens": 676,
+                "reasoningTokens": 0,
+                "prefixCachedTokens": 0,
+                "outputTokenCeiling": 8000,
+                "durationMs": 5930.630279,
+                "httpStatus": 200,
+                "completion": "completed"
+              }
+            }
+          ],
+          "accepted": null
+        },
+        "mobileCheck": {
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "documentWidth": 390,
+          "documentScrollWidth": 390,
+          "scope": "accepted CV layout and copy observations only; not a full 390px workflow journey",
+          "keyboardCopy": {
+            "activatedWith": "Enter",
+            "uiReportedCopied": true,
+            "observedClipboardLength": 0,
+            "clipboardTransferVerified": false
+          },
+          "pointerCopy": {
+            "activatedWith": "click",
+            "uiReportedCopied": true,
+            "observedClipboardLength": 72,
+            "clipboardMatchesDesktop": true
+          }
+        }
+      }
+    ],
+    "resumeAccepted": true,
+    "artifactsAccepted": false,
+    "applicationDraftFullyAccepted": false,
+    "copied": true,
+    "actualPDFExport": {
+      "status": "native Chrome PDF saved by user and inspected",
+      "file": "issue-52-portuguese-cv.pdf",
+      "sha256": "7fdd13658a5f926f0fc38bd9c51ae8b39ea566e2a60ffe31f13674f2c1cf0621",
+      "pages": 1,
+      "a4": true,
+      "claimMatchesDisplayAndCopy": true,
+      "headingMatchesPreview": true,
+      "headingMatchesCopy": false
+    },
+    "credentialCleanup": {
+      "openAI": "absent on fresh page load in CareerOS Test: ! CONFIGURAR CHAVE API",
+      "typeSafe": "absent on fresh page load in CareerOS Test: add TypeSafe API key readiness message",
+      "processValuesOverwritten": true,
+      "clipboardCleared": true,
+      "verifiedAt": "2026-10-12T22:32:14.692Z",
+      "verification": "separate fresh tab in the same disposable browser profile; accepted CV print tab preserved"
+    },
+    "pdfCheck": {
+      "version": "actual-browser-pdf-check-v1",
+      "origin": "CareerOS Test Chrome native print flow from the approved published runtime",
+      "userSavedNativePDF": true,
+      "candidateSourceHead": "2e8c5038cb8f8aa69daac23fa9af4cdf76ae550e",
+      "sha256": "7fdd13658a5f926f0fc38bd9c51ae8b39ea566e2a60ffe31f13674f2c1cf0621",
+      "bytes": 17000,
+      "pages": 1,
+      "pageBoxes": [
+        {
+          "widthPoints": 594.95996,
+          "heightPoints": 841.91998
+        }
+      ],
+      "a4WithinOnePoint": true,
+      "selectableText": [
+        "HABILIDADES TÉCNICAS\n• Ruby: manutenção de ferramentas CLI internas."
+      ],
+      "expectedClaimOccurrences": 1,
+      "textWithinPageBounds": true,
+      "visualReview": "Rendered complete page inspected: sparse heading and claim, no clipping, overlap, missing accents, extra page, site UI or browser header/footer.",
+      "previewHeading": "HABILIDADES TÉCNICAS",
+      "pdfHeading": "HABILIDADES TÉCNICAS",
+      "copiedMarkdownHeading": "Competências Técnicas",
+      "claimMatchesDisplayAndCopy": true,
+      "headingMatchesPreview": true,
+      "headingMatchesCopy": false,
+      "limit": "Only this sparse accepted CV is verified. The local preview heading correction is not included in this frozen-runtime PDF."
+    }
+  },
+  "combinedFrozenBatchUsage": {
+    "workflows": 6,
+    "providerDispatches": 20,
+    "openAIDispatches": 14,
+    "openAIInputTokens": 18723,
+    "openAIOutputTokens": 3761,
+    "openAIOutputTokenCeilings": 96000,
+    "typeSafeDispatches": 6,
+    "typeSafeInputTokens": 6313,
+    "typeSafeOutputTokens": 626
+  },
+  "localPreviewCorrection": {
+    "file": "src/components/GeneratedResumePreview.tsx",
+    "behavior": "Display the accepted Markdown heading verbatim; use translated labels only if no heading exists.",
+    "providerPromptSchemaOrServerHeadingChange": false,
+    "published": false,
+    "validation": {
+      "existingNodeTestsPassed": 132,
+      "typescript": "passed",
+      "productionBuild": "passed"
+    },
+    "liveProviderOrActualPDFVerificationOfCorrection": false
+  },
+  "englishCheckpoint": "frozen-publication-browser.live.json",
+  "englishCheckpointIsDatedPartialRecord": true,
+  "operationalLogs": {
+    "productionScope": "main / production; dashboard endpoint link still names Deploy Preview #110, the build approved for publication",
+    "retentionNotice": "Logs are retained for 24 hours.",
+    "contents": "status, outcome, stage versions, model, usage, durations, platform request IDs; no source, prompt, generated prose or credentials observed",
+    "verifiedAt": "2026-10-12T22:30:33.279Z"
+  },
+  "privacy": {
+    "observedAcceptedSkillEvidenceUnchangedAfterDownstreamRequests": true,
+    "comparison": "rendered Habilidades e tecnologias text, expanded fact details; no full Profile JSON comparison",
+    "fullSavedProfileSnapshotCompared": false,
+    "backendRetentionVerified": false,
+    "originalProductionProfileAndCredentials": "preserved; testing used the separate CareerOS Test profile"
+  },
+  "limitations": [
+    "The English backend/browser discrepancy remains unverified; no retry occurred.",
+    "The Portuguese ingestion claim was displayed in English inside the Portuguese UI; its explanation and approved source were Portuguese.",
+    "Qualification marked Ruby partial after considering the separate request for a Portuguese explanation; no supplemental answer or qualification was entered.",
+    "All artifact blocks showed supported badges, but the job summary displayed four repeated title-only citations. The duty, mandatory Ruby and language request are present in the posting but absent from that field's displayed excerpts. Root cause is unverified.",
+    "Generated Q&A contains three prompts despite one explicit posting application requirement. No claim of exact question fidelity or fully accepted application quality is made.",
+    "Application artifacts remain unaccepted. Only the separately reviewed, supported CV was accepted and copied.",
+    "CV claim text matches preview and copy, while Portuguese section headings differ: HABILIDADES TÉCNICAS versus Competências Técnicas.",
+    "The actual frozen-runtime PDF is one inspected A4 page, with the same claim and heading as preview. It does not contain the later local preview correction.",
+    "At 390px Enter displayed Copiado! but the clipboard read was empty; a later pointer click copied the expected desktop text. Keyboard clipboard transfer remains unverified.",
+    "Actual browser HTTP bodies were not captured. Controlled future-dependent preflight envelopes do not prove exact actual outbound bytes.",
+    "Handler durations are not observed browser latency. Usage is not actual billing; this sparse one-off case cannot establish a quality improvement.",
+    "Broader held-out live coverage and overall issue acceptance remain incomplete."
+  ],
+  "artifacts": [
+    {
+      "path": "frozen-ruby-ingestion.pt.txt",
+      "bytes": 3320,
+      "sha256": "752dd21912f3b39bc659ee8835b712f58f071a228fa83fde9c4a838f66b27586"
+    },
+    {
+      "path": "frozen-ruby-fact-before.pt.txt",
+      "bytes": 1164,
+      "sha256": "ee2c2416269ac6c80a76a13fcf40f30cc350786c4ad1e867aa84f191cf78c06e"
+    },
+    {
+      "path": "frozen-ruby-fact-after.pt.txt",
+      "bytes": 1164,
+      "sha256": "ee2c2416269ac6c80a76a13fcf40f30cc350786c4ad1e867aa84f191cf78c06e"
+    },
+    {
+      "path": "frozen-ruby-qualification.pt.txt",
+      "bytes": 3523,
+      "sha256": "a507dbabc33c6a13352c64c3967695b951093ba2fc149d570bcd4640be639885"
+    },
+    {
+      "path": "frozen-ruby-materials.pt.txt",
+      "bytes": 3429,
+      "sha256": "95cd3bce587f475b35cc7fb1148748904c8906f9fa146948c185c5dfcbae1b67"
+    },
+    {
+      "path": "frozen-ruby-cv-review.pt.txt",
+      "bytes": 1193,
+      "sha256": "55d1fb600fd14d0a64568e55c63ec7350f5d16fb2f13b0b8148a514521133b85"
+    },
+    {
+      "path": "frozen-ruby-cv-preview.pt.txt",
+      "bytes": 71,
+      "sha256": "6dc3edc0d46db9358ee4cb2fa2fd286e25bd0f9b526341cfb5ad2c9eadf71d30"
+    },
+    {
+      "path": "frozen-ruby-cv-copy.pt.txt",
+      "bytes": 77,
+      "sha256": "2d1378641d643e6860f3906323e5684cde2219ff22f7ac519d6f4382c9cb8c12"
+    },
+    {
+      "path": "frozen-ruby-ingestion.pt.jpg",
+      "bytes": 113630,
+      "sha256": "a893ecea296d9399efd0bfa6c149a3cb1f2cdc2635acd24a57b4d8d3d1300900"
+    },
+    {
+      "path": "frozen-ruby-source.pt.jpg",
+      "bytes": 77335,
+      "sha256": "91633f8e0829a5875a0e02c7550a972bf7eb6267e5a56a856aacc4344cc372de"
+    },
+    {
+      "path": "frozen-ruby-qualification.pt.jpg",
+      "bytes": 137867,
+      "sha256": "3f7cf6d1283e6efc74f4668259b50fddee6b49221d5007a7cd2adb6a6a8ace39"
+    },
+    {
+      "path": "frozen-ruby-materials.pt.jpg",
+      "bytes": 132773,
+      "sha256": "f846dedaa4388856abb4ed1dc46ef39ba5314e7ef7bc1af0955f6be155fa4521"
+    },
+    {
+      "path": "frozen-ruby-cv-accepted.pt.jpg",
+      "bytes": 82995,
+      "sha256": "b180726e612fcd1cba0f635dccc8b23ba881c653c0e9c5386f2b2b9863d2fdb5"
+    },
+    {
+      "path": "frozen-published-keys-cleared.pt.jpg",
+      "bytes": 73000,
+      "sha256": "86033d23522d6e3a307cb5e0e17d46f818099f591dd2a4828877b2c3d4c05b33"
+    },
+    {
+      "path": "frozen-ruby-cv.pt.pdf",
+      "bytes": 17000,
+      "sha256": "7fdd13658a5f926f0fc38bd9c51ae8b39ea566e2a60ffe31f13674f2c1cf0621"
+    },
+    {
+      "path": "frozen-ruby-cv-pdf-check.pt.json",
+      "bytes": 1192,
+      "sha256": "50947fbe564fe7e43496e448b5a994efc45bd81079c09638c9eb1a9c2f7403bb"
+    },
+    {
+      "path": "frozen-ruby-cv-page-1.pt.png",
+      "bytes": 14124,
+      "sha256": "e6230c93e3fed6a87df7b41447b6e1aa8344511729ad0a7d30cbddca949c27a0"
+    },
+    {
+      "path": "frozen-ruby-cv-390.pt.jpg",
+      "bytes": 44273,
+      "sha256": "caf773d3adfb1eceaaea68b3608b046884453df5a82ef0436bd143f249538738"
+    }
+  ],
+  "actualCharge": null,
+  "acceptedApplicationResults": 0,
+  "acceptedResultCost": null,
+  "releaseGatePassed": false,
+  "issue52State": "open"
+}

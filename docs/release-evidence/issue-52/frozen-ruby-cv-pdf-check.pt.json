@@ -1,0 +1,29 @@
+{
+  "version": "actual-browser-pdf-check-v1",
+  "origin": "CareerOS Test Chrome native print flow from the approved published runtime",
+  "userSavedNativePDF": true,
+  "candidateSourceHead": "2e8c5038cb8f8aa69daac23fa9af4cdf76ae550e",
+  "sha256": "7fdd13658a5f926f0fc38bd9c51ae8b39ea566e2a60ffe31f13674f2c1cf0621",
+  "bytes": 17000,
+  "pages": 1,
+  "pageBoxes": [
+    {
+      "widthPoints": 594.95996,
+      "heightPoints": 841.91998
+    }
+  ],
+  "a4WithinOnePoint": true,
+  "selectableText": [
+    "HABILIDADES TÉCNICAS\n• Ruby: manutenção de ferramentas CLI internas."
+  ],
+  "expectedClaimOccurrences": 1,
+  "textWithinPageBounds": true,
+  "visualReview": "Rendered complete page inspected: sparse heading and claim, no clipping, overlap, missing accents, extra page, site UI or browser header/footer.",
+  "previewHeading": "HABILIDADES TÉCNICAS",
+  "pdfHeading": "HABILIDADES TÉCNICAS",
+  "copiedMarkdownHeading": "Competências Técnicas",
+  "claimMatchesDisplayAndCopy": true,
+  "headingMatchesPreview": true,
+  "headingMatchesCopy": false,
+  "limit": "Only this sparse accepted CV is verified. The local preview heading correction is not included in this frozen-runtime PDF."
+}

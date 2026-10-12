@@ -1,0 +1,3 @@
+HABILIDADES TÉCNICAS
+
+Ruby: manutenção de ferramentas CLI internas.

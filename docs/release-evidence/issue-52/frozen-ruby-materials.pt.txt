@@ -1,0 +1,132 @@
+CAREEROS
+APLICAR
+PERFIL
+CURRÍCULO
+RESULTADOS
+English
+Português
+CHAVE API ✓
+
+Gerado com evidências profissionais selecionadas. A seleção pode deixar informações úteis de fora; revise cada material antes de usar.
+
+CANDIDATURA GERADA
+
+MATERIAIS DE CANDIDATURA
+NOVA CANDIDATURA
+RESUMO
+CURRÍCULO
+CARTA DE APRESENTAÇÃO
+PERGUNTAS E RESPOSTAS
+Revisar evidências da candidatura
+
+As verificações podem errar. Referências indicam fontes, não comprovam a veracidade. Cada material tem sua própria revisão; aceite todos os materiais para concluir a revisão do rascunho.
+
+Mostrar pendências relevantes
+
+CARGO · COM SUPORTE NAS EVIDÊNCIAS CITADAS
+
+Desenvolvedor Ruby
+
+Ver suporte original
+Trecho da vaga: Desenvolvedor Ruby.
+
+Fornecer correção
+Remover afirmação
+
+RESUMO DA VAGA · COM SUPORTE NAS EVIDÊNCIAS CITADAS
+
+A posição de Desenvolvedor Ruby envolve manter ferramentas CLI internas usando Ruby, requisito obrigatório. A candidatura solicita uma explicação, em português, sobre o uso de Ruby.
+
+Ver suporte original
+Trecho da vaga: Desenvolvedor Ruby.
+
+Trecho da vaga: Desenvolvedor Ruby.
+
+Trecho da vaga: Desenvolvedor Ruby.
+
+Trecho da vaga: Desenvolvedor Ruby.
+
+Fornecer correção
+Remover afirmação
+
+SAUDAÇÃO · COM SUPORTE NAS EVIDÊNCIAS CITADAS
+
+À equipe de contratação,
+
+Ver suporte original
+Fornecer correção
+Remover afirmação
+
+CARTA DE APRESENTAÇÃO · COM SUPORTE NAS EVIDÊNCIAS CITADAS
+
+Tenho experiência usando Ruby para manter ferramentas CLI internas, atividade alinhada à responsabilidade descrita para esta posição. Estou interessado em contribuir com essa manutenção.
+
+Ver suporte original
+
+443f3684-ce67-44b8-98dd-be63562af8a9 · revisão 2
+
+Ruby
+
+Contexto: Informações profissionais gerais
+
+Uso Ruby para manter ferramentas CLI internas.
+Trecho da vaga: Mantenha ferramentas CLI internas usando Ruby.
+
+Fornecer correção
+Remover afirmação
+
+RESPOSTAS DA CANDIDATURA · COM SUPORTE NAS EVIDÊNCIAS CITADAS
+
+1. **Como você usa Ruby?** Uso Ruby para manter ferramentas CLI internas.
+2. **Você atende ao requisito obrigatório de Ruby?** Sim. Ruby é uma competência confirmada.
+3. **Que responsabilidade da vaga se alinha à sua experiência?** A manutenção de ferramentas CLI internas usando Ruby.
+
+Ver suporte original
+
+443f3684-ce67-44b8-98dd-be63562af8a9 · revisão 2
+
+Ruby
+
+Contexto: Informações profissionais gerais
+
+Uso Ruby para manter ferramentas CLI internas.
+Trecho da vaga: Mantenha ferramentas CLI internas usando Ruby.
+
+Trecho da vaga: Mantenha ferramentas CLI internas usando Ruby.
+
+Trecho da vaga: Mantenha ferramentas CLI internas usando Ruby.
+
+Trecho da vaga: Mantenha ferramentas CLI internas usando Ruby.
+
+Trecho da vaga: Mantenha ferramentas CLI internas usando Ruby.
+
+Trecho da vaga: Mantenha ferramentas CLI internas usando Ruby.
+
+Trecho da vaga: Mantenha ferramentas CLI internas usando Ruby.
+
+Trecho da vaga: Mantenha ferramentas CLI internas usando Ruby.
+
+Trecho da vaga: Mantenha ferramentas CLI internas usando Ruby.
+
+Trecho da vaga: Mantenha ferramentas CLI internas usando Ruby.
+
+Fornecer correção
+
+Resolva as pendências relevantes para aceitar o resumo, a carta e as respostas juntos. O texto com suporte não exige confirmação individual.
+
+Aceitar materiais da candidatura
+Restaurar texto do rascunho
+
+CARGO
+
+Não informado
+
+EMPRESA
+
+Não informado
+
+MATERIAIS
+
+Currículo + Carta de apresentação + P&R
+
+RESUMO DA VAGA
