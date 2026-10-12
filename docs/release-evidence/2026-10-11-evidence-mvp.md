@@ -708,3 +708,28 @@ metadata; no source prose, prompts or credentials were seen. Provider retention,
 actual billing and accepted-result cost remain unverified/null. This narrow repeat
 does not establish broader provider quality, bilingual reliability, browser/PDF
 acceptance or full #52 completion. All original release gates remain open.
+
+
+### Explicit CV support-review language — controlled contract correction, 2026-10-12
+
+The published `a91096d` resume review returned a Spanish concern for the neutral
+“Java” subheading under a Portuguese request. Inspection and a failing public-handler
+regression confirm that the support-review envelope did not carry the requested
+`cvLanguage`; its policy asked for reasons in each statement's language, which is
+ambiguous for a neutral technology name. This is a missing-input observation, not
+proof of the sole cause of that provider response.
+
+CV support review now receives the validated selected language (`en` / `pt-BR`,
+with English for an omitted language) and explicitly requests reasons in that
+language, including neutral headings. Diagnostic version adds `review-language-v1`.
+The public-handler test failed before the change and passes for Portuguese, English
+and omitted-language requests. It also retains independent uncertainty and exactly
+one support call: language selection cannot authorize a claim, rewrite a judgment
+or retry a provider. These are controlled provider-boundary assertions, not proof
+of model adherence or semantic quality.
+
+No live provider calls or publication were made for this contract correction. The
+published locked build remains `a91096d`, and its resume uncertainty/Spanish concern
+remain recorded failures. This change does not resolve the semantic heading judgment,
+extra answer selection, corrected live-browser/PDF verification, held-out bilingual
+quality or accepted-result cost. All original #52 release gates remain open.

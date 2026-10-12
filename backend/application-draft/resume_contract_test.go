@@ -250,3 +250,56 @@ func TestIndentedMarkdownCannotDisappearFromAcceptedResume(t *testing.T) {
 		t.Fatalf("indented Markdown escaped plain statement boundary: %d %s", w.Code, w.Body.String())
 	}
 }
+
+// Language-neutral skill names cannot tell a reviewer the requested prose language.
+// Observe the real provider boundary; controlled judgments do not prove model adherence.
+func TestResumeReviewReceivesRequestedLanguageForNeutralHeading(t *testing.T) {
+	for _, tc := range []struct{ requested, want string }{{"pt-BR", "pt-BR"}, {"en", "en"}, {"", "en"}} {
+		t.Run("requested_"+tc.requested, func(t *testing.T) {
+			req := reviewedRequest(t)
+			var input map[string]any
+			json.NewDecoder(req.Body).Decode(&input)
+			if tc.requested == "" {
+				delete(input, "cvLanguage")
+			} else {
+				input["cvLanguage"] = tc.requested
+			}
+			raw, _ := json.Marshal(input)
+			req = httptest.NewRequest("POST", "/api/application-draft", strings.NewReader(string(raw)))
+			req.Header.Set("X-OpenAI-Api-Key", "sk-synthetic")
+			req.Header.Set("X-TypeSafe-Api-Key", "synthetic")
+			calls := 0
+			client := &http.Client{Transport: providerTransport(func(r *http.Request) (*http.Response, error) {
+				calls++
+				if calls == 1 {
+					claim := citedClaim("Java")
+					claim["kind"] = "subheading"
+					return completionResponse(structuredDraft([]any{claim})), nil
+				}
+				var envelope struct{ Messages []struct{ Content string } }
+				if err := json.NewDecoder(r.Body).Decode(&envelope); err != nil {
+					t.Fatal(err)
+				}
+				var payload struct {
+					CvLanguage string `json:"cvLanguage"`
+				}
+				if err := json.Unmarshal([]byte(envelope.Messages[1].Content), &payload); err != nil {
+					t.Fatal(err)
+				}
+				if payload.CvLanguage != tc.want {
+					t.Errorf("neutral Java heading: requested review language %q, got %q", tc.want, payload.CvLanguage)
+				}
+				// Independent uncertainty must survive even when output language is explicit.
+				return completionResponse(map[string]any{"judgments": []any{map[string]any{"index": 0, "state": "uncertain", "reason": "Controlled independent uncertainty."}}}), nil
+			})}
+			w := httptest.NewRecorder()
+			applicationdraft.NewHandlerWithClient(client).ServeHTTP(w, req)
+			if w.Code != 200 || !strings.Contains(w.Body.String(), `"state":"uncertain"`) || !strings.Contains(w.Body.String(), "Controlled independent uncertainty.") {
+				t.Fatalf("review uncertainty changed: %d %s", w.Code, w.Body.String())
+			}
+			if calls != 2 {
+				t.Fatalf("want generation and one support check, got %d", calls)
+			}
+		})
+	}
+}

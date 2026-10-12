@@ -295,7 +295,7 @@ func (a app) call(parent context.Context, key string, in request) (res result, c
 		if err := decodeResumeClaims(fields["resume"], &claims); err != nil {
 			return empty, "invalid_output", err
 		}
-		review, err = a.reviewResume(parent, key, resumeDoc, resumeSelected, claims, in.Answers)
+		review, err = a.reviewResume(parent, key, resumeDoc, resumeSelected, claims, in.Answers, in.CvLanguage)
 		if err != nil || review.Check == "unavailable" {
 			return empty, "invalid_output", errors.New("resume support check unavailable")
 		}
