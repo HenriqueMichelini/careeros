@@ -2,12 +2,13 @@ package applicationdraft
 
 import "professional-information-repo/internal/profiledocument"
 
-// Each alternative binds the complete reference, so the provider cannot mix
-// offsets, quotes or fact identities from different catalog entries. This
-// constrains syntax only; support remains subject to the independent judgment
-// and the existing server-side source and claim guards.
+// Career alternatives bind complete fact references; job alternatives bind
+// complete original ranges. Quotes remain strings because strict-output string
+// enums reject newlines. reviewArtifacts verifies each quote against the exact
+// original bytes at its selected range before retaining it. This constrains
+// syntax and source identity only, never semantic support.
 func artifactCitationSchemas(career []profiledocument.Reference, jobs []jobSupport) (map[string]any, map[string]any, bool) {
-	// Three singleton enums per choice plus seven state/scope values stay below
+	// At most three singleton enums per choice plus seven state/scope values stay below
 	// the provider's 1000-value limit. Do not truncate or use unconstrained fallback.
 	if len(career)+len(jobs) > 300 {
 		return nil, nil, false
@@ -25,7 +26,7 @@ func artifactCitationSchemas(career []profiledocument.Reference, jobs []jobSuppo
 		excerpts = append(excerpts, objectSchema(map[string]any{
 			"start": map[string]any{"type": "integer", "enum": []int{s.Start}},
 			"end":   map[string]any{"type": "integer", "enum": []int{s.End}},
-			"quote": map[string]any{"type": "string", "enum": []string{s.Quote}},
+			"quote": map[string]any{"type": "string"},
 		}, "start", "end", "quote"))
 	}
 	emptyRef := objectSchema(map[string]any{"profileId": map[string]string{"type": "string"}, "id": map[string]string{"type": "string"}, "revision": map[string]string{"type": "integer"}}, "profileId", "id", "revision")

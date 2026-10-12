@@ -1,0 +1,68 @@
+{
+  "kind": "separately authorized local OpenAI artifact-review admission diagnosis",
+  "sourceRevision": "24511e01e4ee3345b022db2834790506045ae1ac",
+  "runtimeCandidate": "956f5c66e3eeb6fc059d2f9c516edd01160e2444",
+  "authorization": {
+    "providerCallCap": 1,
+    "providerCallsUsed": 1,
+    "retries": 0,
+    "publication": false
+  },
+  "input": {
+    "fact": "I use Kotlin to build APIs.",
+    "posting": "Kotlin Developer.\nBuild APIs using Kotlin.\nKotlin is required.\nExplain how you use Kotlin in English.",
+    "origin": "actual manual-edit and qualification-projection clients, new local synthetic IDs",
+    "factMetadata": {
+      "origin": "manual_edit",
+      "approval": "approved",
+      "support": "unsupported",
+      "assertion": "unknown"
+    },
+    "generatedArtifacts": "controlled faithful example, not the previous browser result"
+  },
+  "request": {
+    "provider": "openai",
+    "origin": "local HTTPS to api.openai.com/v1/chat/completions",
+    "model": "gpt-6-luna",
+    "maxCompletionTokens": 8000,
+    "sha256": "ec8fecd95b8507326f66f6b88576ba2d18ce3d3a2acabde525ebe022b506f75e",
+    "bytes": 7851
+  },
+  "response": {
+    "httpStatus": 400,
+    "durationMs": 1527.389,
+    "errorType": "invalid_request_error",
+    "errorParam": "response_format",
+    "errorMessage": "Invalid schema for response_format 'artifact_support': In context=('properties', 'judgments', 'items', 'properties', 'jobSources', 'items', 'anyOf', '0', 'properties', 'quote'), \n is not allowed in string literals for structured outputs (strict=true).",
+    "usage": null
+  },
+  "offlineBefore": {
+    "standardJSONSchema": "pass",
+    "documentedSubsetLimits": "pass",
+    "properties": 24,
+    "enumValues": 22,
+    "depth": 5
+  },
+  "regression": {
+    "command": "GOCACHE=/tmp/careeros-go-cache go test ./backend/application-draft -run TestArtifactSupportReceivesExactPreparedJobCitations -count=1",
+    "before": "FAIL: handler returned 200 with artifact review unavailable after controlled provider HTTP 400",
+    "after": "PASS: multiline exact original citations retained; no newline-containing quote enum"
+  },
+  "accepted": false,
+  "acceptedResultCost": null,
+  "billingVerified": false,
+  "limits": [
+    "One provider admission request; no TypeSafe or generation request, no deployed/browser/PDF evidence.",
+    "Prior browser error body and actual payload remain unavailable; this identifies a reproducible structural defect, not the sole proven historical cause.",
+    "The quote schema now allows strings while exact original-byte checks still reject altered quotes before acceptance. Corrected provider admission is not yet checked.",
+    "No raw private response or credentials committed. No operational-log privacy audit or provider retention verification in this local diagnostic.",
+    "All original issue #52 release gates remain in force."
+  ],
+  "verification": {
+    "go": "go test ./... passed",
+    "node": "132 tests passed; GIT_OPTIONAL_LOCKS=0 for read-only worktree metadata",
+    "typescript": "npx tsc --noEmit passed before the backend-only correction; no TypeScript sources changed",
+    "build": "npm run build passed; existing bundle-size warning; generated dist excluded",
+    "diffWhitespace": "passed"
+  }
+}

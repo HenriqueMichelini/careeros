@@ -301,9 +301,14 @@ func TestArtifactSupportReceivesExactPreparedJobCitations(t *testing.T) {
 		if json.Unmarshal([]byte(envelope.Messages[1].Content), &payload) != nil || len(payload.JobCitations) < 2 {
 			t.Fatal("support request lacks occurrence-specific prepared job citations")
 		}
+		// Reproduce the actual provider's HTTP 400 for a newline in a strict
+		// string enum. A canned successful completion would hide this failure.
+		if hasNewlineEnum(envelope.ResponseFormat.JSONSchema.Schema) {
+			return &http.Response{StatusCode: http.StatusBadRequest, Body: http.NoBody}, nil
+		}
 		assertCareerCitationCatalog(t, []byte(envelope.Messages[1].Content))
 		assertNeutralArtifactBlocks(t, []byte(envelope.Messages[1].Content))
-		assertExactCitationSchema(t, envelope.ResponseFormat.JSONSchema.Schema, envelope.Messages[1].Content)
+		assertCitationRangeSchema(t, envelope.ResponseFormat.JSONSchema.Schema, envelope.Messages[1].Content)
 		covered := ""
 		for _, s := range payload.JobCitations {
 			if s.Start != len(covered) || s.End <= s.Start || s.End > len(posting) || s.Quote != posting[s.Start:s.End] {
@@ -353,6 +358,31 @@ func TestArtifactSupportReceivesExactPreparedJobCitations(t *testing.T) {
 	if calls != 3 {
 		t.Fatalf("want three bounded calls, got %d", calls)
 	}
+}
+
+func hasNewlineEnum(value any) bool {
+	switch value := value.(type) {
+	case map[string]any:
+		if values, ok := value["enum"].([]any); ok {
+			for _, entry := range values {
+				if text, ok := entry.(string); ok && strings.Contains(text, "\n") {
+					return true
+				}
+			}
+		}
+		for _, child := range value {
+			if hasNewlineEnum(child) {
+				return true
+			}
+		}
+	case []any:
+		for _, child := range value {
+			if hasNewlineEnum(child) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func artifactRequest(t *testing.T, overrides map[string]any) *http.Request {
@@ -472,7 +502,7 @@ func assertNeutralArtifactBlocks(t *testing.T, data []byte) {
 	}
 }
 
-func assertExactCitationSchema(t *testing.T, schema map[string]any, content string) {
+func assertCitationRangeSchema(t *testing.T, schema map[string]any, content string) {
 	t.Helper()
 	var payload struct {
 		CareerCitations []map[string]any
@@ -491,7 +521,7 @@ func assertCitationChoices(t *testing.T, array map[string]any, catalog []map[str
 	items := array["items"].(map[string]any)
 	branches, ok := items["anyOf"].([]any)
 	if !ok || len(branches) != len(catalog) {
-		t.Fatal("citation schema must restrict choices to complete catalog entries")
+		t.Fatal("citation schema must restrict identities and range pairs to catalog entries")
 	}
 	if array["maxItems"] != float64(16) {
 		t.Fatal("citation count must preserve the server limit")
@@ -508,6 +538,13 @@ func assertFixedCitation(t *testing.T, obj, citation map[string]any) {
 		t.Fatal("catalog choices must require only all three exact citation fields")
 	}
 	for key, value := range citation {
+		if key == "quote" {
+			p := props[key].(map[string]any)
+			if p["type"] != "string" || len(p) != 1 {
+				t.Fatal("job quotes must allow multiline text and remain subject to exact original-byte validation")
+			}
+			continue
+		}
 		e, ok := props[key].(map[string]any)["enum"].([]any)
 		if !ok || len(e) != 1 || !reflect.DeepEqual(e[0], value) {
 			t.Fatalf("citation field %s permits invented or mixed data", key)

@@ -632,6 +632,62 @@ test("captured invalid job citations remain inspectable and cannot be accepted",
   assert.deepEqual(doc, before)
 })
 
+test("schema-compatible changed job quotes remain unaccepted through the public client", async () => {
+  for (const prefix of ["en", "pt"]) {
+    const fixture = corpus.cases.find(
+      (c) => c.id === `${prefix}-reviewed-draft`,
+    )
+    const doc = fixture.request.profileEvidence
+    const before = structuredClone(doc)
+    for (const quote of [
+      "Invented job text",
+      `${fixture.request.jobPosting}\n`,
+    ]) {
+      const provider = structuredClone(fixture.provider)
+      for (const judgment of provider[2].judgments) {
+        if (judgment.jobSources.length)
+          judgment.jobSources = [
+            {
+              start: 0,
+              end: new TextEncoder().encode(fixture.request.jobPosting).length,
+              quote,
+            },
+          ]
+      }
+      const result = await viaHandler(
+        `${prefix}-reviewed-draft`,
+        provider,
+        () =>
+          generateMaterials(
+            profileView(doc),
+            fixture.request.jobPosting,
+            "sk-controlled",
+            [],
+            fixture.request.cvLanguage,
+            "controlled",
+            undefined,
+            [],
+            doc,
+          ),
+      )
+      assert.equal(result.artifactReview.check, "complete")
+      const rejected = result.artifactReview.claims.filter((c) =>
+        c.concerns.includes("invalid_job_citation"),
+      )
+      assert.ok(rejected.length > 0)
+      for (const claim of rejected) {
+        assert.equal(claim.state, "unsupported")
+        assert.deepEqual(claim.jobSources, [])
+      }
+      assert.throws(
+        () => acceptArtifacts(result.artifactReview, doc),
+        /unresolved/,
+      )
+      assert.deepEqual(doc, before)
+    }
+  }
+})
+
 test("captured shortened qualification source IDs remain rejected", () => {
   const fixture = JSON.parse(
     readFileSync(
