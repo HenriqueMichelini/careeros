@@ -1,0 +1,710 @@
+{
+  "version": "issue52-strength-context-deployed-v1",
+  "revision": "a91096dbe907b3fe093737629f6057c2b61cee1c",
+  "mergeCommit": "6c0cea4d75ae20cc15b8956810031a13d3c5c91c",
+  "deployId": "6acc5c0f469839000864262c",
+  "publication": "Published & locked observed in Netlify UI",
+  "authorization": {
+    "attemptLimit": 2,
+    "attemptsUsed": 2,
+    "automaticRetries": 0,
+    "providerCallsObserved": 8,
+    "syntheticCareerFact": "Uso Java para desenvolver APIs.",
+    "jobPosting": "Desenvolvedor Java. Responsabilidades: desenvolver aplicações em Java. Requisito obrigatório: conhecimento de Java. Responda em português: como você usa Java?",
+    "preflightSha256": "31ab4409375a8a20bb44ad8ad6e8564be491aee16c65204b20fbd4fa13febfa7",
+    "downstreamPreflightLimit": "Generation input exact; downstream envelopes reconstructed with controlled judgments; actual generated prose varies."
+  },
+  "results": [
+    {
+      "origin": "preview",
+      "url": "https://6acc5c0f469839000864262c--beamish-bavarois-333d03.netlify.app",
+      "httpStatus": 200,
+      "durationMs": 11125,
+      "resume": "## Resumo Profissional\nUso Java para desenvolver APIs.\n\n## Competências Técnicas\n### Java\n\n- Desenvolvimento de APIs usando Java.",
+      "applicationAnswers": "1. Como você usa Java? Uso Java para desenvolver APIs.\n2. Você tem experiência desenvolvendo aplicações em Java? A informação disponível confirma o uso de Java para desenvolver APIs; não há outros detalhes de experiência fornecidos.\n3. Qual conhecimento de Java você pode destacar? Uso de Java para desenvolver APIs.",
+      "resumeReview": {
+        "version": "resume-review-v1",
+        "claims": [
+          {
+            "section": "summary",
+            "kind": "paragraph",
+            "text": "Uso Java para desenvolver APIs.",
+            "sources": [
+              {
+                "profileId": "p",
+                "id": "skill",
+                "revision": 1
+              }
+            ],
+            "state": "supported",
+            "concerns": []
+          },
+          {
+            "section": "skills",
+            "kind": "subheading",
+            "text": "Java",
+            "sources": [
+              {
+                "profileId": "p",
+                "id": "skill",
+                "revision": 1
+              }
+            ],
+            "state": "supported",
+            "concerns": []
+          },
+          {
+            "section": "skills",
+            "kind": "bullet",
+            "text": "Desenvolvimento de APIs usando Java.",
+            "sources": [
+              {
+                "profileId": "p",
+                "id": "skill",
+                "revision": 1
+              }
+            ],
+            "state": "supported",
+            "concerns": []
+          }
+        ],
+        "facts": [
+          {
+            "id": "skill",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "p",
+              "revision": 1
+            },
+            "context": [],
+            "field": "skills",
+            "order": 0,
+            "kind": "statement",
+            "value": "Uso Java para desenvolver APIs.",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Uso Java para desenvolver APIs.",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "accepted_proposal",
+              "original": "unknown"
+            },
+            "approval": "approved",
+            "support": "supported",
+            "section": "profile",
+            "evidence": [
+              {
+                "id": "e",
+                "revision": 1,
+                "excerpt": "Uso Java para desenvolver APIs.",
+                "origin": "submitted career notes",
+                "approval": "approved"
+              }
+            ]
+          }
+        ],
+        "check": "complete"
+      },
+      "artifactReview": {
+        "version": "artifact-review-v1",
+        "claims": [
+          {
+            "field": "jobTitle",
+            "text": "Desenvolvedor Java",
+            "sources": [],
+            "jobSources": [
+              {
+                "start": 0,
+                "end": 163,
+                "quote": "Desenvolvedor Java. Responsabilidades: desenvolver aplicações em Java. Requisito obrigatório: conhecimento de Java. Responda em português: como você usa Java?"
+              }
+            ],
+            "state": "supported",
+            "concerns": [],
+            "nonfactual": false,
+            "scope": "job"
+          },
+          {
+            "field": "jobSummary",
+            "text": "O cargo de Desenvolvedor Java envolve desenvolver aplicações em Java. Conhecimento de Java é obrigatório.",
+            "sources": [],
+            "jobSources": [
+              {
+                "start": 0,
+                "end": 163,
+                "quote": "Desenvolvedor Java. Responsabilidades: desenvolver aplicações em Java. Requisito obrigatório: conhecimento de Java. Responda em português: como você usa Java?"
+              }
+            ],
+            "state": "supported",
+            "concerns": [],
+            "nonfactual": false,
+            "scope": "job"
+          },
+          {
+            "field": "greeting",
+            "text": "Olá, equipe de contratação,",
+            "sources": [],
+            "jobSources": [],
+            "state": "supported",
+            "concerns": [],
+            "nonfactual": true,
+            "scope": "nonfactual"
+          },
+          {
+            "field": "body",
+            "text": "Tenho experiência usando Java para desenvolver APIs, uma prática alinhada ao requisito de conhecimento da linguagem e à responsabilidade de desenvolver aplicações em Java. Gostaria de conversar com a equipe de contratação sobre como posso contribuir para essa oportunidade.",
+            "sources": [
+              {
+                "profileId": "p",
+                "id": "skill",
+                "revision": 1
+              }
+            ],
+            "jobSources": [
+              {
+                "start": 0,
+                "end": 163,
+                "quote": "Desenvolvedor Java. Responsabilidades: desenvolver aplicações em Java. Requisito obrigatório: conhecimento de Java. Responda em português: como você usa Java?"
+              }
+            ],
+            "state": "supported",
+            "concerns": [],
+            "nonfactual": false,
+            "scope": "mixed"
+          },
+          {
+            "field": "applicationAnswers",
+            "text": "1. Como você usa Java? Uso Java para desenvolver APIs.\n2. Você tem experiência desenvolvendo aplicações em Java? A informação disponível confirma o uso de Java para desenvolver APIs; não há outros detalhes de experiência fornecidos.\n3. Qual conhecimento de Java você pode destacar? Uso de Java para desenvolver APIs.",
+            "sources": [
+              {
+                "profileId": "p",
+                "id": "skill",
+                "revision": 1
+              }
+            ],
+            "jobSources": [
+              {
+                "start": 0,
+                "end": 163,
+                "quote": "Desenvolvedor Java. Responsabilidades: desenvolver aplicações em Java. Requisito obrigatório: conhecimento de Java. Responda em português: como você usa Java?"
+              }
+            ],
+            "state": "supported",
+            "concerns": [],
+            "nonfactual": false,
+            "scope": "mixed"
+          }
+        ],
+        "facts": [
+          {
+            "id": "skill",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "p",
+              "revision": 1
+            },
+            "context": [],
+            "field": "skills",
+            "order": 0,
+            "kind": "statement",
+            "value": "Uso Java para desenvolver APIs.",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Uso Java para desenvolver APIs.",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "accepted_proposal",
+              "original": "unknown"
+            },
+            "approval": "approved",
+            "support": "supported",
+            "section": "profile",
+            "evidence": [
+              {
+                "id": "e",
+                "revision": 1,
+                "excerpt": "Uso Java para desenvolver APIs.",
+                "origin": "submitted career notes",
+                "approval": "approved"
+              }
+            ]
+          }
+        ],
+        "check": "complete",
+        "jobPosting": "Desenvolvedor Java. Responsabilidades: desenvolver aplicações em Java. Requisito obrigatório: conhecimento de Java. Responda em português: como você usa Java?",
+        "closing": "Atenciosamente,"
+      },
+      "clientReplay": {
+        "origin": "preview",
+        "resumeParsed": true,
+        "artifactsParsed": true,
+        "resumeAccepted": true,
+        "artifactAccepted": true,
+        "errors": [],
+        "profileUnchanged": true
+      },
+      "diagnostic": {
+        "version": "ai-diagnostics-v1",
+        "workflow": "application_draft",
+        "outcome": "complete",
+        "httpStatus": 200,
+        "durationMs": 9912.021834,
+        "applicationResultReuse": false,
+        "stages": [
+          {
+            "name": "field_validation",
+            "version": "jev-rubric-v1/policy-v1",
+            "outcome": "completed",
+            "durationMs": 241.004187,
+            "provider": {
+              "name": "typesafe",
+              "returnedModel": "jev-1.13.0",
+              "inputTokens": 1080,
+              "outputTokens": 108,
+              "reasoningTokens": null,
+              "prefixCachedTokens": null,
+              "outputTokenCeiling": null,
+              "durationMs": 240.82817,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "generation",
+            "version": "application-draft-policy-v2/context-v1/schema-v1",
+            "outcome": "completed",
+            "durationMs": 9669.976126,
+            "provider": {
+              "name": "openai",
+              "returnedModel": "gpt-6-luna",
+              "inputTokens": 1417,
+              "outputTokens": 280,
+              "reasoningTokens": 0,
+              "prefixCachedTokens": 1414,
+              "outputTokenCeiling": 8000,
+              "durationMs": 3426.046036,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "mechanical_preparation",
+            "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+            "outcome": "completed",
+            "durationMs": 0.314829,
+            "provider": null
+          },
+          {
+            "name": "resume_support",
+            "version": "resume-support-openai-v1/number-guard-v2/strength-guard-v2",
+            "outcome": "complete",
+            "durationMs": 1638.256851,
+            "provider": {
+              "name": "openai",
+              "returnedModel": "gpt-6-luna",
+              "inputTokens": 518,
+              "outputTokens": 82,
+              "reasoningTokens": 0,
+              "prefixCachedTokens": 0,
+              "outputTokenCeiling": 4000,
+              "durationMs": 1638.068127,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "artifact_support",
+            "version": "artifact-support-openai-v6/prepared-citations-v1/number-guard-v2/answer-input-v1/career-citations-v1/neutral-blocks-v1/exact-schema-v1/strength-guard-v2",
+            "outcome": "complete",
+            "durationMs": 4604.33529,
+            "provider": {
+              "name": "openai",
+              "returnedModel": "gpt-6-luna",
+              "inputTokens": 1518,
+              "outputTokens": 480,
+              "reasoningTokens": 0,
+              "prefixCachedTokens": 0,
+              "outputTokenCeiling": 8000,
+              "durationMs": 4601.752721,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          }
+        ],
+        "accepted": null
+      }
+    },
+    {
+      "origin": "published",
+      "url": "https://beamish-bavarois-333d03.netlify.app",
+      "httpStatus": 200,
+      "durationMs": 10396,
+      "resume": "## Resumo Profissional\nUso Java para desenvolver APIs.\n\n## Competências Técnicas\n### Java\n\n## Experiência Profissional\n- Desenvolvimento de APIs usando Java.",
+      "applicationAnswers": "Como você usa Java?\nUso Java para desenvolver APIs.",
+      "resumeReview": {
+        "version": "resume-review-v1",
+        "claims": [
+          {
+            "section": "summary",
+            "kind": "paragraph",
+            "text": "Uso Java para desenvolver APIs.",
+            "sources": [
+              {
+                "profileId": "p",
+                "id": "skill",
+                "revision": 1
+              }
+            ],
+            "state": "supported",
+            "concerns": []
+          },
+          {
+            "section": "skills",
+            "kind": "subheading",
+            "text": "Java",
+            "sources": [
+              {
+                "profileId": "p",
+                "id": "skill",
+                "revision": 1
+              }
+            ],
+            "state": "uncertain",
+            "concerns": [
+              "El hecho citado afirma el uso de Java para desarrollar APIs, pero no establece Java como una competencia o encabezado de habilidades por separado."
+            ]
+          },
+          {
+            "section": "experience",
+            "kind": "bullet",
+            "text": "Desenvolvimento de APIs usando Java.",
+            "sources": [
+              {
+                "profileId": "p",
+                "id": "skill",
+                "revision": 1
+              }
+            ],
+            "state": "supported",
+            "concerns": []
+          }
+        ],
+        "facts": [
+          {
+            "id": "skill",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "p",
+              "revision": 1
+            },
+            "context": [],
+            "field": "skills",
+            "order": 0,
+            "kind": "statement",
+            "value": "Uso Java para desenvolver APIs.",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Uso Java para desenvolver APIs.",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "accepted_proposal",
+              "original": "unknown"
+            },
+            "approval": "approved",
+            "support": "supported",
+            "section": "profile",
+            "evidence": [
+              {
+                "id": "e",
+                "revision": 1,
+                "excerpt": "Uso Java para desenvolver APIs.",
+                "origin": "submitted career notes",
+                "approval": "approved"
+              }
+            ]
+          }
+        ],
+        "check": "complete"
+      },
+      "artifactReview": {
+        "version": "artifact-review-v1",
+        "claims": [
+          {
+            "field": "jobTitle",
+            "text": "Desenvolvedor Java",
+            "sources": [],
+            "jobSources": [
+              {
+                "start": 0,
+                "end": 163,
+                "quote": "Desenvolvedor Java. Responsabilidades: desenvolver aplicações em Java. Requisito obrigatório: conhecimento de Java. Responda em português: como você usa Java?"
+              }
+            ],
+            "state": "supported",
+            "concerns": [],
+            "nonfactual": false,
+            "scope": "job"
+          },
+          {
+            "field": "jobSummary",
+            "text": "A vaga de Desenvolvedor Java envolve desenvolver aplicações em Java e exige conhecimento da linguagem.",
+            "sources": [],
+            "jobSources": [
+              {
+                "start": 0,
+                "end": 163,
+                "quote": "Desenvolvedor Java. Responsabilidades: desenvolver aplicações em Java. Requisito obrigatório: conhecimento de Java. Responda em português: como você usa Java?"
+              }
+            ],
+            "state": "supported",
+            "concerns": [],
+            "nonfactual": false,
+            "scope": "job"
+          },
+          {
+            "field": "greeting",
+            "text": "Olá, equipe de contratação,",
+            "sources": [],
+            "jobSources": [],
+            "state": "supported",
+            "concerns": [],
+            "nonfactual": true,
+            "scope": "nonfactual"
+          },
+          {
+            "field": "body",
+            "text": "Tenho experiência usando Java para desenvolver APIs. Essa atuação se alinha à responsabilidade de desenvolver aplicações em Java e ao requisito de conhecimento da linguagem.",
+            "sources": [
+              {
+                "profileId": "p",
+                "id": "skill",
+                "revision": 1
+              }
+            ],
+            "jobSources": [
+              {
+                "start": 0,
+                "end": 163,
+                "quote": "Desenvolvedor Java. Responsabilidades: desenvolver aplicações em Java. Requisito obrigatório: conhecimento de Java. Responda em português: como você usa Java?"
+              }
+            ],
+            "state": "supported",
+            "concerns": [],
+            "nonfactual": false,
+            "scope": "mixed"
+          },
+          {
+            "field": "applicationAnswers",
+            "text": "Como você usa Java?\nUso Java para desenvolver APIs.",
+            "sources": [
+              {
+                "profileId": "p",
+                "id": "skill",
+                "revision": 1
+              }
+            ],
+            "jobSources": [
+              {
+                "start": 0,
+                "end": 163,
+                "quote": "Desenvolvedor Java. Responsabilidades: desenvolver aplicações em Java. Requisito obrigatório: conhecimento de Java. Responda em português: como você usa Java?"
+              }
+            ],
+            "state": "supported",
+            "concerns": [],
+            "nonfactual": false,
+            "scope": "mixed"
+          }
+        ],
+        "facts": [
+          {
+            "id": "skill",
+            "revision": 1,
+            "owner": {
+              "profileId": "p",
+              "id": "p",
+              "revision": 1
+            },
+            "context": [],
+            "field": "skills",
+            "order": 0,
+            "kind": "statement",
+            "value": "Uso Java para desenvolver APIs.",
+            "assertion": "affirmed",
+            "intent": "actual",
+            "certainty": "certain",
+            "temporal": {
+              "wording": "",
+              "precision": "unknown"
+            },
+            "normalization": {
+              "observed": "Uso Java para desenvolver APIs.",
+              "canonical": null,
+              "policy": "exact-alias-v1"
+            },
+            "origin": {
+              "kind": "accepted_proposal",
+              "original": "unknown"
+            },
+            "approval": "approved",
+            "support": "supported",
+            "section": "profile",
+            "evidence": [
+              {
+                "id": "e",
+                "revision": 1,
+                "excerpt": "Uso Java para desenvolver APIs.",
+                "origin": "submitted career notes",
+                "approval": "approved"
+              }
+            ]
+          }
+        ],
+        "check": "complete",
+        "jobPosting": "Desenvolvedor Java. Responsabilidades: desenvolver aplicações em Java. Requisito obrigatório: conhecimento de Java. Responda em português: como você usa Java?",
+        "closing": "Atenciosamente,"
+      },
+      "clientReplay": {
+        "origin": "published",
+        "resumeParsed": true,
+        "artifactsParsed": true,
+        "resumeAccepted": false,
+        "artifactAccepted": true,
+        "errors": [
+          "resume:unresolved"
+        ],
+        "profileUnchanged": true
+      },
+      "diagnostic": {
+        "version": "ai-diagnostics-v1",
+        "workflow": "application_draft",
+        "outcome": "complete",
+        "httpStatus": 200,
+        "durationMs": 8823.92764,
+        "applicationResultReuse": false,
+        "stages": [
+          {
+            "name": "field_validation",
+            "version": "jev-rubric-v1/policy-v1",
+            "outcome": "completed",
+            "durationMs": 123.568158,
+            "provider": {
+              "name": "typesafe",
+              "returnedModel": "jev-1.13.0",
+              "inputTokens": 1080,
+              "outputTokens": 108,
+              "reasoningTokens": null,
+              "prefixCachedTokens": null,
+              "outputTokenCeiling": null,
+              "durationMs": 123.403364,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "generation",
+            "version": "application-draft-policy-v2/context-v1/schema-v1",
+            "outcome": "completed",
+            "durationMs": 8699.861081,
+            "provider": {
+              "name": "openai",
+              "returnedModel": "gpt-6-luna",
+              "inputTokens": 1417,
+              "outputTokens": 323,
+              "reasoningTokens": 0,
+              "prefixCachedTokens": 1414,
+              "outputTokenCeiling": 8000,
+              "durationMs": 3061.598381,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "mechanical_preparation",
+            "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+            "outcome": "completed",
+            "durationMs": 0.253954,
+            "provider": null
+          },
+          {
+            "name": "resume_support",
+            "version": "resume-support-openai-v1/number-guard-v2/strength-guard-v2",
+            "outcome": "complete",
+            "durationMs": 1443.809112,
+            "provider": {
+              "name": "openai",
+              "returnedModel": "gpt-6-luna",
+              "inputTokens": 518,
+              "outputTokens": 103,
+              "reasoningTokens": 0,
+              "prefixCachedTokens": 0,
+              "outputTokenCeiling": 4000,
+              "durationMs": 1443.655297,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          },
+          {
+            "name": "artifact_support",
+            "version": "artifact-support-openai-v6/prepared-citations-v1/number-guard-v2/answer-input-v1/career-citations-v1/neutral-blocks-v1/exact-schema-v1/strength-guard-v2",
+            "outcome": "complete",
+            "durationMs": 4193.664073,
+            "provider": {
+              "name": "openai",
+              "returnedModel": "gpt-6-luna",
+              "inputTokens": 1396,
+              "outputTokens": 438,
+              "reasoningTokens": 0,
+              "prefixCachedTokens": 0,
+              "outputTokenCeiling": 8000,
+              "durationMs": 4191.538287,
+              "httpStatus": 200,
+              "completion": "completed"
+            }
+          }
+        ],
+        "accepted": null
+      }
+    }
+  ],
+  "privacy": {
+    "observedLogContent": "Workflow stages, model, usage, durations and platform request metadata; no source prose, prompts or keys seen in viewed records.",
+    "providerRetentionVerified": false,
+    "actualBilling": null,
+    "acceptedResultCost": null
+  },
+  "limits": [
+    "Two sparse Portuguese diagnostic repeats, not held-out bilingual quality or general reliability.",
+    "Public-client parse/accept replay ran locally against unmodified live responses; no corrected live-browser journey or actual PDF check.",
+    "No principal responsabilidade wording appeared in either new answer, so deployed execution of that lexical exception remains unobserved.",
+    "Published resume uncertainty and Spanish concern remain unresolved; preview generated three answers for one employer question.",
+    "All original issue #52 release requirements remain open."
+  ]
+}
