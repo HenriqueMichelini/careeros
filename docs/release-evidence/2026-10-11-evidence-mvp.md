@@ -579,3 +579,51 @@ live provider or deployed evidence, and all previous attempt allowances remain
 exhausted. Provider schema compliance, semantic reliability, qualification
 source-ID behavior and complete live artifact acceptance remain unproven;
 #52 remains open.
+
+
+### Exact citation schema deployment and client comparison — 2026-10-12
+
+PR #104 merged into `main` at `d3d3de4`; the milestone branch was synchronized.
+With specific fresh authorization, completed build `29ce680` (deploy
+`6acc15784c742b0008d770ca`) was published and observed as **Published & locked**.
+Exactly two synthetic Application Draft attempts ran without retries: one against
+the immutable preview and one against the published app. Both used the Portuguese
+Java posting and sole fact “Uso Java para desenvolver APIs.” The previous temporary
+preflight was absent; a new offline production-handler capture was shown before
+approval. Its downstream envelopes illustrated controlled generated prose, while
+live downstream prose depended on generation.
+
+[Credential-free results](issue-52/exact-citation-schema.deployed.live.json) record
+HTTP 200 in 10,544ms / 9,408ms and handler durations 9,190.288483ms / 8,576.246308ms
+(preview / published). Viewed Netlify records showed eight provider dispatches
+across two requests: TypeSafe plus generation, resume support and artifact support
+for each. The v6 artifact reviews completed and selected exact supplied job/career
+references. The viewed operational records contained metadata without prompts,
+source prose or keys; provider retention and actual billed/accepted-result cost
+remain unverified. Both authorized attempts are exhausted.
+
+The preview output had one answer item and supported judgments for all artifact
+fields. The published output had five items for one employer question, and its
+answer claim was unsupported with `stronger_claim`; other artifact fields and both
+resume reviews were supported. These diagnostic repeats do not prove general model
+reliability, held-out quality or complete release acceptance.
+
+Offline replay through the original client rejected both unmodified responses:
+`normalization`, `owner` and `temporal` had equivalent JSON values with different
+object-key order. The fact values matched structurally. The client compared those
+nested fields by serialized property order. A public `generateMaterials` regression
+passed the unchanged-order control and failed the reordered-resume case before the
+fix. The corrected client compares parsed JSON structurally in resume/artifact fact
+checks and review snapshot checks. It ignores object-key order while preserving
+array order, key presence, types and values. Regressions retain rejection of changed
+revisions, facts, evidence, links, missing properties and array order. This is value
+comparison only; support states, citation validation and explicit acceptance remain
+independent guards.
+
+Replaying the same unmodified live responses with the corrected local client parses
+both; preview resume/artifacts can be accepted, while published artifacts remain
+blocked as unresolved. Both resume reviews can be accepted. Profile remains unchanged
+in replay. This is **offline client evidence**, not corrected-client deployment or a
+live browser journey. No response was repaired or reordered to obtain acceptance,
+no new provider request was made, and the published answer failure remains recorded.
+All original #52 acceptance criteria and broader semantic/cost gates remain open.

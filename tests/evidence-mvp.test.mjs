@@ -8,6 +8,7 @@ import { join } from "node:path"
 import ts from "typescript"
 const dir = mkdtempSync(join(tmpdir(), "evidence-mvp-"))
 const names = [
+  "jsonEquality",
   "profileDocument",
   "profileStorage",
   "ingestionDocument",

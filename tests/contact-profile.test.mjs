@@ -7,15 +7,18 @@ import { join } from "node:path"
 import ts from "typescript"
 
 const temp = mkdtempSync(join(tmpdir(), "careeros-contact-"))
-for (const name of ["profile", "cover-letter", "fieldDecision", "jobContext", "qualificationEvidence", "resumeReview", "artifactReview", "ai"]) {
+for (const name of ["jsonEquality", "profile", "cover-letter", "fieldDecision", "jobContext", "qualificationEvidence", "resumeReview", "artifactReview", "ai"]) {
   const source = readFileSync(new URL(`../src/lib/${name}.ts`, import.meta.url), "utf8")
   const compiled = ts.transpileModule(source, {
     compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
   }).outputText.replace(/from ['"]\.\/jobContext['"]/g, 'from "./jobContext.mjs"').replace(/from ['"]\.\/fieldDecision['"]/g, 'from "./fieldDecision.mjs"').replace(/from ['"]\.\/cover-letter['"]/g, 'from "./cover-letter.mjs"').replace(/from ['"]\.\/profile['"]/g, 'from "./profile.mjs"')
-  writeFileSync(join(temp, `${name}.mjs`), compiled.replace(/import fields from [^\n]+\n/, 'const fields = '+readFileSync(new URL("../internal/qualificationmatching/fields.json", import.meta.url),"utf8")+';\n').replaceAll('"./qualificationEvidence"', '"./qualificationEvidence.mjs"').replaceAll('"./resumeReview"', '"./resumeReview.mjs"').replaceAll('"./artifactReview"', '"./artifactReview.mjs"'))
+  writeFileSync(join(temp, `${name}.mjs`), compiled.replaceAll('"./jsonEquality"', '"./jsonEquality.mjs"').replace(/import fields from [^\n]+\n/, 'const fields = '+readFileSync(new URL("../internal/qualificationmatching/fields.json", import.meta.url),"utf8")+';\n').replaceAll('"./qualificationEvidence"', '"./qualificationEvidence.mjs"').replaceAll('"./resumeReview"', '"./resumeReview.mjs"').replaceAll('"./artifactReview"', '"./artifactReview.mjs"'))
 }
 const { withContactFields, careerProfile, cvQualifications, validQualifications } = await import(join(temp, "profile.mjs"))
 const { findProfileGaps, generateMaterials } = await import(join(temp, "ai.mjs"))
+
+const { acceptResume } = await import(join(temp, "resumeReview.mjs"))
+const { acceptArtifacts } = await import(join(temp, "artifactReview.mjs"))
 
 const oldProfile = {
   careerGoals: "Lead teams", skills: "Go", competencies: "Communication",
@@ -218,6 +221,156 @@ test("draft requests use approved canonical evidence and preserve coverage discl
     assert.ok(result.coverLetter.endsWith("Ada Lovelace"))
     assert.equal(JSON.stringify(doc), before)
     assert.ok(!JSON.stringify(sent).includes("Ada Lovelace"))
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
+test("Application Draft accepts equivalent evidence with independently ordered object keys", async () => {
+  const doc = JSON.parse(
+    readFileSync(
+      new URL("../internal/profiledocument/fixtures.json", import.meta.url),
+    ),
+  )[0].document
+  const repo = withContactFields(oldProfile)
+  const before = structuredClone(doc)
+  const originalFetch = globalThis.fetch
+  const reverseKeys = (value) =>
+    Array.isArray(value)
+      ? value.map(reverseKeys)
+      : value && typeof value === "object"
+        ? Object.fromEntries(
+            Object.entries(value)
+              .reverse()
+              .map(([k, v]) => [k, reverseKeys(v)]),
+          )
+        : value
+  try {
+    for (const part of ["neither", "resume", "artifacts", "both"]) {
+      globalThis.fetch = async (_, options) => {
+        const input = JSON.parse(options.body)
+        const body = reviewedDraftFixture(
+          {
+            jobTitle: null,
+            company: null,
+            jobSummary: "Java role.",
+            resume: "## Technical Skills\n- Javascript",
+            coverLetter: {
+              greeting: "Dear team,",
+              body: "I use Java.",
+              closing: "Sincerely,",
+            },
+            applicationAnswers: "I use Java.",
+          },
+          input,
+        )
+        if (part === "resume" || part === "both")
+          body.resumeReview.facts = reverseKeys(body.resumeReview.facts)
+        if (part === "artifacts" || part === "both")
+          body.artifactReview.facts = reverseKeys(body.artifactReview.facts)
+        return { ok: true, json: async () => body }
+      }
+      const draft = await generateMaterials(
+        repo,
+        "Java required.",
+        "sk-controlled",
+        [],
+        "en",
+        "controlled",
+        undefined,
+        [],
+        doc,
+      ).catch((error) => {
+        throw new Error(part + ": " + error.code)
+      })
+      assert.ok(draft.resumeReview, part)
+      assert.ok(draft.artifactReview, part)
+      const reordered = reverseKeys(doc)
+      assert.ok(acceptResume(draft.resumeReview, reordered).markdown)
+      assert.ok(
+        acceptArtifacts(draft.artifactReview, reordered).applicationAnswers,
+      )
+      for (const change of [
+        (current) => current.revision++,
+        (current) => (current.facts[0].value = "Different claim"),
+        (current) => (current.evidence[0].excerpt = "Different evidence"),
+        (current) => current.links.reverse(),
+        (current) => (current.links[0].state = "invalidated"),
+        (current) =>
+          current.facts[0].context.push({
+            profileId: "p",
+            id: "role",
+            revision: 1,
+          }),
+        (current) => delete current.facts[0].normalization.canonical,
+      ]) {
+        const stale = structuredClone(reordered)
+        change(stale)
+        assert.throws(() => acceptResume(draft.resumeReview, stale), /stale/)
+        assert.throws(
+          () => acceptArtifacts(draft.artifactReview, stale),
+          /stale/,
+        )
+      }
+      assert.deepEqual(doc, before)
+    }
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
+test("Application Draft rejects changed or incomplete fact values despite key reordering", async () => {
+  const doc = JSON.parse(
+    readFileSync(
+      new URL("../internal/profiledocument/fixtures.json", import.meta.url),
+    ),
+  )[0].document
+  const repo = withContactFields(oldProfile)
+  const originalFetch = globalThis.fetch
+  try {
+    for (const change of [
+      (fact) => fact.owner.revision++,
+      (fact) => (fact.value = "Different claim"),
+      (fact) => (fact.assertion = "affirmed"),
+      (fact) => (fact.normalization.canonical = null),
+      (fact) => delete fact.temporal.precision,
+      (fact) => (fact.context = []),
+    ]) {
+      globalThis.fetch = async (_, options) => {
+        const input = JSON.parse(options.body)
+        const body = reviewedDraftFixture(
+          {
+            jobTitle: null,
+            company: null,
+            jobSummary: "Java role.",
+            resume: "## Technical Skills\n- Javascript",
+            coverLetter: {
+              greeting: "Dear team,",
+              body: "I use Java.",
+              closing: "Sincerely,",
+            },
+            applicationAnswers: "I use Java.",
+          },
+          input,
+        )
+        change(body.resumeReview.facts[0])
+        return { ok: true, json: async () => body }
+      }
+      await assert.rejects(
+        generateMaterials(
+          repo,
+          "Java required.",
+          "sk-controlled",
+          [],
+          "en",
+          "controlled",
+          undefined,
+          [],
+          doc,
+        ),
+        (error) => error.code === "invalid_output",
+      )
+    }
   } finally {
     globalThis.fetch = originalFetch
   }

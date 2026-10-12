@@ -1,3 +1,4 @@
+import { equalJsonValue } from "./jsonEquality"
 import type {
   ProfileDocument,
   ProfileRef,
@@ -92,7 +93,7 @@ export function resumeReviewCurrent(
 ): boolean {
   // Identity/revision plus exact snapshot protects against stale tabs, changed
   // relationships/evidence and manual edits. It makes no truth claim.
-  return !!doc && JSON.stringify(review.sourceSnapshot) === JSON.stringify(doc)
+  return !!doc && equalJsonValue(review.sourceSnapshot, doc)
 }
 export function acceptResume(
   review: ResumeReview,
@@ -194,8 +195,10 @@ export function parseResumeReview(
     if (!live) return null
     for (const key of Object.keys(live) as Array<keyof ProfileFact>) {
       if (
-        JSON.stringify(live[key]) !==
-        JSON.stringify((fact as unknown as Record<string, unknown>)[key])
+        !equalJsonValue(
+          live[key],
+          (fact as unknown as Record<string, unknown>)[key],
+        )
       )
         return null
     }

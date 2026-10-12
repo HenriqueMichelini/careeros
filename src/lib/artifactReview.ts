@@ -1,3 +1,4 @@
+import { equalJsonValue } from "./jsonEquality"
 import { completeCoverLetter } from "./cover-letter"
 import type { ProfileDocument, ProfileRef } from "./profileDocument"
 import type { ProfessionalRepository } from "./types"
@@ -60,7 +61,7 @@ export function artifactsCurrent(
   review: { sourceSnapshot: ProfileDocument },
   doc: ProfileDocument | null,
 ) {
-  return !!doc && JSON.stringify(review.sourceSnapshot) === JSON.stringify(doc)
+  return !!doc && equalJsonValue(review.sourceSnapshot, doc)
 }
 function fieldText(claims: ArtifactClaim[], field: ArtifactField) {
   return claims
@@ -203,7 +204,7 @@ export function parseArtifactReview(
     return null
   // Facts are independently validated by the existing resume parser, including
   // approved excerpts and request-local confirmation references.
-  if (JSON.stringify(r.facts) !== JSON.stringify(facts)) return null
+  if (!equalJsonValue(r.facts, facts)) return null
   if (!output.coverLetter || typeof output.coverLetter !== "object") return null
   const cover = output.coverLetter as {
     greeting: string
