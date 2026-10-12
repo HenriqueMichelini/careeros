@@ -670,3 +670,41 @@ attempt allowances remain exhausted, and the published locked build remains
 `29ce680`. Corrected deployed-browser behavior, held-out provider quality and actual
 accepted-result cost remain unverified. The original #52 release requirements remain
 open; this controlled improvement is not full release acceptance.
+
+
+### Responsibility correction — authorized deployed repeats, 2026-10-12
+
+After fresh approval, completed build `a91096d` (deploy
+`6acc5c0f469839000864262c`, PR #106; merge `6c0cea4`) was published. Netlify
+visibly confirmed **Published & locked**, preserving the auto-publishing lock.
+Exactly two synthetic Application Draft attempts ran without retries: one immutable
+preview and one published origin. Both used the preflighted Portuguese Java posting
+and sole career fact “Uso Java para desenvolver APIs.” The generation input was
+exact; downstream preflight examples used reconstructed controlled prose and actual
+generated prose varied. No additional attempt allowance remains.
+
+[Live evidence](issue-52/strength-context.deployed.live.json) preserves the results:
+preview HTTP 200 in 11,125 ms and published HTTP 200 in 10,396 ms. Both returned
+complete artifact review with supported title, summary, greeting, body and answers.
+The unmodified responses parse through the corrected local public client; both
+artifact sets can be accepted with Profile unchanged. Preview resume can also be
+accepted. Published resume cannot: the provider marked its “Java” skills subheading
+uncertain, explaining in Spanish that the source did not establish a separate
+skills heading. That semantic over-rejection and concern-language failure remain
+recorded; an HTTP 200 or complete review does not mean accepted output.
+
+Preview generated three answer items for the one employer question; published
+generated one. Neither generated “principal responsabilidade”, so these calls do
+not directly exercise the deployed lexical exception. They verify deployment of
+the revised guard version and actual client compatibility through offline replay,
+not a corrected live-browser journey. The earlier controlled responsibility/rank
+cases remain a separate kind of evidence.
+
+The viewed Netlify function logs showed two diagnostic records, each with one
+TypeSafe and three OpenAI dispatches (eight total), complete resume/artifact stages
+and `strength-guard-v2`. Handler durations were 9,912.021834 / 8,823.92764 ms.
+Viewed records contained operational stages, usage, durations and platform request
+metadata; no source prose, prompts or credentials were seen. Provider retention,
+actual billing and accepted-result cost remain unverified/null. This narrow repeat
+does not establish broader provider quality, bilingual reliability, browser/PDF
+acceptance or full #52 completion. All original release gates remain open.
