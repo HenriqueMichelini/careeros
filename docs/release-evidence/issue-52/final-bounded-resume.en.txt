@@ -1,0 +1,49 @@
+CAREEROS
+APPLY
+PROFILE
+CV
+RESULTS
+English
+Português
+API KEY ✓
+
+Drafted from selected career evidence. Relevance selection may miss useful information; review each material before use.
+
+GENERATED APPLICATION
+
+APPLICATION MATERIALS
+NEW APPLICATION
+SUMMARY
+RÉSUMÉ
+COVER LETTER
+APPLICATION Q&A
+Review resume evidence
+
+Support checks can be wrong. References show sources, not proof of truth. Each artifact has its own review; accept all materials to complete the draft review.
+
+UNSUPPORTED ASSERTION
+
+I use Kotlin to build APIs.
+
+Concern: The cited fact contains this exact claim, but marks its support as unsupported.
+View original support
+Supply correction
+Remove statement
+
+UNSUPPORTED ASSERTION
+
+Kotlin API development
+
+Concern: The cited fact contains this exact claim, but marks its support as unsupported.
+View original support
+Supply correction
+Remove statement
+
+Accept the resume only after reviewing its wording and original support. Resolve every uncertain or unsupported statement first.
+
+Accept resume
+Restore draft wording
+Copy text
+SAVE AS PDF
+
+In the print dialog, choose Save as PDF, A4 paper, no margins, and turn off headers and footers.

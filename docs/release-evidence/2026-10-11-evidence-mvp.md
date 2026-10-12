@@ -733,3 +733,68 @@ published locked build remains `a91096d`, and its resume uncertainty/Spanish con
 remain recorded failures. This change does not resolve the semantic heading judgment,
 extra answer selection, corrected live-browser/PDF verification, held-out bilingual
 quality or accepted-result cost. All original #52 release gates remain open.
+
+
+### Final frozen browser batch — stopped without retries, 2026-10-12
+
+This section supersedes the preceding publication status, while preserving its
+dated observations. The user authorized publication of frozen build `956f5c6`
+(deploy `6acc5ef0e46b8000081596c0`, PR #108), keeping auto-publishing locked,
+and one final browser batch capped at four workflow attempts / fourteen provider
+calls, with no retries or further patch-and-test cycle. Netlify confirmed
+**Published & locked**. Exactly two workflow attempts ran, both in the immutable
+English preview; seven provider dispatches were observed. Both Portuguese
+published attempts were skipped because the existing Profile contained unrelated
+content. That Profile and its existing credentials were preserved without editing
+or submitting them. The unused allowance was not converted into more attempts.
+
+[Structured evidence](issue-52/final-bounded-browser.live.json) records origins,
+revision, authorization, timings, usage, failure stages and scope limits. The
+provider-free preflight fingerprint was
+`ceffad8c38a2c13a84b2f516312cb61748aebe28bfe86c9b4b123db6c8ff9995`.
+Its canonical approved fact fixture differed from the actual browser-created
+manual fact in origin/IDs/revisions and unsupported/unreviewed metadata. This
+limits its value as exact actual-payload evidence: browser HTTP payloads were
+not captured, and generated prose/jobContext were unknown before submission.
+The only entered career fact was “I use Kotlin to build APIs.”; the matching
+four-line posting and selected English language are retained in the evidence.
+No extra qualification answers were entered or selected.
+
+[Qualification browser output](issue-52/final-bounded-qualification.en.txt)
+rendered a usable review with partial support and unknown company/seniority/location.
+It also listed the API-building duty among qualifications. Handler HTTP 200
+completed in 6,381.106118 ms with one TypeSafe and two OpenAI dispatches. Clicking
+“Generate without these” continued to the draft without adding qualifications.
+
+[Draft browser output](issue-52/final-bounded-draft.en.txt) rendered all five
+artifact blocks as uncertain with `check_unavailable`; acceptance was disabled.
+The handler returned HTTP 200 in 6,375.614972 ms, but diagnostics correctly reported
+`provider_failure`: generation and resume review completed, while artifact support
+returned HTTP 400. One TypeSafe and three OpenAI dispatches occurred. The provider
+error body was not captured, so the underlying reason is unproven. No automatic
+or deliberate retry was made. The answer “I can explain my use of Kotlin in
+English” is a potential unsupported language-ability assertion; four answer items
+for one employer question remain a fidelity observation, not an accepted result.
+
+[Resume browser output](issue-52/final-bounded-resume.en.txt) independently
+rejected the Kotlin/API claims because their cited manual fact was marked
+unsupported. Accept resume, Copy text and Save as PDF were disabled. This
+conservative decision must not be treated as proof that the language correction
+failed or overridden to force acceptance. No output was accepted, copied or
+exported, and there is no new actual-PDF success claim. Manual metadata differs
+from the approved canonical preflight, so this case cannot establish the behavior
+of that approved-fact scenario.
+
+Viewed Netlify logs contained operational stages, timings, usage and platform
+request metadata; no source prose, prompts or credentials were seen. Published
+provider coverage, retention, actual billing and accepted-result cost remain
+unverified. Browser observation elapsed times are upper bounds including polling
+delay, not measured HTTP latency. Both preview test keys were cleared through
+the UI and their absence verified after reload. No runtime source changed for
+this batch. Testing stopped here as agreed.
+
+**Release gate: not passed; #52 remains open.** The consolidated requirement audit
+in issue comment 6117692107 remains applicable. Controlled integration evidence
+does not establish reliable bilingual deployed acceptance, semantic quality or
+accepted-result cost. This final batch adds an actual English browser failure
+and a privacy-preserving Portuguese skip; it does not close those gaps.
