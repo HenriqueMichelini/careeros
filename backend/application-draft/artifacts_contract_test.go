@@ -283,7 +283,12 @@ func TestArtifactSupportReceivesExactPreparedJobCitations(t *testing.T) {
 		if calls == 2 {
 			return completionResponse(map[string]any{"judgments": []any{map[string]any{"index": 0, "state": "supported", "reason": "Faithful."}}}), nil
 		}
-		var envelope struct{ Messages []struct{ Content string } }
+		var envelope struct {
+			Messages       []struct{ Content string }
+			ResponseFormat struct {
+				JSONSchema struct{ Schema map[string]any } `json:"json_schema"`
+			} `json:"response_format"`
+		}
 		json.NewDecoder(r.Body).Decode(&envelope)
 		var payload struct {
 			Blocks       []struct{ Field, Text string }
@@ -298,6 +303,7 @@ func TestArtifactSupportReceivesExactPreparedJobCitations(t *testing.T) {
 		}
 		assertCareerCitationCatalog(t, []byte(envelope.Messages[1].Content))
 		assertNeutralArtifactBlocks(t, []byte(envelope.Messages[1].Content))
+		assertExactCitationSchema(t, envelope.ResponseFormat.JSONSchema.Schema, envelope.Messages[1].Content)
 		covered := ""
 		for _, s := range payload.JobCitations {
 			if s.Start != len(covered) || s.End <= s.Start || s.End > len(posting) || s.Quote != posting[s.Start:s.End] {
@@ -463,5 +469,120 @@ func assertNeutralArtifactBlocks(t *testing.T, data []byte) {
 	}
 	if !reflect.DeepEqual(payload.Blocks, want) {
 		t.Fatalf("review input must contain indexed text blocks without unfinished judgments or empty source lists: %#v", payload.Blocks)
+	}
+}
+
+func assertExactCitationSchema(t *testing.T, schema map[string]any, content string) {
+	t.Helper()
+	var payload struct {
+		CareerCitations []map[string]any
+		JobCitations    []map[string]any
+	}
+	if json.Unmarshal([]byte(content), &payload) != nil {
+		t.Fatal("invalid support request")
+	}
+	fields := schema["properties"].(map[string]any)["judgments"].(map[string]any)["items"].(map[string]any)["properties"].(map[string]any)
+	assertCitationChoices(t, fields["sources"].(map[string]any), payload.CareerCitations)
+	assertCitationChoices(t, fields["jobSources"].(map[string]any), payload.JobCitations)
+}
+
+func assertCitationChoices(t *testing.T, array map[string]any, catalog []map[string]any) {
+	t.Helper()
+	items := array["items"].(map[string]any)
+	branches, ok := items["anyOf"].([]any)
+	if !ok || len(branches) != len(catalog) {
+		t.Fatal("citation schema must restrict choices to complete catalog entries")
+	}
+	if array["maxItems"] != float64(16) {
+		t.Fatal("citation count must preserve the server limit")
+	}
+	for i, branch := range branches {
+		assertFixedCitation(t, branch.(map[string]any), catalog[i])
+	}
+}
+
+func assertFixedCitation(t *testing.T, obj, citation map[string]any) {
+	t.Helper()
+	props := obj["properties"].(map[string]any)
+	if obj["additionalProperties"] != false || len(props) != 3 || len(obj["required"].([]any)) != 3 {
+		t.Fatal("catalog choices must require only all three exact citation fields")
+	}
+	for key, value := range citation {
+		e, ok := props[key].(map[string]any)["enum"].([]any)
+		if !ok || len(e) != 1 || !reflect.DeepEqual(e[0], value) {
+			t.Fatalf("citation field %s permits invented or mixed data", key)
+		}
+	}
+
+}
+
+func TestArtifactCitationSchemaCapacityDoesNotCallSupport(t *testing.T) {
+	req := artifactRequest(t, map[string]any{"jobPosting": strings.Repeat("Java developer.\n\n", 301)})
+	calls := 0
+	client := &http.Client{Transport: providerTransport(func(r *http.Request) (*http.Response, error) {
+		calls++
+		if calls == 1 {
+			return completionResponse(structuredDraft([]any{citedClaim("I use Java.")})), nil
+		}
+		if calls == 2 {
+			return completionResponse(map[string]any{"judgments": []any{map[string]any{"index": 0, "state": "supported", "reason": "Controlled exact skill."}}}), nil
+		}
+		t.Fatal("oversized citation catalog must not invoke artifact support or fall back to an unconstrained schema")
+		return nil, nil
+	})}
+	w := httptest.NewRecorder()
+	applicationdraft.NewHandlerWithClient(client).ServeHTTP(w, req)
+	var out struct {
+		ArtifactReview struct {
+			Check  string
+			Claims []struct {
+				State    string
+				Concerns []string
+			}
+		}
+	}
+	if json.Unmarshal(w.Body.Bytes(), &out) != nil || w.Code != 200 || out.ArtifactReview.Check != "unavailable" || calls != 2 {
+		t.Fatalf("capacity must remain explicit unavailable after bounded generation: status=%d calls=%d %s", w.Code, calls, w.Body.String())
+	}
+	for _, c := range out.ArtifactReview.Claims {
+		if c.State != "uncertain" || !reflect.DeepEqual(c.Concerns, []string{"check_unavailable"}) {
+			t.Fatal("capacity cannot authorize any generated block")
+		}
+	}
+}
+
+func TestEmptyCareerCatalogOnlyAllowsEmptySources(t *testing.T) {
+	var input map[string]any
+	json.NewDecoder(reviewedRequest(t).Body).Decode(&input)
+	doc := input["profileEvidence"].(map[string]any)
+	doc["facts"] = []any{}
+	doc["links"] = []any{}
+	req := artifactRequest(t, map[string]any{"profileEvidence": doc, "reviewResume": false})
+	calls := 0
+	client := &http.Client{Transport: providerTransport(func(r *http.Request) (*http.Response, error) {
+		calls++
+		if calls == 1 {
+			return providerDraft("I use Java."), nil
+		}
+		var envelope struct {
+			ResponseFormat struct {
+				JSONSchema struct{ Schema map[string]any } `json:"json_schema"`
+			} `json:"response_format"`
+		}
+		if json.NewDecoder(r.Body).Decode(&envelope) != nil {
+			t.Fatal("invalid provider envelope")
+		}
+		schema := envelope.ResponseFormat.JSONSchema.Schema
+		refs := schema["properties"].(map[string]any)["judgments"].(map[string]any)["items"].(map[string]any)["properties"].(map[string]any)["sources"].(map[string]any)
+		if refs["maxItems"] != float64(0) {
+			t.Fatal("empty career catalog must forbid generated references")
+		}
+		// An incomplete controlled judgment remains unavailable, not auto-supported.
+		return completionResponse(map[string]any{"judgments": []any{}, "answerConcerns": []string{}}), nil
+	})}
+	w := httptest.NewRecorder()
+	applicationdraft.NewHandlerWithClient(client).ServeHTTP(w, req)
+	if w.Code != 200 || calls != 2 || !strings.Contains(w.Body.String(), `"check":"unavailable"`) {
+		t.Fatalf("%d calls=%d %s", w.Code, calls, w.Body.String())
 	}
 }

@@ -530,3 +530,52 @@ checks pass. The first sandboxed Node invocation could not spawn Go; the full
 suite passed when rerun with subprocess access. No attempts remain under this
 allowance. Qualification reliability, exact citation selection, full deployed
 artifact acceptance, held-out quality and accepted-result cost remain open.
+
+
+## Exact citation alternatives in the support schema
+
+The next correction constrains the existing `sources` and `jobSources` array
+items to complete supplied catalog entries. Each nested `anyOf` alternative
+fixes all three fields with singleton enums. This keeps a fact's Profile/ID/
+revision and an excerpt's start/end/quote together, instead of allowing arbitrary
+strings and integers under a generic object schema. It changes neither the
+public response contract nor server-side citation, scope and support guards.
+No source is substituted or repaired after the provider responds.
+
+The approach uses documented nested `anyOf` and enum support in
+[OpenAI's Structured Outputs guide](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=chat).
+The implementation caps the combined catalog at 300 complete choices (900
+singleton enum values plus seven state/scope values, below the documented 1000
+limit). It also bounds the encoded response format to 100,000 bytes, below the
+documented 120,000-character total string limit; property counts and nesting
+remain below documented limits. Empty catalogs require empty arrays. Oversized
+catalogs/formats leave review unavailable without an artifact-support call;
+there is no truncation or unconstrained fallback. Existing full-envelope limits
+still apply. Duplicating catalog data in the schema increases payload/usage and
+can reduce the inputs eligible for this review; live cost/latency is unmeasured.
+
+The existing public-handler transport regression failed because v5 allowed
+arbitrary source objects, then passed with exact alternatives for all supplied
+career references and occurrence-specific UTF-8 job excerpts. Additional
+public-handler checks verify an empty career catalog permits no references
+and 301 repeated posting occurrences cannot trigger an unconstrained review.
+Old controlled provider outputs that ignore the schema remain subject to the
+unchanged server guards; frozen historical fixtures were not rewritten.
+
+[Controlled schema evidence](issue-52/exact-citation-schema.controlled.json)
+uses a standard JSON Schema validator against the actual captured handler
+schema. The recorded v5 title tuple with invented end offset 20 passes the old
+schema and fails the new one. A separate controlled exact catalog selection
+passes the new schema; an owner ID substituted for the selected fact fails.
+These are structural checks, not accepted live outputs. Empty citations and
+inconsistent scope flags can still satisfy the schema, so the existing server
+support and consistency checks remain necessary. Replaying the recorded bad
+provider response through the handler still blocks the title; it is not repaired.
+
+The support diagnostic version is now
+`artifact-support-openai-v6/prepared-citations-v1/number-guard-v2/answer-input-v1/career-citations-v1/neutral-blocks-v1/exact-schema-v1`.
+Full Go, all 129 Node tests and TypeScript checks pass. This change has no new
+live provider or deployed evidence, and all previous attempt allowances remain
+exhausted. Provider schema compliance, semantic reliability, qualification
+source-ID behavior and complete live artifact acceptance remain unproven;
+#52 remains open.
