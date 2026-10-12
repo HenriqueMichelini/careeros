@@ -1,0 +1,386 @@
+{
+  "version": "frozen-publication-browser-v1",
+  "date": "2026-10-12",
+  "authorization": {
+    "publication": true,
+    "frozenSyntheticBatch": true,
+    "limits": {
+      "workflows": 6,
+      "providerDispatches": 20,
+      "typeSafe": 6,
+      "openAI": 14,
+      "retries": 0,
+      "openAIOutputTokenCeilingTotal": 96000
+    },
+    "retries": 0,
+    "unspentAllowanceReallocated": false
+  },
+  "candidate": {
+    "sourceHead": "2e8c5038cb8f8aa69daac23fa9af4cdf76ae550e",
+    "mergedMain": "cb670b31fb36f94eea63202a38b5d78e5293e109",
+    "tree": "e8b50f0c57e495b94aba43d14416663533ab2ac8",
+    "netlifyDeploy": "6acd0bb9787613642a1bdc53",
+    "publishedOrigin": "https://beamish-bavarois-333d03.netlify.app/",
+    "previewOrigin": "https://6acd0bb9787613642a1bdc53--beamish-bavarois-333d03.netlify.app/",
+    "publication": "Published & locked, observed in Netlify",
+    "autoPublishing": "locked",
+    "billingChange": false
+  },
+  "preflight": {
+    "sha256": "af7d25cf2c58b6851eeec0bf904c471edbae92ad0f2beccf6dc8743e1f0a91aa",
+    "bytes": 331495,
+    "offlineOnly": true,
+    "fixturesAreNotProviderQuality": true,
+    "futureDependentPayloadsAreNotExactLiveBytes": true,
+    "actualBrowserHTTPPayloadsCaptured": false,
+    "validation": "frozen-release-preflight.controlled.json"
+  },
+  "english": {
+    "workflowsDispatched": 3,
+    "providerDispatches": 10,
+    "typeSafeDispatches": 3,
+    "openAIDispatches": 7,
+    "openAIInputTokens": 9420,
+    "openAIOutputTokens": 1993,
+    "openAIOutputTokenCeilings": 48000,
+    "typeSafeInputTokens": 3148,
+    "typeSafeOutputTokens": 313,
+    "resumeAccepted": false,
+    "artifactsAccepted": false,
+    "copied": false,
+    "actualPDFExported": false,
+    "events": [
+      {
+        "language": "en",
+        "workflow": "profile_ingestion",
+        "origin": "https://6acd0bb9787613642a1bdc53--beamish-bavarois-333d03.netlify.app/",
+        "startedAt": "2026-10-12T17:01:29.711Z",
+        "providerDispatchCap": 3,
+        "inputBytes": 42,
+        "input": "I use Ruby to maintain internal CLI tools.",
+        "actualHTTPPayloadCaptured": false,
+        "diagnostic": {
+          "version": "ai-diagnostics-v1",
+          "attemptId": "122a67d324c2435fd03fff9d7909079d",
+          "workflow": "profile_ingestion",
+          "outcome": "completed",
+          "httpStatus": 200,
+          "durationMs": 6815.127793,
+          "applicationResultReuse": false,
+          "stages": [
+            {
+              "name": "mechanical_preparation",
+              "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+              "outcome": "completed",
+              "durationMs": 0.117887,
+              "provider": null
+            },
+            {
+              "name": "field_validation",
+              "version": "jev-rubric-v1/policy-v1",
+              "outcome": "completed",
+              "durationMs": 202.233324,
+              "provider": {
+                "name": "typesafe",
+                "returnedModel": "jev-1.13.0",
+                "inputTokens": 1022,
+                "outputTokens": 97,
+                "reasoningTokens": null,
+                "prefixCachedTokens": null,
+                "outputTokenCeiling": null,
+                "durationMs": 202.050742,
+                "httpStatus": 200,
+                "completion": "completed"
+              }
+            },
+            {
+              "name": "extraction",
+              "version": "profile-claims-prompt-v5/schema-v2/source-resolution-v1/portions-v1/clarifications-v1",
+              "outcome": "completed",
+              "durationMs": 3836.727855,
+              "provider": {
+                "name": "openai",
+                "returnedModel": "gpt-6-luna",
+                "inputTokens": 972,
+                "outputTokens": 181,
+                "reasoningTokens": 0,
+                "prefixCachedTokens": 0,
+                "outputTokenCeiling": 6000,
+                "durationMs": 3836.542018,
+                "httpStatus": 200,
+                "completion": "completed"
+              }
+            },
+            {
+              "name": "reconciliation",
+              "version": "profile-operations-prompt-v4/schema-v3/dispositions-v1/clarifications-v1",
+              "outcome": "completed",
+              "durationMs": 2774.131726,
+              "provider": {
+                "name": "openai",
+                "returnedModel": "gpt-6-luna",
+                "inputTokens": 1999,
+                "outputTokens": 151,
+                "reasoningTokens": 0,
+                "prefixCachedTokens": 0,
+                "outputTokenCeiling": 6000,
+                "durationMs": 2773.679337,
+                "httpStatus": 200,
+                "completion": "completed"
+              }
+            },
+            {
+              "name": "candidate_retrieval",
+              "version": "lexical-projection-v3/stable-facts-v1",
+              "outcome": "completed",
+              "durationMs": 0.035842,
+              "provider": null
+            }
+          ],
+          "accepted": null
+        },
+        "appliedFields": [
+          "skills"
+        ],
+        "unappliedFields": [
+          "tools"
+        ],
+        "persistedEvidenceMatches": true
+      },
+      {
+        "language": "en",
+        "workflow": "qualification_gaps",
+        "origin": "https://6acd0bb9787613642a1bdc53--beamish-bavarois-333d03.netlify.app/",
+        "startedAt": "2026-10-12T17:08:05.773Z",
+        "providerDispatchCap": 3,
+        "jobPosting": "Ruby Developer.\nMaintain internal CLI tools using Ruby.\nRuby is required.\nExplain how you use Ruby in English.",
+        "actualHTTPPayloadCaptured": false,
+        "persistedSkill": "Ruby",
+        "sourceExcerpt": "I use Ruby to maintain internal CLI tools.",
+        "uiDispatch": "Generate Materials click",
+        "diagnostic": {
+          "version": "ai-diagnostics-v1",
+          "attemptId": "ef2075a56a87a1a0fa20494af4b4a83c",
+          "workflow": "qualification_gaps",
+          "outcome": "completed",
+          "httpStatus": 200,
+          "durationMs": 10778.281894,
+          "applicationResultReuse": false,
+          "stages": [
+            {
+              "name": "field_validation",
+              "version": "jev-rubric-v1/policy-v1",
+              "outcome": "completed",
+              "durationMs": 223.769567,
+              "provider": {
+                "name": "typesafe",
+                "returnedModel": "jev-1.13.0",
+                "inputTokens": 1063,
+                "outputTokens": 108,
+                "reasoningTokens": null,
+                "prefixCachedTokens": null,
+                "outputTokenCeiling": null,
+                "durationMs": 223.584627,
+                "httpStatus": 200,
+                "completion": "completed"
+              }
+            },
+            {
+              "name": "qualification_matching",
+              "version": "job-context-v2/prompt-v1/schema-v1/gpt-6-luna/none/jev-rubric-v1/policy-v1",
+              "outcome": "completed",
+              "durationMs": 10553.616801,
+              "provider": {
+                "name": "openai",
+                "returnedModel": "gpt-6-luna",
+                "inputTokens": 1137,
+                "outputTokens": 296,
+                "reasoningTokens": 0,
+                "prefixCachedTokens": 0,
+                "outputTokenCeiling": 8000,
+                "durationMs": 5042.716432,
+                "httpStatus": 200,
+                "completion": "completed"
+              }
+            },
+            {
+              "name": "mechanical_preparation",
+              "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+              "outcome": "completed",
+              "durationMs": 0.179356,
+              "provider": null
+            },
+            {
+              "name": "requirement_evidence",
+              "version": "qualification-evidence-v2",
+              "outcome": "completed",
+              "durationMs": 5509.673511,
+              "provider": {
+                "name": "openai",
+                "returnedModel": "gpt-6-luna",
+                "inputTokens": 770,
+                "outputTokens": 128,
+                "reasoningTokens": 0,
+                "prefixCachedTokens": 0,
+                "outputTokenCeiling": 8000,
+                "durationMs": 5509.233465,
+                "httpStatus": 200,
+                "completion": "completed"
+              }
+            }
+          ],
+          "accepted": null
+        },
+        "qualificationOutcome": "supported Ruby requirement; source excerpts inspected; unspecified metadata remains unknown"
+      },
+      {
+        "language": "en",
+        "workflow": "application_draft",
+        "origin": "https://6acd0bb9787613642a1bdc53--beamish-bavarois-333d03.netlify.app/",
+        "startedAt": "2026-10-12T17:08:56.284Z",
+        "providerDispatchCap": 4,
+        "jobPosting": "Ruby Developer.\nMaintain internal CLI tools using Ruby.\nRuby is required.\nExplain how you use Ruby in English.",
+        "actualHTTPPayloadCaptured": false,
+        "qualificationAcceptedForDraft": true,
+        "browserOutcome": "Application generation is temporarily unavailable. Try again shortly.",
+        "providerDispatchesObserved": 4,
+        "functionLogs": "available after one read-only reload; handler HTTP 200, review stages complete",
+        "accepted": false,
+        "retryCount": 0,
+        "dependentChecksSkipped": [
+          "resume acceptance",
+          "artifact acceptance",
+          "copy",
+          "actual PDF export"
+        ],
+        "savedSkillEvidenceUnchanged": true,
+        "diagnostic": {
+          "version": "ai-diagnostics-v1",
+          "attemptId": "ba94c9c03b1fff3457e71b8273a51c77",
+          "workflow": "application_draft",
+          "outcome": "complete",
+          "httpStatus": 200,
+          "durationMs": 11781.259439,
+          "applicationResultReuse": false,
+          "stages": [
+            {
+              "name": "field_validation",
+              "version": "jev-rubric-v1/policy-v1",
+              "outcome": "completed",
+              "durationMs": 166.343802,
+              "provider": {
+                "name": "typesafe",
+                "returnedModel": "jev-1.13.0",
+                "inputTokens": 1063,
+                "outputTokens": 108,
+                "reasoningTokens": null,
+                "prefixCachedTokens": null,
+                "outputTokenCeiling": null,
+                "durationMs": 166.167665,
+                "httpStatus": 200,
+                "completion": "completed"
+              }
+            },
+            {
+              "name": "generation",
+              "version": "application-draft-policy-v2/context-v1/schema-v1",
+              "outcome": "completed",
+              "durationMs": 11613.814933,
+              "provider": {
+                "name": "openai",
+                "returnedModel": "gpt-6-luna",
+                "inputTokens": 2044,
+                "outputTokens": 336,
+                "reasoningTokens": 0,
+                "prefixCachedTokens": 0,
+                "outputTokenCeiling": 8000,
+                "durationMs": 4004.809594,
+                "httpStatus": 200,
+                "completion": "completed"
+              }
+            },
+            {
+              "name": "mechanical_preparation",
+              "version": "normalization-v1/structure-v1/repetition-v1/normalization-v1/structure-v1/portions-v1/bounds-v1",
+              "outcome": "completed",
+              "durationMs": 0.185856,
+              "provider": null
+            },
+            {
+              "name": "resume_support",
+              "version": "resume-support-openai-v1/number-guard-v2/strength-guard-v2/review-language-v1",
+              "outcome": "complete",
+              "durationMs": 1431.058283,
+              "provider": {
+                "name": "openai",
+                "returnedModel": "gpt-6-luna",
+                "inputTokens": 736,
+                "outputTokens": 73,
+                "reasoningTokens": 0,
+                "prefixCachedTokens": 0,
+                "outputTokenCeiling": 4000,
+                "durationMs": 1430.912172,
+                "httpStatus": 200,
+                "completion": "completed"
+              }
+            },
+            {
+              "name": "artifact_support",
+              "version": "artifact-support-openai-v7/prepared-citations-v1/number-guard-v2/answer-input-v1/career-citations-v1/neutral-blocks-v1/range-schema-v2/strength-guard-v2",
+              "outcome": "complete",
+              "durationMs": 6176.891352,
+              "provider": {
+                "name": "openai",
+                "returnedModel": "gpt-6-luna",
+                "inputTokens": 1762,
+                "outputTokens": 828,
+                "reasoningTokens": 0,
+                "prefixCachedTokens": 0,
+                "outputTokenCeiling": 8000,
+                "durationMs": 6174.88555,
+                "httpStatus": 200,
+                "completion": "completed"
+              }
+            }
+          ],
+          "accepted": null
+        },
+        "browserBackendDiscrepancy": "backend completed but browser displayed temporarily unavailable; exact browser response not captured; cause unverified"
+      }
+    ],
+    "credentialCleanup": {
+      "openAI": "absent after reload: ! SET API KEY",
+      "typeSafe": "absent after reload: add TypeSafe API key message",
+      "clipboardCleared": true,
+      "verifiedAt": "2026-10-12T17:10:48.355Z"
+    }
+  },
+  "portuguese": {
+    "status": "pending separate empty connected browser profile",
+    "workflowsDispatched": 0,
+    "providerDispatches": 0,
+    "publishedBrowserExistingProfileAndCredentials": "preserved, not submitted or changed",
+    "remainingFrozenWorkflowAllowance": 3,
+    "remainingFrozenTypeSafeAllowance": 3,
+    "remainingFrozenOpenAIAllowance": 7,
+    "remainingFrozenOpenAIOutputTokenCeiling": 48000
+  },
+  "privacy": {
+    "diagnostics": "Observed Netlify logs showed stages, versions, timing, token counts and request metadata. No input prose, prompt, output prose or credentials were seen.",
+    "backendRetention": "unverified",
+    "observedAcceptedSkillEvidenceUnchangedAfterDownstreamRequests": true,
+    "fullSavedProfileSnapshotCompared": false
+  },
+  "limitations": [
+    "The backend completed the English draft with HTTP 200 while the browser displayed temporarily unavailable; the exact response and cause are unverified.",
+    "No retry, replacement candidate, prompt/model/schema tuning, additional provider diagnosis or generated application output acceptance occurred inside this batch.",
+    "The applied Skills value was Ruby with the complete approved source excerpt; the duplicate Tools proposal was not selected. This differs from the offline fixture fact value and IDs.",
+    "Exact browser HTTP payloads were not captured. Visible input, language, job citations and selected source evidence were inspected before the dependent requests.",
+    "No actual draft display/copy/PDF consistency, bilingual published-browser acceptance or broad provider-quality result is established by these observations.",
+    "Observed usage is not an actual charge. No accepted result exists for accepted-result cost."
+  ],
+  "actualCharge": null,
+  "acceptedResultCost": null,
+  "releaseGatePassed": false,
+  "issue52State": "open"
+}

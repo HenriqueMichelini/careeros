@@ -1,0 +1,66 @@
+JOB POSTING OR DESCRIPTION
+
+REVIEW JOB UNDERSTANDING
+BACK TO POSTING
+
+Check the details used for tailoring. Source excerpts show where an interpretation came from; they do not guarantee it is correct.
+
+Role
+Ruby Developer
+Original posting excerpt
+Ruby Developer
+Company
+Not supplied
+Seniority
+Not supplied
+Location
+Not supplied
+Responsibilities
+
+Maintain internal CLI tools using Ruby.
+
+Importance not specified
+
+Original posting excerpt
+Maintain internal CLI tools using Ruby.
+Qualifications
+
+Ruby is required.
+
+Explicitly required
+
+Original posting excerpt
+Ruby is required.
+Application Requirements
+
+Explain how you use Ruby in English.
+
+Importance not specified
+
+Original posting excerpt
+Explain how you use Ruby in English.
+
+To correct an interpretation, go back, edit the original posting and analyze again.
+
+Requirement support
+
+Ruby is required.
+
+Supported · Explicitly required
+
+The posting requires Ruby. The approved profile fact states “I use Ruby to maintain internal CLI tools,” which directly supports Ruby experience and aligns with the posting’s description of maintaining internal CLI tools with Ruby. The posting also asks for an explanation in English; the fact is written in English, though it does not independently establish any further communication qualification.
+
+Inspect Profile evidence and context
+
+Review the cited facts alongside their role/project context and any conflicting evidence. References show origin, not proof of truth.
+
+Profile
+
+Skills · Cited support
+
+Ruby
+
+Affirmed · Actual · Certain
+
+I use Ruby to maintain internal CLI tools.
+GENERATE MATERIALS

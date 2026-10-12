@@ -1,0 +1,34 @@
+Skills · Profile
+
+Ruby
+
+Statement · Accepted proposal; original origin unknown · Approved excerpt support
+
+Assertion
+Unknown
+Affirmed
+Negated
+Intent
+Unknown
+Actual
+Aspiration
+Certainty
+Unknown
+Certain
+Uncertain
+Date precision
+Unknown
+Exact
+Approximate
+Original date / duration wording
+Role context
+None
+Project context
+None
+Period context
+None
+Move fact to
+Profile
+I use Ruby to maintain internal CLI tools.
+professional_information · Active
+Remove fact

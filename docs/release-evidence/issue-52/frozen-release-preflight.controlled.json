@@ -1,0 +1,155 @@
+{
+  "preflightSHA256": "af7d25cf2c58b6851eeec0bf904c471edbae92ad0f2beccf6dc8743e1f0a91aa",
+  "preflightBytes": 331495,
+  "offlineOnly": true,
+  "workflows": 6,
+  "providerDispatches": 20,
+  "typeSafeDispatches": 6,
+  "openAIDispatches": 14,
+  "openAIOutputTokenCeilingTotal": 96000,
+  "schemas": [
+    {
+      "name": "profile_claims",
+      "model": "gpt-6-luna",
+      "reasoning": "none",
+      "outputTokenCeiling": 6000,
+      "properties": 17,
+      "enumValues": 30,
+      "maxObjectDepth": 4
+    },
+    {
+      "name": "profile_operations",
+      "model": "gpt-6-luna",
+      "reasoning": "none",
+      "outputTokenCeiling": 6000,
+      "properties": 18,
+      "enumValues": 18,
+      "maxObjectDepth": 3
+    },
+    {
+      "name": "qualification_job_context",
+      "model": "gpt-6-luna",
+      "reasoning": "none",
+      "outputTokenCeiling": 8000,
+      "properties": 39,
+      "enumValues": 11,
+      "maxObjectDepth": 4
+    },
+    {
+      "name": "requirement_evidence",
+      "model": "gpt-6-luna",
+      "reasoning": "none",
+      "outputTokenCeiling": 8000,
+      "properties": 6,
+      "enumValues": 4,
+      "maxObjectDepth": 2
+    },
+    {
+      "name": "application_draft",
+      "model": "gpt-6-luna",
+      "reasoning": "none",
+      "outputTokenCeiling": 8000,
+      "properties": 16,
+      "enumValues": 14,
+      "maxObjectDepth": 3
+    },
+    {
+      "name": "resume_support",
+      "model": "gpt-6-luna",
+      "reasoning": "none",
+      "outputTokenCeiling": 4000,
+      "properties": 4,
+      "enumValues": 3,
+      "maxObjectDepth": 2
+    },
+    {
+      "name": "artifact_support",
+      "model": "gpt-6-luna",
+      "reasoning": "none",
+      "outputTokenCeiling": 8000,
+      "properties": 24,
+      "enumValues": 18,
+      "maxObjectDepth": 3
+    },
+    {
+      "name": "profile_claims",
+      "model": "gpt-6-luna",
+      "reasoning": "none",
+      "outputTokenCeiling": 6000,
+      "properties": 17,
+      "enumValues": 30,
+      "maxObjectDepth": 4
+    },
+    {
+      "name": "profile_operations",
+      "model": "gpt-6-luna",
+      "reasoning": "none",
+      "outputTokenCeiling": 6000,
+      "properties": 18,
+      "enumValues": 18,
+      "maxObjectDepth": 3
+    },
+    {
+      "name": "qualification_job_context",
+      "model": "gpt-6-luna",
+      "reasoning": "none",
+      "outputTokenCeiling": 8000,
+      "properties": 39,
+      "enumValues": 11,
+      "maxObjectDepth": 4
+    },
+    {
+      "name": "requirement_evidence",
+      "model": "gpt-6-luna",
+      "reasoning": "none",
+      "outputTokenCeiling": 8000,
+      "properties": 6,
+      "enumValues": 4,
+      "maxObjectDepth": 2
+    },
+    {
+      "name": "application_draft",
+      "model": "gpt-6-luna",
+      "reasoning": "none",
+      "outputTokenCeiling": 8000,
+      "properties": 16,
+      "enumValues": 14,
+      "maxObjectDepth": 3
+    },
+    {
+      "name": "resume_support",
+      "model": "gpt-6-luna",
+      "reasoning": "none",
+      "outputTokenCeiling": 4000,
+      "properties": 4,
+      "enumValues": 3,
+      "maxObjectDepth": 2
+    },
+    {
+      "name": "artifact_support",
+      "model": "gpt-6-luna",
+      "reasoning": "none",
+      "outputTokenCeiling": 8000,
+      "properties": 24,
+      "enumValues": 18,
+      "maxObjectDepth": 3
+    }
+  ],
+  "allControlledResponsesMatchStandardJSONSchema": true,
+  "noNewlineEnumLiterals": true,
+  "requiredFieldsAndClosedObjectsChecked": true,
+  "providerAdmissionProven": false,
+  "actualCharge": null,
+  "acceptedResultCost": null,
+  "helperCompilation": "Disposable offline capture helper used -buildvcs=false because restricted worktree metadata blocked stamping. Product Go/Node checks were separately run before merge without disabling VCS stamping.",
+  "limitations": [
+    "Initial ingestion requests are exact offline client requests; browser-created document IDs/revisions differ.",
+    "Later requests/envelopes are faithful controlled examples, dependent on actual accepted ingestion/job/generation outputs. They are not exact future live payloads.",
+    "Live source/profile projection and each dependent handler request must be checked before sending, within the frozen source/posting and selected-source limits.",
+    "Controlled supported judgments measure contracts and call caps, not model accuracy, actual provider admission, deployed acceptance or PDF.",
+    "These two new bilingual smoke cases are separate from targeted Kotlin/Java diagnostics, but too small to establish broad quality or reliability.",
+    "No credentials or unrelated user Profile, contact, employer, project, salary or private data are included.",
+    "No retry, clarification follow-up, prompt/model/schema tuning or candidate replacement inside the proposed batch. Skip failed dependents.",
+    "Actual charge and accepted-result cost remain unavailable without billing evidence."
+  ]
+}

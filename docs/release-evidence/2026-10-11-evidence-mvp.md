@@ -6,6 +6,15 @@ All native prerequisites (#33, #50, #51, #62, #65) were closed before work began
 This is a verification deliverable, not certification of arbitrary provider output.
 Deployment checks found failures; this report does not declare the MVP release gate complete.
 
+**Latest checkpoint, 2026-10-12:** PR #110 merged the multiline-citation correction
+as `cb670b31fb36f94eea63202a38b5d78e5293e109`. The separately authorized candidate
+`2e8c5038cb8f8aa69daac23fa9af4cdf76ae550e` is now published and locked. The frozen
+Ruby/CLI English browser check completed ingestion and qualification; the draft
+backend completed but the browser displayed unavailable. No generated application
+output was accepted, copied or exported. Portuguese published-browser coverage
+awaits a separate empty browser profile. See the final checkpoint below; dated
+deployment and failure records remain historical evidence. **#52 remains open.**
+
 ## Scope and evidence rules
 
 New held-out synthetic EN/PT cases connect the public migration/storage, manual
@@ -845,3 +854,122 @@ publication or additional calls. Historical failures, uncertain manual facts,
 extra-answer fidelity observations, qualification reliability, bilingual browser
 acceptance and the held-out quality/cost comparison remain explicit.
 **#52 remains open; the overall release gate has not passed.**
+
+### Frozen Ruby/CLI publication and browser checkpoint, 2026-10-12
+
+The user separately approved publication of the already-built candidate
+`2e8c5038cb8f8aa69daac23fa9af4cdf76ae550e`, deploy
+`6acd0bb9787613642a1bdc53`, and one frozen EN-preview/PT-published synthetic batch.
+The approval caps the batch at six workflows, six TypeSafe and fourteen OpenAI
+dispatches, 96,000 aggregate OpenAI output-token ceilings, and zero retries.
+Unused Portuguese allowance cannot become another English attempt. No candidate
+replacement, prompt/model/schema tuning or extra provider diagnosis is included.
+
+Netlify showed **Published & locked deploy**, the approved head, and publishing
+locked to that deploy after publication. Automatic publishing stayed locked.
+The platform still displayed operational-credit restrictions, but publication of
+this completed build succeeded without a billing change. The source head and
+PR #110 merge commit have the identical tree
+`e8b50f0c57e495b94aba43d14416663533ab2ac8`. Published origin:
+`https://beamish-bavarois-333d03.netlify.app/`; tested immutable preview origin:
+`https://6acd0bb9787613642a1bdc53--beamish-bavarois-333d03.netlify.app/`.
+
+The provider-free preflight contains real public-client requests and handler
+provider envelopes using controlled responses for both languages. Its frozen
+331,495-byte file has SHA-256
+`af7d25cf2c58b6851eeec0bf904c471edbae92ad0f2beccf6dc8743e1f0a91aa`.
+[Retained validation](issue-52/frozen-release-preflight.controlled.json) records
+all fourteen standard-schema checks and absence of newline enum literals. The
+disposable offline helper used `-buildvcs=false` because restricted worktree
+metadata blocked stamping; product checks separately passed without that flag.
+These checks establish controlled contracts, not model quality or exact future
+browser payload bytes. Browser document IDs, accepted proposal values, job
+analysis and generated prose differ from the fixture. Actual browser HTTP bodies
+were not captured. Visible source, language, posting citations and selected
+Profile evidence were inspected before dependent submissions. This leaves the
+issue's exact actual-outbound-payload evidence requirement incomplete.
+
+The fresh English preview Profile contained only the synthetic submission
+“I use Ruby to maintain internal CLI tools.” and initially blank identity/contact
+fields. Ingestion returned one extracted claim and proposed Ruby in both Skills
+and Tools & Technologies. Only the Skills proposal was selected and explicitly
+applied. The saved value is **Ruby**, with the complete approved source excerpt,
+affirmed/actual/certain semantics, unknown date and no role/project ownership.
+The duplicate Tools proposal stayed unselected. This is an observed difference
+from the preflight fixture, not a substitution of its output. The saved fact and
+source survived reload; [before](issue-52/frozen-ruby-fact-before.en.txt) and
+[after](issue-52/frozen-ruby-fact-after.en.txt) rendered metadata were identical
+across the downstream requests. This compares the accepted skill evidence, not
+an unavailable full browser Profile snapshot.
+
+The exact four-line posting was:
+
+```text
+Ruby Developer.
+Maintain internal CLI tools using Ruby.
+Ruby is required.
+Explain how you use Ruby in English.
+```
+
+[Qualification review](issue-52/frozen-ruby-qualification.en.txt) was usable.
+It retained the role, duty, explicit Ruby requirement and English application
+question with exact original excerpts. Company, seniority and location remained
+not supplied. The requirement was supported by the accepted Skills fact and its
+approved excerpt; no temporary answer or additional qualification was entered.
+The review acknowledged that the English source does not independently establish
+a further communication qualification. See the
+[source](issue-52/frozen-ruby-source.en.jpg) and
+[qualification](issue-52/frozen-ruby-qualification.en.jpg) browser observations.
+
+The single subsequent draft request produced a discrepancy. The browser showed
+“Application generation is temporarily unavailable. Try again shortly.” and
+never displayed generated materials. After an initial Netlify log-availability
+error, one read-only dashboard reload exposed HTTP 200 and completed generation,
+resume-support and artifact-support stages, including `range-schema-v2`.
+This demonstrates provider admission of the current artifact-review schema for
+this request; it does not establish browser delivery, acceptance or semantic
+quality. The exact response/error was not captured, so the cause is unverified.
+No additional draft click or provider retry occurred. Resume/artifact acceptance,
+copy and actual PDF checks were skipped because no result was available in the
+browser. The [failure screenshot](issue-52/frozen-ruby-draft-failure.en.jpg)
+records the visible result.
+
+| English workflow | Handler status / duration | TypeSafe / OpenAI dispatches | OpenAI input / output tokens |
+| --- | --- | --- | --- |
+| Ingestion | 200 / 6,815.127793 ms | 1 / 2 | 2,971 / 332 |
+| Qualification | 200 / 10,778.281894 ms | 1 / 2 | 1,907 / 424 |
+| Application Draft | 200 / 11,781.259439 ms; browser unavailable | 1 / 3 | 4,542 / 1,237 |
+| Total | Three workflows; no retry | 3 / 7 | 9,420 / 1,993 |
+
+The observed seven OpenAI calls used `gpt-6-luna`, zero reported reasoning tokens
+and 48,000 aggregate output-token ceilings; three TypeSafe calls returned
+`jev-1.13.0` with 3,148 input / 313 output tokens. These are observed usage and
+handler durations, not actual charges or browser/network latency measurements.
+[Structured evidence](issue-52/frozen-publication-browser.live.json) retains the
+content-free diagnostic stages. Viewed logs contained stage names, versions,
+timings, usage and platform request metadata; no source prose, prompts, output
+prose or credentials were seen. Backend retention remains unverified. Both
+temporary preview keys were cleared through the UI, the browser clipboard was
+cleared, and missing-key readiness was
+[verified after reload](issue-52/frozen-preview-keys-cleared.en.jpg).
+
+The Portuguese published-browser checks have made **zero** provider calls. The
+connected published origin already contained a Profile and credentials, so they
+were preserved without editing, clearing or submitting them. A separate empty
+connected browser profile was requested from the user and is still pending at
+this checkpoint. Its remaining three-workflow / three-TypeSafe / seven-OpenAI /
+48,000-output-ceiling allowance is reserved for that frozen Portuguese case.
+
+The correction's full Go suite, 132 Node tests, TypeScript and production build
+passed before PR #110 merged. GitGuardian, the Netlify preview and redirect
+checks passed on its exact head; header/page checks were neutral. No SonarCloud
+result was reported for that head at merge. This checkpoint changes evidence
+only and does not imply that any unavailable check passed.
+
+**Release gate: not passed; #52 remains open.** The thirteen original issue
+criteria and five closed native prerequisites are unchanged. Controlled and
+historical evidence remains bounded as recorded above. The backend/browser
+discrepancy, exact actual-payload trace, Portuguese published-browser coverage,
+generated-output acceptance/copy/PDF and broader held-out provider quality/cost
+comparison remain incomplete. Actual charge and accepted-result cost are null;
+no accepted generated application result exists for that denominator.
