@@ -1,0 +1,103 @@
+{
+  "baseline": "b22d2d05c18d250bd96b18e46acf5848d80225b4",
+  "scope": "Controlled production-handler counterfactual diagnosis, no provider calls",
+  "originalPublishedBuild": "29ce680e0cbb3e13c0d75c065c704db017903a4e",
+  "sourceHashes": {
+    "backend/application-draft/resume.go": "f485fa7bc12fcb76b686fa40253de3ff75229286e9b67afe626f1b9f2dbcc01c",
+    "backend/application-draft/artifacts.go": "d99a4407f3ccc15a0b6631dafd654fff62b6a66413f0ec0b5ef1fda6b2b3fb42",
+    "backend/application-draft/strength_contract_test.go": "6603165b729d51cf8130f96049a0f4bd9f6d2bbfdb46f2ec810ad9ed072f3fbb"
+  },
+  "counterfactualBoundary": "Reconstructed generation payload from recorded published output plus controlled supported review judgments. Original raw provider judgments were not captured. This isolates the deterministic stronger_claim path; it does not prove the live provider judgment or semantic quality. Existing corpus gold scores are inapplicable and not reported.",
+  "before": {
+    "artifactClaims": [
+      {
+        "field": "jobTitle",
+        "state": "supported",
+        "concerns": []
+      },
+      {
+        "field": "jobSummary",
+        "state": "supported",
+        "concerns": []
+      },
+      {
+        "field": "greeting",
+        "state": "supported",
+        "concerns": []
+      },
+      {
+        "field": "body",
+        "state": "supported",
+        "concerns": []
+      },
+      {
+        "field": "applicationAnswers",
+        "state": "unsupported",
+        "concerns": [
+          "stronger_claim"
+        ]
+      }
+    ]
+  },
+  "after": {
+    "artifactClaims": [
+      {
+        "field": "jobTitle",
+        "state": "supported",
+        "concerns": []
+      },
+      {
+        "field": "jobSummary",
+        "state": "supported",
+        "concerns": []
+      },
+      {
+        "field": "greeting",
+        "state": "supported",
+        "concerns": []
+      },
+      {
+        "field": "body",
+        "state": "supported",
+        "concerns": []
+      },
+      {
+        "field": "applicationAnswers",
+        "state": "supported",
+        "concerns": []
+      }
+    ]
+  },
+  "publicClientReplay": [
+    {
+      "origin": "controlled-principal-before",
+      "resumeParsed": true,
+      "artifactsParsed": true,
+      "resumeAccepted": true,
+      "artifactAccepted": false,
+      "errors": [
+        "artifacts:unresolved"
+      ],
+      "profileUnchanged": true
+    },
+    {
+      "origin": "controlled-principal-after",
+      "resumeParsed": true,
+      "artifactsParsed": true,
+      "resumeAccepted": true,
+      "artifactAccepted": true,
+      "errors": [],
+      "profileUnchanged": true
+    }
+  ],
+  "heldOutProviderQuality": false,
+  "newProviderCalls": 0,
+  "publicationChanged": false,
+  "remainingLiveAttempts": 0,
+  "limits": [
+    "Bounded lexical exception for principal followed by same-line Portuguese responsabilidade; not a semantic subject classifier.",
+    "Real rank uses, other strength terms and metrics remain guarded; provider rejection stays independent.",
+    "Generation still returns five answers in this recorded scenario; question selection and broader workflow reliability are not resolved.",
+    "Corrected backend/client have not been verified in a deployed browser workflow."
+  ]
+}
