@@ -798,3 +798,50 @@ in issue comment 6117692107 remains applicable. Controlled integration evidence
 does not establish reliable bilingual deployed acceptance, semantic quality or
 accepted-result cost. This final batch adds an actual English browser failure
 and a privacy-preserving Portuguese skip; it does not close those gaps.
+
+### Multiline job-citation schema — bounded local diagnosis and correction, 2026-10-12
+
+After the prior frozen browser batch ended, the user separately approved **one**
+local OpenAI artifact-review diagnostic, with no retries, TypeSafe requests,
+publication, Profile changes or acceptance. This new allowance is exhausted.
+[Sanitized evidence](issue-52/newline-enum.local.live.json) records the exact
+payload hash, synthetic input, schema checks, provider status and timing. The
+private raw response is not committed.
+
+The current production handler received the same four-line Kotlin posting and a
+fresh synthetic Profile created by the actual manual-edit and qualification-
+projection clients. Unknown semantics and unsupported evidence metadata were
+preserved. Generated prose was a controlled faithful example; it and the local
+IDs differ from the prior browser attempt. Standard JSON Schema validation and
+the documented required-field, object, enum-count and depth checks passed. These
+checks did not establish provider admission.
+
+The one frozen request returned HTTP 400 in 1,527.389 ms. The provider identified
+`response_format` and specifically rejected a newline in a `jobSources` quote
+enum. The schema has 24 properties, 22 enum values and depth 5; its size does not
+explain that error. Manual fact support metadata affects judgment, while this
+request was rejected at schema admission. This proves a reproducible structural
+defect for multiline posting excerpts. The prior browser error body remains
+unavailable, so this is not asserted as the sole proven historical cause. Usage,
+actual charge and accepted-result cost remain unavailable.
+
+A public-handler regression now emulates the observed HTTP 400 when the actual
+outgoing strict schema contains a newline string enum. Before the correction,
+the existing multiline/UTF-8/CRLF citation case failed with an unavailable review,
+matching the visible browser failure. Afterward it passes. The schema still
+binds complete career references and complete original start/end pairs. Job
+quotes use the string type rather than literal enums; the existing deterministic
+UTF-8 and exact-original-byte checks remain mandatory before a quote is retained.
+No quote is guessed, normalized or repaired. Independent judgments, number and
+strength guards and explicit acceptance remain in force. New EN/PT tests through
+the public handler/client reject invented text and an added newline even at
+otherwise correct source ranges, while preserving the Profile. The shared
+prepared source remains the only source mapper. Policy/model settings and public
+response shapes are unchanged; diagnostics identify `range-schema-v2`.
+
+The correction has **no fresh provider, deployed browser or PDF verification**.
+The approved published runtime remains `956f5c6`; this section authorizes no
+publication or additional calls. Historical failures, uncertain manual facts,
+extra-answer fidelity observations, qualification reliability, bilingual browser
+acceptance and the held-out quality/cost comparison remain explicit.
+**#52 remains open; the overall release gate has not passed.**
