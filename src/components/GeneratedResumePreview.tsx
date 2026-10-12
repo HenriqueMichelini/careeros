@@ -211,9 +211,8 @@ export default function GeneratedResumePreview({
               className="mb-3 last:mb-0"
             >
               <h3 className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--color-accent)]">
-                {section.id
-                  ? labels[section.id]
-                  : section.title || t("results.resume")}
+                {section.title ||
+                  (section.id ? labels[section.id] : t("results.resume"))}
               </h3>
               {section.blocks.map((block, blockIndex) => (
                 <Fragment key={blockIndex}>

@@ -1,0 +1,94 @@
+SEÇÕES
+
+PERFIL
+Objetivos de carreira
+Habilidades e tecnologias
+Experiência
+Projetos
+Formação
+Certificações
+Idiomas
+Remuneração
+Outros
+PERFIL
+
+Edite seus dados profissionais por seção
+
+Adicione seus dados de identidade e contato aqui e atualize suas informações profissionais nas outras seções.
+
+Identidade e contato
+
+Estes dados aparecem no cabeçalho do currículo. Deixe um campo vazio para omiti-lo.
+
+NOME COMPLETO
+E-MAIL
+TELEFONE
+LOCALIZAÇÃO
+LINKS PROFISSIONAIS
+Adicionar informações profissionais
+
+Cole um fato profissional ou informações brutas extensas; não é preciso organizar ou revisar o texto antes. Repetições, formatos misturados e anotações desorganizadas são bem-vindos. Extraímos fatos distintos com suporte no texto, consolidamos repetições e sugerimos alterações objetivas nas seções adequadas do Perfil. Confira fonte, destino e valores antes/depois, edite ou rejeite sugestões e aplique explicitamente as que aprovar.
+
+Configurações de validação TypeSafe
+Termos de uso de entradas do CareerOS
+Suas informações profissionais
+
+46 / 30000 bytes
+
+Processar próxima parte
+Descartar
+
+Cada clique processa uma parte limitada (até 30 afirmações / 60 alterações). O texto completo é validado a cada vez. Revise e salve ou dispense as sugestões antes de continuar. O texto fica somente nesta sessão.
+
+Partes da fonte processadas: 1 / 1; Tentadas: 1
+
+O progresso da fonte não comprova que todos os fatos foram encontrados. Afirmações não resolvidas ainda precisam de revisão. Somente fatos salvos são comparados com partes posteriores; referências ambíguas precisam de esclarecimento.
+
+Regiões da fonte em bytes
+Dispensar sugestões restantes desta parte
+Reiniciar com partes menores (fatos salvos permanecem)
+Alterações sugeridas no Perfil
+
+Nada está selecionado. Confira a fonte e os valores antes/depois e aprove as alterações desejadas.
+
+Afirmações revisadas: 1 · Afirmações inválidas: 0 · Alterações não alocadas: 0
+
+Este registro contabiliza as afirmações retornadas. Ele não comprova que todos os fatos do texto enviado foram descobertos.
+
+Uses Ruby to maintain internal CLI tools.
+
+Fonte: “Uso Ruby para manter ferramentas CLI internas.”
+
+Alteração proposta
+
+Uma alteração foi proposta para revisão explícita antes de salvar.
+
+Detalhe da comparação no idioma do texto enviado
+
+Afirmou que usa Ruby para manter ferramentas CLI internas; o perfil não contém fatos existentes que indiquem duplicidade.
+
+Aprovar alterações ligadas
+Rejeitar alterações ligadas
+Adicionar · Habilidades · Habilidades · Fato novo
+Fonte: “Uso Ruby para manter ferramentas CLI internas.”
+Fonte: “Uso Ruby para manter ferramentas CLI internas.”
+
+Terminologia exata proposta: —
+
+Afirmado · Real · Certo · Desconhecido
+
+Depois / valor sugerido (editável)
+Mostrar prévia completa do campo
+Adicionar · Ferramentas e tecnologias · Ferramentas e tecnologias · Fato novo
+Fonte: “Uso Ruby para manter ferramentas CLI internas.”
+Fonte: “Uso Ruby para manter ferramentas CLI internas.”
+
+Terminologia exata proposta: —
+
+Afirmado · Real · Certo · Desconhecido
+
+Depois / valor sugerido (editável)
+Mostrar prévia completa do campo
+Aplicar alterações aprovadas
+Cancelar e descartar
+Detalhes e contexto dos fatos

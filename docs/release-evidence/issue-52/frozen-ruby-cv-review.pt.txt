@@ -1,0 +1,47 @@
+CAREEROS
+APLICAR
+PERFIL
+CURRÍCULO
+RESULTADOS
+English
+Português
+CHAVE API ✓
+
+Gerado com evidências profissionais selecionadas. A seleção pode deixar informações úteis de fora; revise cada material antes de usar.
+
+CANDIDATURA GERADA
+
+MATERIAIS DE CANDIDATURA
+NOVA CANDIDATURA
+RESUMO
+CURRÍCULO
+CARTA DE APRESENTAÇÃO
+PERGUNTAS E RESPOSTAS
+Revisar evidências do currículo
+
+As verificações podem errar. Referências indicam fontes, não comprovam a veracidade. Cada material tem sua própria revisão; aceite todos os materiais para concluir a revisão do rascunho.
+
+COM SUPORTE NAS EVIDÊNCIAS CITADAS
+
+Ruby: manutenção de ferramentas CLI internas.
+
+Ver suporte original
+
+443f3684-ce67-44b8-98dd-be63562af8a9 · revisão 2
+
+Ruby
+
+Contexto: Informações profissionais gerais
+
+Uso Ruby para manter ferramentas CLI internas.
+Fornecer correção
+Remover afirmação
+
+Aceite o currículo após revisar o texto e seu suporte original. Resolva primeiro todas as afirmações incertas ou sem suporte.
+
+Aceitar currículo
+Restaurar texto do rascunho
+Copiar texto
+SALVAR COMO PDF
+
+Na janela de impressão, escolha Salvar como PDF, papel A4, sem margens e desative cabeçalhos e rodapés.

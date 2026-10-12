@@ -1,0 +1,65 @@
+SEÇÕES
+
+PERFIL
+Objetivos de carreira
+Habilidades e tecnologias
+Experiência
+Projetos
+Formação
+Certificações
+Idiomas
+Remuneração
+Outros
+
+REVISÃO POR IA
+
+Revisa apenas Habilidades e tecnologias.
+
+REVISAR COM IA
+HABILIDADES E TECNOLOGIAS
+
+Habilidades, competências, ferramentas e tecnologias
+
+HABILIDADES
+COMPETÊNCIAS PRINCIPAIS
+FERRAMENTAS E TECNOLOGIAS
+Detalhes e contexto dos fatos
+
+Blocos existentes permanecem inteiros. Correções manuais são de sua autoria; mudanças de significado invalidam o suporte anterior. Mova apenas para um campo compatível vazio.
+
+Habilidades · Perfil
+
+Ruby
+
+Afirmação · Proposta aceita; origem original desconhecida · Suporte de trecho aprovado
+
+Afirmação
+Desconhecido
+Afirmado
+Negado
+Intenção
+Desconhecido
+Real
+Aspiração
+Certeza
+Desconhecido
+Certo
+Incerto
+Precisão da data
+Desconhecido
+Exata
+Aproximada
+Texto original da data / duração
+Contexto do cargo
+Nenhum
+Contexto do projeto
+Nenhum
+Contexto do período
+Nenhum
+Mover fato para
+Perfil
+Uso Ruby para manter ferramentas CLI internas.
+professional_information · Ativo
+Remover fato
+Competências principais · Perfil
+Ferramentas e tecnologias · Perfil

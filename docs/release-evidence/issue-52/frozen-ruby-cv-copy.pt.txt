@@ -1,0 +1,2 @@
+## Competências Técnicas
+- Ruby: manutenção de ferramentas CLI internas.
