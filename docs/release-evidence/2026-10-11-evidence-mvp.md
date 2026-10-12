@@ -627,3 +627,46 @@ in replay. This is **offline client evidence**, not corrected-client deployment 
 live browser journey. No response was repaired or reordered to obtain acceptance,
 no new provider request was made, and the published answer failure remains recorded.
 All original #52 acceptance criteria and broader semantic/cost gates remain open.
+
+
+### Portuguese responsibility wording versus seniority — controlled correction, 2026-10-12
+
+The published build `29ce680` answer contained “principal responsabilidade”. The
+shared resume/artifact strength guard matched `principal` anywhere in a block and
+compared it only with career source terms, treating this ordinary Portuguese noun
+phrase as a rank. A controlled production-handler counterfactual reconstructed the
+recorded generated output and supplied supported review judgments. It reproduced
+`stronger_claim`; changing only the phrase to “responsabilidade central” removed
+that concern. Original raw live provider judgments were not captured, so this
+isolates a deterministic failure path without claiming it was the sole live cause.
+
+The revised lexical guard excludes `principal` when followed on the same line by
+Portuguese `responsabilidade`. It applies the same classification to source facts
+and generated text: responsibility wording cannot supply evidence for a principal
+engineer claim. Other occurrences of `principal`, other strength terms, metrics,
+source identity, ownership and independent support-review outcomes remain guarded.
+The diagnostic versions add `strength-guard-v2`; provider policy/schema, model,
+retry behavior and public response shapes are unchanged. This is a bounded lexical
+correction, not a semantic subject classifier or certification of support.
+
+The public handler regression failed before the fix and passes afterward. Eleven
+controlled cases cover question/declarative responsibility phrasing, English and
+Portuguese principal-engineer claims, rank before/after the role, a second rank
+claim after the responsibility phrase, source-side rank contamination, literal
+supported rank, other strength words, invented metrics and independent review
+rejection. The fixture judgments are controlled; they do not prove model quality.
+
+[Controlled evidence](issue-52/strength-context.controlled.json) also records replay
+of the reconstructed published scenario before/after the correction through the
+actual client. Before, its artifact review cannot be accepted; afterward the
+controlled review can be accepted, with Profile unchanged. The recorded generated
+answer still has five items, and this correction does not resolve question-selection
+concerns or broader qualification/draft reliability. The reused evaluation corpus's
+gold labels do not describe this diagnostic case, so its aggregate scoring is not
+reported as precision/completeness evidence.
+
+No provider calls or publication were made for this correction. All existing live
+attempt allowances remain exhausted, and the published locked build remains
+`29ce680`. Corrected deployed-browser behavior, held-out provider quality and actual
+accepted-result cost remain unverified. The original #52 release requirements remain
+open; this controlled improvement is not full release acceptance.
