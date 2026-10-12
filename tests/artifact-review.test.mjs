@@ -5,7 +5,7 @@ import { join } from "node:path"
 import { tmpdir } from "node:os"
 import ts from "typescript"
 const dir = mkdtempSync(join(tmpdir(), "artifact-review-"))
-for (const name of ["artifactReview", "cover-letter"]) {
+for (const name of ["jsonEquality", "artifactReview", "cover-letter"]) {
   const source = readFileSync(
     new URL(`../src/lib/${name}.ts`, import.meta.url),
     "utf8",
@@ -19,7 +19,8 @@ for (const name of ["artifactReview", "cover-letter"]) {
           target: ts.ScriptTarget.ES2022,
         },
       })
-      .outputText.replace('"./cover-letter"', '"./cover-letter.mjs"'),
+      .outputText.replace('"./jsonEquality"', '"./jsonEquality.mjs"')
+      .replace('"./cover-letter"', '"./cover-letter.mjs"'),
   )
 }
 const {

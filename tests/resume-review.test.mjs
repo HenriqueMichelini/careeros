@@ -6,10 +6,10 @@ import { join } from "node:path"
 import ts from "typescript"
 const path = join(mkdtempSync(join(tmpdir(), "resume-review-")), "review.mjs")
 writeFileSync(
-  path,
+  join(path, "..", "jsonEquality.mjs"),
   ts.transpileModule(
     readFileSync(
-      new URL("../src/lib/resumeReview.ts", import.meta.url),
+      new URL("../src/lib/jsonEquality.ts", import.meta.url),
       "utf8",
     ),
     {
@@ -19,6 +19,23 @@ writeFileSync(
       },
     },
   ).outputText,
+)
+writeFileSync(
+  path,
+  ts
+    .transpileModule(
+      readFileSync(
+        new URL("../src/lib/resumeReview.ts", import.meta.url),
+        "utf8",
+      ),
+      {
+        compilerOptions: {
+          module: ts.ModuleKind.ESNext,
+          target: ts.ScriptTarget.ES2022,
+        },
+      },
+    )
+    .outputText.replace('"./jsonEquality"', '"./jsonEquality.mjs"'),
 )
 const {
   acceptResume,
