@@ -87,6 +87,11 @@ func (t transport) RoundTrip(r *http.Request) (*http.Response, error) {
 	entry.RequestBody, entry.RequestEncoding = encodedBody(raw)
 	requestBytes := len(raw)
 	entry.RequestSHA256, entry.RequestBytes = digest(raw), &requestBytes
+	if !c.approval.Dispatch {
+		entry.Outcome = "not_dispatched"
+		c.stopped, c.inspectionOnly = true, true
+		return nil, errors.New("release capture inspection only")
+	}
 	request := r.Clone(r.Context())
 	request.Body = io.NopCloser(bytes.NewReader(raw))
 	started := time.Now()
@@ -138,14 +143,19 @@ func elapsed(started time.Time) *float64 {
 }
 
 func containsSecret(raw []byte, secrets []string) bool {
-	if sensitiveString(string(raw), secrets) {
-		return true
+	value := string(raw)
+	for depth := 0; depth < 64; depth++ {
+		if sensitiveString(value, secrets) {
+			return true
+		}
+		decoded := decodeEscapes(value)
+		if decoded == value {
+			return false
+		}
+		value = decoded
 	}
-	var value any
-	if json.Unmarshal(raw, &value) != nil {
-		return false
-	}
-	return sensitiveValue(value, secrets, 0)
+	// Excessive nested escapes cannot be inspected completely within this bound.
+	return true
 }
 
 func sensitiveString(value string, secrets []string) bool {
@@ -157,34 +167,46 @@ func sensitiveString(value string, secrets []string) bool {
 	return false
 }
 
-func sensitiveValue(value any, secrets []string, depth int) bool {
-	// Fail closed on excessive nesting, including JSON embedded in content strings.
-	if depth > 64 {
-		return true
+// Scan escape tokens independently of JSON document validity, so truncated
+// objects and embedded malformed strings cannot hide an otherwise complete key.
+func decodeEscapes(value string) string {
+	if !strings.Contains(value, `\`) {
+		return value
 	}
-	switch v := value.(type) {
-	case string:
-		if sensitiveString(v, secrets) {
-			return true
-		}
-		var embedded any
-		if json.Unmarshal([]byte(v), &embedded) == nil {
-			return sensitiveValue(embedded, secrets, depth+1)
-		}
-	case []any:
-		for _, item := range v {
-			if sensitiveValue(item, secrets, depth+1) {
-				return true
+	var decoded strings.Builder
+	for i := 0; i < len(value); {
+		if value[i] == '\\' && i+1 < len(value) {
+			text, width := escapeToken(value[i:])
+			if width > 0 {
+				decoded.WriteString(text)
+				i += width
+				continue
 			}
 		}
-	case map[string]any:
-		for key, item := range v {
-			if sensitiveString(key, secrets) || sensitiveValue(item, secrets, depth+1) {
-				return true
+		decoded.WriteByte(value[i])
+		i++
+	}
+	return decoded.String()
+}
+
+func escapeToken(value string) (string, int) {
+	if value[1] == 'u' && len(value) >= 6 {
+		widths := []int{6}
+		if len(value) >= 12 && value[6:8] == `\u` {
+			widths = []int{12, 6}
+		}
+		for _, width := range widths {
+			var text string
+			if json.Unmarshal([]byte(`"`+value[:width]+`"`), &text) == nil {
+				return text, width
 			}
 		}
 	}
-	return false
+	escapes := map[byte]string{'"': "\"", '\\': `\`, '/': "/", 'b': "\b", 'f': "\f", 'n': "\n", 'r': "\r", 't': "\t"}
+	if text, ok := escapes[value[1]]; ok {
+		return text, 2
+	}
+	return "", 0
 }
 
 func encodedBody(raw []byte) (string, string) {

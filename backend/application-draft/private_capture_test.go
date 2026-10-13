@@ -46,11 +46,40 @@ func approvePrivateCapture(t *testing.T, req *http.Request) string {
 		"version": "release-capture-manifest-v1", "expiresAt": time.Now().Add(time.Hour).UTC().Format(time.RFC3339),
 		"cases": []any{map[string]any{
 			"id": "ruby-pt-draft", "path": "/api/application-draft", "origin": privateCaptureOrigin,
-			"requestSHA256": hash, "stages": []string{"field_validation", "generation", "resume_support", "artifact_support"},
+			"requestSHA256": hash, "stages": []string{"field_validation", "generation", "resume_support", "artifact_support"}, "dispatch": true,
 		}},
 	})
 	t.Setenv("CAREEROS_RELEASE_CAPTURE", string(manifest))
 	return hash
+}
+
+func TestPrivateCaptureDefaultsToInspectionBeforeAnyProviderDispatch(t *testing.T) {
+	req, fixture := privateCaptureRequest(t)
+	approvePrivateCapture(t, req)
+	var manifest map[string]any
+	_ = json.Unmarshal([]byte(os.Getenv("CAREEROS_RELEASE_CAPTURE")), &manifest)
+	delete(manifest["cases"].([]any)[0].(map[string]any), "dispatch")
+	raw, _ := json.Marshal(manifest)
+	t.Setenv("CAREEROS_RELEASE_CAPTURE", string(raw))
+	w := httptest.NewRecorder()
+	applicationdraft.NewHandlerWithClient(&http.Client{Transport: fixture}).ServeHTTP(w, req)
+	var output struct {
+		ReleaseCapture struct {
+			Outcome   string
+			Envelopes []struct {
+				Outcome, Stage, RequestBody string
+				HTTPStatus, ResponseBytes   *int
+				DurationMS                  *float64
+			}
+		}
+	}
+	if json.Unmarshal(w.Body.Bytes(), &output) != nil || len(fixture.hashes) != 0 || output.ReleaseCapture.Outcome != "inspection_only" || len(output.ReleaseCapture.Envelopes) != 1 {
+		t.Fatal("default capture must return the actual first envelope without any provider dispatch")
+	}
+	envelope := output.ReleaseCapture.Envelopes[0]
+	if envelope.Outcome != "not_dispatched" || envelope.Stage != "field_validation" || !strings.Contains(envelope.RequestBody, "Desenvolvedor Ruby.") || envelope.HTTPStatus != nil || envelope.ResponseBytes != nil || envelope.DurationMS != nil {
+		t.Fatal("inspection must preserve the real approved request and leave unobserved measurements null")
+	}
 }
 
 func TestApprovedSyntheticCaptureReturnsExactProviderBodiesOnlyToRequester(t *testing.T) {
@@ -160,6 +189,41 @@ func TestPrivateCaptureWithholdsAuthenticationFailureBodies(t *testing.T) {
 	envelope := output.ReleaseCapture.Envelopes[0]
 	if envelope.ResponseBody != "" || envelope.ResponseBytes != nil || envelope.Outcome != "authentication_failure" {
 		t.Fatal("authentication-failure bodies may contain masked credentials and must be withheld")
+	}
+}
+
+func TestPrivateCaptureWithholdsEscapedCredentialsInMalformedResponses(t *testing.T) {
+	for _, raw := range []string{
+		`{"error":"sk\u002dprivate\u002dopenai\u002d93f"`,
+		`{"error":"sk\u002dprivate\u002dopenai\u002d93f`,
+		`{"choices":[{"message":{"content":"{\"error\":\"sk\\u002dprivate\\u002dopenai\\u002d93f\""}}]}`,
+	} {
+		for _, status := range []int{200, 502} {
+			req, _ := privateCaptureRequest(t)
+			req.Header.Set("X-OpenAI-Api-Key", "sk-private-openai-93f")
+			req.Header.Set("X-TypeSafe-Api-Key", "private-typesafe-c5e")
+			approvePrivateCapture(t, req)
+			client := &http.Client{Transport: captureProviderTransport(func(r *http.Request) (*http.Response, error) {
+				return &http.Response{StatusCode: status, Body: io.NopCloser(strings.NewReader(raw))}, nil
+			})}
+			w := httptest.NewRecorder()
+			applicationdraft.NewHandlerWithClient(client).ServeHTTP(w, req)
+			var output struct {
+				ReleaseCapture struct {
+					Envelopes []struct {
+						Outcome, ResponseBody, ResponseSHA256 string
+						ResponseBytes                         *int
+					}
+				}
+			}
+			if json.Unmarshal(w.Body.Bytes(), &output) != nil || len(output.ReleaseCapture.Envelopes) != 1 {
+				t.Fatal("malformed credential echo must preserve only safe failure metadata")
+			}
+			envelope := output.ReleaseCapture.Envelopes[0]
+			if envelope.Outcome != "credential_content" || envelope.ResponseBody != "" || envelope.ResponseSHA256 != "" || envelope.ResponseBytes != nil {
+				t.Fatal("malformed or embedded JSON escapes must not bypass credential exclusion")
+			}
+		}
 	}
 }
 

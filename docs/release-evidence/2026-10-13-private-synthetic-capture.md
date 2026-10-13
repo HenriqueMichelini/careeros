@@ -3,7 +3,7 @@
 Date: 2026-10-13, America/Sao_Paulo. This extends the
 [controlled preparation](2026-10-12-controlled-preparation.md) after Henrique
 approved private, synthetic-only response capture. **Release gate: not passed.**
-No provider call, credential-file read, production publication, capture activation
+No live provider call, credential-file read, production publication, capture activation
 on Netlify or billing change is authorized or performed by this implementation.
 
 ## Implemented boundary
@@ -14,6 +14,14 @@ response and networking behavior. Capture requests require a valid, unexpired
 `CAREEROS_RELEASE_CAPTURE` approval manifest. An unconfigured or invalid capture
 request receives a content-free 403 before provider work; it does not fall back
 to ordinary processing.
+
+Approved capture defaults to inspection only. The first actual serialized provider
+envelope is inspected and returned with `not_dispatched`; the workflow stops with
+`inspection_only`, without invoking the provider transport. Provider status,
+response and duration remain unavailable. This supports a zero-provider deployed
+mechanism check using inert, syntactically valid placeholder keys. Forwarding
+requires an explicit `dispatch: true` in the approved manifest case and separate
+authorization for provider calls. The flag itself is not billing authorization.
 
 Each manifest case fixes the case ID, route, exact browser origin, SHA-256 of the
 complete browser request bytes and provider-stage sequence. The manifest contains
@@ -51,7 +59,9 @@ The `releaseCapture` field is appended only to the requesting HTTP response,
 including partial failure results. Responses use `Cache-Control: no-store` and
 provide no cross-origin access grant. Authentication headers are never collected.
 Both supplied credentials are checked against request and response contents,
-including JSON escapes and embedded JSON; credential-bearing content is withheld.
+including JSON escapes in truncated responses and embedded malformed JSON;
+credential-bearing content is withheld. Escape scanning is bounded and does not
+depend on a complete JSON document.
 Authentication-failure bodies are withheld entirely, including masked-key errors,
 while the existing key-failure status is preserved. Transport error strings are
 excluded. Payloads live only in that request's memory;
@@ -67,12 +77,15 @@ the raw response privately using its network capture tools.
 2. Capture the browser's exact serialized request bytes without dispatching a
    provider workflow. Freeze their hash and the expected stage sequence. Do not
    substitute a hand-built request that merely looks equivalent.
-3. Configure only that deployment with the content-free manifest, an expiry no
+3. Configure only that deployment with the content-free manifest, `dispatch: false`, an expiry no
    later than 24 hours away and the exact approved cases. No provider credentials
    belong in that manifest or server configuration.
-4. For an authorized test request, add the case ID header in the requesting test
+4. For the inspection request, use inert placeholder keys, add the case ID header in the requesting test
    browser and privately retain its actual request and raw response. Preserve
-   failed/unavailable results and skipped dependents. A 403 is a stop condition.
+   the `inspection_only` result and verify zero provider dispatch. A 403 is a stop
+   condition. After separate provider authorization, an explicitly approved
+   `dispatch: true` configuration may retain actual provider exchanges; preserve
+   failed/unavailable results and skipped dependents.
 5. Remove the capture configuration and temporary browser keys/clipboard data
    after the bounded check. Verify missing-key readiness after a fresh load.
 
@@ -89,6 +102,7 @@ placeholder and its origin is an invalid example domain. It authorizes no run.
       "path": "/api/application-draft",
       "origin": "https://preview.example.invalid",
       "requestSHA256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "dispatch": false,
       "stages": ["field_validation", "generation", "resume_support", "artifact_support"]
     }
   ]
@@ -117,13 +131,19 @@ and all three explained-qualification stages. They check exact body delivery,
 source projection, authentication exclusion, escaped credential echoes, approval
 rejections before dispatch, cancellation, malformed/binary/oversized responses,
 transport failure, null measurements and isolation from a later ordinary request.
+An inspection-only regression observes the actual first envelope and zero
+controlled provider-transport calls when the dispatch flag is omitted.
 The public `generateMaterials` regression verifies that capture evidence stays
 outside application state while resume/artifact acceptance continues to work.
 
 Initial red cases exposed the missing capture response, ambiguous origin/case
 admission, an escaped cross-provider credential echo, dispatch after cancellation,
-zero values for unavailable measurements and client-state propagation. Each was
-corrected and rerun through those approved seams. Full validation and the
+zero values for unavailable measurements and client-state propagation. The Spec
+review also exposed escaped credentials in truncated JSON; lexical escape scanning
+now withholds those responses, with public-handler regressions for malformed root
+and embedded strings at HTTP 200/502. The Standards review's repeated-switch
+suggestion was resolved with one private stage-contract descriptor. Each change
+was rerun through the approved seams. Full validation and the
 independent Standards/Spec review are recorded on PR #114 and canonical issue #52.
 
 **Criterion 7 still lacks actual deployed capture evidence.** The existing

@@ -20,7 +20,7 @@ func TestApprovedQualificationCapturePreservesPrivateProfileProjection(t *testin
 		"version": "release-capture-manifest-v1", "expiresAt": time.Now().Add(time.Hour).UTC().Format(time.RFC3339),
 		"cases": []any{map[string]any{
 			"id": "qualification-synthetic", "path": "/api/qualification-gaps", "origin": "https://release.example",
-			"requestSHA256": hex.EncodeToString(hash[:]), "stages": []string{"field_validation", "qualification_matching"},
+			"requestSHA256": hex.EncodeToString(hash[:]), "stages": []string{"field_validation", "qualification_matching"}, "dispatch": true,
 		}},
 	})
 	t.Setenv("CAREEROS_RELEASE_CAPTURE", string(manifest))
@@ -62,7 +62,7 @@ func TestPrivateQualificationCaptureIncludesResponseDependentRequirementEvidence
 			"version": "release-capture-manifest-v1", "expiresAt": time.Now().Add(time.Hour).UTC().Format(time.RFC3339),
 			"cases": []any{map[string]any{
 				"id": "explained-qualification", "path": "/api/qualification-gaps", "origin": "https://release.example",
-				"requestSHA256": hex.EncodeToString(hash[:]), "stages": []string{"field_validation", "qualification_matching", "requirement_evidence"},
+				"requestSHA256": hex.EncodeToString(hash[:]), "stages": []string{"field_validation", "qualification_matching", "requirement_evidence"}, "dispatch": true,
 			}},
 		})
 		t.Setenv("CAREEROS_RELEASE_CAPTURE", string(manifest))

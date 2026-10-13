@@ -32,6 +32,7 @@ type approvedCase struct {
 	Origin        string   `json:"origin"`
 	RequestSHA256 string   `json:"requestSHA256"`
 	Stages        []string `json:"stages"`
+	Dispatch      bool     `json:"dispatch,omitempty"`
 	expiresAt     time.Time
 }
 
@@ -51,12 +52,13 @@ type evidence struct {
 
 type collector struct {
 	evidence
-	approval      approvedCase
-	used          int
-	stopped       bool
-	secrets       []string
-	posting       string
-	understandJob bool
+	approval       approvedCase
+	used           int
+	stopped        bool
+	secrets        []string
+	posting        string
+	understandJob  bool
+	inspectionOnly bool
 }
 
 type contextKey struct{}
@@ -94,7 +96,9 @@ func Handler(path string, next http.Handler) http.Handler {
 		result := &boundedResult{headers: make(http.Header)}
 		next.ServeHTTP(result, r.WithContext(ctx))
 		c.Outcome = "complete"
-		if c.stopped || len(c.Envelopes) != len(c.approval.Stages) {
+		if c.inspectionOnly {
+			c.Outcome = "inspection_only"
+		} else if c.stopped || len(c.Envelopes) != len(c.approval.Stages) {
 			c.Outcome = "incomplete"
 		}
 		returnEvidence(w, result, c.evidence)

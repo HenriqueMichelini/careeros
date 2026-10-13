@@ -34,42 +34,50 @@ func (c *collector) allowedEnvelope(r *http.Request, stage string, raw []byte) b
 	return c.allowedOpenAI(stage, object)
 }
 
+type stageContract struct {
+	ceiling                       int
+	schema                        string
+	roles, fields, optionalFields []string
+}
+
+var stageContracts = map[string]stageContract{
+	"generation": {
+		ceiling: 8000, schema: "application_draft", roles: []string{"system", "user"},
+		fields: []string{"careerEvidence", "jobPosting", "confirmedQualifications", "qualificationAnswers", "selection", "resumeApplicationEvidence"}, optionalFields: []string{"jobContext"},
+	},
+	"resume_support": {
+		ceiling: 4000, schema: "resume_support", roles: []string{"system", "user"}, fields: []string{"claims", "facts", "qualificationAnswers", "cvLanguage"},
+	},
+	"artifact_support": {
+		ceiling: 8000, schema: "artifact_support", roles: []string{"system", "user"}, fields: []string{"careerCitations", "blocks", "facts", "jobPosting", "jobCitations", "applicationAnswers", "qualificationAnswers", "cvLanguage"},
+	},
+	"qualification_matching": {ceiling: 8000, schema: "qualification_job_context", roles: []string{"user"}},
+	"requirement_evidence":   {ceiling: 8000, schema: "requirement_evidence", roles: []string{"user"}},
+}
+
 func (c *collector) allowedOpenAI(stage string, object map[string]json.RawMessage) bool {
-	ceiling, schema, roles := 8000, "", []string{"system", "user"}
-	switch stage {
-	case "generation":
-		schema = "application_draft"
-	case "resume_support":
-		ceiling, schema = 4000, "resume_support"
-	case "artifact_support":
-		schema = "artifact_support"
-	case "qualification_matching":
-		roles = []string{"user"}
-		if c.understandJob {
-			schema = "qualification_job_context"
-		} else {
-			ceiling = 1200
-		}
-	case "requirement_evidence":
-		roles, schema = []string{"user"}, "requirement_evidence"
-	default:
+	contract, ok := stageContracts[stage]
+	if !ok {
 		return false
 	}
+	if stage == "qualification_matching" && !c.understandJob {
+		contract.ceiling, contract.schema = 1200, ""
+	}
 	var actualCeiling int
-	if json.Unmarshal(object["max_completion_tokens"], &actualCeiling) != nil || actualCeiling != ceiling || !allowedFormat(object["response_format"], schema) {
+	if json.Unmarshal(object["max_completion_tokens"], &actualCeiling) != nil || actualCeiling != contract.ceiling || !allowedFormat(object["response_format"], contract.schema) {
 		return false
 	}
 	var messages []map[string]json.RawMessage
-	if json.Unmarshal(object["messages"], &messages) != nil || len(messages) != len(roles) {
+	if json.Unmarshal(object["messages"], &messages) != nil || len(messages) != len(contract.roles) {
 		return false
 	}
 	for i, message := range messages {
 		var role, content string
-		if !exactFields(message, "role", "content") || json.Unmarshal(message["role"], &role) != nil || role != roles[i] || json.Unmarshal(message["content"], &content) != nil || content == "" {
+		if !exactFields(message, "role", "content") || json.Unmarshal(message["role"], &role) != nil || role != contract.roles[i] || json.Unmarshal(message["content"], &content) != nil || content == "" {
 			return false
 		}
 	}
-	if len(roles) == 1 {
+	if len(contract.fields) == 0 {
 		return true
 	}
 	var content string
@@ -78,16 +86,10 @@ func (c *collector) allowedOpenAI(stage string, object map[string]json.RawMessag
 	if json.Unmarshal([]byte(content), &data) != nil {
 		return false
 	}
-	switch stage {
-	case "generation":
-		delete(data, "jobContext") // Optional, already source-validated by the handler.
-		return exactFields(data, "careerEvidence", "jobPosting", "confirmedQualifications", "qualificationAnswers", "selection", "resumeApplicationEvidence")
-	case "resume_support":
-		return exactFields(data, "claims", "facts", "qualificationAnswers", "cvLanguage")
-	case "artifact_support":
-		return exactFields(data, "careerCitations", "blocks", "facts", "jobPosting", "jobCitations", "applicationAnswers", "qualificationAnswers", "cvLanguage")
+	for _, field := range contract.optionalFields {
+		delete(data, field)
 	}
-	return false
+	return exactFields(data, contract.fields...)
 }
 
 func allowedFormat(raw json.RawMessage, schema string) bool {
