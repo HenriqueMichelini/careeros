@@ -3,8 +3,10 @@
 Date: 2026-10-13, America/Sao_Paulo. This extends the
 [controlled preparation](2026-10-12-controlled-preparation.md) after Henrique
 approved private, synthetic-only response capture. **Release gate: not passed.**
-No live provider call, credential-file read, production publication, capture activation
-on Netlify or billing change is authorized or performed by this implementation.
+At the implementation checkpoint, no live provider call, credential-file read,
+production publication, capture activation on Netlify or billing change was
+authorized or performed. The separately approved inspection below supersedes
+only that checkpoint's capture-activation status.
 
 ## Implemented boundary
 
@@ -155,3 +157,61 @@ remains zero. Separate provider/publication authorization, a frozen measurement
 plan, broader disjoint bilingual quality comparison and accepted-application cost
 evidence remain outstanding. Historical English delivery, PT language/support
 observations and all original release criteria remain open.
+
+## Separately approved preview inspection — stopped
+
+Henrique subsequently approved one synthetic inspection request, temporary
+Deploy Previews configuration, a same-source preview rebuild if needed and
+configuration removal afterward. The allowance was one attempt, zero provider
+dispatches, inert placeholder keys, `dispatch: false`, at most one hour of
+activation and no retry. It did not authorize provider calls or publication.
+
+Netlify showed successful preview deployment `6aceb8b5a4b5981a6f9abcc1` at source
+`6f87542c83241351966401a4f77f4f16c174ddf1`, with five deployed functions. The
+manifest had one value in the Deploy Previews context; Production and the other
+contexts were empty. Its approved origin was
+`https://deploy-preview-114--beamish-bavarois-333d03.netlify.app`, case
+`ruby-en-inspection`, route `/api/qualification-gaps`, and expiry
+`2026-10-14T00:02:02Z`.
+
+The approved 1,273-byte English request was copied exactly from the retained
+controlled browser request, SHA-256
+`5a67636650ace60f6ce9b0f5a9c5de2d08474770886443abac55cf541387a7c3`.
+It contains the anonymous Ruby regression only. The disposable browser used
+inert key strings, without reading real provider credentials.
+
+The single attempt returned HTTP 404 with Netlify's “Page not found” HTML in
+392.8 ms of browser fetch time. Its retained UTF-8 response is 3,449 bytes,
+SHA-256 `8514f0009a58c6e0acb5468f88037732b59b70af5e524f452e3bef8fb33effc5`.
+The network recorder retained **no request matching the approved endpoint**.
+The failed attempt did not retain its final response URL. Therefore actual
+browser request bytes, final request origin, handler execution, provider
+dispatch count and provider envelopes remain unavailable; this is not proof
+that the approved qualification route itself returned 404.
+
+A subsequent read-only visit in the authenticated browser passed through
+Netlify's Team protection/edge-access page and loaded CareerOS at the approved
+preview origin and deployment. Access redirection is a possible explanation,
+not an established cause of the failed attempt. The test harness's separate
+readiness check and relative request URL were insufficient safeguards against
+navigation between those operations. A future attempt must verify a stable,
+authenticated test browser, use the absolute approved endpoint, check origin
+at send time and retain the final response URL. It needs fresh authorization;
+the stopped attempt is not reallocated.
+A read-only last-hour qualification-log query scoped to Deploy Preview #114
+returned no results. That sampled absence does not establish zero dispatches
+or platform-wide retention behavior.
+
+No second workflow request was sent. The temporary variable was removed and
+Netlify's “No environment variables set for this project” state was verified
+after reload. The disposable test browser and its temporary profile were
+removed; placeholder keys were never stored and the clipboard was unused.
+Removing project configuration does not prove removal from an already-built
+immutable deployment; any retained manifest remains inspection-only and expires
+at the timestamp above. Raw evidence stays in the private local inspection
+folder, outside the repository and server content logs.
+
+**Deployed capture remains unverified and criterion 7 remains open.** No real
+provider credentials, paid-provider run, production publication, merge or
+billing change was part of this inspection. All broader release gates and
+historical failures remain in force.

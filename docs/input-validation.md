@@ -12,8 +12,11 @@ The qualification and Application Draft handlers also support
 [private synthetic response capture](release-evidence/2026-10-13-private-synthetic-capture.md)
 under an expiring exact-request/origin approval manifest. It is disabled by
 default, uses request memory and the requesting response only, and excludes
-authentication and content logs. It has not been activated or verified on Netlify;
-criterion 7 remains unavailable at the actual deployed boundary.
+authentication and content logs. A separately approved preview-only inspection
+was activated, attempted once and stopped after a 404 response without matching
+request capture; the temporary configuration was removed. Actual deployed
+capture and criterion 7 remain unverified at the deployed boundary; see the
+linked inspection checkpoint for its limits.
 
 The [Netlify route configuration](../netlify.toml) exposes five fixed workflows:
 `/api/profile/review`, `/api/profile/ingest`, `/api/cv/generate`,
