@@ -2,8 +2,8 @@
   "evidence": "controlled loopback browser only; no provider quality or deployed acceptance",
   "sourceHashes": {
     "tests/inspection-browser-fixture.mjs": "647abc25c1a8c0f1beb9be546363a60c148c277680439ad5ac24e80db4177c1a",
-    "tests/preview-inspection-harness.mjs": "c96f59cd200afe761a0a5798d835a88cc1d545a2176a451e337f0cc9f2734c29",
-    "tests/preview-inspection-browser.check.mjs": "5bc1fabfb76366affcdf11cd408bcc843d2b6705c159336abc656bd2fae98395"
+    "tests/preview-inspection-harness.mjs": "350767897cf1668df6720782a15b46a8f40b9f3f399328b45841fbfd5996edd2",
+    "tests/preview-inspection-browser.check.mjs": "b4f59a647f9c820a9da0d9fdff42ec9f3ac16412959d4173fd244de32fb83559"
   },
   "results": [
     {
@@ -106,6 +106,14 @@
       "name": "mutated browser body blocked before release",
       "outcome": "stopped",
       "reason": "network_bytes_mismatch",
+      "posts": 0,
+      "diagnostic": "endpoint_request_observed",
+      "redirects": 0
+    },
+    {
+      "name": "concurrent duplicate POST cannot spend a second attempt",
+      "outcome": "stopped",
+      "reason": "unexpected_workflow_request",
       "posts": 0,
       "diagnostic": "endpoint_request_observed",
       "redirects": 0

@@ -58,7 +58,9 @@ The new [operator harness](../../tests/preview-inspection-harness.mjs) provides:
 - An absolute `/api/qualification-gaps` POST with fixed inert keys, no key-file or
   Profile-storage reads, and no clipboard use. Interception checks actual UTF-8
   bytes/hash, Origin, method, case and inert headers before release. At most one
-  POST is released; a stopped inspector cannot be retried.
+  POST is released; a stopped inspector cannot be retried. The slot is reserved
+  synchronously before asynchronous checks, and acceptance requires exactly one
+  released request. Divergent body text is withheld; only its size/hash are retained.
 - Explicit 3xx rejection without following Location, retained observed response
   URL/status and redirect chain, and separate diagnostics for no endpoint request,
   a missing Network event, unexpected HTTP, and missing/invalid capture.
@@ -99,7 +101,8 @@ The retained [controlled report](issue-52/controlled-preview-inspection-browser.
 binds its fixture, harness and browser-check source hashes. It covers navigation
 after readiness and while paused, a changed deploy, lost Network observation,
 changed base URL, 301/302/303/307/308, an observed 404, a successful-looking fetch
-with no network request, changed request bytes, missing/invalid/forwarded capture,
+with no network request, changed request bytes, simultaneous duplicate requests,
+missing/invalid/forwarded capture,
 changed original provider input and session expiry during the document check.
 It also rejects an unauthenticated page and seven invalid/missing approval-adapter
 cases. Redirect destinations receive zero workflow POSTs.
@@ -116,8 +119,20 @@ manifest admission policy and product UI are unchanged. Existing controlled
 Results/PDF evidence remains tied to its recorded source hashes; new PDFs or
 provider quality are not claimed from this harness.
 
-Validation results and the final reviewed commit are recorded in PR #114 and #52
-after checks complete. The release gate remains open regardless of those checks.
+The first review found a reservation race: two paused POSTs could both pass the
+counter check before awaiting metadata. The added concurrent browser regression
+failed with `released 2 concurrent POSTs`, then passed after synchronous reservation.
+The final report preserves this regression and source hashes for the correction.
+
+Full Go tests, all 134 Node tests, TypeScript and the production build passed.
+The Node suite required execution outside the sandbox because it blocked two Go
+subprocesses (`spawnSync go EPERM`); the earlier sandbox failure is not counted as
+a product failure. The browser check passed with a disposable, loopback-only
+Chrome and external DNS resolution disabled. Formatting and whitespace checks
+passed. The build retains the existing large-chunk advisory. Runtime/UI source
+is unchanged, so historical browser/PDF validation was not repeated or relabelled.
+The final reviewed commit and checks are recorded in PR #114 and #52. The release
+gate remains open regardless of those checks.
 
 ## Concrete proposal for P2 — pending fresh authorization
 

@@ -109,7 +109,8 @@ export async function createPreviewInspector(
   let phase = "readiness",
     prepared = false,
     consumed = false,
-    closed = false
+    closed = false,
+    requestClaimed = false
   const tasks = new Set(),
     unsubscribers = []
   const stop = (reason) => {
@@ -249,18 +250,33 @@ export async function createPreviewInspector(
               ),
             )
           : Buffer.from(request.postData ?? "", "utf8")
+        const approvedBytes =
+          raw.equals(Buffer.from(approval.requestBody)) &&
+          digest(raw) === approval.requestSHA256
         evidence.request ??= {
           url: request.url,
           method: request.method,
           origin: headers.origin ?? null,
-          body: raw.toString("utf8"),
+          ...(approvedBytes
+            ? { body: raw.toString("utf8") }
+            : { bodyWithheld: true }),
           bytes: raw.length,
           sha256: digest(raw),
           source: "CDP.Fetch.requestPaused",
         }
-        if (phase !== "inspection" || evidence.releasedRequests !== 0)
-          reason = "unexpected_workflow_request"
-        else if (request.url !== approval.endpoint || request.method !== "POST")
+        // Reserve synchronously before any deployment/page await.
+        if (phase !== "inspection" || requestClaimed) {
+          stop("unexpected_workflow_request")
+          evidence.blockedRequests.push({
+            url: request.url,
+            method: request.method,
+            reason: "unexpected_workflow_request",
+          })
+          await call("Fetch.failRequest", { requestId, errorReason: "Aborted" })
+          return
+        }
+        requestClaimed = true
+        if (request.url !== approval.endpoint || request.method !== "POST")
           reason = "unexpected_route"
         else if (headers.origin !== approval.origin)
           reason = "request_origin_mismatch"
@@ -271,11 +287,7 @@ export async function createPreviewInspector(
           )
         )
           reason = "request_headers_mismatch"
-        else if (
-          !raw.equals(Buffer.from(approval.requestBody)) ||
-          digest(raw) !== approval.requestSHA256
-        )
-          reason = "request_bytes_mismatch"
+        else if (!approvedBytes) reason = "request_bytes_mismatch"
         else if (!fresh(approval)) reason = "approval_expired"
         else if (!(await verifyDeployment()))
           reason = "deployment_identity_unverified"
@@ -379,9 +391,13 @@ export async function createPreviewInspector(
       await Promise.all([...tasks])
       const result = evidence.browser
       if (result?.stopped) stop(result.stopped)
-      if (!evidence.request) stop("no_endpoint_request_observed")
+      const endpointObserved =
+        evidence.request?.url === approval.endpoint &&
+        evidence.request?.method === "POST"
+      if (!endpointObserved) stop("no_endpoint_request_observed")
       else if (!evidence.networkRequestObserved)
         stop("network_request_event_missing")
+      else if (evidence.releasedRequests !== 1) stop("request_count_mismatch")
       else if (!evidence.reason && (result?.failed || !result))
         stop("browser_request_failed")
       else if (
@@ -438,7 +454,7 @@ export async function createPreviewInspector(
           stop("missing_or_invalid_capture")
         }
       }
-      evidence.endpointDiagnostic = !evidence.request
+      evidence.endpointDiagnostic = !endpointObserved
         ? "no_endpoint_request_observed"
         : evidence.networkRequestObserved
           ? "endpoint_request_observed"

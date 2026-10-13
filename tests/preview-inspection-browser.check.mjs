@@ -262,9 +262,36 @@ try {
           evidence.reason,
         ),
       )
+      assert.equal(evidence.request.body, undefined)
+      assert.equal(evidence.request.bodyWithheld, true)
       assert.equal(evidence.releasedRequests, 0)
       assert.equal(posts, 0)
     },
+  )
+  await scenario(
+    "concurrent duplicate POST cannot spend a second attempt",
+    async () => {
+      await browser.evaluate(`const original=fetch;window.fetch=(url,options)=>{
+      const first=original(url,options),second=original(url,options).catch(()=>{});
+      return Promise.all([first,second]).then(([response])=>response);
+    }`)
+    },
+    (evidence, posts) => {
+      assert.ok(
+        evidence.releasedRequests <= 1,
+        `released ${evidence.releasedRequests} concurrent POSTs`,
+      )
+      assert.ok(posts <= 1, `server received ${posts} concurrent POSTs`)
+      assert.equal(evidence.reason, "unexpected_workflow_request")
+      assert.equal(evidence.outcome, "stopped")
+    },
+    (adapter) => ({
+      ...adapter,
+      readDeployment: async () => {
+        await new Promise((resolve) => setTimeout(resolve, 50))
+        return readDeployment()
+      },
+    }),
   )
   for (const [name, change] of [
     [
