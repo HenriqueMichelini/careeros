@@ -6,6 +6,226 @@ import { join } from "node:path"
 import { reviewedDraftFixture } from "./reviewed-resume-fixture.mjs"
 import { jobContextFixture } from "./job-context-fixtures.mjs"
 
+function sparseRubyFixture(locale, template, ptMarkdown) {
+  const pt = locale === "pt-BR"
+  const doc = structuredClone(template.request.profileEvidence)
+  doc.facts[0].value = doc.facts[0].normalization.observed = "Ruby"
+  doc.evidence[0].excerpt = pt
+    ? "Uso Ruby para manter ferramentas CLI internas."
+    : "I use Ruby to maintain internal CLI tools."
+  const markdown = pt
+    ? ptMarkdown
+    : "## Technical Skills\n- Ruby: maintaining internal CLI tools."
+  const posting = pt
+    ? "Desenvolvedor Ruby.\nMantenha ferramentas CLI internas usando Ruby.\nRuby é obrigatório.\nExplique como você usa Ruby em português."
+    : "Ruby developer.\nMaintain internal CLI tools using Ruby.\nRuby is required.\nExplain how you use Ruby in English."
+  const answer = pt
+    ? "Uso Ruby para manter ferramentas CLI internas."
+    : "I use Ruby to maintain internal CLI tools."
+  const answers = pt
+    ? "## Respostas solicitadas pela empresa\n" +
+      answer +
+      "\n\n## Sugestões adicionais\nQue ferramentas a equipe mantém?"
+    : "## Employer-requested answers\n" +
+      answer +
+      "\n\n## Additional suggestions\nWhich tools does the team maintain?"
+  return {
+    pt,
+    markdown,
+    answer,
+    answers,
+    locale,
+    doc,
+    posting,
+    materials: {
+      jobTitle: pt ? "Desenvolvedor Ruby" : "Ruby developer",
+      company: null,
+      jobSummary: posting,
+      resume: markdown,
+      coverLetter: {
+        greeting: pt ? "Prezada equipe de contratação," : "Dear hiring team,",
+        body: answer,
+        closing: pt ? "Atenciosamente," : "Sincerely,",
+      },
+      applicationAnswers: answers,
+    },
+  }
+}
+
+async function checkControlledClipboard({ evaluate, until }, { pt, markdown }) {
+  const copiedLabel = pt ? "Copiado!" : "Copied!"
+  const copyLabel = pt ? "Copiar texto" : "Copy text"
+  const nativeStubs = {
+    missing: "undefined",
+    throw: "{writeText:()=>{throw Error('Denied')}}",
+    reject: "{writeText:async()=>{throw Error('Denied')}}",
+  }
+  await evaluate(
+    "window.__nativeClipboard=navigator.clipboard;window.__nativeExecCommand=document.execCommand",
+  )
+  for (const [native, fallback, success] of [
+    ["reject", "false", false],
+    ["missing", "false", false],
+    ["throw", "throw", false],
+    ["missing", "true", true],
+    ["reject", "true", true],
+  ]) {
+    const fallbackStub =
+      fallback === "throw"
+        ? "throw Error('Unavailable')"
+        : `window.__fallbackText=document.querySelector('textarea').value;return ${fallback}`
+    await evaluate(
+      `Object.defineProperty(navigator,'clipboard',{configurable:true,value:${nativeStubs[native]}});document.execCommand=()=>{${fallbackStub}};document.querySelector('.results-resume-actions button').focus();document.querySelector('.results-resume-actions button').click()`,
+    )
+    await until(
+      success
+        ? `document.querySelector('.results-resume-actions button').textContent.trim()===${JSON.stringify(copiedLabel)}`
+        : "!!document.querySelector('.results-page [role=alert]')",
+    )
+    if (success)
+      assert.equal(
+        await evaluate("window.__fallbackText"),
+        markdown,
+        "acknowledged legacy copy receives the complete accepted text",
+      )
+    else
+      assert.equal(
+        await evaluate(
+          "document.querySelector('.results-resume-actions button').textContent.trim()",
+        ),
+        copyLabel,
+      )
+    assert.equal(
+      await evaluate(
+        "document.activeElement===document.querySelector('.results-resume-actions button')",
+      ),
+      true,
+      "legacy copying preserves keyboard focus",
+    )
+  }
+  await evaluate(
+    "Object.defineProperty(navigator,'clipboard',{configurable:true,value:window.__nativeClipboard});document.execCommand=window.__nativeExecCommand",
+  )
+}
+
+async function checkResumeExports(
+  { call, evaluate, until },
+  { pt, markdown, locale },
+  work,
+  nativeCopy,
+) {
+  // These Linux checks use fixed system Poppler paths, independent of npm's PATH.
+  for (const width of [1280, 390]) {
+    await call("Emulation.setDeviceMetricsOverride", {
+      width,
+      height: 844,
+      deviceScaleFactor: 1,
+      mobile: false,
+    })
+    assert.equal(
+      await evaluate("document.documentElement.scrollWidth <= innerWidth"),
+      true,
+    )
+    assert.equal(
+      await evaluate(
+        "document.querySelector('.cv-paper-content section h3').textContent.trim()",
+      ),
+      pt ? "Competências Técnicas" : "Technical Skills",
+    )
+    for (const method of ["Enter", "Space", "pointer"])
+      await nativeCopy(
+        ".results-resume-actions button",
+        markdown,
+        method,
+        pt ? "Copiado!" : "Copied!",
+      )
+    await evaluate(
+      "window.__printCalled=false;window.print=()=>{window.__printCalled=true};document.querySelector('.results-resume-actions button:last-child').click()",
+    )
+    await until(
+      "window.__printCalled && !!document.querySelector('.results-print-root')",
+    )
+    const pdf = join(work, `ruby-${locale}-${width}.pdf`)
+    writeFileSync(
+      pdf,
+      Buffer.from(
+        (
+          await call("Page.printToPDF", {
+            printBackground: true,
+            preferCSSPageSize: true,
+          })
+        ).data,
+        "base64",
+      ),
+    )
+    assert.match(
+      execFileSync("/usr/bin/pdfinfo", [pdf], { encoding: "utf8" }),
+      /Pages:\s+1\b[\s\S]*\(A4\)/,
+    )
+    const pdfText = execFileSync("/usr/bin/pdftotext", ["-raw", pdf, "-"], {
+      encoding: "utf8",
+    })
+    assert.match(pdfText, pt ? /Competências Técnicas/i : /Technical Skills/i)
+    assert.equal(
+      pdfText.split(
+        pt
+          ? "Ruby: manutenção de ferramentas CLI internas."
+          : "Ruby: maintaining internal CLI tools.",
+      ).length - 1,
+      1,
+    )
+    assert.doesNotMatch(
+      pdfText,
+      /HABILIDADES TÉCNICAS|Generated Application|Application Q&A/,
+    )
+    execFileSync("/usr/bin/pdftoppm", [
+      "-scale-to",
+      "1200",
+      "-singlefile",
+      "-png",
+      pdf,
+      pdf.slice(0, -4),
+    ])
+    await evaluate("window.dispatchEvent(new Event('afterprint'))")
+  }
+}
+
+async function checkArtifactCopies({ evaluate }, fixture, nativeCopy) {
+  const { pt, posting, answer, answers } = fixture
+  const current = fixture
+  for (const [tab, expected] of [
+    [0, posting],
+    [
+      2,
+      [
+        current.materials.coverLetter.greeting,
+        answer,
+        current.materials.coverLetter.closing,
+      ].join("\n\n"),
+    ],
+    [3, answers],
+  ]) {
+    await evaluate(
+      `document.querySelectorAll('.results-tabs button')[${tab}].click()`,
+    )
+    if (tab !== 0)
+      assert.equal(
+        await evaluate(
+          "document.querySelector('.results-content pre').textContent",
+        ),
+        expected,
+      )
+    if (tab !== 0)
+      for (const method of ["Enter", "Space", "pointer"])
+        await nativeCopy(
+          ".results-other-actions button",
+          expected,
+          method,
+          pt ? "Copiado!" : "Copied!",
+        )
+  }
+}
+
 // Controlled reconstructions for Results delivery/export, never historical raw
 // responses or provider-quality samples. CDP captures the browser's actual HTTP
 // bodies; the response boundary is fulfilled locally with synthetic fixtures.
@@ -150,46 +370,9 @@ export async function checkResultsRelease({
   }
   try {
     for (const locale of ["en", "pt-BR"]) {
-      const pt = locale === "pt-BR"
-      const doc = structuredClone(template.request.profileEvidence)
-      doc.facts[0].value = doc.facts[0].normalization.observed = "Ruby"
-      doc.evidence[0].excerpt = pt
-        ? "Uso Ruby para manter ferramentas CLI internas."
-        : "I use Ruby to maintain internal CLI tools."
-      const markdown = pt
-        ? ptMarkdown
-        : "## Technical Skills\n- Ruby: maintaining internal CLI tools."
-      const posting = pt
-        ? "Desenvolvedor Ruby.\nMantenha ferramentas CLI internas usando Ruby.\nRuby é obrigatório.\nExplique como você usa Ruby em português."
-        : "Ruby developer.\nMaintain internal CLI tools using Ruby.\nRuby is required.\nExplain how you use Ruby in English."
-      const answer = pt
-        ? "Uso Ruby para manter ferramentas CLI internas."
-        : "I use Ruby to maintain internal CLI tools."
-      const answers = pt
-        ? "## Respostas solicitadas pela empresa\n" +
-          answer +
-          "\n\n## Sugestões adicionais\nQue ferramentas a equipe mantém?"
-        : "## Employer-requested answers\n" +
-          answer +
-          "\n\n## Additional suggestions\nWhich tools does the team maintain?"
-      current = {
-        doc,
-        posting,
-        materials: {
-          jobTitle: pt ? "Desenvolvedor Ruby" : "Ruby developer",
-          company: null,
-          jobSummary: posting,
-          resume: markdown,
-          coverLetter: {
-            greeting: pt
-              ? "Prezada equipe de contratação,"
-              : "Dear hiring team,",
-            body: answer,
-            closing: pt ? "Atenciosamente," : "Sincerely,",
-          },
-          applicationAnswers: answers,
-        },
-      }
+      const fixture = sparseRubyFixture(locale, template, ptMarkdown)
+      const { pt, doc, markdown, posting } = fixture
+      current = fixture
       await evaluate(
         `localStorage.clear();localStorage.setItem('careeros_profile_v2',${JSON.stringify(JSON.stringify(doc))});localStorage.setItem('careeros_locale',${JSON.stringify(locale)});localStorage.setItem('careeros_cv_language',${JSON.stringify(locale)});localStorage.setItem('careeros_apikey','sk-release-capture');localStorage.setItem('careeros_typesafe_key','release-capture');window.__releaseReloadPending=true;location.reload()`,
       )
@@ -228,165 +411,14 @@ export async function checkResultsRelease({
         `Array.from(document.querySelectorAll('.resume-review button')).find(b=>b.textContent.trim()===${JSON.stringify(acceptResume)}).click()`,
       )
       await until("!!document.querySelector('.cv-paper-content')")
-      await evaluate(
-        "window.__nativeClipboard=navigator.clipboard;window.__nativeExecCommand=document.execCommand",
+      await checkControlledClipboard({ evaluate, until }, fixture)
+      await checkResumeExports(
+        { call, evaluate, until },
+        fixture,
+        work,
+        nativeCopy,
       )
-      for (const [native, fallback, success] of [
-        ["reject", "false", false],
-        ["missing", "false", false],
-        ["throw", "throw", false],
-        ["missing", "true", true],
-        ["reject", "true", true],
-      ]) {
-        await evaluate(
-          `Object.defineProperty(navigator,'clipboard',{configurable:true,value:${
-            native === "missing"
-              ? "undefined"
-              : native === "throw"
-                ? "{writeText:()=>{throw Error('Denied')}}"
-                : "{writeText:async()=>{throw Error('Denied')}}"
-          }});document.execCommand=()=>{${
-            fallback === "throw"
-              ? "throw Error('Unavailable')"
-              : `window.__fallbackText=document.querySelector('textarea').value;return ${fallback}`
-          }};document.querySelector('.results-resume-actions button').focus();document.querySelector('.results-resume-actions button').click()`,
-        )
-        await until(
-          success
-            ? `document.querySelector('.results-resume-actions button').textContent.trim()===${JSON.stringify(pt ? "Copiado!" : "Copied!")}`
-            : "!!document.querySelector('.results-page [role=alert]')",
-        )
-        if (success)
-          assert.equal(
-            await evaluate("window.__fallbackText"),
-            markdown,
-            "acknowledged legacy copy receives the complete accepted text",
-          )
-        else
-          assert.equal(
-            await evaluate(
-              "document.querySelector('.results-resume-actions button').textContent.trim()",
-            ),
-            pt ? "Copiar texto" : "Copy text",
-          )
-        assert.equal(
-          await evaluate(
-            "document.activeElement===document.querySelector('.results-resume-actions button')",
-          ),
-          true,
-          "legacy copying preserves keyboard focus",
-        )
-      }
-      await evaluate(
-        "Object.defineProperty(navigator,'clipboard',{configurable:true,value:window.__nativeClipboard});document.execCommand=window.__nativeExecCommand",
-      )
-      for (const width of [1280, 390]) {
-        await call("Emulation.setDeviceMetricsOverride", {
-          width,
-          height: 844,
-          deviceScaleFactor: 1,
-          mobile: false,
-        })
-        assert.equal(
-          await evaluate("document.documentElement.scrollWidth <= innerWidth"),
-          true,
-        )
-        assert.equal(
-          await evaluate(
-            "document.querySelector('.cv-paper-content section h3').textContent.trim()",
-          ),
-          pt ? "Competências Técnicas" : "Technical Skills",
-        )
-        for (const method of ["Enter", "Space", "pointer"])
-          await nativeCopy(
-            ".results-resume-actions button",
-            markdown,
-            method,
-            pt ? "Copiado!" : "Copied!",
-          )
-        await evaluate(
-          "window.__printCalled=false;window.print=()=>{window.__printCalled=true};document.querySelector('.results-resume-actions button:last-child').click()",
-        )
-        await until(
-          "window.__printCalled && !!document.querySelector('.results-print-root')",
-        )
-        const pdf = join(work, `ruby-${locale}-${width}.pdf`)
-        writeFileSync(
-          pdf,
-          Buffer.from(
-            (
-              await call("Page.printToPDF", {
-                printBackground: true,
-                preferCSSPageSize: true,
-              })
-            ).data,
-            "base64",
-          ),
-        )
-        assert.match(
-          execFileSync("pdfinfo", [pdf], { encoding: "utf8" }),
-          /Pages:\s+1\b[\s\S]*\(A4\)/,
-        )
-        const pdfText = execFileSync("pdftotext", ["-raw", pdf, "-"], {
-          encoding: "utf8",
-        })
-        assert.match(
-          pdfText,
-          pt ? /Competências Técnicas/i : /Technical Skills/i,
-        )
-        assert.equal(
-          pdfText.split(
-            pt
-              ? "Ruby: manutenção de ferramentas CLI internas."
-              : "Ruby: maintaining internal CLI tools.",
-          ).length - 1,
-          1,
-        )
-        assert.doesNotMatch(
-          pdfText,
-          /HABILIDADES TÉCNICAS|Generated Application|Application Q&A/,
-        )
-        execFileSync("pdftoppm", [
-          "-scale-to",
-          "1200",
-          "-singlefile",
-          "-png",
-          pdf,
-          pdf.slice(0, -4),
-        ])
-        await evaluate("window.dispatchEvent(new Event('afterprint'))")
-      }
-      for (const [tab, expected] of [
-        [0, posting],
-        [
-          2,
-          [
-            current.materials.coverLetter.greeting,
-            answer,
-            current.materials.coverLetter.closing,
-          ].join("\n\n"),
-        ],
-        [3, answers],
-      ]) {
-        await evaluate(
-          `document.querySelectorAll('.results-tabs button')[${tab}].click()`,
-        )
-        if (tab !== 0)
-          assert.equal(
-            await evaluate(
-              "document.querySelector('.results-content pre').textContent",
-            ),
-            expected,
-          )
-        if (tab !== 0)
-          for (const method of ["Enter", "Space", "pointer"])
-            await nativeCopy(
-              ".results-other-actions button",
-              expected,
-              method,
-              pt ? "Copiado!" : "Copied!",
-            )
-      }
+      await checkArtifactCopies({ evaluate }, fixture, nativeCopy)
       assert.deepEqual(
         await evaluate(
           "JSON.parse(localStorage.getItem('careeros_profile_v2'))",

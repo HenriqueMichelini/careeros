@@ -10,6 +10,13 @@ import GeneratedResumePreview from "../components/GeneratedResumePreview"
 
 type Tab = "summary" | "resume" | "cover" | "answers"
 type PdfTarget = "resume" | "cover"
+type CopyStatus = "idle" | "pending" | "copied" | "failed"
+const COPY_LABELS: Record<CopyStatus, TranslationKey> = {
+  idle: "common.copyText",
+  pending: "results.copying",
+  copied: "common.copied",
+  failed: "common.copyText",
+}
 const A4_HEIGHT_PX = (297 * 96) / 25.4
 
 const TABS: {
@@ -76,21 +83,14 @@ export default function ResultsPage({ setPage }: Props) {
   const { state, dispatch, profileDocument } = useStore()
   const { t } = useI18n()
   const [activeTab, setActiveTab] = useState<Tab>("summary")
-  const [copyStatus, setCopyStatus] =
-    useState<"idle" | "pending" | "copied" | "failed">("idle")
+  const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle")
   const [pdfOverflow, setPdfOverflow] = useState(false)
   const copyAttemptRef = useRef(0)
   const copyFocusRef = useRef<HTMLElement | null>(null)
   const resumePreviewRef = useRef<HTMLDivElement>(null)
   const printCleanupRef = useRef<(() => void) | null>(null)
   const materials = state.generatedMaterials
-  const copyLabel = t(
-    copyStatus === "pending"
-      ? "results.copying"
-      : copyStatus === "copied"
-        ? "common.copied"
-        : "common.copyText",
-  )
+  const copyLabel = t(COPY_LABELS[copyStatus])
 
   useEffect(() => {
     setCopyStatus("idle")

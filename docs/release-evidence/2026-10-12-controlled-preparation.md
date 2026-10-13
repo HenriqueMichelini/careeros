@@ -152,6 +152,14 @@ also exposed reload and fixed-delay dialog-click races. The harness now waits
 for the replacement document and rendered dialog controls. These controlled
 failures are distinct from the historical uncaptured English delivery failure.
 
+The initial PR security check flagged PATH lookup for the three Poppler tools in
+the new browser harness. Those invocations now use the verified system binaries
+under `/usr/bin`. Controlled fixture setup and assertions were split into smaller
+helpers after the complexity review; browser actions remain sequential because
+they share the document and clipboard. The full Go and Node suites, TypeScript,
+production build and extended Chrome/PDF check passed again after these changes.
+The retained browser record and PDF artifacts were regenerated from that source.
+
 Node/Go adapter runs also receive process-local `GIT_DIR` and `GIT_WORK_TREE`
 pointing at the actual checkout. No VCS stamping is disabled. The production build
 uses a temporary output directory; generated assets are excluded from the source
