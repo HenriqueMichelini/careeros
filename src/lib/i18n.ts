@@ -123,6 +123,9 @@ const messages = {
     "common.copy": "Copy",
     "common.copied": "Copied!",
     "common.copyText": "Copy text",
+    "results.copying": "Copying…",
+    "results.copyFailed":
+      "Could not copy. Try again or copy the text manually.",
     "common.sample": "Sample",
     "common.sampleContent": "Sample content",
     "common.present": "Present",
@@ -989,6 +992,9 @@ const messages = {
     "common.copy": "Copiar",
     "common.copied": "Copiado!",
     "common.copyText": "Copiar texto",
+    "results.copying": "Copiando…",
+    "results.copyFailed":
+      "Não foi possível copiar. Tente novamente ou copie o texto manualmente.",
     "common.sample": "Exemplo",
     "common.sampleContent": "Conteúdo de exemplo",
     "common.present": "Atual",

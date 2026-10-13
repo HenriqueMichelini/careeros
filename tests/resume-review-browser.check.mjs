@@ -186,10 +186,10 @@ try {
     "document.readyState === 'complete' && !!document.querySelector('header button')",
   )
   await evaluate(
-    `localStorage.removeItem('careeros_profile_v2'); localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_apikey', 'synthetic-test-key'); localStorage.setItem('careeros_typesafe_key', 'synthetic-typesafe'); location.reload()`,
+    `localStorage.removeItem('careeros_profile_v2'); localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(repo))}); localStorage.setItem('careeros_apikey', 'synthetic-test-key'); localStorage.setItem('careeros_typesafe_key', 'synthetic-typesafe'); window.__reviewReloadPending=true; location.reload()`,
   )
   await until(
-    "document.readyState === 'complete' && !!document.querySelector('header button')",
+    "!window.__reviewReloadPending && document.readyState === 'complete' && !!document.querySelector('header button')",
   )
   const clickApply = async () => {
     await evaluate("document.querySelector('header button:last-child').click()")
@@ -278,11 +278,8 @@ try {
       `window.__pending.shift().resolve(new Response(${JSON.stringify(JSON.stringify(body))}, { status: ${status}, headers: { 'Content-Type': 'application/json' } }))`,
     )
     await pause(70)
-    if (
-      body.gaps?.length === 0 &&
-      !inspectOnly &&
-      (await evaluate("!!document.querySelector('[role=dialog]')"))
-    ) {
+    if (body.gaps?.length === 0 && !inspectOnly) {
+      await until("document.querySelectorAll('[role=dialog] button').length >= 2")
       await evaluate(
         "Array.from(document.querySelectorAll('[role=dialog] button')).at(-2).click()",
       )
@@ -305,6 +302,7 @@ try {
       await respond({ gaps: [] })
     } else {
       assert.equal(await evaluate("window.__pending.length"), 0)
+      await until("document.querySelectorAll('[role=dialog] button').length >= 2")
       await evaluate(
         "Array.from(document.querySelectorAll('[role=dialog] button')).at(-2).click()",
       )

@@ -1,5 +1,6 @@
 import { reviewedFixtureFetchWrapper } from "./reviewed-resume-fixture.mjs"
 import { jobContextFixture } from "./job-context-fixtures.mjs"
+import { checkResultsRelease } from "./results-release-checks.mjs"
 // Browser regression for the Profile CV and an Application Draft resume.
 // Uses synthetic API responses; no provider request is made.
 import assert from "node:assert/strict"
@@ -109,6 +110,7 @@ const chrome = spawn(
   { stdio: "ignore" },
 )
 let socket
+const eventListeners = new Map()
 try {
   for (let attempt = 0; attempt < 100; attempt++) {
     try {
@@ -144,7 +146,10 @@ try {
   const pending = new Map()
   socket.onmessage = ({ data }) => {
     const message = JSON.parse(data)
-    if (!message.id) return
+    if (!message.id) {
+      eventListeners.get(message.method)?.(message.params)
+      return
+    }
     const callback = pending.get(message.id)
     pending.delete(message.id)
     if (message.error) callback.reject(new Error(message.error.message))
@@ -241,6 +246,76 @@ try {
     "({ paper: !!document.querySelector('.cv-paper'), headings: Array.from(document.querySelectorAll('.cv-paper-content section h3')).map(el => el.textContent.trim()), rawMarkdown: !!document.querySelector('pre') })",
   )
   assert.ok(generated.paper, "Apply résumé should use the CV A4 paper preview")
+  // Clipboard APIs are the external boundary here. A failed native write and
+  // failed legacy fallback must never be presented as a successful transfer.
+  await evaluate(`window.__nativeClipboard = navigator.clipboard;
+    window.__nativeExecCommand = document.execCommand;
+    Object.defineProperty(navigator, 'clipboard', {configurable:true,
+      value:{writeText:async()=>{throw new Error('Clipboard unavailable')}}});
+    document.execCommand = () => false;
+    document.querySelector('.results-resume-actions button').click()`)
+  await pause(60)
+  assert.equal(
+    await evaluate(
+      "document.querySelector('.results-resume-actions button').textContent.trim()",
+    ),
+    "Copy text",
+    "failed clipboard transfer must not show Copied!",
+  )
+  assert.match(
+    await evaluate(
+      "document.querySelector('.results-page [role=alert]')?.textContent ?? ''",
+    ),
+    /Could not copy/,
+    "failed native and fallback writes must expose an actionable failure",
+  )
+  await evaluate(`Object.defineProperty(navigator, 'clipboard', {configurable:true,
+    value:{writeText:()=>new Promise(resolve=>window.__finishCopy=resolve)}});
+    document.querySelector('.results-resume-actions button').click()`)
+  assert.equal(
+    await evaluate(
+      "document.querySelector('.results-resume-actions button').textContent.trim()",
+    ),
+    "Copying…",
+  )
+  assert.equal(
+    await evaluate(
+      "document.querySelector('.results-resume-actions button').disabled",
+    ),
+    true,
+  )
+  await evaluate(
+    "document.querySelector('.results-tabs button').click(); window.__finishCopy()",
+  )
+  await pause(60)
+  assert.equal(
+    await evaluate("document.querySelector('.results-page [role=alert]')"),
+    null,
+    "changing artifacts clears copy failure feedback",
+  )
+  await evaluate("document.querySelectorAll('.results-tabs button')[2].click()")
+  await until("!!document.querySelector('.results-other-actions button')")
+  assert.equal(
+    await evaluate(
+      "document.querySelector('.results-other-actions button').textContent.trim()",
+    ),
+    "Copy text",
+    "an obsolete completion cannot confirm copying a different artifact",
+  )
+  await evaluate("document.querySelectorAll('.results-tabs button')[1].click()")
+  await evaluate(`window.__fallbackCalls=0;
+    Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:()=>new Promise((resolve,reject)=>window.__failCopy=()=>reject(Error('Denied')))}});
+    document.execCommand=()=>{window.__fallbackCalls++;return true};
+    document.querySelector('.results-resume-actions button').focus();document.querySelector('.results-resume-actions button').click()`)
+  await evaluate("document.querySelectorAll('.results-tabs button')[2].click()")
+  await until("!!document.querySelector('.results-other-actions button')")
+  await evaluate("document.querySelector('.results-other-actions button').focus();window.__failCopy()")
+  await pause(60)
+  assert.equal(await evaluate("window.__fallbackCalls"), 0, "an obsolete copy cannot start a legacy write after permission rejection")
+  assert.equal(await evaluate("document.activeElement===document.querySelector('.results-other-actions button')"), true, "an obsolete copy preserves focus on the current artifact")
+  await evaluate("document.querySelectorAll('.results-tabs button')[1].click()")
+  await evaluate(`Object.defineProperty(navigator, 'clipboard', {configurable:true, value:window.__nativeClipboard});
+    document.execCommand = window.__nativeExecCommand`)
   assert.equal(
     generated.rawMarkdown,
     false,
@@ -502,6 +577,19 @@ try {
   assert.ok(await evaluate("document.body.textContent.includes('Add your name and contact details in Profile')"), "a draft without identity should direct the user to Profile")
   await evaluate("Array.from(document.querySelectorAll('button')).find(el => el.textContent.trim() === 'Profile').click()")
   await until("!!document.querySelector('aside nav')")
+  await checkResultsRelease({
+    call,
+    evaluate,
+    until,
+    pause,
+    work,
+    root,
+    origin: `http://127.0.0.1:${port}`,
+    onEvent: (method, listener) =>
+      listener
+        ? eventListeners.set(method, listener)
+        : eventListeners.delete(method),
+  })
   console.log(
     "CV and Apply use an A4 document preview with matching section order",
   )

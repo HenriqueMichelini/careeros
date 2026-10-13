@@ -22,15 +22,36 @@ const TABS: {
   { id: "answers", labelKey: "results.applicationQa" },
 ]
 
-function copyToClipboard(text: string) {
-  navigator.clipboard.writeText(text).catch(() => {
-    const el = document.createElement("textarea")
-    el.value = text
+async function copyToClipboard(
+  text: string,
+  isCurrent: () => boolean,
+): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+      return true
+    }
+  } catch {
+    // Older browsers and denied clipboard permissions can use the legacy API.
+  }
+  if (!isCurrent()) return false
+  const previousFocus = document.activeElement
+  const el = document.createElement("textarea")
+  el.value = text
+  el.readOnly = true
+  el.style.position = "fixed"
+  el.style.opacity = "0"
+  try {
     document.body.appendChild(el)
     el.select()
-    document.execCommand("copy")
-    document.body.removeChild(el)
-  })
+    return document.execCommand("copy") === true
+  } catch {
+    return false
+  } finally {
+    el.remove()
+    if (isCurrent() && previousFocus instanceof HTMLElement)
+      previousFocus.focus({ preventScroll: true })
+  }
 }
 
 function MarkdownContent({ content }: { content: string }) {
@@ -55,12 +76,43 @@ export default function ResultsPage({ setPage }: Props) {
   const { state, dispatch, profileDocument } = useStore()
   const { t } = useI18n()
   const [activeTab, setActiveTab] = useState<Tab>("summary")
-  const [copied, setCopied] = useState(false)
+  const [copyStatus, setCopyStatus] =
+    useState<"idle" | "pending" | "copied" | "failed">("idle")
   const [pdfOverflow, setPdfOverflow] = useState(false)
+  const copyAttemptRef = useRef(0)
+  const copyFocusRef = useRef<HTMLElement | null>(null)
   const resumePreviewRef = useRef<HTMLDivElement>(null)
   const printCleanupRef = useRef<(() => void) | null>(null)
   const materials = state.generatedMaterials
+  const copyLabel = t(
+    copyStatus === "pending"
+      ? "results.copying"
+      : copyStatus === "copied"
+        ? "common.copied"
+        : "common.copyText",
+  )
 
+  useEffect(() => {
+    setCopyStatus("idle")
+    return () => {
+      copyAttemptRef.current++
+    }
+  }, [
+    activeTab,
+    materials?.acceptedResume,
+    materials?.acceptedArtifacts,
+    profileDocument,
+  ])
+  useEffect(() => {
+    if (
+      (copyStatus === "copied" || copyStatus === "failed") &&
+      document.activeElement === document.body
+    )
+      copyFocusRef.current?.focus({ preventScroll: true })
+    if (copyStatus !== "copied") return
+    const timer = setTimeout(() => setCopyStatus("idle"), 2000)
+    return () => clearTimeout(timer)
+  }, [copyStatus])
   useEffect(() => {
     return () => printCleanupRef.current?.()
   }, [])
@@ -126,7 +178,7 @@ export default function ResultsPage({ setPage }: Props) {
     answers: acceptedArtifacts?.applicationAnswers ?? "",
   }
 
-  function handleCopy() {
+  async function handleCopy() {
     if (activeTab === "resume" ? !resumeUsable : !artifactsUsable) return
     const text =
       activeTab === "resume"
@@ -141,9 +193,15 @@ export default function ResultsPage({ setPage }: Props) {
             .filter(Boolean)
             .join("\n\n")
         : tabContent[activeTab]
-    copyToClipboard(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    const attempt = ++copyAttemptRef.current
+    const isCurrent = () => attempt === copyAttemptRef.current
+    copyFocusRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
+    setCopyStatus("pending")
+    const success = await copyToClipboard(text, isCurrent)
+    if (isCurrent()) setCopyStatus(success ? "copied" : "failed")
   }
 
   async function savePdf(target: PdfTarget) {
@@ -316,6 +374,11 @@ export default function ResultsPage({ setPage }: Props) {
           borderTop: "none",
         }}
       >
+        {copyStatus === "failed" && (
+          <p role="alert" className="mb-4 text-sm text-[var(--color-accent)]">
+            {t("results.copyFailed")}
+          </p>
+        )}
         {activeTab !== "resume" &&
           (materials.artifactReview ? (
             <ArtifactReviewPanel
@@ -461,10 +524,11 @@ export default function ResultsPage({ setPage }: Props) {
               <div className="results-resume-actions flex min-h-10 items-center justify-end gap-3">
                 <button
                   onClick={handleCopy}
-                  disabled={!resumeUsable}
+                  disabled={!resumeUsable || copyStatus === "pending"}
+                  aria-live="polite"
                   className="border px-3 py-1.5 text-xs disabled:opacity-40 border-[var(--color-border)]"
                 >
-                  {copied ? t("common.copied") : t("common.copyText")}
+                  {copyLabel}
                 </button>
                 <button
                   disabled={!resumeUsable}
@@ -516,11 +580,12 @@ export default function ResultsPage({ setPage }: Props) {
               <div className="results-other-actions flex min-h-10 items-center justify-end gap-3">
                 <button
                   onClick={handleCopy}
-                  disabled={!artifactsUsable}
+                  disabled={!artifactsUsable || copyStatus === "pending"}
+                  aria-live="polite"
                   className="disabled:opacity-40 bg-[var(--color-fg)] px-3 py-1.5 text-xs uppercase tracking-widest text-white transition-opacity hover:opacity-85"
                   style={{ fontFamily: "var(--font-mono)" }}
                 >
-                  {copied ? t("common.copied") : t("common.copyText")}
+                  {copyLabel}
                 </button>
                 {activeTab === "cover" && (
                   <button

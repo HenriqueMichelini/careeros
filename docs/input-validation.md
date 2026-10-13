@@ -1,6 +1,6 @@
 # Field-aware input validation
 
-Status as of 2026-10-12: #29–#33 and milestone #1 are closed following the bounded omission-feedback remediation and authorized field-validation checks on 2026-10-08. The earlier failed audit remains historical evidence, superseded within that bounded scope by [release evidence](release-evidence/2026-10-08-field-validation-release.md) and [protected-preview browser evidence](release-evidence/2026-10-08-field-validation-browser.md). The redesigned-MVP release gate #52 remains open: the latest English check completed ingestion and qualification, but the browser did not display the completed backend draft; Portuguese published-browser testing is pending. See the [MVP integration gate](release-evidence/2026-10-11-evidence-mvp.md) for these observations and the unverified broader provider, acceptance and PDF coverage.
+Status as of 2026-10-13: #29–#33 and milestone #1 are closed following the bounded omission-feedback remediation and authorized field-validation checks on 2026-10-08. The earlier failed audit remains historical evidence, superseded within that bounded scope by [release evidence](release-evidence/2026-10-08-field-validation-release.md) and [protected-preview browser evidence](release-evidence/2026-10-08-field-validation-browser.md). The redesigned-MVP release gate #52 remains open: the bounded English check completed ingestion and qualification, but the browser did not display the completed backend draft. The bounded Portuguese published-browser journey completed ingestion, qualification and draft review; only its supported sparse CV was accepted, copied and saved as an actual one-page PDF. Application artifacts remain unaccepted. That frozen PDF predates the preview-heading correction; deployed corrected display/copy/PDF parity, native keyboard clipboard transfer on the frozen runtime, exact actual deployed outbound-payload capture, broader bilingual provider quality and accepted-result cost remain unverified. Provider-free local checks of corrected headings and native transfer are recorded in the [controlled preparation report](release-evidence/2026-10-12-controlled-preparation.md). See the [MVP integration gate](release-evidence/2026-10-11-evidence-mvp.md) for the dated observations and their limits.
 
 This document records agreed decisions for handling pasted content in CareerOS's AI-powered fields. The user approved the five-ticket breakdown, which is published under the [Field-aware input validation milestone](https://github.com/HenriqueMichelini/careeros/milestone/1). Implementation and evidence are recorded in the ticket documents and [combined verification report](evaluations/field-validation-integration-results.md). Ticket closure alone does not establish broader deployment readiness; the milestone's bounded acceptance and retained failures are recorded separately above.
 
@@ -31,6 +31,25 @@ server still decides field sufficiency. Application Draft represents missing
 [handler](../backend/application-draft/main.go) and
 [client](../src/lib/ai.ts) enforce this contract. Readiness, field acceptance and
 HTTP 200 do not establish supported generated claims or accepted browser output.
+
+### Application answer policy
+
+Application Draft answers cover every explicit employer Application Requirement
+first. Optional useful suggestions follow separately; they cannot substitute for
+a requested answer or be presented as employer questions. English headings are
+`Employer-requested answers` and `Additional suggestions`; Portuguese headings are
+`Respostas solicitadas pela empresa` and `Sugestões adicionais`. Empty sections
+are omitted. A posting with no requested answers uses only the suggestions
+section. There is no fixed answer count. Preserve a language explicitly requested
+for an individual answer and disclose missing candidate information honestly.
+
+Generation policy v3 and independent artifact-support policy v8 carry this rule.
+The support check receives the requested output language and can return concerns
+for missing requested answers or mislabeled suggestions. Those concerns block
+acceptance through the existing review contract. This is a fallible semantic
+check; controlled policy and concern-propagation tests do not prove provider
+compliance. See the [controlled preparation report](release-evidence/2026-10-12-controlled-preparation.md)
+for local clipboard/export evidence and the remaining deployed capture gate.
 
 ## Agreed decisions
 
