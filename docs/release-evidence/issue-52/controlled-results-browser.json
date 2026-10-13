@@ -3,8 +3,8 @@
   "sourceHashes": {
     "src/pages/ResultsPage.tsx": "ee089995c9009fb33b8b546919bad3554008a3cfc2a904dfd5b6a7d7d5396c38",
     "src/components/GeneratedResumePreview.tsx": "fa4017cf91c2759e0fcc797197ed1db0b4f83b4b6341345dd5f18df9ac92d9e1",
-    "src/lib/ai.ts": "57d04b03b5f0a91ed40234607cd105839c7ad37c0a0f19ca0bb856ea255ed522",
-    "backend/application-draft/main.go": "505b8c17eec7236acafb2cff6ad7d0f67a5eb6f6acaf20ba19f0856497884ee8",
+    "src/lib/ai.ts": "687fd77301429e799eb18afbd704850aa6dc48beb5fac65edf9a37f9b65a07f6",
+    "backend/application-draft/main.go": "82f22bd8341e0cbc34bfbe6f5223339dcc05d16df3ca0f3c65ae1eb520ae90a8",
     "backend/application-draft/artifacts.go": "9157275ae61860fb4a22b2b73f00bc4f6fa51cf467bbfde44decacf08e0bef94",
     "tests/results-release-checks.mjs": "354d7943a0ad0466c25e32a105f0e725ed282d0aee2c68f2e4d1ea3ea25cdbc6"
   },
@@ -50,7 +50,7 @@
   ],
   "captures": [
     {
-      "url": "http://127.0.0.1:36677/api/qualification-gaps",
+      "url": "http://127.0.0.1:35151/api/qualification-gaps",
       "requestBody": "{\"repository\":{\"careerGoals\":\"\",\"skills\":\"Ruby\",\"competencies\":\"\",\"experience\":[],\"tools\":\"\",\"projects\":[],\"employmentStatus\":\"\",\"currentSalary\":\"\",\"desiredSalary\":\"\",\"additionalInfo\":\"\"},\"qualifications\":{\"education\":[],\"certifications\":[],\"languages\":[]},\"jobPosting\":\"Ruby developer.\\nMaintain internal CLI tools using Ruby.\\nRuby is required.\\nExplain how you use Ruby in English.\",\"understandJob\":true,\"profileEvidence\":{\"version\":2,\"id\":\"p\",\"revision\":1,\"normalizationPolicy\":\"exact-alias-v1\",\"entities\":[],\"facts\":[{\"id\":\"skill\",\"revision\":1,\"owner\":{\"profileId\":\"p\",\"id\":\"p\",\"revision\":1},\"context\":[],\"field\":\"skills\",\"order\":0,\"kind\":\"statement\",\"value\":\"Ruby\",\"assertion\":\"affirmed\",\"intent\":\"actual\",\"certainty\":\"certain\",\"temporal\":{\"wording\":\"\",\"precision\":\"unknown\"},\"normalization\":{\"observed\":\"Ruby\",\"canonical\":null,\"policy\":\"exact-alias-v1\"},\"origin\":{\"kind\":\"accepted_proposal\",\"original\":\"unknown\"},\"approval\":\"approved\",\"support\":\"supported\"}],\"evidence\":[{\"id\":\"e\",\"revision\":1,\"excerpt\":\"I use Ruby to maintain internal CLI tools.\",\"origin\":\"submitted career notes\",\"approval\":\"approved\"}],\"links\":[{\"id\":\"support\",\"kind\":\"supports\",\"from\":{\"profileId\":\"p\",\"id\":\"skill\",\"revision\":1},\"to\":{\"profileId\":\"p\",\"id\":\"e\",\"revision\":1},\"state\":\"active\"}]}}",
       "status": 200,
       "headers": {
@@ -58,14 +58,14 @@
         "Cache-Control": "no-store"
       },
       "responseBody": "{\"gaps\":[],\"jobContext\":{\"version\":\"job-context-v2/prompt-v1/schema-v1/gpt-6-luna/none/jev-rubric-v1/policy-v1\",\"sourceId\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"inputsId\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"job\":{\"jobTitle\":null,\"company\":null,\"seniority\":null,\"location\":null,\"responsibilities\":[],\"qualifications\":[],\"applicationRequirements\":[]}}}",
-      "durationMs": 1.3760000001639128,
+      "durationMs": 1.698000000033062,
       "requestHash": "5a67636650ace60f6ce9b0f5a9c5de2d08474770886443abac55cf541387a7c3",
       "responseHash": "e03529d64246f590a46c6a2946dfc9e1cacdeff5137db3510ee39890c9fe3c33",
       "requestBytes": 1273,
       "responseBytes": 412
     },
     {
-      "url": "http://127.0.0.1:36677/api/application-draft",
+      "url": "http://127.0.0.1:35151/api/application-draft",
       "requestBody": "{\"repository\":{\"careerGoals\":\"\",\"skills\":\"Ruby\",\"competencies\":\"\",\"experience\":[],\"tools\":\"\",\"projects\":[],\"employmentStatus\":\"\",\"currentSalary\":\"\",\"desiredSalary\":\"\",\"additionalInfo\":\"\"},\"qualifications\":{\"education\":[],\"certifications\":[],\"languages\":[]},\"jobPosting\":\"Ruby developer.\\nMaintain internal CLI tools using Ruby.\\nRuby is required.\\nExplain how you use Ruby in English.\",\"confirmedQualifications\":[],\"cvLanguage\":\"en\",\"profileEvidence\":{\"version\":2,\"id\":\"p\",\"revision\":1,\"normalizationPolicy\":\"exact-alias-v1\",\"entities\":[],\"facts\":[{\"id\":\"skill\",\"revision\":1,\"owner\":{\"profileId\":\"p\",\"id\":\"p\",\"revision\":1},\"context\":[],\"field\":\"skills\",\"order\":0,\"kind\":\"statement\",\"value\":\"Ruby\",\"assertion\":\"affirmed\",\"intent\":\"actual\",\"certainty\":\"certain\",\"temporal\":{\"wording\":\"\",\"precision\":\"unknown\"},\"normalization\":{\"observed\":\"Ruby\",\"canonical\":null,\"policy\":\"exact-alias-v1\"},\"origin\":{\"kind\":\"accepted_proposal\",\"original\":\"unknown\"},\"approval\":\"approved\",\"support\":\"supported\"}],\"evidence\":[{\"id\":\"e\",\"revision\":1,\"excerpt\":\"I use Ruby to maintain internal CLI tools.\",\"origin\":\"submitted career notes\",\"approval\":\"approved\"}],\"links\":[{\"id\":\"support\",\"kind\":\"supports\",\"from\":{\"profileId\":\"p\",\"id\":\"skill\",\"revision\":1},\"to\":{\"profileId\":\"p\",\"id\":\"e\",\"revision\":1},\"state\":\"active\"}]},\"reviewResume\":true,\"reviewArtifacts\":true,\"selectedFactIds\":[],\"jobContext\":{\"version\":\"job-context-v2/prompt-v1/schema-v1/gpt-6-luna/none/jev-rubric-v1/policy-v1\",\"sourceId\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"inputsId\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"job\":{\"jobTitle\":null,\"company\":null,\"seniority\":null,\"location\":null,\"responsibilities\":[],\"qualifications\":[],\"applicationRequirements\":[]}}}",
       "status": 200,
       "headers": {
@@ -73,14 +73,14 @@
         "Cache-Control": "no-store"
       },
       "responseBody": "{\"jobTitle\":\"Ruby developer\",\"company\":null,\"jobSummary\":\"Ruby developer.\\nMaintain internal CLI tools using Ruby.\\nRuby is required.\\nExplain how you use Ruby in English.\",\"resume\":\"## Technical Skills\\n- Ruby: maintaining internal CLI tools.\",\"coverLetter\":{\"greeting\":\"Dear hiring team,\",\"body\":\"I use Ruby to maintain internal CLI tools.\",\"closing\":\"Sincerely,\"},\"applicationAnswers\":\"## Employer-requested answers\\nI use Ruby to maintain internal CLI tools.\\n\\n## Additional suggestions\\nWhich tools does the team maintain?\",\"artifactReview\":{\"version\":\"artifact-review-v1\",\"check\":\"complete\",\"facts\":[{\"id\":\"skill\",\"revision\":1,\"owner\":{\"profileId\":\"p\",\"id\":\"p\",\"revision\":1},\"context\":[],\"field\":\"skills\",\"order\":0,\"kind\":\"statement\",\"value\":\"Ruby\",\"assertion\":\"affirmed\",\"intent\":\"actual\",\"certainty\":\"certain\",\"temporal\":{\"wording\":\"\",\"precision\":\"unknown\"},\"normalization\":{\"observed\":\"Ruby\",\"canonical\":null,\"policy\":\"exact-alias-v1\"},\"origin\":{\"kind\":\"accepted_proposal\",\"original\":\"unknown\"},\"approval\":\"approved\",\"support\":\"supported\",\"section\":\"profile\",\"evidence\":[{\"id\":\"e\",\"revision\":1,\"excerpt\":\"I use Ruby to maintain internal CLI tools.\",\"origin\":\"submitted career notes\",\"approval\":\"approved\"}]}],\"jobPosting\":\"Ruby developer.\\nMaintain internal CLI tools using Ruby.\\nRuby is required.\\nExplain how you use Ruby in English.\",\"closing\":\"Sincerely,\",\"claims\":[{\"field\":\"jobTitle\",\"text\":\"Ruby developer\",\"state\":\"supported\",\"concerns\":[],\"nonfactual\":false,\"scope\":\"job\",\"sources\":[],\"jobSources\":[{\"start\":0,\"end\":110,\"quote\":\"Ruby developer.\\nMaintain internal CLI tools using Ruby.\\nRuby is required.\\nExplain how you use Ruby in English.\"}]},{\"field\":\"jobSummary\",\"text\":\"Ruby developer.\\nMaintain internal CLI tools using Ruby.\\nRuby is required.\\nExplain how you use Ruby in English.\",\"state\":\"supported\",\"concerns\":[],\"nonfactual\":false,\"scope\":\"job\",\"sources\":[],\"jobSources\":[{\"start\":0,\"end\":110,\"quote\":\"Ruby developer.\\nMaintain internal CLI tools using Ruby.\\nRuby is required.\\nExplain how you use Ruby in English.\"}]},{\"field\":\"greeting\",\"text\":\"Dear hiring team,\",\"state\":\"supported\",\"concerns\":[],\"nonfactual\":true,\"scope\":\"nonfactual\",\"sources\":[],\"jobSources\":[]},{\"field\":\"body\",\"text\":\"I use Ruby to maintain internal CLI tools.\",\"state\":\"supported\",\"concerns\":[],\"nonfactual\":false,\"scope\":\"career\",\"sources\":[{\"profileId\":\"p\",\"id\":\"skill\",\"revision\":1}],\"jobSources\":[]},{\"field\":\"applicationAnswers\",\"text\":\"## Employer-requested answers\\nI use Ruby to maintain internal CLI tools.\",\"state\":\"supported\",\"concerns\":[],\"nonfactual\":false,\"scope\":\"career\",\"sources\":[{\"profileId\":\"p\",\"id\":\"skill\",\"revision\":1}],\"jobSources\":[]},{\"field\":\"applicationAnswers\",\"text\":\"## Additional suggestions\\nWhich tools does the team maintain?\",\"state\":\"supported\",\"concerns\":[],\"nonfactual\":false,\"scope\":\"career\",\"sources\":[{\"profileId\":\"p\",\"id\":\"skill\",\"revision\":1}],\"jobSources\":[]}]},\"resumeReview\":{\"version\":\"resume-review-v1\",\"check\":\"complete\",\"facts\":[{\"id\":\"skill\",\"revision\":1,\"owner\":{\"profileId\":\"p\",\"id\":\"p\",\"revision\":1},\"context\":[],\"field\":\"skills\",\"order\":0,\"kind\":\"statement\",\"value\":\"Ruby\",\"assertion\":\"affirmed\",\"intent\":\"actual\",\"certainty\":\"certain\",\"temporal\":{\"wording\":\"\",\"precision\":\"unknown\"},\"normalization\":{\"observed\":\"Ruby\",\"canonical\":null,\"policy\":\"exact-alias-v1\"},\"origin\":{\"kind\":\"accepted_proposal\",\"original\":\"unknown\"},\"approval\":\"approved\",\"support\":\"supported\",\"section\":\"profile\",\"evidence\":[{\"id\":\"e\",\"revision\":1,\"excerpt\":\"I use Ruby to maintain internal CLI tools.\",\"origin\":\"submitted career notes\",\"approval\":\"approved\"}]}],\"claims\":[{\"section\":\"skills\",\"kind\":\"bullet\",\"text\":\"Ruby: maintaining internal CLI tools.\",\"sources\":[{\"profileId\":\"p\",\"id\":\"skill\",\"revision\":1}],\"state\":\"supported\",\"concerns\":[]}]}}",
-      "durationMs": 1.6390000000683358,
+      "durationMs": 1.6750000013416866,
       "requestHash": "177b63604fee17bb11c4112448915a012717455cb89ad4567aa32318dbdf051e",
       "responseHash": "2dfaa97f62acd7d3135e7bc66b9df8c4bd937d1cda39555ce2e43349aa09ffa1",
       "requestBytes": 1764,
       "responseBytes": 3789
     },
     {
-      "url": "http://127.0.0.1:36677/api/qualification-gaps",
+      "url": "http://127.0.0.1:35151/api/qualification-gaps",
       "requestBody": "{\"repository\":{\"careerGoals\":\"\",\"skills\":\"Ruby\",\"competencies\":\"\",\"experience\":[],\"tools\":\"\",\"projects\":[],\"employmentStatus\":\"\",\"currentSalary\":\"\",\"desiredSalary\":\"\",\"additionalInfo\":\"\"},\"qualifications\":{\"education\":[],\"certifications\":[],\"languages\":[]},\"jobPosting\":\"Desenvolvedor Ruby.\\nMantenha ferramentas CLI internas usando Ruby.\\nRuby é obrigatório.\\nExplique como você usa Ruby em português.\",\"understandJob\":true,\"profileEvidence\":{\"version\":2,\"id\":\"p\",\"revision\":1,\"normalizationPolicy\":\"exact-alias-v1\",\"entities\":[],\"facts\":[{\"id\":\"skill\",\"revision\":1,\"owner\":{\"profileId\":\"p\",\"id\":\"p\",\"revision\":1},\"context\":[],\"field\":\"skills\",\"order\":0,\"kind\":\"statement\",\"value\":\"Ruby\",\"assertion\":\"affirmed\",\"intent\":\"actual\",\"certainty\":\"certain\",\"temporal\":{\"wording\":\"\",\"precision\":\"unknown\"},\"normalization\":{\"observed\":\"Ruby\",\"canonical\":null,\"policy\":\"exact-alias-v1\"},\"origin\":{\"kind\":\"accepted_proposal\",\"original\":\"unknown\"},\"approval\":\"approved\",\"support\":\"supported\"}],\"evidence\":[{\"id\":\"e\",\"revision\":1,\"excerpt\":\"Uso Ruby para manter ferramentas CLI internas.\",\"origin\":\"submitted career notes\",\"approval\":\"approved\"}],\"links\":[{\"id\":\"support\",\"kind\":\"supports\",\"from\":{\"profileId\":\"p\",\"id\":\"skill\",\"revision\":1},\"to\":{\"profileId\":\"p\",\"id\":\"e\",\"revision\":1},\"state\":\"active\"}]}}",
       "status": 200,
       "headers": {
@@ -88,14 +88,14 @@
         "Cache-Control": "no-store"
       },
       "responseBody": "{\"gaps\":[],\"jobContext\":{\"version\":\"job-context-v2/prompt-v1/schema-v1/gpt-6-luna/none/jev-rubric-v1/policy-v1\",\"sourceId\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"inputsId\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"job\":{\"jobTitle\":null,\"company\":null,\"seniority\":null,\"location\":null,\"responsibilities\":[],\"qualifications\":[],\"applicationRequirements\":[]}}}",
-      "durationMs": 1.2540000002445595,
+      "durationMs": 1.0959999999613501,
       "requestHash": "950d90f92c35c8a1b7e852ebd56ee74d1a594e419aa3c8c93acfa6102016d3bb",
       "responseHash": "e03529d64246f590a46c6a2946dfc9e1cacdeff5137db3510ee39890c9fe3c33",
       "requestBytes": 1299,
       "responseBytes": 412
     },
     {
-      "url": "http://127.0.0.1:36677/api/application-draft",
+      "url": "http://127.0.0.1:35151/api/application-draft",
       "requestBody": "{\"repository\":{\"careerGoals\":\"\",\"skills\":\"Ruby\",\"competencies\":\"\",\"experience\":[],\"tools\":\"\",\"projects\":[],\"employmentStatus\":\"\",\"currentSalary\":\"\",\"desiredSalary\":\"\",\"additionalInfo\":\"\"},\"qualifications\":{\"education\":[],\"certifications\":[],\"languages\":[]},\"jobPosting\":\"Desenvolvedor Ruby.\\nMantenha ferramentas CLI internas usando Ruby.\\nRuby é obrigatório.\\nExplique como você usa Ruby em português.\",\"confirmedQualifications\":[],\"cvLanguage\":\"pt-BR\",\"profileEvidence\":{\"version\":2,\"id\":\"p\",\"revision\":1,\"normalizationPolicy\":\"exact-alias-v1\",\"entities\":[],\"facts\":[{\"id\":\"skill\",\"revision\":1,\"owner\":{\"profileId\":\"p\",\"id\":\"p\",\"revision\":1},\"context\":[],\"field\":\"skills\",\"order\":0,\"kind\":\"statement\",\"value\":\"Ruby\",\"assertion\":\"affirmed\",\"intent\":\"actual\",\"certainty\":\"certain\",\"temporal\":{\"wording\":\"\",\"precision\":\"unknown\"},\"normalization\":{\"observed\":\"Ruby\",\"canonical\":null,\"policy\":\"exact-alias-v1\"},\"origin\":{\"kind\":\"accepted_proposal\",\"original\":\"unknown\"},\"approval\":\"approved\",\"support\":\"supported\"}],\"evidence\":[{\"id\":\"e\",\"revision\":1,\"excerpt\":\"Uso Ruby para manter ferramentas CLI internas.\",\"origin\":\"submitted career notes\",\"approval\":\"approved\"}],\"links\":[{\"id\":\"support\",\"kind\":\"supports\",\"from\":{\"profileId\":\"p\",\"id\":\"skill\",\"revision\":1},\"to\":{\"profileId\":\"p\",\"id\":\"e\",\"revision\":1},\"state\":\"active\"}]},\"reviewResume\":true,\"reviewArtifacts\":true,\"selectedFactIds\":[],\"jobContext\":{\"version\":\"job-context-v2/prompt-v1/schema-v1/gpt-6-luna/none/jev-rubric-v1/policy-v1\",\"sourceId\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"inputsId\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"job\":{\"jobTitle\":null,\"company\":null,\"seniority\":null,\"location\":null,\"responsibilities\":[],\"qualifications\":[],\"applicationRequirements\":[]}}}",
       "status": 200,
       "headers": {
@@ -103,7 +103,7 @@
         "Cache-Control": "no-store"
       },
       "responseBody": "{\"jobTitle\":\"Desenvolvedor Ruby\",\"company\":null,\"jobSummary\":\"Desenvolvedor Ruby.\\nMantenha ferramentas CLI internas usando Ruby.\\nRuby é obrigatório.\\nExplique como você usa Ruby em português.\",\"resume\":\"## Competências Técnicas\\n- Ruby: manutenção de ferramentas CLI internas.\",\"coverLetter\":{\"greeting\":\"Prezada equipe de contratação,\",\"body\":\"Uso Ruby para manter ferramentas CLI internas.\",\"closing\":\"Atenciosamente,\"},\"applicationAnswers\":\"## Respostas solicitadas pela empresa\\nUso Ruby para manter ferramentas CLI internas.\\n\\n## Sugestões adicionais\\nQue ferramentas a equipe mantém?\",\"artifactReview\":{\"version\":\"artifact-review-v1\",\"check\":\"complete\",\"facts\":[{\"id\":\"skill\",\"revision\":1,\"owner\":{\"profileId\":\"p\",\"id\":\"p\",\"revision\":1},\"context\":[],\"field\":\"skills\",\"order\":0,\"kind\":\"statement\",\"value\":\"Ruby\",\"assertion\":\"affirmed\",\"intent\":\"actual\",\"certainty\":\"certain\",\"temporal\":{\"wording\":\"\",\"precision\":\"unknown\"},\"normalization\":{\"observed\":\"Ruby\",\"canonical\":null,\"policy\":\"exact-alias-v1\"},\"origin\":{\"kind\":\"accepted_proposal\",\"original\":\"unknown\"},\"approval\":\"approved\",\"support\":\"supported\",\"section\":\"profile\",\"evidence\":[{\"id\":\"e\",\"revision\":1,\"excerpt\":\"Uso Ruby para manter ferramentas CLI internas.\",\"origin\":\"submitted career notes\",\"approval\":\"approved\"}]}],\"jobPosting\":\"Desenvolvedor Ruby.\\nMantenha ferramentas CLI internas usando Ruby.\\nRuby é obrigatório.\\nExplique como você usa Ruby em português.\",\"closing\":\"Atenciosamente,\",\"claims\":[{\"field\":\"jobTitle\",\"text\":\"Desenvolvedor Ruby\",\"state\":\"supported\",\"concerns\":[],\"nonfactual\":false,\"scope\":\"job\",\"sources\":[],\"jobSources\":[{\"start\":0,\"end\":132,\"quote\":\"Desenvolvedor Ruby.\\nMantenha ferramentas CLI internas usando Ruby.\\nRuby é obrigatório.\\nExplique como você usa Ruby em português.\"}]},{\"field\":\"jobSummary\",\"text\":\"Desenvolvedor Ruby.\\nMantenha ferramentas CLI internas usando Ruby.\\nRuby é obrigatório.\\nExplique como você usa Ruby em português.\",\"state\":\"supported\",\"concerns\":[],\"nonfactual\":false,\"scope\":\"job\",\"sources\":[],\"jobSources\":[{\"start\":0,\"end\":132,\"quote\":\"Desenvolvedor Ruby.\\nMantenha ferramentas CLI internas usando Ruby.\\nRuby é obrigatório.\\nExplique como você usa Ruby em português.\"}]},{\"field\":\"greeting\",\"text\":\"Prezada equipe de contratação,\",\"state\":\"supported\",\"concerns\":[],\"nonfactual\":true,\"scope\":\"nonfactual\",\"sources\":[],\"jobSources\":[]},{\"field\":\"body\",\"text\":\"Uso Ruby para manter ferramentas CLI internas.\",\"state\":\"supported\",\"concerns\":[],\"nonfactual\":false,\"scope\":\"career\",\"sources\":[{\"profileId\":\"p\",\"id\":\"skill\",\"revision\":1}],\"jobSources\":[]},{\"field\":\"applicationAnswers\",\"text\":\"## Respostas solicitadas pela empresa\\nUso Ruby para manter ferramentas CLI internas.\",\"state\":\"supported\",\"concerns\":[],\"nonfactual\":false,\"scope\":\"career\",\"sources\":[{\"profileId\":\"p\",\"id\":\"skill\",\"revision\":1}],\"jobSources\":[]},{\"field\":\"applicationAnswers\",\"text\":\"## Sugestões adicionais\\nQue ferramentas a equipe mantém?\",\"state\":\"supported\",\"concerns\":[],\"nonfactual\":false,\"scope\":\"career\",\"sources\":[{\"profileId\":\"p\",\"id\":\"skill\",\"revision\":1}],\"jobSources\":[]}]},\"resumeReview\":{\"version\":\"resume-review-v1\",\"check\":\"complete\",\"facts\":[{\"id\":\"skill\",\"revision\":1,\"owner\":{\"profileId\":\"p\",\"id\":\"p\",\"revision\":1},\"context\":[],\"field\":\"skills\",\"order\":0,\"kind\":\"statement\",\"value\":\"Ruby\",\"assertion\":\"affirmed\",\"intent\":\"actual\",\"certainty\":\"certain\",\"temporal\":{\"wording\":\"\",\"precision\":\"unknown\"},\"normalization\":{\"observed\":\"Ruby\",\"canonical\":null,\"policy\":\"exact-alias-v1\"},\"origin\":{\"kind\":\"accepted_proposal\",\"original\":\"unknown\"},\"approval\":\"approved\",\"support\":\"supported\",\"section\":\"profile\",\"evidence\":[{\"id\":\"e\",\"revision\":1,\"excerpt\":\"Uso Ruby para manter ferramentas CLI internas.\",\"origin\":\"submitted career notes\",\"approval\":\"approved\"}]}],\"claims\":[{\"section\":\"skills\",\"kind\":\"bullet\",\"text\":\"Ruby: manutenção de ferramentas CLI internas.\",\"sources\":[{\"profileId\":\"p\",\"id\":\"skill\",\"revision\":1}],\"state\":\"supported\",\"concerns\":[]}]}}",
-      "durationMs": 1.8199999999524152,
+      "durationMs": 1.132000001234701,
       "requestHash": "98dd2968a6890eae3af5bf35fd2c4deb133f905347da3888b8c6c84856cad7dc",
       "responseHash": "5d1bb4b9a7a5a113c43349a84e853ca4a2372e9b0830fccd8be44d5f8989cfad",
       "requestBytes": 1793,
@@ -116,7 +116,7 @@
     {
       "path": "controlled-ruby-en-1280.pdf",
       "bytes": 15812,
-      "sha256": "01dcc00f6f24bc8e1cba22d090d693a168166d0e72c4f3b89239c50130467c84",
+      "sha256": "0140ab49bc6cad0b4bf78fd1cb6c7c0f6ece33c69afc93ca2ac5e56a378093d4",
       "language": "en",
       "viewportWidth": 1280,
       "evidence": "actual local Chrome printToPDF output from accepted Results print clone"
@@ -124,7 +124,7 @@
     {
       "path": "controlled-ruby-en-390.pdf",
       "bytes": 15812,
-      "sha256": "01dcc00f6f24bc8e1cba22d090d693a168166d0e72c4f3b89239c50130467c84",
+      "sha256": "0140ab49bc6cad0b4bf78fd1cb6c7c0f6ece33c69afc93ca2ac5e56a378093d4",
       "language": "en",
       "viewportWidth": 390,
       "evidence": "actual local Chrome printToPDF output from accepted Results print clone"
@@ -132,7 +132,7 @@
     {
       "path": "controlled-ruby-pt-BR-1280.pdf",
       "bytes": 17249,
-      "sha256": "2083ac5c8463a39039a8c7cce2e0afdd866a54a1cbc9f15f2ce7980d555b3bfa",
+      "sha256": "602133738fde32bcd85770bd762d988c5b9d23560e0e354807464c86d61609f2",
       "language": "pt-BR",
       "viewportWidth": 1280,
       "evidence": "actual local Chrome printToPDF output from accepted Results print clone"
@@ -140,7 +140,7 @@
     {
       "path": "controlled-ruby-pt-BR-390.pdf",
       "bytes": 17249,
-      "sha256": "2083ac5c8463a39039a8c7cce2e0afdd866a54a1cbc9f15f2ce7980d555b3bfa",
+      "sha256": "602133738fde32bcd85770bd762d988c5b9d23560e0e354807464c86d61609f2",
       "language": "pt-BR",
       "viewportWidth": 390,
       "evidence": "actual local Chrome printToPDF output from accepted Results print clone"

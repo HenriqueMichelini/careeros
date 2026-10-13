@@ -104,12 +104,14 @@ Denying the artifact-support envelope leaves that review unavailable with no
 retry. The test transport has no network delegate; no live command or credential
 file is involved.
 
-**Criterion 7 remains unavailable at the deployed egress boundary.** The ordinary
-Netlify wrapper still constructs the ordinary handler. This patch adds no
-production content logging or deployed interception mechanism. Local CDP capture
-and in-memory transport inspection cannot establish actual deployed outbound
-bytes. Stop before selecting a further paid batch until safe deployed inspection
-is demonstrated inside a separately approved privacy boundary. A static fixture
+**Criterion 7 remains unavailable at the deployed egress boundary.** At controlled
+preparation head `15a9d1e`, the Netlify wrapper constructed the ordinary handler.
+The subsequently approved [private synthetic response capture extension](2026-10-13-private-synthetic-capture.md)
+adds a disabled-by-default, request-scoped mechanism without content logging or
+server payload storage. It has not been activated or verified on Netlify. Local
+CDP capture and in-memory transport inspection cannot establish actual deployed
+outbound bytes. Stop before selecting a further paid batch until safe deployed
+inspection is demonstrated inside the approved privacy boundary. A static fixture
 cannot preapprove unknown response-dependent envelopes.
 
 No new live candidate, exact deployment/origin pair, broader held-out inventory,
@@ -137,7 +139,7 @@ rtk proxy npm run test:cv-preview
 rtk proxy npm run test:results-firefox-pdf
 ```
 
-Refreshed on 2026-10-13: all Go packages passed; all 133 Node tests passed;
+Refreshed on 2026-10-13: all Go packages passed; all 134 Node tests passed;
 TypeScript and the production build passed. The build retained its existing
 large-chunk advisory. The extended Chrome check passed, including the 24 native
 transfers, stale-copy rejection and four A4 exports. Resume/application review

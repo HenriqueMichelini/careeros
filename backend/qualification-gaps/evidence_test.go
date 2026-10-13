@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-func explainedRequest(t *testing.T, decision string, alter func(map[string]any)) *httptest.ResponseRecorder {
+func explainedRequest(t *testing.T, decision string, alter func(map[string]any), decorate ...func(*http.Request)) *httptest.ResponseRecorder {
 	t.Helper()
 	raw, _ := os.ReadFile("../../internal/profiledocument/fixtures.json")
 	var fixtures []struct{ Document json.RawMessage }
@@ -43,6 +43,9 @@ func explainedRequest(t *testing.T, decision string, alter func(map[string]any))
 	req := httptest.NewRequest("POST", "/api/qualification-gaps", strings.NewReader(string(data)))
 	req.Header.Set("X-OpenAI-Api-Key", "sk-synthetic")
 	req.Header.Set("X-TypeSafe-Api-Key", "synthetic")
+	for _, customize := range decorate {
+		customize(req)
+	}
 	w := httptest.NewRecorder()
 	NewHandlerWithClient(client).ServeHTTP(w, req)
 	return w

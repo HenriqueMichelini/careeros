@@ -120,6 +120,64 @@ function handler(
   return result.output
 }
 const { findProfileGaps, generateMaterials } = await load("ai")
+
+test("private response capture stays outside Application Draft state", async () => {
+  const fixture = structuredClone(
+    corpus.cases.find((c) => c.id === "pt-reviewed-draft"),
+  )
+  const previous = globalThis.fetch
+  let wireOutput
+  globalThis.fetch = async (_url, options) => {
+    wireOutput = handler(
+      "pt-reviewed-draft",
+      JSON.parse(options.body),
+      fixture.provider,
+      200,
+      "development",
+    )
+    wireOutput.releaseCapture = {
+      version: "release-capture-v1",
+      envelopes: [{ requestBody: "PRIVATE_SYNTHETIC_WIRE_EVIDENCE" }],
+    }
+    return new Response(JSON.stringify(wireOutput), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    })
+  }
+  try {
+    const doc = fixture.request.profileEvidence
+    const result = await generateMaterials(
+      profileView(doc),
+      fixture.request.jobPosting,
+      "sk-controlled",
+      [],
+      "pt-BR",
+      "controlled",
+      undefined,
+      [],
+      doc,
+    )
+    assert.equal(
+      "releaseCapture" in result,
+      false,
+      "provider payload evidence must not propagate into product state",
+    )
+    assert.doesNotMatch(
+      JSON.stringify(result),
+      /PRIVATE_SYNTHETIC_WIRE_EVIDENCE/,
+    )
+    assert.equal(
+      wireOutput.releaseCapture.version,
+      "release-capture-v1",
+      "raw response remains available to its requesting test browser",
+    )
+    assert.ok(acceptResume(result.resumeReview, doc))
+    assert.ok(acceptArtifacts(result.artifactReview, doc))
+  } finally {
+    globalThis.fetch = previous
+  }
+})
+
 async function viaHandler(templateId, provider, operation, split = "heldout") {
   const previous = globalThis.fetch
   globalThis.fetch = async (url, options) =>

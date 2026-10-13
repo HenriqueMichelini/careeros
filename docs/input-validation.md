@@ -8,6 +8,13 @@ Domain terms are defined in [CONTEXT.md](../CONTEXT.md).
 
 ## Current implementation
 
+The qualification and Application Draft handlers also support
+[private synthetic response capture](release-evidence/2026-10-13-private-synthetic-capture.md)
+under an expiring exact-request/origin approval manifest. It is disabled by
+default, uses request memory and the requesting response only, and excludes
+authentication and content logs. It has not been activated or verified on Netlify;
+criterion 7 remains unavailable at the actual deployed boundary.
+
 The [Netlify route configuration](../netlify.toml) exposes five fixed workflows:
 `/api/profile/review`, `/api/profile/ingest`, `/api/cv/generate`,
 `/api/qualification-gaps`, and `/api/application-draft`. Section review and general

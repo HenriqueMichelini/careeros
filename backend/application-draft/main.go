@@ -21,6 +21,7 @@ import (
 	"professional-information-repo/internal/profiledocument"
 	"professional-information-repo/internal/profilevalidation"
 	"professional-information-repo/internal/qualificationmatching"
+	"professional-information-repo/internal/releasecapture"
 )
 
 const (
@@ -71,12 +72,12 @@ type coverLetter struct {
 
 type app struct{ client *http.Client }
 
-func NewHandler() http.Handler { return (app{&http.Client{Timeout: timeout}}).handler() }
+func NewHandler() http.Handler { return NewHandlerWithClient(&http.Client{Timeout: timeout}) }
 
 // NewHandlerWithClient uses the production workflow with an explicit provider
 // transport, allowing local evaluation without changing process-wide networking.
 func NewHandlerWithClient(client *http.Client) http.Handler {
-	return (app{client: client}).handler()
+	return releasecapture.Handler("/api/application-draft", (app{client: releasecapture.Client(client)}).handler())
 }
 
 func (a app) handler() http.Handler {
