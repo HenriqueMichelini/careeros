@@ -432,6 +432,52 @@ export async function checkResultsRelease({
       capture.responseBytes = Buffer.byteLength(capture.responseBody)
       delete capture.started
     }
+    await evaluate("navigator.clipboard.writeText('')")
+    assert.equal(
+      await evaluate("navigator.clipboard.readText()"),
+      "",
+      "cleanup must acknowledge and read back an empty native clipboard before reload",
+    )
+    await evaluate(
+      "localStorage.removeItem('careeros_apikey');localStorage.removeItem('careeros_typesafe_key');window.__releaseReloadPending=true;location.reload()",
+    )
+    await until(
+      "!window.__releaseReloadPending && document.readyState==='complete' && !!document.querySelector('header button')",
+    )
+    assert.equal(
+      await evaluate("localStorage.getItem('careeros_apikey')"),
+      null,
+    )
+    assert.equal(
+      await evaluate("localStorage.getItem('careeros_typesafe_key')"),
+      null,
+    )
+    assert.equal(
+      await evaluate("navigator.clipboard.readText()"),
+      "",
+      "clipboard remains empty after the fresh load",
+    )
+    await evaluate("document.querySelector('header button:last-child').click()")
+    await until("document.querySelectorAll('nav button').length===4")
+    await evaluate("document.querySelectorAll('nav button')[0].click()")
+    await until("!!document.querySelector('main textarea')")
+    await evaluate(
+      `{const el=document.querySelector('main textarea');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(el,${JSON.stringify(current.posting)});el.dispatchEvent(new Event('input',{bubbles:true}))}`,
+    )
+    await until(
+      "Array.from(document.querySelectorAll('[data-checklist-state]')).map(e=>e.dataset.checklistState).join(',')==='pending,ready,ready'",
+    )
+    assert.equal(
+      await evaluate("document.querySelector('#job-typesafe-key').value"),
+      "",
+    )
+    assert.equal(
+      await evaluate(
+        "Array.from(document.querySelectorAll('main button')).find(b=>/Generate|Gerar/.test(b.textContent)).disabled",
+      ),
+      true,
+      "fresh-load generation must stay disabled without keys despite a ready Profile and posting",
+    )
     writeFileSync(
       join(work, "controlled-browser-capture.json"),
       JSON.stringify(
@@ -455,26 +501,17 @@ export async function checkResultsRelease({
             artifacts: ["resume", "coverLetter", "applicationAnswers"],
             successfulTransfers: 24,
           },
+          cleanup: {
+            clipboardEmptyBeforeAndAfterReload: true,
+            storedKeysAbsent: true,
+            renderedMissingKeyReadiness: true,
+          },
           profileComparisons,
           captures: [...captures.values()],
         },
         null,
         2,
       ),
-    )
-    await evaluate(
-      "navigator.clipboard.writeText('');localStorage.removeItem('careeros_apikey');localStorage.removeItem('careeros_typesafe_key');window.__releaseReloadPending=true;location.reload()",
-    )
-    await until(
-      "!window.__releaseReloadPending && document.readyState==='complete' && !!document.querySelector('header button')",
-    )
-    assert.equal(
-      await evaluate("localStorage.getItem('careeros_apikey')"),
-      null,
-    )
-    assert.equal(
-      await evaluate("localStorage.getItem('careeros_typesafe_key')"),
-      null,
     )
     console.log(
       "EN/PT native Enter/Space/pointer clipboard, retained PT headings, four actual A4 PDFs, full Profile preservation and synthetic HTTP capture: passed",

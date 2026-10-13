@@ -67,7 +67,10 @@ cover-letter/signature and Firefox checks remain separate tests.
 Full parsed saved Profile objects are compared before and after the controlled
 draft, acceptance, clipboard and PDF operations. This uses deep value equality,
 not serialized property order. Temporary synthetic keys and clipboard contents
-are cleared, and missing keys are confirmed after reload. These local synthetic
+are cleared. The clipboard write is awaited and empty contents are read back
+before and after reload. The fresh-load UI shows pending keys with a ready
+Profile/posting and disabled generation; both stored keys and the rendered
+TypeSafe key field are empty. These local synthetic
 checks do not replace the missing full-Profile comparison in the frozen live
 batch.
 
