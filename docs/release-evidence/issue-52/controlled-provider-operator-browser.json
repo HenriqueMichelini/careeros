@@ -2,8 +2,8 @@
   "evidence": "controlled loopback browser with fabricated provider captures; no real provider dispatch or deployed/provider quality evidence",
   "sourceHashes": {
     "tests/inspection-browser-fixture.mjs": "8183ec1155a0e4dde669c4a4bc8974d3b9e30deddfeb02ebc8ca2dbb9b3aa6ed",
-    "tests/preview-inspection-harness.mjs": "b14485a55dca162504659cc907e4347c784bcc0e11ce91279f838e9a801059ed",
-    "tests/preview-provider-browser.check.mjs": "531002a8e46fe3b3d1168fbe536beb6ad94774c792025182eb1558ff89ac2fcc"
+    "tests/preview-inspection-harness.mjs": "225415e133a80e74a56003311747753b9e62b9fc3d3cf492dc24817ef4e4fe52",
+    "tests/preview-provider-browser.check.mjs": "222664996d5d5d6e50b90f9f77e6aad4ffe48939491c806412097467a6c0514e"
   },
   "results": [
     {
@@ -128,6 +128,18 @@
     },
     {
       "name": "percent-escaped redirect credential is withheld",
+      "outcome": "stopped",
+      "reason": "unexpected_redirect",
+      "posts": 1,
+      "captureOutcome": null,
+      "reservedCaseIds": [
+        "controlled-paid-qualification"
+      ],
+      "reservedWorkflowAttempts": 1,
+      "reservedProviderDispatches": 3
+    },
+    {
+      "name": "malformed percent prefix cannot conceal redirect credential",
       "outcome": "stopped",
       "reason": "unexpected_redirect",
       "posts": 1,

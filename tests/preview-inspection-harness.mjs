@@ -25,7 +25,9 @@ function credentialContent(raw, keys) {
       try {
         return decodeURIComponent(token)
       } catch {
-        return token
+        return token.replace(/%([0-9a-f]{2})/gi, (_, hex) =>
+          String.fromCharCode(Number.parseInt(hex, 16)),
+        )
       }
     })
     if (decoded === value) return false

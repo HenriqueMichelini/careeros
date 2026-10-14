@@ -63,7 +63,7 @@ global server replay protection mechanism.
 ## Controlled evidence
 
 The [new browser report](issue-52/controlled-provider-operator-browser.json) records
-18 loopback scenarios with fabricated captures: three/four-stage capture, partial
+19 loopback scenarios with fabricated captures: three/four-stage capture, partial
 transport/auth failures, missing evidence, changed response hash, changed original
 Jev text, wrong model, changed deterministic payload, redirect rejection, escaped
 key withholding, caller mutation isolation, duplicate budget reservation and
@@ -80,6 +80,9 @@ a placeholder key in a 302 Location. The corrections scrub all evidence strings
 and restore the 55-second qualification deadline. New browser regressions cover
 literal/percent-escaped redirect echoes, blocked URLs and a response between the
 old/new scaled deadlines. The original review findings remain part of the record.
+A subsequent review reproduced an invalid UTF-8 percent prefix concealing an
+otherwise recoverable encoded key. Percent bytes now decode independently when
+UTF-8 decoding fails, and the malformed-prefix redirect has its own regression.
 
 The [inspection regression report](issue-52/controlled-inspection-regression-p3.json)
 repeats all 21 existing browser scenarios, seven approval/adapter rejection checks

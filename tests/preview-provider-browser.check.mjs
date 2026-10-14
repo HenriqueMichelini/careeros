@@ -268,19 +268,26 @@ try {
       assert.equal(e.redirects.length, 1)
     },
   })
-  for (const encoded of [false, true])
+  for (const encoded of [false, true, "malformed-prefix"])
     await scenario(
-      encoded
-        ? "percent-escaped redirect credential is withheld"
-        : "redirect credential is withheld",
+      encoded === "malformed-prefix"
+        ? "malformed percent prefix cannot conceal redirect credential"
+        : encoded
+          ? "percent-escaped redirect credential is withheld"
+          : "redirect credential is withheld",
       {
         redirect: true,
         location:
           browser.authOrigin +
           "/auth?echo=" +
-          (encoded
-            ? keys["X-OpenAI-Api-Key"].replaceAll("-", "%2D")
-            : keys["X-OpenAI-Api-Key"]),
+          (encoded === "malformed-prefix"
+            ? "%FF" +
+              [...keys["X-OpenAI-Api-Key"]]
+                .map((c) => "%" + c.charCodeAt(0).toString(16).padStart(2, "0"))
+                .join("")
+            : encoded
+              ? keys["X-OpenAI-Api-Key"].replaceAll("-", "%2D")
+              : keys["X-OpenAI-Api-Key"]),
         check: (e, n) => {
           assert.equal(e.reason, "unexpected_redirect")
           assert.equal(n, 1)
