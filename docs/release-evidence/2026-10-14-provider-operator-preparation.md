@@ -1,5 +1,10 @@
 # #52 P3 operator preparation — no provider execution
 
+This is the dated preparation record. Subsequent separately authorized execution
+and its failures are in the [bounded deployed cohort report](2026-10-14-bounded-deployed-cohort.md);
+the [release-gate reconciliation](2026-10-14-release-gate-reconciliation.md) is the
+current disposition. No execution claim below is retroactively broadened.
+
 P2 passed at `c154f40`, as recorded in the [deployed inspection](2026-10-13-p2-deployed-inspection.md).
 Its documentation commit `948ac95` passed SonarCloud, GitGuardian and Netlify
 preview/redirect checks; header/pages checks were neutral. The P3 preparation

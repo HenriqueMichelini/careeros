@@ -1,6 +1,6 @@
 # Field-aware input validation
 
-Status as of 2026-10-13: #29–#33 and milestone #1 are closed following the bounded omission-feedback remediation and authorized field-validation checks on 2026-10-08. The earlier failed audit remains historical evidence, superseded within that bounded scope by [release evidence](release-evidence/2026-10-08-field-validation-release.md) and [protected-preview browser evidence](release-evidence/2026-10-08-field-validation-browser.md). The redesigned-MVP release gate #52 remains open: the bounded English check completed ingestion and qualification, but the browser did not display the completed backend draft. The bounded Portuguese published-browser journey completed ingestion, qualification and draft review; only its supported sparse CV was accepted, copied and saved as an actual one-page PDF. Application artifacts remain unaccepted. That frozen PDF predates the preview-heading correction; deployed corrected display/copy/PDF parity, native keyboard clipboard transfer on the frozen runtime, exact actual deployed outbound-payload capture, broader bilingual provider quality and accepted-result cost remain unverified. Provider-free local checks of corrected headings and native transfer are recorded in the [controlled preparation report](release-evidence/2026-10-12-controlled-preparation.md). See the [MVP integration gate](release-evidence/2026-10-11-evidence-mvp.md) for the dated observations and their limits.
+Status as of 2026-10-14: #29–#33 and milestone #1 remain closed after the bounded omission-feedback remediation and authorized checks on 2026-10-08. The earlier failed audit remains historical evidence, superseded within that bounded scope by [release evidence](release-evidence/2026-10-08-field-validation-release.md) and [protected-preview browser evidence](release-evidence/2026-10-08-field-validation-browser.md). The redesigned-MVP release gate #52 remains open. A separately approved inspection and the new EN/PT cohort established actual preview-handler/provider capture for qualification and Application Draft. All four workflows completed within 14 dispatches, but neither complete application was accepted. Separate supported CVs were accepted, copied with Enter/Space and rendered to inspected PDFs in local replay of the unchanged real responses. That controlled delivery evidence does not establish live deployed React or native Save-dialog acceptance. Broader bilingual quality, actual charges, accepted-result cost and current-candidate published-route acceptance remain unavailable or unverified. See the [new cohort report](release-evidence/2026-10-14-bounded-deployed-cohort.md) and [all 13 criterion dispositions](release-evidence/2026-10-14-release-gate-reconciliation.md). The [initial integration gate](release-evidence/2026-10-11-evidence-mvp.md) preserves the old English browser/backend discrepancy, Portuguese artifact blocks, frozen PDF and clipboard limitations without relabeling them as resolved.
 
 This document records agreed decisions for handling pasted content in CareerOS's AI-powered fields. The user approved the five-ticket breakdown, which is published under the [Field-aware input validation milestone](https://github.com/HenriqueMichelini/careeros/milestone/1). Implementation and evidence are recorded in the ticket documents and [combined verification report](evaluations/field-validation-integration-results.md). Ticket closure alone does not establish broader deployment readiness; the milestone's bounded acceptance and retained failures are recorded separately above.
 
@@ -12,11 +12,16 @@ The qualification and Application Draft handlers also support
 [private synthetic response capture](release-evidence/2026-10-13-private-synthetic-capture.md)
 under an expiring exact-request/origin approval manifest. It is disabled by
 default, uses request memory and the requesting response only, and excludes
-authentication and content logs. A separately approved preview-only inspection
-was activated, attempted once and stopped after a 404 response without matching
-request capture; the temporary configuration was removed. Actual deployed
-capture and criterion 7 remain unverified at the deployed boundary; see the
-linked inspection checkpoint for its limits.
+authentication and content logs. The first inspection's 404 and unknown
+destination remain historical. The separately approved
+[P2 inspection](release-evidence/2026-10-13-p2-deployed-inspection.md) subsequently
+verified the first real serialized envelope at its own source, with zero provider
+dispatches. The [P3 cohort](release-evidence/2026-10-14-bounded-deployed-cohort.md)
+captured four actual qualification/Draft workflows and all 14 provider exchanges
+at source `63a51df` on preview #114. Temporary capture configurations were removed
+and their removal verified after reload. Criterion 7 remains partial: the other
+three current-candidate routes, published-app acceptance and full live React
+review/export were not established by that cohort.
 
 The [Netlify route configuration](../netlify.toml) exposes five fixed workflows:
 `/api/profile/review`, `/api/profile/ingest`, `/api/cv/generate`,
@@ -59,7 +64,10 @@ for missing requested answers or mislabeled suggestions. Those concerns block
 acceptance through the existing review contract. This is a fallible semantic
 check; controlled policy and concern-propagation tests do not prove provider
 compliance. See the [controlled preparation report](release-evidence/2026-10-12-controlled-preparation.md)
-for local clipboard/export evidence and the remaining deployed capture gate.
+for the original local clipboard/export correction, and the
+[new cohort report](release-evidence/2026-10-14-bounded-deployed-cohort.md) for
+actual provider failures, controlled real-response delivery and remaining
+deployment/semantic-acceptance gates.
 
 ## Agreed decisions
 
