@@ -18,7 +18,7 @@ const boundedBody = async (response, limit) => {
     size += value.length
     if (size > limit) {
       await reader.cancel()
-      throw Error("response_capacity")
+      throw new Error("response_capacity")
     }
     chunks.push(value)
   }
@@ -70,11 +70,126 @@ function validate(approval) {
     digest(approval.requestBody) !== approval.requestSHA256 ||
     !fresh(approval)
   )
-    throw Error("Invalid inspection approval; no browser request sent")
+    throw new Error("Invalid inspection approval; no browser request sent")
 }
 function fresh(approval) {
   const remaining = Date.parse(approval.expiresAt) - Date.now()
   return remaining > 0 && remaining <= 60 * 60 * 1000
+}
+
+function observedRequest(approval, request) {
+  const headers = Object.fromEntries(
+    Object.entries(request.headers).map(([name, value]) => [
+      name.toLowerCase(),
+      value,
+    ]),
+  )
+  const raw = request.postDataEntries
+    ? Buffer.concat(
+        request.postDataEntries.map(({ bytes }) =>
+          Buffer.from(bytes, "base64"),
+        ),
+      )
+    : Buffer.from(request.postData ?? "", "utf8")
+  const approvedBytes =
+    raw.equals(Buffer.from(approval.requestBody)) &&
+    digest(raw) === approval.requestSHA256
+  return {
+    headers,
+    approvedBytes,
+    observation: {
+      url: request.url,
+      method: request.method,
+      origin: headers.origin ?? null,
+      ...(approvedBytes
+        ? { body: raw.toString("utf8") }
+        : { bodyWithheld: true }),
+      bytes: raw.length,
+      sha256: digest(raw),
+      source: "CDP.Fetch.requestPaused",
+    },
+  }
+}
+
+function requestAdmissionIssue(approval, request, { headers, approvedBytes }) {
+  if (request.url !== approval.endpoint || request.method !== "POST")
+    return "unexpected_route"
+  if (headers.origin !== approval.origin) return "request_origin_mismatch"
+  if (
+    headers["x-careeros-release-capture"] !== approval.caseID ||
+    Object.entries(inspectionKeys).some(
+      ([name, value]) => headers[name.toLowerCase()] !== value,
+    )
+  )
+    return "request_headers_mismatch"
+  if (!approvedBytes) return "request_bytes_mismatch"
+  if (!fresh(approval)) return "approval_expired"
+  return null
+}
+
+function endpointDiagnostic(approval, evidence) {
+  if (
+    evidence.request?.url !== approval.endpoint ||
+    evidence.request?.method !== "POST"
+  )
+    return "no_endpoint_request_observed"
+  if (!evidence.networkRequestObserved) return "network_request_event_missing"
+  return "endpoint_request_observed"
+}
+
+function responseObservationIssue(approval, evidence) {
+  const result = evidence.browser
+  if (result?.stopped) return result.stopped
+  const diagnostic = endpointDiagnostic(approval, evidence)
+  if (diagnostic !== "endpoint_request_observed") return diagnostic
+  if (evidence.releasedRequests !== 1) return "request_count_mismatch"
+  if (!result || result.failed) return "browser_request_failed"
+  if (result.url !== approval.endpoint || result.redirected)
+    return "response_url_mismatch"
+  if (
+    result.status !== approval.expectedStatus ||
+    evidence.response?.status !== approval.expectedStatus
+  )
+    return "unexpected_http_response"
+  return null
+}
+
+function verifiedFirstEnvelope(approval, evidence) {
+  const capture = JSON.parse(evidence.browser.body).releaseCapture
+  const envelope = capture.envelopes[0]
+  const raw =
+    envelope.requestEncoding === "utf8"
+      ? Buffer.from(envelope.requestBody)
+      : null
+  const providerInput = raw ? JSON.parse(raw.toString("utf8")) : null
+  if (
+    capture.version !== "release-capture-v1" ||
+    capture.caseId !== approval.caseID ||
+    capture.requestSHA256 !== approval.requestSHA256 ||
+    capture.outcome !== "inspection_only" ||
+    capture.envelopes.length !== 1 ||
+    envelope.stage !== "field_validation" ||
+    envelope.outcome !== "not_dispatched" ||
+    envelope.admission !== "release-egress-v1" ||
+    envelope.endpoint !== "https://api.typesafe.ai/v1/systemone" ||
+    !raw ||
+    raw.length !== envelope.requestBytes ||
+    digest(raw) !== envelope.requestSHA256 ||
+    providerInput.model !== "jev-1.13.0" ||
+    providerInput.state?.field !== "job_posting" ||
+    providerInput.state.submission !==
+      JSON.parse(approval.requestBody).jobPosting ||
+    envelope.httpStatus !== null ||
+    envelope.responseBytes !== null ||
+    envelope.durationMs !== null ||
+    envelope.responseBody !== undefined ||
+    envelope.responseSHA256 !== undefined ||
+    envelope.responseEncoding !== undefined ||
+    evidence.response.cacheControl !== "no-store" ||
+    !evidence.response.contentType?.includes("application/json")
+  )
+    throw new Error("incomplete capture")
+  return envelope
 }
 
 export async function createPreviewInspector(
@@ -84,7 +199,7 @@ export async function createPreviewInspector(
   const approval = structuredClone(suppliedApproval)
   validate(approval)
   if (typeof readDeployment !== "function")
-    throw Error("A fresh deployment metadata reader is required")
+    throw new Error("A fresh deployment metadata reader is required")
   const evidence = {
     version: "preview-inspection-browser-v1",
     candidateSHA: approval.candidateSHA,
@@ -123,7 +238,9 @@ export async function createPreviewInspector(
           .then(() => fn(event))
           .catch(() => stop("recorder_failure"))
         tasks.add(task)
-        task.finally(() => tasks.delete(task))
+        task
+          .finally(() => tasks.delete(task))
+          .catch(() => stop("recorder_failure"))
       }),
     )
   }
@@ -142,7 +259,7 @@ export async function createPreviewInspector(
       const timeout = new Promise((_, reject) => {
         timer = setTimeout(() => {
           controller.abort()
-          reject(Error("deployment read deadline"))
+          reject(new Error("deployment read deadline"))
         }, 5000)
       })
       let current
@@ -165,7 +282,7 @@ export async function createPreviewInspector(
         age < 0 ||
         age > 5000
       )
-        throw Error("deployment mismatch")
+        throw new Error("deployment mismatch")
       evidence.deploymentChecks.push({
         id: current.id,
         commitRef: current.commitRef,
@@ -197,114 +314,78 @@ export async function createPreviewInspector(
       stop("unexpected_redirect")
     }
   })
-  subscribe("Fetch.requestPaused", async (event) => {
-    const {
-      requestId,
-      request,
-      responseStatusCode,
-      responseHeaders = [],
-    } = event
-    try {
-      if (responseStatusCode !== undefined) {
-        const headers = Object.fromEntries(
-          responseHeaders.map(({ name, value }) => [name.toLowerCase(), value]),
-        )
-        if (request.url === approval.endpoint)
-          evidence.response = {
-            url: request.url,
-            status: responseStatusCode,
-            contentType: headers["content-type"] ?? null,
-            cacheControl: headers["cache-control"] ?? null,
-          }
-        if (responseStatusCode >= 300 && responseStatusCode < 400) {
-          evidence.redirects.push({
-            url: request.url,
-            status: responseStatusCode,
-            location: headers.location ?? null,
-            followed: false,
-          })
-          stop("unexpected_redirect")
-          await call("Fetch.failRequest", { requestId, errorReason: "Aborted" })
-          return
-        }
-        await call("Fetch.continueRequest", { requestId })
-        return
+  const pausedWorkflowIssue = async (request) => {
+    const observed = observedRequest(approval, request)
+    evidence.request ??= observed.observation
+    // Reserve synchronously before any deployment/page await.
+    if (phase !== "inspection" || requestClaimed) {
+      stop("unexpected_workflow_request")
+      return "unexpected_workflow_request"
+    }
+    requestClaimed = true
+    const admissionIssue = requestAdmissionIssue(approval, request, observed)
+    if (admissionIssue) return admissionIssue
+    if (!(await verifyDeployment())) return "deployment_identity_unverified"
+    if (!atApprovedPage(await snapshot())) return "navigation_changed"
+    // Time can advance during the awaited checks. This is a separate phase
+    // from synchronous request admission, not a redundant predicate.
+    if (!fresh(approval)) return "approval_expired"
+    if (evidence.reason) return evidence.reason
+    evidence.releasedRequests++
+    return null
+  }
+  const pausedRequestIssue = async (request) => {
+    const url = new URL(request.url)
+    if (url.origin !== approval.origin) return "unexpected_origin"
+    if (
+      url.pathname.startsWith("/api/") ||
+      url.pathname.startsWith("/.netlify/functions/")
+    )
+      return pausedWorkflowIssue(request)
+    if (!["GET", "HEAD"].includes(request.method)) return "unexpected_method"
+    return null
+  }
+  const pausedResponseIssue = ({
+    request,
+    responseStatusCode,
+    responseHeaders = [],
+  }) => {
+    const headers = Object.fromEntries(
+      responseHeaders.map(({ name, value }) => [name.toLowerCase(), value]),
+    )
+    if (request.url === approval.endpoint)
+      evidence.response = {
+        url: request.url,
+        status: responseStatusCode,
+        contentType: headers["content-type"] ?? null,
+        cacheControl: headers["cache-control"] ?? null,
       }
-      const url = new URL(request.url)
-      const isWorkflow =
-        url.pathname.startsWith("/api/") ||
-        url.pathname.startsWith("/.netlify/functions/")
-      let reason
-      if (url.origin !== approval.origin) reason = "unexpected_origin"
-      else if (isWorkflow) {
-        const headers = Object.fromEntries(
-          Object.entries(request.headers).map(([name, value]) => [
-            name.toLowerCase(),
-            value,
-          ]),
-        )
-        const raw = request.postDataEntries
-          ? Buffer.concat(
-              request.postDataEntries.map(({ bytes }) =>
-                Buffer.from(bytes, "base64"),
-              ),
-            )
-          : Buffer.from(request.postData ?? "", "utf8")
-        const approvedBytes =
-          raw.equals(Buffer.from(approval.requestBody)) &&
-          digest(raw) === approval.requestSHA256
-        evidence.request ??= {
-          url: request.url,
-          method: request.method,
-          origin: headers.origin ?? null,
-          ...(approvedBytes
-            ? { body: raw.toString("utf8") }
-            : { bodyWithheld: true }),
-          bytes: raw.length,
-          sha256: digest(raw),
-          source: "CDP.Fetch.requestPaused",
-        }
-        // Reserve synchronously before any deployment/page await.
-        if (phase !== "inspection" || requestClaimed) {
-          stop("unexpected_workflow_request")
+    if (responseStatusCode >= 300 && responseStatusCode < 400) {
+      evidence.redirects.push({
+        url: request.url,
+        status: responseStatusCode,
+        location: headers.location ?? null,
+        followed: false,
+      })
+      return "unexpected_redirect"
+    }
+    return null
+  }
+  subscribe("Fetch.requestPaused", async (event) => {
+    const { requestId, request, responseStatusCode } = event
+    try {
+      const responsePaused = responseStatusCode !== undefined
+      const reason = responsePaused
+        ? pausedResponseIssue(event)
+        : await pausedRequestIssue(request)
+      if (reason) {
+        stop(reason)
+        if (!responsePaused)
           evidence.blockedRequests.push({
             url: request.url,
             method: request.method,
-            reason: "unexpected_workflow_request",
+            reason,
           })
-          await call("Fetch.failRequest", { requestId, errorReason: "Aborted" })
-          return
-        }
-        requestClaimed = true
-        if (request.url !== approval.endpoint || request.method !== "POST")
-          reason = "unexpected_route"
-        else if (headers.origin !== approval.origin)
-          reason = "request_origin_mismatch"
-        else if (
-          headers["x-careeros-release-capture"] !== approval.caseID ||
-          Object.entries(inspectionKeys).some(
-            ([name, value]) => headers[name.toLowerCase()] !== value,
-          )
-        )
-          reason = "request_headers_mismatch"
-        else if (!approvedBytes) reason = "request_bytes_mismatch"
-        else if (!fresh(approval)) reason = "approval_expired"
-        else if (!(await verifyDeployment()))
-          reason = "deployment_identity_unverified"
-        else if (!atApprovedPage(await snapshot()))
-          reason = "navigation_changed"
-        else if (!fresh(approval)) reason = "approval_expired"
-        else if (evidence.reason) reason = evidence.reason
-        if (!reason) evidence.releasedRequests++
-      } else if (!["GET", "HEAD"].includes(request.method))
-        reason = "unexpected_method"
-      if (reason) {
-        stop(reason)
-        evidence.blockedRequests.push({
-          url: request.url,
-          method: request.method,
-          reason,
-        })
         await call("Fetch.failRequest", { requestId, errorReason: "Aborted" })
       } else await call("Fetch.continueRequest", { requestId })
     } catch {
@@ -327,7 +408,8 @@ export async function createPreviewInspector(
 
   return {
     async prepare() {
-      if (closed || consumed || prepared) throw Error("Inspector is single-use")
+      if (closed || consumed || prepared)
+        throw new Error("Inspector is single-use")
       if (!(await verifyDeployment())) return false
       if (!atApprovedPage(await snapshot())) {
         stop("authenticated_page_unverified")
@@ -342,7 +424,7 @@ export async function createPreviewInspector(
             body:await (${boundedBody.toString()})(response,1048576)};
         } catch {return {failed:true}};
       })()`)
-      await Promise.all([...tasks])
+      await Promise.all(tasks)
       evidence.readiness = {
         url: result.url ?? null,
         status: result.status ?? null,
@@ -361,7 +443,8 @@ export async function createPreviewInspector(
       return prepared
     },
     async inspect() {
-      if (consumed || closed) throw Error("Inspector is single-use; no retry")
+      if (consumed || closed)
+        throw new Error("Inspector is single-use; no retry")
       consumed = true
       evidence.outcome = "stopped"
       if (!prepared) stop("authenticated_page_unverified")
@@ -388,77 +471,19 @@ export async function createPreviewInspector(
           stop("browser_execution_failed")
         }
       }
-      await Promise.all([...tasks])
+      await Promise.all(tasks)
       const result = evidence.browser
-      if (result?.stopped) stop(result.stopped)
-      const endpointObserved =
-        evidence.request?.url === approval.endpoint &&
-        evidence.request?.method === "POST"
-      if (!endpointObserved) stop("no_endpoint_request_observed")
-      else if (!evidence.networkRequestObserved)
-        stop("network_request_event_missing")
-      else if (evidence.releasedRequests !== 1) stop("request_count_mismatch")
-      else if (!evidence.reason && (result?.failed || !result))
-        stop("browser_request_failed")
-      else if (
-        !evidence.reason &&
-        (result.url !== approval.endpoint || result.redirected)
-      )
-        stop("response_url_mismatch")
-      else if (
-        !evidence.reason &&
-        (result.status !== approval.expectedStatus ||
-          evidence.response?.status !== approval.expectedStatus)
-      )
-        stop("unexpected_http_response")
+      if (!evidence.reason) stop(responseObservationIssue(approval, evidence))
       if (!evidence.reason) {
         try {
-          const output = JSON.parse(result.body),
-            capture = output.releaseCapture
-          const envelope = capture.envelopes[0]
-          const raw =
-            envelope.requestEncoding === "utf8"
-              ? Buffer.from(envelope.requestBody)
-              : null
-          const providerInput = raw ? JSON.parse(raw.toString("utf8")) : null
-          if (
-            capture.version !== "release-capture-v1" ||
-            capture.caseId !== approval.caseID ||
-            capture.requestSHA256 !== approval.requestSHA256 ||
-            capture.outcome !== "inspection_only" ||
-            capture.envelopes.length !== 1 ||
-            envelope.stage !== "field_validation" ||
-            envelope.outcome !== "not_dispatched" ||
-            envelope.admission !== "release-egress-v1" ||
-            envelope.endpoint !== "https://api.typesafe.ai/v1/systemone" ||
-            !raw ||
-            raw.length !== envelope.requestBytes ||
-            digest(raw) !== envelope.requestSHA256 ||
-            providerInput.model !== "jev-1.13.0" ||
-            providerInput.state?.field !== "job_posting" ||
-            providerInput.state.submission !==
-              JSON.parse(approval.requestBody).jobPosting ||
-            envelope.httpStatus !== null ||
-            envelope.responseBytes !== null ||
-            envelope.durationMs !== null ||
-            envelope.responseBody !== undefined ||
-            envelope.responseSHA256 !== undefined ||
-            envelope.responseEncoding !== undefined ||
-            evidence.response.cacheControl !== "no-store" ||
-            !evidence.response.contentType?.includes("application/json")
-          )
-            throw Error("incomplete capture")
+          const envelope = verifiedFirstEnvelope(approval, evidence)
           evidence.outcome = "inspection_verified"
           evidence.providerEnvelope = envelope
         } catch {
           stop("missing_or_invalid_capture")
         }
       }
-      evidence.endpointDiagnostic = !endpointObserved
-        ? "no_endpoint_request_observed"
-        : evidence.networkRequestObserved
-          ? "endpoint_request_observed"
-          : "network_request_event_missing"
+      evidence.endpointDiagnostic = endpointDiagnostic(approval, evidence)
       if (result?.body !== undefined)
         evidence.responseBodySHA256 = digest(result.body)
       return structuredClone(evidence)
@@ -467,7 +492,7 @@ export async function createPreviewInspector(
       if (closed) return
       closed = true
       // Drain handlers before releasing interception on this disposable test target.
-      await Promise.all([...tasks])
+      await Promise.all(tasks)
       await call("Fetch.disable")
       for (const unsubscribe of unsubscribers) unsubscribe()
       await call("Network.setBypassServiceWorker", { bypass: false })

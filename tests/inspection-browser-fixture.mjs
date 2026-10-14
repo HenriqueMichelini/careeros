@@ -82,7 +82,7 @@ export async function inspectionBrowserFixture() {
         )
         break
       } catch {}
-      if (attempt === 99) throw Error("Controlled Chrome did not start")
+      if (attempt === 99) throw new Error("Controlled Chrome did not start")
       await pause(50)
     }
     const tabs = await (
@@ -102,7 +102,7 @@ export async function inspectionBrowserFixture() {
         if (!entry) return
         pending.delete(message.id)
         clearTimeout(entry.timer)
-        if (message.error) entry.reject(Error(message.error.message))
+        if (message.error) entry.reject(new Error(message.error.message))
         else entry.resolve(message.result)
       } else
         for (const listener of listeners.get(message.method) ?? [])
@@ -114,7 +114,7 @@ export async function inspectionBrowserFixture() {
         const id = ++nextID
         const timer = setTimeout(() => {
           pending.delete(id)
-          reject(Error(`CDP timeout: ${method}`))
+          reject(new Error(`CDP timeout: ${method}`))
         }, 10000)
         pending.set(id, { resolve, reject, timer })
         socket.send(JSON.stringify({ id, method, params }))
@@ -130,7 +130,7 @@ export async function inspectionBrowserFixture() {
         awaitPromise: true,
         returnByValue: true,
       })
-      if (result.exceptionDetails) throw Error(result.exceptionDetails.text)
+      if (result.exceptionDetails) throw new Error(result.exceptionDetails.text)
       return result.result.value
     }
     const navigate = async (url) => {
@@ -144,7 +144,7 @@ export async function inspectionBrowserFixture() {
           return
         await pause(20)
       }
-      throw Error("Controlled navigation did not complete")
+      throw new Error("Controlled navigation did not complete")
     }
     return {
       call,
@@ -164,7 +164,7 @@ export async function inspectionBrowserFixture() {
         socket.close()
         for (const entry of pending.values()) {
           clearTimeout(entry.timer)
-          entry.reject(Error("Browser closed"))
+          entry.reject(new Error("Browser closed"))
         }
         chrome.kill()
         await new Promise((resolve) => chrome.once("exit", resolve))

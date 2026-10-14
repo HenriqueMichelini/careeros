@@ -134,6 +134,20 @@ is unchanged, so historical browser/PDF validation was not repeated or relabelle
 The final reviewed commit and checks are recorded in PR #114 and #52. The release
 gate remains open regardless of those checks.
 
+### Late CI follow-up
+
+After the initial `374391e` checkpoint, SonarCloud published a failing reliability
+gate. It reported a cleanup Promise without an explicit final rejection handler
+and repeated expiry conditions on either side of asynchronous checks. The cleanup
+chain now handles rejection explicitly. Request admission and post-await guards
+are separate functions; both expiry checks remain. A new browser regression
+crosses expiry during the paused metadata lookup and verifies zero released POSTs.
+Request/response validators were also separated to reduce the new harness's
+cognitive complexity. New harness/fixture error construction and Promise iterable
+usage were aligned with the analyzer. No rule exclusions, suppression, runtime
+changes or provider traffic were introduced. The replacement head must pass its
+own CI; the earlier local evidence does not establish that gate result.
+
 ## Concrete proposal for P2 — pending fresh authorization
 
 The proposed new allowance is **one** preview-only inspection attempt and **zero**

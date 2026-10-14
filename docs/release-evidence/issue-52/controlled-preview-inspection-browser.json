@@ -1,9 +1,9 @@
 {
   "evidence": "controlled loopback browser only; no provider quality or deployed acceptance",
   "sourceHashes": {
-    "tests/inspection-browser-fixture.mjs": "647abc25c1a8c0f1beb9be546363a60c148c277680439ad5ac24e80db4177c1a",
-    "tests/preview-inspection-harness.mjs": "350767897cf1668df6720782a15b46a8f40b9f3f399328b45841fbfd5996edd2",
-    "tests/preview-inspection-browser.check.mjs": "b4f59a647f9c820a9da0d9fdff42ec9f3ac16412959d4173fd244de32fb83559"
+    "tests/inspection-browser-fixture.mjs": "8183ec1155a0e4dde669c4a4bc8974d3b9e30deddfeb02ebc8ca2dbb9b3aa6ed",
+    "tests/preview-inspection-harness.mjs": "569c3fea4f419906e7d6d2959b0d6422dd5e98aa5acd42940ddb2838f841aaba",
+    "tests/preview-inspection-browser.check.mjs": "6100f91ffe2b9770d4a90baf4b6f4bee368d004e4ce5bc29539971da072c8eb3"
   },
   "results": [
     {
@@ -156,6 +156,13 @@
       "reason": "missing_or_invalid_capture",
       "posts": 1,
       "diagnostic": "endpoint_request_observed",
+      "redirects": 0
+    },
+    {
+      "name": "approval expires during paused metadata lookup",
+      "outcome": "stopped",
+      "reason": "approval_expired",
+      "posts": 0,
       "redirects": 0
     },
     {

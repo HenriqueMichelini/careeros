@@ -352,6 +352,61 @@ try {
 
   // Readiness must reject an unauthenticated page without any API request.
   deploymentOverride = {}
+  await browser.navigate(browser.origin + "/app")
+  const expiringApproval = {
+    ...approval(),
+    expiresAt: new Date(Date.now() + 1000).toISOString(),
+  }
+  let expiryMetadataReads = 0
+  const postsBeforeExpiry = browser.requests.filter(
+    (request) => request.method === "POST",
+  ).length
+  const expiringInspector = await createPreviewInspector(
+    {
+      ...browser,
+      readDeployment: async () => {
+        if (++expiryMetadataReads === 2)
+          await new Promise((resolve) =>
+            setTimeout(
+              resolve,
+              Math.max(
+                0,
+                Date.parse(expiringApproval.expiresAt) - Date.now() + 30,
+              ),
+            ),
+          )
+        return readDeployment()
+      },
+    },
+    expiringApproval,
+  )
+  try {
+    assert.equal(await expiringInspector.prepare(), true)
+    const evidence = await expiringInspector.inspect()
+    assert.equal(
+      expiryMetadataReads,
+      2,
+      "expiry is crossed during the asynchronous pre-release lookup",
+    )
+    assert.equal(evidence.reason, "approval_expired")
+    assert.equal(evidence.releasedRequests, 0)
+    assert.equal(
+      browser.requests.filter((request) => request.method === "POST").length,
+      postsBeforeExpiry,
+    )
+    results.push({
+      name: "approval expires during paused metadata lookup",
+      outcome: evidence.outcome,
+      reason: evidence.reason,
+      posts: 0,
+      redirects: 0,
+    })
+  } finally {
+    await expiringInspector.close()
+  }
+
+  // An unauthenticated page must never send an API request.
+  deploymentOverride = {}
   await browser.navigate(browser.authOrigin + "/auth")
   const inspector = await createPreviewInspector(
     { ...browser, readDeployment },
