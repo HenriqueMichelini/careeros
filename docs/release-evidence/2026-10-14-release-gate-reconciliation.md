@@ -15,10 +15,12 @@ candidate, model/prompt change or deployment.
 ## Fixed evidence and current tracker
 
 The execution candidate was `63a51dfeb7d8220ac4dde8e64eb47ca866a131f9`, reviewed
-against `1a30a445e194d353af116d8a2b5c5194b14ff36a`. Production runtime is unchanged
+against `1a30a445e194d353af116d8a2b5c5194b14ff36a`. Application runtime source is unchanged
 since `6f87542c83241351966401a4f77f4f16c174ddf1`; later changes include verification
 tests/package test commands and evidence. Documentation commits do not retest or
 replace the two immutable execution builds.
+The runtime source checkpoint does not identify a newly verified or published
+production deployment.
 
 PR #114 remains on `codex/evidence-backed-cvs-and-applications` targeting `main`.
 GitHub readback confirmed the five native prerequisites #33, #50, #51, #62 and

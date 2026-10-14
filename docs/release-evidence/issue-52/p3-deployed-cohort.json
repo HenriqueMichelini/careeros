@@ -2,7 +2,7 @@
   "version": "bounded-deployed-cohort-v1",
   "reviewBaselineSHA": "1a30a445e194d353af116d8a2b5c5194b14ff36a",
   "executionCandidateSHA": "63a51dfeb7d8220ac4dde8e64eb47ca866a131f9",
-  "productionRuntimeCheckpointSHA": "6f87542c83241351966401a4f77f4f16c174ddf1",
+  "runtimeSourceCheckpointSHA": "6f87542c83241351966401a4f77f4f16c174ddf1",
   "origin": "https://deploy-preview-114--beamish-bavarois-333d03.netlify.app",
   "workflowAttempts": 4,
   "providerDispatches": 14,

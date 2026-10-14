@@ -18,7 +18,7 @@ prompt tuning or slot reallocation occurred.
 | --- | --- |
 | Original review baseline | `1a30a445e194d353af116d8a2b5c5194b14ff36a` |
 | Execution candidate | `63a51dfeb7d8220ac4dde8e64eb47ca866a131f9`, PR #114 |
-| Production runtime checkpoint | `6f87542c83241351966401a4f77f4f16c174ddf1` |
+| Application runtime source checkpoint | `6f87542c83241351966401a4f77f4f16c174ddf1` |
 | Preview origin | `https://deploy-preview-114--beamish-bavarois-333d03.netlify.app` |
 | P3-A build | `6acfaa3a4faf95db07d7d9c1`, completed `2026-10-14T16:14:49Z` |
 | P3-B build | `6acfb8bd3e8c6c289017fefe`, completed `2026-10-14T17:16:00Z` |
@@ -35,10 +35,12 @@ including the explicitly additional P3-B rebuild.
 
 SonarCloud passed at the execution candidate, completing
 `2026-10-14T05:12:14Z`. GitGuardian, preview and redirect checks passed;
-header/pages checks were neutral. Production source, routes, models and
+header/pages checks were neutral. Application runtime source, routes, models and
 acceptance policies are unchanged since the runtime checkpoint. Later changes
 include verification tests and package test commands, not runtime dependencies.
 Evidence commits after the cohort do not relabel its source or build.
+The runtime source checkpoint identifies code in the PR; it is not a claim that
+this revision was published to production.
 
 The budget remained the user's already clarified direction within provider
 account limits they report setting. Numeric limits, balances and billed charges
@@ -234,3 +236,9 @@ local production build passed; generated tracked assets were preserved privately
 for replay and restored in the checkout. Existing build advisories remain.
 Earlier full Go/TypeScript/Firefox/heavy-CV checks retain their dated source and
 controlled scope; they were not converted into new provider/deployment claims.
+
+Independent metadata validation rechecked all four private capture-file hashes,
+all 14 serialized request/response byte counts and hashes, source-file identity,
+the exhausted ledger, Profile/PDF observations and all 13 matrix entries/links.
+JSON parsing and `git diff --check` passed. The installed formatter rejected
+Markdown/JSON targets as unsupported; it is not counted as a passing check.
