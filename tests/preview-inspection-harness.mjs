@@ -17,7 +17,7 @@ function credentialContent(raw, keys) {
       /\\(?:u([0-9a-f]{4})|([\\/"bfnrt]))/gi,
       (_, hex, escaped) =>
         hex
-          ? String.fromCharCode(Number.parseInt(hex, 16))
+          ? String.fromCodePoint(Number.parseInt(hex, 16))
           : ({ b: "\b", f: "\f", n: "\n", r: "\r", t: "\t" }[escaped] ??
             escaped),
     )
@@ -26,7 +26,7 @@ function credentialContent(raw, keys) {
         return decodeURIComponent(token)
       } catch {
         return token.replace(/%([0-9a-f]{2})/gi, (_, hex) =>
-          String.fromCharCode(Number.parseInt(hex, 16)),
+          String.fromCodePoint(Number.parseInt(hex, 16)),
         )
       }
     })
@@ -293,8 +293,9 @@ export async function createPreviewProviderRunner(
     !providerBudgets.has(budget) ||
     (!local && !budget.persistenceConfigured) ||
     !keys ||
-    Object.keys(keys).sort().join(",") !==
-      "X-OpenAI-Api-Key,X-TypeSafe-Api-Key" ||
+    Object.keys(keys).length !== 2 ||
+    !Object.hasOwn(keys, "X-OpenAI-Api-Key") ||
+    !Object.hasOwn(keys, "X-TypeSafe-Api-Key") ||
     Object.values(keys).some(
       (value) =>
         typeof value !== "string" || !value.trim() || /[\r\n]/.test(value),
@@ -397,8 +398,7 @@ export function createProviderWorkflowBudget({
   return budget
 }
 
-function verifiedProviderCapture(approval, evidence) {
-  const capture = JSON.parse(evidence.browser.body).releaseCapture
+function validateProviderCapture(approval, capture, response) {
   if (
     capture?.version !== "release-capture-v1" ||
     capture.caseId !== approval.caseID ||
@@ -408,82 +408,102 @@ function verifiedProviderCapture(approval, evidence) {
     capture.envelopes.length > approval.stages.length ||
     (capture.outcome === "complete" &&
       capture.envelopes.length !== approval.stages.length) ||
-    evidence.response.cacheControl !== "no-store" ||
-    !evidence.response.contentType?.includes("application/json")
+    response.cacheControl !== "no-store" ||
+    !response.contentType?.includes("application/json")
   )
     throw new Error("Invalid provider capture")
-  for (const [index, entry] of capture.envelopes.entries()) {
-    const target =
-      index === 0
-        ? "https://api.typesafe.ai/v1/systemone"
-        : "https://api.openai.com/v1/chat/completions"
-    const request =
-      entry.requestEncoding === "utf8"
-        ? Buffer.from(entry.requestBody ?? "")
-        : null
-    if (
-      entry.stage !== approval.stages[index] ||
-      entry.admission !== "release-egress-v1" ||
-      entry.endpoint !== target ||
-      !request ||
-      request.length !== entry.requestBytes ||
-      digest(request) !== entry.requestSHA256 ||
-      !["captured", "transport_failure", "authentication_failure"].includes(
-        entry.outcome,
-      ) ||
-      (entry.outcome !== "captured" && index !== capture.envelopes.length - 1)
+}
+
+function validateProviderModel(approval, data, index) {
+  if (
+    index === 0 &&
+    (data.model !== "jev-1.13.0" ||
+      data.state?.field !== "job_posting" ||
+      data.state.submission !== JSON.parse(approval.requestBody).jobPosting)
+  )
+    throw new Error("Original Jev input mismatch")
+  if (
+    index > 0 &&
+    (data.model !== "gpt-6-luna" || data.reasoning_effort !== "none")
+  )
+    throw new Error("Provider settings mismatch")
+}
+
+function validateProviderRequest(approval, entry, index, total) {
+  const target =
+    index === 0
+      ? "https://api.typesafe.ai/v1/systemone"
+      : "https://api.openai.com/v1/chat/completions"
+  const request =
+    entry.requestEncoding === "utf8"
+      ? Buffer.from(entry.requestBody ?? "")
+      : null
+  if (
+    entry.stage !== approval.stages[index] ||
+    entry.admission !== "release-egress-v1" ||
+    entry.endpoint !== target ||
+    !request ||
+    request.length !== entry.requestBytes ||
+    digest(request) !== entry.requestSHA256 ||
+    !["captured", "transport_failure", "authentication_failure"].includes(
+      entry.outcome,
     )
-      throw new Error("Invalid serialized provider envelope")
-    const known = approval.deterministicEnvelopes[index]
+  )
+    throw new Error("Invalid serialized provider envelope")
+  if (entry.outcome !== "captured" && index !== total - 1)
+    throw new Error("Invalid failed-provider stage sequence")
+  const known = approval.deterministicEnvelopes[index]
+  if (
+    known &&
+    (entry.requestSHA256 !== known.requestSHA256 ||
+      entry.requestBytes !== known.requestBytes)
+  )
+    throw new Error("Deterministic preflight envelope mismatch")
+  validateProviderModel(approval, JSON.parse(request.toString("utf8")), index)
+}
+
+function providerResponseBytes(entry) {
+  if (entry.responseEncoding === "utf8")
+    return Buffer.from(entry.responseBody ?? "")
+  if (entry.responseEncoding === "base64")
+    return Buffer.from(entry.responseBody ?? "", "base64")
+  return null
+}
+
+function validateProviderResponse(entry) {
+  if (entry.outcome === "captured") {
+    const response = providerResponseBytes(entry)
     if (
-      known &&
-      (entry.requestSHA256 !== known.requestSHA256 ||
-        entry.requestBytes !== known.requestBytes)
-    )
-      throw new Error("Deterministic preflight envelope mismatch")
-    const data = JSON.parse(request.toString("utf8"))
-    if (
-      index === 0 &&
-      (data.model !== "jev-1.13.0" ||
-        data.state?.field !== "job_posting" ||
-        data.state.submission !== JSON.parse(approval.requestBody).jobPosting)
-    )
-      throw new Error("Original Jev input mismatch")
-    if (
-      index > 0 &&
-      (data.model !== "gpt-6-luna" || data.reasoning_effort !== "none")
-    )
-      throw new Error("Provider settings mismatch")
-    if (entry.outcome === "captured") {
-      const response =
-        entry.responseEncoding === "utf8"
-          ? Buffer.from(entry.responseBody ?? "")
-          : entry.responseEncoding === "base64"
-            ? Buffer.from(entry.responseBody ?? "", "base64")
-            : null
-      if (
-        !response ||
-        response.length !== entry.responseBytes ||
-        digest(response) !== entry.responseSHA256 ||
-        !Number.isInteger(entry.httpStatus) ||
-        entry.httpStatus < 100 ||
-        entry.httpStatus > 599 ||
-        !Number.isFinite(entry.durationMs) ||
-        entry.durationMs < 0
-      )
-        throw new Error("Invalid serialized provider response")
-    } else if (
-      entry.responseBytes !== null ||
-      entry.responseBody !== undefined ||
+      !response ||
+      response.length !== entry.responseBytes ||
+      digest(response) !== entry.responseSHA256 ||
+      !Number.isInteger(entry.httpStatus) ||
+      entry.httpStatus < 100 ||
+      entry.httpStatus > 599 ||
       !Number.isFinite(entry.durationMs) ||
-      entry.durationMs < 0 ||
-      (entry.outcome === "transport_failure"
-        ? entry.httpStatus !== null
-        : ![401, 403].includes(entry.httpStatus))
-    ) {
-      throw new Error("Invalid failed-provider observation")
-    }
+      entry.durationMs < 0
+    )
+      throw new Error("Invalid serialized provider response")
+  } else if (
+    entry.responseBytes !== null ||
+    entry.responseBody !== undefined ||
+    !Number.isFinite(entry.durationMs) ||
+    entry.durationMs < 0 ||
+    (entry.outcome === "transport_failure"
+      ? entry.httpStatus !== null
+      : ![401, 403].includes(entry.httpStatus))
+  ) {
+    throw new Error("Invalid failed-provider observation")
   }
+}
+
+function verifiedProviderCapture(approval, evidence) {
+  const capture = JSON.parse(evidence.browser.body).releaseCapture
+  validateProviderCapture(approval, capture, evidence.response)
+  capture.envelopes.forEach((entry, index) => {
+    validateProviderRequest(approval, entry, index, capture.envelopes.length)
+    validateProviderResponse(entry)
+  })
   return {
     captureOutcome: capture.outcome,
     providerEnvelopes: capture.envelopes,

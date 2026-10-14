@@ -6,8 +6,8 @@ preview/redirect checks; header/pages checks were neutral. The P3 preparation
 below is a subsequent verification-only change. It does not relabel the P2
 observation as a test of this newer harness.
 
-No provider credential file was read, paid call made, capture variable activated
-or manual rebuild triggered for P3. The user permits the needed budget within the
+During controlled implementation, no provider credential file was read, paid call
+made, capture variable activated or manual rebuild triggered for P3. The user permits the needed budget within the
 limits they report having configured at the providers; their numeric values have
 not been observed, and this work does not change those limits. The proposed cohort
 remains bounded by four workflow attempts and 14 provider dispatches, including
@@ -129,3 +129,20 @@ The previous 404 and missing historical English response remain unresolved.
 #52 and its 13 original release criteria remain open. P3 execution, accepted
 artifacts, copy/PDF parity, quality comparison, attributable charges and the final
 P4/P5 release decision are not established by this preparation.
+
+## Later readiness and CI follow-up
+
+After the user unlocked their Vault, a process-local readiness check confirmed
+that the two previously supplied credential files are present and each contains
+one nonempty `NAME=value` assignment. Values were not printed, retained in new
+files, entered into browser state or sent to any service. This format check does
+not prove funded/valid provider access or authorize a workflow by itself.
+
+SonarCloud check `115688779120` failed at `3080cb7` with a new-code reliability
+rating of D. The operator's default array sort was replaced with explicit checks
+for the two required header names. The large provider-capture validator was split
+into capture, request/model and response validators, retaining the same checks.
+Unicode conversion uses code-point APIs. No analyzer suppression, exclusions,
+provider/runtime changes or live calls were introduced. The failing check remains
+historical; only the replacement head's own CI can establish its quality gate.
+Existing maintenance annotations outside this correction are not claimed fixed.

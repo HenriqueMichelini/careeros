@@ -283,7 +283,9 @@ try {
           (encoded === "malformed-prefix"
             ? "%FF" +
               [...keys["X-OpenAI-Api-Key"]]
-                .map((c) => "%" + c.charCodeAt(0).toString(16).padStart(2, "0"))
+                .map(
+                  (c) => "%" + c.codePointAt(0).toString(16).padStart(2, "0"),
+                )
                 .join("")
             : encoded
               ? keys["X-OpenAI-Api-Key"].replaceAll("-", "%2D")

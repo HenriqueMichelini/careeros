@@ -2,8 +2,8 @@
   "evidence": "controlled loopback browser with fabricated provider captures; no real provider dispatch or deployed/provider quality evidence",
   "sourceHashes": {
     "tests/inspection-browser-fixture.mjs": "8183ec1155a0e4dde669c4a4bc8974d3b9e30deddfeb02ebc8ca2dbb9b3aa6ed",
-    "tests/preview-inspection-harness.mjs": "225415e133a80e74a56003311747753b9e62b9fc3d3cf492dc24817ef4e4fe52",
-    "tests/preview-provider-browser.check.mjs": "222664996d5d5d6e50b90f9f77e6aad4ffe48939491c806412097467a6c0514e"
+    "tests/preview-inspection-harness.mjs": "ffb645f59f45bacd8a3b453fce0d7d5e99d1e8e2e033cfc222bdc81b355b818c",
+    "tests/preview-provider-browser.check.mjs": "a66699e6b95618c143b9c1401dc03852b5b559779fba326b1cc5765f0301b0d7"
   },
   "results": [
     {
