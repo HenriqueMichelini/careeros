@@ -1,0 +1,199 @@
+{
+  "evidence": "controlled loopback browser with fabricated provider captures; no real provider dispatch or deployed/provider quality evidence",
+  "sourceHashes": {
+    "tests/inspection-browser-fixture.mjs": "8183ec1155a0e4dde669c4a4bc8974d3b9e30deddfeb02ebc8ca2dbb9b3aa6ed",
+    "tests/preview-inspection-harness.mjs": "06e42b59def3a7ff10ae754f53af1132bc62325206658e145c7e96c07e09664c",
+    "tests/preview-provider-browser.check.mjs": "5d3358067a9c19696dd1dc550f4702d6ffc6ba795a61f29ac0e92770c6993f33"
+  },
+  "results": [
+    {
+      "name": "three-stage qualification capture",
+      "outcome": "provider_capture_verified",
+      "reason": null,
+      "posts": 1,
+      "captureOutcome": "complete",
+      "reservedCaseIds": [
+        "controlled-paid-qualification"
+      ],
+      "reservedWorkflowAttempts": 1,
+      "reservedProviderDispatches": 3
+    },
+    {
+      "name": "four-stage draft capture",
+      "outcome": "provider_capture_verified",
+      "reason": null,
+      "posts": 1,
+      "captureOutcome": "complete",
+      "reservedCaseIds": [
+        "controlled-paid-draft"
+      ],
+      "reservedWorkflowAttempts": 1,
+      "reservedProviderDispatches": 4
+    },
+    {
+      "name": "partial transport_failure",
+      "outcome": "provider_capture_verified",
+      "reason": null,
+      "posts": 1,
+      "captureOutcome": "incomplete",
+      "reservedCaseIds": [
+        "controlled-paid-qualification"
+      ],
+      "reservedWorkflowAttempts": 1,
+      "reservedProviderDispatches": 3
+    },
+    {
+      "name": "partial authentication_failure",
+      "outcome": "provider_capture_verified",
+      "reason": null,
+      "posts": 1,
+      "captureOutcome": "incomplete",
+      "reservedCaseIds": [
+        "controlled-paid-qualification"
+      ],
+      "reservedWorkflowAttempts": 1,
+      "reservedProviderDispatches": 3
+    },
+    {
+      "name": "missing capture is not accepted",
+      "outcome": "stopped",
+      "reason": "missing_or_invalid_capture",
+      "posts": 1,
+      "captureOutcome": null,
+      "reservedCaseIds": [
+        "controlled-paid-qualification"
+      ],
+      "reservedWorkflowAttempts": 1,
+      "reservedProviderDispatches": 3
+    },
+    {
+      "name": "tampered serialized response hash",
+      "outcome": "stopped",
+      "reason": "missing_or_invalid_capture",
+      "posts": 1,
+      "captureOutcome": null,
+      "reservedCaseIds": [
+        "controlled-paid-qualification"
+      ],
+      "reservedWorkflowAttempts": 1,
+      "reservedProviderDispatches": 3
+    },
+    {
+      "name": "changed original Jev input",
+      "outcome": "stopped",
+      "reason": "missing_or_invalid_capture",
+      "posts": 1,
+      "captureOutcome": null,
+      "reservedCaseIds": [
+        "controlled-paid-qualification"
+      ],
+      "reservedWorkflowAttempts": 1,
+      "reservedProviderDispatches": 3
+    },
+    {
+      "name": "unexpected provider model",
+      "outcome": "stopped",
+      "reason": "missing_or_invalid_capture",
+      "posts": 1,
+      "captureOutcome": null,
+      "reservedCaseIds": [
+        "controlled-paid-qualification"
+      ],
+      "reservedWorkflowAttempts": 1,
+      "reservedProviderDispatches": 3
+    },
+    {
+      "name": "redirect is not followed",
+      "outcome": "stopped",
+      "reason": "unexpected_redirect",
+      "posts": 1,
+      "captureOutcome": null,
+      "reservedCaseIds": [
+        "controlled-paid-qualification"
+      ],
+      "reservedWorkflowAttempts": 1,
+      "reservedProviderDispatches": 3
+    },
+    {
+      "name": "changed deterministic envelope despite valid model",
+      "outcome": "stopped",
+      "reason": "missing_or_invalid_capture",
+      "posts": 1,
+      "captureOutcome": null,
+      "reservedCaseIds": [
+        "controlled-paid-qualification"
+      ],
+      "reservedWorkflowAttempts": 1,
+      "reservedProviderDispatches": 3
+    },
+    {
+      "name": "escaped credential echo is withheld",
+      "outcome": "stopped",
+      "reason": "credential_content_withheld",
+      "posts": 1,
+      "captureOutcome": null,
+      "reservedCaseIds": [
+        "controlled-paid-qualification"
+      ],
+      "reservedWorkflowAttempts": 1,
+      "reservedProviderDispatches": 3
+    },
+    {
+      "name": "caller approval mutation cannot change reservation",
+      "outcome": "provider_capture_verified",
+      "reason": null,
+      "posts": 1,
+      "captureOutcome": "complete",
+      "reservedCaseIds": [
+        "controlled-paid-qualification"
+      ],
+      "reservedWorkflowAttempts": 1,
+      "reservedProviderDispatches": 3
+    },
+    {
+      "name": "reserved case cannot be repeated",
+      "outcome": "stopped",
+      "reason": "provider_budget_exhausted",
+      "posts": 0,
+      "reservedCaseIds": [
+        "controlled-paid-qualification"
+      ],
+      "reservedWorkflowAttempts": 1,
+      "reservedProviderDispatches": 3
+    },
+    {
+      "name": "budget persistence failure sends zero POSTs",
+      "outcome": "stopped",
+      "reason": "controlled_disk_failure",
+      "posts": 0,
+      "reservedCaseIds": [
+        "controlled-paid-qualification"
+      ],
+      "reservedWorkflowAttempts": 1,
+      "reservedProviderDispatches": 3
+    }
+  ],
+  "providerDispatches": 0,
+  "realCredentialReads": 0,
+  "fullBudgetReservation": {
+    "reservedCaseIds": [
+      "q-en",
+      "q-pt",
+      "d-en",
+      "d-pt"
+    ],
+    "reservedWorkflowAttempts": 4,
+    "reservedProviderDispatches": 14
+  },
+  "budgetAndApprovalRejectionChecks": 10,
+  "restoredBudgetReservation": {
+    "reservedCaseIds": [
+      "saved-q",
+      "saved-d"
+    ],
+    "reservedWorkflowAttempts": 2,
+    "reservedProviderDispatches": 7
+  },
+  "externalWorkflowRequests": 0,
+  "retries": 0
+}

@@ -1,0 +1,47 @@
+{
+  "evidence": "controlled handler only; never connected to providers; first Jev acceptance is fabricated; later response-dependent envelope is not frozen",
+  "cases": [
+    {
+      "envelopes": [
+        {
+          "endpoint": "https://api.typesafe.ai/v1/systemone",
+          "requestBytes": 3548,
+          "requestSHA256": "4b99337a547587ddc2cd7725504bb77153f1980f572adfa3f1d31746a6222267",
+          "stage": "field_validation"
+        },
+        {
+          "endpoint": "https://api.openai.com/v1/chat/completions",
+          "requestBytes": 6564,
+          "requestSHA256": "f047982407d5f1c4ebbe3a0632b26f2df40199a1db2915b34f7e38efec508b15",
+          "stage": "qualification_matching"
+        }
+      ],
+      "evidence": "controlled actual handler serialization with a fabricated Jev acceptance and a closed transport; no external provider traffic or quality evidence",
+      "externalProviderDispatches": 0,
+      "id": "p3-postgresql-en",
+      "requestBytes": 2351,
+      "requestSHA256": "d709313763c49f92dd7bb514d59052fcb1f1586288a39faf429cf54b518f1667"
+    },
+    {
+      "envelopes": [
+        {
+          "endpoint": "https://api.typesafe.ai/v1/systemone",
+          "requestBytes": 3552,
+          "requestSHA256": "e50deea53141e864494787f936da0578986d550d422f8b9178275e169fd7a890",
+          "stage": "field_validation"
+        },
+        {
+          "endpoint": "https://api.openai.com/v1/chat/completions",
+          "requestBytes": 6572,
+          "requestSHA256": "5bbc094d5c81a4f9730c3e4ffae2ab87a3e9175a49d927ba2fc6c9e75aa3f7d3",
+          "stage": "qualification_matching"
+        }
+      ],
+      "evidence": "controlled actual handler serialization with a fabricated Jev acceptance and a closed transport; no external provider traffic or quality evidence",
+      "externalProviderDispatches": 0,
+      "id": "p3-typescript-pt",
+      "requestBytes": 2431,
+      "requestSHA256": "af0f3d49dad6faba67a8c711e58e7e98cf4b8d5d66b2fdb36b35835d68469aa6"
+    }
+  ]
+}

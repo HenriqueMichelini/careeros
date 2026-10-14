@@ -1,0 +1,182 @@
+{
+  "evidence": "controlled loopback browser only; no provider quality or deployed acceptance",
+  "sourceHashes": {
+    "tests/inspection-browser-fixture.mjs": "8183ec1155a0e4dde669c4a4bc8974d3b9e30deddfeb02ebc8ca2dbb9b3aa6ed",
+    "tests/preview-inspection-harness.mjs": "06e42b59def3a7ff10ae754f53af1132bc62325206658e145c7e96c07e09664c",
+    "tests/preview-inspection-browser.check.mjs": "6100f91ffe2b9770d4a90baf4b6f4bee368d004e4ce5bc29539971da072c8eb3"
+  },
+  "results": [
+    {
+      "name": "navigation after readiness",
+      "outcome": "stopped",
+      "reason": "navigation_changed",
+      "posts": 0,
+      "diagnostic": "no_endpoint_request_observed",
+      "redirects": 0
+    },
+    {
+      "name": "deploy changes after readiness",
+      "outcome": "stopped",
+      "reason": "deployment_identity_unverified",
+      "posts": 0,
+      "diagnostic": "endpoint_request_observed",
+      "redirects": 0
+    },
+    {
+      "name": "navigation while browser request is paused",
+      "outcome": "stopped",
+      "reason": "navigation_changed",
+      "posts": 0,
+      "diagnostic": "endpoint_request_observed",
+      "redirects": 0
+    },
+    {
+      "name": "missing Network event despite response",
+      "outcome": "stopped",
+      "reason": "network_request_event_missing",
+      "posts": 1,
+      "diagnostic": "network_request_event_missing",
+      "redirects": 0
+    },
+    {
+      "name": "absolute endpoint ignores changed base URL",
+      "outcome": "inspection_verified",
+      "reason": null,
+      "posts": 1,
+      "diagnostic": "endpoint_request_observed",
+      "redirects": 0
+    },
+    {
+      "name": "authentication redirect 301",
+      "outcome": "stopped",
+      "reason": "unexpected_redirect",
+      "posts": 1,
+      "diagnostic": "endpoint_request_observed",
+      "redirects": 1
+    },
+    {
+      "name": "authentication redirect 302",
+      "outcome": "stopped",
+      "reason": "unexpected_redirect",
+      "posts": 1,
+      "diagnostic": "endpoint_request_observed",
+      "redirects": 1
+    },
+    {
+      "name": "authentication redirect 303",
+      "outcome": "stopped",
+      "reason": "unexpected_redirect",
+      "posts": 1,
+      "diagnostic": "endpoint_request_observed",
+      "redirects": 1
+    },
+    {
+      "name": "authentication redirect 307",
+      "outcome": "stopped",
+      "reason": "unexpected_redirect",
+      "posts": 1,
+      "diagnostic": "endpoint_request_observed",
+      "redirects": 1
+    },
+    {
+      "name": "authentication redirect 308",
+      "outcome": "stopped",
+      "reason": "unexpected_redirect",
+      "posts": 1,
+      "diagnostic": "endpoint_request_observed",
+      "redirects": 1
+    },
+    {
+      "name": "unexpected HTTP 404",
+      "outcome": "stopped",
+      "reason": "unexpected_http_response",
+      "posts": 1,
+      "diagnostic": "endpoint_request_observed",
+      "redirects": 0
+    },
+    {
+      "name": "successful-looking response without endpoint request",
+      "outcome": "stopped",
+      "reason": "no_endpoint_request_observed",
+      "posts": 0,
+      "diagnostic": "no_endpoint_request_observed",
+      "redirects": 0
+    },
+    {
+      "name": "mutated browser body blocked before release",
+      "outcome": "stopped",
+      "reason": "network_bytes_mismatch",
+      "posts": 0,
+      "diagnostic": "endpoint_request_observed",
+      "redirects": 0
+    },
+    {
+      "name": "concurrent duplicate POST cannot spend a second attempt",
+      "outcome": "stopped",
+      "reason": "unexpected_workflow_request",
+      "posts": 0,
+      "diagnostic": "endpoint_request_observed",
+      "redirects": 0
+    },
+    {
+      "name": "missing capture",
+      "outcome": "stopped",
+      "reason": "missing_or_invalid_capture",
+      "posts": 1,
+      "diagnostic": "endpoint_request_observed",
+      "redirects": 0
+    },
+    {
+      "name": "dispatched envelope",
+      "outcome": "stopped",
+      "reason": "missing_or_invalid_capture",
+      "posts": 1,
+      "diagnostic": "endpoint_request_observed",
+      "redirects": 0
+    },
+    {
+      "name": "wrong case",
+      "outcome": "stopped",
+      "reason": "missing_or_invalid_capture",
+      "posts": 1,
+      "diagnostic": "endpoint_request_observed",
+      "redirects": 0
+    },
+    {
+      "name": "wrong provider hash",
+      "outcome": "stopped",
+      "reason": "missing_or_invalid_capture",
+      "posts": 1,
+      "diagnostic": "endpoint_request_observed",
+      "redirects": 0
+    },
+    {
+      "name": "changed original in provider envelope",
+      "outcome": "stopped",
+      "reason": "missing_or_invalid_capture",
+      "posts": 1,
+      "diagnostic": "endpoint_request_observed",
+      "redirects": 0
+    },
+    {
+      "name": "approval expires during paused metadata lookup",
+      "outcome": "stopped",
+      "reason": "approval_expired",
+      "posts": 0,
+      "redirects": 0
+    },
+    {
+      "name": "authentication expires before readiness fetch",
+      "outcome": "stopped",
+      "reason": "unexpected_redirect",
+      "posts": 0,
+      "redirects": 1
+    }
+  ],
+  "approvalRejectionChecks": 7,
+  "authenticationPageRejection": true,
+  "retries": 0,
+  "externalWorkflowRequests": 0,
+  "providerDispatches": 0,
+  "deploymentReader": "controlled metadata fixture; actual Netlify reader remains separately verified at P2"
+}

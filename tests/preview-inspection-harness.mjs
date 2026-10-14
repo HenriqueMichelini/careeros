@@ -1,4 +1,4 @@
-// Private, synthetic, inspection-only operator harness. Importing never sends.
+// Private synthetic preview operators. Importing never sends.
 // readDeployment must query current Netlify metadata, without cached attestations.
 import { createHash } from "node:crypto"
 
@@ -8,6 +8,24 @@ export const inspectionKeys = Object.freeze({
 })
 const digest = (raw) => createHash("sha256").update(raw).digest("hex")
 const endpointPath = "/api/qualification-gaps"
+const providerBudgets = new WeakSet()
+function credentialContent(raw, keys) {
+  let value = raw
+  for (let depth = 0; depth < 64; depth++) {
+    if (keys.some((key) => value.includes(key))) return true
+    const decoded = value.replace(
+      /\\(?:u([0-9a-f]{4})|([\\/"bfnrt]))/gi,
+      (_, hex, escaped) =>
+        hex
+          ? String.fromCharCode(Number.parseInt(hex, 16))
+          : ({ b: "\b", f: "\f", n: "\n", r: "\r", t: "\t" }[escaped] ??
+            escaped),
+    )
+    if (decoded === value) return false
+    value = decoded
+  }
+  return true
+}
 const boundedBody = async (response, limit) => {
   const reader = response.body.getReader(),
     chunks = []
@@ -31,7 +49,7 @@ const boundedBody = async (response, limit) => {
   return new TextDecoder("utf-8", { fatal: true }).decode(bytes)
 }
 
-function validate(approval) {
+function validate(approval, policy) {
   const origin = new URL(approval.origin)
   const local =
     origin.protocol === "http:" &&
@@ -58,19 +76,19 @@ function validate(approval) {
     approval.deployment.commitRef !== approval.candidateSHA ||
     approval.deployment.url !== approval.origin ||
     approval.deployment.deployURL !== deployURL ||
-    approval.endpoint !== approval.origin + endpointPath ||
+    approval.endpoint !== approval.origin + policy.path ||
     new URL(approval.documentURL).origin !== approval.origin ||
     !/^[a-z0-9][a-z0-9-]{0,63}$/.test(approval.caseID) ||
-    approval.dispatch !== false ||
-    approval.expectedStatus !== 502 ||
-    approval.stages?.join(",") !==
-      "field_validation,qualification_matching,requirement_evidence" ||
+    approval.dispatch !== policy.dispatch ||
+    approval.expectedStatus !== policy.expectedStatus ||
+    approval.stages?.join(",") !== policy.stages.join(",") ||
     typeof approval.requestBody !== "string" ||
     Buffer.byteLength(approval.requestBody) > 512 * 1024 ||
     digest(approval.requestBody) !== approval.requestSHA256 ||
     !fresh(approval)
   )
     throw new Error("Invalid inspection approval; no browser request sent")
+  policy.validateApproval?.(approval)
 }
 function fresh(approval) {
   const remaining = Date.parse(approval.expiresAt) - Date.now()
@@ -111,13 +129,18 @@ function observedRequest(approval, request) {
   }
 }
 
-function requestAdmissionIssue(approval, request, { headers, approvedBytes }) {
+function requestAdmissionIssue(
+  approval,
+  request,
+  { headers, approvedBytes },
+  keys,
+) {
   if (request.url !== approval.endpoint || request.method !== "POST")
     return "unexpected_route"
   if (headers.origin !== approval.origin) return "request_origin_mismatch"
   if (
     headers["x-careeros-release-capture"] !== approval.caseID ||
-    Object.entries(inspectionKeys).some(
+    Object.entries(keys).some(
       ([name, value]) => headers[name.toLowerCase()] !== value,
     )
   )
@@ -147,8 +170,9 @@ function responseObservationIssue(approval, evidence) {
   if (result.url !== approval.endpoint || result.redirected)
     return "response_url_mismatch"
   if (
-    result.status !== approval.expectedStatus ||
-    evidence.response?.status !== approval.expectedStatus
+    (approval.expectedStatus !== null &&
+      result.status !== approval.expectedStatus) ||
+    evidence.response?.status !== result.status
   )
     return "unexpected_http_response"
   return null
@@ -192,16 +216,270 @@ function verifiedFirstEnvelope(approval, evidence) {
   return envelope
 }
 
-export async function createPreviewInspector(
+export async function createPreviewInspector(adapter, approval) {
+  return createPreviewRecorder(adapter, approval, {
+    path: endpointPath,
+    dispatch: false,
+    expectedStatus: 502,
+    stages: [
+      "field_validation",
+      "qualification_matching",
+      "requirement_evidence",
+    ],
+    keys: inspectionKeys,
+    timeoutMs: 10000,
+    version: "preview-inspection-browser-v1",
+    outcome: "inspection_verified",
+    verifyResponse: (value, evidence) => ({
+      providerEnvelope: verifiedFirstEnvelope(value, evidence),
+    }),
+  })
+}
+
+// Paid use has its own explicit policy. The inspection API still rejects it.
+export async function createPreviewProviderRunner(
+  adapter,
+  approval,
+  { keys, budget },
+) {
+  approval = structuredClone(approval)
+  const parsedOrigin = new URL(approval.origin)
+  const local =
+    parsedOrigin.protocol === "http:" &&
+    ["127.0.0.1", "localhost", "[::1]"].includes(parsedOrigin.hostname)
+  const stages =
+    approval.endpoint === approval.origin + "/api/qualification-gaps"
+      ? ["field_validation", "qualification_matching", "requirement_evidence"]
+      : approval.endpoint === approval.origin + "/api/application-draft"
+        ? [
+            "field_validation",
+            "generation",
+            "resume_support",
+            "artifact_support",
+          ]
+        : null
+  if (
+    !stages ||
+    !providerBudgets.has(budget) ||
+    (!local && !budget.persistenceConfigured) ||
+    !keys ||
+    Object.keys(keys).sort().join(",") !==
+      "X-OpenAI-Api-Key,X-TypeSafe-Api-Key" ||
+    Object.values(keys).some(
+      (value) =>
+        typeof value !== "string" || !value.trim() || /[\r\n]/.test(value),
+    ) ||
+    credentialContent(approval.requestBody, Object.values(keys))
+  )
+    throw new Error(
+      "Invalid provider operator configuration; no browser request sent",
+    )
+  const privateKeys = { ...keys }
+  return createPreviewRecorder(adapter, approval, {
+    path: new URL(approval.endpoint).pathname,
+    dispatch: true,
+    expectedStatus: null,
+    stages,
+    keys: privateKeys,
+    timeoutMs: 30000,
+    version: "preview-provider-browser-v1",
+    outcome: "provider_capture_verified",
+    validateApproval: (value) => {
+      if (
+        value.batchID !== budget.id ||
+        value.providerDispatchLimit !== stages.length ||
+        value.deterministicEnvelopes?.length !== 2 ||
+        value.deterministicEnvelopes.some(
+          (entry, index) =>
+            entry.stage !== stages[index] ||
+            !/^[a-f0-9]{64}$/.test(entry.requestSHA256) ||
+            !Number.isInteger(entry.requestBytes) ||
+            entry.requestBytes <= 0 ||
+            entry.requestBytes > 256 * 1024,
+        )
+      )
+        throw new Error(
+          "Provider budget approval mismatch; no browser request sent",
+        )
+    },
+    beforeInspect: () => budget.reserve(approval.caseID, stages.length),
+    sanitize: (evidence) => {
+      if (
+        evidence.browser?.body !== undefined &&
+        credentialContent(evidence.browser.body, Object.values(privateKeys))
+      ) {
+        delete evidence.browser.body
+        evidence.browser.bodyWithheld = true
+        return "credential_content_withheld"
+      }
+      return null
+    },
+    verifyResponse: verifiedProviderCapture,
+  })
+}
+
+export function createProviderWorkflowBudget({
+  id,
+  cases,
+  reservedCaseIds = [],
+  persist,
+}) {
+  if (
+    typeof id !== "string" ||
+    !id ||
+    !Array.isArray(cases) ||
+    !cases.length ||
+    cases.length > 4 ||
+    new Set(cases.map((value) => value.id)).size !== cases.length ||
+    cases.some(
+      (value) =>
+        !/^[a-z0-9][a-z0-9-]{0,63}$/.test(value.id) ||
+        ![3, 4].includes(value.maxDispatches),
+    ) ||
+    cases.reduce((sum, value) => sum + value.maxDispatches, 0) > 14 ||
+    !Array.isArray(reservedCaseIds) ||
+    new Set(reservedCaseIds).size !== reservedCaseIds.length ||
+    reservedCaseIds.some(
+      (caseID) => !cases.some((value) => value.id === caseID),
+    ) ||
+    (persist !== undefined && typeof persist !== "function")
+  )
+    throw new Error("Invalid bounded provider workflow budget")
+  const allowed = new Map(cases.map((value) => [value.id, value.maxDispatches]))
+  const spent = new Set(reservedCaseIds)
+  const snapshot = () => ({
+    reservedCaseIds: [...spent],
+    reservedWorkflowAttempts: spent.size,
+    reservedProviderDispatches: [...spent].reduce(
+      (sum, caseID) => sum + allowed.get(caseID),
+      0,
+    ),
+  })
+  const budget = Object.freeze({
+    id,
+    persistenceConfigured: typeof persist === "function",
+    reserve(caseID, dispatches) {
+      if (spent.has(caseID) || allowed.get(caseID) !== dispatches) return false
+      spent.add(caseID)
+      const saved = persist?.({ id, ...snapshot() })
+      if (saved?.then) {
+        Promise.resolve(saved).catch(() => {})
+        throw new Error(
+          "Budget persistence must finish synchronously before dispatch",
+        )
+      }
+      return true
+    },
+    snapshot,
+  })
+  providerBudgets.add(budget)
+  return budget
+}
+
+function verifiedProviderCapture(approval, evidence) {
+  const capture = JSON.parse(evidence.browser.body).releaseCapture
+  if (
+    capture?.version !== "release-capture-v1" ||
+    capture.caseId !== approval.caseID ||
+    capture.requestSHA256 !== approval.requestSHA256 ||
+    !["complete", "incomplete"].includes(capture.outcome) ||
+    !Array.isArray(capture.envelopes) ||
+    capture.envelopes.length > approval.stages.length ||
+    (capture.outcome === "complete" &&
+      capture.envelopes.length !== approval.stages.length) ||
+    evidence.response.cacheControl !== "no-store" ||
+    !evidence.response.contentType?.includes("application/json")
+  )
+    throw new Error("Invalid provider capture")
+  for (const [index, entry] of capture.envelopes.entries()) {
+    const target =
+      index === 0
+        ? "https://api.typesafe.ai/v1/systemone"
+        : "https://api.openai.com/v1/chat/completions"
+    const request =
+      entry.requestEncoding === "utf8"
+        ? Buffer.from(entry.requestBody ?? "")
+        : null
+    if (
+      entry.stage !== approval.stages[index] ||
+      entry.admission !== "release-egress-v1" ||
+      entry.endpoint !== target ||
+      !request ||
+      request.length !== entry.requestBytes ||
+      digest(request) !== entry.requestSHA256 ||
+      !["captured", "transport_failure", "authentication_failure"].includes(
+        entry.outcome,
+      ) ||
+      (entry.outcome !== "captured" && index !== capture.envelopes.length - 1)
+    )
+      throw new Error("Invalid serialized provider envelope")
+    const known = approval.deterministicEnvelopes[index]
+    if (
+      known &&
+      (entry.requestSHA256 !== known.requestSHA256 ||
+        entry.requestBytes !== known.requestBytes)
+    )
+      throw new Error("Deterministic preflight envelope mismatch")
+    const data = JSON.parse(request.toString("utf8"))
+    if (
+      index === 0 &&
+      (data.model !== "jev-1.13.0" ||
+        data.state?.field !== "job_posting" ||
+        data.state.submission !== JSON.parse(approval.requestBody).jobPosting)
+    )
+      throw new Error("Original Jev input mismatch")
+    if (
+      index > 0 &&
+      (data.model !== "gpt-6-luna" || data.reasoning_effort !== "none")
+    )
+      throw new Error("Provider settings mismatch")
+    if (entry.outcome === "captured") {
+      const response =
+        entry.responseEncoding === "utf8"
+          ? Buffer.from(entry.responseBody ?? "")
+          : entry.responseEncoding === "base64"
+            ? Buffer.from(entry.responseBody ?? "", "base64")
+            : null
+      if (
+        !response ||
+        response.length !== entry.responseBytes ||
+        digest(response) !== entry.responseSHA256 ||
+        !Number.isInteger(entry.httpStatus) ||
+        entry.httpStatus < 100 ||
+        entry.httpStatus > 599 ||
+        !Number.isFinite(entry.durationMs) ||
+        entry.durationMs < 0
+      )
+        throw new Error("Invalid serialized provider response")
+    } else if (
+      entry.responseBytes !== null ||
+      entry.responseBody !== undefined ||
+      !Number.isFinite(entry.durationMs) ||
+      entry.durationMs < 0 ||
+      (entry.outcome === "transport_failure"
+        ? entry.httpStatus !== null
+        : ![401, 403].includes(entry.httpStatus))
+    ) {
+      throw new Error("Invalid failed-provider observation")
+    }
+  }
+  return {
+    captureOutcome: capture.outcome,
+    providerEnvelopes: capture.envelopes,
+  }
+}
+
+async function createPreviewRecorder(
   { call, evaluate, onEvent, readDeployment },
   suppliedApproval,
+  policy,
 ) {
   const approval = structuredClone(suppliedApproval)
-  validate(approval)
+  validate(approval, policy)
   if (typeof readDeployment !== "function")
     throw new Error("A fresh deployment metadata reader is required")
   const evidence = {
-    version: "preview-inspection-browser-v1",
+    version: policy.version,
     candidateSHA: approval.candidateSHA,
     deployID: approval.deployID,
     origin: approval.origin,
@@ -323,7 +601,12 @@ export async function createPreviewInspector(
       return "unexpected_workflow_request"
     }
     requestClaimed = true
-    const admissionIssue = requestAdmissionIssue(approval, request, observed)
+    const admissionIssue = requestAdmissionIssue(
+      approval,
+      request,
+      observed,
+      policy.keys,
+    )
     if (admissionIssue) return admissionIssue
     if (!(await verifyDeployment())) return "deployment_identity_unverified"
     if (!atApprovedPage(await snapshot())) return "navigation_changed"
@@ -447,6 +730,8 @@ export async function createPreviewInspector(
         throw new Error("Inspector is single-use; no retry")
       consumed = true
       evidence.outcome = "stopped"
+      if (policy.beforeInspect && !policy.beforeInspect())
+        stop("provider_budget_exhausted")
       if (!prepared) stop("authenticated_page_unverified")
       if (!fresh(approval)) stop("approval_expired")
       if (!evidence.reason) {
@@ -460,8 +745,8 @@ export async function createPreviewInspector(
             if(Date.now()>=${Date.parse(approval.expiresAt)}) return {stopped:'approval_expired'};
             try {
               const response=await fetch(${JSON.stringify(approval.endpoint)}, {
-                method:'POST',redirect:'error',credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(10000),
-                headers:${JSON.stringify({ ...inspectionKeys, "Content-Type": "application/json", "X-CareerOS-Release-Capture": approval.caseID })},
+                method:'POST',redirect:'error',credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(${policy.timeoutMs}),
+                headers:${JSON.stringify({ ...policy.keys, "Content-Type": "application/json", "X-CareerOS-Release-Capture": approval.caseID })},
                 body:${JSON.stringify(approval.requestBody)}});
               return {url:response.url,status:response.status,redirected:response.redirected,
                 body:await (${boundedBody.toString()})(response,3145728),durationMs:performance.now()-started};
@@ -473,12 +758,12 @@ export async function createPreviewInspector(
       }
       await Promise.all(tasks)
       const result = evidence.browser
+      if (policy.sanitize) stop(policy.sanitize(evidence))
       if (!evidence.reason) stop(responseObservationIssue(approval, evidence))
       if (!evidence.reason) {
         try {
-          const envelope = verifiedFirstEnvelope(approval, evidence)
-          evidence.outcome = "inspection_verified"
-          evidence.providerEnvelope = envelope
+          Object.assign(evidence, policy.verifyResponse(approval, evidence))
+          evidence.outcome = policy.outcome
         } catch {
           stop("missing_or_invalid_capture")
         }
