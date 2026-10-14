@@ -4,6 +4,10 @@ Date: 2026-10-13, America/Sao_Paulo. **Release gate: not passed.**
 This records P0/P1 of the supplied remaining-work plan. It authorizes no external
 configuration, deployed inspection, provider use, merge or production publication.
 
+Subsequent separately authorized P2: [actual deployed inspection passed](2026-10-13-p2-deployed-inspection.md)
+at candidate `c154f40`, with one POST, zero provider dispatches and verified cleanup.
+The pending proposal below is preserved as the earlier P0/P1 checkpoint.
+
 ## Candidate reconciliation (P0)
 
 GitHub and local refs were read before implementation:

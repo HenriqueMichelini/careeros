@@ -1,5 +1,10 @@
 # Private synthetic response capture — issue #52
 
+Later evidence: [P2 deployed inspection verified](2026-10-13-p2-deployed-inspection.md)
+records the separately approved `c154f40` inspection, one actual endpoint POST,
+first envelope and cleanup. The failed earlier attempt below remains historical;
+its 404 cause is still unknown. The release gate remains open.
+
 Date: 2026-10-13, America/Sao_Paulo. This extends the
 [controlled preparation](2026-10-12-controlled-preparation.md) after Henrique
 approved private, synthetic-only response capture. **Release gate: not passed.**
