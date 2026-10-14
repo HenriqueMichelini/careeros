@@ -79,12 +79,18 @@ execFileSync("go", ["build", "-o", executable, "./scripts/semantic-quality"], {
   env: { ...process.env, GOCACHE: "/tmp/careeros-go-cache" },
 })
 let runIndex = 0
-function handler(templateId, request, provider, expectedStatus = 200) {
+function handler(
+  templateId,
+  request,
+  provider,
+  expectedStatus = 200,
+  split = "heldout",
+) {
   const sample = structuredClone(corpus.cases.find((c) => c.id === templateId))
   delete sample.steps
   delete sample.sequenceOutput
   sample.id = `integration-${runIndex++}`
-  sample.split = "heldout"
+  sample.split = split
   sample.request = request
   sample.provider = provider
   const fixture = join(dir, `${sample.id}.json`),
@@ -114,11 +120,71 @@ function handler(templateId, request, provider, expectedStatus = 200) {
   return result.output
 }
 const { findProfileGaps, generateMaterials } = await load("ai")
-async function viaHandler(templateId, provider, operation) {
+
+test("private response capture stays outside Application Draft state", async () => {
+  const fixture = structuredClone(
+    corpus.cases.find((c) => c.id === "pt-reviewed-draft"),
+  )
+  const previous = globalThis.fetch
+  let wireOutput
+  globalThis.fetch = async (_url, options) => {
+    wireOutput = handler(
+      "pt-reviewed-draft",
+      JSON.parse(options.body),
+      fixture.provider,
+      200,
+      "development",
+    )
+    wireOutput.releaseCapture = {
+      version: "release-capture-v1",
+      envelopes: [{ requestBody: "PRIVATE_SYNTHETIC_WIRE_EVIDENCE" }],
+    }
+    return new Response(JSON.stringify(wireOutput), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    })
+  }
+  try {
+    const doc = fixture.request.profileEvidence
+    const result = await generateMaterials(
+      profileView(doc),
+      fixture.request.jobPosting,
+      "sk-controlled",
+      [],
+      "pt-BR",
+      "controlled",
+      undefined,
+      [],
+      doc,
+    )
+    assert.equal(
+      "releaseCapture" in result,
+      false,
+      "provider payload evidence must not propagate into product state",
+    )
+    assert.doesNotMatch(
+      JSON.stringify(result),
+      /PRIVATE_SYNTHETIC_WIRE_EVIDENCE/,
+    )
+    assert.equal(
+      wireOutput.releaseCapture.version,
+      "release-capture-v1",
+      "raw response remains available to its requesting test browser",
+    )
+    assert.ok(acceptResume(result.resumeReview, doc))
+    assert.ok(acceptArtifacts(result.artifactReview, doc))
+  } finally {
+    globalThis.fetch = previous
+  }
+})
+
+async function viaHandler(templateId, provider, operation, split = "heldout") {
   const previous = globalThis.fetch
   globalThis.fetch = async (url, options) =>
     new Response(
-      JSON.stringify(handler(templateId, JSON.parse(options.body), provider)),
+      JSON.stringify(
+        handler(templateId, JSON.parse(options.body), provider, 200, split),
+      ),
       { status: 200, headers: { "Content-Type": "application/json" } },
     )
   try {
@@ -127,6 +193,118 @@ async function viaHandler(templateId, provider, operation) {
     globalThis.fetch = previous
   }
 }
+
+test("retained Ruby support gaps stay explicit in reconstructed production-handler/client regressions", async () => {
+  // The retained browser transcript is not a raw provider response. These are
+  // independently source-reviewed reconstructions, now known regression cases.
+  const fixture = structuredClone(
+    corpus.cases.find((c) => c.id === "pt-reviewed-draft"),
+  )
+  const doc = fixture.request.profileEvidence
+  doc.facts[0].value = doc.facts[0].normalization.observed = "Ruby"
+  doc.evidence[0].excerpt = "Uso Ruby para manter ferramentas CLI internas."
+  const before = structuredClone(doc)
+  const posting =
+    "Desenvolvedor Ruby.\nMantenha ferramentas CLI internas usando Ruby.\nRuby é obrigatório.\nExplique como você usa Ruby em português."
+  const excerpts = [
+    { start: 0, end: 19, quote: "Desenvolvedor Ruby." },
+    {
+      start: 20,
+      end: 66,
+      quote: "Mantenha ferramentas CLI internas usando Ruby.",
+    },
+    { start: 67, end: 88, quote: "Ruby é obrigatório." },
+    { start: 89, end: 132, quote: "Explique como você usa Ruby em português." },
+  ]
+  // Literal byte ranges are checked against the independently retained posting.
+  for (const s of excerpts)
+    assert.equal(
+      Buffer.from(posting).subarray(s.start, s.end).toString(),
+      s.quote,
+    )
+  for (const variant of [
+    "complete excerpts",
+    "title-only unresolved",
+    "required answer omitted",
+  ]) {
+    const provider = structuredClone(fixture.provider)
+    Object.assign(provider[0], {
+      jobTitle: "Desenvolvedor Ruby",
+      jobSummary: posting,
+      applicationAnswers:
+        variant === "required answer omitted"
+          ? "Tenho interesse na oportunidade."
+          : "## Respostas solicitadas pela empresa\nUso Ruby para manter ferramentas CLI internas.",
+      coverLetter: {
+        greeting: "Prezada equipe de contratação,",
+        body: "Uso Ruby para manter ferramentas CLI internas.",
+        closing: "Atenciosamente,",
+      },
+    })
+    provider[0].resume[0].text = "Ruby: manutenção de ferramentas CLI internas."
+    for (const judgment of provider[2].judgments) {
+      judgment.reason =
+        "Controlled reconstruction, not an actual model judgment."
+      if (judgment.scope === "job")
+        judgment.jobSources =
+          judgment.index === 0 ? excerpts.slice(0, 1) : excerpts
+    }
+    if (variant === "title-only unresolved") {
+      Object.assign(provider[2].judgments[1], {
+        state: "uncertain",
+        reason:
+          "Title citation does not support the duty, mandatory requirement and language request.",
+        jobSources: excerpts.slice(0, 1),
+      })
+    }
+    if (variant === "required answer omitted")
+      provider[2].answerConcerns = [
+        "A resposta solicitada em português não explica como a pessoa usa Ruby.",
+      ]
+    const result = await viaHandler(
+      "pt-reviewed-draft",
+      provider,
+      () =>
+        generateMaterials(
+          profileView(doc),
+          posting,
+          "sk-controlled",
+          [],
+          "pt-BR",
+          "controlled",
+          undefined,
+          [],
+          doc,
+        ),
+      "development",
+    )
+    const summary = result.artifactReview.claims.find(
+      (c) => c.field === "jobSummary",
+    )
+    assert.deepEqual(
+      summary.jobSources,
+      variant === "title-only unresolved" ? excerpts.slice(0, 1) : excerpts,
+    )
+    if (variant === "complete excerpts") {
+      const accepted = acceptArtifacts(result.artifactReview, doc)
+      assert.equal(accepted.jobSummary, posting)
+      assert.match(
+        accepted.applicationAnswers,
+        /^## Respostas solicitadas pela empresa\nUso Ruby/,
+      )
+    } else
+      assert.throws(
+        () => acceptArtifacts(result.artifactReview, doc),
+        /unresolved/,
+      )
+    // A separately reviewed CV can remain acceptable while artifacts are blocked.
+    assert.equal(
+      acceptResume(result.resumeReview, doc).markdown,
+      "## Competências Técnicas\n- Ruby: manutenção de ferramentas CLI internas.",
+    )
+    assert.deepEqual(doc, before)
+  }
+})
 const lock = async (fn) => fn()
 function memory(values) {
   const data = new Map(Object.entries(values))

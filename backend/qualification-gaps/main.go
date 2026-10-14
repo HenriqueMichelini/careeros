@@ -20,6 +20,7 @@ import (
 	"professional-information-repo/internal/profiledocument"
 	"professional-information-repo/internal/profilevalidation"
 	"professional-information-repo/internal/qualificationmatching"
+	"professional-information-repo/internal/releasecapture"
 )
 
 const (
@@ -94,12 +95,12 @@ func isTimeout(err error) bool {
 	return errors.As(err, &networkError) && networkError.Timeout()
 }
 
-func NewHandler() http.Handler { return (app{client: &http.Client{Timeout: gapTimeout}}).handler() }
+func NewHandler() http.Handler { return NewHandlerWithClient(&http.Client{Timeout: gapTimeout}) }
 
 // NewHandlerWithClient uses the production workflow with an explicit provider
 // transport, allowing local evaluation without changing process-wide networking.
 func NewHandlerWithClient(client *http.Client) http.Handler {
-	return (app{client: client}).handler()
+	return releasecapture.Handler("/api/qualification-gaps", (app{client: releasecapture.Client(client)}).handler())
 }
 
 func (a app) handler() http.Handler {

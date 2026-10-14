@@ -151,6 +151,14 @@ func Start(ctx context.Context, name, version string) (context.Context, func(str
 		}
 	}
 }
+
+// StageName returns only the application-owned stage label, never source data.
+func StageName(ctx context.Context) string {
+	if stage, ok := ctx.Value(stageKey).(*Stage); ok {
+		return stage.Name
+	}
+	return ""
+}
 func BeginProvider(ctx context.Context, name string, ceiling *int64) {
 	if s, ok := ctx.Value(stageKey).(*Stage); ok {
 		s.Provider = &Provider{Name: name, OutputCeiling: ceiling, started: time.Now()}

@@ -1,0 +1,167 @@
+{
+  "version": "deployed-preview-inspection-summary-v1",
+  "localDate": "2026-10-13",
+  "timezone": "America/Sao_Paulo",
+  "authorization": {
+    "phase": "P2",
+    "scope": "one inspection, zero provider dispatches, one same-source configuration rebuild, cleanup",
+    "dispatch": false,
+    "expiresAt": "2026-10-14T01:34:15.126Z",
+    "keys": "inert placeholders only"
+  },
+  "candidateSHA": "c154f40ca04e8ef88bb0b917b89603b586797d0f",
+  "deployID": "6acecf58423a9ea41a9137f6",
+  "origin": "https://deploy-preview-114--beamish-bavarois-333d03.netlify.app",
+  "endpoint": "https://deploy-preview-114--beamish-bavarois-333d03.netlify.app/api/qualification-gaps",
+  "caseID": "ruby-en-inspection-hardened",
+  "requestSHA256": "5a67636650ace60f6ce9b0f5a9c5de2d08474770886443abac55cf541387a7c3",
+  "outcome": "inspection_verified",
+  "reason": null,
+  "networkRequestObserved": true,
+  "releasedRequests": 1,
+  "endpointDiagnostic": "endpoint_request_observed",
+  "redirects": [],
+  "blockedRequests": [],
+  "readiness": {
+    "url": "https://deploy-preview-114--beamish-bavarois-333d03.netlify.app/",
+    "status": 200,
+    "documentSHA256": "df02aa4988c879b4deeb8394deccce929506524acdb878f55f75d119fb28589a"
+  },
+  "deploymentChecks": [
+    {
+      "id": "6acecf58423a9ea41a9137f6",
+      "commitRef": "c154f40ca04e8ef88bb0b917b89603b586797d0f",
+      "url": "https://deploy-preview-114--beamish-bavarois-333d03.netlify.app",
+      "deployURL": "https://6acecf58423a9ea41a9137f6--beamish-bavarois-333d03.netlify.app",
+      "observedAt": "2026-10-14T00:40:49.353Z",
+      "context": "deploy-preview"
+    },
+    {
+      "id": "6acecf58423a9ea41a9137f6",
+      "commitRef": "c154f40ca04e8ef88bb0b917b89603b586797d0f",
+      "url": "https://deploy-preview-114--beamish-bavarois-333d03.netlify.app",
+      "deployURL": "https://6acecf58423a9ea41a9137f6--beamish-bavarois-333d03.netlify.app",
+      "observedAt": "2026-10-14T00:40:59.802Z",
+      "context": "deploy-preview"
+    }
+  ],
+  "response": {
+    "url": "https://deploy-preview-114--beamish-bavarois-333d03.netlify.app/api/qualification-gaps",
+    "status": 502,
+    "contentType": "application/json; charset=utf-8",
+    "cacheControl": "no-store"
+  },
+  "responseBodySHA256": "d0c3601c4fb448235217966d84f73f3334dffa3ec3d92e0d5a6d579886f8133c",
+  "request": {
+    "url": "https://deploy-preview-114--beamish-bavarois-333d03.netlify.app/api/qualification-gaps",
+    "method": "POST",
+    "origin": "https://deploy-preview-114--beamish-bavarois-333d03.netlify.app",
+    "bytes": 1273,
+    "sha256": "5a67636650ace60f6ce9b0f5a9c5de2d08474770886443abac55cf541387a7c3",
+    "source": "CDP.Fetch.requestPaused"
+  },
+  "capture": {
+    "version": "release-capture-v1",
+    "caseId": "ruby-en-inspection-hardened",
+    "requestSHA256": "5a67636650ace60f6ce9b0f5a9c5de2d08474770886443abac55cf541387a7c3",
+    "outcome": "inspection_only"
+  },
+  "envelope": {
+    "stage": "field_validation",
+    "outcome": "not_dispatched",
+    "requestEncoding": "utf8",
+    "requestSHA256": "befd6e2a35abd41748da3bad3102235691b9737a81064db870213b93f10fb550",
+    "requestBytes": 3414,
+    "responseBytes": null,
+    "httpStatus": null,
+    "durationMs": null,
+    "admission": "release-egress-v1",
+    "endpoint": "https://api.typesafe.ai/v1/systemone"
+  },
+  "providerDispatches": 0,
+  "browserInspectionDurationMs": 3089.900000002235,
+  "metadataLookups": [
+    {
+      "id": "6acec710103dcd3ecab6ca99",
+      "commitRef": "c154f40ca04e8ef88bb0b917b89603b586797d0f",
+      "url": "https://deploy-preview-114--beamish-bavarois-333d03.netlify.app",
+      "deployURL": "https://6acec710103dcd3ecab6ca99--beamish-bavarois-333d03.netlify.app",
+      "context": "deploy-preview",
+      "observedAt": "2026-10-14T00:38:09.169Z",
+      "platformLookupMS": 2507,
+      "lookupMS": 2518
+    },
+    {
+      "id": "6acecf58423a9ea41a9137f6",
+      "commitRef": "c154f40ca04e8ef88bb0b917b89603b586797d0f",
+      "url": "https://deploy-preview-114--beamish-bavarois-333d03.netlify.app",
+      "deployURL": "https://6acecf58423a9ea41a9137f6--beamish-bavarois-333d03.netlify.app",
+      "context": "deploy-preview",
+      "observedAt": "2026-10-14T00:40:49.353Z",
+      "platformLookupMS": 2475,
+      "lookupMS": 2484
+    },
+    {
+      "id": "6acecf58423a9ea41a9137f6",
+      "commitRef": "c154f40ca04e8ef88bb0b917b89603b586797d0f",
+      "url": "https://deploy-preview-114--beamish-bavarois-333d03.netlify.app",
+      "deployURL": "https://6acecf58423a9ea41a9137f6--beamish-bavarois-333d03.netlify.app",
+      "context": "deploy-preview",
+      "observedAt": "2026-10-14T00:40:59.802Z",
+      "platformLookupMS": 2478,
+      "lookupMS": 2497
+    }
+  ],
+  "configurationRebuilds": 1,
+  "originalDeployID": "6acec710103dcd3ecab6ca99",
+  "privateRawEvidenceSHA256": "2a294c4edc3dc8e3fe974f76e9e8d3c2b3ec980fc66d140c886a43981b152b63",
+  "cleanup": {
+    "settings": {
+      "removed": "CAREEROS_RELEASE_CAPTURE",
+      "verifiedAfterReload": true,
+      "observedAt": "2026-10-14T00:42:06.351Z",
+      "remainingProjectVariables": 0,
+      "immutableManifestExpiresAt": "2026-10-14T01:34:15.126Z"
+    },
+    "browserClosed": true,
+    "disposableProfileAbsent": true,
+    "relay": {
+      "interceptionClosed": true,
+      "relayClosed": true,
+      "attempted": true,
+      "browserCleanupOwner": "original-disposable-browser-operator"
+    },
+    "clipboardUsed": false,
+    "keysPersisted": false
+  },
+  "operationalTelemetry": {
+    "window": {
+      "scope": "deploypreview:114",
+      "function": "qualification-gaps",
+      "preset": "Last hour",
+      "start": "Oct 13, 2026 08:42 PM",
+      "end": "Oct 13, 2026 09:42 PM",
+      "timezone": "GMT-3",
+      "observedAt": "2026-10-14T00:44:16.475Z"
+    },
+    "attemptID": "13f799ac69f1b8a372b8144627a5890e",
+    "requestIDPrefix": "c93fe882",
+    "observedHTTPStatus": 502,
+    "handlerDiagnosticDurationMs": 1.071932,
+    "platformDurationMs": 4.13,
+    "platformInitDurationMs": 151.64,
+    "outcome": "transport_failure",
+    "contentObserved": false,
+    "interpretation": "Intentional inspection stop; diagnostic provider wrapper timing/status are not a provider response or latency measurement.",
+    "retentionObserved": "24 hours",
+    "scopeLimit": "Only qualification-gaps in Deploy Preview #114 and the displayed one-hour window were inspected."
+  },
+  "unavailable": [
+    "provider responses, tokens and duration",
+    "provider-backed semantic quality",
+    "accepted complete application",
+    "deployed copy/PDF acceptance parity",
+    "actual billing reconciliation",
+    "production route acceptance"
+  ]
+}

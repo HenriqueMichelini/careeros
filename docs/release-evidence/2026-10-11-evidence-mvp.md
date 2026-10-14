@@ -1,12 +1,16 @@
 # Evidence-based MVP integration gate (#52)
 
+Current disposition: [2026-10-14 release-gate reconciliation](2026-10-14-release-gate-reconciliation.md).
+This report retains its original sources and dated failures; the newer checkpoint
+does not replace or retrospectively pass those observations.
+
 Review baseline: `4e48cb8a9106a78f58a5fde7c412475650dbb794`.
 Milestone 4 branch `codex/evidence-backed-cvs-and-applications`, base `main`.
 All native prerequisites (#33, #50, #51, #62, #65) were closed before work began.
 This is a verification deliverable, not certification of arbitrary provider output.
 Deployment checks found failures; this report does not declare the MVP release gate complete.
 
-**Latest checkpoint, 2026-10-12:** The approved candidate
+**Checkpoint, 2026-10-12:** The approved candidate
 `2e8c5038cb8f8aa69daac23fa9af4cdf76ae550e` remains published and locked. The frozen
 English-preview / Portuguese-published batch is now fully spent: six workflows,
 six TypeSafe and fourteen OpenAI dispatches, with no retries. Portuguese generation

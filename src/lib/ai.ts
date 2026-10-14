@@ -112,6 +112,7 @@ export async function generateMaterials(
   const payload = (await response.json().catch(() => null)) as {
     error?: unknown
     coverLetter?: unknown
+    releaseCapture?: unknown
   } & Partial<Omit<GeneratedMaterials, "coverLetter">> | null
   signal?.throwIfAborted()
   checkJobDecision(payload)
@@ -193,8 +194,10 @@ export async function generateMaterials(
   const fullName = repo.fullName?.trim() || ""
   const coverLetter = completeCoverLetter(payload.coverLetter, fullName)
   if (coverLetter === null) throw new ApplicationDraftError("invalid_output")
+  const materials = { ...payload }
+  delete materials.releaseCapture
   return {
-    ...payload,
+    ...materials,
     resumeReview: resumeReview ?? undefined,
     artifactReview: artifactReview ?? undefined,
     cvLanguage,

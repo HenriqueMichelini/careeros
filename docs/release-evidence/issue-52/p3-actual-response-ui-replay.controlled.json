@@ -1,0 +1,302 @@
+{
+  "version": "actual-response-local-ui-replay-v1",
+  "executionCandidateSHA": "63a51dfeb7d8220ac4dde8e64eb47ca866a131f9",
+  "mode": "local compiled UI with retained actual API response bodies; not live deployed React interaction",
+  "providerDispatches": 0,
+  "realCredentialFileReads": 0,
+  "localWorkflowReplaysInCompletedRun": 4,
+  "earlierInterruptedLocalWorkflowReplays": 2,
+  "allCompletedRunRequestBytesMatchPaidApprovedRequests": true,
+  "nativePrintDialogOperated": false,
+  "printMode": "actual accepted UI print projection captured with test-only window.print hook; separately rendered by normal-sandbox Chrome print engine",
+  "profileMode": "test-only hash observations of the synthetic saved Profile; no content-bearing telemetry",
+  "clipboardScope": "browser session clipboard; real app copy; known sentinel before read",
+  "serverClosed": true,
+  "serverClosedAt": "2026-10-14T21:00:00.454Z",
+  "viewportReset": true,
+  "testTabClosed": true,
+  "syntheticClipboardCleared": true,
+  "localBuildAssets": [
+    {
+      "path": "assets/index-DujNVVLc.js",
+      "bytes": 556414,
+      "sha256": "6f1d2b7969078617f9bd21578c8707bc645b39570ddf0697562defa17f95c562"
+    },
+    {
+      "path": "assets/index-g8cvCnuO.css",
+      "bytes": 37118,
+      "sha256": "9f32561172ef250ca40616b2d885e179778530a17bcbc2fd45b172f18ec1fd88"
+    },
+    {
+      "path": "index.html",
+      "bytes": 519,
+      "sha256": "8162b4286f21b929e17dcef42ea5031895a70542253832371eb0d113464f52f4"
+    }
+  ],
+  "localHTMLMatchesDeployedReadiness": false,
+  "cases": [
+    {
+      "artifactAcceptanceEnabled": false,
+      "checkedQualifications": 0,
+      "resumeAcceptanceEnabled": true,
+      "copyEqualsReturnedResume": true,
+      "clipboardTransferred": true,
+      "copyCharacters": 213,
+      "desktopMetrics": {
+        "paperHeight": 1122.5,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "mobileMetrics": {
+        "paper": {
+          "bottom": 1328.59375,
+          "height": 435.59375,
+          "left": 41,
+          "right": 349,
+          "top": 893,
+          "width": 308,
+          "x": 41,
+          "y": 893
+        },
+        "scrollWidth": 390,
+        "width": 390
+      },
+      "mobileSpaceCopyMatches": true,
+      "mobileArtifactAcceptanceEnabled": false,
+      "unacceptedQACopyEnabled": false,
+      "resultsPersistedAfterReload": false,
+      "reloadResultsHeading": "Nothing generated",
+      "resumeAcceptedInControlledUI": true,
+      "completeApplicationAccepted": false,
+      "id": "p3-postgresql-en",
+      "savedProfileObservation": {
+        "id": "p3-postgresql-en",
+        "observationCount": 166,
+        "firstAt": "2026-10-14T20:46:31.502Z",
+        "lastAt": "2026-10-14T20:51:35.413Z",
+        "profileBytes": 1721,
+        "profileSHA256": "a61253b1d1b79552071806f519237097aacd915aa5f9931fe080cf7d5d01bbb5",
+        "allProfileBytesUnchanged": true,
+        "lastStorageKeys": [
+          "careeros_apikey",
+          "careeros_cv_language",
+          "careeros_cv_preferences_v1",
+          "careeros_locale",
+          "careeros_profile_v2",
+          "careeros_typesafe_key"
+        ],
+        "backendResultsPersisted": false
+      },
+      "pdf": {
+        "id": "p3-postgresql-en",
+        "bytes": 18837,
+        "sha256": "12a68fb8e8f53cff864e13832806bc8a3ea178d7728e912d358fb0ada139bb33",
+        "sourceHTMLSHA256": "c022350205182f699dec0664fe7f658217183d1746a601d001caa0ab94542715",
+        "mode": "Chrome print engine of actual accepted UI print projection; local controlled replay",
+        "nativeSaveDialogOperated": false,
+        "providerDispatches": 0,
+        "normalChromeSandbox": true,
+        "temporaryChromeProfileRemoved": true,
+        "artifactFilename": "p3-postgresql-en.cv.pdf",
+        "pages": 1,
+        "pageSizePoints": [
+          [
+            594.95996,
+            841.91998
+          ]
+        ],
+        "allTextBoundsInsidePage": true,
+        "normalizedPDFEqualsCopiedMarkdown": true,
+        "normalizedDisplayEqualsCopiedMarkdown": true,
+        "extractedTextSHA256": "ff823a56563800bb3a72642c8149155e5f148c003fbfec58b827c15029904aca",
+        "normalizedTextSHA256": "d358b29e75cd0d89e0440443dc8f3540ab18c7c5b8ef2a6d7e1d31264549a35c",
+        "renderedPageVisuallyInspectedByAgent": true
+      },
+      "copiedTextBytes": 213,
+      "copiedTextSHA256": "3d047075e95b8471be798890704dc6f5dbd752927ce155a689937a6be0fa8e48"
+    },
+    {
+      "checkedQualifications": 0,
+      "artifactAcceptanceEnabled": false,
+      "resumeAcceptanceEnabled": true,
+      "copyEqualsReturnedResume": true,
+      "clipboardTransferred": true,
+      "copyCharacters": 142,
+      "contentUnchangedWithEnglishUI": true,
+      "desktopMetrics": {
+        "paperHeight": 1122.5,
+        "scrollWidth": 1280,
+        "width": 1280
+      },
+      "mobileMetrics": {
+        "paper": {
+          "bottom": 1328.59375,
+          "height": 435.59375,
+          "left": 41,
+          "right": 349,
+          "top": 893,
+          "width": 308,
+          "x": 41,
+          "y": 893
+        },
+        "scrollWidth": 390,
+        "width": 390
+      },
+      "mobileEnterCopyMatches": true,
+      "mobileArtifactAcceptanceEnabled": false,
+      "unacceptedQACopyEnabled": false,
+      "resultsPersistedAfterReload": false,
+      "resumeAcceptedInControlledUI": true,
+      "completeApplicationAccepted": false,
+      "id": "p3-typescript-pt",
+      "savedProfileObservation": {
+        "id": "p3-typescript-pt",
+        "observationCount": 240,
+        "firstAt": "2026-10-14T20:51:36.281Z",
+        "lastAt": "2026-10-14T20:59:06.744Z",
+        "profileBytes": 1778,
+        "profileSHA256": "e907f35f5284ebddc2c3e86de3d7e076afcbb2c616e8dae8bcd18d7f72fa5845",
+        "allProfileBytesUnchanged": true,
+        "lastStorageKeys": [
+          "careeros_apikey",
+          "careeros_cv_language",
+          "careeros_cv_preferences_v1",
+          "careeros_locale",
+          "careeros_profile_v2",
+          "careeros_typesafe_key"
+        ],
+        "backendResultsPersisted": false
+      },
+      "pdf": {
+        "id": "p3-typescript-pt",
+        "bytes": 18404,
+        "sha256": "a7d43d599ea2fb34c7d66998f5c5813f6161bc0c382523973ac798cd8cd41acd",
+        "sourceHTMLSHA256": "bacc80101752ca0080ec9bd5c40411c318222079eef52e48976ce13d7664b3ba",
+        "mode": "Chrome print engine of actual accepted UI print projection; local controlled replay",
+        "nativeSaveDialogOperated": false,
+        "providerDispatches": 0,
+        "normalChromeSandbox": true,
+        "temporaryChromeProfileRemoved": true,
+        "artifactFilename": "p3-typescript-pt.cv.pdf",
+        "pages": 1,
+        "pageSizePoints": [
+          [
+            594.95996,
+            841.91998
+          ]
+        ],
+        "allTextBoundsInsidePage": true,
+        "normalizedPDFEqualsCopiedMarkdown": true,
+        "normalizedDisplayEqualsCopiedMarkdown": true,
+        "extractedTextSHA256": "8f025828ea93c6f7215a46f018655ded1088d0291e3562be95c45518ac61e991",
+        "normalizedTextSHA256": "1b4f9652ca9e3977156d963479111c341b537771e859ba44f4f75f6743f40655",
+        "renderedPageVisuallyInspectedByAgent": true
+      },
+      "copiedTextBytes": 147,
+      "copiedTextSHA256": "18b85c6ac1e8f2a05851a51a62ef955a1b860142a67b70d90801153ecb4b9fe1"
+    }
+  ],
+  "headerLayoutCheck": {
+    "mode": "local header-only check; no workflow APIs",
+    "providerDispatches": 0,
+    "metrics": {
+      "controls": [
+        {
+          "clientWidth": 66,
+          "label": "Aplicar",
+          "rect": {
+            "bottom": 76,
+            "height": 27,
+            "left": 16,
+            "right": 82.40625,
+            "top": 49,
+            "width": 66.40625,
+            "x": 16,
+            "y": 49
+          },
+          "scrollWidth": 66
+        },
+        {
+          "clientWidth": 59,
+          "label": "Perfil",
+          "rect": {
+            "bottom": 76,
+            "height": 27,
+            "left": 103.59375,
+            "right": 162.796875,
+            "top": 49,
+            "width": 59.203125,
+            "x": 103.59375,
+            "y": 49
+          },
+          "scrollWidth": 59
+        },
+        {
+          "clientWidth": 81,
+          "label": "Curr\u00edculo",
+          "rect": {
+            "bottom": 76,
+            "height": 27,
+            "left": 184,
+            "right": 264.8125,
+            "top": 49,
+            "width": 80.8125,
+            "x": 184,
+            "y": 49
+          },
+          "scrollWidth": 81
+        },
+        {
+          "clientWidth": 88,
+          "label": "Resultados",
+          "rect": {
+            "bottom": 76,
+            "height": 27,
+            "left": 286,
+            "right": 374,
+            "top": 49,
+            "width": 88,
+            "x": 286,
+            "y": 49
+          },
+          "scrollWidth": 88
+        },
+        {
+          "clientWidth": 110,
+          "label": "EnglishPortugu\u00eas",
+          "rect": {
+            "bottom": 41,
+            "height": 33,
+            "left": 167.15625,
+            "right": 279.15625,
+            "top": 8,
+            "width": 112,
+            "x": 167.15625,
+            "y": 8
+          },
+          "scrollWidth": 110
+        },
+        {
+          "clientWidth": 85,
+          "label": "CHAVE API \u2713",
+          "rect": {
+            "bottom": 39,
+            "height": 29,
+            "left": 287.15625,
+            "right": 374,
+            "top": 10,
+            "width": 86.84375,
+            "x": 287.15625,
+            "y": 10
+          },
+          "scrollWidth": 85
+        }
+      ],
+      "scrollWidth": 390,
+      "viewportWidth": 390
+    }
+  },
+  "controlServerSHA256": "dc067af96856ddebc6b02c94719652f5e2284af5bfc7b09d661b9c9e8e9ce860",
+  "testObserverSHA256": "d358128d9df27885ef043586dd80ac20fe0aad54e8962940476f99eb544cf338",
+  "completeApplicationAccepted": 0
+}
