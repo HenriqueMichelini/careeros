@@ -2,8 +2,8 @@
   "evidence": "controlled loopback browser with fabricated provider captures; no real provider dispatch or deployed/provider quality evidence",
   "sourceHashes": {
     "tests/inspection-browser-fixture.mjs": "8183ec1155a0e4dde669c4a4bc8974d3b9e30deddfeb02ebc8ca2dbb9b3aa6ed",
-    "tests/preview-inspection-harness.mjs": "06e42b59def3a7ff10ae754f53af1132bc62325206658e145c7e96c07e09664c",
-    "tests/preview-provider-browser.check.mjs": "5d3358067a9c19696dd1dc550f4702d6ffc6ba795a61f29ac0e92770c6993f33"
+    "tests/preview-inspection-harness.mjs": "b14485a55dca162504659cc907e4347c784bcc0e11ce91279f838e9a801059ed",
+    "tests/preview-provider-browser.check.mjs": "531002a8e46fe3b3d1168fbe536beb6ad94774c792025182eb1558ff89ac2fcc"
   },
   "results": [
     {
@@ -108,6 +108,54 @@
       "reason": "unexpected_redirect",
       "posts": 1,
       "captureOutcome": null,
+      "reservedCaseIds": [
+        "controlled-paid-qualification"
+      ],
+      "reservedWorkflowAttempts": 1,
+      "reservedProviderDispatches": 3
+    },
+    {
+      "name": "redirect credential is withheld",
+      "outcome": "stopped",
+      "reason": "unexpected_redirect",
+      "posts": 1,
+      "captureOutcome": null,
+      "reservedCaseIds": [
+        "controlled-paid-qualification"
+      ],
+      "reservedWorkflowAttempts": 1,
+      "reservedProviderDispatches": 3
+    },
+    {
+      "name": "percent-escaped redirect credential is withheld",
+      "outcome": "stopped",
+      "reason": "unexpected_redirect",
+      "posts": 1,
+      "captureOutcome": null,
+      "reservedCaseIds": [
+        "controlled-paid-qualification"
+      ],
+      "reservedWorkflowAttempts": 1,
+      "reservedProviderDispatches": 3
+    },
+    {
+      "name": "blocked URL credential is withheld",
+      "outcome": "stopped",
+      "reason": "unexpected_route",
+      "posts": 0,
+      "captureOutcome": null,
+      "reservedCaseIds": [
+        "controlled-paid-qualification"
+      ],
+      "reservedWorkflowAttempts": 1,
+      "reservedProviderDispatches": 3
+    },
+    {
+      "name": "qualification preserves production 55-second deadline",
+      "outcome": "provider_capture_verified",
+      "reason": null,
+      "posts": 1,
+      "captureOutcome": "complete",
       "reservedCaseIds": [
         "controlled-paid-qualification"
       ],

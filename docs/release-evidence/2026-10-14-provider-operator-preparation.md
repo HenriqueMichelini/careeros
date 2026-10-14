@@ -28,8 +28,10 @@ Application Draft routes, with their exact origin, browser bytes/hash, deploymen
 identity and one-hour maximum expiry. It uses the same synchronous request
 reservation, fresh authenticated metadata checks before readiness/while paused,
 post-await expiry guard, same-origin page checks and redirect rejection as P2.
-Browser workflow timeout is 30 seconds; the deployment lookup deadline remains
-five seconds. The process-local keys are excluded from evidence and approval files.
+Browser qualification timeout is 55 seconds, matching canonical Profile requests
+in the product; Application Draft remains 30 seconds. The deployment lookup
+deadline remains five seconds. Process-local keys are excluded from approval
+files; credential-bearing body and metadata values are withheld from evidence.
 
 The first two deterministic provider-envelope hashes/lengths must be supplied in
 the approval. The actual returned serialized envelopes are checked against them.
@@ -42,8 +44,11 @@ post-response hash comparison is not a new server-side hash admission mechanism.
 `provider_capture_verified` means the capture is coherent; it does **not** mean
 provider output or workflow acceptance passed. Partial captures, transport and
 authentication failures retain their status. Missing/invalid evidence stops the
-run. Literal and recursively JSON-escaped key echoes cause the browser body to be
-withheld. No retry, fallback model or output modification is introduced.
+run. Literal, recursively JSON-escaped and percent-escaped key echoes are checked
+throughout returned evidence, including redirect locations and blocked URLs.
+Credential-bearing browser bodies are removed; other affected strings are
+replaced with a withholding marker. No retry, fallback model or output
+modification is introduced.
 
 `createProviderWorkflowBudget` admits at most four distinct cases totaling at most
 14 slots. A case reserves its complete worst-case stage allowance synchronously
@@ -58,14 +63,23 @@ global server replay protection mechanism.
 ## Controlled evidence
 
 The [new browser report](issue-52/controlled-provider-operator-browser.json) records
-14 loopback scenarios with fabricated captures: three/four-stage capture, partial
+18 loopback scenarios with fabricated captures: three/four-stage capture, partial
 transport/auth failures, missing evidence, changed response hash, changed original
 Jev text, wrong model, changed deterministic payload, redirect rejection, escaped
 key withholding, caller mutation isolation, duplicate budget reservation and
-budget write failure. It also records ten budget/approval rejection checks,
+budget write failure, metadata credential echoes and a scaled-clock qualification
+deadline regression. It also records ten budget/approval rejection checks,
 four-case/14-slot reservation and restoration across phases. No external provider
 traffic or real credential reads occurred. Fabricated bodies do not measure
 provider semantics, usage, charges or acceptance.
+
+Spec review at `9f4f4f1` found two actionable defects before any real keys or paid
+calls: redirect metadata could retain a supplied key, and qualification's operator
+deadline was shorter than the product's deadline. Controlled reproduction retained
+a placeholder key in a 302 Location. The corrections scrub all evidence strings
+and restore the 55-second qualification deadline. New browser regressions cover
+literal/percent-escaped redirect echoes, blocked URLs and a response between the
+old/new scaled deadlines. The original review findings remain part of the record.
 
 The [inspection regression report](issue-52/controlled-inspection-regression-p3.json)
 repeats all 21 existing browser scenarios, seven approval/adapter rejection checks

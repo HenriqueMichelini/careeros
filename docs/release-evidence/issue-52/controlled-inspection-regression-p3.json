@@ -2,7 +2,7 @@
   "evidence": "controlled loopback browser only; no provider quality or deployed acceptance",
   "sourceHashes": {
     "tests/inspection-browser-fixture.mjs": "8183ec1155a0e4dde669c4a4bc8974d3b9e30deddfeb02ebc8ca2dbb9b3aa6ed",
-    "tests/preview-inspection-harness.mjs": "06e42b59def3a7ff10ae754f53af1132bc62325206658e145c7e96c07e09664c",
+    "tests/preview-inspection-harness.mjs": "b14485a55dca162504659cc907e4347c784bcc0e11ce91279f838e9a801059ed",
     "tests/preview-inspection-browser.check.mjs": "6100f91ffe2b9770d4a90baf4b6f4bee368d004e4ce5bc29539971da072c8eb3"
   },
   "results": [

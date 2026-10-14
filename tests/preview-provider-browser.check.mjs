@@ -128,6 +128,9 @@ async function scenario(
     transform = (x) => x,
     status = 200,
     redirect = false,
+    location,
+    delayMs = 0,
+    adapt = (value) => value,
     setup,
     check,
   },
@@ -137,16 +140,22 @@ async function scenario(
   const frozenServerApproval = structuredClone(a)
   await browser.navigate(browser.origin + "/app")
   browser.respond((_request, res) => {
-    res.writeHead(redirect ? 302 : status, {
-      "Content-Type": "application/json",
-      "Cache-Control": "no-store",
-      ...(redirect ? { Location: browser.authOrigin + "/auth" } : {}),
-    })
-    res.end(JSON.stringify(transform(output(frozenServerApproval))))
+    const respond = () => {
+      res.writeHead(redirect ? 302 : status, {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        ...(redirect
+          ? { Location: location ?? browser.authOrigin + "/auth" }
+          : {}),
+      })
+      res.end(JSON.stringify(transform(output(frozenServerApproval))))
+    }
+    if (delayMs) setTimeout(respond, delayMs)
+    else respond()
   })
   const before = browser.requests.filter((r) => r.method === "POST").length
   const runner = await createPreviewProviderRunner(
-    { ...browser, readDeployment },
+    adapt({ ...browser, readDeployment }, a),
     a,
     { keys, budget },
   )
@@ -257,6 +266,70 @@ try {
       assert.equal(e.reason, "unexpected_redirect")
       assert.equal(n, 1)
       assert.equal(e.redirects.length, 1)
+    },
+  })
+  for (const encoded of [false, true])
+    await scenario(
+      encoded
+        ? "percent-escaped redirect credential is withheld"
+        : "redirect credential is withheld",
+      {
+        redirect: true,
+        location:
+          browser.authOrigin +
+          "/auth?echo=" +
+          (encoded
+            ? keys["X-OpenAI-Api-Key"].replaceAll("-", "%2D")
+            : keys["X-OpenAI-Api-Key"]),
+        check: (e, n) => {
+          assert.equal(e.reason, "unexpected_redirect")
+          assert.equal(n, 1)
+          assert.equal(e.redirects[0].location, "[credential content withheld]")
+          assert.ok(!JSON.stringify(e).includes(keys["X-OpenAI-Api-Key"]))
+        },
+      },
+    )
+  await scenario("blocked URL credential is withheld", {
+    adapt: (adapter, a) => ({
+      ...adapter,
+      evaluate: (expression) =>
+        adapter.evaluate(
+          expression.replace(
+            "fetch(" + JSON.stringify(a.endpoint) + ",",
+            "fetch(" +
+              JSON.stringify(a.endpoint + "?echo=" + keys["X-OpenAI-Api-Key"]) +
+              ",",
+          ),
+        ),
+    }),
+    check: (e, n) => {
+      assert.equal(n, 0)
+      assert.equal(e.reason, "unexpected_route")
+      assert.equal(e.request.url, "[credential content withheld]")
+      assert.equal(e.blockedRequests[0].url, "[credential content withheld]")
+      assert.ok(!JSON.stringify(e).includes(keys["X-OpenAI-Api-Key"]))
+    },
+  })
+  let qualificationDeadline
+  await scenario("qualification preserves production 55-second deadline", {
+    delayMs: 400,
+    adapt: (adapter) => ({
+      ...adapter,
+      evaluate: (expression) =>
+        adapter.evaluate(
+          expression.replace(
+            /AbortSignal.timeout\((55000|30000)\)/g,
+            (_match, ms) => {
+              qualificationDeadline = Number(ms)
+              return "AbortSignal.timeout(" + Number(ms) / 100 + ")"
+            },
+          ),
+        ),
+    }),
+    check: (e, n) => {
+      assert.equal(qualificationDeadline, 55000)
+      assert.equal(e.outcome, "provider_capture_verified")
+      assert.equal(n, 1)
     },
   })
   await scenario("changed deterministic envelope despite valid model", {

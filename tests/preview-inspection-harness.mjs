@@ -13,7 +13,7 @@ function credentialContent(raw, keys) {
   let value = raw
   for (let depth = 0; depth < 64; depth++) {
     if (keys.some((key) => value.includes(key))) return true
-    const decoded = value.replace(
+    const escaped = value.replace(
       /\\(?:u([0-9a-f]{4})|([\\/"bfnrt]))/gi,
       (_, hex, escaped) =>
         hex
@@ -21,10 +21,38 @@ function credentialContent(raw, keys) {
           : ({ b: "\b", f: "\f", n: "\n", r: "\r", t: "\t" }[escaped] ??
             escaped),
     )
+    const decoded = escaped.replace(/(?:%[0-9a-f]{2})+/gi, (token) => {
+      try {
+        return decodeURIComponent(token)
+      } catch {
+        return token
+      }
+    })
     if (decoded === value) return false
     value = decoded
   }
   return true
+}
+function withholdCredentialEvidence(evidence, keys) {
+  let withheld = false
+  if (
+    evidence.browser?.body !== undefined &&
+    credentialContent(evidence.browser.body, keys)
+  ) {
+    delete evidence.browser.body
+    evidence.browser.bodyWithheld = true
+    withheld = true
+  }
+  const inspect = (value) => {
+    for (const [name, item] of Object.entries(value)) {
+      if (typeof item === "string" && credentialContent(item, keys)) {
+        value[name] = "[credential content withheld]"
+        withheld = true
+      } else if (item && typeof item === "object") inspect(item)
+    }
+  }
+  inspect(evidence)
+  return withheld ? "credential_content_withheld" : null
 }
 const boundedBody = async (response, limit) => {
   const reader = response.body.getReader(),
@@ -281,7 +309,7 @@ export async function createPreviewProviderRunner(
     expectedStatus: null,
     stages,
     keys: privateKeys,
-    timeoutMs: 30000,
+    timeoutMs: stages.length === 3 ? 55000 : 30000,
     version: "preview-provider-browser-v1",
     outcome: "provider_capture_verified",
     validateApproval: (value) => {
@@ -303,17 +331,8 @@ export async function createPreviewProviderRunner(
         )
     },
     beforeInspect: () => budget.reserve(approval.caseID, stages.length),
-    sanitize: (evidence) => {
-      if (
-        evidence.browser?.body !== undefined &&
-        credentialContent(evidence.browser.body, Object.values(privateKeys))
-      ) {
-        delete evidence.browser.body
-        evidence.browser.bodyWithheld = true
-        return "credential_content_withheld"
-      }
-      return null
-    },
+    sanitize: (evidence) =>
+      withholdCredentialEvidence(evidence, Object.values(privateKeys)),
     verifyResponse: verifiedProviderCapture,
   })
 }
