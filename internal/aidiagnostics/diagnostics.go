@@ -139,6 +139,9 @@ func Start(ctx context.Context, name, version string) (context.Context, func(str
 	}
 	return context.WithValue(ctx, stageKey, s), func(outcome string) {
 		s.DurationMS = milliseconds(started)
+		if outcome == "complete" {
+			outcome = "completed"
+		}
 		if outcome == "invalid_output" {
 			outcome = "rejected_output"
 		}

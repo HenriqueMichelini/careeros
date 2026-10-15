@@ -40,6 +40,7 @@ type Call struct {
 	CacheWriteTokens      *int64  `json:"cacheWriteTokensSubsetOfInput"`
 }
 type RunResult struct {
+	RequiredSteps   int                    `json:"requiredSteps,omitempty"`
 	Steps           []RunResult            `json:"steps,omitempty"`
 	Diagnostics     *aidiagnostics.Attempt `json:"diagnostics,omitempty"`
 	ID              string                 `json:"id"`

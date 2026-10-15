@@ -20,6 +20,33 @@ import (
 
 type transport func(*http.Request) (*http.Response, error)
 
+func TestControlledReviewedDraftEmitsCanonicalCompletion(t *testing.T) {
+	raw, err := os.ReadFile("../../docs/evaluations/workflow-settings/cases.v1.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var corpus struct {
+		Cases []eval.Case `json:"cases"`
+	}
+	if err := json.Unmarshal(raw, &corpus); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range corpus.Cases {
+		if c.Task != "application_draft" {
+			continue
+		}
+		run, err := eval.Run(c, "controlled", "", "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if run.Diagnostics == nil || run.Diagnostics.Outcome != "completed" {
+			t.Fatalf("noncanonical draft: %+v", run.Diagnostics)
+		}
+		return
+	}
+	t.Fatal("missing retained draft case")
+}
+
 func (f transport) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
 func TestCompletedWorkflowReportsObservedUsageWithoutContent(t *testing.T) {
 	var report d.Attempt
