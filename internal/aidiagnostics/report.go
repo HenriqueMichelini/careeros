@@ -46,6 +46,8 @@ type StageSummary struct {
 	Outcomes           map[string]int `json:"outcomes"`
 }
 type Summary struct {
+	OutcomeNormalizerVersion string                   `json:"outcomeNormalizerVersion"`
+	OperationalOutcomes      map[string]int           `json:"operationalOutcomes"`
 	Stages                   map[string]*StageSummary `json:"stagesByVersion"`
 	DurationMS               float64                  `json:"totalWorkflowDurationMs"`
 	Attempts                 int                      `json:"attempts"`
@@ -80,6 +82,8 @@ func ratio(n, d int) *float64 {
 }
 func Summarize(attempts []Attempt, prices []Price) (Summary, error) {
 	s := Summary{Stages: map[string]*StageSummary{}, Attempts: len(attempts), Outcomes: map[string]int{}, Billing: "unavailable: no invoice evidence; estimates exclude unobserved/provider-specific billing components", Prices: prices}
+	s.OutcomeNormalizerVersion = OutcomeNormalizerVersion
+	s.OperationalOutcomes = map[string]int{}
 	for _, p := range prices {
 		if _, err := time.Parse("2006-01-02", p.AsOf); err != nil {
 			return s, errors.New("pricing requires an ISO date")
@@ -95,9 +99,11 @@ func Summarize(attempts []Attempt, prices []Price) (Summary, error) {
 	for _, a := range attempts {
 		s.DurationMS += a.DurationMS
 		s.Outcomes[a.Outcome]++
-		if a.Outcome == "completed" {
+		category := OperationalOutcome(a.Outcome)
+		s.OperationalOutcomes[category]++
+		if category == "completed" {
 			s.Completed++
-		} else {
+		} else if category == "infrastructure_failure" {
 			s.Failed++
 		}
 		if a.Accepted != nil {

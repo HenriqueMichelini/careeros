@@ -3,6 +3,7 @@ package semanticeval
 import (
 	"fmt"
 	"math"
+	"professional-information-repo/internal/aidiagnostics"
 	"strings"
 	"time"
 )
@@ -34,23 +35,28 @@ type Rate struct {
 	Output float64 `json:"outputPerMillionUSD"`
 }
 type ComparisonSummary struct {
-	Attempts        int            `json:"attempts"`
-	Completed       int            `json:"completed"`
-	Failed          int            `json:"failed"`
-	Accepted        int            `json:"accepted"`
-	Reviewed        int            `json:"reviewed"`
-	Calls           int            `json:"providerCalls"`
-	Unpriced        int            `json:"unpricedCalls"`
-	DurationMS      float64        `json:"workflowDurationMs"`
-	KnownUSD        *float64       `json:"knownPricedComponentsUSD"`
-	TotalUSD        *float64       `json:"totalEstimatedUSD"`
-	PerCompletedUSD *float64       `json:"estimatedPerCompletedUSD"`
-	PerAcceptedUSD  *float64       `json:"estimatedPerAcceptedUSD"`
-	InputTokens     TokensObserved `json:"inputTokens"`
-	OutputTokens    TokensObserved `json:"outputTokens"`
-	ReasoningTokens TokensObserved `json:"reasoningTokensSubsetOfOutput"`
-	CachedTokens    TokensObserved `json:"cachedTokensSubsetOfInput"`
-	WriteTokens     TokensObserved `json:"cacheWriteTokensSubsetOfInput"`
+	LeafAttempts                      int            `json:"leafAttempts"`
+	RequiredUnreached                 int            `json:"requiredUnreached"`
+	SequencesWithUnknownRequiredSteps int            `json:"sequencesWithUnknownRequiredSteps"`
+	OutcomeNormalizerVersion          string         `json:"outcomeNormalizerVersion"`
+	OperationalOutcomes               map[string]int `json:"operationalOutcomes"`
+	Attempts                          int            `json:"attempts"`
+	Completed                         int            `json:"completed"`
+	Failed                            int            `json:"failed"`
+	Accepted                          int            `json:"accepted"`
+	Reviewed                          int            `json:"reviewed"`
+	Calls                             int            `json:"providerCalls"`
+	Unpriced                          int            `json:"unpricedCalls"`
+	DurationMS                        float64        `json:"workflowDurationMs"`
+	KnownUSD                          *float64       `json:"knownPricedComponentsUSD"`
+	TotalUSD                          *float64       `json:"totalEstimatedUSD"`
+	PerCompletedUSD                   *float64       `json:"estimatedPerCompletedUSD"`
+	PerAcceptedUSD                    *float64       `json:"estimatedPerAcceptedUSD"`
+	InputTokens                       TokensObserved `json:"inputTokens"`
+	OutputTokens                      TokensObserved `json:"outputTokens"`
+	ReasoningTokens                   TokensObserved `json:"reasoningTokensSubsetOfOutput"`
+	CachedTokens                      TokensObserved `json:"cachedTokensSubsetOfInput"`
+	WriteTokens                       TokensObserved `json:"cacheWriteTokensSubsetOfInput"`
 }
 type TokensObserved struct {
 	Total   *int64 `json:"observed"`
@@ -88,23 +94,18 @@ func Compare(runs []ComparisonRun, rates []Rate) (map[string]*ComparisonSummary,
 		}
 		s := summaries[r.Configuration]
 		if s == nil {
-			s = &ComparisonSummary{}
+			s = &ComparisonSummary{OutcomeNormalizerVersion: aidiagnostics.OutcomeNormalizerVersion, OperationalOutcomes: map[string]int{}}
 			summaries[r.Configuration] = s
 		}
 		s.Attempts++
+		category := operationalOutcome(r.Run)
+		s.OperationalOutcomes[category]++
 		if Completed(r.Run) {
 			s.Completed++
-		} else {
+		} else if category == "infrastructure_failure" {
 			s.Failed++
 		}
-		if r.Run.Diagnostics != nil {
-			s.DurationMS += r.Run.Diagnostics.DurationMS
-		}
-		for _, step := range r.Run.Steps {
-			if step.Diagnostics != nil {
-				s.DurationMS += step.Diagnostics.DurationMS
-			}
-		}
+		accumulateLeaves(r.Run, s)
 		if r.Review != nil {
 			if strings.TrimSpace(r.Review.Method) == "" || strings.TrimSpace(r.Review.Reason) == "" {
 				return nil, fmt.Errorf("review method and source-grounded reason required")
@@ -117,7 +118,7 @@ func Compare(runs []ComparisonRun, rates []Rate) (map[string]*ComparisonSummary,
 				s.Accepted++
 			}
 		}
-		for _, call := range r.Run.Calls {
+		for _, call := range dispatchCalls(r.Run) {
 			s.Calls++
 			s.InputTokens.add(call.InputTokens)
 			s.OutputTokens.add(call.OutputTokens)
@@ -150,6 +151,64 @@ func Compare(runs []ComparisonRun, rates []Rate) (map[string]*ComparisonSummary,
 	}
 	return summaries, nil
 }
+
+func operationalOutcome(r RunResult) string {
+	if r.Diagnostics != nil {
+		category := aidiagnostics.OperationalOutcome(r.Diagnostics.Outcome)
+		if category != "completed" {
+			return category
+		}
+	}
+	for _, step := range r.Steps {
+		if category := operationalOutcome(step); category != "completed" {
+			return category
+		}
+	}
+	if r.RequiredSteps > len(r.Steps) {
+		return "incomplete"
+	}
+	// Sequence status can be copied from a child. Prefer its observed category
+	// before the legacy status-only fallback, which supplies no quality evidence.
+	if r.Status != 200 {
+		if r.Status >= 500 {
+			return "infrastructure_failure"
+		}
+		return "unknown"
+	}
+	return "completed"
+}
+
+func accumulateLeaves(r RunResult, s *ComparisonSummary) {
+	if r.RequiredSteps > 0 || len(r.Steps) > 0 {
+		if r.RequiredSteps == 0 {
+			s.SequencesWithUnknownRequiredSteps++
+		}
+		if r.RequiredSteps > len(r.Steps) {
+			s.RequiredUnreached += r.RequiredSteps - len(r.Steps)
+		}
+		for _, step := range r.Steps {
+			accumulateLeaves(step, s)
+		}
+		return
+	}
+	s.LeafAttempts++
+	if r.Diagnostics != nil {
+		s.DurationMS += r.Diagnostics.DurationMS
+	}
+}
+
+// Sequence Calls is the existing flattened dispatch ledger. Use it once;
+// recurse only when a caller supplies a tree without a flattened ledger.
+func dispatchCalls(r RunResult) []Call {
+	if len(r.Calls) > 0 || len(r.Steps) == 0 {
+		return r.Calls
+	}
+	var calls []Call
+	for _, step := range r.Steps {
+		calls = append(calls, dispatchCalls(step)...)
+	}
+	return calls
+}
 func priceCall(c Call, rates []Rate) (float64, bool) {
 	if c.Provider != "api.openai.com" || c.InputTokens == nil || c.OutputTokens == nil || c.CachedTokens == nil || c.CacheWriteTokens == nil {
 		return 0, false
@@ -167,13 +226,5 @@ func priceCall(c Call, rates []Rate) (float64, bool) {
 }
 
 func Completed(r RunResult) bool {
-	if r.Status != 200 || r.Diagnostics != nil && (r.Diagnostics.Outcome != "completed" && r.Diagnostics.Outcome != "complete") {
-		return false
-	}
-	for _, step := range r.Steps {
-		if !Completed(step) {
-			return false
-		}
-	}
-	return true
+	return operationalOutcome(r) == "completed"
 }

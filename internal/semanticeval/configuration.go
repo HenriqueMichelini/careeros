@@ -62,6 +62,7 @@ func RunConfigured(c Case, mode, openAIKey, typeSafeKey, id string, budget *Budg
 
 func runSteps(c Case, mode, key, gate string, config *Configuration, budget *Budget) (RunResult, error) {
 	result := RunResult{ID: c.ID, Task: c.Task, Language: c.Language, Split: c.Split, Role: c.Role, Mode: mode, Status: 200, NoStore: true}
+	result.RequiredSteps = len(c.Steps)
 	combined := map[string][]json.RawMessage{"claims": {}, "operations": {}}
 	for _, step := range c.Steps {
 		if c.SequenceOutput == "final" && len(result.Steps) > 0 {
