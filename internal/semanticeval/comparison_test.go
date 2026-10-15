@@ -36,6 +36,31 @@ func TestComparisonCountsNestedLeavesOnceAndReportsUnreachedRequiredLegs(t *test
 	}
 }
 
+func TestSequenceRetainsChildOutcomeBeforeCopiedHTTPStatus(t *testing.T) {
+	for _, tc := range []struct {
+		outcome, category string
+		status            int
+	}{
+		{"assessment_unavailable", "assessment_unavailable", 502},
+		{"reject_attack", "policy_rejection", 400},
+	} {
+		r := RunResult{Status: tc.status, RequiredSteps: 2, Steps: []RunResult{{Status: tc.status, Diagnostics: &aidiagnostics.Attempt{Outcome: tc.outcome}}}}
+		summaries, err := Compare([]ComparisonRun{{Configuration: "current", Run: r}}, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		s := summaries["current"]
+		if s.OperationalOutcomes[tc.category] != 1 || s.Failed != 0 {
+			t.Fatalf("%s: %+v", tc.outcome, s)
+		}
+	}
+	r := RunResult{Status: 409, RequiredSteps: 2, Steps: []RunResult{{Status: 200}}}
+	summaries, err := Compare([]ComparisonRun{{Configuration: "current", Run: r}}, nil)
+	if err != nil || summaries["current"].OperationalOutcomes["incomplete"] != 1 {
+		t.Fatalf("unreached: %+v %v", summaries, err)
+	}
+}
+
 func TestComparisonChargesFailuresAndCacheWritesBeforeAcceptedCost(t *testing.T) {
 	n := func(v int64) *int64 { return &v }
 	call := Call{Provider: "api.openai.com", ReturnedModel: "gpt-6-luna", InputTokens: n(1200), OutputTokens: n(40), CachedTokens: n(1024), CacheWriteTokens: n(128), ReasoningTokens: n(10)}

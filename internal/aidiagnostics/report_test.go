@@ -55,6 +55,17 @@ func TestReportSeparatesNoncompletionFromInfrastructureFailure(t *testing.T) {
 		}
 	}
 }
+
+func TestReportRecognizesProductionFieldPolicyOutcomes(t *testing.T) {
+	for _, tc := range []struct{ outcome, category string }{
+		{"reject_attack", "policy_rejection"}, {"unusable", "policy_rejection"}, {"request_rephrasing", "requested_rephrasing"},
+	} {
+		r, err := d.Summarize([]d.Attempt{{Outcome: tc.outcome}}, nil)
+		if err != nil || r.OperationalOutcomes[tc.category] != 1 || r.Completed != 0 || r.Failed != 0 {
+			t.Fatalf("%s: %+v %v", tc.outcome, r, err)
+		}
+	}
+}
 func TestReportKeepsMissingBillingAndAcceptanceUnavailable(t *testing.T) {
 	model := "gpt-6-luna"
 	yes := true

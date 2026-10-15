@@ -159,21 +159,21 @@ func operationalOutcome(r RunResult) string {
 			return category
 		}
 	}
-	// Legacy reports without diagnostics retain the pre-existing status-based
-	// interpretation; this says nothing about semantic quality or acceptance.
+	for _, step := range r.Steps {
+		if category := operationalOutcome(step); category != "completed" {
+			return category
+		}
+	}
+	if r.RequiredSteps > len(r.Steps) {
+		return "incomplete"
+	}
+	// Sequence status can be copied from a child. Prefer its observed category
+	// before the legacy status-only fallback, which supplies no quality evidence.
 	if r.Status != 200 {
 		if r.Status >= 500 {
 			return "infrastructure_failure"
 		}
 		return "unknown"
-	}
-	if r.RequiredSteps > len(r.Steps) {
-		return "incomplete"
-	}
-	for _, step := range r.Steps {
-		if category := operationalOutcome(step); category != "completed" {
-			return category
-		}
 	}
 	return "completed"
 }

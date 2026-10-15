@@ -10,7 +10,8 @@ rewritten. `outcomes` retains the original diagnostic vocabulary;
 | --- | --- |
 | `completed`, historical `complete` | completed |
 | `request_information` | requested_information |
-| `input_rejected`, `reject`, `irrelevant`, `rephrase`, `refused` | policy_rejection |
+| `input_rejected`, `reject`, `reject_attack`, `irrelevant`, `unusable`, `rephrase`, `refused` | policy_rejection |
+| `request_rephrasing` | requested_rephrasing |
 | `incomplete`, `incomplete_output`, `truncated` | incomplete |
 | `canceled`, `cancelled` | canceled |
 | `unavailable`, `assessment_unavailable` | assessment_unavailable |

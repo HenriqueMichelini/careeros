@@ -11,8 +11,10 @@ func OperationalOutcome(outcome string) string {
 		return "completed"
 	case "request_information":
 		return "requested_information"
-	case "input_rejected", "reject", "irrelevant", "rephrase", "refused":
+	case "input_rejected", "reject", "reject_attack", "irrelevant", "unusable", "rephrase", "refused":
 		return "policy_rejection"
+	case "request_rephrasing":
+		return "requested_rephrasing"
 	case "incomplete", "incomplete_output", "truncated":
 		return "incomplete"
 	case "canceled", "cancelled":
