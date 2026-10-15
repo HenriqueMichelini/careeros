@@ -27,6 +27,8 @@ import {
 } from "./sectionReview"
 import {
   openProfile,
+  readProfile,
+  browserProfileLock,
   saveProfile,
   PROFILE_KEY,
   LEGACY_KEY,
@@ -160,6 +162,7 @@ const StoreContext = createContext<{
   state: AppState & { repository: ProfessionalRepository }
   dispatch: (action: Action) => Promise<boolean>
   profileDocument: ProfileDocument | null
+  refreshCanonicalProfile: () => Promise<boolean>
   editCanonicalProfile: (edit: ProfileEdit) => Promise<boolean>
   applyIngestionProposal: (
     snapshot: ProfileDocument,
@@ -283,6 +286,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     [],
   )
+  const refreshCanonicalProfile = useCallback(() => {
+    const refreshing = queue.current.then(async () => {
+      try {
+        const current = await browserProfileLock(() =>
+          readProfile(localStorage),
+        )
+        documentRef.current = current
+        optimisticDocument.current = current
+        failed.current = false
+        setProfileDocument(current)
+        setProfileError(null)
+        return true
+      } catch (error) {
+        setProfileError(
+          error instanceof ProfileStorageError ? error.code : "storage",
+        )
+        return false
+      }
+    })
+    queue.current = refreshing
+    return refreshing
+  }, [])
   const editCanonicalProfile = useCallback(
     (edit: ProfileEdit) => updateCanonical((doc) => editProfile(doc, edit)),
     [updateCanonical],
@@ -392,6 +417,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         dispatch,
         profileDocument,
         editCanonicalProfile,
+        refreshCanonicalProfile,
         applyProfileProposal,
         applyIngestionProposal,
       }}
@@ -415,7 +441,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             <button
               type="button"
               className="underline"
-              onClick={() => window.location.reload()}
+              data-profile-refresh
+              onClick={() => void refreshCanonicalProfile()}
             >
               {translate(state.uiLocale, "profile.persistence.reload")}
             </button>
