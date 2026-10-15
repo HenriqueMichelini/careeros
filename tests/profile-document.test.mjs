@@ -1550,3 +1550,102 @@ test("accepted ingestion preserves unrelated statement identity and meaning", ()
   )
   assert.equal(next.revision, doc.revision + 1)
 })
+
+test("Apply answer review saves only selected excerpts with truthful origin and survives reload", async () => {
+  const doc = migrateProfile(
+    { skills: "", additionalInfo: "Unrelated private note" },
+    "apply-profile",
+  )
+  const input = "I use TypeScript. Unselected sentence."
+  const result = ingestionResult([ingestionClaim("c1", "I use TypeScript.")], [
+    ingestionOp({ approved: false }),
+  ])
+  result.applyAnswer = {
+    version: 1,
+    requestId: "answer-1",
+    language: "en",
+    profile: { profileId: doc.id, id: doc.id, revision: doc.revision },
+  }
+  const pending = applyIngestionDocument(doc, doc, input, result)
+  assert.deepEqual(pending.evidence, [])
+  result.operations[0].approved = true
+  const next = applyIngestionDocument(doc, doc, input, result)
+  assert.deepEqual(
+    next.evidence.map((e) => [e.excerpt, e.origin]),
+    [["I use TypeScript.", "apply_answer"]],
+  )
+  assert.deepEqual(
+    next.facts.filter((f) => f.field === "additionalInfo"),
+    doc.facts
+      .filter((f) => f.field === "additionalInfo")
+      .map((f) => ({ ...f, owner: { ...f.owner, revision: next.revision } })),
+  )
+  const s = storage({ [PROFILE_KEY]: JSON.stringify(doc) })
+  await saveProfile(s, doc, next, lock)
+  assert.deepEqual((await openProfile(s, lock)).evidence, next.evidence)
+  await assert.rejects(saveProfile(s, doc, next, lock), { code: "stale" })
+})
+
+test("a reviewed save reports the durable outcome when a lock rejects after atomic commit", async () => {
+  const doc = migrateProfile({ skills: "" }, "uncertain-save")
+  const next = editProfile(doc, {
+    type: "field",
+    ownerId: doc.id,
+    field: "skills",
+    value: "TypeScript",
+  })
+  const s = storage({ [PROFILE_KEY]: JSON.stringify(doc) })
+  const lateFailure = async (operation) => {
+    await operation()
+    throw new Error("Lock feedback lost after commit")
+  }
+  await saveProfile(s, doc, next, lateFailure)
+  assert.deepEqual(await openProfile(s, lock), next)
+  await assert.rejects(saveProfile(s, doc, next, lock), { code: "stale" })
+})
+
+test("Apply provenance and selected owners cannot bypass snapshot or destination validation", () => {
+  const doc = migrateProfile(
+    {
+      skills: "",
+      projects: [
+        {
+          id: "p1",
+          name: "Atlas",
+          description: "",
+          technologies: "",
+          url: "",
+          highlights: "",
+        },
+      ],
+    },
+    "handoff-validation",
+  )
+  const base = ingestionResult([ingestionClaim("c1", "I use TypeScript.")], [
+    ingestionOp(),
+  ])
+  const metadata = {
+    version: 1,
+    requestId: "a1",
+    language: "pt-BR",
+    profile: { profileId: doc.id, id: doc.id, revision: doc.revision },
+  }
+  for (const patch of [
+    { ...metadata, origin: "trusted" },
+    { ...metadata, profile: { ...metadata.profile, revision: 99 } },
+    {
+      ...metadata,
+      target: { profileId: doc.id, id: doc.entities[0].id, revision: 1 },
+    },
+  ]) {
+    assert.throws(
+      () =>
+        applyIngestionDocument(doc, doc, "I use TypeScript.", {
+          ...base,
+          applyAnswer: patch,
+        }),
+      { code: "invalid_output" },
+    )
+  }
+  assert.deepEqual(doc.evidence, [])
+})

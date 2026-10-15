@@ -1,3 +1,6 @@
+import ApplyProfileEnrichment, {
+  type ApplyAnswer,
+} from "../components/ApplyProfileEnrichment"
 import {
   qualificationProjection,
   hasQualificationEvidence,
@@ -25,6 +28,7 @@ import {
 import { ConfirmedQualification, Page, ProfileGap } from "../lib/types"
 
 interface Props {
+  enrichmentActive: boolean
   active: boolean
   setPage: (p: Page) => void
 }
@@ -105,8 +109,10 @@ function StatusRow({
   )
 }
 
-export default function HomePage({ setPage, active }: Props) {
+export default function HomePage({ setPage, active, enrichmentActive }: Props) {
   const { state, dispatch, profileDocument } = useStore()
+  const [enrichmentAnswers, setEnrichmentAnswers] = useState<ApplyAnswer[]>([])
+  const [enrichmentBusy, setEnrichmentBusy] = useState(false)
   const [requirementMatches, setRequirementMatches] =
     useState<RequirementMatch[]>([])
   const { t } = useI18n()
@@ -253,7 +259,8 @@ export default function HomePage({ setPage, active }: Props) {
     !!state.apiKey &&
     !!state.typesafeKey.trim() &&
     jobPosting.trim() !== revisionRequiredFor?.text &&
-    !state.isGenerating
+    !state.isGenerating &&
+    !enrichmentBusy
 
   async function handleGenerate(discardAnalysis = false) {
     if (!canGenerate) return
@@ -314,7 +321,33 @@ export default function HomePage({ setPage, active }: Props) {
   }
 
   async function generateFromGapPrompt(useConfirmedQualifications: boolean) {
-    if (state.isGenerating || !jobContext) return
+    if (state.isGenerating || enrichmentBusy || !jobContext) return
+    setEnrichmentAnswers((prior) => {
+      const fresh = profileGaps.flatMap((gap, index) =>
+        gapNotes[index]?.trim()
+          ? [
+              {
+                id: crypto.randomUUID(),
+                text: gapNotes[index],
+                requirement: gap.requirement,
+                language: state.uiLocale,
+              },
+            ]
+          : [],
+      )
+      return [
+        ...prior,
+        ...fresh.filter(
+          (a) =>
+            !prior.some(
+              (p) =>
+                p.text === a.text &&
+                p.requirement === a.requirement &&
+                p.language === a.language,
+            ),
+        ),
+      ]
+    })
 
     const confirmedQualifications: ConfirmedQualification[] =
       useConfirmedQualifications
@@ -384,9 +417,7 @@ export default function HomePage({ setPage, active }: Props) {
   }
 
   // Keep the session hooks mounted across navigation, without inactive controls.
-  if (!active) return null
-
-  return (
+  const applyContent = (
     <div className="max-w-6xl mx-auto px-6 py-14">
       {/* Header */}
       <div className="mb-12">
@@ -492,7 +523,9 @@ export default function HomePage({ setPage, active }: Props) {
             }}
           >
             <span>
-              {t("home.characterCount", { count: jobPosting.trim().length })}
+              {t("home.characterCount", {
+                count: jobPosting.trim().length,
+              })}
             </span>
             {jobPosting && (
               <button
@@ -950,5 +983,16 @@ export default function HomePage({ setPage, active }: Props) {
         </div>
       )}
     </div>
+  )
+  return (
+    <>
+      {active && applyContent}
+      <ApplyProfileEnrichment
+        answers={enrichmentAnswers}
+        visible={active || enrichmentActive}
+        generationActive={state.isGenerating}
+        onBusyChange={setEnrichmentBusy}
+      />
+    </>
   )
 }

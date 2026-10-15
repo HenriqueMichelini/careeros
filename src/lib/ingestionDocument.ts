@@ -210,7 +210,10 @@ export function applyIngestionDocument(
         ]) {
           const excerpt = source.source
           const identity = JSON.stringify([
-            source.origin ?? "professional_information",
+            source.origin ??
+              (result.applyAnswer
+                ? "apply_answer"
+                : "professional_information"),
             excerpt,
           ])
           if (retained.has(identity)) continue
@@ -219,7 +222,11 @@ export function applyIngestionDocument(
             id: crypto.randomUUID(),
             revision: 1,
             excerpt,
-            origin: source.origin ?? "professional_information",
+            origin:
+              source.origin ??
+              (result.applyAnswer
+                ? "apply_answer"
+                : "professional_information"),
             approval: "approved" as const,
           }
           next.evidence.push(evidence)
@@ -387,7 +394,8 @@ export function applyIngestionDocument(
         // Do not persist source IDs derived from the full paste; the retained
         // excerpt itself and its accepted origin are sufficient for inspection.
         const identity = JSON.stringify([
-          source.origin ?? "professional_information",
+          source.origin ??
+            (result.applyAnswer ? "apply_answer" : "professional_information"),
           source.source,
         ])
         if (evidenceIdentities.has(identity)) continue
@@ -397,7 +405,9 @@ export function applyIngestionDocument(
           id: crypto.randomUUID(),
           revision: 1,
           excerpt: source.source,
-          origin: source.origin ?? "professional_information",
+          origin:
+            source.origin ??
+            (result.applyAnswer ? "apply_answer" : "professional_information"),
           approval: "approved" as const,
         }
         next.evidence.push(evidence)

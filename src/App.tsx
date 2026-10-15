@@ -17,7 +17,11 @@ function AppInner() {
       {page === "repository" && <RepositoryPage />}
       {page === "cv" && <CvPage />}
       {page === "results" && <ResultsPage setPage={setPage} />}
-      <HomePage setPage={setPage} active={page === "home"} />
+      <HomePage
+        setPage={setPage}
+        active={page === "home"}
+        enrichmentActive={page === "results"}
+      />
     </Layout>
   )
 }
