@@ -86,30 +86,13 @@ func SummarizeDispatches(ledger []Dispatch, rates []semanticeval.Rate) (UsageSum
 		if len(r.Origins) > 1 {
 			return r, fmt.Errorf("different evidence origins require separate usage cohorts")
 		}
-		call := dispatch.Call
-		inconsistent := false
-		for _, issue := range usageIssues(call) {
-			inconsistent = inconsistent || strings.Contains(issue, "exceeds") || strings.Contains(issue, "invalid")
-		}
-		if inconsistent {
+		validation := validateUsage(dispatch.Call)
+		call := validation.Clean
+		if validation.Inconsistent {
 			r.InconsistentCalls++
-			// Retain raw usage in Dispatch; exclude inconsistent components from
-			// derived sums and prevent pricing a contradictory observation.
+			// Raw components remain in Dispatch; contradictory observations
+			// cannot be priced even when some components remain valid.
 			call.Provider = ""
-			for _, component := range []**int64{&call.InputTokens, &call.OutputTokens, &call.CachedTokens, &call.CacheWriteTokens, &call.ReasoningTokens} {
-				if *component != nil && **component < 0 {
-					*component = nil
-				}
-			}
-			if call.InputTokens != nil && call.CachedTokens != nil && *call.CachedTokens > *call.InputTokens {
-				call.CachedTokens = nil
-			}
-			if call.OutputTokens != nil && call.ReasoningTokens != nil && *call.ReasoningTokens > *call.OutputTokens {
-				call.ReasoningTokens = nil
-			}
-			if call.InputTokens != nil && call.CachedTokens != nil && call.CacheWriteTokens != nil && *call.CacheWriteTokens > *call.InputTokens-*call.CachedTokens {
-				call.CacheWriteTokens = nil
-			}
 		}
 		calls = append(calls, call)
 	}
@@ -174,7 +157,7 @@ func DispatchLedger(imported ImportResult) []Dispatch {
 			}
 		}
 		for i, call := range calls {
-			result = append(result, Dispatch{Identity: fmt.Sprintf("%s:dispatch:%d", c.Identity, i), CaseIdentity: c.Identity, Origin: caseOrigin, Call: call, UnavailableReasons: usageIssues(call)})
+			result = append(result, Dispatch{Identity: fmt.Sprintf("%s:dispatch:%d", c.Identity, i), CaseIdentity: c.Identity, Origin: caseOrigin, Call: call, UnavailableReasons: validateUsage(call).Reasons})
 		}
 	}
 	return result
@@ -191,28 +174,46 @@ func flattenedCalls(run semanticeval.RunResult) []semanticeval.Call {
 	return calls
 }
 
-func usageIssues(call semanticeval.Call) []string {
-	issues := []string{}
+type usageValidation struct {
+	Clean        semanticeval.Call
+	Inconsistent bool
+	Reasons      []string
+}
+
+func validateUsage(original semanticeval.Call) usageValidation {
+	r := usageValidation{Clean: original, Reasons: []string{}}
+	invalid := func(reason string, component **int64) {
+		r.Inconsistent = true
+		r.Reasons = append(r.Reasons, reason)
+		*component = nil
+	}
 	for _, component := range []struct {
 		name  string
-		value *int64
+		value **int64
 	}{
-		{"input", call.InputTokens}, {"output", call.OutputTokens}, {"cached", call.CachedTokens}, {"cache-write", call.CacheWriteTokens}, {"reasoning", call.ReasoningTokens},
+		{"input", &r.Clean.InputTokens}, {"output", &r.Clean.OutputTokens}, {"cached", &r.Clean.CachedTokens}, {"cache-write", &r.Clean.CacheWriteTokens}, {"reasoning", &r.Clean.ReasoningTokens},
 	} {
-		if component.value == nil {
-			issues = append(issues, component.name+": unavailable")
-		} else if *component.value < 0 {
-			issues = append(issues, component.name+": invalid negative usage")
+		if *component.value == nil {
+			r.Reasons = append(r.Reasons, component.name+": unavailable")
+		} else if **component.value < 0 {
+			invalid(component.name+": invalid negative usage", component.value)
 		}
 	}
-	if call.CachedTokens != nil && call.InputTokens != nil && *call.CachedTokens > *call.InputTokens {
-		issues = append(issues, "cached exceeds input")
+	c := &r.Clean
+	if c.CachedTokens != nil && c.InputTokens != nil && *c.CachedTokens > *c.InputTokens {
+		invalid("cached exceeds input", &c.CachedTokens)
 	}
-	if call.ReasoningTokens != nil && call.OutputTokens != nil && *call.ReasoningTokens > *call.OutputTokens {
-		issues = append(issues, "reasoning exceeds output")
+	if c.ReasoningTokens != nil && c.OutputTokens != nil && *c.ReasoningTokens > *c.OutputTokens {
+		invalid("reasoning exceeds output", &c.ReasoningTokens)
 	}
-	if call.CacheWriteTokens != nil && call.InputTokens != nil && call.CachedTokens != nil && *call.CacheWriteTokens > *call.InputTokens-*call.CachedTokens {
-		issues = append(issues, "cache-write exceeds remaining input")
+	if c.CacheWriteTokens != nil && c.InputTokens != nil {
+		available := *c.InputTokens
+		if c.CachedTokens != nil {
+			available -= *c.CachedTokens
+		}
+		if *c.CacheWriteTokens > available {
+			invalid("cache-write exceeds available input", &c.CacheWriteTokens)
+		}
 	}
-	return issues
+	return r
 }

@@ -58,6 +58,18 @@ func TestAcceptedCostRequiresNamedEvidenceAndChargesAllCohortCalls(t *testing.T)
 	}
 }
 
+func TestCacheWriteCannotExceedInputWhenCachedReadsAreUnavailable(t *testing.T) {
+	input := int64(10)
+	write := int64(20)
+	r, err := lab.SummarizeDispatches([]lab.Dispatch{{Identity: "partial", Origin: "provider-observed", Call: semanticeval.Call{InputTokens: &input, CacheWriteTokens: &write}}}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r.InconsistentCalls != 1 || r.CacheWrite.Total != nil || r.CacheWrite.Missing != 1 || r.TotalUSD != nil {
+		t.Fatalf("invalid partial subset retained: %+v", r)
+	}
+}
+
 func TestDispatchLedgerCountsFlattenedSettingsCallsOnceAndLabelsSimulation(t *testing.T) {
 	raw, err := os.ReadFile("../../docs/evaluations/workflow-settings/controlled.v1.json")
 	if err != nil {
