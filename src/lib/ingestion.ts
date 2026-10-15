@@ -102,7 +102,59 @@ export interface IngestionContinuation {
   planComplete: boolean
   processed: boolean
 }
+export interface ApplyAnswerReview {
+  version: 1
+  requestId: string
+  language: "en" | "pt-BR"
+  profile: ProfileRef
+  target?: ProfileRef
+}
+
+export function validApplyAnswerReview(
+  value: unknown,
+  document?: ProfileDocument,
+): value is ApplyAnswerReview {
+  if (
+    !record(value) ||
+    !keys(
+      Object.fromEntries(Object.entries(value).filter(([k]) => k !== "target")),
+      ["version", "requestId", "language", "profile"],
+    ) ||
+    value.version !== 1 ||
+    !string(value.requestId, 100) ||
+    !value.requestId.trim() ||
+    !["en", "pt-BR"].includes(String(value.language)) ||
+    !document
+  )
+    return false
+  const validRef = (ref: unknown): ref is ProfileRef =>
+    record(ref) &&
+    keys(ref, ["profileId", "id", "revision"]) &&
+    ref.profileId === document.id &&
+    typeof ref.id === "string" &&
+    Number.isSafeInteger(ref.revision) &&
+    Number(ref.revision) > 0
+  if (
+    !validRef(value.profile) ||
+    value.profile.id !== document.id ||
+    value.profile.revision !== document.revision
+  )
+    return false
+  const target = value.target
+  return (
+    target === undefined ||
+    (validRef(target) &&
+      document.entities.some(
+        (e) =>
+          e.id === target.id &&
+          e.revision === target.revision &&
+          ["projects", "experience"].includes(e.kind),
+      ))
+  )
+}
+
 export interface IngestionResult {
+  applyAnswer?: ApplyAnswerReview
   continuation?: IngestionContinuation
 
   outcomes?: IngestionOutcome[]
@@ -378,9 +430,13 @@ export function validateIngestionResult(
       Object.fromEntries(
         Object.entries(raw).filter(
           ([key]) =>
-            !["outcomes", "coverage", "skippedClaims", "continuation"].includes(
-              key,
-            ),
+            ![
+              "outcomes",
+              "coverage",
+              "skippedClaims",
+              "continuation",
+              "applyAnswer",
+            ].includes(key),
         ),
       ),
       [
@@ -590,9 +646,39 @@ export function validateIngestionResult(
     )
       throw new IngestionError("invalid_output")
   }
+  if (raw.applyAnswer !== undefined) {
+    if (
+      !validApplyAnswerReview(raw.applyAnswer, document) ||
+      ingestionInputBytes(input) > 8000
+    )
+      throw new IngestionError("invalid_output")
+    const target = raw.applyAnswer.target
+    if (target) {
+      const owner = document!.entities.find((e) => e.id === target.id)!
+      if (
+        operations.some(
+          (op) =>
+            op.target !== owner.kind ||
+            op.entryId !== owner.legacyId ||
+            (op.supportingClaimIds ?? [op.claimId]).some(
+              (id) =>
+                !selectedIngestionOwnerSupports(
+                  claims.find((c) => c.id === id)!,
+                  document!,
+                  target,
+                ),
+            ),
+        )
+      )
+        throw new IngestionError("invalid_output")
+    }
+  }
   const ledger = validateOutcomeLedger(raw, claims, operations, input, document)
   return {
     ...ledger,
+    ...(raw.applyAnswer
+      ? { applyAnswer: raw.applyAnswer as unknown as ApplyAnswerReview }
+      : {}),
     claims,
     operations,
     unverifiedClaimCount: raw.unverifiedClaimCount as number,
@@ -735,6 +821,7 @@ function validateOutcomeLedger(
               claims.find((c) => c.id === item.claimId)!,
               document.facts.find((f) => f.id === ref.id)!,
               document,
+              (raw.applyAnswer as ApplyAnswerReview | undefined)?.target,
             ),
         ))
     )
@@ -839,11 +926,46 @@ export function ingestionIdentityFacts(
 }
 
 // Only exact wording and the pinned alias policy can establish equivalence.
+function selectedIngestionOwnerSupports(
+  claim: IngestionClaim,
+  doc: ProfileDocument,
+  target: ProfileRef,
+): boolean {
+  const owner = doc.entities.find(
+    (e) => e.id === target.id && e.revision === target.revision,
+  )
+  if (!owner) return false
+  const source = [
+    claim.source,
+    ...(claim.supportingSources ?? []).map((s) => s.source),
+  ].join("\n")
+  const identity = doc.facts.filter(
+    (f) =>
+      f.owner.id === owner.id &&
+      ["company", "title", "startDate", "endDate", "name"].includes(f.field) &&
+      !!f.value,
+  )
+  if (
+    identity.length &&
+    identity.every((f) => source.includes(String(f.value)))
+  )
+    return true
+  return (
+    /^\s*(?:I\b|Eu\b|Usei\b|Uso\b|Não\b|Our team\b|Nossa equipe\b)/i.test(
+      claim.source,
+    ) &&
+    !/\b(?:at|for|in|from|as|em|na|no|nas|nos|como|de|project|projeto|company|empresa|role|cargo|employer|empregador)\b/i.test(
+      source,
+    )
+  )
+}
+
 // A generated summary never establishes the meaning of its original source.
 function exactIngestionFact(
   claim: IngestionClaim,
   fact: ProfileFact,
   doc: ProfileDocument,
+  selectedOwner?: ProfileRef,
 ): boolean {
   const aliases: Record<string, string> = {
     Javascript: "JavaScript",
@@ -914,13 +1036,28 @@ function exactIngestionFact(
       claim.source,
       ...(claim.supportingSources ?? []).map((s) => s.source),
     ].join("\n")
+    const selected =
+      selectedOwner?.id === fact.owner.id &&
+      doc.entities.some(
+        (e) =>
+          e.id === selectedOwner.id && e.revision === selectedOwner.revision,
+      )
     if (
-      !identity.length ||
-      identity.some((f) => !source.includes(String(f.value)))
+      !selected &&
+      (!identity.length ||
+        identity.some((f) => !source.includes(String(f.value))))
     )
+      return false
+    if (selected && !selectedIngestionOwnerSupports(claim, doc, selectedOwner!))
       return false
   }
   return true
+}
+
+function sameProfileRef(a?: ProfileRef, b?: ProfileRef): boolean {
+  return !a || !b
+    ? a === b
+    : a.profileId === b.profileId && a.id === b.id && a.revision === b.revision
 }
 
 function sameSourceReference(
@@ -947,11 +1084,19 @@ export async function ingestProfile(
     claim: IngestionClaim
     answer: string
   },
+  applyAnswer?: ApplyAnswerReview,
 ): Promise<IngestionResult> {
   if (
     !input.trim() ||
     ingestionInputBytes(input) > ingestionMaxBytes ||
     !validProfile(profile)
+  )
+    throw new IngestionError("input")
+  if (
+    applyAnswer &&
+    (!validApplyAnswerReview(applyAnswer, document) ||
+      ingestionInputBytes(input) > 8000 ||
+      portion)
   )
     throw new IngestionError("input")
   let response: Response
@@ -967,6 +1112,7 @@ export async function ingestProfile(
         input,
         profile: withContactFields(profile),
         ...(document ? { document } : {}),
+        ...(applyAnswer ? { applyAnswer } : {}),
         ...(portion ? { portion } : {}),
         ...(clarification ? { clarification } : {}),
       }),
@@ -1015,6 +1161,16 @@ export async function ingestProfile(
   const { decision: _decision, ...proposals } = raw
   if (!("outcomes" in proposals)) throw new IngestionError("invalid_output")
   const result = validateIngestionResult(proposals, input, profile, document)
+  if (
+    !!result.applyAnswer !== !!applyAnswer ||
+    (applyAnswer &&
+      (!result.applyAnswer ||
+        result.applyAnswer.requestId !== applyAnswer.requestId ||
+        result.applyAnswer.language !== applyAnswer.language ||
+        !sameProfileRef(result.applyAnswer.profile, applyAnswer.profile) ||
+        !sameProfileRef(result.applyAnswer.target, applyAnswer.target)))
+  )
+    throw new IngestionError("invalid_output")
   if (clarification) {
     const c = result.claims[0]
     const allowed = [...(clarification.claim.supportingSources ?? [])]

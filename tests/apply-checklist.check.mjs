@@ -1,3 +1,4 @@
+import { enrichmentScenarios } from "./apply-enrichment-browser.scenarios.mjs"
 import { reviewedDraftFixture } from "./reviewed-resume-fixture.mjs"
 import { jobContextFixture } from "./job-context-fixtures.mjs"
 import { savedProfileExpression } from "./profile-browser-storage.mjs"
@@ -204,6 +205,7 @@ try {
       "Array.from(document.querySelectorAll('[data-checklist-state]')).map(el => el.dataset.checklistState)",
     )
   const fill = async (text) => {
+    await until("!!document.querySelector('main textarea')")
     await evaluate(
       `(() => { const el = document.querySelector('main textarea'); Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(el, ${JSON.stringify(text)}); el.dispatchEvent(new Event('input', { bubbles: true })); })()`,
     )
@@ -1229,6 +1231,34 @@ try {
           )
         }
       }
+      for (const mode of [
+        "success",
+        "decline",
+        "quota",
+        "cross-tab",
+        "success-draft",
+      ])
+        await enrichmentScenarios({
+          evaluate,
+          until,
+          pause,
+          clickApply,
+          fill,
+          generate,
+          respond,
+          repo,
+          locale,
+          mode,
+          materials,
+        })
+      const enrichmentShot = await call("Page.captureScreenshot", {
+        format: "png",
+        captureBeyondViewport: true,
+      })
+      writeFileSync(
+        join(work, `apply-enrichment-${locale}-${width}.png`),
+        Buffer.from(enrichmentShot.data, "base64"),
+      )
       console.log(`PASS Apply controlled workflow ${locale} ${width}px`)
     }
   }

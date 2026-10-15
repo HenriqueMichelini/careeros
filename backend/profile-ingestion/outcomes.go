@@ -39,6 +39,7 @@ type comparisonFact struct {
 	Evidence  []profiledocument.Evidence `json:"acceptedEvidence"`
 }
 type reconciliationContext struct {
+	applyTarget           *profiledocument.Entity
 	extractionInstruction string
 	comparisonInstruction string
 	view                  *preprocessing.View
@@ -234,7 +235,7 @@ func exactClaimValue(c claim) string {
 	}
 	return exactAlias(strings.TrimSpace(c.Source))
 }
-func exactFact(c claim, f comparisonFact) bool {
+func exactFact(c claim, f comparisonFact, l *reconciliationContext) bool {
 	var value string
 	if json.Unmarshal(f.Fact.Value, &value) != nil {
 		return false
@@ -265,7 +266,7 @@ func exactFact(c claim, f comparisonFact) bool {
 		return false
 	}
 	if f.Fact.Owner.ID != f.Reference.ProfileID || len(f.Fact.Context) > 0 {
-		if !identitySupported(c, f.Identity) {
+		if !identitySupported(c, f.Identity) && !selectedOwnerSupports(c, f.Fact.Owner.ID, l) {
 			return false
 		}
 	}
@@ -322,7 +323,7 @@ func reconcileOutcomes(claims []claim, ops []operation, unresolved []string, l *
 			for _, r := range o.RelatedFacts {
 				match := false
 				for _, f := range l.candidates {
-					if f.Reference == r && exactFact(c, f) {
+					if f.Reference == r && exactFact(c, f, l) {
 						match = true
 					}
 				}
@@ -337,7 +338,7 @@ func reconcileOutcomes(claims []claim, ops []operation, unresolved []string, l *
 		}
 		if contains([]string{"change", "overlap"}, o.Kind) {
 			for _, f := range l.candidates {
-				if exactFact(c, f) {
+				if exactFact(c, f, l) {
 					o.Kind, o.Reason = "exact_duplicate", "verified_exact_alias_or_wording"
 					o.RelatedFacts = []profiledocument.Reference{f.Reference}
 					break
@@ -347,7 +348,7 @@ func reconcileOutcomes(claims []claim, ops []operation, unresolved []string, l *
 		// Only verified exact matches can establish already represented without a patch.
 		if o.Kind == "unresolved" && !l.rejected[c.ID] && len(l.proposed) == 0 {
 			for _, f := range l.candidates {
-				if exactFact(c, f) {
+				if exactFact(c, f, l) {
 					o.Kind, o.Reason = "exact_duplicate", "verified_exact_alias_or_wording"
 					o.RelatedFacts = append(o.RelatedFacts, f.Reference)
 				}
@@ -515,6 +516,14 @@ func safeOwner(op operation, claims []claim, l *reconciliationContext) bool {
 		if e.Kind != op.Target || e.LegacyID != op.EntryID {
 			continue
 		}
+		if l.applyTarget != nil && l.applyTarget.ID == e.ID {
+			for _, c := range claims {
+				if (c.ID == op.ClaimID || contains(op.SupportingClaimIDs, c.ID)) && !selectedOwnerSupports(c, e.ID, l) {
+					return false
+				}
+			}
+			return true
+		}
 		identities := []string{}
 		for _, f := range l.document.Facts {
 			if f.Owner.ID == e.ID && identityField(f.Field) && f.Field != "current" {
@@ -548,7 +557,7 @@ func identityOccurrence(source, value string, identities []string) bool {
 		beforeRaw, afterRaw := source[:at[0]], source[at[1]:]
 		before, after := strings.TrimSpace(beforeRaw), strings.TrimSpace(afterRaw)
 		left := before == "" || regexp.MustCompile(`[,;:\n\r()—–]\s*$`).MatchString(beforeRaw) || regexp.MustCompile(`(?i)\b(?:at|for|as|from|in|em|na|no|como|de|company|empresa|project|projeto)$`).MatchString(before)
-		right := after == "" || regexp.MustCompile(`^\s*[,;:\n\r()—–]`).MatchString(afterRaw) || regexp.MustCompile(`(?i)^(?:as|in|from|between|since|em|como|de|entre|desde)\b`).MatchString(after)
+		right := after == "" || regexp.MustCompile(`^\s*(?:[,;:\n\r()—–]|\.(?:\s|$))`).MatchString(afterRaw) || regexp.MustCompile(`(?i)^(?:as|in|from|between|since|around|approximately|about|em|como|de|entre|desde|por|durante)\b`).MatchString(after)
 		for _, other := range identities {
 			if other == value {
 				continue

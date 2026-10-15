@@ -81,19 +81,35 @@ export async function saveProfile(
   candidate: ProfileDocument,
   lock: ProfileLock = browserProfileLock,
 ): Promise<void> {
-  await lock(() =>
-    guarded(() => {
-      if (
-        !validateProfileDocument(expected) ||
-        !validateProfileDocument(candidate) ||
-        candidate.id !== expected.id ||
-        candidate.revision !== expected.revision + 1
-      )
-        throw new ProfileStorageError("validation")
-      const current = readProfile(storage)
-      if (JSON.stringify(current) !== JSON.stringify(expected))
-        throw new ProfileStorageError("stale")
-      storage.setItem(PROFILE_KEY, JSON.stringify(candidate))
-    }),
-  )
+  let commitAttempted = false
+  try {
+    await lock(() =>
+      guarded(() => {
+        if (
+          !validateProfileDocument(expected) ||
+          !validateProfileDocument(candidate) ||
+          candidate.id !== expected.id ||
+          candidate.revision !== expected.revision + 1
+        )
+          throw new ProfileStorageError("validation")
+        const current = readProfile(storage)
+        if (JSON.stringify(current) !== JSON.stringify(expected))
+          throw new ProfileStorageError("stale")
+        commitAttempted = true
+        storage.setItem(PROFILE_KEY, JSON.stringify(candidate))
+      }),
+    )
+  } catch (error) {
+    // A lock can fail to deliver feedback after setItem committed atomically.
+    // Read authority before suggesting another review; never repeat the write.
+    if (commitAttempted) {
+      try {
+        if (JSON.stringify(readProfile(storage)) === JSON.stringify(candidate))
+          return
+      } catch {
+        /* Preserve the original failure and recovery state. */
+      }
+    }
+    throw error
+  }
 }

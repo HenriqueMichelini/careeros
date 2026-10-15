@@ -7,6 +7,35 @@ export type TranslationValue = string | number
 
 const messages = {
   en: {
+    "enrichment.savedAnswer": "Accepted application answer",
+    "enrichment.hide": "Hide saved answer",
+    "enrichment.proposed": "Proposed operation",
+    "enrichment.dependencies":
+      "Select the related identity and supporting operations together, or review again. The selected changes cannot yet form a complete Profile update.",
+    "enrichment.title": "Review application answers for your Profile",
+    "enrichment.disclosure":
+      "Optional: send this answer and your current Profile to CareerOS for review. TypeSafe classifies the answer; OpenAI receives professional text and relevant comparison context using your keys, which may use credits. Review does not save. Only selected changes and accepted excerpts are saved locally.",
+    "enrichment.continuity":
+      "Your application and its original sources stay unchanged. Analyze again deliberately to use a saved Profile update. Saving alone does not guarantee fewer questions.",
+    "enrichment.answer":
+      "Your professional answer (edit and review again if needed)",
+    "enrichment.owner": "Existing project or role (optional context)",
+    "enrichment.noOwner": "Resolve from my answer; ask if ambiguous",
+    "enrichment.review": "Review this answer for Profile",
+    "enrichment.save": "Save selected changes to Profile",
+    "enrichment.saved":
+      "Saved to Profile. Your original application stays available.",
+    "enrichment.failed":
+      "Not saved. Your answer and application are retained. Check Profile recovery feedback and deliberately review again before retrying.",
+    "enrichment.reload":
+      "Profile storage changed or is unavailable. Refresh the saved Profile using the recovery action above; your answer stays here. Then review again. No automatic retry.",
+    "enrichment.dismiss": "Keep application-only",
+    "enrichment.cancel": "Cancel review",
+    "enrichment.newOwner": "New entry — review its identity",
+    "enrichment.profile": "Profile",
+    "enrichment.inspect":
+      "Inspect approved excerpts and correct or remove specific facts in Profile. There is no transaction undo.",
+
     ...qualificationMessages.en,
     "profile.facts.context": "Context",
     "profile.facts.removeContext": "Remove context",
@@ -876,6 +905,36 @@ const messages = {
       "This cover letter exceeds one A4 page. Generate a shorter draft before saving it as PDF.",
   },
   "pt-BR": {
+    "enrichment.savedAnswer": "Resposta aceita da candidatura",
+    "enrichment.hide": "Ocultar resposta salva",
+    "enrichment.proposed": "Operação proposta",
+    "enrichment.dependencies":
+      "Selecione juntas as operações de identidade e suporte relacionadas, ou revise novamente. As alterações selecionadas ainda não formam uma atualização completa do Perfil.",
+    "enrichment.title": "Revisar respostas da candidatura para o Perfil",
+    "enrichment.disclosure":
+      "Opcional: envie esta resposta e seu Perfil atual ao CareerOS para revisão. O TypeSafe classifica a resposta; a OpenAI recebe texto profissional e contexto relevante de comparação usando suas chaves, o que pode consumir créditos. Revisar não salva. Somente alterações selecionadas e trechos aceitos são salvos localmente.",
+    "enrichment.continuity":
+      "Sua candidatura e suas fontes originais permanecem iguais. Analise novamente de forma deliberada para usar o Perfil atualizado. Salvar não garante menos perguntas.",
+    "enrichment.answer":
+      "Sua resposta profissional (edite e revise novamente se necessário)",
+    "enrichment.owner": "Projeto ou experiência existente (contexto opcional)",
+    "enrichment.noOwner":
+      "Resolver pela minha resposta; perguntar se houver ambiguidade",
+    "enrichment.review": "Revisar esta resposta para o Perfil",
+    "enrichment.save": "Salvar alterações selecionadas no Perfil",
+    "enrichment.saved":
+      "Salvo no Perfil. Sua candidatura original continua disponível.",
+    "enrichment.failed":
+      "Não foi salvo. Sua resposta e candidatura foram preservadas. Verifique a recuperação do Perfil e revise novamente antes de tentar salvar.",
+    "enrichment.reload":
+      "O armazenamento do Perfil mudou ou está indisponível. Atualize o Perfil salvo pela ação de recuperação acima; sua resposta permanece aqui. Depois revise novamente. Sem tentativa automática.",
+    "enrichment.dismiss": "Manter somente na candidatura",
+    "enrichment.cancel": "Cancelar revisão",
+    "enrichment.newOwner": "Novo item — revise sua identidade",
+    "enrichment.profile": "Perfil",
+    "enrichment.inspect":
+      "Inspecione os trechos aceitos e corrija ou remova fatos específicos no Perfil. Não há desfazer da transação.",
+
     ...qualificationMessages["pt-BR"],
     "profile.facts.context": "Contexto",
     "profile.facts.removeContext": "Remover contexto",

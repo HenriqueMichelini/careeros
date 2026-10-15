@@ -25,6 +25,7 @@ const maxBody = 160 << 10
 const timeout = 24 * time.Second
 
 type request struct {
+	ApplyAnswer   *applyAnswerRequest       `json:"applyAnswer,omitempty"`
 	Clarification *clarificationRequest     `json:"clarification,omitempty"`
 	Portion       *portionRequest           `json:"portion,omitempty"`
 	Document      json.RawMessage           `json:"document,omitempty"`
@@ -75,6 +76,7 @@ type proposal struct {
 	Operations []operation    `json:"operations"`
 }
 type result struct {
+	ApplyAnswer            *applyAnswerRequest      `json:"applyAnswer,omitempty"`
 	Continuation           *continuationProgress    `json:"continuation,omitempty"`
 	SkippedClaims          []skippedClaim           `json:"skippedClaims"`
 	Outcomes               []claimOutcome           `json:"outcomes"`
@@ -139,7 +141,7 @@ func (a app) ingest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var shape map[string]json.RawMessage
-	if json.Unmarshal(raw, &shape) != nil || (len(shape) < 2 || len(shape) > 5) || shape["input"] == nil || shape["profile"] == nil {
+	if json.Unmarshal(raw, &shape) != nil || (len(shape) < 2 || len(shape) > 6) || shape["input"] == nil || shape["profile"] == nil {
 		fail(400, "input")
 		return
 	}
@@ -162,6 +164,10 @@ func (a app) ingest(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		ledger.document = &doc
+	}
+	if !prepareApplyAnswer(in, ledger) {
+		fail(400, "input")
+		return
 	}
 	prepared, err := preprocessing.PrepareBoundedWithContext(r.Context(), in.Input, fieldvalidation.ProfessionalInformation)
 	if err != nil {
@@ -229,11 +235,15 @@ func (a app) ingest(w http.ResponseWriter, r *http.Request) {
 		fail(codeStatus(code), code)
 		return
 	}
+	if !applyOperationsWithinTarget(in.ApplyAnswer, ledger.document, ops) {
+		fail(502, "invalid_output")
+		return
+	}
 	if progress != nil {
 		progress.Processed = unverifiedCount == 0 && len(claims) < 30 && len(ops) < 60 && unplacedCount == 0
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	_ = json.NewEncoder(w).Encode(result{Continuation: progress, Outcomes: ledger.outcomes, Coverage: coverageFor(len(claims), unverifiedCount), SkippedClaims: ledger.skipped, Decision: decision, Claims: claims, Operations: ops, UnverifiedClaimCount: unverifiedCount, UnresolvedClaimIds: unresolvedIDs, UnplacedOperationCount: unplacedCount})
+	_ = json.NewEncoder(w).Encode(result{ApplyAnswer: in.ApplyAnswer, Continuation: progress, Outcomes: ledger.outcomes, Coverage: coverageFor(len(claims), unverifiedCount), SkippedClaims: ledger.skipped, Decision: decision, Claims: claims, Operations: ops, UnverifiedClaimCount: unverifiedCount, UnresolvedClaimIds: unresolvedIDs, UnplacedOperationCount: unplacedCount})
 }
 
 func validInput(in request) bool {
@@ -369,7 +379,7 @@ func exactArray(raw []byte, name string) bool {
 	return ok && strings.HasPrefix(strings.TrimSpace(string(item)), "[")
 }
 func (a app) extract(ctx context.Context, key string, source preprocessing.Source, contexts ...*reconciliationContext) (res []claim, skippedCount int, codeResult string) {
-	ctx, finish := aidiagnostics.Start(ctx, "extraction", "profile-claims-prompt-v5/schema-v2/source-resolution-v1/portions-v1/clarifications-v1")
+	ctx, finish := aidiagnostics.Start(ctx, "extraction", "profile-claims-prompt-v6/schema-v2/source-resolution-v1/portions-v1/clarifications-v1/apply-answer-v1")
 	defer func() { finish(codeResult) }()
 	reject := func(reason string) ([]claim, int, string) {
 		log.Printf("profile_ingestion stage=extract reason=%s", reason)
@@ -681,7 +691,7 @@ func mentionsURL(s string) bool {
 	return strings.Contains(s, "http") || strings.Contains(s, "www.") || strings.Contains(s, "url") || strings.Contains(s, "github.com")
 }
 func (a app) compare(ctx context.Context, key string, claims []claim, p profilevalidation.Profile, contexts ...*reconciliationContext) (res []operation, unresolved []string, unplacedCount int, codeResult string) {
-	ctx, finish := aidiagnostics.Start(ctx, "reconciliation", "profile-operations-prompt-v4/schema-v3/dispositions-v1/clarifications-v1")
+	ctx, finish := aidiagnostics.Start(ctx, "reconciliation", "profile-operations-prompt-v5/schema-v3/dispositions-v1/clarifications-v1/apply-answer-v1")
 	defer func() { finish(codeResult) }()
 	ledger := &reconciliationContext{}
 	if len(contexts) > 0 {
