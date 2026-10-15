@@ -169,6 +169,52 @@ export async function enrichmentScenarios({
       0,
       "No automatic provider retry on storage failure/stale update",
     )
+    await evaluate("document.querySelector('[data-profile-refresh]').click()")
+    await until("!document.querySelector('[data-profile-refresh]')")
+    assert.equal(
+      await evaluate(
+        "document.querySelector('[data-enrichment-answer]').value",
+      ),
+      answer,
+      "In-memory recovery preserves the transient answer",
+    )
+    assert.equal(
+      await evaluate(
+        "document.querySelector('[data-enrichment-save]').disabled",
+      ),
+      true,
+      "Recovery requires renewed review",
+    )
+    await evaluate("document.querySelector('[data-enrichment-review]').click()")
+    await until("window.__pending.length===1")
+    const renewed = await evaluate(
+      "JSON.parse(window.__pending[0].options.body)",
+    )
+    assert.equal(renewed.document.revision, JSON.parse(expected).revision)
+    fixture.applyAnswer = renewed.applyAnswer
+    await respond(fixture)
+    await until("!!document.querySelector('[data-enrichment-operation]')")
+    assert.equal(
+      await evaluate(
+        "document.querySelector('[data-enrichment-operation]').checked",
+      ),
+      false,
+    )
+    await evaluate(
+      "document.querySelector('[data-enrichment-operation]').click();document.querySelector('[data-enrichment-save]').click()",
+    )
+    await until("!!document.querySelector('[data-enrichment-saved]')")
+    const recovered = await evaluate(
+      "JSON.parse(localStorage.getItem('careeros_profile_v2'))",
+    )
+    assert.equal(recovered.revision, JSON.parse(expected).revision + 1)
+    if (mode === "cross-tab")
+      assert.ok(
+        recovered.facts.some(
+          (f) =>
+            f.field === "additionalInfo" && f.value === "Unrelated later edit",
+        ),
+      )
     return
   }
   // Cancel before the response; an obsolete provider result cannot restore review.

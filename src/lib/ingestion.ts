@@ -657,7 +657,17 @@ export function validateIngestionResult(
       const owner = document!.entities.find((e) => e.id === target.id)!
       if (
         operations.some(
-          (op) => op.target !== owner.kind || op.entryId !== owner.legacyId,
+          (op) =>
+            op.target !== owner.kind ||
+            op.entryId !== owner.legacyId ||
+            (op.supportingClaimIds ?? [op.claimId]).some(
+              (id) =>
+                !selectedIngestionOwnerSupports(
+                  claims.find((c) => c.id === id)!,
+                  document!,
+                  target,
+                ),
+            ),
         )
       )
         throw new IngestionError("invalid_output")
@@ -916,6 +926,40 @@ export function ingestionIdentityFacts(
 }
 
 // Only exact wording and the pinned alias policy can establish equivalence.
+function selectedIngestionOwnerSupports(
+  claim: IngestionClaim,
+  doc: ProfileDocument,
+  target: ProfileRef,
+): boolean {
+  const owner = doc.entities.find(
+    (e) => e.id === target.id && e.revision === target.revision,
+  )
+  if (!owner) return false
+  const source = [
+    claim.source,
+    ...(claim.supportingSources ?? []).map((s) => s.source),
+  ].join("\n")
+  const identity = doc.facts.filter(
+    (f) =>
+      f.owner.id === owner.id &&
+      ["company", "title", "startDate", "endDate", "name"].includes(f.field) &&
+      !!f.value,
+  )
+  if (
+    identity.length &&
+    identity.every((f) => source.includes(String(f.value)))
+  )
+    return true
+  return (
+    /^\s*(?:I\b|Eu\b|Usei\b|Uso\b|Não\b|Our team\b|Nossa equipe\b)/i.test(
+      claim.source,
+    ) &&
+    !/\b(?:at|for|in|from|as|em|na|no|nas|nos|como|de|project|projeto|company|empresa|role|cargo|employer|empregador)\b/i.test(
+      source,
+    )
+  )
+}
+
 // A generated summary never establishes the meaning of its original source.
 function exactIngestionFact(
   claim: IngestionClaim,
@@ -1004,29 +1048,8 @@ function exactIngestionFact(
         identity.some((f) => !source.includes(String(f.value))))
     )
       return false
-    if (selected) {
-      const primary = entity?.kind === "experience" ? "company" : "name"
-      const label = doc.facts.find(
-        (f) => f.owner.id === entity?.id && f.field === primary,
-      )?.value
-      if (
-        doc.entities.some(
-          (e) =>
-            e.kind === entity?.kind &&
-            e.id !== entity?.id &&
-            doc.facts.some(
-              (f) =>
-                f.owner.id === e.id &&
-                f.field === primary &&
-                f.value !== label &&
-                typeof f.value === "string" &&
-                !!f.value &&
-                source.includes(f.value),
-            ),
-        )
-      )
-        return false
-    }
+    if (selected && !selectedIngestionOwnerSupports(claim, doc, selectedOwner!))
+      return false
   }
   return true
 }

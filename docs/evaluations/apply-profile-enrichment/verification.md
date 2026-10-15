@@ -12,13 +12,13 @@ used here. #52 retains its existing release gates.
 | Requirement | Controlled evidence |
 | --- | --- |
 | Complete answer classified before extraction; strict origin/target/revision schema | `backend/profile-ingestion/apply_answer_test.go`: handler acceptance, ten invalid handoffs rejected before providers, malicious whole-answer rejection |
-| Fresh project enrichment, chosen owner, exact repeat, ambiguous ownership, team/approximate time, negation, wrong owner, related technologies | Sixteen handler matrix cases: eight scenarios in EN and PT. Source excerpts and meaning qualifiers retained; ambiguous/invalid operations withheld |
+| Fresh project enrichment, chosen owner, exact repeat, ambiguous ownership, team/approximate time, negation, wrong owner, related technologies | Sixteen handler matrix cases: eight scenarios in EN and PT, plus explicit unknown-project and same-company conflicting-role regressions. Source excerpts and meaning qualifiers retained; ambiguous/invalid operations withheld |
 | Focused clarification retains both origins and chosen owner | Production handler clarification case with two independent classifications, one revised claim and one scoped proposal |
 | Accepted excerpts and unrelated data survive reload; malformed/stale targets rejected | `tests/profile-document.test.mjs`: canonical Apply save/reload and strict handoff validation, plus existing canonical fact/evidence tests |
 | Uncertain commit feedback | Canonical storage test: a lock rejects after atomic commit; durable read confirms success, and repeating the old snapshot is rejected |
 | No implicit save/call, unchecked factual answers, explicit review and selections | `tests/apply-enrichment-browser.scenarios.mjs`, invoked by `tests/apply-checklist.check.mjs`: real Apply workflow with controlled responses |
 | Cancellation/late response, failure, deliberate retry, repeated Save | Browser matrix: cancelled response cannot restore a review; failed review does not retry; one revision committed after repeated clicks |
-| Declined save, quota error, cross-tab stale state, original successful Draft | Browser failure modes verify unchanged authority or unrelated later edit, retained recovery answer, no false success, and original artifact content with truthful stale-source warning |
+| Declined save, quota error, cross-tab stale state, original successful Draft | Browser failure modes verify unchanged authority or unrelated later edit, retained recovery answer through an in-memory durable refresh and explicit re-review/save, preservation of later unrelated edits, no false success, and original artifact content with truthful stale-source warning |
 | Later reuse is independent of persistence | Fresh browser analysis carries accepted project facts/excerpts; a separately controlled supported match removes only the basic AWS question. This does not measure provider recall or semantic quality |
 | Inspect/correct/remove and recovery | Existing canonical Profile editing/storage coverage; accepted origins/excerpts remain inspectable. No transaction undo or rollback over later edits |
 
@@ -51,3 +51,11 @@ Final check outcomes and independent Standards/Spec review are recorded in the
 implementation PR and issue comments after execution. Failures must be resolved
 or explicitly retained as unavailable evidence; discovery closure alone cannot
 establish implementation acceptance.
+
+Independent review found and resolved two gaps: selected ownership could overrule
+explicit scope, and page reload recovery could discard transient answers.
+Regression coverage now rejects conflicting/unknown ownership at both handler
+and canonical apply boundaries, and completes quota/cross-tab recovery through
+in-memory Profile refresh, renewed review/selection and successful persistence.
+A nonblocking duplicated-origin fallback was centralized. The saved-answer
+control now says Hide saved answer rather than implying a declined save.

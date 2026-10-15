@@ -7,6 +7,8 @@ export type TranslationValue = string | number
 
 const messages = {
   en: {
+    "enrichment.savedAnswer": "Accepted application answer",
+    "enrichment.hide": "Hide saved answer",
     "enrichment.proposed": "Proposed operation",
     "enrichment.dependencies":
       "Select the related identity and supporting operations together, or review again. The selected changes cannot yet form a complete Profile update.",
@@ -26,7 +28,7 @@ const messages = {
     "enrichment.failed":
       "Not saved. Your answer and application are retained. Check Profile recovery feedback and deliberately review again before retrying.",
     "enrichment.reload":
-      "Profile storage changed or is unavailable. Keep this answer, use Profile recovery, then reload and review again. No automatic retry.",
+      "Profile storage changed or is unavailable. Refresh the saved Profile using the recovery action above; your answer stays here. Then review again. No automatic retry.",
     "enrichment.dismiss": "Keep application-only",
     "enrichment.cancel": "Cancel review",
     "enrichment.newOwner": "New entry — review its identity",
@@ -903,6 +905,8 @@ const messages = {
       "This cover letter exceeds one A4 page. Generate a shorter draft before saving it as PDF.",
   },
   "pt-BR": {
+    "enrichment.savedAnswer": "Resposta aceita da candidatura",
+    "enrichment.hide": "Ocultar resposta salva",
     "enrichment.proposed": "Operação proposta",
     "enrichment.dependencies":
       "Selecione juntas as operações de identidade e suporte relacionadas, ou revise novamente. As alterações selecionadas ainda não formam uma atualização completa do Perfil.",
@@ -923,7 +927,7 @@ const messages = {
     "enrichment.failed":
       "Não foi salvo. Sua resposta e candidatura foram preservadas. Verifique a recuperação do Perfil e revise novamente antes de tentar salvar.",
     "enrichment.reload":
-      "O armazenamento do Perfil mudou ou está indisponível. Preserve esta resposta, use a recuperação do Perfil e recarregue para revisar novamente. Sem tentativa automática.",
+      "O armazenamento do Perfil mudou ou está indisponível. Atualize o Perfil salvo pela ação de recuperação acima; sua resposta permanece aqui. Depois revise novamente. Sem tentativa automática.",
     "enrichment.dismiss": "Manter somente na candidatura",
     "enrichment.cancel": "Cancelar revisão",
     "enrichment.newOwner": "Novo item — revise sua identidade",

@@ -1649,3 +1649,16 @@ test("Apply provenance and selected owners cannot bypass snapshot or destination
   }
   assert.deepEqual(doc.evidence, [])
 })
+
+test("selected Apply context cannot replace an explicitly different project or role", () => {
+ for (const example of [
+  {profile:{projects:[{id:"p1",name:"Atlas",description:"",technologies:"",url:"",highlights:""}]},target:"projects",entryId:"p1",field:"highlights",input:"I used AWS Lambda in Unknown Project."},
+  {profile:{experience:[{id:"e1",company:"Acme",title:"Engineer",startDate:"2021",endDate:"2022",current:false,location:"",description:"",responsibilities:"",achievements:""}]},target:"experience",entryId:"e1",field:"responsibilities",input:"I used AWS Lambda at Acme as Architect from 2023 to 2024."},
+ ]) {
+  const doc=migrateProfile(example.profile,"selected-scope")
+  const owner=doc.entities.find(e=>e.legacyId===example.entryId)
+  const result=ingestionResult([ingestionClaim("c1",example.input,[example.target])],[ingestionOp({target:example.target,entryId:example.entryId,field:example.field,value:"AWS Lambda"})])
+  result.applyAnswer={version:1,requestId:"a1",language:"en",profile:{profileId:doc.id,id:doc.id,revision:doc.revision},target:{profileId:doc.id,id:owner.id,revision:owner.revision}}
+  assert.throws(()=>applyIngestionDocument(doc,doc,example.input,result),{code:"invalid_output"})
+ }
+})

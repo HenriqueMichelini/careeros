@@ -72,3 +72,18 @@ A review normally adds one TypeSafe and two OpenAI requests; a focused
 clarification normally adds two of each. Early failures can dispatch fewer.
 Saving itself makes no provider request. These are code-path counts, not measured
 latency, tokens, charges, or a bound on deliberately repeated journeys.
+
+## Review refinements
+
+A selected owner resolves omitted identity only. An answer with explicit
+ownership or period wording must establish the selected identity through the
+existing conservative check; selecting an existing target does not override a
+different named employer/project, role or period. Unknown scope stays a
+clarification candidate. These are conservative checks, not a semantic proof.
+
+Storage recovery refreshes the durable canonical Profile in memory, under the
+shared lock and behind queued writes. It does not reload the page, write a
+Profile or call a provider. Answers, edits and existing Drafts remain mounted;
+a failed or stale review requires a deliberate new review and fresh selections.
+The normal recovery download remains available before discarding unrelated
+unsaved manual Profile edits.

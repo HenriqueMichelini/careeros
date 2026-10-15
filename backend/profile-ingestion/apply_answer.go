@@ -3,6 +3,7 @@ package profileingestion
 import (
 	"encoding/json"
 	"professional-information-repo/internal/profiledocument"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 )
@@ -73,32 +74,22 @@ func selectedOwnerSupports(c claim, owner string, l *reconciliationContext) bool
 	if l == nil || l.applyTarget == nil || l.applyTarget.ID != owner || l.document == nil {
 		return false
 	}
-	primary := "name"
-	if l.applyTarget.Kind == "experience" {
-		primary = "company"
-	}
-	labels := map[string]string{}
+	identity := []profiledocument.Fact{}
 	for _, f := range l.document.Facts {
-		if f.Field == primary {
-			var value string
-			_ = json.Unmarshal(f.Value, &value)
-			if value != "" {
-				labels[f.Owner.ID] = value
-			}
+		if f.Owner.ID == owner && identityField(f.Field) {
+			identity = append(identity, f)
 		}
+	}
+	if identitySupported(c, identity) {
+		return true
 	}
 	source := c.Source
-	for _, s := range c.SupportingSources {
-		source += "\n" + s.Source
+	for _, support := range c.SupportingSources {
+		source += "\n" + support.Source
 	}
-	for _, e := range l.document.Entities {
-		if e.Kind != l.applyTarget.Kind || e.ID == owner {
-			continue
-		}
-		label := labels[e.ID]
-		if label != "" && label != labels[owner] && identityOccurrence(source, label, []string{label}) {
-			return false
-		}
-	}
-	return true
+	// Selected context fills omitted identity, never replaces an explicit scope.
+	// Unknown ownership wording stays a clarification candidate, not a guess.
+	scope := regexp.MustCompile(`(?i)\b(?:at|for|in|from|as|em|na|no|nas|nos|como|de|project|projeto|company|empresa|role|cargo|employer|empregador)\b`)
+	personal := regexp.MustCompile(`(?i)^\s*(?:I\b|Eu\b|Usei\b|Uso\b|Não\b|Our team\b|Nossa equipe\b)`)
+	return personal.MatchString(c.Source) && !scope.MatchString(source)
 }

@@ -47,6 +47,7 @@ export default function ApplyProfileEnrichment({
   const [inputs, setInputs] = useState<Record<string, string>>({})
   const [targets, setTargets] = useState<Record<string, string>>({})
   const [review, setReview] = useState<Review | null>(null)
+  const [reviewInvalidated, setReviewInvalidated] = useState(false)
   const [busy, setBusy] = useState(false)
   const [saving, setSaving] = useState(false)
   const [feedback, setFeedback] = useState("")
@@ -91,6 +92,7 @@ export default function ApplyProfileEnrichment({
     // Late responses cannot adopt another Profile snapshot. Preserve recovery text.
     attempt.current++
     controller.current?.abort()
+    if (state.profileError) setReviewInvalidated(true)
     if (!saving) setWorking(false)
   }, [profileDocument, generationActive, state.profileError])
 
@@ -201,6 +203,7 @@ export default function ApplyProfileEnrichment({
         current.current.profileError
       )
         throw new IngestionError("stale")
+      setReviewInvalidated(false)
       setReview({
         answerId: answer.id,
         input,
@@ -238,6 +241,7 @@ export default function ApplyProfileEnrichment({
     if (
       inFlight.current ||
       !review ||
+      reviewInvalidated ||
       stale ||
       generationActive ||
       state.profileError ||
@@ -256,7 +260,7 @@ export default function ApplyProfileEnrichment({
       if (saved) {
         setSavedIds((ids) => [...ids, review.answerId])
         setReview(null)
-        setFeedback(t("enrichment.saved"))
+        setFeedback("")
       } else setFeedback(t("enrichment.failed"))
     } catch (error) {
       showError(error)
@@ -312,7 +316,11 @@ export default function ApplyProfileEnrichment({
           >
             <p className="text-sm">{answer.requirement}</p>
             <label className="block text-sm">
-              {t("enrichment.answer")}
+              {t(
+                savedIds.includes(answer.id)
+                  ? "enrichment.savedAnswer"
+                  : "enrichment.answer",
+              )}
               <textarea
                 data-enrichment-answer
                 className="block w-full bg-transparent border p-2 mt-2"
@@ -381,7 +389,11 @@ export default function ApplyProfileEnrichment({
                 setDismissed((ids) => [...ids, answer.id])
               }}
             >
-              {t("enrichment.dismiss")}
+              {t(
+                savedIds.includes(answer.id)
+                  ? "enrichment.hide"
+                  : "enrichment.dismiss",
+              )}
             </button>
             {review?.answerId === answer.id && (
               <div className="space-y-3">
@@ -531,6 +543,7 @@ export default function ApplyProfileEnrichment({
                   disabled={
                     disabled ||
                     stale ||
+                    reviewInvalidated ||
                     !preview ||
                     !review.result.operations.some((o) => o.approved)
                   }

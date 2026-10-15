@@ -256,3 +256,49 @@ func TestApplyClarificationKeepsChosenOwnerAndSeparateAnswerEvidence(t *testing.
 		t.Fatalf("status=%d calls=%d body=%s", w.Code, calls, w.Body.String())
 	}
 }
+
+func TestChosenOwnerCannotOverrideExplicitUnknownOrConflictingRole(t *testing.T) {
+	for _, scenario := range []string{"unknown-project", "same-company-role"} {
+		t.Run(scenario, func(t *testing.T) {
+			p := profile()
+			p.Experience[0].StartDate = "2021"
+			p.Experience[0].EndDate = "2022"
+			input := "I used AWS Lambda in Unknown Project."
+			target := "projects"
+			entry := "p1"
+			owner := "entity/p1"
+			field := "highlights"
+			if scenario == "same-company-role" {
+				other := p.Experience[0]
+				other.ID = "e2"
+				other.Title = "Architect"
+				other.StartDate = "2023"
+				other.EndDate = "2024"
+				p.Experience = append(p.Experience, other)
+				input = "I used AWS Lambda at Acme as Architect from 2023 to 2024."
+				target = "experience"
+				entry = "e1"
+				owner = "entity/e1"
+				field = "responsibilities"
+			}
+			d := ledgerDocument(p)
+			calls := 0
+			h := NewHandlerWithClient(&http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+				calls++
+				if r.URL.Host == "api.typesafe.ai" {
+					return jevResponse("professional_fact", "none"), nil
+				}
+				if calls == 2 {
+					return completion(string(mustJSON(extraction{Claims: []claim{{ID: "c1", Source: input, Text: input, Targets: []string{target}}}}))), nil
+				}
+				return completion(string(mustJSON(proposal{Operations: []operation{{ClaimID: "c1", Target: target, EntryID: entry, Field: field, Action: "add", Value: "AWS Lambda", Finding: "in_place"}}}))), nil
+			})})
+			w := sendApplyBody(h, map[string]any{"input": input, "profile": p, "document": d, "applyAnswer": map[string]any{"version": 1, "requestId": "a1", "language": "en", "profile": map[string]any{"profileId": d.ID, "id": d.ID, "revision": d.Revision}, "target": map[string]any{"profileId": d.ID, "id": owner, "revision": 1}}})
+			var got result
+			_ = json.Unmarshal(w.Body.Bytes(), &got)
+			if w.Code != 200 || len(got.Operations) != 0 || len(got.Outcomes) != 1 || got.Outcomes[0].Kind != "clarification" {
+				t.Fatalf("wrong scoped owner accepted: %d %s", w.Code, w.Body.String())
+			}
+		})
+	}
+}
