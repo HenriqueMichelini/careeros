@@ -41,3 +41,7 @@ Provider refusals, incomplete/truncated output, empty summaries and malformed or
 The client also rejects over-capacity projections before HTTP. Bounds remain 500 facts, 12 KiB text each and 128 KiB request, with no silent truncation. Actual A4 measurement/export handling and font/density/language preferences remain authoritative. Controlled browser checks include short/heavy EN/PT at 1440px and 390px, all densities, saved v1/v2 reload/manual edits, stale support, storage failure, cancellation and export overflow. Controlled results do not establish live-provider quality or deployed behavior.
 
 Schema contract follows [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs): all object fields are required and objects reject additional properties. Domain validation remains necessary beyond structural enforcement.
+
+## Approved statement-support extension (#123; implementation pending)
+
+[ADR 0003](adr/0003-general-cv-statement-support.md) defines the approved bounded independent assessment, per-statement support/provenance contract, v3 response and saved-document migration, and dependencies for #124–#128. The preceding sections describe the current implementation; v3 is a future contract until those slices are integrated. Existing freshness and source links do not establish semantic support. No runtime change or live-provider validation was performed for this decision.
