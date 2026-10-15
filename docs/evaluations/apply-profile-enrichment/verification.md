@@ -47,10 +47,22 @@ No published route or actual PDF evidence is claimed for this feature.
 
 ## Repository checks
 
-Final check outcomes and independent Standards/Spec review are recorded in the
-implementation PR and issue comments after execution. Failures must be resolved
-or explicitly retained as unavailable evidence; discovery closure alone cannot
-establish implementation acceptance.
+Final local checks passed on the reviewed runtime source `a68bd76`:
+
+- `npx tsc --noEmit`.
+- `npm test`: 138 passed, zero failed.
+- `GOCACHE=/tmp/careeros-go-cache /usr/local/go/bin/go test ./...`: all packages passed.
+- `npm run build`: passed; the existing bundle-size advisory remains.
+- `node tests/apply-checklist.check.mjs`: full Apply regressions plus five enrichment
+  modes at EN/PT × 1440/390px, including complete in-memory recovery/re-review/save.
+- Targeted canonical Profile file: 49 passed. The new handler cohort contains 31
+  controlled case opportunities, including rejected handoffs and ownership regressions.
+- `git diff --check`: passed. Build/cache outputs were excluded and restored.
+
+Independent Standards and Spec agents re-reviewed `584d5dc...a68bd76` after the
+fixes: zero remaining actionable findings on each axis. The Spec reviewer also
+independently ran the focused handler regressions. Final EN/PT desktop/mobile
+screenshots were inspected; pending and saved states fit 390px without overflow.
 
 Independent review found and resolved two gaps: selected ownership could overrule
 explicit scope, and page reload recovery could discard transient answers.
