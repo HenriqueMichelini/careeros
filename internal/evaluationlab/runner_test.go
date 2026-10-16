@@ -42,7 +42,7 @@ func TestAllCatalogSuitesExecuteDirectlyWithoutExternalTransport(t *testing.T) {
 		return raw
 	}
 	labels := read("qualification-evidence/cases.json")
-	assets := map[string][]byte{"semantic-quality": read("semantic-quality/cases.v2.json"), "workflow-settings": read("workflow-settings/cases.v1.json"), "qualification-evidence": labels, "application-context": labels, "application-baseline": read("semantic-quality/controlled.v2.json")}
+	assets := map[string][]byte{"semantic-quality": read("semantic-quality/cases.v2.json"), "workflow-settings": read("workflow-settings/cases.v1.json"), "qualification-evidence": labels, "application-context": labels, "application-baseline": read("semantic-quality/controlled.v2.json"), "section-review": read("section-review/cases.v1.json")}
 	var external atomic.Int64
 	original := http.DefaultTransport
 	http.DefaultTransport = deniedTransport{calls: &external}

@@ -119,6 +119,12 @@ func interpretRetainedAssertion(c *ImportedCase) {
 func bindFixtureEvidence(c *ImportedCase, raw json.RawMessage) {
 	var fixture struct {
 		ID               string            `json:"id"`
+		Task             string            `json:"task"`
+		SourceSpans      json.RawMessage   `json:"sourceSpans"`
+		Adjudication     string            `json:"adjudication"`
+		AssessorScenario string            `json:"assessorScenario"`
+		ExpectedStatus   int               `json:"expectedStatus"`
+		ExpectedCalls    int               `json:"expectedCalls"`
 		Request          json.RawMessage   `json:"request"`
 		Document         json.RawMessage   `json:"document"`
 		Gold             json.RawMessage   `json:"gold"`
@@ -141,6 +147,11 @@ func bindFixtureEvidence(c *ImportedCase, raw json.RawMessage) {
 		gold = fixture.Relevant
 	}
 	c.Source = bytes.Clone(source)
+	if fixture.Task == "profile_review" {
+		c.Source, _ = json.Marshal(map[string]any{"request": json.RawMessage(source), "sourceSpans": fixture.SourceSpans, "adjudication": fixture.Adjudication, "assessorScenario": fixture.AssessorScenario, "expectedContract": map[string]int{"status": fixture.ExpectedStatus, "calls": fixture.ExpectedCalls}, "requiredStages": []string{"section_review", "section_support_check"}})
+		c.Review = json.RawMessage(`{"kind":"client_review","state":"unavailable","reason":"handler-only; no Apply or user decision observed"}`)
+		c.UnavailableReasons = append(c.UnavailableReasons, "semantic adjudication pending; scripted judgments do not establish assessor accuracy", "client Apply and human review decisions are not observed by this adapter")
+	}
 	c.Expected = bytes.Clone(gold)
 	c.ExpectedFailures = append([]string{}, fixture.ExpectedFailures...)
 	c.Split = fixture.Split

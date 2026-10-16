@@ -17,7 +17,21 @@ type Atom struct {
 	Optional bool              `json:"optional,omitempty"`
 	Source   string            `json:"source,omitempty"`
 }
+type SourceSpan struct {
+	ID        string `json:"id"`
+	FactID    string `json:"factId"`
+	StartByte int    `json:"startByte"`
+	EndByte   int    `json:"endByte"`
+	Text      string `json:"text"`
+}
+
 type Case struct {
+	ProviderStatuses  []int             `json:"providerStatuses,omitempty"`
+	ExpectedStatus    int               `json:"expectedStatus,omitempty"`
+	ExpectedCalls     int               `json:"expectedCalls,omitempty"`
+	AssessorScenario  string            `json:"assessorScenario,omitempty"`
+	Adjudication      string            `json:"adjudication,omitempty"`
+	SourceSpans       []SourceSpan      `json:"sourceSpans,omitempty"`
 	SequenceOutput    string            `json:"sequenceOutput,omitempty"`
 	Steps             []Case            `json:"steps,omitempty"`
 	ID                string            `json:"id"`
@@ -83,7 +97,7 @@ func outputGroups(c Case, output map[string]any) []string {
 	for _, atom := range c.Gold {
 		groups[atom.Group] = true
 	}
-	for _, group := range []string{"claims", "operations", "gaps", "summary", "selected", "wording", "draft"} {
+	for _, group := range []string{"claims", "operations", "gaps", "summary", "selected", "wording", "draft", "patches"} {
 		if _, ok := output[group]; ok {
 			groups[group] = true
 		}
@@ -207,6 +221,13 @@ func ratio(numerator, denominator int) float64 {
 
 func outputUnits(group string, output map[string]any) []map[string]string {
 	switch group {
+	case "sectionSummary":
+		if text, ok := output["summary"].(string); ok {
+			return []map[string]string{{"text": text}}
+		}
+		return nil
+	case "patches":
+		return patchUnits(output[group])
 	case "resumeReview", "artifactReview":
 		review, ok := output[group].(map[string]any)
 		if !ok {
@@ -409,7 +430,13 @@ func validateCase(c Case) error {
 			return err
 		}
 	}
-	return validatePatterns(c.Forbidden)
+	if err := validatePatterns(c.Forbidden); err != nil {
+		return err
+	}
+	if c.Task == "profile_review" {
+		return validateSectionReviewCase(c)
+	}
+	return nil
 }
 func validateAtom(c Case, atom Atom) error {
 	patterns := []string{}
@@ -454,4 +481,24 @@ func oneOf(value string, options ...string) bool {
 		}
 	}
 	return false
+}
+
+func patchUnits(value any) []map[string]string {
+	patches, ok := value.([]any)
+	if !ok {
+		return nil
+	}
+	units := []map[string]string{}
+	for _, patch := range patches {
+		fields := valueFields(patch)
+		for _, clause := range proseClauses(fields["wording"]) {
+			unit := map[string]string{}
+			for key, text := range fields {
+				unit[key] = text
+			}
+			unit["text"] = clause
+			units = append(units, unit)
+		}
+	}
+	return units
 }

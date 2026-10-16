@@ -4,6 +4,7 @@ package evaluationlab
 type retainedArtifact struct{ Path, Version string }
 
 var retainedArtifacts = map[string]retainedArtifact{
+	"02cc0a3dbec4a195823f3d9eabea09e8633ac0a43d6c090dabdacbfd5a76985e": {Path: "docs/evaluations/section-review/controlled.v1.json", Version: "semantic-quality-report-v2"},
 	"5d231ea5c263ae88e4b53aa4c677d56a2e03b2889caa50764e27bbc97a2617ef": {Path: "docs/evaluations/semantic-quality/controlled.v1.json", Version: "semantic-quality-report-v1"},
 	"54dcbc2d520d9f896a06aa838bce9d11386ac78b01a62875221f0692a82e1d17": {Path: "docs/evaluations/semantic-quality/controlled.v2.json", Version: "semantic-quality-report-v2"},
 	"48367e321c140fc4f942d2ecf81ba7117f420adf608af7d11ce6c439ffbc42b0": {Path: "docs/evaluations/semantic-quality/live.final.v1.json", Version: "semantic-quality-report-v1"},
