@@ -38,6 +38,7 @@ func (s *FileStore) Import(raw []byte, dependencies [][]byte) (string, error) {
 		return "", s.fail(err)
 	}
 	manifest := storeManifest{Version: StoreVersion, Kind: "import", Summary: RunSummary{ID: id, EngineState: "completed", AssertionVerdict: "unavailable", Suite: imported.Format, Mode: "offline-import", Cases: len(imported.Cases), Quarantined: imported.Quarantined}, Snapshot: generation, OriginalHash: imported.OriginalHash, CaseHashes: map[string]string{}}
+	manifest.Summary = summaryMetadata(manifest.Summary, imported.Cases, DispatchLedger(imported), []string{imported.Version, imported.OriginalVersion, imported.Derivation.Version, imported.Provenance.Commit})
 	for _, c := range imported.Cases {
 		encoded, _ := json.Marshal(c)
 		manifest.CaseHashes[c.Identity] = semanticeval.Hash(encoded)

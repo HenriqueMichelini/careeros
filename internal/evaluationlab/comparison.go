@@ -29,6 +29,9 @@ type Compatibility struct {
 }
 
 type CaseDelta struct {
+	Language                string `json:"language"`
+	Workflow                string `json:"workflow"`
+	Kind                    string `json:"kind"`
 	CaseID                  string `json:"caseId"`
 	LeftIdentity            string `json:"leftIdentity"`
 	RightIdentity           string `json:"rightIdentity"`
@@ -106,7 +109,11 @@ func CompareCases(a, b ComparisonContract, dimension string, left, right []Impor
 	for _, key := range ordered {
 		lc, lok := l[key]
 		rc, rok := rightIndex[key]
-		delta := CaseDelta{CaseID: lc.ID, LeftIdentity: lc.Identity, RightIdentity: rc.Identity}
+		scope := lc
+		if !lok {
+			scope = rc
+		}
+		delta := CaseDelta{CaseID: lc.ID, LeftIdentity: lc.Identity, RightIdentity: rc.Identity, Language: scope.Language, Workflow: scope.Workflow, Kind: scope.Kind}
 		if delta.CaseID == "" {
 			delta.CaseID = rc.ID
 		}

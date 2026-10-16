@@ -26,6 +26,8 @@ type ExecutionContext struct {
 // RunRecord is the versioned storage/API contract. Engine execution, assertions,
 // operational outcomes and persistence acknowledgments have distinct fields.
 type RunRecord struct {
+	StartedAt           string              `json:"startedAt,omitempty"`
+	ElapsedMS           *float64            `json:"elapsedMs,omitempty"`
 	Progress            RunProgress         `json:"progress"`
 	Version             string              `json:"version"`
 	ID                  string              `json:"id"`

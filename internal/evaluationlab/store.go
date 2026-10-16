@@ -38,17 +38,26 @@ type StoreOptions struct {
 	SoftWarningBytes int64
 }
 type RunSummary struct {
-	ID               string `json:"id"`
-	EngineState      string `json:"engineState"`
-	AssertionVerdict string `json:"assertionVerdict"`
-	Suite            string `json:"suite"`
-	Mode             string `json:"mode"`
-	Cases            int    `json:"cases"`
-	Quarantined      bool   `json:"quarantined"`
+	Workflows        []string `json:"workflows,omitempty"`
+	Languages        []string `json:"languages,omitempty"`
+	Categories       []string `json:"categories,omitempty"`
+	Outcomes         []string `json:"outcomes,omitempty"`
+	Models           []string `json:"configuredModels,omitempty"`
+	ReturnedModels   []string `json:"returnedModels,omitempty"`
+	Versions         []string `json:"versions,omitempty"`
+	Configuration    string   `json:"configuration,omitempty"`
+	ID               string   `json:"id"`
+	EngineState      string   `json:"engineState"`
+	AssertionVerdict string   `json:"assertionVerdict"`
+	Suite            string   `json:"suite"`
+	Mode             string   `json:"mode"`
+	Cases            int      `json:"cases"`
+	Quarantined      bool     `json:"quarantined"`
 }
 type RunFilter struct {
-	Suite, EngineState string
-	Offset, Limit      int
+	Workflow, Language, Category, Mode, Outcome, Model, ReturnedModel, Version string
+	Suite, EngineState                                                         string
+	Offset, Limit                                                              int
 }
 type RunPage struct {
 	Runs     []RunSummary `json:"runs"`
@@ -315,6 +324,8 @@ func (s *FileStore) save(record RunRecord) error {
 	record = cloneJSON(record)
 	record.Durable = true
 	manifest := storeManifest{Version: StoreVersion, Summary: RunSummary{ID: record.ID, EngineState: record.EngineState, AssertionVerdict: record.AssertionVerdict, Suite: record.Selection.Suite, Mode: record.Selection.Mode, Cases: len(record.Cases)}, Snapshot: generation, CaseHashes: map[string]string{}}
+	manifest.Summary = summaryMetadata(manifest.Summary, record.Cases, record.Dispatches, []string{record.Version, record.Context.ConfigurationVersion, record.Context.RuntimeVersion, record.Context.PromptVersion, record.Context.SchemaVersion, record.Context.ScorerVersion, record.Context.StrategyVersion, record.Context.LabelHash, record.Provenance.Commit})
+	manifest.Summary.Configuration = record.Selection.Configuration
 	for _, c := range record.Cases {
 		if !storeID.MatchString(c.Identity) {
 			return fmt.Errorf("invalid case identity")
@@ -443,7 +454,7 @@ func (s *FileStore) List(filter RunFilter) (RunPage, error) {
 	}
 	ids := []string{}
 	for id, m := range s.manifests {
-		if (filter.Suite == "" || m.Summary.Suite == filter.Suite) && (filter.EngineState == "" || m.Summary.EngineState == filter.EngineState) {
+		if matchesSummary(m.Summary, filter) {
 			ids = append(ids, id)
 		}
 	}

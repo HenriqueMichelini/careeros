@@ -18,7 +18,9 @@
     "format": "oxfmt",
     "test:cv-generation": "node tests/cv-generation-browser.check.mjs",
     "test:preview-inspection": "node tests/preview-inspection-browser.check.mjs",
-    "test:preview-provider": "node tests/preview-provider-browser.check.mjs"
+    "test:preview-provider": "node tests/preview-provider-browser.check.mjs",
+    "build:lab": "vite build --config vite.lab.config.ts",
+    "lab": "node scripts/lab.mjs"
   },
   "dependencies": {
     "react": "^19.0.0",

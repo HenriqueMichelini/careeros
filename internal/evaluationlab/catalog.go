@@ -3,14 +3,15 @@ package evaluationlab
 import "fmt"
 
 type FixtureCase struct {
-	ID            string `json:"id"`
-	Hash          string `json:"hash"`
-	Workflow      string `json:"workflow"`
-	Language      string `json:"language"`
-	Split         string `json:"split"`
-	ExposureGroup string `json:"exposureGroup"`
-	RequiredSteps int    `json:"requiredSteps"`
-	MaximumCalls  int    `json:"maximumCalls"`
+	Categories    []string `json:"categories,omitempty"`
+	ID            string   `json:"id"`
+	Hash          string   `json:"hash"`
+	Workflow      string   `json:"workflow"`
+	Language      string   `json:"language"`
+	Split         string   `json:"split"`
+	ExposureGroup string   `json:"exposureGroup"`
+	RequiredSteps int      `json:"requiredSteps"`
+	MaximumCalls  int      `json:"maximumCalls"`
 }
 
 type Suite struct {
@@ -47,6 +48,9 @@ func Catalog() []Suite {
 		s.Configurations = append([]string{}, s.Configurations...)
 		s.RequiredTools = append([]string{}, s.RequiredTools...)
 		s.Cases = append([]FixtureCase{}, s.Cases...)
+		for j := range s.Cases {
+			s.Cases[j].Categories = append([]string{}, s.Cases[j].Categories...)
+		}
 		result[i] = s
 	}
 	return result

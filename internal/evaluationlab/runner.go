@@ -36,6 +36,7 @@ type EventPage struct {
 	Gap      bool       `json:"gap"`
 }
 type runState struct {
+	started         time.Time
 	record          RunRecord
 	plan            Plan
 	cancel          context.CancelFunc
@@ -98,6 +99,8 @@ func (r *Runner) Start(parent context.Context, plan Plan) (string, error) {
 		record.Context.StrategyVersion = versionedHash("lab-strategy-source-envelope-v1", plan.Provenance.SourceHashes)
 	}
 	state := &runState{record: record, plan: plan, cancel: cancel, done: make(chan struct{}), ctx: ctx}
+	state.started = time.Now()
+	state.record.StartedAt = state.started.UTC().Format(time.RFC3339Nano)
 	r.runs[id] = state
 	r.active = id
 	r.eventLocked(state, RunEvent{Kind: "run_admitted"})
@@ -112,7 +115,12 @@ func (r *Runner) Read(id string) (RunRecord, error) {
 	if !ok {
 		return RunRecord{}, fmt.Errorf("unknown run")
 	}
-	return cloneJSON(state.record), nil
+	record := cloneJSON(state.record)
+	if record.EngineState == "running" || record.EngineState == "planned" {
+		elapsed := time.Since(state.started).Seconds() * 1000
+		record.ElapsedMS = &elapsed
+	}
+	return record, nil
 }
 func (r *Runner) Wait(ctx context.Context, id string) (RunRecord, error) {
 	r.mu.Lock()
@@ -478,6 +486,8 @@ func (r *Runner) execute(parent context.Context, state *runState) {
 		}
 	}
 	state.record.Progress.UnreachedHTTP = max(0, state.record.Progress.PlannedHTTP-state.record.Progress.AttemptedHTTP)
+	elapsed := time.Since(state.started).Seconds() * 1000
+	state.record.ElapsedMS = &elapsed
 	state.record.Metrics = nativeMetrics(state.record, state.plan)
 	terminalRecord := cloneJSON(state.record)
 	state.record.EngineState = "running"
