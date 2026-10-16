@@ -1,6 +1,7 @@
 package evaluationlab
 
 var approvedFixtureHashes = map[string]bool{
+	"928f87641f3ee7e2310926a6da5aa89548d3271827421c7ad3b77fa7565b8cc6": true,
 	"885d652fe45d554cd8a757990e0ae1231601a48ac7eca6368945570422af38ab": true,
 	"7c212dab6d3790ae2769f03ad7095dcdf676a6002958bd7b4ad8433bb2f58175": true,
 	"99f0a4f9c0f02b72d49b96e8aeaa1018add8fedd87af097d9aa10d28ca84a188": true,

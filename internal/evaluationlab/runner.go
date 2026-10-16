@@ -382,7 +382,7 @@ func (r *Runner) execute(parent context.Context, state *runState) {
 		r.mu.Unlock()
 		var actual json.RawMessage
 		switch state.plan.Selection.Suite {
-		case "semantic-quality", "workflow-settings":
+		case "semantic-quality", "workflow-settings", "section-review":
 			c, lookupErr := r.semanticCase(state.plan.Selection.Suite, id)
 			if lookupErr != nil {
 				err = lookupErr
@@ -588,7 +588,7 @@ func plannedCase(raw json.RawMessage, configuration string) (ImportedCase, error
 	return c, nil
 }
 func (r *Runner) interpretCase(c *ImportedCase, suite string) {
-	if suite == "semantic-quality" || suite == "workflow-settings" {
+	if suite == "semantic-quality" || suite == "workflow-settings" || suite == "section-review" {
 		var run semanticeval.RunResult
 		_ = json.Unmarshal(c.Actual, &run)
 		interpretRetainedAssertion(c)
