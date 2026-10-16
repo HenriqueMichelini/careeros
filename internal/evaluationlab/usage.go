@@ -9,11 +9,13 @@ import (
 )
 
 type Dispatch struct {
-	Identity           string            `json:"identity"`
-	CaseIdentity       string            `json:"caseIdentity"`
-	Origin             string            `json:"origin"`
-	Call               semanticeval.Call `json:"call"`
-	UnavailableReasons []string          `json:"unavailableReasons"`
+	State               string            `json:"state,omitempty"`
+	LogicalCaseIdentity string            `json:"logicalCaseIdentity,omitempty"`
+	Identity            string            `json:"identity"`
+	CaseIdentity        string            `json:"caseIdentity"`
+	Origin              string            `json:"origin"`
+	Call                semanticeval.Call `json:"call"`
+	UnavailableReasons  []string          `json:"unavailableReasons"`
 }
 
 type UsageSummary struct {
@@ -78,10 +80,13 @@ func SummarizeDispatches(ledger []Dispatch, rates []semanticeval.Rate) (UsageSum
 		if dispatch.Identity == "" || seen[dispatch.Identity] {
 			return r, fmt.Errorf("missing or duplicate dispatch identity")
 		}
+		seen[dispatch.Identity] = true
+		if dispatch.State == "planned" || dispatch.State == "not_dispatched" {
+			continue
+		}
 		if !contains([]string{"simulated", "historical-provider-observed", "provider-observed", "unknown-final"}, dispatch.Origin) {
 			return r, fmt.Errorf("unknown dispatch origin")
 		}
-		seen[dispatch.Identity] = true
 		r.Origins[dispatch.Origin]++
 		if len(r.Origins) > 1 {
 			return r, fmt.Errorf("different evidence origins require separate usage cohorts")

@@ -22,6 +22,11 @@ type Derivation struct {
 }
 
 type ImportedCase struct {
+	LeafIdentity       string          `json:"leafIdentity,omitempty"`
+	PlannedSteps       int             `json:"plannedSteps,omitempty"`
+	AttemptedSteps     int             `json:"attemptedSteps,omitempty"`
+	SkippedSteps       int             `json:"skippedSteps,omitempty"`
+	ArtifactHash       string          `json:"artifactHash,omitempty"`
 	ExpectedFailures   []string        `json:"expectedFailures,omitempty"`
 	AssertionVersion   string          `json:"assertionVersion,omitempty"`
 	Split              string          `json:"split,omitempty"`

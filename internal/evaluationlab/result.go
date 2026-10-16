@@ -26,6 +26,7 @@ type ExecutionContext struct {
 // RunRecord is the versioned storage/API contract. Engine execution, assertions,
 // operational outcomes and persistence acknowledgments have distinct fields.
 type RunRecord struct {
+	Progress            RunProgress         `json:"progress"`
 	Version             string              `json:"version"`
 	ID                  string              `json:"id"`
 	EngineState         string              `json:"engineState"`
@@ -41,6 +42,17 @@ type RunRecord struct {
 	Metrics             []Metric            `json:"metrics"`
 	Durable             bool                `json:"durable"`
 	UnavailableReasons  []string            `json:"unavailableReasons"`
+}
+
+type RunProgress struct {
+	PlannedCases        int `json:"plannedCases"`
+	StartedCases        int `json:"startedCases"`
+	FinishedCases       int `json:"finishedCases"`
+	PlannedHTTP         int `json:"plannedHttpAttempts"`
+	AttemptedHTTP       int `json:"attemptedHttpAttempts"`
+	FinishedHTTP        int `json:"finishedHttpAttempts"`
+	UnreachedHTTP       int `json:"unreachedHttpAttempts"`
+	AttemptedDispatches int `json:"attemptedDispatches"`
 }
 
 func ValidateResult(r RunRecord) error {

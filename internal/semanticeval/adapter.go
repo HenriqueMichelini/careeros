@@ -2,6 +2,7 @@ package semanticeval
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -22,6 +23,7 @@ import (
 func Hash(raw []byte) string { h := sha256.Sum256(raw); return hex.EncodeToString(h[:]) }
 
 type Call struct {
+	DispatchID            string  `json:"dispatchId,omitempty"`
 	InstructionPrefixHash string  `json:"first256InstructionCharactersHash"`
 	Provider              string  `json:"provider"`
 	Model                 string  `json:"model"`
@@ -57,6 +59,7 @@ type RunResult struct {
 	Score           Result                 `json:"score"`
 }
 type transport struct {
+	failure   error
 	mode      string
 	responses []json.RawMessage
 	calls     []Call
@@ -74,6 +77,21 @@ func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	host := req.URL.Host
 	if host != openAIHost && host != typeSafeHost {
 		return nil, fmt.Errorf("unexpected provider host")
+	}
+	if err := req.Context().Err(); err != nil {
+		t.failure = err
+		return nil, err
+	}
+	policy := executionPolicy(req.Context())
+	if policy.BeforeDispatch != nil {
+		if err := policy.BeforeDispatch(req.Context()); err != nil {
+			t.failure = err
+			return nil, err
+		}
+	}
+	if err := req.Context().Err(); err != nil {
+		t.failure = err
+		return nil, err
 	}
 	raw, err := io.ReadAll(req.Body)
 	if err != nil {
@@ -102,17 +120,30 @@ func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		req.ContentLength = int64(len(raw))
 	}
 	t.calls = append(t.calls, providerCall(host, raw, body))
+	observeRequest(req.Context(), host, len(raw))
+	if policy.NewDispatchID != nil {
+		t.calls[len(t.calls)-1].DispatchID = policy.NewDispatchID()
+	}
+	if policy.ObserveDispatch != nil {
+		policy.ObserveDispatch(DispatchObservation{Phase: DispatchStarted, Call: t.calls[len(t.calls)-1]})
+	}
 	started := time.Now()
 	var response *http.Response
 	if t.mode == "live" {
 		response, err = http.DefaultTransport.RoundTrip(req)
 	} else {
 		response, err = t.controlledResponse(host, body)
+		if err == nil && policy.ControlledBody != nil {
+			response.Body = policy.ControlledBody(req.Context(), response.Body)
+		}
 	}
 	if err == nil {
-		err = t.captureResponse(response, host)
+		err = t.captureResponse(req.Context(), response, host)
 	}
 	t.calls[len(t.calls)-1].DurationMS = float64(time.Since(started).Microseconds()) / 1000
+	if policy.ObserveDispatch != nil {
+		policy.ObserveDispatch(DispatchObservation{Phase: DispatchFinished, Call: t.calls[len(t.calls)-1], Err: err})
+	}
 	return response, err
 }
 func providerCall(host string, raw []byte, body map[string]any) Call {
@@ -133,10 +164,16 @@ func providerCall(host string, raw []byte, body map[string]any) Call {
 	}
 	return call
 }
-func (t *transport) captureResponse(response *http.Response, host string) error {
+func (t *transport) captureResponse(ctx context.Context, response *http.Response, host string) error {
 	t.calls[len(t.calls)-1].Status = response.StatusCode
-	body, err := io.ReadAll(io.LimitReader(response.Body, (1<<20)+1))
-	response.Body.Close()
+	originalBody := response.Body
+	stop := context.AfterFunc(ctx, func() { originalBody.Close() })
+	body, err := io.ReadAll(io.LimitReader(contextReader{ctx: ctx, reader: originalBody}, (1<<20)+1))
+	stop()
+	originalBody.Close()
+	if ctx.Err() != nil {
+		err = ctx.Err()
+	}
 	if err != nil {
 		return err
 	}
@@ -217,19 +254,24 @@ func Run(c Case, mode, openAIKey, typeSafeKey string) (RunResult, error) {
 	return run(c, mode, openAIKey, typeSafeKey, nil, nil)
 }
 
+func RunContext(ctx context.Context, c Case, mode, openAIKey, typeSafeKey string) (RunResult, error) {
+	return runContext(ctx, c, mode, openAIKey, typeSafeKey, nil, nil)
+}
+
 func run(c Case, mode, openAIKey, typeSafeKey string, config *Configuration, budget *Budget) (RunResult, error) {
+	return runContext(context.Background(), c, mode, openAIKey, typeSafeKey, config, budget)
+}
+
+func runContext(ctx context.Context, c Case, mode, openAIKey, typeSafeKey string, config *Configuration, budget *Budget) (RunResult, error) {
 	result := RunResult{ID: c.ID, Task: c.Task, Split: c.Split, Language: c.Language, Mode: mode, Role: c.Role}
+	if err := ctx.Err(); err != nil {
+		return result, err
+	}
 	if mode != "controlled" && mode != "live" {
 		return result, fmt.Errorf("unknown evidence mode")
 	}
 	if mode == "live" && (openAIKey == "" || (c.Task != "cv_generation" && typeSafeKey == "")) {
 		return result, fmt.Errorf("live provider credentials required")
-	}
-	if budget != nil {
-		if budget.Used >= budget.Limit || budget.WorkflowLimit > 0 && budget.Workflows >= budget.WorkflowLimit {
-			return result, fmt.Errorf("evaluation budget exhausted")
-		}
-		budget.Workflows++
 	}
 	t := &transport{mode: mode, responses: c.Provider, config: config, budget: budget, envelopes: c.ProviderEnvelopes}
 	client := &http.Client{Transport: t, Timeout: 55 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
@@ -251,6 +293,21 @@ func run(c Case, mode, openAIKey, typeSafeKey string, config *Configuration, bud
 	default:
 		return result, fmt.Errorf("unknown task %q", c.Task)
 	}
+	if budget != nil && (budget.Used >= budget.Limit || budget.WorkflowLimit > 0 && budget.Workflows >= budget.WorkflowLimit) {
+		return result, fmt.Errorf("evaluation budget exhausted")
+	}
+	policy := executionPolicy(ctx)
+	if policy.BeforeWorkflow != nil {
+		if err := policy.BeforeWorkflow(ctx, c); err != nil {
+			return result, err
+		}
+	}
+	if budget != nil {
+		budget.Workflows++
+	}
+	if policy.ObserveWorkflow != nil {
+		defer func() { policy.ObserveWorkflow(c, result) }()
+	}
 	if mode == "controlled" {
 		openAIKey = "sk-controlled"
 		typeSafeKey = "controlled"
@@ -259,14 +316,22 @@ func run(c Case, mode, openAIKey, typeSafeKey string, config *Configuration, bud
 	req.Header.Set("X-OpenAI-Api-Key", openAIKey)
 	req.Header.Set("X-TypeSafe-Api-Key", typeSafeKey)
 	rec := httptest.NewRecorder()
-	req = req.WithContext(aidiagnostics.WithSink(req.Context(), func(a aidiagnostics.Attempt) { result.Diagnostics = &a }))
+	req = req.WithContext(aidiagnostics.WithSink(ctx, func(a aidiagnostics.Attempt) { result.Diagnostics = &a }))
 	handler.ServeHTTP(rec, req)
 	result.Status = rec.Code
 	result.NoStore = rec.Header().Get("Cache-Control") == "no-store"
 	result.Calls = t.calls
 	result.ProviderOutputs = t.outputs
 	result.Output = append(json.RawMessage{}, rec.Body.Bytes()...)
-	return Assess(c, result)
+	if t.failure != nil {
+		return result, t.failure
+	}
+	if err := ctx.Err(); err != nil {
+		return result, err
+	}
+	assessed, err := Assess(c, result)
+	result = assessed
+	return result, err
 }
 
 // Assess scores a saved production response without invoking any provider. The
