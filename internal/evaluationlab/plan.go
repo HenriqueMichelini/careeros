@@ -109,7 +109,19 @@ func (p *Planner) Plan(selection Selection, caps ExecutionCaps) (Plan, error) {
 		}
 	}
 	selection.CaseIDs = append([]string{}, order...)
-	plan := Plan{Version: PlanVersion, ID: newLabID(), Selection: selection, SuiteVersion: suite.Version, InputHashes: hashes, CaseOrder: order, Caps: caps, RuntimeVersion: runtime.Version(), Concurrency: 1, Provenance: cloneJSON(p.provenance)}
+	plan := Plan{Version: PlanVersion, ID: newLabID(), Selection: selection, SuiteVersion: suite.Version, InputHashes: hashes, CaseOrder: order, Caps: caps, RuntimeVersion: runtime.Version() + "/" + runtime.GOOS + "/" + runtime.GOARCH, Concurrency: 1, Provenance: cloneJSON(p.provenance)}
+	plan.Provenance.FixtureHash = hashes[selection.Suite]
+	plan.Provenance.FixtureHashes = cloneJSON(hashes)
+	var fixtureDocument struct {
+		Version string `json:"version"`
+	}
+	if err := json.Unmarshal(p.assets[selection.Suite], &fixtureDocument); err != nil {
+		return Plan{}, fmt.Errorf("invalid fixture metadata")
+	}
+	plan.Provenance.FixtureVersion = fixtureDocument.Version
+	if fixtureDocument.Version == "" {
+		plan.Provenance.UnavailableReasons = append(plan.Provenance.UnavailableReasons, "fixture document version unavailable")
+	}
 	for _, id := range order {
 		for _, c := range suite.Cases {
 			if c.ID == id {

@@ -38,7 +38,7 @@ func CaptureSource(root string) (Provenance, error) {
 	if modified == "" {
 		p.UnavailableReasons = append(p.UnavailableReasons, "compiler clean/dirty state unavailable")
 	}
-	for _, directory := range []string{"backend", "internal", "scripts/semantic-quality", "scripts/workflow-settings", "scripts/qualification-evidence", "scripts/application-context"} {
+	for _, directory := range []string{"backend", "internal", "lab/api", "scripts/semantic-quality", "scripts/workflow-settings", "scripts/qualification-evidence", "scripts/application-context"} {
 		err := filepath.WalkDir(filepath.Join(canonical, directory), func(path string, entry os.DirEntry, walkErr error) error {
 			if walkErr != nil {
 				return walkErr

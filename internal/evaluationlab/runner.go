@@ -90,6 +90,13 @@ func (r *Runner) Start(parent context.Context, plan Plan) (string, error) {
 	id := newLabID()
 	ctx, cancel := context.WithTimeout(parent, time.Duration(plan.Caps.DeadlineMS)*time.Millisecond)
 	record := RunRecord{Version: ResultVersion, ID: id, EngineState: "planned", AssertionVerdict: "unavailable", Selection: plan.Selection, Provenance: cloneJSON(plan.Provenance), Cases: cases, Dispatches: []Dispatch{}, OperationalOutcomes: map[string]int{}, UnavailableReasons: []string{"pending local evidence; durable persistence is not provided by the memory runner"}, Context: ExecutionContext{Mode: plan.Selection.Mode, RuntimeVersion: plan.RuntimeVersion, Concurrency: 1, Order: append([]string{}, plan.CaseOrder...), MaxLogicalCases: plan.Caps.MaxCases, MaxHTTPAttempts: plan.Caps.MaxHTTPAttempts, MaxProviderCalls: plan.Caps.MaxProviderCalls, MaxArtifactBytes: plan.Caps.MaxArtifactBytes, DeadlineMS: plan.Caps.DeadlineMS, ConfigurationVersion: plan.SuiteVersion, SchemaVersion: ResultVersion, ScorerVersion: plan.Provenance.SourceHashes["internal/semanticeval/score.go"], UnavailableReasons: []string{"source/prompt/label completeness depends on supplied launch provenance"}}, Progress: RunProgress{PlannedCases: len(cases), PlannedHTTP: plan.RequiredHTTPAttempts}}
+	record.Context.LabelHash = versionedHash("lab-label-fixture-set-v1", plan.InputHashes)
+	if len(plan.Provenance.SourceHashes) > 0 {
+		// Conservative source-envelope versions: equal means the captured source
+		// collection is identical; a mismatch never isolates a prompt/strategy edit.
+		record.Context.PromptVersion = versionedHash("lab-prompt-source-envelope-v1", plan.Provenance.SourceHashes)
+		record.Context.StrategyVersion = versionedHash("lab-strategy-source-envelope-v1", plan.Provenance.SourceHashes)
+	}
 	state := &runState{record: record, plan: plan, cancel: cancel, done: make(chan struct{}), ctx: ctx}
 	r.runs[id] = state
 	r.active = id
@@ -633,4 +640,9 @@ func finalizeUnreached(c *ImportedCase, reason string) {
 	for i := range c.Children {
 		finalizeUnreached(&c.Children[i], reason)
 	}
+}
+
+func versionedHash(version string, value any) string {
+	raw, _ := json.Marshal(value)
+	return version + ":" + semanticeval.Hash(raw)
 }
