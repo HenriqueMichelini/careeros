@@ -87,6 +87,6 @@ node tests/section-review-browser.check.mjs
 
 Write candidate reports to a new path; preserve the retained report byte-for-byte.
 No credentials, external providers, deployment, real Profiles, live calibration or
-human label certification were used. The later HTTP/dashboard integration must add
-the `section-review` fixture asset to its fixed launcher map; this slice is based on
-the shared runner/history commit before that launcher exists.
+human label certification were used. The loopback API launcher includes the `section-review` fixture in its fixed asset
+map after integrating this suite. The original section-review slice was based on
+the shared runner/history commit before that launcher existed.
