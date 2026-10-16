@@ -9,12 +9,13 @@ import (
 )
 
 func query(r *http.Request, keys ...string) (url.Values, error) {
+	if len(r.URL.RawQuery)>4096 { return nil,fmt.Errorf("query exceeds bounds") }
 	q, err := url.ParseQuery(r.URL.RawQuery)
 	if err != nil {
 		return nil, err
 	}
 	for key, values := range q {
-		if !contains(keys, key) || len(values) != 1 {
+		if !contains(keys, key) || len(values) != 1 || len(values[0])>256 {
 			return nil, fmt.Errorf("unsupported query")
 		}
 	}
@@ -50,6 +51,8 @@ func (a *API) historyRoute(w http.ResponseWriter, r *http.Request) bool {
 	switch {
 	case len(parts) == 1:
 		a.detail(w, r, parts[0])
+	case len(parts) == 2 && parts[1] == "view":
+		a.dashboardView(w, r, parts[0])
 	case len(parts) == 2 && parts[1] == "events":
 		a.events(w, r, parts[0])
 	case len(parts) == 2 && parts[1] == "exports":
@@ -62,7 +65,7 @@ func (a *API) historyRoute(w http.ResponseWriter, r *http.Request) bool {
 	return true
 }
 func (a *API) list(w http.ResponseWriter, r *http.Request) {
-	q, err := query(r, "suite", "engineState", "offset", "limit")
+	q, err := query(r, "suite", "engineState", "offset", "limit", "workflow", "language", "category", "mode", "outcome", "model", "returnedModel", "version")
 	if err != nil {
 		a.error(w, 400, "invalid_query", "Unsupported history query.")
 		return
@@ -73,7 +76,7 @@ func (a *API) list(w http.ResponseWriter, r *http.Request) {
 		a.error(w, 400, "invalid_query", "Invalid history pagination.")
 		return
 	}
-	page, err := a.store.List(RunFilter{Suite: q.Get("suite"), EngineState: q.Get("engineState"), Offset: offset, Limit: limit})
+	page, err := a.store.List(RunFilter{Suite: q.Get("suite"), EngineState: q.Get("engineState"), Offset: offset, Limit: limit, Workflow: q.Get("workflow"), Language: q.Get("language"), Category: q.Get("category"), Mode: q.Get("mode"), Outcome: q.Get("outcome"), Model: q.Get("model"), ReturnedModel: q.Get("returnedModel"), Version: q.Get("version")})
 	if err != nil {
 		a.error(w, 503, "history_unavailable", "History is unavailable.")
 		return

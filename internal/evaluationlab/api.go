@@ -36,6 +36,7 @@ type API struct {
 	epoch      string
 	mu         sync.Mutex
 	admissions map[string]admission
+	deleted    map[string]bool
 }
 
 func NewAPI(planner *Planner, runner *Runner, store *FileStore, options APIOptions) (*API, error) {
@@ -54,7 +55,7 @@ func NewAPI(planner *Planner, runner *Runner, store *FileStore, options APIOptio
 	if options.Context == nil {
 		options.Context = context.Background()
 	}
-	return &API{planner: planner, runner: runner, store: store, options: options, host: origin.Host, session: APISession{Authorization: "Bearer " + newLabID(), CSRF: newLabID()}, nonce: newLabID(), epoch: newLabID(), admissions: map[string]admission{}}, nil
+	return &API{planner: planner, runner: runner, store: store, options: options, host: origin.Host, session: APISession{Authorization: "Bearer " + newLabID(), CSRF: newLabID()}, nonce: newLabID(), epoch: newLabID(), admissions: map[string]admission{}, deleted: map[string]bool{}}, nil
 }
 
 // Session is for the trusted local launch/test harness only. Never log or store.
@@ -98,10 +99,13 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		a.json(w, 200, struct {
 			Version string  `json:"version"`
 			Suites  []Suite `json:"suites"`
-		}{APIVersion, Catalog()})
+		}{APIVersion, a.dashboardCatalog()})
 		return
 	}
 	if a.historyRoute(w, r) {
+		return
+	}
+	if a.dashboardRoute(w, r) {
 		return
 	}
 	if a.executionRoute(w, r) {
@@ -125,5 +129,5 @@ func (a *API) shell(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Content-Security-Policy", "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; connect-src 'self'; script-src 'self' 'nonce-"+a.nonce+"'; style-src 'self'")
 	session, _ := json.Marshal(a.session)
-	fmt.Fprintf(w, `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>CareerOS Evaluation Lab</title><body><main id="lab"><h1>Evaluation Lab</h1><p>Private local controlled evaluation. No live provider access.</p></main><script nonce="%s">window.__LAB_SESSION__=%s;</script>%s</body></html>`, a.nonce, session, a.assetTags())
+	fmt.Fprintf(w, `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>CareerOS Evaluation Lab</title><body><div id="lab"><h1>Evaluation Lab</h1><p>Private local controlled evaluation. No live provider access.</p></div><script nonce="%s">window.__LAB_SESSION__=%s;</script>%s</body></html>`, a.nonce, session, a.assetTags())
 }

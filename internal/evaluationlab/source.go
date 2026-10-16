@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-// CaptureSource reads only Go/embedded JSON in known implementation directories.
+// CaptureSource reads code/embedded JSON in known implementation directories.
 // The launcher's root is local configuration; browser/import data never supplies it.
 func CaptureSource(root string) (Provenance, error) {
 	canonical, err := filepath.EvalSymlinks(root)
@@ -38,7 +38,7 @@ func CaptureSource(root string) (Provenance, error) {
 	if modified == "" {
 		p.UnavailableReasons = append(p.UnavailableReasons, "compiler clean/dirty state unavailable")
 	}
-	for _, directory := range []string{"backend", "internal", "lab/api", "scripts/semantic-quality", "scripts/workflow-settings", "scripts/qualification-evidence", "scripts/application-context"} {
+	for _, directory := range []string{"backend", "internal", "lab/api", "lab/ui", "scripts/semantic-quality", "scripts/workflow-settings", "scripts/qualification-evidence", "scripts/application-context"} {
 		err := filepath.WalkDir(filepath.Join(canonical, directory), func(path string, entry os.DirEntry, walkErr error) error {
 			if walkErr != nil {
 				return walkErr
@@ -46,7 +46,7 @@ func CaptureSource(root string) (Provenance, error) {
 			if entry.Type()&os.ModeSymlink != 0 {
 				return fmt.Errorf("source snapshot rejects symlinks")
 			}
-			if entry.IsDir() || strings.HasSuffix(path, "_test.go") || !strings.HasSuffix(path, ".go") && !strings.HasSuffix(path, ".json") {
+			if entry.IsDir() || strings.HasSuffix(path, "_test.go") || !strings.HasSuffix(path, ".go") && !strings.HasSuffix(path, ".json") && !(directory == "lab/ui" && (strings.HasSuffix(path, ".ts") || strings.HasSuffix(path, ".tsx") || strings.HasSuffix(path, ".css"))) {
 				return nil
 			}
 			info, err := entry.Info()
@@ -70,6 +70,18 @@ func CaptureSource(root string) (Provenance, error) {
 		if err != nil {
 			return Provenance{}, err
 		}
+	}
+	for _, name := range []string{"vite.lab.config.ts", "scripts/lab.mjs"} {
+		path := filepath.Join(canonical, name)
+		info, err := os.Lstat(path)
+		if err != nil || !info.Mode().IsRegular() || info.Size() > MaxImportBytes {
+			return Provenance{}, fmt.Errorf("Lab build source unavailable or unsafe")
+		}
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			return Provenance{}, err
+		}
+		p.SourceHashes[name] = semanticeval.Hash(raw)
 	}
 	if modified == "true" {
 		p.DirtyHashes = map[string]string{}

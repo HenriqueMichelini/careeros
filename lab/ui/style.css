@@ -1,0 +1,20 @@
+@import 'tailwindcss' source(none);
+@source './';
+@theme { --font-sans: system-ui, sans-serif; }
+body { margin:0; background:#f4f6f8; color:#172b3a; font:16px system-ui,sans-serif; }
+main { max-width:1200px; margin:auto; padding:24px; }
+header { padding:12px 0 24px; }
+h1 { font-size:30px; font-weight:700; } h2 { font-size:22px;font-weight:650;margin-bottom:12px; } h3 { font-size:18px;font-weight:600;margin-bottom:8px; }
+section { margin-bottom:24px;padding:20px;background:white;border:1px solid #d7e0e6;border-radius:12px; }
+button,input,select { font:inherit; } button { padding:8px 12px;border:1px solid #506b7b;border-radius:6px;background:#e9f3f8;cursor:pointer; } button:hover { background:#d4e8f1; } button:disabled { opacity:.5;cursor:default; }
+input:not([type=checkbox]),select { width:100%;min-width:0;padding:8px;border:1px solid #8194a0;border-radius:5px;background:white; }
+label { display:block;font-size:14px; } label>span { display:block;margin-bottom:4px; }
+:focus-visible { outline:3px solid #006f9b;outline-offset:3px; }
+.filters { display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:12px 0; }
+.actions { display:flex;flex-wrap:wrap;gap:10px;margin:12px 0;align-items:center; }
+.notice { padding:12px;background:#fff4d8;border-left:4px solid #b77c00;margin:12px 0;overflow-wrap:anywhere; }
+.error { background:#ffe8e5;border-color:#aa3020; }
+.table { display:block;width:100%;max-width:100%;overflow:auto;max-height:420px; } table { border-collapse:collapse;width:100%;font-size:14px; } th,td { padding:10px;text-align:left;border-bottom:1px solid #d7e0e6;vertical-align:top; } th { background:#edf3f7;position:sticky;top:0; }
+pre { white-space:pre-wrap;overflow-wrap:anywhere;font:12px ui-monospace,monospace;max-height:450px;overflow:auto;padding:12px;background:#edf3f7; } details { margin:10px 0; } summary { cursor:pointer;font-weight:600; }
+.muted { color:#465d6c;font-size:14px; } .identity { overflow-wrap:anywhere;font:12px ui-monospace,monospace; } .case-choice { display:flex;gap:8px;align-items:start; } input[type=checkbox] { margin-top:4px; }
+@media(max-width:500px) { main { padding:12px; } section { padding:12px; } h1 { font-size:25px; } }

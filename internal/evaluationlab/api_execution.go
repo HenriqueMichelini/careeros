@@ -72,6 +72,10 @@ func (a *API) start(w http.ResponseWriter, r *http.Request) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	if prior, ok := a.admissions[input.Token]; ok {
+		if a.deleted[prior.RunID] {
+			a.error(w, 410, "deleted", "The original admitted evidence was deliberately deleted.")
+			return
+		}
 		if prior.PlanHash != input.Plan.Hash {
 			a.error(w, 409, "idempotency_conflict", "Token was already used for another plan.")
 			return
@@ -143,6 +147,10 @@ func (a *API) executionRoute(w http.ResponseWriter, r *http.Request) bool {
 		return true
 	}
 	prefix := "/lab/api/runs/"
+	if strings.HasPrefix(r.URL.Path, prefix) && strings.HasSuffix(r.URL.Path, "/delete") {
+		a.deleteEvidence(w, r, strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, prefix), "/delete"))
+		return true
+	}
 	if strings.HasPrefix(r.URL.Path, prefix) && strings.HasSuffix(r.URL.Path, "/cancel") {
 		id := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, prefix), "/cancel")
 		a.cancel(w, r, id)

@@ -33,11 +33,17 @@ func TestCompatibleCaseComparisonShowsDeltasAndNeverPoolsPartialPairs(t *testing
 	contract := lab.ComparisonContract{FixtureHash: "f", LabelHash: "l", SourceVersion: "s", PromptVersion: "p", SchemaVersion: "j", ScorerVersion: "v", StrategyVersion: "r", BudgetVersion: "b", RuntimeVersion: "t", Mode: "controlled", Configuration: "current"}
 	candidate := contract
 	candidate.Configuration = "candidate"
-	left := []lab.ImportedCase{{ID: "en-case", Identity: "left", Kind: "workflow-result", Configuration: "current", Actual: json.RawMessage(`{"status":200,"score":{"forbiddenAdditions":0,"relationshipErrors":0,"missing":[]}}`)}}
-	right := []lab.ImportedCase{{ID: "en-case", Identity: "right", Kind: "workflow-result", Configuration: "candidate", Actual: json.RawMessage(`{"status":200,"score":{"forbiddenAdditions":1,"relationshipErrors":2,"missing":["required"]}}`)}}
+	left := []lab.ImportedCase{{ID: "en-case", Language: "en", Workflow: "profile_ingestion", Identity: "left", Kind: "workflow-result", Configuration: "current", Actual: json.RawMessage(`{"status":200,"score":{"forbiddenAdditions":0,"relationshipErrors":0,"missing":[]}}`)}}
+	right := []lab.ImportedCase{{ID: "en-case", Language: "en", Workflow: "profile_ingestion", Identity: "right", Kind: "workflow-result", Configuration: "candidate", Actual: json.RawMessage(`{"status":200,"score":{"forbiddenAdditions":1,"relationshipErrors":2,"missing":["required"]}}`)}}
 	r := lab.CompareCases(contract, candidate, "configuration", left, right)
 	if !r.Compatibility.Compatible || r.Partial || len(r.Deltas) != 1 || r.Deltas[0].ForbiddenAdditionsDelta == nil || *r.Deltas[0].ForbiddenAdditionsDelta != 1 || *r.Deltas[0].MissingLabelsDelta != 1 {
 		t.Fatalf("lost paired deltas: %+v", r)
+	}
+	encoded, _ := json.Marshal(r.Deltas[0])
+	var scope map[string]any
+	json.Unmarshal(encoded, &scope)
+	if scope["language"] != "en" || scope["workflow"] != "profile_ingestion" {
+		t.Fatal("comparison scope not visible without inferring from case ID")
 	}
 	r = lab.CompareCases(contract, candidate, "configuration", left, nil)
 	if r.Compatibility.Compatible || !r.Partial || len(r.Compatibility.Reasons) == 0 {
