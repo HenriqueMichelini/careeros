@@ -114,27 +114,7 @@ func TestAPIAdmissionIsIdempotentAndCancellationStopsDispatch(t *testing.T) {
 	wg.Wait()
 	close(ids)
 	close(statuses)
-	id := ""
-	created := 0
-	for current := range ids {
-		if current == "" {
-			t.Fatal("missing id")
-		}
-		if id != "" && id != current {
-			t.Fatal("token redispatched")
-		}
-		id = current
-	}
-	for status := range statuses {
-		if status == 201 {
-			created++
-		} else if status != 200 {
-			t.Fatalf("race status%d", status)
-		}
-	}
-	if created != 1 {
-		t.Fatalf("admitted%d", created)
-	}
+	id := assertSingleAdmission(t, ids, statuses)
 	select {
 	case <-entered:
 	case <-time.After(time.Second):
@@ -200,9 +180,7 @@ func TestAPIHistoryImportExportAndBounds(t *testing.T) {
 	}
 	record := awaitRun(t, r, id)
 	for _, path := range []string{"/lab/api/runs?limit=1", "/lab/api/runs/" + id, "/lab/api/runs/" + id + "/cases/" + record.Cases[0].Identity, "/lab/api/runs/" + id + "/exports?format=diagnostics", "/lab/api/runs/" + id + "/exports?format=json"} {
-		if out := request("GET", path, nil); out.Code != 200 {
-			t.Fatalf("read %s failed%d", path, out.Code)
-		}
+		assertHTTPStatus(t, request("GET", path, nil), 200)
 	}
 	events := request("GET", "/lab/api/runs/"+id+"/events?after=0&limit=3", nil)
 	var page struct {
@@ -265,5 +243,39 @@ func TestAPIHistoryImportExportAndBounds(t *testing.T) {
 	}
 	if out := request("GET", "/lab/api/runs?path=/etc/passwd", nil); out.Code != 400 {
 		t.Fatal("arbitrary query accepted")
+	}
+}
+
+func assertSingleAdmission(t *testing.T, ids <-chan string, statuses <-chan int) string {
+	t.Helper()
+	id := ""
+	created := 0
+	for current := range ids {
+		if current == "" {
+			t.Fatal("missing id")
+		}
+		if id != "" && id != current {
+			t.Fatal("token redispatched")
+		}
+		id = current
+	}
+	for status := range statuses {
+		if status == 201 {
+			created++
+		} else if status != 200 {
+			t.Fatalf("race status%d", status)
+		}
+	}
+	if created != 1 {
+		t.Fatalf("admitted%d", created)
+	}
+
+	return id
+}
+
+func assertHTTPStatus(t *testing.T, response *httptest.ResponseRecorder, want int) {
+	t.Helper()
+	if response.Code != want {
+		t.Fatalf("HTTP status%d want%d", response.Code, want)
 	}
 }

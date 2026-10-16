@@ -3,6 +3,7 @@ package evaluationlab
 import (
 	"context"
 	"io"
+	"io/fs"
 	"net/http"
 	"strings"
 )
@@ -24,30 +25,40 @@ func (a *API) Shutdown(ctx context.Context) error {
 	}
 	return nil
 }
+
+const assetUnavailable = "Lab asset unavailable."
+
 func (a *API) asset(w http.ResponseWriter, r *http.Request) bool {
 	const prefix = "/lab/assets/"
 	if !strings.HasPrefix(r.URL.Path, prefix) || r.Method != http.MethodGet {
 		return false
 	}
-	name := strings.TrimPrefix(r.URL.Path, prefix)
-	if _, err := query(r); err != nil || !contains([]string{"lab.js", "lab.css"}, name) || a.options.Assets == nil {
-		a.error(w, 404, "not_found", "Lab asset unavailable.")
+	if _, err := query(r); err != nil || a.options.Assets == nil {
+		a.error(w, 404, "not_found", assetUnavailable)
 		return true
 	}
-	f, err := a.options.Assets.Open(name)
+	var f fs.File
+	var err error
+	kind := "text/javascript; charset=utf-8"
+	switch r.URL.Path {
+	case "/lab/assets/lab.js":
+		f, err = a.options.Assets.Open("lab.js")
+	case "/lab/assets/lab.css":
+		f, err = a.options.Assets.Open("lab.css")
+		kind = "text/css; charset=utf-8"
+	default:
+		a.error(w, 404, "not_found", assetUnavailable)
+		return true
+	}
 	if err != nil {
-		a.error(w, 404, "not_found", "Lab asset unavailable.")
+		a.error(w, 404, "not_found", assetUnavailable)
 		return true
 	}
 	defer f.Close()
 	info, err := f.Stat()
 	if err != nil || !info.Mode().IsRegular() || info.Size() > 1<<20 {
-		a.error(w, 404, "not_found", "Lab asset unavailable.")
+		a.error(w, 404, "not_found", assetUnavailable)
 		return true
-	}
-	kind := "text/javascript; charset=utf-8"
-	if name == "lab.css" {
-		kind = "text/css; charset=utf-8"
 	}
 	w.Header().Set("Content-Type", kind)
 	w.WriteHeader(200)
