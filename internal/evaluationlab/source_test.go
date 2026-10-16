@@ -10,7 +10,7 @@ func TestSourceSnapshotIncludesEmbeddedRubricAndRunnerCode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, path := range []string{"internal/fieldvalidation/questions.json", "internal/semanticeval/context.go", "internal/semanticeval/batch.go", "internal/evaluationlab/runner.go"} {
+	for _, path := range []string{"internal/fieldvalidation/questions.json", "internal/semanticeval/context.go", "internal/semanticeval/batch.go", "internal/evaluationlab/runner.go", "lab/api/main.go"} {
 		if provenance.SourceHashes[path] == "" {
 			t.Fatalf("missing source dependency %s", path)
 		}

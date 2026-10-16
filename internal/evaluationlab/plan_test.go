@@ -22,6 +22,9 @@ func TestFrozenPlanBindsSelectionOrderFixtureBytesAndExecutionCaps(t *testing.T)
 	if plan.ID == "" || plan.Hash == "" || len(plan.CaseOrder) != 1 || plan.CaseOrder[0] != "en-fact" || plan.RequiredHTTPAttempts != 1 {
 		t.Fatalf("incomplete frozen plan: %+v", plan)
 	}
+	if plan.Provenance.FixtureVersion != "semantic-quality-v2" || plan.SuiteVersion != "lab-suite-v1" {
+		t.Fatal("fixture and catalog versions conflated")
+	}
 	if err := planner.ValidatePlan(plan); err != nil {
 		t.Fatal(err)
 	}
