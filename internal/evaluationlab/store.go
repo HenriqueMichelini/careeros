@@ -16,6 +16,8 @@ import (
 )
 
 const StoreVersion = "lab-store-v1"
+const snapshotPrefix = "snapshot-"
+const writerLock = "writer.lock"
 const maxStoreFile = 64 << 20
 const maxStoredRuns = 4096
 
@@ -204,7 +206,7 @@ func (s *FileStore) safe(path string) error {
 	}
 	return nil
 }
-func (s *FileStore) read(path string, max int64) ([]byte, error) {
+func (s *FileStore) read(path string, limit int64) ([]byte, error) {
 	if err := s.safe(path); err != nil {
 		return nil, err
 	}
@@ -217,11 +219,11 @@ func (s *FileStore) read(path string, max int64) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if !info.Mode().IsRegular() || info.Size() > max {
+	if !info.Mode().IsRegular() || info.Size() > limit {
 		return nil, fmt.Errorf("history file exceeds bounds or is not regular")
 	}
-	raw, err := io.ReadAll(io.LimitReader(f, max+1))
-	if len(raw) > int(max) {
+	raw, err := io.ReadAll(io.LimitReader(f, limit+1))
+	if len(raw) > int(limit) {
 		return nil, fmt.Errorf("history file exceeds bounds")
 	}
 	return raw, err
@@ -303,7 +305,7 @@ func (s *FileStore) save(record RunRecord) error {
 			return s.fail(err)
 		}
 	}
-	generation := "snapshot-" + newLabID()
+	generation := snapshotPrefix + newLabID()
 	if err := s.guard("create-snapshot"); err != nil {
 		return s.fail(err)
 	}
@@ -470,63 +472,86 @@ func (s *FileStore) rebuild() error {
 		return fmt.Errorf("history catalog exceeds bounds")
 	}
 	for _, entry := range entries {
-		id := entry.Name()
-		if id == "writer.lock" {
+		if entry.Name() == writerLock {
 			continue
 		}
-		if !storeID.MatchString(id) || !entry.IsDir() {
+		if !storeID.MatchString(entry.Name()) || !entry.IsDir() {
 			s.problems = append(s.problems, "unrecognized history entry")
 			continue
 		}
-		raw, err := s.read(filepath.Join(id, "manifest.json"), 1<<20)
-		var m storeManifest
-		if err == nil {
-			err = json.Unmarshal(raw, &m)
-		}
-		if err == nil && (m.Version != StoreVersion || m.Summary.ID != id || !strings.HasPrefix(m.Snapshot, "snapshot-") || !storeID.MatchString(strings.TrimPrefix(m.Snapshot, "snapshot-")) || len(m.CaseHashes) > 512) {
-			err = fmt.Errorf("invalid manifest")
-		}
-		var record RunRecord
-		if err == nil && m.Kind != "" && m.Kind != "import" {
-			err = fmt.Errorf("unknown history kind")
-		}
-		if err == nil && (!contains([]string{"planned", "running", "completed", "failed", "canceled", "interrupted"}, m.Summary.EngineState) || len(m.Hash) != 64 || m.Summary.Cases != len(m.CaseHashes)) {
-			err = fmt.Errorf("invalid manifest metadata")
-		}
-		if err == nil && m.Kind == "" && (m.Summary.EngineState == "planned" || m.Summary.EngineState == "running") {
-			record, err = s.load(m)
-		}
-
-		if err != nil {
-			s.problems = append(s.problems, id+": invalid or incomplete history")
-			continue
-		}
-		s.manifests[id] = m
-		if m.Kind == "import" {
-			continue
-		}
-		if _, eventErr := s.readEvents(id); eventErr != nil {
-			s.problems = append(s.problems, id+": damaged checkpoint journal")
-		}
-		if record.EngineState == "planned" || record.EngineState == "running" {
-			record.EngineState = "interrupted"
-			record.AssertionVerdict = "blocked"
-			record.UnavailableReasons = append(record.UnavailableReasons, "process_restart; no auto-resume")
-			for i := range record.Dispatches {
-				if record.Dispatches[i].State == "attempted" || record.Dispatches[i].State == "planned" {
-					record.Dispatches[i].State = "unknown-final"
-				}
-			}
-			if err = s.save(record); err != nil {
-				record.Durable = false
-				record.UnavailableReasons = append(record.UnavailableReasons, "interruption recovery could not be persisted")
-				s.recovery[id] = record
-				m.Summary.EngineState = "interrupted"
-				m.Summary.AssertionVerdict = "blocked"
-				s.manifests[id] = m
-				s.problems = append(s.problems, id+": interruption recovery not durable")
-			}
-		}
+		s.rebuildEntry(entry.Name())
 	}
 	return nil
+}
+func validateManifest(m storeManifest, id string) error {
+	if m.Version != StoreVersion || m.Summary.ID != id {
+		return fmt.Errorf("invalid manifest identity/version")
+	}
+	if !strings.HasPrefix(m.Snapshot, snapshotPrefix) || !storeID.MatchString(strings.TrimPrefix(m.Snapshot, snapshotPrefix)) {
+		return fmt.Errorf("invalid snapshot identity")
+	}
+	if len(m.CaseHashes) > 512 || m.Summary.Cases != len(m.CaseHashes) || len(m.Hash) != 64 {
+		return fmt.Errorf("invalid manifest bounds")
+	}
+	if m.Kind != "" && m.Kind != "import" {
+		return fmt.Errorf("unknown history kind")
+	}
+	if !contains([]string{"planned", "running", "completed", "failed", "canceled", "interrupted"}, m.Summary.EngineState) {
+		return fmt.Errorf("invalid execution state")
+	}
+	return nil
+}
+func (s *FileStore) rebuildEntry(id string) {
+	raw, err := s.read(filepath.Join(id, "manifest.json"), 1<<20)
+	var m storeManifest
+	if err == nil {
+		err = json.Unmarshal(raw, &m)
+	}
+	if err == nil {
+		err = validateManifest(m, id)
+	}
+	if err != nil {
+		s.problems = append(s.problems, id+": invalid or incomplete history")
+		return
+	}
+	s.manifests[id] = m
+	if m.Kind == "import" {
+		return
+	}
+	if _, err = s.readEvents(id); err != nil {
+		s.problems = append(s.problems, id+": damaged checkpoint journal")
+	}
+	if m.Summary.EngineState != "planned" && m.Summary.EngineState != "running" {
+		return
+	}
+	record, err := s.load(m)
+	if err != nil {
+		m.Summary.EngineState = "interrupted"
+		m.Summary.AssertionVerdict = "blocked"
+		s.manifests[id] = m
+		s.problems = append(s.problems, id+": interrupted result unavailable")
+		s.fail(err)
+		return
+	}
+	s.recoverInterrupted(m, record)
+}
+func (s *FileStore) recoverInterrupted(m storeManifest, record RunRecord) {
+	record.EngineState = "interrupted"
+	record.AssertionVerdict = "blocked"
+	record.UnavailableReasons = append(record.UnavailableReasons, "process_restart; no auto-resume")
+	for i := range record.Dispatches {
+		if record.Dispatches[i].State == "attempted" || record.Dispatches[i].State == "planned" {
+			record.Dispatches[i].State = "unknown-final"
+		}
+	}
+	if err := s.save(record); err == nil {
+		return
+	}
+	record.Durable = false
+	record.UnavailableReasons = append(record.UnavailableReasons, "interruption recovery could not be persisted")
+	s.recovery[record.ID] = record
+	m.Summary.EngineState = "interrupted"
+	m.Summary.AssertionVerdict = "blocked"
+	s.manifests[record.ID] = m
+	s.problems = append(s.problems, record.ID+": interruption recovery not durable")
 }

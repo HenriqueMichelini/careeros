@@ -76,13 +76,8 @@ func TestStoreRestartPreservesPartialRunAndNeverResumes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	p := semanticPlanner(t)
-	r := lab.NewRunner(p, lab.RunnerOptions{})
-	id, err := r.Start(context.Background(), factPlan(t, p))
-	if err != nil {
-		t.Fatal(err)
-	}
-	record := awaitRun(t, r, id)
+	record := controlledHistoryRecord(t, lab.RunnerOptions{})
+	id := record.ID
 	record.EngineState = "running"
 	record.Dispatches[0].State = "attempted"
 	if err = s.Save(record); err != nil {
@@ -152,13 +147,7 @@ func TestStoreDetectsTruncatedEventsWithoutLosingOtherHistory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	p := semanticPlanner(t)
-	r := lab.NewRunner(p, lab.RunnerOptions{Retain: s.Save})
-	id, err := r.Start(context.Background(), factPlan(t, p))
-	if err != nil {
-		t.Fatal(err)
-	}
-	awaitRun(t, r, id)
+	id := controlledHistoryRecord(t, lab.RunnerOptions{Retain: s.Save}).ID
 	events, err := s.Events(id, 0, 100)
 	if err != nil || len(events) == 0 {
 		t.Fatalf("missing durable events: %v", err)
@@ -359,12 +348,12 @@ func TestStoreVersionedSyntheticBundleRoundTrip(t *testing.T) {
 		t.Fatal(err)
 	}
 	original, _ := s.LoadImport(id)
-	copy, _ := s.LoadImport(copyID)
-	if copy.OriginalHash != original.OriginalHash || len(copy.Cases) != len(original.Cases) || copy.Derivation != original.Derivation {
+	roundTripped, _ := s.LoadImport(copyID)
+	if roundTripped.OriginalHash != original.OriginalHash || len(roundTripped.Cases) != len(original.Cases) || roundTripped.Derivation != original.Derivation {
 		t.Fatal("bundle changed evidence")
 	}
-	detail, err := s.Case(copyID, copy.Cases[0].Identity)
-	if err != nil || detail.Identity != copy.Cases[0].Identity {
+	detail, err := s.Case(copyID, roundTripped.Cases[0].Identity)
+	if err != nil || detail.Identity != roundTripped.Cases[0].Identity {
 		t.Fatalf("import lazy detail: %v", err)
 	}
 }
@@ -375,13 +364,8 @@ func TestDamagedJournalDoesNotPreventReadingOtherRunsOnRestart(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	p := semanticPlanner(t)
-	r := lab.NewRunner(p, lab.RunnerOptions{})
-	id, err := r.Start(context.Background(), factPlan(t, p))
-	if err != nil {
-		t.Fatal(err)
-	}
-	record := awaitRun(t, r, id)
+	record := controlledHistoryRecord(t, lab.RunnerOptions{})
+	id := record.ID
 	record.EngineState = "running"
 	if err = s.Save(record); err != nil {
 		t.Fatal(err)
@@ -420,13 +404,8 @@ func TestNativeSyntheticExportPreservesEvidenceWithoutTrustPromotion(t *testing.
 		t.Fatal(err)
 	}
 	defer s.Close()
-	p := semanticPlanner(t)
-	r := lab.NewRunner(p, lab.RunnerOptions{Retain: s.Save})
-	id, err := r.Start(context.Background(), factPlan(t, p))
-	if err != nil {
-		t.Fatal(err)
-	}
-	record := awaitRun(t, r, id)
+	record := controlledHistoryRecord(t, lab.RunnerOptions{Retain: s.Save})
+	id := record.ID
 	encoded, err := s.ExportJSON(id)
 	if err != nil {
 		t.Fatal(err)
@@ -435,8 +414,8 @@ func TestNativeSyntheticExportPreservesEvidenceWithoutTrustPromotion(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
-	copy, err := s.LoadImport(copyID)
-	if err != nil || !copy.Quarantined || string(copy.Original) != string(encoded) {
+	roundTripped, err := s.LoadImport(copyID)
+	if err != nil || !roundTripped.Quarantined || string(roundTripped.Original) != string(encoded) {
 		t.Fatal("native export altered or promoted")
 	}
 	markdown, err := s.ExportMarkdown(id)
@@ -459,13 +438,8 @@ func TestStoreRebuildUsesMetadataAndKeepsIndependentCaseArtifacts(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	p := semanticPlanner(t)
-	r := lab.NewRunner(p, lab.RunnerOptions{Retain: s.Save})
-	id, err := r.Start(context.Background(), factPlan(t, p))
-	if err != nil {
-		t.Fatal(err)
-	}
-	record := awaitRun(t, r, id)
+	record := controlledHistoryRecord(t, lab.RunnerOptions{Retain: s.Save})
+	id := record.ID
 	s.Close()
 	entries, _ := os.ReadDir(filepath.Join(dir, id))
 	for _, entry := range entries {
@@ -496,13 +470,8 @@ func TestNativeExportRejectsBundleTooLargeToRoundTrip(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer s.Close()
-	p := semanticPlanner(t)
-	r := lab.NewRunner(p, lab.RunnerOptions{})
-	id, err := r.Start(context.Background(), factPlan(t, p))
-	if err != nil {
-		t.Fatal(err)
-	}
-	record := awaitRun(t, r, id)
+	record := controlledHistoryRecord(t, lab.RunnerOptions{})
+	id := record.ID
 	record.UnavailableReasons = append(record.UnavailableReasons, strings.Repeat("x", lab.MaxImportBytes))
 	if err = s.Save(record); err != nil {
 		t.Fatal(err)
@@ -518,13 +487,8 @@ func TestCaseEnvelopePreservesArtifactAtConfiguredBound(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer s.Close()
-	p := semanticPlanner(t)
-	r := lab.NewRunner(p, lab.RunnerOptions{})
-	id, err := r.Start(context.Background(), factPlan(t, p))
-	if err != nil {
-		t.Fatal(err)
-	}
-	record := awaitRun(t, r, id)
+	record := controlledHistoryRecord(t, lab.RunnerOptions{})
+	id := record.ID
 	record.Cases[0].Actual = json.RawMessage(`"` + strings.Repeat("x", lab.MaxImportBytes-2) + `"`)
 	record.Cases[0].ArtifactHash = ""
 	if err = s.Save(record); err != nil {
@@ -538,4 +502,15 @@ func TestCaseEnvelopePreservesArtifactAtConfiguredBound(t *testing.T) {
 	if err != nil || len(artifact) != lab.MaxImportBytes {
 		t.Fatalf("bounded artifact unavailable: %v", err)
 	}
+}
+
+func controlledHistoryRecord(t *testing.T, options lab.RunnerOptions) lab.RunRecord {
+	t.Helper()
+	p := semanticPlanner(t)
+	runner := lab.NewRunner(p, options)
+	id, err := runner.Start(context.Background(), factPlan(t, p))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return awaitRun(t, runner, id)
 }

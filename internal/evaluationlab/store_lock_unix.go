@@ -10,12 +10,12 @@ import (
 )
 
 func (s *FileStore) acquireLock() error {
-	if _, err := s.root.Lstat("writer.lock"); err == nil {
-		if err = s.safe("writer.lock"); err != nil {
+	if _, err := s.root.Lstat(writerLock); err == nil {
+		if err = s.safe(writerLock); err != nil {
 			return err
 		}
 	}
-	f, err := s.root.OpenFile("writer.lock", os.O_CREATE|os.O_RDWR, 0600)
+	f, err := s.root.OpenFile(writerLock, os.O_CREATE|os.O_RDWR, 0600)
 	if err != nil {
 		return err
 	}

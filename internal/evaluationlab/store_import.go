@@ -24,7 +24,7 @@ func (s *FileStore) Import(raw []byte, dependencies [][]byte) (string, error) {
 		return "", fmt.Errorf("history catalog capacity reached")
 	}
 	id := newLabID()
-	generation := "snapshot-" + newLabID()
+	generation := snapshotPrefix + newLabID()
 	if err = s.guard("create-import"); err != nil {
 		return "", s.fail(err)
 	}
