@@ -50,8 +50,7 @@ func RunApplicationContext(ctx context.Context, labelsRaw, casesRaw, baselineRaw
 	if err := json.Unmarshal(baselineRaw, &baseline); err != nil {
 		return report, err
 	}
-	rows := []any{}
-	fields := []any{}
+	report = ApplicationContextReport{Retrieval: []any{}, Fields: []any{}, FixtureHashes: map[string]string{"retrieval": eval.Hash(labelsRaw), "outputs": eval.Hash(casesRaw), "baseline": eval.Hash(baselineRaw)}, Limitations: "Replays fixed outputs, including known bad outputs. Candidate labels are inherited from #45; baseline full approved candidate set has no retrieval omissions. Field metrics use #34 clause labels; unsupported candidates require adjudication. No live inference, billing, latency, quality or token improvement is established.", Mode: "controlled-offline"}
 	content := json.RawMessage(`{"jobTitle":null,"company":null,"jobSummary":"Java required.","resume":"Java","coverLetter":{"greeting":"Dear team,","body":"I use Java.","closing":"Sincerely,"},"applicationAnswers":"Java."}`)
 	available := []string{}
 	for _, c := range labels.Cases {
@@ -106,7 +105,7 @@ func RunApplicationContext(ctx context.Context, labelsRaw, casesRaw, baselineRaw
 				negative = append(negative, id)
 			}
 		}
-		rows = append(rows, map[string]any{"id": c.ID, "status": w.Status, "relevant": len(c.Relevant), "retrieved": len(c.Relevant) - len(missing), "materialMisses": missing, "negativeMisses": negative, "selection": result.Selection, "providerEnvelopeBytes": outbound, "baselineApprovedCandidateRecall": 1.0})
+		report.Retrieval = append(report.Retrieval, map[string]any{"id": c.ID, "status": w.Status, "relevant": len(c.Relevant), "retrieved": len(c.Relevant) - len(missing), "materialMisses": missing, "negativeMisses": negative, "selection": result.Selection, "providerEnvelopeBytes": outbound, "baselineApprovedCandidateRecall": 1.0})
 	}
 	for _, c := range corpus.Cases {
 		if c.Task != "application_draft" || !wanted[c.ID] {
@@ -148,9 +147,8 @@ func RunApplicationContext(ctx context.Context, labelsRaw, casesRaw, baselineRaw
 			if err := e; err != nil {
 				return report, err
 			}
-			fields = append(fields, map[string]any{"id": c.ID, "field": field, "status": w.Status, "baseline": before, "currentControlledReplay": now})
+			report.Fields = append(report.Fields, map[string]any{"id": c.ID, "field": field, "status": w.Status, "baseline": before, "currentControlledReplay": now})
 		}
 	}
-	report = ApplicationContextReport{Retrieval: rows, Fields: fields, FixtureHashes: map[string]string{"retrieval": eval.Hash(labelsRaw), "outputs": eval.Hash(casesRaw), "baseline": eval.Hash(baselineRaw)}, Limitations: "Replays fixed outputs, including known bad outputs. Candidate labels are inherited from #45; baseline full approved candidate set has no retrieval omissions. Field metrics use #34 clause labels; unsupported candidates require adjudication. No live inference, billing, latency, quality or token improvement is established.", Mode: "controlled-offline"}
 	return report, nil
 }

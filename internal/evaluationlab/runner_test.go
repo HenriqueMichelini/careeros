@@ -107,6 +107,13 @@ func TestSequenceArtifactCapStopsBeforeNextRequiredLeg(t *testing.T) {
 	if record.EngineState != "failed" || record.Progress.AttemptedHTTP != 1 || record.Progress.UnreachedHTTP != 1 {
 		t.Fatalf("artifact cap allowed another leg: state=%s attempted=%d unreached=%d", record.EngineState, record.Progress.AttemptedHTTP, record.Progress.UnreachedHTTP)
 	}
+	if record.Cases[0].Children[0].AttemptedSteps != 1 {
+		t.Fatal("executed child lacks attempted count")
+	}
+	child := record.Cases[0].Children[1]
+	if child.EngineState != "skipped" || child.SkippedSteps != 1 || child.AttemptedSteps != 0 || len(child.UnavailableReasons) != 1 || child.UnavailableReasons[0] != "capacity_exhausted" {
+		t.Fatalf("unreached child lacks accounting: %+v", child)
+	}
 }
 
 type labBlockedBody struct {

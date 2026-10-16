@@ -251,6 +251,9 @@ func (r *Runner) policy(state *runState) semanticeval.ExecutionPolicy {
 			state.leafIdentity = leaf.LeafIdentity
 			leaf.EngineState = "running"
 			root.AttemptedSteps++
+			if leaf != root {
+				leaf.AttemptedSteps++
+			}
 			state.record.Progress.AttemptedHTTP++
 			r.eventLocked(state, RunEvent{Kind: "workflow_started", CaseIdentity: state.leafIdentity})
 			return nil
@@ -443,12 +446,20 @@ func (r *Runner) execute(parent context.Context, state *runState) {
 	if state.record.EngineState != "completed" {
 		state.record.AssertionVerdict = "blocked"
 	}
+	stopReason := "prior_leg_stopped"
+	switch {
+	case state.storageErr != nil:
+		stopReason = "storage_failure"
+	case errors.Is(ctx.Err(), context.Canceled):
+		stopReason = "canceled"
+	case errors.Is(ctx.Err(), context.DeadlineExceeded):
+		stopReason = "deadline_exceeded"
+	case errors.Is(err, errRunCapacity):
+		stopReason = "capacity_exhausted"
+	}
 	for i := range state.record.Cases {
 		c := &state.record.Cases[i]
-		if c.EngineState == "planned" {
-			c.AssertionVerdict = "skipped"
-			c.SkippedSteps = c.PlannedSteps
-		}
+		finalizeUnreached(c, stopReason)
 		if c.AssertionVerdict == "fail" {
 			state.record.AssertionVerdict = "fail"
 		}
@@ -609,4 +620,17 @@ func cloneJSON[T any](value T) T {
 	var copy T
 	_ = json.Unmarshal(raw, &copy)
 	return copy
+}
+
+// finalizeUnreached records why every planned leg remained unattempted.
+func finalizeUnreached(c *ImportedCase, reason string) {
+	if c.EngineState == "planned" {
+		c.EngineState = "skipped"
+		c.AssertionVerdict = "skipped"
+		c.SkippedSteps = max(0, c.PlannedSteps-c.AttemptedSteps)
+		c.UnavailableReasons = append(c.UnavailableReasons, reason)
+	}
+	for i := range c.Children {
+		finalizeUnreached(&c.Children[i], reason)
+	}
 }
