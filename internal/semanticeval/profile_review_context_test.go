@@ -31,17 +31,17 @@ func sectionCase(t *testing.T, id string) eval.Case {
 }
 func TestSectionReviewCancellationAndDeadlineRetainPartialStagesWithoutRetry(t *testing.T) {
 	for _, lang := range []string{"en", "pt"} {
-		for _, fault := range []string{"cancel-rewrite", "cancel-support", "deadline"} {
+		for _, fault := range []string{"cancel-rewrite", "cancel-support", "deadline-rewrite", "deadline-support"} {
 			t.Run(lang+"-"+fault, func(t *testing.T) {
 				c := sectionCase(t, lang+"-grounded")
 				limit := time.Second
-				if fault == "deadline" {
+				if fault == "deadline-rewrite" || fault == "deadline-support" {
 					limit = 100 * time.Millisecond
 				}
 				ctx, cancel := context.WithTimeout(context.Background(), limit)
 				defer cancel()
 				stopAt := 1
-				if fault == "cancel-support" {
+				if fault == "cancel-support" || fault == "deadline-support" {
 					stopAt = 2
 				}
 				reading := make(chan struct{})
@@ -66,7 +66,7 @@ func TestSectionReviewCancellationAndDeadlineRetainPartialStagesWithoutRetry(t *
 					t.Fatal("controlled section body was not reached")
 				}
 				expected := context.DeadlineExceeded
-				if fault != "deadline" {
+				if fault == "cancel-rewrite" || fault == "cancel-support" {
 					expected = context.Canceled
 					cancel()
 				}
