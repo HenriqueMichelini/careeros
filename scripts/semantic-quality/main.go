@@ -3,13 +3,16 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"runtime/debug"
 	"strings"
+	"syscall"
 	"time"
 
 	eval "professional-information-repo/internal/semanticeval"
@@ -273,7 +276,7 @@ func buildRevision() string {
 }
 func sourceHashes() (map[string]string, error) {
 	hashes := map[string]string{}
-	for _, path := range []string{"backend/profile-ingestion/main.go", "backend/qualification-gaps/main.go", "backend/cv-generation/main.go", "backend/application-draft/main.go", "internal/fieldvalidation/decision.go", "internal/fieldvalidation/questions.json", "internal/semanticeval/score.go", "internal/semanticeval/adapter.go", "scripts/semantic-quality/main.go"} {
+	for _, path := range []string{"backend/profile-ingestion/main.go", "backend/qualification-gaps/main.go", "backend/cv-generation/main.go", "backend/application-draft/main.go", "internal/fieldvalidation/decision.go", "internal/fieldvalidation/questions.json", "internal/semanticeval/score.go", "internal/semanticeval/adapter.go", "internal/semanticeval/context.go", "internal/semanticeval/configuration.go", "internal/semanticeval/batch.go", "scripts/semantic-quality/main.go"} {
 		source, err := os.ReadFile(filepath.Clean(path))
 		if err != nil {
 			return nil, err
@@ -293,36 +296,43 @@ func saveReport(file *os.File, result *report) error {
 	encoder.SetIndent("", "  ")
 	return encoder.Encode(result)
 }
-func evaluateCase(c eval.Case, o options, keys credentials, saved map[string]eval.RunResult) (eval.RunResult, error) {
-	if o.replay == "" {
-		return eval.Run(c, o.mode, keys.openAI, keys.typeSafe)
-	}
-	result := saved[c.ID]
-	result.Mode = "replay"
-	result.Role = c.Role
-	return eval.Assess(c, result)
-}
+
 func executeCases(result *report, file *os.File, cases []eval.Case, o options, keys credentials, saved map[string]eval.RunResult) error {
 	if err := saveReport(file, result); err != nil {
 		return err
 	}
 	failed := 0
-	for _, c := range cases {
-		run, err := evaluateCase(c, o, keys, saved)
-		if err != nil {
-			return fmt.Errorf("fixture %s failed to evaluate: %w", c.ID, err)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	mode := o.mode
+	if o.replay != "" {
+		mode = "replay"
+	}
+	err := eval.ExecuteBatch(ctx, eval.Batch{Cases: cases, Mode: mode, Saved: saved, OpenAIKey: keys.openAI, TypeSafeKey: keys.typeSafe}, func(c eval.Case, _ string, run eval.RunResult, evaluationErr error) error {
+		if evaluationErr != nil && len(run.Calls) == 0 {
+			return fmt.Errorf("fixture %s failed to evaluate: %w", c.ID, evaluationErr)
+		}
+		if evaluationErr != nil {
+			run.Score.Failures = append(run.Score.Failures, "evaluation interrupted")
 		}
 		result.Runs = append(result.Runs, run)
-		if err = saveReport(file, result); err != nil {
+		if err := saveReport(file, result); err != nil {
 			return err
 		}
 		fmt.Printf("%s %s HTTP=%d precision=%.3f completeness=%.3f forbidden=%d failures=%d\n", result.Mode, c.ID, run.Status, run.Score.Precision, run.Score.Completeness, run.Score.ForbiddenAdditions, len(run.Score.Failures))
 		if len(run.Score.Failures) > 0 {
 			failed++
 		}
+		if evaluationErr != nil {
+			return fmt.Errorf("fixture %s failed to evaluate: %w", c.ID, evaluationErr)
+		}
 		if o.mode == "live" && run.Status != 200 {
 			return fmt.Errorf("live run stopped on workflow failure; partial evidence saved")
 		}
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 	fmt.Printf("Saved %d cases; %d have label or contract failures. Human prose review remains separate.\n", len(result.Runs), failed)
 	return nil // Baselines record quality failures; they are not CI pass claims.

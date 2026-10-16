@@ -98,7 +98,7 @@ func Compare(runs []ComparisonRun, rates []Rate) (map[string]*ComparisonSummary,
 			summaries[r.Configuration] = s
 		}
 		s.Attempts++
-		category := operationalOutcome(r.Run)
+		category := OperationalOutcome(r.Run)
 		s.OperationalOutcomes[category]++
 		if Completed(r.Run) {
 			s.Completed++
@@ -152,7 +152,9 @@ func Compare(runs []ComparisonRun, rates []Rate) (map[string]*ComparisonSummary,
 	return summaries, nil
 }
 
-func operationalOutcome(r RunResult) string {
+// OperationalOutcome applies the shared terminal interpretation to a logical
+// result and its observed required children; it does not infer quality.
+func OperationalOutcome(r RunResult) string {
 	if r.Diagnostics != nil {
 		category := aidiagnostics.OperationalOutcome(r.Diagnostics.Outcome)
 		if category != "completed" {
@@ -160,7 +162,7 @@ func operationalOutcome(r RunResult) string {
 		}
 	}
 	for _, step := range r.Steps {
-		if category := operationalOutcome(step); category != "completed" {
+		if category := OperationalOutcome(step); category != "completed" {
 			return category
 		}
 	}
@@ -226,5 +228,5 @@ func priceCall(c Call, rates []Rate) (float64, bool) {
 }
 
 func Completed(r RunResult) bool {
-	return operationalOutcome(r) == "completed"
+	return OperationalOutcome(r) == "completed"
 }
