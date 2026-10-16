@@ -113,3 +113,20 @@ visible preflight problems; Go public tests cover actual storage health/failure 
 No providers, real Profiles, credential discovery, deployment verification, user
 acceptance, physical mobile or actual-PDF evidence was used. Human adjudication remains
 pending. Existing CV integrity work and release gates remain separately owned.
+
+## Review correction evidence
+
+The initial `v1` exports remain immutable evidence of candidate
+`1475956f229024ad247d8d404014b858423635f4`. Independent Spec review found that late lazy-case
+responses could appear under another run and comparison results could survive changes
+to their selected IDs. Controlled browser regressions reproduced both defects before
+correction. Request generations now invalidate case reads on run/case navigation and
+deletion, and comparison reads on either ID/dimension change, including history buttons.
+The analogous delayed-plan regression was also reproduced and corrected: any composer
+selection/cap change invalidates its pending preview. Stale errors are ignored too.
+
+`smoke.native.v2.json`, `.md` and `smoke.manifest.v2.json` retain a new actual browser
+export from the corrected source. Every v2 source hash matches those corrected files;
+the compiler VCS commit is the initial candidate with dirty review corrections. The
+same complete browser flow plus all delayed-response regressions passed. Both original
+and corrected snapshots remain available; neither snapshot certifies semantic quality.

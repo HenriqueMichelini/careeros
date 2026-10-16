@@ -53,6 +53,12 @@ export function App() {
     [view, setView] = useState<View | null>(null),
     [events, setEvents] = useState<EventPage | null>(null),
     [caseEvidence, setCaseEvidence] = useState<CaseEvidence | null>(null)
+  const caseSequence = useRef(0)
+  const planSequence = useRef(0)
+  const invalidatePlan = () => {
+    planSequence.current++
+    setPlan(null)
+  }
   const [history, setHistory] = useState<Page>({
       runs: [],
       next: 0,
@@ -67,12 +73,44 @@ export function App() {
     [right, setRight] = useState(""),
     [dimension, setDimension] = useState("configuration"),
     [comparison, setComparison] = useState<Comparison | null>(null)
+  const comparisonSequence = useRef(0)
   const [importFile, setImportFile] = useState<File | null>(null),
     [dependencies, setDependencies] = useState<File[]>([]),
     [bundle, setBundle] = useState(false),
     [confirmDelete, setConfirmDelete] = useState("")
   const [viewedAt, setViewedAt] = useState(Date.now()),
     [now, setNow] = useState(Date.now())
+  const invalidateComparison = () => {
+    comparisonSequence.current++
+    setComparison(null)
+  }
+  const changeLeft = (value: string) => {
+    invalidateComparison()
+    setLeft(value)
+  }
+  const changeRight = (value: string) => {
+    invalidateComparison()
+    setRight(value)
+  }
+  const changeDimension = (value: string) => {
+    invalidateComparison()
+    setDimension(value)
+  }
+  const compare = async () => {
+    const sequence = ++comparisonSequence.current
+    setComparison(null)
+    setError("")
+    try {
+      const result = await request<Comparison>("comparisons", {
+        leftId: left,
+        rightId: right,
+        changedDimension: dimension,
+      })
+      if (sequence === comparisonSequence.current) setComparison(result)
+    } catch (e) {
+      if (sequence === comparisonSequence.current) setError(errorText(e))
+    }
+  }
   const suite = catalog.find((s) => s.id === suiteId)
   const available = status?.suites.find((s) => s.id === suiteId)
   const visible = (suite?.cases ?? []).filter(
@@ -107,6 +145,7 @@ export function App() {
     if (sequence === historySequence.current) setHistory(page)
   }
   const openRun = (id: string) => {
+    caseSequence.current++
     setRunId(id)
     location.hash = "run=" + id
     setCaseEvidence(null)
@@ -114,6 +153,19 @@ export function App() {
     setEvents(null)
     setConfirmDelete("")
     setViewedAt(Date.now())
+  }
+  const loadCase = async (identity: string) => {
+    const sequence = ++caseSequence.current
+    setCaseEvidence(null)
+    setError("")
+    try {
+      const evidence = await request<CaseEvidence>(
+        `runs/${runId}/cases/${encodeURIComponent(identity)}`,
+      )
+      if (sequence === caseSequence.current) setCaseEvidence(evidence)
+    } catch (e) {
+      if (sequence === caseSequence.current) setError(errorText(e))
+    }
   }
   useEffect(() => {
     void attempt(async () => {
@@ -195,32 +247,37 @@ export function App() {
       split: "",
       search: "",
     })
-    setPlan(null)
+    invalidatePlan()
   }
   const filter = (key: keyof typeof filters, value: string) => {
     setFilters({ ...filters, [key]: value })
-    setPlan(null)
+    invalidatePlan()
   }
-  const preview = () =>
-    attempt(async () => {
-      setBusy(true)
-      try {
-        const next = await request<Plan>("plans", {
-          selection: {
-            suite: suiteId,
-            mode,
-            configuration,
-            caseIds: chosen.map((c) => c.id),
-          },
-          caps,
-        })
+  const preview = async () => {
+    const sequence = ++planSequence.current
+    setBusy(true)
+    setError("")
+    try {
+      const next = await request<Plan>("plans", {
+        selection: {
+          suite: suiteId,
+          mode,
+          configuration,
+          caseIds: chosen.map((c) => c.id),
+        },
+        caps,
+      })
+      if (sequence === planSequence.current) {
         setPlan(next)
         setToken(identity())
         setConsumed(false)
-      } finally {
-        setBusy(false)
       }
-    })
+    } catch (e) {
+      if (sequence === planSequence.current) setError(errorText(e))
+    } finally {
+      setBusy(false)
+    }
+  }
   const start = () =>
     attempt(async () => {
       if (!plan || consumed) return
@@ -348,7 +405,7 @@ export function App() {
               value={mode}
               onChange={(e) => {
                 setMode(e.target.value)
-                setPlan(null)
+                invalidatePlan()
               }}
             >
               {suite?.modes.map((v) => <option key={v}>{v}</option>)}
@@ -360,7 +417,7 @@ export function App() {
               value={configuration}
               onChange={(e) => {
                 setConfiguration(e.target.value)
-                setPlan(null)
+                invalidatePlan()
               }}
             >
               {suite?.configurations.map((v) => <option key={v}>{v}</option>)}
@@ -413,7 +470,7 @@ export function App() {
           <button
             onClick={() => {
               setChecked(visible.map((c) => c.id))
-              setPlan(null)
+              invalidatePlan()
             }}
           >
             Select filtered cases
@@ -421,7 +478,7 @@ export function App() {
           <button
             onClick={() => {
               setChecked([])
-              setPlan(null)
+              invalidatePlan()
             }}
           >
             Clear selection
@@ -459,7 +516,7 @@ export function App() {
                               ? [...checked, c.id]
                               : checked.filter((id) => id !== c.id),
                           )
-                          setPlan(null)
+                          invalidatePlan()
                         }}
                       />
                       {c.id}
@@ -495,7 +552,7 @@ export function App() {
                   value={caps[key]}
                   onChange={(e) => {
                     setCaps({ ...caps, [key]: Number(e.target.value) })
-                    setPlan(null)
+                    invalidatePlan()
                   }}
                 />
               </label>
@@ -700,8 +757,8 @@ export function App() {
                     </details>
                   </td>
                   <td>
-                    <button onClick={() => setLeft(r.id)}>Set left</button>{" "}
-                    <button onClick={() => setRight(r.id)}>Set right</button>
+                    <button onClick={() => changeLeft(r.id)}>Set left</button>{" "}
+                    <button onClick={() => changeRight(r.id)}>Set right</button>
                   </td>
                 </tr>
               ))}
@@ -820,17 +877,7 @@ export function App() {
                     {view.cases.map((c) => (
                       <tr key={c.identity}>
                         <td>
-                          <button
-                            onClick={() =>
-                              void attempt(async () =>
-                                setCaseEvidence(
-                                  await request<CaseEvidence>(
-                                    `runs/${runId}/cases/${encodeURIComponent(c.identity)}`,
-                                  ),
-                                ),
-                              )
-                            }
-                          >
+                          <button onClick={() => void loadCase(c.identity)}>
                             {c.id}
                           </button>
                           <br />
@@ -875,6 +922,7 @@ export function App() {
                       await request(`runs/${runId}/delete`, {
                         confirmId: confirmDelete,
                       })
+                      caseSequence.current++
                       setRunId("")
                       setView(null)
                       location.hash = ""
@@ -901,7 +949,7 @@ export function App() {
             <input
               value={left}
               onChange={(e) => {
-                setLeft(e.target.value)
+                changeLeft(e.target.value)
                 setComparison(null)
               }}
             />
@@ -911,7 +959,7 @@ export function App() {
             <input
               value={right}
               onChange={(e) => {
-                setRight(e.target.value)
+                changeRight(e.target.value)
                 setComparison(null)
               }}
             />
@@ -921,7 +969,7 @@ export function App() {
             <select
               value={dimension}
               onChange={(e) => {
-                setDimension(e.target.value)
+                changeDimension(e.target.value)
                 setComparison(null)
               }}
             >
@@ -941,17 +989,7 @@ export function App() {
         </div>
         <button
           disabled={!left || !right || left === right}
-          onClick={() =>
-            void attempt(async () =>
-              setComparison(
-                await request<Comparison>("comparisons", {
-                  leftId: left,
-                  rightId: right,
-                  changedDimension: dimension,
-                }),
-              ),
-            )
-          }
+          onClick={() => void compare()}
         >
           Compare safety and omission evidence
         </button>

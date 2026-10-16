@@ -69,7 +69,9 @@ try {
     socket.onerror = reject
   })
   let next = 0,
-    mockStatus = null
+    mockStatus = null,
+    holdPath = ""
+  const held = []
   const pending = new Map(),
     external = [],
     starts = [],
@@ -104,6 +106,10 @@ try {
           body: Buffer.from(JSON.stringify(mockStatus)).toString("base64"),
         })
       } else if (url.startsWith(origin + "/")) {
+        if (holdPath && url.includes(holdPath)) {
+          held.push(event.params.requestId)
+          return
+        }
         if (request.method === "POST" && url === origin + "/lab/api/runs")
           starts.push(url)
         void call("Fetch.continueRequest", {
@@ -252,17 +258,86 @@ try {
   const current = await choose("workflow-settings", "en-fact", "current")
   const alternate = await choose("workflow-settings", "en-fact", "luna-low")
   assert.notEqual(current, alternate)
+  const openStored = async (id) => {
+    await evaluate(
+      `(()=>{const row=[...document.querySelectorAll('#history-title ~ .table tbody tr')].find(r=>r.innerText.includes(${JSON.stringify(id)}));if(!row)throw new Error('Stored row unavailable');row.querySelector('button').click()})()`,
+    )
+    await until(
+      `location.hash==='#run='+${JSON.stringify(id)}&&document.querySelector('#run-title')?.parentElement.innerText.includes('Engine completed')`,
+    )
+  }
+  const releaseHeld = async () => {
+    holdPath = ""
+    for (const requestId of held.splice(0))
+      await call("Fetch.continueRequest", { requestId })
+    await pause(300)
+  }
+  await openStored(current)
+  holdPath = `/runs/${current}/cases/`
+  await button("en-fact")
+  for (let i = 0; i < 100 && !held.length; i++) await pause(10)
+  assert.equal(held.length, 1, "case request not captured")
+  await openStored(alternate)
+  await releaseHeld()
+  assert.equal(
+    await evaluate(
+      `!!document.querySelector('article[aria-label="Case evidence"]')`,
+    ),
+    false,
+    "late evidence appeared under another run",
+  )
   await input("Left run ID", current)
   await input("Right run ID", alternate)
   await button("Compare safety and omission evidence")
   await until(
     `document.querySelector('#compare-title')?.parentElement.innerText.includes('Compatible finite evidence')`,
   )
+  await evaluate(
+    `(()=>{const row=[...document.querySelectorAll('#history-title ~ .table tbody tr')].find(r=>r.innerText.includes(${JSON.stringify(en)}));[...row.querySelectorAll('button')].find(b=>b.textContent==='Set left').click()})()`,
+  )
+  assert.equal(
+    await evaluate(
+      `document.querySelector('#compare-title')?.parentElement.innerText.includes('Compatible finite evidence')`,
+    ),
+    false,
+    "history selection kept the old comparison",
+  )
+  await input("Left run ID", current)
+  holdPath = "/lab/api/comparisons"
+  await button("Compare safety and omission evidence")
+  for (let i = 0; i < 100 && !held.length; i++) await pause(10)
+  assert.equal(held.length, 1, "comparison request not captured")
   await input("Left run ID", en)
+  await releaseHeld()
+  assert.equal(
+    await evaluate(
+      `document.querySelector('#compare-title')?.parentElement.innerText.includes('Compatible finite evidence')`,
+    ),
+    false,
+    "late comparison described previous IDs",
+  )
   await input("Right run ID", alternate)
   await button("Compare safety and omission evidence")
   await until(
     `document.querySelector('#compare-title')?.parentElement.innerText.includes('Incompatible:')`,
+  )
+  await input("Suite", "semantic-quality")
+  await button("Clear selection")
+  await evaluate(
+    `document.querySelector('input[aria-label="Select en-fact"]').click()`,
+  )
+  holdPath = "/lab/api/plans"
+  await button("Preview frozen plan")
+  for (let i = 0; i < 100 && !held.length; i++) await pause(10)
+  assert.equal(held.length, 1, "plan request not captured")
+  await input("Suite", "qualification-evidence")
+  await releaseHeld()
+  assert.equal(
+    await evaluate(
+      `!!document.querySelector('article[aria-label="Frozen plan"]')`,
+    ),
+    false,
+    "late plan restored previous composer selection",
   )
   await choose("qualification-evidence", "explicit-support")
   await choose("application-context", "explicit-support")
