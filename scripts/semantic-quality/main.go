@@ -276,7 +276,7 @@ func buildRevision() string {
 }
 func sourceHashes() (map[string]string, error) {
 	hashes := map[string]string{}
-	for _, path := range []string{"backend/profile-ingestion/main.go", "backend/qualification-gaps/main.go", "backend/cv-generation/main.go", "backend/application-draft/main.go", "internal/fieldvalidation/decision.go", "internal/fieldvalidation/questions.json", "internal/semanticeval/score.go", "internal/semanticeval/adapter.go", "internal/semanticeval/context.go", "internal/semanticeval/configuration.go", "internal/semanticeval/batch.go", "scripts/semantic-quality/main.go"} {
+	for _, path := range []string{"backend/profile-ingestion/main.go", "backend/qualification-gaps/main.go", "backend/cv-generation/main.go", "backend/application-draft/main.go", "internal/fieldvalidation/decision.go", "internal/fieldvalidation/questions.json", "internal/semanticeval/score.go", "internal/semanticeval/adapter.go", "internal/semanticeval/context.go", "internal/semanticeval/configuration.go", "internal/semanticeval/batch.go", "internal/semanticeval/profile_review.go", "backend/profile-review/main.go", "scripts/semantic-quality/main.go"} {
 		source, err := os.ReadFile(filepath.Clean(path))
 		if err != nil {
 			return nil, err

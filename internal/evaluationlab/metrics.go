@@ -286,10 +286,11 @@ func workflowMetrics(imported ImportResult) []Metric {
 			return
 		}
 		var observed struct {
-			Status  int                  `json:"status"`
-			Score   *semanticeval.Result `json:"score"`
-			Current *semanticeval.Result `json:"currentControlledReplay"`
-			Field   string               `json:"field"`
+			Status  int                            `json:"status"`
+			Facets  map[string]semanticeval.Result `json:"labelFacetScores"`
+			Score   *semanticeval.Result           `json:"score"`
+			Current *semanticeval.Result           `json:"currentControlledReplay"`
+			Field   string                         `json:"field"`
 		}
 		if json.Unmarshal(c.Actual, &observed) != nil {
 			return
@@ -297,6 +298,20 @@ func workflowMetrics(imported ImportResult) []Metric {
 		score := observed.Score
 		if score == nil {
 			score = observed.Current
+		}
+		if c.Workflow == "profile_review" {
+			if facet, ok := observed.Facets["patches"]; ok {
+				score = &facet
+			}
+			if observed.Field == "" {
+				var scope struct {
+					Request struct {
+						Section string `json:"section"`
+					} `json:"request"`
+				}
+				_ = json.Unmarshal(c.Source, &scope)
+				observed.Field = scope.Request.Section
+			}
 		}
 		if score != nil {
 			for _, measure := range []struct {

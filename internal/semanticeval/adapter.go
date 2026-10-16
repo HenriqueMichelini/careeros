@@ -16,6 +16,7 @@ import (
 	draft "professional-information-repo/backend/application-draft"
 	cv "professional-information-repo/backend/cv-generation"
 	ingestion "professional-information-repo/backend/profile-ingestion"
+	review "professional-information-repo/backend/profile-review"
 	gaps "professional-information-repo/backend/qualification-gaps"
 	"professional-information-repo/internal/fieldvalidation"
 )
@@ -42,32 +43,37 @@ type Call struct {
 	CacheWriteTokens      *int64  `json:"cacheWriteTokensSubsetOfInput"`
 }
 type RunResult struct {
-	RequiredSteps   int                    `json:"requiredSteps,omitempty"`
-	Steps           []RunResult            `json:"steps,omitempty"`
-	Diagnostics     *aidiagnostics.Attempt `json:"diagnostics,omitempty"`
-	ID              string                 `json:"id"`
-	Task            string                 `json:"task"`
-	Split           string                 `json:"split"`
-	Language        string                 `json:"language"`
-	Mode            string                 `json:"mode"`
-	Role            string                 `json:"role"`
-	Status          int                    `json:"status"`
-	NoStore         bool                   `json:"noStore"`
-	Calls           []Call                 `json:"calls"`
-	Output          json.RawMessage        `json:"output"`
-	ProviderOutputs []json.RawMessage      `json:"providerOutputs,omitempty"`
-	Score           Result                 `json:"score"`
+	LabelFacetScores map[string]Result      `json:"labelFacetScores,omitempty"`
+	RequestEnvelopes []json.RawMessage      `json:"controlledRequestEnvelopes,omitempty"`
+	RequiredSteps    int                    `json:"requiredSteps,omitempty"`
+	Steps            []RunResult            `json:"steps,omitempty"`
+	Diagnostics      *aidiagnostics.Attempt `json:"diagnostics,omitempty"`
+	ID               string                 `json:"id"`
+	Task             string                 `json:"task"`
+	Split            string                 `json:"split"`
+	Language         string                 `json:"language"`
+	Mode             string                 `json:"mode"`
+	Role             string                 `json:"role"`
+	Status           int                    `json:"status"`
+	NoStore          bool                   `json:"noStore"`
+	Calls            []Call                 `json:"calls"`
+	Output           json.RawMessage        `json:"output"`
+	ProviderOutputs  []json.RawMessage      `json:"providerOutputs,omitempty"`
+	Score            Result                 `json:"score"`
 }
 type transport struct {
-	failure   error
-	mode      string
-	responses []json.RawMessage
-	calls     []Call
-	index     int
-	outputs   []json.RawMessage
-	config    *Configuration
-	budget    *Budget
-	envelopes []json.RawMessage
+	captureRequests bool
+	statuses        []int
+	requests        []json.RawMessage
+	failure         error
+	mode            string
+	responses       []json.RawMessage
+	calls           []Call
+	index           int
+	outputs         []json.RawMessage
+	config          *Configuration
+	budget          *Budget
+	envelopes       []json.RawMessage
 }
 
 const openAIHost = "api.openai.com"
@@ -118,6 +124,9 @@ func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		req = req.Clone(req.Context())
 		req.Body = io.NopCloser(bytes.NewReader(raw))
 		req.ContentLength = int64(len(raw))
+	}
+	if t.captureRequests {
+		t.requests = append(t.requests, bytes.Clone(raw))
 	}
 	t.calls = append(t.calls, providerCall(host, raw, body))
 	observeRequest(req.Context(), host, len(raw))
@@ -201,13 +210,14 @@ func (t *transport) captureResponse(ctx context.Context, response *http.Response
 	if json.Unmarshal(envelope.Usage, &usage) == nil && usage.Prompt.Writes != nil && *usage.Prompt.Writes >= 0 {
 		call.CacheWriteTokens = usage.Prompt.Writes
 	}
-	if len(envelope.Choices) > 0 && t.mode == "live" {
+	if len(envelope.Choices) > 0 && (t.mode == "live" || t.captureRequests) {
 		t.outputs = append(t.outputs, envelope.Choices)
 	}
 	return nil
 }
 func (t *transport) controlledResponse(host string, body map[string]any) (*http.Response, error) {
 	var response any
+	status := http.StatusOK
 	if host == typeSafeHost {
 		response = controlledDecision(body)
 	} else {
@@ -219,11 +229,14 @@ func (t *transport) controlledResponse(host string, body map[string]any) (*http.
 			_ = json.Unmarshal(t.envelopes[t.index], &envelope)
 		}
 		response = envelope
+		if t.index < len(t.statuses) {
+			status = t.statuses[t.index]
+		}
 		t.index++
 	}
 	encoded, _ := json.Marshal(response)
-	t.calls[len(t.calls)-1].Status = http.StatusOK
-	return &http.Response{StatusCode: http.StatusOK, Header: http.Header{"Content-Type": []string{"application/json"}}, Body: io.NopCloser(bytes.NewReader(encoded))}, nil
+	t.calls[len(t.calls)-1].Status = status
+	return &http.Response{StatusCode: status, Header: http.Header{"Content-Type": []string{"application/json"}}, Body: io.NopCloser(bytes.NewReader(encoded))}, nil
 }
 func controlledDecision(body map[string]any) any {
 	questions := body["questions"].(map[string]any)
@@ -270,14 +283,20 @@ func runContext(ctx context.Context, c Case, mode, openAIKey, typeSafeKey string
 	if mode != "controlled" && mode != "live" {
 		return result, fmt.Errorf("unknown evidence mode")
 	}
+	if c.Task == "profile_review" && mode != "controlled" {
+		return result, fmt.Errorf("profile_review evaluation is controlled only")
+	}
 	if mode == "live" && (openAIKey == "" || (c.Task != "cv_generation" && typeSafeKey == "")) {
 		return result, fmt.Errorf("live provider credentials required")
 	}
-	t := &transport{mode: mode, responses: c.Provider, config: config, budget: budget, envelopes: c.ProviderEnvelopes}
+	t := &transport{captureRequests: c.Task == "profile_review" && mode == "controlled", statuses: c.ProviderStatuses, mode: mode, responses: c.Provider, config: config, budget: budget, envelopes: c.ProviderEnvelopes}
 	client := &http.Client{Transport: t, Timeout: 55 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	var handler http.Handler
 	var path string
 	switch c.Task {
+	case "profile_review":
+		handler = review.NewHandlerWithClient(client)
+		path = "/api/profile/review"
 	case "profile_ingestion":
 		handler = ingestion.NewHandlerWithClient(client)
 		path = "/api/profile/ingest"
@@ -322,6 +341,7 @@ func runContext(ctx context.Context, c Case, mode, openAIKey, typeSafeKey string
 	result.NoStore = rec.Header().Get("Cache-Control") == "no-store"
 	result.Calls = t.calls
 	result.ProviderOutputs = t.outputs
+	result.RequestEnvelopes = t.requests
 	result.Output = append(json.RawMessage{}, rec.Body.Bytes()...)
 	if t.failure != nil {
 		return result, t.failure
@@ -347,6 +367,13 @@ func Assess(c Case, result RunResult) (RunResult, error) {
 	}
 	var output map[string]any
 	json.Unmarshal(result.Output, &output)
+	if c.Task == "profile_review" {
+		facets, facetErr := sectionLabelFacets(c, output)
+		if facetErr != nil {
+			return result, facetErr
+		}
+		result.LabelFacetScores = facets
+	}
 	if d, ok := output["decision"].(map[string]any); ok {
 		if o, ok := d["outcome"].(map[string]any); ok && o["kind"] != "accept" {
 			result.Score.Failures = append(result.Score.Failures, "field decision did not accept")

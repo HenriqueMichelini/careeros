@@ -17,7 +17,9 @@ func nativeMetrics(record RunRecord, plan Plan) []Metric {
 		value := float64(n)
 		metrics = append(metrics, Metric{ID: "M18", Version: "lab-metrics-v1", Measure: count.name, Mode: record.Context.Mode, Source: plan.Hash, ObservationCount: &n, Eligible: n, Evaluated: n, Units: "count", Estimator: "frozen-plan progress and observed controlled dispatch ledger", Value: &value})
 	}
-	if plan.Selection.Suite == "semantic-quality" || plan.Selection.Suite == "workflow-settings" {
+	if plan.Selection.Suite == "section-review" {
+		metrics = append(metrics, sectionMetrics(record, plan)...)
+	} else if plan.Selection.Suite == "semantic-quality" || plan.Selection.Suite == "workflow-settings" {
 		for _, m := range workflowMetrics(ImportResult{OriginMode: "controlled", OriginalHash: plan.Hash, Cases: record.Cases}) {
 			if m.ID != "M18" {
 				metrics = append(metrics, m)
