@@ -1,3 +1,4 @@
+import { SourceReview } from "./SourceReview"
 import React, { useEffect, useState, useRef } from "react"
 import { request, download, bytes } from "./api"
 import { Json, Select, MetricTable, CaseDetail } from "./components"
@@ -928,7 +929,16 @@ export function App() {
                   </tbody>
                 </table>
               </div>
-              {caseEvidence && <CaseDetail evidence={caseEvidence} />}
+              {caseEvidence && (
+                <div key={runId + ":" + caseEvidence.identity}>
+                  <CaseDetail evidence={caseEvidence} />
+                  <SourceReview
+                    runId={runId}
+                    caseId={caseEvidence.identity}
+                    reviewer={status?.humanReviewer}
+                  />
+                </div>
+              )}
               <h3>Metric opportunities and missingness</h3>
               <MetricTable
                 metrics={view.metrics ?? []}

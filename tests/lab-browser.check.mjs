@@ -261,6 +261,29 @@ try {
     ),
     "case evidence facets are not separate",
   )
+  await button("Create pending source review")
+  await until(
+    `[...document.querySelectorAll('[aria-label="Source review worksheet"] button')].some(b=>b.textContent==='Export source review' && !b.disabled)`,
+  )
+  assert.ok(
+    await evaluate(
+      `document.querySelector('[aria-label="Source review worksheet"]').innerText.includes('Human approval is disabled')`,
+    ),
+    "default launch offered human gold approval",
+  )
+  await button("Export source review")
+  for (
+    let i = 0;
+    i < 100 && !readdirSync(work).includes("source-review.json");
+    i++
+  )
+    await pause(50)
+  const worksheet = JSON.parse(
+    readFileSync(join(work, "source-review.json"), "utf8"),
+  )
+  assert.equal(worksheet.version, "lab-source-review-v1")
+  assert.equal(worksheet.state, "pending")
+  assert.ok(worksheet.binding.sourceBytes)
   await button("Export json")
   for (
     let i = 0;

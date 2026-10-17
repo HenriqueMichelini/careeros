@@ -23,6 +23,7 @@ func main() {
 	}
 }
 func run() error {
+	reviewer := flag.String("human-reviewer", "", "explicit local human domain reviewer; approval disabled when empty")
 	port := flag.Int("port", 0, "loopback port (0 selects an available port)")
 	data := flag.String("data-dir", "", "private local history directory")
 	assets := flag.String("assets-dir", "lab/web", "local Lab asset directory")
@@ -73,7 +74,7 @@ func run() error {
 	if info, statErr := os.Stat(*assets); statErr == nil && info.IsDir() {
 		assetFS = os.DirFS(*assets)
 	}
-	api, err := lab.NewAPI(planner, runner, store, lab.APIOptions{Origin: origin, Context: ctx, Assets: assetFS})
+	api, err := lab.NewAPI(planner, runner, store, lab.APIOptions{Origin: origin, Context: ctx, Assets: assetFS, HumanReviewer: *reviewer})
 	if err != nil {
 		return err
 	}

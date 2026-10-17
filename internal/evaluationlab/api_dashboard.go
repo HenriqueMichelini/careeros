@@ -97,14 +97,15 @@ func (a *API) dashboardRoute(w http.ResponseWriter, r *http.Request) bool {
 		suites = append(suites, suiteAvailability{suite.ID, available, reason})
 	}
 	a.json(w, 200, struct {
-		Process      ProcessCapabilities `json:"processCapabilities"`
-		Version      string              `json:"version"`
-		StorageReady bool                `json:"storageReady"`
-		Usage        StoreUsage          `json:"usage"`
-		Suites       []suiteAvailability `json:"suites"`
-		Metrics      []MetricDefinition  `json:"metricDefinitions"`
-		Build        any                 `json:"build"`
-	}{process, APIVersion, ready, usage, suites, MetricRegistry(), a.dashboardBuild()})
+		Process       ProcessCapabilities `json:"processCapabilities"`
+		Version       string              `json:"version"`
+		StorageReady  bool                `json:"storageReady"`
+		Usage         StoreUsage          `json:"usage"`
+		Suites        []suiteAvailability `json:"suites"`
+		Metrics       []MetricDefinition  `json:"metricDefinitions"`
+		Build         any                 `json:"build"`
+		HumanReviewer string              `json:"humanReviewer,omitempty"`
+	}{process, APIVersion, ready, usage, suites, MetricRegistry(), a.dashboardBuild(), a.options.HumanReviewer})
 	return true
 }
 

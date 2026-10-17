@@ -4,18 +4,21 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"professional-information-repo/internal/semanticeval"
 	"strconv"
 	"strings"
 )
 
 func query(r *http.Request, keys ...string) (url.Values, error) {
-	if len(r.URL.RawQuery)>4096 { return nil,fmt.Errorf("query exceeds bounds") }
+	if len(r.URL.RawQuery) > 4096 {
+		return nil, fmt.Errorf("query exceeds bounds")
+	}
 	q, err := url.ParseQuery(r.URL.RawQuery)
 	if err != nil {
 		return nil, err
 	}
 	for key, values := range q {
-		if !contains(keys, key) || len(values) != 1 || len(values[0])>256 {
+		if !contains(keys, key) || len(values) != 1 || len(values[0]) > 256 {
 			return nil, fmt.Errorf("unsupported query")
 		}
 	}
@@ -91,18 +94,21 @@ func (a *API) detail(w http.ResponseWriter, r *http.Request, id string) {
 	if current, err := a.runner.Read(id); err == nil {
 		if current.EngineState != "planned" && current.EngineState != "running" {
 			if saved, saveErr := a.store.Load(id); saveErr == nil && saved.EngineState == current.EngineState {
-				a.json(w, 200, saved)
+				a.runDetail(w, id, saved)
 				return
 			}
 		}
-		a.json(w, 200, current)
+		a.runDetail(w, id, current)
 		return
 	}
 	if saved, err := a.store.Load(id); err == nil {
-		a.json(w, 200, saved)
+		a.runDetail(w, id, saved)
 		return
 	}
 	if imported, err := a.store.LoadImport(id); err == nil {
+		if !a.exposeContent(w, id, "", "view") {
+			return
+		}
 		a.json(w, 200, imported)
 		return
 	}
@@ -118,7 +124,22 @@ func (a *API) caseDetail(w http.ResponseWriter, r *http.Request, id, caseID stri
 		a.error(w, 404, "case_unavailable", "Case evidence is unavailable.")
 		return
 	}
-	a.json(w, 200, detail)
+	if !a.exposeContent(w, id, caseID, "view") {
+		return
+	}
+	var exposure *CohortStatus
+	if len(detail.Source) > 0 {
+		status, statusErr := a.store.CohortStatus(semanticeval.Hash(detail.Source))
+		if statusErr != nil {
+			a.error(w, 409, "exposure_unavailable", "Exposure status unavailable.")
+			return
+		}
+		exposure = &status
+	}
+	a.json(w, 200, struct {
+		ImportedCase
+		Exposure *CohortStatus `json:"exposure,omitempty"`
+	}{detail, exposure})
 }
 func (a *API) events(w http.ResponseWriter, r *http.Request, id string) {
 	q, err := query(r, "after", "limit", "epoch")
@@ -231,8 +252,29 @@ func (a *API) export(w http.ResponseWriter, r *http.Request, id string) {
 		a.error(w, 409, "export_unavailable", "Approved synthetic export is unavailable.")
 		return
 	}
+	if q.Get("format") != "diagnostics" && !a.exposeContent(w, id, "", "export") {
+		return
+	}
 	w.Header().Set("Content-Type", kind)
 	w.Header().Set("Content-Disposition", `attachment; filename="evaluation-`+id+`.`+extension+`"`)
 	w.WriteHeader(200)
 	_, _ = w.Write(raw)
+}
+
+func (a *API) exposeContent(w http.ResponseWriter, runID, caseID, use string) bool {
+	if err := a.store.ExposeRun(runID, caseID, use); err != nil {
+		a.error(w, 409, "exposure_unavailable", "Content remains blocked because exposure history cannot be recorded.")
+		return false
+	}
+	return true
+}
+
+func (a *API) runDetail(w http.ResponseWriter, id string, record RunRecord) {
+	if err := a.store.ExposeRun(id, "", "view"); err != nil {
+		// Keep failed execution and recovery metadata readable without disclosing
+		// content whose exposure cannot be durably recorded.
+		record.Cases = caseMetadata(record.Cases)
+		record.UnavailableReasons = append(record.UnavailableReasons, "Source/output content withheld: durable exposure recording unavailable.")
+	}
+	a.json(w, 200, record)
 }
