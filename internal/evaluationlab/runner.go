@@ -1,6 +1,7 @@
 package evaluationlab
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -16,6 +17,7 @@ var ErrRunnerBusy = errors.New("an evaluation run is already active")
 var errRunCapacity = errors.New("evaluation capacity exhausted")
 
 type RunnerOptions struct {
+	Processes      *ProcessAdapter
 	BeforeDispatch func(context.Context) error
 	Retain         func(RunRecord) error
 	ControlledBody func(context.Context, io.ReadCloser) io.ReadCloser
@@ -99,6 +101,7 @@ func (r *Runner) Start(parent context.Context, plan Plan) (string, error) {
 		record.Context.StrategyVersion = versionedHash("lab-strategy-source-envelope-v1", plan.Provenance.SourceHashes)
 	}
 	state := &runState{record: record, plan: plan, cancel: cancel, done: make(chan struct{}), ctx: ctx}
+	state.record.Progress.PlannedProcesses = plan.RequiredProcessAttempts
 	state.started = time.Now()
 	state.record.StartedAt = state.started.UTC().Format(time.RFC3339Nano)
 	r.runs[id] = state
@@ -408,6 +411,36 @@ func (r *Runner) execute(parent context.Context, state *runState) {
 			var report ApplicationContextReport
 			report, err = RunApplicationContext(ctx, r.planner.assets["application-context"], r.planner.assets["semantic-quality"], r.planner.assets["application-baseline"], []string{id})
 			actual, _ = json.Marshal(report)
+		case "test-adapters":
+			var report ProcessResult
+			if r.options.Processes == nil {
+				report = ProcessResult{Version: ProcessResultVersion, Selector: id, Outcome: "tool_missing", CleanupComplete: true, UnavailableReasons: []string{"isolated process adapter unavailable"}}
+				err = fmt.Errorf("process adapter unavailable")
+			} else {
+				report, err = r.options.Processes.run(ctx, id, state.plan.Caps.MaxArtifactBytes-state.artifactBytes, func(phase string) error {
+					if phase == "intent" {
+						if healthErr := r.health(ctx, state); healthErr != nil {
+							return healthErr
+						}
+						return r.retain(state)
+					}
+					r.mu.Lock()
+					if phase == "started" {
+						state.record.Progress.AttemptedProcesses++
+						state.record.Cases[index].AttemptedSteps++
+					}
+					r.eventLocked(state, RunEvent{Kind: "process_" + phase, CaseIdentity: state.record.Cases[index].Identity})
+					r.mu.Unlock()
+					return r.retain(state)
+				})
+			}
+			actual, _ = json.Marshal(report)
+			r.mu.Lock()
+			if report.SpawnAttempted {
+				state.record.Progress.FinishedProcesses++
+			}
+			r.eventLocked(state, RunEvent{Kind: "process_finished", CaseIdentity: state.record.Cases[index].Identity, Outcome: report.Outcome})
+			r.mu.Unlock()
 		default:
 			err = fmt.Errorf("unsupported execution suite")
 		}
@@ -426,7 +459,16 @@ func (r *Runner) execute(parent context.Context, state *runState) {
 		}
 		root.EngineState = "completed"
 		root.AssertionVerdict = "unavailable"
+		if state.plan.Selection.Suite == "test-adapters" {
+			var report ProcessResult
+			_ = json.Unmarshal(actual, &report)
+			root.OperationalOutcome = report.Outcome
+			root.UnavailableReasons = append(root.UnavailableReasons, report.UnavailableReasons...)
+		}
 		if err != nil {
+			if state.plan.Selection.Suite == "test-adapters" {
+				root.AssertionVerdict = "blocked"
+			}
 			root.EngineState = "failed"
 			if errors.Is(ctx.Err(), context.Canceled) {
 				root.EngineState = "canceled"
@@ -486,6 +528,7 @@ func (r *Runner) execute(parent context.Context, state *runState) {
 		}
 	}
 	state.record.Progress.UnreachedHTTP = max(0, state.record.Progress.PlannedHTTP-state.record.Progress.AttemptedHTTP)
+	state.record.Progress.UnreachedProcesses = max(0, state.record.Progress.PlannedProcesses-state.record.Progress.AttemptedProcesses)
 	elapsed := time.Since(state.started).Seconds() * 1000
 	state.record.ElapsedMS = &elapsed
 	state.record.Metrics = nativeMetrics(state.record, state.plan)
@@ -555,6 +598,16 @@ func (r *Runner) plannedCases(plan Plan) ([]ImportedCase, error) {
 			if err != nil {
 				return nil, err
 			}
+			if plan.Selection.Suite == "test-adapters" {
+				c.Kind = "process-test"
+				c.Source = bytes.Clone(raw)
+				var expected struct {
+					Outcome string `json:"expectedOutcome"`
+				}
+				_ = json.Unmarshal(raw, &expected)
+				c.Expected, _ = json.Marshal(map[string]string{"outcome": expected.Outcome, "scope": "fixed driver or guard control; not semantic support"})
+				c.UnavailableReasons = append(c.UnavailableReasons, "test exit assertions are not semantic quality or client acceptance")
+			}
 			if c.Workflow == "" {
 				c.Workflow = "qualification_gaps"
 				if plan.Selection.Suite == "application-context" {
@@ -598,6 +651,15 @@ func plannedCase(raw json.RawMessage, configuration string) (ImportedCase, error
 	return c, nil
 }
 func (r *Runner) interpretCase(c *ImportedCase, suite string) {
+	if suite == "test-adapters" {
+		var report ProcessResult
+		_ = json.Unmarshal(c.Actual, &report)
+		c.AssertionVerdict = "fail"
+		if report.Outcome == "passed" {
+			c.AssertionVerdict = "pass"
+		}
+		return
+	}
 	if suite == "semantic-quality" || suite == "workflow-settings" || suite == "section-review" {
 		var run semanticeval.RunResult
 		_ = json.Unmarshal(c.Actual, &run)

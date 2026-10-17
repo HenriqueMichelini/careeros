@@ -35,6 +35,7 @@ export interface Plan {
     caseIds: string[]
   }
   caseOrder: string[]
+  requiredProcessAttempts?: number
   requiredHttpAttempts: number
   maximumPlannedProviderCalls: number
   caps: Caps
@@ -82,6 +83,17 @@ export interface Status {
     available: boolean
     reason?: string
   }[]
+  processCapabilities?: {
+    isolationAvailable: boolean
+    runtimeVersions: Record<string, string>
+    unavailableReasons: string[]
+    selectors: {
+      id: string
+      requiredTools: string[]
+      available: boolean
+      unavailableReasons: string[]
+    }[]
+  }
   metricDefinitions: Definition[]
   build?: Record<string, unknown>
 }
@@ -116,6 +128,10 @@ export interface View {
   originalVersion?: string
   selection?: Plan["selection"]
   progress?: {
+    plannedProcesses?: number
+    attemptedProcesses?: number
+    finishedProcesses?: number
+    unreachedProcesses?: number
     plannedCases: number
     startedCases: number
     finishedCases: number

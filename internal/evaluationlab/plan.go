@@ -21,6 +21,7 @@ type ExecutionCaps struct {
 	DeadlineMS       int64 `json:"deadlineMs"`
 }
 type Plan struct {
+	RequiredProcessAttempts     int               `json:"requiredProcessAttempts,omitempty"`
 	Provenance                  Provenance        `json:"provenance"`
 	Version                     string            `json:"version"`
 	ID                          string            `json:"id"`
@@ -110,6 +111,9 @@ func (p *Planner) Plan(selection Selection, caps ExecutionCaps) (Plan, error) {
 	}
 	selection.CaseIDs = append([]string{}, order...)
 	plan := Plan{Version: PlanVersion, ID: newLabID(), Selection: selection, SuiteVersion: suite.Version, InputHashes: hashes, CaseOrder: order, Caps: caps, RuntimeVersion: runtime.Version() + "/" + runtime.GOOS + "/" + runtime.GOARCH, Concurrency: 1, Provenance: cloneJSON(p.provenance)}
+	if selection.Suite == "test-adapters" {
+		plan.RequiredProcessAttempts = len(order)
+	}
 	plan.Provenance.FixtureHash = hashes[selection.Suite]
 	plan.Provenance.FixtureHashes = cloneJSON(hashes)
 	var fixtureDocument struct {

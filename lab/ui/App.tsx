@@ -379,11 +379,17 @@ export function App() {
           Refresh storage
         </button>
         <p className="muted">
-          Go execution is built into this launcher. Ordinary Node/browser test
-          adapters are unavailable until their separate integration. Provider,
-          human review, physical mobile and actual-PDF observations are not
-          inferred from controlled results.
+          Existing Go, Node and browser tests use fixed selectors and private
+          process isolation. Runtime preflight is shown below. Provider, human
+          review, physical mobile and actual-PDF observations are not inferred
+          from controlled results.
         </p>
+        {status?.processCapabilities && (
+          <Json
+            label="Isolated test runtime preflight and coverage gaps"
+            value={status.processCapabilities}
+          />
+        )}
       </section>
       <section aria-labelledby="composer-title">
         <h2 id="composer-title">Compose a run</h2>
@@ -534,6 +540,22 @@ export function App() {
                   </td>
                   <td>
                     {c.requiredSteps} / {c.maximumCalls}
+                    {suiteId === "test-adapters" && (
+                      <p className="muted">
+                        {(() => {
+                          const capability =
+                            status?.processCapabilities?.selectors?.find(
+                              (item) => item.id === c.id,
+                            )
+                          if (!capability)
+                            return "Process preflight unavailable"
+                          const availability = capability.available
+                            ? "runtime available"
+                            : capability.unavailableReasons.join("; ")
+                          return `${capability.requiredTools.join(", ")} · ${availability}`
+                        })()}
+                      </p>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -578,6 +600,7 @@ export function App() {
             <h3>Frozen plan</h3>
             <p>
               {plan.caseOrder.length} logical cases ·{" "}
+              {plan.requiredProcessAttempts ?? 0} fixed test drivers ·{" "}
               {plan.requiredHttpAttempts} required HTTP legs · up to{" "}
               {plan.maximumPlannedProviderCalls} simulated dispatches ·
               concurrency 1
@@ -817,6 +840,16 @@ export function App() {
                   {view.progress.attemptedHttpAttempts} attempted;{" "}
                   {view.progress.unreachedHttpAttempts} unreached. Provider
                   dispatches attempted {view.progress.attemptedDispatches}.
+                  {(view.progress.plannedProcesses ?? 0) > 0 && (
+                    <>
+                      {" "}
+                      Test drivers: {view.progress.finishedProcesses ?? 0}/
+                      {view.progress.plannedProcesses} finished;{" "}
+                      {view.progress.attemptedProcesses ?? 0} attempted;{" "}
+                      {view.progress.unreachedProcesses ?? 0} unreached. Nested
+                      test/process totals are unavailable.
+                    </>
+                  )}
                 </p>
               )}
               <div className="actions">

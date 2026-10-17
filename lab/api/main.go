@@ -38,7 +38,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	paths := map[string]string{"semantic-quality": "semantic-quality/cases.v2.json", "section-review": "section-review/cases.v1.json", "workflow-settings": "workflow-settings/cases.v1.json", "qualification-evidence": "qualification-evidence/cases.json", "application-context": "qualification-evidence/cases.json", "application-baseline": "semantic-quality/controlled.v2.json"}
+	paths := map[string]string{"test-adapters": "test-adapters/cases.v2.json", "semantic-quality": "semantic-quality/cases.v2.json", "section-review": "section-review/cases.v1.json", "workflow-settings": "workflow-settings/cases.v1.json", "qualification-evidence": "qualification-evidence/cases.json", "application-context": "qualification-evidence/cases.json", "application-baseline": "semantic-quality/controlled.v2.json"}
 	fixtures := map[string][]byte{}
 	for key, path := range paths {
 		raw, readErr := os.ReadFile(filepath.Join(root, "docs", "evaluations", path))
@@ -64,7 +64,11 @@ func run() error {
 	origin := "http://" + listener.Addr().String()
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
-	runner := lab.NewRunner(planner, lab.RunnerOptions{Retain: store.Save, BeforeDispatch: store.Health})
+	processes, err := lab.NewProcessAdapter(root)
+	if err != nil {
+		return err
+	}
+	runner := lab.NewRunner(planner, lab.RunnerOptions{Retain: store.Save, BeforeDispatch: store.Health, Processes: processes})
 	var assetFS fs.FS
 	if info, statErr := os.Stat(*assets); statErr == nil && info.IsDir() {
 		assetFS = os.DirFS(*assets)

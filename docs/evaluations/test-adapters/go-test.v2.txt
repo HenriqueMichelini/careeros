@@ -1,0 +1,33 @@
+ok  	professional-information-repo/backend/application-draft	0.558s
+ok  	professional-information-repo/backend/cv-generation	0.027s
+ok  	professional-information-repo/backend/profile-ingestion	2.702s
+ok  	professional-information-repo/backend/profile-review	0.041s
+ok  	professional-information-repo/backend/qualification-gaps	1.897s
+?   	professional-information-repo/cmd/profile-review	[no test files]
+ok  	professional-information-repo/internal/aidiagnostics	0.098s
+ok  	professional-information-repo/internal/evaluationlab	213.175s
+?   	professional-information-repo/internal/fieldvalidation	[no test files]
+?   	professional-information-repo/internal/jobcontext	[no test files]
+ok  	professional-information-repo/internal/netlifyproxy	0.020s
+?   	professional-information-repo/internal/openaihttp	[no test files]
+ok  	professional-information-repo/internal/preprocessing	5.143s
+ok  	professional-information-repo/internal/profiledocument	0.038s
+ok  	professional-information-repo/internal/profilevalidation	0.021s
+?   	professional-information-repo/internal/qualificationmatching	[no test files]
+?   	professional-information-repo/internal/releasecapture	[no test files]
+ok  	professional-information-repo/internal/semanticeval	1.053s
+?   	professional-information-repo/internal/testsupport	[no test files]
+?   	professional-information-repo/lab/api	[no test files]
+?   	professional-information-repo/netlify/functions/application-draft	[no test files]
+?   	professional-information-repo/netlify/functions/cv-generation	[no test files]
+?   	professional-information-repo/netlify/functions/profile-ingestion	[no test files]
+ok  	professional-information-repo/netlify/functions/profile-review	0.005s
+?   	professional-information-repo/netlify/functions/qualification-gaps	[no test files]
+?   	professional-information-repo/scripts/ai-diagnostics	[no test files]
+?   	professional-information-repo/scripts/application-context	[no test files]
+?   	professional-information-repo/scripts/field-validation/remediation	[no test files]
+ok  	professional-information-repo/scripts/field-validation/verify	0.030s
+?   	professional-information-repo/scripts/preview-preflight	[no test files]
+?   	professional-information-repo/scripts/qualification-evidence	[no test files]
+?   	professional-information-repo/scripts/semantic-quality	[no test files]
+ok  	professional-information-repo/scripts/workflow-settings	0.007s

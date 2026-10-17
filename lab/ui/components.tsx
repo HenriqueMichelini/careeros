@@ -127,6 +127,46 @@ export function CaseDetail({ evidence }: { evidence: CaseEvidence }) {
     !Array.isArray(evidence.actual)
       ? evidence.actual as Record<string, unknown>
       : null
+  const artifacts = Array.isArray(actual?.artifacts) ? actual.artifacts : []
+  const [artifactError, setArtifactError] = React.useState("")
+  async function saveArtifact(value: unknown) {
+    try {
+      if (!value || typeof value !== "object")
+        throw new Error("Artifact unavailable")
+      const artifact = value as Record<string, unknown>
+      let mime: string | null = null
+      if (artifact.kind === "screenshot") mime = "image/png"
+      if (artifact.kind === "cdp-produced-pdf") mime = "application/pdf"
+      if (
+        !mime ||
+        typeof artifact.bytes !== "string" ||
+        artifact.bytes.length > 1400000 ||
+        typeof artifact.hash !== "string"
+      )
+        throw new Error("Artifact type or byte bound unavailable")
+      const raw = Uint8Array.from(
+        atob(artifact.bytes),
+        (c) => c.codePointAt(0) ?? 0,
+      )
+      const hash = Array.from(
+        new Uint8Array(await crypto.subtle.digest("SHA-256", raw)),
+        (b) => b.toString(16).padStart(2, "0"),
+      ).join("")
+      if (hash !== artifact.hash) throw new Error("Artifact hash mismatch")
+      const url = URL.createObjectURL(new Blob([raw], { type: mime })),
+        link = document.createElement("a")
+      link.href = url
+      link.download =
+        artifact.kind === "screenshot" ? "lab-screenshot.png" : "lab-cdp.pdf"
+      link.click()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+      setArtifactError("")
+    } catch (error) {
+      setArtifactError(
+        error instanceof Error ? error.message : "Artifact unavailable",
+      )
+    }
+  }
   return (
     <article aria-label="Case evidence">
       <h3>
@@ -168,6 +208,32 @@ export function CaseDetail({ evidence }: { evidence: CaseEvidence }) {
         value={actual?.providerOutputs}
       />
       <Json label="Explicit client review decision" value={evidence.review} />
+      {artifacts.length > 0 && (
+        <div aria-label="Typed test artifacts">
+          <p>
+            Controlled test artifacts. Screenshots and CDP PDFs do not establish
+            native print/save.
+          </p>
+          {artifacts.map((value, index) => {
+            const item = value as Record<string, unknown>
+            return (
+              <p
+                key={String(item.hash) + ":" + String(item.name)}
+                className="identity"
+              >
+                {String(item.kind)} · {String(item.name)} ·{" "}
+                {String(item.origin)} · {String(item.runtime)}
+                <br />
+                SHA-256 {String(item.hash)}{" "}
+                <button onClick={() => void saveArtifact(value)}>
+                  Download verified artifact {index + 1}
+                </button>
+              </p>
+            )
+          })}
+          {artifactError && <p role="alert">{artifactError}</p>}
+        </div>
+      )}
       <Json label="Complete retained actual artifact" value={evidence.actual} />
       <Json
         label="Unavailable evidence and expected negative controls"

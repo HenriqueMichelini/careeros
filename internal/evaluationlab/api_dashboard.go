@@ -76,6 +76,10 @@ func (a *API) dashboardRoute(w http.ResponseWriter, r *http.Request) bool {
 	}
 	usage, usageErr := a.store.Usage()
 	ready := a.store.Health(r.Context()) == nil && usageErr == nil
+	process := ProcessCapabilities{RuntimeVersions: map[string]string{}, UnavailableReasons: []string{"Process adapter is unavailable in this launch."}}
+	if a.runner.options.Processes != nil {
+		process = a.runner.options.Processes.Capabilities()
+	}
 	suites := []suiteAvailability{}
 	for _, suite := range Catalog() {
 		available := len(a.planner.assets[suite.ID]) > 0
@@ -83,19 +87,24 @@ func (a *API) dashboardRoute(w http.ResponseWriter, r *http.Request) bool {
 			available = available && len(a.planner.assets["semantic-quality"]) > 0 && len(a.planner.assets["application-baseline"]) > 0
 		}
 		reason := ""
-		if !available {
+		if suite.ID == "test-adapters" && !process.IsolationAvailable {
+			available = false
+			reason = "Private process isolation is unavailable; no unsandboxed fallback."
+		}
+		if !available && reason == "" {
 			reason = "Required approved fixture assets are unavailable in this launch."
 		}
 		suites = append(suites, suiteAvailability{suite.ID, available, reason})
 	}
 	a.json(w, 200, struct {
+		Process      ProcessCapabilities `json:"processCapabilities"`
 		Version      string              `json:"version"`
 		StorageReady bool                `json:"storageReady"`
 		Usage        StoreUsage          `json:"usage"`
 		Suites       []suiteAvailability `json:"suites"`
 		Metrics      []MetricDefinition  `json:"metricDefinitions"`
 		Build        any                 `json:"build"`
-	}{APIVersion, ready, usage, suites, MetricRegistry(), a.dashboardBuild()})
+	}{process, APIVersion, ready, usage, suites, MetricRegistry(), a.dashboardBuild()})
 	return true
 }
 

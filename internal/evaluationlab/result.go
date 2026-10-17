@@ -47,6 +47,10 @@ type RunRecord struct {
 }
 
 type RunProgress struct {
+	PlannedProcesses    int `json:"plannedProcesses,omitempty"`
+	AttemptedProcesses  int `json:"attemptedProcesses,omitempty"`
+	FinishedProcesses   int `json:"finishedProcesses,omitempty"`
+	UnreachedProcesses  int `json:"unreachedProcesses,omitempty"`
 	PlannedCases        int `json:"plannedCases"`
 	StartedCases        int `json:"startedCases"`
 	FinishedCases       int `json:"finishedCases"`
