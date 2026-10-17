@@ -314,7 +314,7 @@ func TestProcessRunnerMissingToolIsBlockedWithoutSpawning(t *testing.T) {
 		SpawnAttempted, CleanupComplete bool
 	}
 	json.Unmarshal(record.Cases[0].Actual, &actual)
-	if record.EngineState != "failed" || record.AssertionVerdict != "blocked" || actual.Outcome != "tool_missing" || actual.ExitCode != nil || actual.SpawnAttempted || !actual.CleanupComplete || record.Progress.UnreachedProcesses != 2 || record.Cases[1].EngineState != "skipped" {
+	if record.EngineState != "failed" || record.AssertionVerdict != "blocked" || record.Cases[0].AssertionVerdict != "blocked" || actual.Outcome != "tool_missing" || actual.ExitCode != nil || actual.SpawnAttempted || !actual.CleanupComplete || record.Progress.UnreachedProcesses != 2 || record.Cases[1].EngineState != "skipped" {
 		t.Fatalf("tool absence became a passing test: %s", record.Cases[0].Actual)
 	}
 }
@@ -408,7 +408,7 @@ func TestProcessRunnerExecutesExistingNodeCanonicalContracts(t *testing.T) {
 		CleanupComplete bool
 		RuntimeVersions map[string]string
 	}
-	if len(record.Cases) != 1 || json.Unmarshal(record.Cases[0].Actual, &actual) != nil || actual.Outcome != "passed" || actual.Origin != "isolated-node-tests" || !actual.CleanupComplete || actual.RuntimeVersions["node"] == "" || record.AssertionVerdict != "pass" || record.Progress.FinishedProcesses != 1 {
+	if len(record.Cases) != 1 || json.Unmarshal(record.Cases[0].Actual, &actual) != nil || record.Cases[0].PlannedSteps != 1 || record.Cases[0].AttemptedSteps != 1 || record.Cases[0].SkippedSteps != 0 || actual.Outcome != "passed" || actual.Origin != "isolated-node-tests" || !actual.CleanupComplete || actual.RuntimeVersions["node"] == "" || record.AssertionVerdict != "pass" || record.Progress.FinishedProcesses != 1 {
 		t.Fatalf("isolated Node contract unavailable: %s", record.Cases[0].Actual)
 	}
 	if len(record.Dispatches) != 0 || record.Progress.AttemptedHTTP != 0 {

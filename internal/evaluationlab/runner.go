@@ -427,6 +427,7 @@ func (r *Runner) execute(parent context.Context, state *runState) {
 					r.mu.Lock()
 					if phase == "started" {
 						state.record.Progress.AttemptedProcesses++
+						state.record.Cases[index].AttemptedSteps++
 					}
 					r.eventLocked(state, RunEvent{Kind: "process_" + phase, CaseIdentity: state.record.Cases[index].Identity})
 					r.mu.Unlock()
@@ -465,6 +466,9 @@ func (r *Runner) execute(parent context.Context, state *runState) {
 			root.UnavailableReasons = append(root.UnavailableReasons, report.UnavailableReasons...)
 		}
 		if err != nil {
+			if state.plan.Selection.Suite == "test-adapters" {
+				root.AssertionVerdict = "blocked"
+			}
 			root.EngineState = "failed"
 			if errors.Is(ctx.Err(), context.Canceled) {
 				root.EngineState = "canceled"
