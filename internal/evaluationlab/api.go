@@ -16,6 +16,7 @@ import (
 const APIVersion = "lab-api-v1"
 
 type APIOptions struct {
+	LiveGuard     *LiveGuard
 	HumanReviewer string
 	ReviewOrigin  string
 	Origin        string
@@ -56,6 +57,9 @@ func NewAPI(planner *Planner, runner *Runner, store *FileStore, options APIOptio
 	}
 	if len(options.HumanReviewer) > 128 || options.ReviewOrigin != "" && !contains([]string{"local-human-attestation", "controlled-test"}, options.ReviewOrigin) {
 		return nil, fmt.Errorf("invalid human review configuration")
+	}
+	if options.LiveGuard != nil && (options.LiveGuard.planner != planner || options.LiveGuard.store != store) {
+		return nil, fmt.Errorf("guard must own this planner and store")
 	}
 	if options.Context == nil {
 		options.Context = context.Background()
@@ -105,6 +109,9 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Version string  `json:"version"`
 			Suites  []Suite `json:"suites"`
 		}{APIVersion, a.dashboardCatalog()})
+		return
+	}
+	if a.liveRoute(w, r) {
 		return
 	}
 	if a.exposureRoute(w, r) {

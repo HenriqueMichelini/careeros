@@ -11,6 +11,9 @@ import (
 // Shutdown cancels admitted work and waits for partial evidence retention before
 // the launch process closes its private store. Context controls the wait only.
 func (a *API) Shutdown(ctx context.Context) error {
+	if a.options.LiveGuard != nil {
+		a.options.LiveGuard.Close()
+	}
 	a.mu.Lock()
 	ids := []string{}
 	for _, admitted := range a.admissions {
