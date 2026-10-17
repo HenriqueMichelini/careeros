@@ -12,7 +12,7 @@ Commands were invoked through RTK. `GOCACHE=/tmp/careeros-go-cache` was used for
 | --- | --- |
 | `go test ./...` on `9fc5cf27` | Passed; evaluationlab 215.878 s. Includes actual Go/Node and all registered representative browser entry points. |
 | Focused public runner suite on reviewed `2a7e845e` (Go/Node entry points, section/Resume browsers, privacy, cancellation/deadline, flood, missing tool, crash, native print, assertion regression) | Passed, 101.932 s; no inference/HTTP attempt inflation. |
-| `go test -race ./internal/evaluationlab -run 'TestProcessRunner(Cancellation\|Deadline\|Bounds\|Cannot\|MissingTool\|ExecutesExistingNode)\|TestAPI\|TestSequence\|TestRunner' -count=1` | Passed, 6.508 s on reviewed code. |
+| `go test -race ./internal/evaluationlab -run 'TestProcessRunner(Cancellation|Deadline|Bounds|Cannot|MissingTool|ExecutesExistingNode)|TestAPI|TestSequence|TestRunner' -count=1` | Passed, 6.508 s on reviewed code. |
 | `npm test` | 143 passed, zero skipped/failed. Injected field helpers remain offline; test names mentioning live collectors do not imply real provider execution. |
 | `npx tsc --noEmit` | Passed. |
 | Product `npm run build` and one-invocation Lab build/launch | Passed; existing Vite native-loader/chunk-size warnings retained. Generated product build output was restored and excluded. |
