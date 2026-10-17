@@ -16,30 +16,7 @@ import (
 )
 
 func TestProcessRunnerExecutesAllowlistedGoContractsWithoutInference(t *testing.T) {
-	adapter, err := lab.NewProcessAdapter("../..")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !adapter.Capabilities().IsolationAvailable {
-		t.Skip("Host namespace isolation unavailable in this execution environment")
-	}
-	raw, err := os.ReadFile("../../docs/evaluations/test-adapters/cases.v1.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	planner, err := lab.NewPlanner(map[string][]byte{"test-adapters": raw})
-	if err != nil {
-		t.Fatal(err)
-	}
-	plan, err := planner.Plan(lab.Selection{Suite: "test-adapters", Mode: "offline", Configuration: "current", CaseIDs: []string{"go-preprocessing"}}, lab.ExecutionCaps{MaxCases: 1, MaxHTTPAttempts: 1, MaxProviderCalls: 1, MaxArtifactBytes: 1 << 20, DeadlineMS: 60000})
-	if err != nil {
-		t.Fatal(err)
-	}
-	runner := lab.NewRunner(planner, lab.RunnerOptions{Processes: adapter})
-	id, err := runner.Start(context.Background(), plan)
-	if err != nil {
-		t.Fatal(err)
-	}
+	runner, id := startProcessRun(t, lab.Selection{Suite: "test-adapters", Mode: "offline", Configuration: "current", CaseIDs: []string{"go-preprocessing"}}, lab.ExecutionCaps{MaxCases: 1, MaxHTTPAttempts: 1, MaxProviderCalls: 1, MaxArtifactBytes: 1 << 20, DeadlineMS: 60000})
 	ctx, cancel := context.WithTimeout(context.Background(), 65*time.Second)
 	defer cancel()
 	record, err := runner.Wait(ctx, id)
@@ -82,30 +59,7 @@ func TestProcessRunnerCannotReadHostSentinelsOrReachHostLoopback(t *testing.T) {
 	go server.Serve(listener)
 	defer server.Close()
 	t.Setenv("OPENAI_API_KEY", "synthetic-lab-environment-canary")
-	adapter, err := lab.NewProcessAdapter("../..")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !adapter.Capabilities().IsolationAvailable {
-		t.Skip("Host namespace isolation unavailable")
-	}
-	raw, err := os.ReadFile("../../docs/evaluations/test-adapters/cases.v1.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	planner, err := lab.NewPlanner(map[string][]byte{"test-adapters": raw})
-	if err != nil {
-		t.Fatal(err)
-	}
-	plan, err := planner.Plan(lab.Selection{Suite: "test-adapters", Mode: "offline", Configuration: "current", CaseIDs: []string{"probe-isolation"}}, lab.ExecutionCaps{MaxCases: 1, MaxHTTPAttempts: 1, MaxProviderCalls: 1, MaxArtifactBytes: 1 << 20, DeadlineMS: 5000})
-	if err != nil {
-		t.Fatal(err)
-	}
-	runner := lab.NewRunner(planner, lab.RunnerOptions{Processes: adapter})
-	id, err := runner.Start(context.Background(), plan)
-	if err != nil {
-		t.Fatal(err)
-	}
+	runner, id := startProcessRun(t, lab.Selection{Suite: "test-adapters", Mode: "offline", Configuration: "current", CaseIDs: []string{"probe-isolation"}}, lab.ExecutionCaps{MaxCases: 1, MaxHTTPAttempts: 1, MaxProviderCalls: 1, MaxArtifactBytes: 1 << 20, DeadlineMS: 5000})
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	record, err := runner.Wait(ctx, id)
@@ -129,30 +83,7 @@ func TestProcessRunnerCannotReadHostSentinelsOrReachHostLoopback(t *testing.T) {
 }
 
 func TestProcessRunnerCancellationStopsDetachedChildAndGrandchild(t *testing.T) {
-	adapter, err := lab.NewProcessAdapter("../..")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !adapter.Capabilities().IsolationAvailable {
-		t.Skip("Host namespace isolation unavailable")
-	}
-	raw, err := os.ReadFile("../../docs/evaluations/test-adapters/cases.v1.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	planner, err := lab.NewPlanner(map[string][]byte{"test-adapters": raw})
-	if err != nil {
-		t.Fatal(err)
-	}
-	plan, err := planner.Plan(lab.Selection{Suite: "test-adapters", Mode: "offline", Configuration: "current", CaseIDs: []string{"probe-hang-tree", "node-profile-document"}}, lab.ExecutionCaps{MaxCases: 2, MaxHTTPAttempts: 1, MaxProviderCalls: 1, MaxArtifactBytes: 1 << 20, DeadlineMS: 5000})
-	if err != nil {
-		t.Fatal(err)
-	}
-	runner := lab.NewRunner(planner, lab.RunnerOptions{Processes: adapter})
-	id, err := runner.Start(context.Background(), plan)
-	if err != nil {
-		t.Fatal(err)
-	}
+	runner, id := startProcessRun(t, lab.Selection{Suite: "test-adapters", Mode: "offline", Configuration: "current", CaseIDs: []string{"probe-hang-tree", "node-profile-document"}}, lab.ExecutionCaps{MaxCases: 2, MaxHTTPAttempts: 1, MaxProviderCalls: 1, MaxArtifactBytes: 1 << 20, DeadlineMS: 5000})
 	ready := false
 	for i := 0; i < 200; i++ {
 		page, eventErr := runner.Events(id, 0, 100)
@@ -172,7 +103,7 @@ func TestProcessRunnerCancellationStopsDetachedChildAndGrandchild(t *testing.T) 
 	if !ready {
 		t.Fatal("actual detached child/grandchild tree was not reached")
 	}
-	if err = runner.Cancel(id); err != nil {
+	if err := runner.Cancel(id); err != nil {
 		t.Fatal(err)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -192,30 +123,7 @@ func TestProcessRunnerCancellationStopsDetachedChildAndGrandchild(t *testing.T) 
 }
 
 func TestProcessRunnerDeadlineRetainsPartialTreeAndUnreachedTest(t *testing.T) {
-	adapter, err := lab.NewProcessAdapter("../..")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !adapter.Capabilities().IsolationAvailable {
-		t.Skip("Host namespace isolation unavailable")
-	}
-	raw, err := os.ReadFile("../../docs/evaluations/test-adapters/cases.v1.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	planner, err := lab.NewPlanner(map[string][]byte{"test-adapters": raw})
-	if err != nil {
-		t.Fatal(err)
-	}
-	plan, err := planner.Plan(lab.Selection{Suite: "test-adapters", Mode: "offline", Configuration: "current", CaseIDs: []string{"probe-hang-tree", "node-profile-document"}}, lab.ExecutionCaps{MaxCases: 2, MaxHTTPAttempts: 1, MaxProviderCalls: 1, MaxArtifactBytes: 1 << 20, DeadlineMS: 1000})
-	if err != nil {
-		t.Fatal(err)
-	}
-	runner := lab.NewRunner(planner, lab.RunnerOptions{Processes: adapter})
-	id, err := runner.Start(context.Background(), plan)
-	if err != nil {
-		t.Fatal(err)
-	}
+	runner, id := startProcessRun(t, lab.Selection{Suite: "test-adapters", Mode: "offline", Configuration: "current", CaseIDs: []string{"probe-hang-tree", "node-profile-document"}}, lab.ExecutionCaps{MaxCases: 2, MaxHTTPAttempts: 1, MaxProviderCalls: 1, MaxArtifactBytes: 1 << 20, DeadlineMS: 1000})
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	record, err := runner.Wait(ctx, id)
@@ -233,30 +141,7 @@ func TestProcessRunnerDeadlineRetainsPartialTreeAndUnreachedTest(t *testing.T) {
 }
 
 func TestProcessRunnerBoundsOutputAndStopsFollowingTests(t *testing.T) {
-	adapter, err := lab.NewProcessAdapter("../..")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !adapter.Capabilities().IsolationAvailable {
-		t.Skip("Host namespace isolation unavailable")
-	}
-	raw, err := os.ReadFile("../../docs/evaluations/test-adapters/cases.v1.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	planner, err := lab.NewPlanner(map[string][]byte{"test-adapters": raw})
-	if err != nil {
-		t.Fatal(err)
-	}
-	plan, err := planner.Plan(lab.Selection{Suite: "test-adapters", Mode: "offline", Configuration: "current", CaseIDs: []string{"probe-output", "node-profile-document"}}, lab.ExecutionCaps{MaxCases: 2, MaxHTTPAttempts: 1, MaxProviderCalls: 1, MaxArtifactBytes: 1 << 20, DeadlineMS: 5000})
-	if err != nil {
-		t.Fatal(err)
-	}
-	runner := lab.NewRunner(planner, lab.RunnerOptions{Processes: adapter})
-	id, err := runner.Start(context.Background(), plan)
-	if err != nil {
-		t.Fatal(err)
-	}
+	runner, id := startProcessRun(t, lab.Selection{Suite: "test-adapters", Mode: "offline", Configuration: "current", CaseIDs: []string{"probe-output", "node-profile-document"}}, lab.ExecutionCaps{MaxCases: 2, MaxHTTPAttempts: 1, MaxProviderCalls: 1, MaxArtifactBytes: 1 << 20, DeadlineMS: 5000})
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	record, err := runner.Wait(ctx, id)
@@ -278,30 +163,7 @@ func TestProcessRunnerBoundsOutputAndStopsFollowingTests(t *testing.T) {
 }
 
 func TestProcessRunnerMissingToolIsBlockedWithoutSpawning(t *testing.T) {
-	adapter, err := lab.NewProcessAdapter("../..")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !adapter.Capabilities().IsolationAvailable {
-		t.Skip("Host namespace isolation unavailable")
-	}
-	raw, err := os.ReadFile("../../docs/evaluations/test-adapters/cases.v1.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	planner, err := lab.NewPlanner(map[string][]byte{"test-adapters": raw})
-	if err != nil {
-		t.Fatal(err)
-	}
-	plan, err := planner.Plan(lab.Selection{Suite: "test-adapters", Mode: "offline", Configuration: "current", CaseIDs: []string{"probe-tool-missing", "node-profile-document"}}, lab.ExecutionCaps{MaxCases: 2, MaxHTTPAttempts: 1, MaxProviderCalls: 1, MaxArtifactBytes: 1 << 20, DeadlineMS: 5000})
-	if err != nil {
-		t.Fatal(err)
-	}
-	runner := lab.NewRunner(planner, lab.RunnerOptions{Processes: adapter})
-	id, err := runner.Start(context.Background(), plan)
-	if err != nil {
-		t.Fatal(err)
-	}
+	runner, id := startProcessRun(t, lab.Selection{Suite: "test-adapters", Mode: "offline", Configuration: "current", CaseIDs: []string{"probe-tool-missing", "node-profile-document"}}, lab.ExecutionCaps{MaxCases: 2, MaxHTTPAttempts: 1, MaxProviderCalls: 1, MaxArtifactBytes: 1 << 20, DeadlineMS: 5000})
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	record, err := runner.Wait(ctx, id)
@@ -320,30 +182,7 @@ func TestProcessRunnerMissingToolIsBlockedWithoutSpawning(t *testing.T) {
 }
 
 func TestProcessRunnerReusesSectionBrowserHarnessWithScreenshotEvidence(t *testing.T) {
-	adapter, err := lab.NewProcessAdapter("../..")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !adapter.Capabilities().IsolationAvailable {
-		t.Skip("Host namespace isolation unavailable in this execution environment")
-	}
-	raw, err := os.ReadFile("../../docs/evaluations/test-adapters/cases.v1.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	planner, err := lab.NewPlanner(map[string][]byte{"test-adapters": raw})
-	if err != nil {
-		t.Fatal(err)
-	}
-	plan, err := planner.Plan(lab.Selection{Suite: "test-adapters", Mode: "offline", Configuration: "current", CaseIDs: []string{"browser-section-review"}}, lab.ExecutionCaps{MaxCases: 1, MaxHTTPAttempts: 1, MaxProviderCalls: 1, MaxArtifactBytes: 2 << 20, DeadlineMS: 60000})
-	if err != nil {
-		t.Fatal(err)
-	}
-	runner := lab.NewRunner(planner, lab.RunnerOptions{Processes: adapter})
-	id, err := runner.Start(context.Background(), plan)
-	if err != nil {
-		t.Fatal(err)
-	}
+	runner, id := startProcessRun(t, lab.Selection{Suite: "test-adapters", Mode: "offline", Configuration: "current", CaseIDs: []string{"browser-section-review"}}, lab.ExecutionCaps{MaxCases: 1, MaxHTTPAttempts: 1, MaxProviderCalls: 1, MaxArtifactBytes: 2 << 20, DeadlineMS: 60000})
 	ctx, cancel := context.WithTimeout(context.Background(), 65*time.Second)
 	defer cancel()
 	record, err := runner.Wait(ctx, id)
@@ -373,30 +212,7 @@ func TestProcessRunnerReusesSectionBrowserHarnessWithScreenshotEvidence(t *testi
 }
 
 func TestProcessRunnerExecutesExistingNodeCanonicalContracts(t *testing.T) {
-	adapter, err := lab.NewProcessAdapter("../..")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !adapter.Capabilities().IsolationAvailable {
-		t.Skip("Host namespace isolation unavailable in this execution environment")
-	}
-	raw, err := os.ReadFile("../../docs/evaluations/test-adapters/cases.v1.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	planner, err := lab.NewPlanner(map[string][]byte{"test-adapters": raw})
-	if err != nil {
-		t.Fatal(err)
-	}
-	plan, err := planner.Plan(lab.Selection{Suite: "test-adapters", Mode: "offline", Configuration: "current", CaseIDs: []string{"node-profile-document"}}, lab.ExecutionCaps{MaxCases: 1, MaxHTTPAttempts: 1, MaxProviderCalls: 1, MaxArtifactBytes: 1 << 20, DeadlineMS: 60000})
-	if err != nil {
-		t.Fatal(err)
-	}
-	runner := lab.NewRunner(planner, lab.RunnerOptions{Processes: adapter})
-	id, err := runner.Start(context.Background(), plan)
-	if err != nil {
-		t.Fatal(err)
-	}
+	runner, id := startProcessRun(t, lab.Selection{Suite: "test-adapters", Mode: "offline", Configuration: "current", CaseIDs: []string{"node-profile-document"}}, lab.ExecutionCaps{MaxCases: 1, MaxHTTPAttempts: 1, MaxProviderCalls: 1, MaxArtifactBytes: 1 << 20, DeadlineMS: 60000})
 	ctx, cancel := context.WithTimeout(context.Background(), 65*time.Second)
 	defer cancel()
 	record, err := runner.Wait(ctx, id)
@@ -424,34 +240,7 @@ func TestProcessRunnerCrashRetainsDistinctOutcome(t *testing.T) {
 }
 func runProcessSelector(t *testing.T, selector string) (lab.RunRecord, lab.ProcessResult) {
 	t.Helper()
-	adapter, err := lab.NewProcessAdapter("../..")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !adapter.Capabilities().IsolationAvailable {
-		t.Skip("Host namespace isolation unavailable")
-	}
-	raw, err := os.ReadFile("../../docs/evaluations/test-adapters/cases.v1.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	provenance, err := lab.CaptureSource("../..")
-	if err != nil {
-		t.Fatal(err)
-	}
-	planner, err := lab.NewPlanner(map[string][]byte{"test-adapters": raw}, provenance)
-	if err != nil {
-		t.Fatal(err)
-	}
-	plan, err := planner.Plan(lab.Selection{Suite: "test-adapters", Mode: "offline", Configuration: "current", CaseIDs: []string{selector}}, lab.ExecutionCaps{MaxCases: 1, MaxHTTPAttempts: 1, MaxProviderCalls: 1, MaxArtifactBytes: 2 << 20, DeadlineMS: 60000})
-	if err != nil {
-		t.Fatal(err)
-	}
-	runner := lab.NewRunner(planner, lab.RunnerOptions{Processes: adapter})
-	id, err := runner.Start(context.Background(), plan)
-	if err != nil {
-		t.Fatal(err)
-	}
+	runner, id := startProcessRun(t, lab.Selection{Suite: "test-adapters", Mode: "offline", Configuration: "current", CaseIDs: []string{selector}}, lab.ExecutionCaps{MaxCases: 1, MaxHTTPAttempts: 1, MaxProviderCalls: 1, MaxArtifactBytes: 2 << 20, DeadlineMS: 60000})
 	ctx, cancel := context.WithTimeout(context.Background(), 65*time.Second)
 	defer cancel()
 	record, err := runner.Wait(ctx, id)
@@ -492,14 +281,7 @@ func TestProcessRunnerUsesOfflineFieldHelpers(t *testing.T) {
 }
 
 func TestProcessCatalogPlansExistingWorkflowEntryPoints(t *testing.T) {
-	raw, err := os.ReadFile("../../docs/evaluations/test-adapters/cases.v1.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	planner, err := lab.NewPlanner(map[string][]byte{"test-adapters": raw})
-	if err != nil {
-		t.Fatal(err)
-	}
+	planner := processPlanner(t)
 	for _, selector := range []string{"go-canonical", "go-ingestion", "go-job-application", "go-cv", "node-ingestion", "node-job-reuse", "node-artifact-review", "browser-canonical-edit", "browser-ingestion", "browser-enrichment", "browser-application-reuse", "browser-resume-review"} {
 		t.Run(selector, func(t *testing.T) {
 			plan, err := planner.Plan(lab.Selection{Suite: "test-adapters", Mode: "offline", Configuration: "current", CaseIDs: []string{selector}}, lab.ExecutionCaps{MaxCases: 1, MaxHTTPAttempts: 1, MaxProviderCalls: 1, MaxArtifactBytes: 2 << 20, DeadlineMS: 60000})
@@ -615,4 +397,42 @@ func TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes(t *testing.T) {
 			t.Logf("Observed existing harness: outcome=%s engine=%s assertion=%s", actual.Outcome, record.EngineState, record.AssertionVerdict)
 		})
 	}
+}
+
+func processPlanner(t *testing.T) *lab.Planner {
+	t.Helper()
+	raw, err := os.ReadFile("../../docs/evaluations/test-adapters/cases.v2.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	provenance, err := lab.CaptureSource("../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	planner, err := lab.NewPlanner(map[string][]byte{"test-adapters": raw}, provenance)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return planner
+}
+func startProcessRun(t *testing.T, selection lab.Selection, caps lab.ExecutionCaps) (*lab.Runner, string) {
+	t.Helper()
+	adapter, err := lab.NewProcessAdapter("../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !adapter.Capabilities().IsolationAvailable {
+		t.Skip("Host namespace isolation unavailable")
+	}
+	planner := processPlanner(t)
+	plan, err := planner.Plan(selection, caps)
+	if err != nil {
+		t.Fatal(err)
+	}
+	runner := lab.NewRunner(planner, lab.RunnerOptions{Processes: adapter})
+	id, err := runner.Start(context.Background(), plan)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return runner, id
 }

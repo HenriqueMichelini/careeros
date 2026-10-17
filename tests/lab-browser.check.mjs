@@ -201,7 +201,7 @@ try {
   })
   await call("Page.navigate", { url: origin + "/lab/" })
   await until(`document.body.innerText.includes('Private history ready')`)
-  const processRun = await choose("test-adapters", "node-profile-document")
+  await choose("test-adapters", "node-profile-document")
   await button("node-profile-document")
   await until(`!!document.querySelector('article[aria-label="Case evidence"]')`)
   assert.ok(
@@ -216,7 +216,7 @@ try {
     ),
     "test-driver progress missing",
   )
-  const artifactRun = await choose("test-adapters", "browser-resume-review")
+  await choose("test-adapters", "browser-resume-review")
   await button("browser-resume-review")
   await until(`!!document.querySelector('[aria-label="Typed test artifacts"]')`)
   assert.ok(

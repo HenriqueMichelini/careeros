@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http/httptest"
-	"os"
 	"path/filepath"
 	lab "professional-information-repo/internal/evaluationlab"
 	"testing"
@@ -153,23 +152,8 @@ func TestDashboardViewKeepsCaseArtifactsBehindLazyLookup(t *testing.T) {
 }
 
 func TestProcessPlansRejectCommandPathEnvironmentAndProviderOverrides(t *testing.T) {
-	raw, err := os.ReadFile("../../docs/evaluations/test-adapters/cases.v1.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	planner, err := lab.NewPlanner(map[string][]byte{"test-adapters": raw})
-	if err != nil {
-		t.Fatal(err)
-	}
-	store, err := lab.OpenFileStore(filepath.Join(t.TempDir(), "history"), lab.StoreOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer store.Close()
-	api, err := lab.NewAPI(planner, lab.NewRunner(planner, lab.RunnerOptions{}), store, lab.APIOptions{Origin: "http://127.0.0.1:8123"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	planner := processPlanner(t)
+	store, api := processDashboardAPI(t, planner)
 	for _, field := range []string{"command", "args", "executable", "package", "file", "path", "environment", "providerHost"} {
 		selection := map[string]any{"suite": "test-adapters", "mode": "offline", "configuration": "current", "caseIds": []string{"go-preprocessing"}, field: "unapproved-override"}
 		body, _ := json.Marshal(map[string]any{"selection": selection, "caps": lab.ExecutionCaps{MaxCases: 1, MaxHTTPAttempts: 1, MaxProviderCalls: 1, MaxArtifactBytes: 1 << 20, DeadlineMS: 1000}})
@@ -185,7 +169,7 @@ func TestProcessPlansRejectCommandPathEnvironmentAndProviderOverrides(t *testing
 			t.Fatalf("%s override accepted: %d", field, out.Code)
 		}
 	}
-	if _, err = planner.Plan(lab.Selection{Suite: "test-adapters", Mode: "offline", Configuration: "current", CaseIDs: []string{"../../backend"}}, lab.ExecutionCaps{MaxCases: 1, MaxHTTPAttempts: 1, MaxProviderCalls: 1, MaxArtifactBytes: 1 << 20, DeadlineMS: 1000}); err == nil {
+	if _, err := planner.Plan(lab.Selection{Suite: "test-adapters", Mode: "offline", Configuration: "current", CaseIDs: []string{"../../backend"}}, lab.ExecutionCaps{MaxCases: 1, MaxHTTPAttempts: 1, MaxProviderCalls: 1, MaxArtifactBytes: 1 << 20, DeadlineMS: 1000}); err == nil {
 		t.Fatal("arbitrary path became a test selector")
 	}
 	page, err := store.List(lab.RunFilter{Limit: 100})
@@ -195,23 +179,8 @@ func TestProcessPlansRejectCommandPathEnvironmentAndProviderOverrides(t *testing
 }
 
 func TestDashboardProcessPreflightExposesMissingIsolation(t *testing.T) {
-	raw, err := os.ReadFile("../../docs/evaluations/test-adapters/cases.v1.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	planner, err := lab.NewPlanner(map[string][]byte{"test-adapters": raw})
-	if err != nil {
-		t.Fatal(err)
-	}
-	store, err := lab.OpenFileStore(filepath.Join(t.TempDir(), "history"), lab.StoreOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer store.Close()
-	api, err := lab.NewAPI(planner, lab.NewRunner(planner, lab.RunnerOptions{}), store, lab.APIOptions{Origin: "http://127.0.0.1:8123"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	planner := processPlanner(t)
+	_, api := processDashboardAPI(t, planner)
 	req := httptest.NewRequest("GET", "/lab/api/status", nil)
 	req.Host = "127.0.0.1:8123"
 	req.Header.Set("Authorization", api.Session().Authorization)
@@ -233,4 +202,18 @@ func TestDashboardProcessPreflightExposesMissingIsolation(t *testing.T) {
 			t.Fatal("fixtures alone reported executable")
 		}
 	}
+}
+
+func processDashboardAPI(t *testing.T, planner *lab.Planner) (*lab.FileStore, *lab.API) {
+	t.Helper()
+	store, err := lab.OpenFileStore(filepath.Join(t.TempDir(), "history"), lab.StoreOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { store.Close() })
+	api, err := lab.NewAPI(planner, lab.NewRunner(planner, lab.RunnerOptions{}), store, lab.APIOptions{Origin: "http://127.0.0.1:8123"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return store, api
 }

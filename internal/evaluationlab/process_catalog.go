@@ -1,7 +1,7 @@
 // Static catalog bound to the reviewed source/selector manifest.
 package evaluationlab
 
-const processFixtureHash = "4ef2e16d03f030ecbe2862f7bf24e4e622191c8af2649589f06297da44fe572f"
+const processFixtureHash = "0f9469797d9ba65ed5d356a5d0f8bd5832415c989287488c13df70525bd5650b"
 
 func init() {
 	suiteCatalog = append(suiteCatalog, Suite{

@@ -85,5 +85,5 @@ func (n *processNamespace) stop(reader *os.File) bool {
 // rather than fall back to a racy numeric-PID signal.
 func hasProcessHandle(process *os.Process) bool {
 	handle, ok := any(process).(interface{ WithHandle(func(uintptr)) error })
-	return ok && handle.WithHandle(func(uintptr) {}) == nil
+	return ok && handle.WithHandle(func(uintptr) { /* Acquiring a valid handle is the capability being tested. */ }) == nil
 }

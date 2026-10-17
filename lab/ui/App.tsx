@@ -547,13 +547,12 @@ export function App() {
                             status?.processCapabilities?.selectors?.find(
                               (item) => item.id === c.id,
                             )
-                          return capability
-                            ? `${capability.requiredTools.join(", ")} · ${
-                                capability.available
-                                  ? "runtime available"
-                                  : capability.unavailableReasons.join("; ")
-                              }`
-                            : "Process preflight unavailable"
+                          if (!capability)
+                            return "Process preflight unavailable"
+                          const availability = capability.available
+                            ? "runtime available"
+                            : capability.unavailableReasons.join("; ")
+                          return `${capability.requiredTools.join(", ")} · ${availability}`
                         })()}
                       </p>
                     )}

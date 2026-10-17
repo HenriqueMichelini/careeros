@@ -38,7 +38,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	paths := map[string]string{"test-adapters": "test-adapters/cases.v1.json", "semantic-quality": "semantic-quality/cases.v2.json", "section-review": "section-review/cases.v1.json", "workflow-settings": "workflow-settings/cases.v1.json", "qualification-evidence": "qualification-evidence/cases.json", "application-context": "qualification-evidence/cases.json", "application-baseline": "semantic-quality/controlled.v2.json"}
+	paths := map[string]string{"test-adapters": "test-adapters/cases.v2.json", "semantic-quality": "semantic-quality/cases.v2.json", "section-review": "section-review/cases.v1.json", "workflow-settings": "workflow-settings/cases.v1.json", "qualification-evidence": "qualification-evidence/cases.json", "application-context": "qualification-evidence/cases.json", "application-baseline": "semantic-quality/controlled.v2.json"}
 	fixtures := map[string][]byte{}
 	for key, path := range paths {
 		raw, readErr := os.ReadFile(filepath.Join(root, "docs", "evaluations", path))

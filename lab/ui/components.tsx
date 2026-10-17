@@ -134,12 +134,9 @@ export function CaseDetail({ evidence }: { evidence: CaseEvidence }) {
       if (!value || typeof value !== "object")
         throw new Error("Artifact unavailable")
       const artifact = value as Record<string, unknown>
-      const mime =
-        artifact.kind === "screenshot"
-          ? "image/png"
-          : artifact.kind === "cdp-produced-pdf"
-            ? "application/pdf"
-            : null
+      let mime: string | null = null
+      if (artifact.kind === "screenshot") mime = "image/png"
+      if (artifact.kind === "cdp-produced-pdf") mime = "application/pdf"
       if (
         !mime ||
         typeof artifact.bytes !== "string" ||
@@ -147,7 +144,10 @@ export function CaseDetail({ evidence }: { evidence: CaseEvidence }) {
         typeof artifact.hash !== "string"
       )
         throw new Error("Artifact type or byte bound unavailable")
-      const raw = Uint8Array.from(atob(artifact.bytes), (c) => c.charCodeAt(0))
+      const raw = Uint8Array.from(
+        atob(artifact.bytes),
+        (c) => c.codePointAt(0) ?? 0,
+      )
       const hash = Array.from(
         new Uint8Array(await crypto.subtle.digest("SHA-256", raw)),
         (b) => b.toString(16).padStart(2, "0"),
@@ -217,7 +217,10 @@ export function CaseDetail({ evidence }: { evidence: CaseEvidence }) {
           {artifacts.map((value, index) => {
             const item = value as Record<string, unknown>
             return (
-              <p key={index} className="identity">
+              <p
+                key={String(item.hash) + ":" + String(item.name)}
+                className="identity"
+              >
                 {String(item.kind)} · {String(item.name)} ·{" "}
                 {String(item.origin)} · {String(item.runtime)}
                 <br />
