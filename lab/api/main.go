@@ -23,6 +23,7 @@ func main() {
 	}
 }
 func run() error {
+	enableGuard := flag.Bool("enable-live-guard", false, "enable controlled guard preflight capability only; no real execution")
 	reviewer := flag.String("human-reviewer", "", "explicit local human domain reviewer; approval disabled when empty")
 	port := flag.Int("port", 0, "loopback port (0 selects an available port)")
 	data := flag.String("data-dir", "", "private local history directory")
@@ -74,7 +75,12 @@ func run() error {
 	if info, statErr := os.Stat(*assets); statErr == nil && info.IsDir() {
 		assetFS = os.DirFS(*assets)
 	}
-	api, err := lab.NewAPI(planner, runner, store, lab.APIOptions{Origin: origin, Context: ctx, Assets: assetFS, HumanReviewer: *reviewer})
+	guard, err := lab.NewLiveGuard(planner, store, lab.LiveGuardOptions{Enabled: *enableGuard, HumanReviewer: *reviewer})
+	if err != nil {
+		return err
+	}
+	defer guard.Close()
+	api, err := lab.NewAPI(planner, runner, store, lab.APIOptions{Origin: origin, Context: ctx, Assets: assetFS, HumanReviewer: *reviewer, LiveGuard: guard})
 	if err != nil {
 		return err
 	}

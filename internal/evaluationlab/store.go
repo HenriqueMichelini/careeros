@@ -74,16 +74,17 @@ type storeManifest struct {
 	OriginalHash string            `json:"originalHash,omitempty"`
 }
 type FileStore struct {
-	recovery  map[string]RunRecord
-	mu        sync.Mutex
-	root      *os.Root
-	dir       string
-	lock      *os.File
-	options   StoreOptions
-	manifests map[string]storeManifest
-	problems  []string
-	failure   error
-	closed    bool
+	guardOwner string
+	recovery   map[string]RunRecord
+	mu         sync.Mutex
+	root       *os.Root
+	dir        string
+	lock       *os.File
+	options    StoreOptions
+	manifests  map[string]storeManifest
+	problems   []string
+	failure    error
+	closed     bool
 }
 
 // DefaultStoreDirectory is application-owned user data, outside the checkout.
@@ -480,16 +481,16 @@ func (s *FileStore) rebuild() error {
 	if err != nil {
 		return err
 	}
-	entries, err := dir.ReadDir(maxStoredRuns + 3)
+	entries, err := dir.ReadDir(maxStoredRuns + 4)
 	dir.Close()
 	if err != nil && !errors.Is(err, io.EOF) {
 		return err
 	}
-	if len(entries) > maxStoredRuns+2 {
+	if len(entries) > maxStoredRuns+3 {
 		return fmt.Errorf("history catalog exceeds bounds")
 	}
 	for _, entry := range entries {
-		if entry.Name() == writerLock || entry.Name() == exposureDirectory {
+		if entry.Name() == writerLock || entry.Name() == exposureDirectory || entry.Name() == guardDirectory {
 			continue
 		}
 		if !storeID.MatchString(entry.Name()) || !entry.IsDir() {
