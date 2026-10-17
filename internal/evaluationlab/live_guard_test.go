@@ -53,18 +53,7 @@ func TestLivePreflightBindsOwnedPlanAndNeverCarriesAuthority(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer store.Close()
-	raw, err := os.ReadFile("../../docs/evaluations/semantic-quality/cases.v2.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	provenance, err := lab.CaptureSource("../..")
-	if err != nil {
-		t.Fatal(err)
-	}
-	planner, err := lab.NewPlanner(map[string][]byte{"semantic-quality": raw}, provenance)
-	if err != nil {
-		t.Fatal(err)
-	}
+	planner := guardPlanner(t, "semantic-quality", "../../docs/evaluations/semantic-quality/cases.v2.json")
 	plan := factPlan(t, planner)
 	now := time.Now()
 	guard, err := lab.NewLiveGuard(planner, store, lab.LiveGuardOptions{Enabled: true, HumanReviewer: "controlled-human-example", Origin: "controlled-test", Now: func() time.Time { return now }})
@@ -231,18 +220,7 @@ func guardExample(t *testing.T, supplied ...*lab.FileStore) (*lab.LiveGuard, lab
 		}
 		t.Cleanup(func() { store.Close() })
 	}
-	raw, err := os.ReadFile("../../docs/evaluations/semantic-quality/cases.v2.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	provenance, err := lab.CaptureSource("../..")
-	if err != nil {
-		t.Fatal(err)
-	}
-	planner, err := lab.NewPlanner(map[string][]byte{"semantic-quality": raw}, provenance)
-	if err != nil {
-		t.Fatal(err)
-	}
+	planner := guardPlanner(t, "semantic-quality", "../../docs/evaluations/semantic-quality/cases.v2.json")
 	guard, err := lab.NewLiveGuard(planner, store, lab.LiveGuardOptions{Enabled: true, HumanReviewer: "controlled-human-example", Origin: "controlled-test"})
 	if err != nil {
 		t.Fatal(err)
@@ -322,11 +300,7 @@ func TestGuardRestartKeepsUnknownFinalAndCannotRedispatch(t *testing.T) {
 
 func TestGuardRejectsDistinctInFlightAndOutOfOrderDispatches(t *testing.T) {
 	guard, preflight := guardExample(t)
-	challenge, err := guard.Approval(preflight.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	token, err := guard.Authorize(lab.GuardApproval{PreflightID: preflight.ID, Hash: preflight.Hash, Actor: lab.ReviewActor{ID: "controlled-human-example", Type: "human"}, Confirmation: challenge.Confirmation, Rationale: "Controlled concurrency test only"}, map[string]string{"api.openai.com": "synthetic-openai", "api.typesafe.ai": "synthetic-jev"})
+	token, err := authorizeGuardExample(t, guard, preflight, "Controlled concurrency test only")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -363,11 +337,7 @@ func TestGuardCancellationBeforeAndAfterAdmissionNeverRefunds(t *testing.T) {
 	for _, after := range []bool{false, true} {
 		t.Run(fmt.Sprint(after), func(t *testing.T) {
 			guard, preflight := guardExample(t)
-			challenge, err := guard.Approval(preflight.ID)
-			if err != nil {
-				t.Fatal(err)
-			}
-			token, err := guard.Authorize(lab.GuardApproval{PreflightID: preflight.ID, Hash: preflight.Hash, Actor: lab.ReviewActor{ID: "controlled-human-example", Type: "human"}, Confirmation: challenge.Confirmation, Rationale: "Controlled cancellation only"}, map[string]string{"api.openai.com": "synthetic-openai", "api.typesafe.ai": "synthetic-jev"})
+			token, err := authorizeGuardExample(t, guard, preflight, "Controlled cancellation only")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -410,11 +380,7 @@ func TestGuardCancellationBeforeAndAfterAdmissionNeverRefunds(t *testing.T) {
 
 func TestGuardDeadlineExpiresWithoutDispatchAndRevokesAuthority(t *testing.T) {
 	guard, preflight := guardExample(t)
-	challenge, err := guard.Approval(preflight.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	token, err := guard.Authorize(lab.GuardApproval{PreflightID: preflight.ID, Hash: preflight.Hash, Actor: lab.ReviewActor{ID: "controlled-human-example", Type: "human"}, Confirmation: challenge.Confirmation, Rationale: "Controlled deadline test only"}, map[string]string{"api.openai.com": "synthetic-openai", "api.typesafe.ai": "synthetic-jev"})
+	token, err := authorizeGuardExample(t, guard, preflight, "Controlled deadline test only")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -484,11 +450,7 @@ func TestGuardPartialPricesRetainKnownSubtotalWithoutInventingTotal(t *testing.T
 	if err != nil {
 		t.Fatal(err)
 	}
-	challenge, err := guard.Approval(preflight.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	token, err := guard.Authorize(lab.GuardApproval{PreflightID: preflight.ID, Hash: preflight.Hash, Actor: lab.ReviewActor{ID: "controlled-human-example", Type: "human"}, Confirmation: challenge.Confirmation, Rationale: "Controlled fictional price accounting only"}, map[string]string{"api.openai.com": "synthetic-openai", "api.typesafe.ai": "synthetic-jev"})
+	token, err := authorizeGuardExample(t, guard, preflight, "Controlled fictional price accounting only")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -517,11 +479,7 @@ func TestGuardFailureClassesStopWithoutRetryAndKeepAttempt(t *testing.T) {
 	} {
 		t.Run(scenario.name, func(t *testing.T) {
 			guard, preflight := guardExample(t)
-			challenge, err := guard.Approval(preflight.ID)
-			if err != nil {
-				t.Fatal(err)
-			}
-			token, err := guard.Authorize(lab.GuardApproval{PreflightID: preflight.ID, Hash: preflight.Hash, Actor: lab.ReviewActor{ID: "controlled-human-example", Type: "human"}, Confirmation: challenge.Confirmation, Rationale: "Controlled failure accounting only"}, map[string]string{"api.openai.com": "synthetic-openai", "api.typesafe.ai": "synthetic-jev"})
+			token, err := authorizeGuardExample(t, guard, preflight, "Controlled failure accounting only")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -564,11 +522,7 @@ func TestGuardTokenBudgetRacesNeverOverspend(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	challenge, err := guard.Approval(preflight.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	token, err := guard.Authorize(lab.GuardApproval{PreflightID: preflight.ID, Hash: preflight.Hash, Actor: lab.ReviewActor{ID: "controlled-human-example", Type: "human"}, Confirmation: challenge.Confirmation, Rationale: "Controlled budget race only"}, map[string]string{"api.openai.com": "synthetic-openai", "api.typesafe.ai": "synthetic-jev"})
+	token, err := authorizeGuardExample(t, guard, preflight, "Controlled budget race only")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -611,11 +565,7 @@ func TestGuardIntentRetentionFailurePreventsTransport(t *testing.T) {
 	}
 	defer store.Close()
 	guard, preflight := guardExample(t, store)
-	challenge, err := guard.Approval(preflight.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	token, err := guard.Authorize(lab.GuardApproval{PreflightID: preflight.ID, Hash: preflight.Hash, Actor: lab.ReviewActor{ID: "controlled-human-example", Type: "human"}, Confirmation: challenge.Confirmation, Rationale: "Controlled pre-dispatch retention failure only"}, map[string]string{"api.openai.com": "synthetic-openai", "api.typesafe.ai": "synthetic-jev"})
+	token, err := authorizeGuardExample(t, guard, preflight, "Controlled pre-dispatch retention failure only")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -641,11 +591,7 @@ func TestControlledGuardNeverAttemptsExternalNetwork(t *testing.T) {
 	http.DefaultTransport = deniedTransport{calls: &external}
 	defer func() { http.DefaultTransport = original }()
 	guard, preflight := guardExample(t)
-	challenge, err := guard.Approval(preflight.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	token, err := guard.Authorize(lab.GuardApproval{PreflightID: preflight.ID, Hash: preflight.Hash, Actor: lab.ReviewActor{ID: "controlled-human-example", Type: "human"}, Confirmation: challenge.Confirmation, Rationale: "Controlled zero-network verification only"}, map[string]string{"api.openai.com": "synthetic-openai", "api.typesafe.ai": "synthetic-jev"})
+	token, err := authorizeGuardExample(t, guard, preflight, "Controlled zero-network verification only")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -663,11 +609,7 @@ func TestControlledGuardNeverAttemptsExternalNetwork(t *testing.T) {
 
 func TestGuardRejectsOverflowingUsageWithoutTrustingItsCost(t *testing.T) {
 	guard, preflight := guardExample(t)
-	challenge, err := guard.Approval(preflight.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	token, err := guard.Authorize(lab.GuardApproval{PreflightID: preflight.ID, Hash: challenge.Hash, Actor: lab.ReviewActor{ID: "controlled-human-example", Type: "human"}, Confirmation: challenge.Confirmation, Rationale: "Controlled malformed usage test only"}, map[string]string{"api.openai.com": "synthetic-openai", "api.typesafe.ai": "synthetic-jev"})
+	token, err := authorizeGuardExample(t, guard, preflight, "Controlled malformed usage test only")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -704,11 +646,7 @@ func retainGuardExample(t *testing.T, name string, value any) {
 
 func TestGuardCallerDeadlineRetainsTimeoutAndNonrefundableAttempt(t *testing.T) {
 	guard, preflight := guardExample(t)
-	challenge, err := guard.Approval(preflight.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	token, err := guard.Authorize(lab.GuardApproval{PreflightID: preflight.ID, Hash: challenge.Hash, Actor: lab.ReviewActor{ID: "controlled-human-example", Type: "human"}, Confirmation: challenge.Confirmation, Rationale: "Controlled timeout attribution"}, map[string]string{"api.openai.com": "synthetic-openai", "api.typesafe.ai": "synthetic-jev"})
+	token, err := authorizeGuardExample(t, guard, preflight, "Controlled timeout attribution")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -733,4 +671,30 @@ func TestGuardCallerDeadlineRetainsTimeoutAndNonrefundableAttempt(t *testing.T) 
 	}); err == nil || calls != 1 {
 		t.Fatal("timed out run continued")
 	}
+}
+
+func guardPlanner(t *testing.T, suite, fixture string) *lab.Planner {
+	t.Helper()
+	raw, err := os.ReadFile(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	provenance, err := lab.CaptureSource("../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	planner, err := lab.NewPlanner(map[string][]byte{suite: raw}, provenance)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return planner
+}
+
+func authorizeGuardExample(t *testing.T, guard *lab.LiveGuard, preflight lab.LivePreflight, rationale string) (lab.GuardAuthorization, error) {
+	t.Helper()
+	challenge, err := guard.Approval(preflight.ID)
+	if err != nil {
+		return lab.GuardAuthorization{}, err
+	}
+	return guard.Authorize(lab.GuardApproval{PreflightID: preflight.ID, Hash: challenge.Hash, Actor: lab.ReviewActor{ID: "controlled-human-example", Type: "human"}, Confirmation: challenge.Confirmation, Rationale: rationale}, map[string]string{"api.openai.com": "synthetic-openai", "api.typesafe.ai": "synthetic-jev"})
 }

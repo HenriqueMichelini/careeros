@@ -2,7 +2,6 @@ package evaluationlab_test
 
 import (
 	"context"
-	"os"
 	lab "professional-information-repo/internal/evaluationlab"
 	"professional-information-repo/internal/semanticeval"
 	"testing"
@@ -14,18 +13,7 @@ func TestGuardFrozenComparisonInterleavesAndEnforcesEquivalentPlans(t *testing.T
 		t.Fatal(err)
 	}
 	defer store.Close()
-	raw, err := os.ReadFile("../../docs/evaluations/workflow-settings/cases.v1.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	provenance, err := lab.CaptureSource("../..")
-	if err != nil {
-		t.Fatal(err)
-	}
-	planner, err := lab.NewPlanner(map[string][]byte{"workflow-settings": raw}, provenance)
-	if err != nil {
-		t.Fatal(err)
-	}
+	planner := guardPlanner(t, "workflow-settings", "../../docs/evaluations/workflow-settings/cases.v1.json")
 	guard, err := lab.NewLiveGuard(planner, store, lab.LiveGuardOptions{Enabled: true, HumanReviewer: "controlled-human-example", Origin: "controlled-test"})
 	if err != nil {
 		t.Fatal(err)
@@ -113,18 +101,7 @@ func TestGuardSequenceKeepsLogicalCaseHTTPAndProviderLegsSeparate(t *testing.T) 
 		t.Fatal(err)
 	}
 	defer store.Close()
-	raw, err := os.ReadFile("../../docs/evaluations/workflow-settings/cases.v1.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	provenance, err := lab.CaptureSource("../..")
-	if err != nil {
-		t.Fatal(err)
-	}
-	planner, err := lab.NewPlanner(map[string][]byte{"workflow-settings": raw}, provenance)
-	if err != nil {
-		t.Fatal(err)
-	}
+	planner := guardPlanner(t, "workflow-settings", "../../docs/evaluations/workflow-settings/cases.v1.json")
 	guard, err := lab.NewLiveGuard(planner, store, lab.LiveGuardOptions{Enabled: true, HumanReviewer: "controlled-human-example", Origin: "controlled-test"})
 	if err != nil {
 		t.Fatal(err)
@@ -186,18 +163,7 @@ func TestGuardPreflightRejectsReorderedCasesAndSequenceLeaves(t *testing.T) {
 				t.Fatal(err)
 			}
 			defer store.Close()
-			raw, err := os.ReadFile("../../docs/evaluations/workflow-settings/cases.v1.json")
-			if err != nil {
-				t.Fatal(err)
-			}
-			provenance, err := lab.CaptureSource("../..")
-			if err != nil {
-				t.Fatal(err)
-			}
-			planner, err := lab.NewPlanner(map[string][]byte{"workflow-settings": raw}, provenance)
-			if err != nil {
-				t.Fatal(err)
-			}
+			planner := guardPlanner(t, "workflow-settings", "../../docs/evaluations/workflow-settings/cases.v1.json")
 			guard, err := lab.NewLiveGuard(planner, store, lab.LiveGuardOptions{Enabled: true})
 			if err != nil {
 				t.Fatal(err)
