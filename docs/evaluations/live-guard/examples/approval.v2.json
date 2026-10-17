@@ -1,0 +1,9 @@
+{
+  "hash": "c33c87baa56d9096929d70641253d3c97bcae9bd1989504e5c67374ebb25ec79",
+  "actor": {
+    "id": "controlled-human-example",
+    "type": "human"
+  },
+  "origin": "controlled-test",
+  "rationale": "Controlled protocol example only; no real experiment or human gold."
+}

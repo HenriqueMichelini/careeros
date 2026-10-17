@@ -1,0 +1,56 @@
+{
+  "version": "lab-dashboard-smoke-v2",
+  "frozenReviewBase": "84fe8ab37a2e90756d6a4939924036867007959a",
+  "sourceVerification": "Every retained v2 native source hash matches corrected files; compiler VCS commit 1475956f229024ad247d8d404014b858423635f4 with dirty review correction. Final correction head recorded in PR.",
+  "runtime": {
+    "go": "go1.26.4 linux/amd64",
+    "node": "v24.15.0",
+    "vite": "8.3.1",
+    "browser": "isolated headless Chrome, desktop and 390px viewport; no physical mobile claim"
+  },
+  "exports": {
+    "smoke.native.v2.json": {
+      "sha256": "ec13f3907fba9a8cc0488e71021d2ac9288d8b4b570210a5f25a4f8354777f1e",
+      "bytes": 41328
+    },
+    "smoke.native.v2.md": {
+      "sha256": "e3aa60dd23f6566ca82b40ae5a96f1371b9932ef575c68c736c1d95ce35e889f",
+      "bytes": 270
+    }
+  },
+  "buildAssets": {
+    "lab.js": "489e0f4fa1d8e86675946c56f3906f6c8ebc90a0173a3e7cb2c59abfcd7ae422",
+    "lab.css": "4aaa462a49a28b1a43e2712e8d469917972b67d9ea43551fdb2297bd52ebec0e"
+  },
+  "controlledBrowserEvidence": "/tmp/careeros-lab-browser-OOVyfH",
+  "observations": [
+    "Actual one-command standalone launch",
+    "Selective semantic/settings/qualification-evidence/application-context/section-review execution",
+    "Lazy case artifacts and separated output/label/judgment/client evidence",
+    "JSON and Markdown downloads",
+    "Terminal refresh and active reconnect without new admission",
+    "Actual UI cancellation with partial evidence",
+    "History filters before pagination",
+    "Compatible and incompatible stored comparisons",
+    "Malformed import rejection and unknown import quarantine",
+    "Exact-ID deliberate deletion",
+    "Keyboard selection/plan/start at 1440px and 390px",
+    "Zero instrumented browser storage calls",
+    "Zero observed external browser requests; requests denied by harness",
+    "Delayed lazy case response ignored after run navigation",
+    "History Set left/right clears prior comparison",
+    "Delayed comparison response ignored after selected ID changes",
+    "Delayed frozen plan ignored after composer suite changes"
+  ],
+  "syntheticUIFaults": [
+    "API response for missing fixture capability and unavailable storage; actual native storage failures separately covered by public Go tests"
+  ],
+  "limits": [
+    "Synthetic controlled/local browser evidence only",
+    "No actual-provider, deployment, human acceptance, physical-mobile or actual-PDF observations",
+    "Native export reimport remains quarantined until separately registered",
+    "Legacy history lacks added optional index fields until new evidence is created; no historical data rewritten",
+    "Source and asset hashes do not prove binary correspondence or semantic correctness"
+  ],
+  "priorManifestSHA256": "a85866c4200c946ae8c08853023ba334a1caa607a1a8ece41675504665d57d84"
+}

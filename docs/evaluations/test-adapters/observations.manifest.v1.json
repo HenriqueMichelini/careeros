@@ -1,0 +1,323 @@
+{
+  "version": "lab-test-adapter-observations-v1",
+  "baseCommit": "b7595505882995530af158f54b05e9e6938b039e",
+  "reviewedCodeCommit": "2a7e845e26d959f9d0903d73300fcedbb8d6f780",
+  "fixtureVersion": "lab-process-fixtures-v1",
+  "fixtureSHA256": "4ef2e16d03f030ecbe2862f7bf24e4e622191c8af2649589f06297da44fe572f",
+  "origin": "synthetic-offline-local-host",
+  "files": [
+    {
+      "path": "docs/evaluations/test-adapters/observations.v1/browser-resume-review.v1.json",
+      "sha256": "f7de4a6d52fbbb08b81642901cbc57cecd3cad38a71685a2c773c3f32edab246",
+      "bytes": 1294695,
+      "caseId": "browser-resume-review",
+      "engineState": "completed",
+      "assertionVerdict": "pass",
+      "operationalOutcome": "passed",
+      "runtimeVersions": {
+        "bubblewrap": "bubblewrap 0.12.0",
+        "chrome": "Google Chrome 155.0.8059.79",
+        "go": "go version go1.26.4 linux/amd64",
+        "node": "v24.15.0",
+        "supervisor": "go1.26.4"
+      },
+      "artifactKinds": [
+        "cdp-produced-pdf",
+        "screenshot",
+        "cdp-produced-pdf",
+        "screenshot",
+        "cdp-produced-pdf",
+        "screenshot",
+        "cdp-produced-pdf",
+        "screenshot",
+        "screenshot",
+        "screenshot",
+        "screenshot",
+        "screenshot",
+        "cdp-produced-pdf",
+        "cdp-produced-pdf",
+        "cdp-produced-pdf",
+        "cdp-produced-pdf",
+        "screenshot",
+        "screenshot",
+        "screenshot",
+        "screenshot"
+      ]
+    },
+    {
+      "path": "docs/evaluations/test-adapters/observations.v1/go-canonical.v1.json",
+      "sha256": "a25c39cb1005e526e0cffc46c9911a9c7bf384fb2e7d253358f668e88e91bb6c",
+      "bytes": 38818,
+      "caseId": "go-canonical",
+      "engineState": "completed",
+      "assertionVerdict": "pass",
+      "operationalOutcome": "passed",
+      "runtimeVersions": {
+        "bubblewrap": "bubblewrap 0.12.0",
+        "chrome": "Google Chrome 155.0.8059.79",
+        "go": "go version go1.26.4 linux/amd64",
+        "node": "v24.15.0",
+        "supervisor": "go1.26.4"
+      },
+      "artifactKinds": []
+    },
+    {
+      "path": "docs/evaluations/test-adapters/observations.v1/go-cv.v1.json",
+      "sha256": "d7549d2b938f06aeeeeb09be73156c4a2e09127b75a9639b4f0adb4260fd3f4d",
+      "bytes": 38428,
+      "caseId": "go-cv",
+      "engineState": "completed",
+      "assertionVerdict": "pass",
+      "operationalOutcome": "passed",
+      "runtimeVersions": {
+        "bubblewrap": "bubblewrap 0.12.0",
+        "chrome": "Google Chrome 155.0.8059.79",
+        "go": "go version go1.26.4 linux/amd64",
+        "node": "v24.15.0",
+        "supervisor": "go1.26.4"
+      },
+      "artifactKinds": []
+    },
+    {
+      "path": "docs/evaluations/test-adapters/observations.v1/go-ingestion.v1.json",
+      "sha256": "aa5e8f42ec3308c7dda57e359cb513386eb84eef05cd61d75d6afc9030e16a72",
+      "bytes": 38761,
+      "caseId": "go-ingestion",
+      "engineState": "completed",
+      "assertionVerdict": "pass",
+      "operationalOutcome": "passed",
+      "runtimeVersions": {
+        "bubblewrap": "bubblewrap 0.12.0",
+        "chrome": "Google Chrome 155.0.8059.79",
+        "go": "go version go1.26.4 linux/amd64",
+        "node": "v24.15.0",
+        "supervisor": "go1.26.4"
+      },
+      "artifactKinds": []
+    },
+    {
+      "path": "docs/evaluations/test-adapters/observations.v1/go-job-application.v1.json",
+      "sha256": "b321e90dab2bc66ba9be9cfacaa8c13fd7dd11096b2b0ee23622a2e6fc1ccc67",
+      "bytes": 39026,
+      "caseId": "go-job-application",
+      "engineState": "completed",
+      "assertionVerdict": "pass",
+      "operationalOutcome": "passed",
+      "runtimeVersions": {
+        "bubblewrap": "bubblewrap 0.12.0",
+        "chrome": "Google Chrome 155.0.8059.79",
+        "go": "go version go1.26.4 linux/amd64",
+        "node": "v24.15.0",
+        "supervisor": "go1.26.4"
+      },
+      "artifactKinds": []
+    },
+    {
+      "path": "docs/evaluations/test-adapters/observations.v1/native-print-capability.v1.json",
+      "sha256": "ba4bebeb8ab75d244ae289c0d1a042e7bc3c8a700ca2613e51137df2344c4533",
+      "bytes": 37712,
+      "caseId": "native-print-capability",
+      "engineState": "failed",
+      "assertionVerdict": "blocked",
+      "operationalOutcome": "native_print_unavailable",
+      "runtimeVersions": {
+        "bubblewrap": "bubblewrap 0.12.0",
+        "chrome": "Google Chrome 155.0.8059.79",
+        "go": "go version go1.26.4 linux/amd64",
+        "node": "v24.15.0",
+        "supervisor": "go1.26.4"
+      },
+      "artifactKinds": []
+    },
+    {
+      "path": "docs/evaluations/test-adapters/observations.v1/node-artifact-review.v1.json",
+      "sha256": "dc35065d713dcaa3b5b9db159e6b1532a7b119eb4eb38084539eee40ea3f53c5",
+      "bytes": 45740,
+      "caseId": "node-artifact-review",
+      "engineState": "completed",
+      "assertionVerdict": "pass",
+      "operationalOutcome": "passed",
+      "runtimeVersions": {
+        "bubblewrap": "bubblewrap 0.12.0",
+        "chrome": "Google Chrome 155.0.8059.79",
+        "go": "go version go1.26.4 linux/amd64",
+        "node": "v24.15.0",
+        "supervisor": "go1.26.4"
+      },
+      "artifactKinds": []
+    },
+    {
+      "path": "docs/evaluations/test-adapters/observations.v1/node-field-tooling.v1.json",
+      "sha256": "052eb62af179de1fbe4424c19614b7a975f6c9301a070fbacdbb4fdfe772c749",
+      "bytes": 42979,
+      "caseId": "node-field-tooling",
+      "engineState": "completed",
+      "assertionVerdict": "pass",
+      "operationalOutcome": "passed",
+      "runtimeVersions": {
+        "bubblewrap": "bubblewrap 0.12.0",
+        "chrome": "Google Chrome 155.0.8059.79",
+        "go": "go version go1.26.4 linux/amd64",
+        "node": "v24.15.0",
+        "supervisor": "go1.26.4"
+      },
+      "artifactKinds": []
+    },
+    {
+      "path": "docs/evaluations/test-adapters/observations.v1/node-ingestion.v1.json",
+      "sha256": "352b118a8e972b8a9117232fa4b989fb86056675e640b83a57385736478736d3",
+      "bytes": 44607,
+      "caseId": "node-ingestion",
+      "engineState": "completed",
+      "assertionVerdict": "pass",
+      "operationalOutcome": "passed",
+      "runtimeVersions": {
+        "bubblewrap": "bubblewrap 0.12.0",
+        "chrome": "Google Chrome 155.0.8059.79",
+        "go": "go version go1.26.4 linux/amd64",
+        "node": "v24.15.0",
+        "supervisor": "go1.26.4"
+      },
+      "artifactKinds": []
+    },
+    {
+      "path": "docs/evaluations/test-adapters/observations.v1/node-job-reuse.v1.json",
+      "sha256": "d5a6e820e2a84fa71534a56307b20af84fb1210694829cc65d3e81ea46e216eb",
+      "bytes": 41449,
+      "caseId": "node-job-reuse",
+      "engineState": "completed",
+      "assertionVerdict": "pass",
+      "operationalOutcome": "passed",
+      "runtimeVersions": {
+        "bubblewrap": "bubblewrap 0.12.0",
+        "chrome": "Google Chrome 155.0.8059.79",
+        "go": "go version go1.26.4 linux/amd64",
+        "node": "v24.15.0",
+        "supervisor": "go1.26.4"
+      },
+      "artifactKinds": []
+    },
+    {
+      "path": "docs/evaluations/test-adapters/observations.v1/probe-assertion.v1.json",
+      "sha256": "a51e247920050926bd39f0898de538f461c1a34f091a621f6dfabeaa09506458",
+      "bytes": 39706,
+      "caseId": "probe-assertion",
+      "engineState": "completed",
+      "assertionVerdict": "fail",
+      "operationalOutcome": "assertion_failed",
+      "runtimeVersions": {
+        "bubblewrap": "bubblewrap 0.12.0",
+        "chrome": "Google Chrome 155.0.8059.79",
+        "go": "go version go1.26.4 linux/amd64",
+        "node": "v24.15.0",
+        "supervisor": "go1.26.4"
+      },
+      "artifactKinds": []
+    },
+    {
+      "path": "docs/evaluations/test-adapters/observations.v1/probe-crash.v1.json",
+      "sha256": "c5cd5e89ab6f1d78c360a9a3dc2f474736163ae192ef8f2158dd458a1195308a",
+      "bytes": 38340,
+      "caseId": "probe-crash",
+      "engineState": "failed",
+      "assertionVerdict": "blocked",
+      "operationalOutcome": "crashed",
+      "runtimeVersions": {
+        "bubblewrap": "bubblewrap 0.12.0",
+        "chrome": "Google Chrome 155.0.8059.79",
+        "go": "go version go1.26.4 linux/amd64",
+        "node": "v24.15.0",
+        "supervisor": "go1.26.4"
+      },
+      "artifactKinds": []
+    },
+    {
+      "path": "docs/evaluations/test-adapters/observations.v1/browser-canonical-edit.process.v1.json",
+      "sha256": "8349aea1a8eaaad1037e9cc3f4298dcada1f0557ec655534f19e69e5249f962a",
+      "bytes": 82094,
+      "caseId": "browser-canonical-edit",
+      "operationalOutcome": "assertion_failed",
+      "runtimeVersions": {
+        "bubblewrap": "bubblewrap 0.12.0",
+        "chrome": "Google Chrome 155.0.8059.79",
+        "go": "go version go1.26.4 linux/amd64",
+        "node": "v24.15.0",
+        "supervisor": "go1.26.4"
+      },
+      "artifactKinds": [
+        "screenshot"
+      ],
+      "limit": "Process result bytes from full-suite candidate 9fc5cf27. Known case-step/blocked-metadata defects corrected in reviewed 2a7e845e; original observation is not rewritten. This file preserves process evidence only."
+    },
+    {
+      "path": "docs/evaluations/test-adapters/observations.v1/browser-enrichment.process.v1.json",
+      "sha256": "f82308ad8f8feee8c78385cae2a0d3324dc5c6247c4af498c51b9a495395cd07",
+      "bytes": 911253,
+      "caseId": "browser-enrichment",
+      "operationalOutcome": "assertion_failed",
+      "runtimeVersions": {
+        "bubblewrap": "bubblewrap 0.12.0",
+        "chrome": "Google Chrome 155.0.8059.79",
+        "go": "go version go1.26.4 linux/amd64",
+        "node": "v24.15.0",
+        "supervisor": "go1.26.4"
+      },
+      "artifactKinds": [
+        "screenshot",
+        "screenshot",
+        "screenshot",
+        "screenshot",
+        "screenshot"
+      ],
+      "limit": "Process result bytes from full-suite candidate 9fc5cf27. Known case-step/blocked-metadata defects corrected in reviewed 2a7e845e; original observation is not rewritten. This file preserves process evidence only."
+    },
+    {
+      "path": "docs/evaluations/test-adapters/observations.v1/browser-ingestion.process.v1.json",
+      "sha256": "eaa3fe32acbe54099f1c168650d1ee0dfac011e689ab5e28fa3e165419b3d6bb",
+      "bytes": 1220016,
+      "caseId": "browser-ingestion",
+      "operationalOutcome": "passed",
+      "runtimeVersions": {
+        "bubblewrap": "bubblewrap 0.12.0",
+        "chrome": "Google Chrome 155.0.8059.79",
+        "go": "go version go1.26.4 linux/amd64",
+        "node": "v24.15.0",
+        "supervisor": "go1.26.4"
+      },
+      "artifactKinds": [
+        "screenshot",
+        "screenshot",
+        "screenshot",
+        "screenshot",
+        "screenshot"
+      ],
+      "limit": "Process result bytes from full-suite candidate 9fc5cf27. Known case-step/blocked-metadata defects corrected in reviewed 2a7e845e; original observation is not rewritten. This file preserves process evidence only."
+    },
+    {
+      "path": "docs/evaluations/test-adapters/observations.v1/browser-application-reuse.process.v1.json",
+      "sha256": "61220ceb7565186dbb08f89539d4b1e548745fb1651ebf20d795ec3cedac0df1",
+      "bytes": 176706,
+      "caseId": "browser-application-reuse",
+      "operationalOutcome": "passed",
+      "runtimeVersions": {
+        "bubblewrap": "bubblewrap 0.12.0",
+        "chrome": "Google Chrome 155.0.8059.79",
+        "go": "go version go1.26.4 linux/amd64",
+        "node": "v24.15.0",
+        "supervisor": "go1.26.4"
+      },
+      "artifactKinds": [
+        "screenshot",
+        "screenshot"
+      ],
+      "limit": "Process result bytes from full-suite candidate 9fc5cf27. Known case-step/blocked-metadata defects corrected in reviewed 2a7e845e; original observation is not rewritten. This file preserves process evidence only."
+    }
+  ],
+  "limits": [
+    "Fixed-driver test assertions only; no semantic quality, real provider, deployed behavior or native PDF acceptance",
+    "Actual browser harnesses use private synthetic origins and profiles; external resources/fonts are unavailable",
+    "Compiler VCS metadata may be unavailable in go test; launch source hashes describe captured local files and do not independently certify binary correspondence",
+    "The reviewed-code focused host verification covers Go/Node, section and Resume browsers, guards and process cleanup; full broader inventory is separately preserved from 9fc5cf27",
+    "No captured observation is a fresh blinded cohort or human-approved domain gold"
+  ]
+}

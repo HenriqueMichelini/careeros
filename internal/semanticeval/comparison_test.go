@@ -3,8 +3,63 @@ package semanticeval
 import (
 	"encoding/json"
 	"math"
+	"professional-information-repo/internal/aidiagnostics"
 	"testing"
 )
+
+func TestComparisonKeepsUnknownAndExpectedRejectionSeparateFromFailure(t *testing.T) {
+	runs := []ComparisonRun{
+		{Configuration: "current", Run: RunResult{Status: 200, Diagnostics: &aidiagnostics.Attempt{Outcome: "future_outcome"}}},
+		{Configuration: "current", Run: RunResult{Status: 200, Diagnostics: &aidiagnostics.Attempt{Outcome: "irrelevant"}}},
+		{Configuration: "current", Run: RunResult{Status: 502, Diagnostics: &aidiagnostics.Attempt{Outcome: "transport_failure"}}},
+	}
+	summaries, err := Compare(runs, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := summaries["current"]
+	if s.Completed != 0 || s.Failed != 1 || s.OperationalOutcomes["unknown"] != 1 || s.OperationalOutcomes["policy_rejection"] != 1 {
+		t.Fatalf("outcomes: %+v", s)
+	}
+}
+
+func TestComparisonCountsNestedLeavesOnceAndReportsUnreachedRequiredLegs(t *testing.T) {
+	leaf := RunResult{Status: 200, Diagnostics: &aidiagnostics.Attempt{Outcome: "completed", DurationMS: 3}, Calls: []Call{{Provider: "controlled"}}}
+	parent := RunResult{Status: 200, RequiredSteps: 2, Steps: []RunResult{{Status: 200, RequiredSteps: 2, Steps: []RunResult{leaf, leaf}, Calls: append(append([]Call{}, leaf.Calls...), leaf.Calls...)}}, Calls: append(append([]Call{}, leaf.Calls...), leaf.Calls...)}
+	summaries, err := Compare([]ComparisonRun{{Configuration: "current", Run: parent}}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := summaries["current"]
+	if s.Completed != 0 || s.LeafAttempts != 2 || s.RequiredUnreached != 1 || s.Calls != 2 || s.DurationMS != 6 || s.OperationalOutcomes["incomplete"] != 1 {
+		t.Fatalf("sequence accounting: %+v", s)
+	}
+}
+
+func TestSequenceRetainsChildOutcomeBeforeCopiedHTTPStatus(t *testing.T) {
+	for _, tc := range []struct {
+		outcome, category string
+		status            int
+	}{
+		{"assessment_unavailable", "assessment_unavailable", 502},
+		{"reject_attack", "policy_rejection", 400},
+	} {
+		r := RunResult{Status: tc.status, RequiredSteps: 2, Steps: []RunResult{{Status: tc.status, Diagnostics: &aidiagnostics.Attempt{Outcome: tc.outcome}}}}
+		summaries, err := Compare([]ComparisonRun{{Configuration: "current", Run: r}}, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		s := summaries["current"]
+		if s.OperationalOutcomes[tc.category] != 1 || s.Failed != 0 {
+			t.Fatalf("%s: %+v", tc.outcome, s)
+		}
+	}
+	r := RunResult{Status: 409, RequiredSteps: 2, Steps: []RunResult{{Status: 200}}}
+	summaries, err := Compare([]ComparisonRun{{Configuration: "current", Run: r}}, nil)
+	if err != nil || summaries["current"].OperationalOutcomes["incomplete"] != 1 {
+		t.Fatalf("unreached: %+v %v", summaries, err)
+	}
+}
 
 func TestComparisonChargesFailuresAndCacheWritesBeforeAcceptedCost(t *testing.T) {
 	n := func(v int64) *int64 { return &v }

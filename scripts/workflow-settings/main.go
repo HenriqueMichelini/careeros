@@ -3,14 +3,17 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"path/filepath"
 	eval "professional-information-repo/internal/semanticeval"
 	"runtime/debug"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -112,32 +115,29 @@ func run() error {
 	if err = save(file, &rep); err != nil {
 		return err
 	}
-	// Interleave configurations to reduce order/time bias. Heldout labels remain frozen.
-	for _, c := range data.Cases {
-		for _, config := range rep.Configurations {
-			if err = attempt(&rep, file, c, config.ID, false, *mode, key, gate, budget); err != nil {
-				return err
-			}
+	// Shared orchestration keeps deliberate case/configuration interleaving.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	configurations := []string{}
+	for _, configuration := range rep.Configurations {
+		configurations = append(configurations, configuration.ID)
+	}
+	return eval.ExecuteBatch(ctx, eval.Batch{Cases: data.Cases, Configurations: configurations, Mode: *mode, OpenAIKey: key, TypeSafeKey: gate, Budget: budget}, func(c eval.Case, configuration string, run eval.RunResult, evaluationErr error) error {
+		if evaluationErr != nil {
+			run.Status = 502
+			run.Score.Failures = append(run.Score.Failures, "evaluation interrupted")
 		}
-	}
+		rep.Runs = append(rep.Runs, eval.ComparisonRun{Configuration: configuration, Repeat: false, Run: run})
+		rep.Calls = budget.Used
+		rep.HTTPAttempts = budget.Workflows
+		fmt.Fprintf(os.Stderr, "configuration=%s case=%s repeat=%t status=%d calls=%d\n", configuration, c.ID, false, run.Status, budget.Used)
+		if err := save(file, &rep); err != nil {
+			return err
+		}
+		return evaluationErr
+	})
+}
 
-	return nil
-}
-func attempt(rep *report, file *os.File, c eval.Case, config string, repeat bool, mode, key, gate string, budget *eval.Budget) error {
-	run, err := eval.RunConfigured(c, mode, key, gate, config, budget)
-	if err != nil {
-		run.Status = 502
-		run.Score.Failures = append(run.Score.Failures, "evaluation interrupted")
-	}
-	rep.Runs = append(rep.Runs, eval.ComparisonRun{Configuration: config, Repeat: repeat, Run: run})
-	rep.Calls = budget.Used
-	rep.HTTPAttempts = budget.Workflows
-	fmt.Fprintf(os.Stderr, "configuration=%s case=%s repeat=%t status=%d calls=%d\n", config, c.ID, repeat, run.Status, budget.Used)
-	if saveErr := save(file, rep); saveErr != nil {
-		return saveErr
-	}
-	return err
-}
 func save(file *os.File, rep *report) error {
 	summary, err := eval.Compare(rep.Runs, rep.Rates)
 	if err != nil {
@@ -202,7 +202,7 @@ func sourceHashes() (map[string]string, error) {
 			if err != nil {
 				return err
 			}
-			if d.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+			if d.IsDir() || !strings.HasSuffix(path, ".go") && !strings.HasSuffix(path, ".json") || strings.HasSuffix(path, "_test.go") {
 				return nil
 			}
 			raw, err := os.ReadFile(path)

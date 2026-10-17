@@ -1,6 +1,7 @@
 package semanticeval
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -47,6 +48,13 @@ func configuration(id string) (Configuration, error) {
 // RunConfigured changes only the evaluation transport's fixed OpenAI settings.
 // Production handlers, instruction text, output bounds and Jev remain unchanged.
 func RunConfigured(c Case, mode, openAIKey, typeSafeKey, id string, budget *Budget) (RunResult, error) {
+	return RunConfiguredContext(context.Background(), c, mode, openAIKey, typeSafeKey, id, budget)
+}
+
+func RunConfiguredContext(ctx context.Context, c Case, mode, openAIKey, typeSafeKey, id string, budget *Budget) (RunResult, error) {
+	if err := ctx.Err(); err != nil {
+		return RunResult{}, err
+	}
 	config, err := configuration(id)
 	if err != nil {
 		return RunResult{}, err
@@ -55,15 +63,19 @@ func RunConfigured(c Case, mode, openAIKey, typeSafeKey, id string, budget *Budg
 		return RunResult{}, fmt.Errorf("provider call budget exhausted")
 	}
 	if len(c.Steps) > 0 {
-		return runSteps(c, mode, openAIKey, typeSafeKey, &config, budget)
+		return runSteps(ctx, c, mode, openAIKey, typeSafeKey, &config, budget)
 	}
-	return run(c, mode, openAIKey, typeSafeKey, &config, budget)
+	return runContext(ctx, c, mode, openAIKey, typeSafeKey, &config, budget)
 }
 
-func runSteps(c Case, mode, key, gate string, config *Configuration, budget *Budget) (RunResult, error) {
+func runSteps(ctx context.Context, c Case, mode, key, gate string, config *Configuration, budget *Budget) (RunResult, error) {
 	result := RunResult{ID: c.ID, Task: c.Task, Language: c.Language, Split: c.Split, Role: c.Role, Mode: mode, Status: 200, NoStore: true}
+	result.RequiredSteps = len(c.Steps)
 	combined := map[string][]json.RawMessage{"claims": {}, "operations": {}}
 	for _, step := range c.Steps {
+		if err := ctx.Err(); err != nil {
+			return result, err
+		}
 		if c.SequenceOutput == "final" && len(result.Steps) > 0 {
 			var ok bool
 			step, ok = withReturnedClarification(step, result.Output)
@@ -72,7 +84,11 @@ func runSteps(c Case, mode, key, gate string, config *Configuration, budget *Bud
 				return Assess(c, result)
 			}
 		}
-		part, err := run(step, mode, key, gate, config, budget)
+		part, err := runContext(ctx, step, mode, key, gate, config, budget)
+		if err != nil && part.Status == 0 && part.Diagnostics == nil && len(part.Calls) == 0 {
+			result.Status = 502
+			return result, err
+		}
 		result.Steps = append(result.Steps, part)
 		result.Calls = append(result.Calls, part.Calls...)
 		result.NoStore = result.NoStore && part.NoStore
