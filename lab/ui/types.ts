@@ -70,6 +70,7 @@ export interface Definition {
   version: string
 }
 export interface Status {
+  humanReviewer?: string
   version: string
   storageReady: boolean
   usage: {
@@ -98,6 +99,16 @@ export interface Status {
   build?: Record<string, unknown>
 }
 export interface CaseEvidence {
+  exposure?: {
+    entry: {
+      historicalName: string
+      split: string
+      exposureGroup: string
+    }
+    effectiveSplit: string
+    untouched: boolean
+    events: unknown[]
+  }
   identity: string
   id: string
   workflow: string

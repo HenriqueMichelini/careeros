@@ -176,6 +176,16 @@ export function CaseDetail({ evidence }: { evidence: CaseEvidence }) {
         Engine {evidence.engineState}; assertion {evidence.assertionVerdict};
         operational outcome {evidence.operationalOutcome}
       </p>
+      {evidence.exposure && (
+        <p className="notice">
+          Historical cohort: {evidence.exposure.entry.historicalName}; effective
+          split: {evidence.exposure.effectiveSplit}.{" "}
+          {evidence.exposure.untouched
+            ? "No Lab exposure recorded."
+            : "Untouched holdout status is unavailable after content access."}{" "}
+          Paired exposure events: {evidence.exposure.events.length}.
+        </p>
+      )}
       <p className="notice">
         Curated matches and unmatched candidates are label evidence. An
         unmatched regex candidate is not a confirmed hallucination. Model

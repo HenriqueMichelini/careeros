@@ -411,6 +411,12 @@ func (s *FileStore) Load(id string) (RunRecord, error) {
 func (s *FileStore) Case(id, caseID string) (ImportedCase, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	return s.caseEvidence(id, caseID)
+}
+
+// caseEvidence requires the store lock; private review bindings reuse the same
+// immutable case bytes and integrity checks as the public history seam.
+func (s *FileStore) caseEvidence(id, caseID string) (ImportedCase, error) {
 	var c ImportedCase
 	if s.closed {
 		return c, fmt.Errorf("store closed")
@@ -474,16 +480,16 @@ func (s *FileStore) rebuild() error {
 	if err != nil {
 		return err
 	}
-	entries, err := dir.ReadDir(maxStoredRuns + 2)
+	entries, err := dir.ReadDir(maxStoredRuns + 3)
 	dir.Close()
 	if err != nil && !errors.Is(err, io.EOF) {
 		return err
 	}
-	if len(entries) > maxStoredRuns+1 {
+	if len(entries) > maxStoredRuns+2 {
 		return fmt.Errorf("history catalog exceeds bounds")
 	}
 	for _, entry := range entries {
-		if entry.Name() == writerLock {
+		if entry.Name() == writerLock || entry.Name() == exposureDirectory {
 			continue
 		}
 		if !storeID.MatchString(entry.Name()) || !entry.IsDir() {

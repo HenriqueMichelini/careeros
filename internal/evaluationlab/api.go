@@ -16,9 +16,11 @@ import (
 const APIVersion = "lab-api-v1"
 
 type APIOptions struct {
-	Origin  string
-	Context context.Context
-	Assets  fs.FS
+	HumanReviewer string
+	ReviewOrigin  string
+	Origin        string
+	Context       context.Context
+	Assets        fs.FS
 }
 type APISession struct {
 	Authorization string `json:"authorization"`
@@ -51,6 +53,9 @@ func NewAPI(planner *Planner, runner *Runner, store *FileStore, options APIOptio
 	}
 	if planner == nil || runner == nil || store == nil {
 		return nil, fmt.Errorf("local execution/history unavailable")
+	}
+	if len(options.HumanReviewer) > 128 || options.ReviewOrigin != "" && !contains([]string{"local-human-attestation", "controlled-test"}, options.ReviewOrigin) {
+		return nil, fmt.Errorf("invalid human review configuration")
 	}
 	if options.Context == nil {
 		options.Context = context.Background()
@@ -100,6 +105,12 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Version string  `json:"version"`
 			Suites  []Suite `json:"suites"`
 		}{APIVersion, a.dashboardCatalog()})
+		return
+	}
+	if a.exposureRoute(w, r) {
+		return
+	}
+	if a.reviewRoute(w, r) {
 		return
 	}
 	if a.historyRoute(w, r) {
