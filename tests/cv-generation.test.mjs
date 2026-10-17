@@ -30,6 +30,12 @@ const {
   createCuratedCv,
   parseCuratedCv,
   validateCvResult,
+  validateCvSupport,
+  cvSupportUnits,
+  cvReviewUnits,
+  cvReviewResolved,
+  acceptCvResult,
+  emptyCvReview,
 } = await import(path)
 const profile = {
   fullName: "Avery",
@@ -692,4 +698,238 @@ test("retained authorized EN/PT live summaries also pass client validation and a
     assert.equal(saved.sources[0].text, c.request.facts[0].text)
     assert.match(saved.summary, /20%/)
   }
+})
+
+// ADR 0003 / issue #125 client review gate. One review unit exists per summary
+// item and rewrite; a global acceptance never promotes uncertain or unsupported
+// machine wording, and unresolved text can only be removed or reverted.
+const gateCore = () => {
+  const facts = cvFacts(profile)
+  const skill = facts.find((f) => f.field === "skills")
+  const desc = facts.find((f) => f.field === "description")
+  return {
+    facts,
+    skill,
+    desc,
+    core: {
+      summary: [{ sourceIds: [skill.id], text: skill.text }],
+      selected: [skill.id, desc.id],
+      wording: { [desc.id]: desc.text },
+    },
+  }
+}
+const gateSupport = (statements) => ({
+  policyVersion: "cv-statement-support-v1",
+  assessment: "complete",
+  statements,
+})
+const gateStatement = (id, text, sourceIds, status, reason = "reason") => ({
+  id,
+  text,
+  sourceIds,
+  status,
+  reason,
+})
+
+test("review units map one-to-one to generated statements and support fails closed on any mismatch", () => {
+  const { skill, desc, core } = gateCore()
+  assert.deepEqual(
+    cvSupportUnits(core).map((unit) => [unit.id, unit.kind, unit.text]),
+    [
+      ["summary:0", "summary", skill.text],
+      [`wording:${desc.id}`, "wording", desc.text],
+    ],
+  )
+  const good = gateSupport([
+    gateStatement("summary:0", skill.text, [skill.id], "supported"),
+    gateStatement(`wording:${desc.id}`, desc.text, [desc.id], "uncertain"),
+  ])
+  assert.ok(validateCvSupport(good, core))
+  const rejects = (mutate) => {
+    const value = structuredClone(good)
+    mutate(value)
+    assert.equal(validateCvSupport(value, core), false)
+  }
+  rejects((v) => (v.policyVersion = "cv-statement-support-v2"))
+  rejects((v) => (v.assessment = "unknown"))
+  rejects((v) => (v.statements[0].text = "Kubernetes platforms"))
+  rejects((v) => (v.statements[0].sourceIds = [desc.id]))
+  rejects((v) => (v.statements[0].status = "supported!"))
+  rejects((v) => (v.statements[0].reason = "x".repeat(501)))
+  rejects((v) => v.statements.pop())
+  rejects((v) =>
+    v.statements.push(
+      gateStatement("summary:1", skill.text, [skill.id], "supported"),
+    ),
+  )
+  rejects((v) => (v.statements[1].id = "summary:0"))
+  rejects((v) => (v.statements[0].extra = "field"))
+  // An unavailable assessment must already present every unit as uncertain.
+  const unavailable = gateSupport([
+    gateStatement("summary:0", skill.text, [skill.id], "uncertain"),
+    gateStatement(`wording:${desc.id}`, desc.text, [desc.id], "uncertain"),
+  ])
+  unavailable.assessment = "unavailable"
+  assert.ok(validateCvSupport(unavailable, core))
+  rejects((v) => {
+    v.assessment = "unavailable"
+    v.statements[0].status = "supported"
+  })
+})
+
+test("client consumes a v3 response and rejects an incomplete or unknown-version payload", async () => {
+  const { generateCv } = await import(path)
+  const { facts, skill, desc, core } = gateCore()
+  const support = gateSupport([
+    gateStatement("summary:0", skill.text, [skill.id], "supported"),
+    gateStatement(
+      `wording:${desc.id}`,
+      desc.text,
+      [desc.id],
+      "unsupported",
+      "invented",
+    ),
+  ])
+  const original = globalThis.fetch
+  try {
+    let outbound
+    globalThis.fetch = async (_url, options) => {
+      outbound = JSON.parse(options.body)
+      return new Response(
+        JSON.stringify({ schemaVersion: 3, ...core, support }),
+      )
+    }
+    const result = await generateCv(
+      facts,
+      "en",
+      "sk-test",
+      new AbortController().signal,
+    )
+    // Activation is #128: the legacy request is unchanged until then.
+    assert.equal(outbound.statementSupport, undefined)
+    assert.equal(result.support.assessment, "complete")
+    assert.deepEqual(
+      cvReviewUnits(result).map((unit) => [unit.id, unit.status]),
+      [
+        ["summary:0", "supported"],
+        [`wording:${desc.id}`, "unsupported"],
+      ],
+    )
+    const respond = (payload) =>
+      (globalThis.fetch = async () =>
+        new Response(JSON.stringify(payload), { status: 200 }))
+    // Missing one record fails closed.
+    respond({
+      schemaVersion: 3,
+      ...core,
+      support: gateSupport([support.statements[0]]),
+    })
+    await assert.rejects(
+      () => generateCv(facts, "en", "sk-test", new AbortController().signal),
+      /invalid_output/,
+    )
+    // An unknown/malformed version never becomes accepted legacy wording.
+    respond({ schemaVersion: 2, ...core })
+    await assert.rejects(
+      () => generateCv(facts, "en", "sk-test", new AbortController().signal),
+      /invalid_output/,
+    )
+    respond({
+      schemaVersion: 3,
+      ...core,
+      support: { ...support, assessment: "nope" },
+    })
+    await assert.rejects(
+      () => generateCv(facts, "en", "sk-test", new AbortController().signal),
+      /invalid_output/,
+    )
+    // A legacy v2 response without any version stays accepted.
+    respond(core)
+    const legacy = await generateCv(
+      facts,
+      "en",
+      "sk-test",
+      new AbortController().signal,
+    )
+    assert.equal(legacy.support, undefined)
+    assert.equal(cvReviewUnits(legacy), null)
+    assert.ok(cvReviewResolved(legacy, emptyCvReview))
+  } finally {
+    globalThis.fetch = original
+  }
+})
+
+test("partial acceptance removes only reviewed-out units and never invents filler", () => {
+  const { facts, skill, desc, core } = gateCore()
+  const result = {
+    ...core,
+    support: gateSupport([
+      gateStatement("summary:0", skill.text, [skill.id], "supported"),
+      gateStatement(
+        `wording:${desc.id}`,
+        desc.text,
+        [desc.id],
+        "uncertain",
+        "ambiguous",
+      ),
+    ]),
+  }
+  assert.equal(cvReviewResolved(result, emptyCvReview), false)
+  assert.throws(
+    () => acceptCvResult(result, facts, emptyCvReview),
+    /unresolved_output/,
+  )
+  // The unresolved rewrite may be reverted; the supported summary stays.
+  const resolved = acceptCvResult(result, facts, {
+    discardedSummaryIds: [],
+    revertedWordingIds: [desc.id],
+  })
+  assert.deepEqual(resolved.summary, [
+    { sourceIds: [skill.id], text: skill.text },
+  ])
+  assert.deepEqual(resolved.wording, {})
+  assert.deepEqual(resolved.selected, [skill.id, desc.id])
+  assert.equal(resolved.support, undefined)
+  assert.ok(validateCvResult(resolved, facts))
+  // Removing the only summary sentence cannot fall back to invented filler.
+  const emptied = {
+    discardedSummaryIds: ["summary:0"],
+    revertedWordingIds: [desc.id],
+  }
+  assert.equal(cvReviewResolved(result, emptied), false)
+  assert.throws(() => acceptCvResult(result, facts, emptied), /invalid_output/)
+  // Unresolved text kept inside the acceptance is rejected, not promoted.
+  assert.throws(
+    () => createCuratedCv(profile, facts, result, "en"),
+    /unresolved_output/,
+  )
+})
+
+test("all-supported v3 content is accepted with judgments and discards applied", () => {
+  const { facts, skill, desc, core } = gateCore()
+  const result = {
+    ...core,
+    support: gateSupport([
+      gateStatement("summary:0", skill.text, [skill.id], "supported"),
+      gateStatement(`wording:${desc.id}`, desc.text, [desc.id], "supported"),
+    ]),
+  }
+  assert.ok(cvReviewResolved(result, emptyCvReview))
+  assert.deepEqual(acceptCvResult(result, facts, emptyCvReview), core)
+  // Discarding the only summary sentence cannot invent filler.
+  assert.throws(
+    () =>
+      acceptCvResult(result, facts, {
+        discardedSummaryIds: ["summary:0"],
+        revertedWordingIds: [],
+      }),
+    /invalid_output/,
+  )
+  // Reverting a supported rewrite falls back to the verbatim source fact.
+  const reverted = acceptCvResult(result, facts, {
+    discardedSummaryIds: [],
+    revertedWordingIds: [desc.id],
+  })
+  assert.deepEqual(reverted.wording, {})
+  assert.ok(validateCvResult(reverted, facts))
 })
