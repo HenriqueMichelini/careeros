@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	lab "professional-information-repo/internal/evaluationlab"
 	"testing"
@@ -147,6 +148,89 @@ func TestDashboardViewKeepsCaseArtifactsBehindLazyLookup(t *testing.T) {
 		var page lab.RunPage
 		if out.Code != 200 || json.Unmarshal(out.Body.Bytes(), &page) != nil || len(page.Runs) != query.count {
 			t.Fatalf("history filter %s unavailable: %d", query.language, out.Code)
+		}
+	}
+}
+
+func TestProcessPlansRejectCommandPathEnvironmentAndProviderOverrides(t *testing.T) {
+	raw, err := os.ReadFile("../../docs/evaluations/test-adapters/cases.v1.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	planner, err := lab.NewPlanner(map[string][]byte{"test-adapters": raw})
+	if err != nil {
+		t.Fatal(err)
+	}
+	store, err := lab.OpenFileStore(filepath.Join(t.TempDir(), "history"), lab.StoreOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	api, err := lab.NewAPI(planner, lab.NewRunner(planner, lab.RunnerOptions{}), store, lab.APIOptions{Origin: "http://127.0.0.1:8123"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, field := range []string{"command", "args", "executable", "package", "file", "path", "environment", "providerHost"} {
+		selection := map[string]any{"suite": "test-adapters", "mode": "offline", "configuration": "current", "caseIds": []string{"go-preprocessing"}, field: "unapproved-override"}
+		body, _ := json.Marshal(map[string]any{"selection": selection, "caps": lab.ExecutionCaps{MaxCases: 1, MaxHTTPAttempts: 1, MaxProviderCalls: 1, MaxArtifactBytes: 1 << 20, DeadlineMS: 1000}})
+		req := httptest.NewRequest("POST", "/lab/api/plans", bytes.NewReader(body))
+		req.Host = "127.0.0.1:8123"
+		req.Header.Set("Origin", "http://127.0.0.1:8123")
+		req.Header.Set("Authorization", api.Session().Authorization)
+		req.Header.Set("X-Lab-CSRF", api.Session().CSRF)
+		req.Header.Set("Content-Type", "application/json")
+		out := httptest.NewRecorder()
+		api.ServeHTTP(out, req)
+		if out.Code != 400 {
+			t.Fatalf("%s override accepted: %d", field, out.Code)
+		}
+	}
+	if _, err = planner.Plan(lab.Selection{Suite: "test-adapters", Mode: "offline", Configuration: "current", CaseIDs: []string{"../../backend"}}, lab.ExecutionCaps{MaxCases: 1, MaxHTTPAttempts: 1, MaxProviderCalls: 1, MaxArtifactBytes: 1 << 20, DeadlineMS: 1000}); err == nil {
+		t.Fatal("arbitrary path became a test selector")
+	}
+	page, err := store.List(lab.RunFilter{Limit: 100})
+	if err != nil || len(page.Runs) != 0 {
+		t.Fatal("rejected plans created execution history")
+	}
+}
+
+func TestDashboardProcessPreflightExposesMissingIsolation(t *testing.T) {
+	raw, err := os.ReadFile("../../docs/evaluations/test-adapters/cases.v1.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	planner, err := lab.NewPlanner(map[string][]byte{"test-adapters": raw})
+	if err != nil {
+		t.Fatal(err)
+	}
+	store, err := lab.OpenFileStore(filepath.Join(t.TempDir(), "history"), lab.StoreOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	api, err := lab.NewAPI(planner, lab.NewRunner(planner, lab.RunnerOptions{}), store, lab.APIOptions{Origin: "http://127.0.0.1:8123"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest("GET", "/lab/api/status", nil)
+	req.Host = "127.0.0.1:8123"
+	req.Header.Set("Authorization", api.Session().Authorization)
+	out := httptest.NewRecorder()
+	api.ServeHTTP(out, req)
+	var status struct {
+		Process *lab.ProcessCapabilities `json:"processCapabilities"`
+		Suites  []struct {
+			ID        string
+			Available bool
+			Reason    string
+		}
+	}
+	if json.Unmarshal(out.Body.Bytes(), &status) != nil || status.Process == nil || status.Process.IsolationAvailable || len(status.Process.UnavailableReasons) == 0 {
+		t.Fatal("missing process capability hidden")
+	}
+	for _, suite := range status.Suites {
+		if suite.ID == "test-adapters" && (suite.Available || suite.Reason == "") {
+			t.Fatal("fixtures alone reported executable")
 		}
 	}
 }

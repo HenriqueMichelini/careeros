@@ -33,7 +33,7 @@ func (d deniedTransport) RoundTrip(*http.Request) (*http.Response, error) {
 	return nil, errors.New("external network denied by controlled test")
 }
 
-func TestAllCatalogSuitesExecuteDirectlyWithoutExternalTransport(t *testing.T) {
+func TestInProcessCatalogSuitesExecuteDirectlyWithoutExternalTransport(t *testing.T) {
 	read := func(path string) []byte {
 		raw, err := os.ReadFile("../../docs/evaluations/" + path)
 		if err != nil {
@@ -48,6 +48,9 @@ func TestAllCatalogSuitesExecuteDirectlyWithoutExternalTransport(t *testing.T) {
 	http.DefaultTransport = deniedTransport{calls: &external}
 	t.Cleanup(func() { http.DefaultTransport = original })
 	for _, suite := range lab.Catalog() {
+		if suite.ID == "test-adapters" {
+			continue
+		} // Separately exercised through the isolated public runner seam.
 		t.Run(suite.ID, func(t *testing.T) {
 			p, err := lab.NewPlanner(assets)
 			if err != nil {

@@ -12,12 +12,15 @@ func nativeMetrics(record RunRecord, plan Plan) []Metric {
 	}{
 		{"planned-logical-cases", record.Progress.PlannedCases}, {"started-logical-cases", record.Progress.StartedCases}, {"finished-logical-cases", record.Progress.FinishedCases},
 		{"http-leaf-attempt-count", record.Progress.AttemptedHTTP}, {"unreached-http-leg-count", record.Progress.UnreachedHTTP}, {"simulated-dispatch-count", record.Progress.AttemptedDispatches},
+		{"planned-process-attempt-count", record.Progress.PlannedProcesses}, {"attempted-process-count", record.Progress.AttemptedProcesses}, {"finished-process-count", record.Progress.FinishedProcesses}, {"unreached-process-count", record.Progress.UnreachedProcesses},
 	} {
 		n := count.value
 		value := float64(n)
 		metrics = append(metrics, Metric{ID: "M18", Version: "lab-metrics-v1", Measure: count.name, Mode: record.Context.Mode, Source: plan.Hash, ObservationCount: &n, Eligible: n, Evaluated: n, Units: "count", Estimator: "frozen-plan progress and observed controlled dispatch ledger", Value: &value})
 	}
-	if plan.Selection.Suite == "section-review" {
+	if plan.Selection.Suite == "test-adapters" {
+		metrics = append(metrics, processMetrics(record, plan)...)
+	} else if plan.Selection.Suite == "section-review" {
 		metrics = append(metrics, sectionMetrics(record, plan)...)
 	} else if plan.Selection.Suite == "semantic-quality" || plan.Selection.Suite == "workflow-settings" {
 		for _, m := range workflowMetrics(ImportResult{OriginMode: "controlled", OriginalHash: plan.Hash, Cases: record.Cases}) {

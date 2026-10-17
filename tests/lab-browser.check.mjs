@@ -138,8 +138,8 @@ try {
       )
     return result.result.value
   }
-  const until = async (expression, label = expression) => {
-    for (let i = 0; i < 200; i++) {
+  const until = async (expression, label = expression, attempts = 200) => {
+    for (let i = 0; i < attempts; i++) {
       if (await evaluate(expression)) return
       await pause(25)
     }
@@ -179,6 +179,7 @@ try {
     await until(
       `document.querySelector('#run-title')?.parentElement.innerText.includes('Engine completed')`,
       "terminal controlled run",
+      suite === "test-adapters" ? 3000 : 200,
     )
     return id
   }
@@ -200,6 +201,46 @@ try {
   })
   await call("Page.navigate", { url: origin + "/lab/" })
   await until(`document.body.innerText.includes('Private history ready')`)
+  const processRun = await choose("test-adapters", "node-profile-document")
+  await button("node-profile-document")
+  await until(`!!document.querySelector('article[aria-label="Case evidence"]')`)
+  assert.ok(
+    await evaluate(
+      `document.querySelector('article[aria-label="Case evidence"]').innerText.includes('operational outcome passed')`,
+    ),
+    "Node exit result not shown",
+  )
+  assert.ok(
+    await evaluate(
+      `document.querySelector('#run-title').parentElement.innerText.includes('Test drivers: 1/1 finished')`,
+    ),
+    "test-driver progress missing",
+  )
+  const artifactRun = await choose("test-adapters", "browser-resume-review")
+  await button("browser-resume-review")
+  await until(`!!document.querySelector('[aria-label="Typed test artifacts"]')`)
+  assert.ok(
+    await evaluate(
+      `document.querySelector('[aria-label="Typed test artifacts"]').innerText.includes('cdp-produced-pdf')`,
+    ),
+    "CDP PDF kind missing",
+  )
+  await button("Download verified artifact 1")
+  for (
+    let i = 0;
+    i < 100 &&
+    !readdirSync(work).some(
+      (name) => name === "lab-screenshot.png" || name === "lab-cdp.pdf",
+    );
+    i++
+  )
+    await pause(50)
+  assert.ok(
+    readdirSync(work).some(
+      (name) => name === "lab-screenshot.png" || name === "lab-cdp.pdf",
+    ),
+    "typed artifact download unavailable",
+  )
   const en = await choose("semantic-quality", "en-fact")
   assert.equal(
     await evaluate(
@@ -504,7 +545,7 @@ try {
   assert.deepEqual(external, [], "Lab requested external network resources")
   assert.deepEqual(exceptions, [], "browser runtime exception")
   console.log(
-    "PASS actual Lab launch → selective semantic/settings/retrieval/section runs → lazy detail → JSON/Markdown export → refresh/reconnect without restart → cancel → indexed history filters → compatible/incompatible comparisons → malformed/quarantined imports → deliberate deletion; synthetic UI preflight faults; keyboard and 390px layout; zero browser storage/external requests.",
+    "PASS actual Lab launch → fixed Node driver and isolated Resume harness with typed artifact download → selective semantic/settings/retrieval/section runs → lazy detail → JSON/Markdown export → refresh/reconnect without restart → cancel → indexed history filters → compatible/incompatible comparisons → malformed/quarantined imports → deliberate deletion; synthetic UI preflight faults; keyboard and 390px layout; zero browser storage/external requests.",
   )
   console.log("Evidence:", work)
 } finally {

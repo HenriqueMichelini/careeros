@@ -38,7 +38,7 @@ func CaptureSource(root string) (Provenance, error) {
 	if modified == "" {
 		p.UnavailableReasons = append(p.UnavailableReasons, "compiler clean/dirty state unavailable")
 	}
-	for _, directory := range []string{"backend", "internal", "lab/api", "lab/ui", "scripts/semantic-quality", "scripts/workflow-settings", "scripts/qualification-evidence", "scripts/application-context"} {
+	for _, directory := range []string{"backend", "internal", "lab/api", "lab/ui", "lab/process", "scripts/semantic-quality", "scripts/workflow-settings", "scripts/qualification-evidence", "scripts/application-context"} {
 		err := filepath.WalkDir(filepath.Join(canonical, directory), func(path string, entry os.DirEntry, walkErr error) error {
 			if walkErr != nil {
 				return walkErr
@@ -46,7 +46,7 @@ func CaptureSource(root string) (Provenance, error) {
 			if entry.Type()&os.ModeSymlink != 0 {
 				return fmt.Errorf("source snapshot rejects symlinks")
 			}
-			if entry.IsDir() || strings.HasSuffix(path, "_test.go") || !strings.HasSuffix(path, ".go") && !strings.HasSuffix(path, ".json") && !(directory == "lab/ui" && (strings.HasSuffix(path, ".ts") || strings.HasSuffix(path, ".tsx") || strings.HasSuffix(path, ".css"))) {
+			if entry.IsDir() || strings.HasSuffix(path, "_test.go") || !strings.HasSuffix(path, ".go") && !strings.HasSuffix(path, ".json") && !(directory == "lab/process" && strings.HasSuffix(path, ".mjs")) && !(directory == "lab/ui" && (strings.HasSuffix(path, ".ts") || strings.HasSuffix(path, ".tsx") || strings.HasSuffix(path, ".css"))) {
 				return nil
 			}
 			info, err := entry.Info()
