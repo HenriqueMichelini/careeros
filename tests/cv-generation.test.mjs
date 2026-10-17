@@ -27,6 +27,7 @@ const {
   cvFacts,
   stableCvFacts,
   cvSupportStatus,
+  cvWordingTrust,
   createCuratedCv,
   parseCuratedCv,
   validateCvResult,
@@ -1334,4 +1335,158 @@ test("reverting a rewrite and discarding a sentence keep their decisions as hist
   )
   assert.equal(byUnit[`wording:${desc.id}`].original.status, "uncertain")
   assert.ok(validateCvReviewRecords(provenance, facts))
+})
+
+// ADR 0003 / issue #127 legacy snapshot compatibility. Saved v1/v2 snapshots
+// predate the statement assessment: their generated wording is historical and
+// unverified. Trust is derived from the stored metadata, is independent of
+// source freshness and is never upgraded by loading or re-saving.
+const legacyV1 = () => {
+  const facts = cvFacts(profile)
+  const source = facts.find((f) => f.field === "achievements")
+  const saved = createCuratedCv(
+    profile,
+    facts,
+    {
+      summary: [{ sourceId: source.id, text: source.text }],
+      selected: [source.id],
+    },
+    "en",
+  )
+  assert.equal(saved.version, 1)
+  return saved
+}
+const legacyV2 = () => {
+  const doc = stableDocument()
+  doc.facts[0].support = "supported"
+  const facts = stableCvFacts(doc)
+  const saved = createCuratedCv(
+    profile,
+    facts,
+    {
+      summary: [{ sourceIds: [facts[0].id], text: facts[0].text }],
+      selected: [facts[0].id],
+    },
+    "pt-BR",
+    "balanced",
+    doc,
+  )
+  assert.equal(saved.version, 2)
+  return { saved, doc }
+}
+// A valid v3 snapshot with a user-authored summary sentence and a
+// machine-supported one, built from the same idea as the #126 provenance tests.
+const assessedV3 = (cvLanguage = "en") => {
+  const doc = provenanceDocument()
+  const facts = stableCvFacts(doc)
+  const desc = facts.find((f) => f.field === "description")
+  const impact = facts.find((f) => f.field === "achievements")
+  const result = {
+    summary: [
+      { sourceIds: [desc.id], text: desc.text },
+      { sourceIds: [impact.id], text: impact.text },
+    ],
+    selected: [desc.id, impact.id],
+    support: gateSupport([
+      gateStatement("summary:0", desc.text, [desc.id], "supported", "direct"),
+      gateStatement(
+        "summary:1",
+        impact.text,
+        [impact.id],
+        "supported",
+        "direct",
+      ),
+    ]),
+  }
+  const saved = createCuratedCv(
+    profile,
+    facts,
+    result,
+    cvLanguage,
+    "balanced",
+    doc,
+    {
+      discardedSummaryIds: [],
+      revertedWordingIds: [],
+      editedText: { "summary:0": "Designed customer services for 30 teams." },
+    },
+  )
+  assert.equal(saved.version, 3)
+  return { saved, facts, doc, desc, impact }
+}
+
+test("saved v1/v2 wording is unverified independently of source freshness", () => {
+  const v1 = legacyV1()
+  assert.equal(cvWordingTrust(v1), "unverified")
+  assert.equal(cvSupportStatus(v1, null), "legacy")
+  const { saved, doc } = legacyV2()
+  assert.equal(cvWordingTrust(saved), "unverified")
+  // Unchanged sources are "current" yet the wording stays unverified: freshness
+  // and semantic trust are separate axes.
+  assert.equal(cvSupportStatus(saved, doc), "current")
+  assert.equal(cvWordingTrust(saved), "unverified")
+  doc.facts[0].value = "Changed"
+  assert.equal(cvSupportStatus(saved, doc), "stale")
+  assert.equal(cvWordingTrust(saved), "unverified")
+})
+
+test("only a complete, self-consistent v3 provenance reads as assessed", () => {
+  const { saved } = assessedV3()
+  assert.equal(cvWordingTrust(saved), "assessed")
+  // A malformed or incomplete v3 document never defaults to machine-supported.
+  const invalid = (change) => {
+    const value = structuredClone(saved)
+    change(value)
+    assert.equal(cvWordingTrust(value), "unverified")
+  }
+  invalid((v) => (v.version = 2))
+  invalid((v) => delete v.provenance)
+  invalid((v) => (v.provenance = []))
+  invalid((v) => (v.provenance[0].decision = "approve"))
+  invalid((v) => (v.provenance[0].origin = "user_confirmed"))
+  invalid((v) => (v.provenance[0].sourceIds = ["ghost"]))
+  invalid((v) => delete v.sources)
+  // A legacy v2 snapshot whose provenance is fabricated is not assessed either.
+  const { saved: legacy } = legacyV2()
+  assert.equal(cvWordingTrust({ ...legacy, version: 3 }), "unverified")
+})
+
+test("loading legacy v1/v2 snapshots preserves content, calls no provider and never mutates the Profile", () => {
+  const { saved, doc } = legacyV2()
+  const originalDoc = structuredClone(doc)
+  const v1 = legacyV1()
+  const raws = [JSON.stringify(v1), JSON.stringify(saved)]
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = () => {
+    throw new Error("legacy load must not call the provider")
+  }
+  try {
+    for (const raw of raws) {
+      const parsed = parseCuratedCv(raw)
+      assert.ok(parsed)
+      // Round-trips byte for byte: content loss and automatic source rewriting
+      // would change the serialized document.
+      assert.equal(JSON.stringify(parsed), raw)
+      assert.ok(parsed.summary.length > 0)
+      assert.ok(parsed.sources.length > 0)
+      assert.ok(parsed.sources.every((f) => f.text.length > 0))
+      cvSupportStatus(parsed, doc)
+      cvWordingTrust(parsed)
+    }
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+  assert.deepEqual(doc, originalDoc)
+})
+
+test("an assessed v3 snapshot round-trips with its trust intact in EN/PT", () => {
+  for (const cvLanguage of ["en", "pt-BR"]) {
+    const { saved } = assessedV3(cvLanguage)
+    assert.equal(cvWordingTrust(saved), "assessed")
+    const reloaded = parseCuratedCv(JSON.stringify(saved))
+    assert.ok(reloaded)
+    assert.equal(reloaded.cvLanguage, cvLanguage)
+    assert.equal(cvWordingTrust(reloaded), "assessed")
+    assert.deepEqual(reloaded, saved)
+  }
 })

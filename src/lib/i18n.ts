@@ -102,6 +102,10 @@ const messages = {
       "Profile support has changed. This saved CV and your edits remain unchanged; review the original sources before reuse.",
     "cv.supportCurrent":
       "Referenced Profile revisions are unchanged. Review wording for accuracy before reuse.",
+    "cv.wordingUnverified":
+      "Generated wording in this saved CV predates statement assessment, so it is unverified. Review each claim against its original sources before reuse.",
+    "cv.wordingAssessed":
+      "This saved CV keeps each statement's review decision. Machine-supported wording stays separate from wording you authored yourself.",
     "cv.sourceRevision": "revision {{revision}}",
     "cv.sourceCaution":
       "Source links show traceability, not proof that wording is faithful. Compare each claim with its original support.",
@@ -1034,6 +1038,10 @@ const messages = {
       "O apoio no Perfil mudou. Este CV salvo e suas edições continuam iguais; revise as fontes originais antes de reutilizar.",
     "cv.supportCurrent":
       "As revisões referenciadas do Perfil continuam iguais. Revise a precisão do texto antes de reutilizar.",
+    "cv.wordingUnverified":
+      "O texto gerado neste currículo salvo é anterior à avaliação por afirmação e, portanto, não é verificado. Revise cada afirmação com suas fontes originais antes de reutilizar.",
+    "cv.wordingAssessed":
+      "Este currículo salvo mantém a decisão de revisão de cada afirmação. O texto com apoio da máquina permanece separado do texto escrito por você.",
     "cv.sourceRevision": "revisão {{revision}}",
     "cv.sourceCaution":
       "Os vínculos mostram rastreabilidade, não provam a fidelidade do texto. Compare cada afirmação com o apoio original.",

@@ -524,6 +524,13 @@ try {
       false,
     )
     assert.equal(
+      await evaluate(
+        "document.querySelector('[data-cv-wording-trust]').dataset.cvWordingTrust",
+      ),
+      "unverified",
+      "legacy v1 snapshot wording is labeled unverified",
+    )
+    assert.equal(
       await evaluate("document.querySelector('textarea').value"),
       fixture.locale === "en"
         ? "Edited professional summary."
@@ -1371,6 +1378,159 @@ try {
     console.log(
       fixture.locale +
         ": v3 user provenance; edit/confirm accepted as version 3, reload and stale reference preserve authorship, failed save keeps the previous CV",
+    )
+  }
+  // ADR 0003 / issue #127: legacy v1/v2 saved CVs stay usable and are labeled
+  // unverified independently of source freshness, loading with no provider call
+  // and no canonical Profile mutation, and still exporting to a one-page PDF. A
+  // v3 snapshot is instead labeled assessed and reloads with its review wording.
+  // Controlled local fixtures only; this establishes enforcement, not live quality.
+  for (const fixture of fixtures) {
+    const repo = structuredClone(fixture.repo)
+    const userText =
+      fixture.locale === "en"
+        ? "I led the customer platform for 30 teams."
+        : "Liderei a plataforma de clientes para 30 equipes."
+    await openCv(repo, fixture.locale)
+    const originalProfile = await evaluate(savedProfileExpression)
+    // Seed a valid v2 legacy snapshot (document references, no provenance).
+    const legacyRaw = await evaluate(`(async()=>{
+      const {stableCvFacts,createCuratedCv}=await import('/src/lib/cvGeneration.ts');
+      const doc=JSON.parse(localStorage.getItem('careeros_profile_v2'));
+      const facts=stableCvFacts(doc);
+      const summary=facts.find(f=>f.field==='description');
+      const impact=facts.find(f=>f.field==='achievements');
+      const result={summary:[{sourceIds:[summary.id],text:summary.text}],selected:[summary.id,impact.id]};
+      const saved=createCuratedCv(${JSON.stringify(repo)},facts,result,${JSON.stringify(fixture.locale)},'balanced',doc);
+      const raw=JSON.stringify(saved);
+      localStorage.setItem('careeros_curated_cv_v1',raw);
+      return raw;
+    })()`)
+    const legacy = JSON.parse(legacyRaw)
+    assert.equal(legacy.version, 2)
+    assert.equal(legacy.provenance, undefined)
+    await evaluate("location.reload()")
+    await until("!!document.querySelector('header button')")
+    // A legacy load must be a pure local read: no provider request occurs.
+    await evaluate(
+      "window.__loaderCalls=0;window.__originalFetch=window.fetch;window.fetch=async()=>{window.__loaderCalls++;throw new Error('legacy load must not fetch')}",
+    )
+    await evaluate("document.querySelector('header button:last-child').click()")
+    await until("document.querySelectorAll('nav button').length===4")
+    await evaluate("document.querySelectorAll('nav button')[2].click()")
+    await until("!!document.querySelector('[data-cv-saved-support]')")
+    assert.equal(
+      await evaluate("window.__loaderCalls"),
+      0,
+      "legacy load never calls the provider",
+    )
+    assert.equal(
+      await evaluate(
+        "document.querySelector('[data-cv-wording-trust]').dataset.cvWordingTrust",
+      ),
+      "unverified",
+      "legacy v2 wording is unverified even when sources are current",
+    )
+    assert.equal(
+      await evaluate(
+        "!!document.querySelector('[data-cv-saved-support] [role=status]')",
+      ),
+      false,
+      "unchanged sources stay current, not stale: freshness is a separate axis",
+    )
+    assert.equal(
+      await evaluate("document.querySelector('textarea').value"),
+      legacy.summary,
+      "legacy summary content is preserved",
+    )
+    assert.equal(
+      await evaluate(savedProfileExpression),
+      originalProfile,
+      "legacy load never mutates the canonical Profile",
+    )
+    const reloadedLegacy = JSON.parse(
+      await evaluate("localStorage.getItem('careeros_curated_cv_v1')"),
+    )
+    assert.equal(reloadedLegacy.version, 2)
+    assert.equal(reloadedLegacy.provenance, undefined)
+    assert.equal(reloadedLegacy.summary, legacy.summary)
+    assert.deepEqual(
+      reloadedLegacy.sources.map((f) => f.text),
+      legacy.sources.map((f) => f.text),
+    )
+    assert.deepEqual(reloadedLegacy.repository, legacy.repository)
+    // A legacy snapshot still exports without content loss.
+    await call("Emulation.setDeviceMetricsOverride", {
+      width: 1440,
+      height: 1000,
+      deviceScaleFactor: 1,
+      mobile: false,
+    })
+    await evaluate("document.fonts.ready")
+    const legacyPdf = await call("Page.printToPDF", {
+      printBackground: true,
+      preferCSSPageSize: true,
+    })
+    const legacyPath = join(work, `${fixture.locale}-legacy.pdf`)
+    writeFileSync(legacyPath, Buffer.from(legacyPdf.data, "base64"))
+    assert.match(
+      execFileSync("pdfinfo", [legacyPath], { encoding: "utf8" }),
+      /Pages:\s+1/,
+      "legacy snapshot exports as one A4 page",
+    )
+    const legacyText = execFileSync("pdftotext", ["-raw", legacyPath, "-"], {
+      encoding: "utf8",
+    })
+    assert.ok(
+      legacyText.toLowerCase().includes(repo.fullName.toLowerCase()),
+      "legacy export keeps the name",
+    )
+    assert.ok(
+      legacyText.includes(legacy.summary),
+      "legacy export keeps the summary without content loss",
+    )
+    await evaluate("window.fetch=window.__originalFetch")
+    // An assessed v3 snapshot is labeled assessed and reloads with its wording.
+    const assessedRaw = await evaluate(`(async()=>{
+      const {stableCvFacts,createCuratedCv}=await import('/src/lib/cvGeneration.ts');
+      const doc=JSON.parse(localStorage.getItem('careeros_profile_v2'));
+      const facts=stableCvFacts(doc);
+      const summary=facts.find(f=>f.field==='description');
+      const impact=facts.find(f=>f.field==='achievements');
+      const result={summary:[{sourceIds:[summary.id],text:summary.text},{sourceIds:[impact.id],text:impact.text}],selected:[summary.id,impact.id],support:{policyVersion:'cv-statement-support-v1',assessment:'complete',statements:[{id:'summary:0',text:summary.text,sourceIds:[summary.id],status:'supported',reason:'direct'},{id:'summary:1',text:impact.text,sourceIds:[impact.id],status:'supported',reason:'direct'}]}};
+      const saved=createCuratedCv(${JSON.stringify(repo)},facts,result,${JSON.stringify(fixture.locale)},'balanced',doc,{discardedSummaryIds:[],revertedWordingIds:[],editedText:{'summary:0':${JSON.stringify(userText)}}});
+      const raw=JSON.stringify(saved);
+      localStorage.setItem('careeros_curated_cv_v1',raw);
+      return raw;
+    })()`)
+    assert.equal(JSON.parse(assessedRaw).version, 3)
+    await evaluate("location.reload()")
+    await until("!!document.querySelector('header button')")
+    await evaluate("document.querySelector('header button:last-child').click()")
+    await until("document.querySelectorAll('nav button').length===4")
+    await evaluate("document.querySelectorAll('nav button')[2].click()")
+    await until("!!document.querySelector('[data-cv-wording-trust]')")
+    assert.equal(
+      await evaluate(
+        "document.querySelector('[data-cv-wording-trust]').dataset.cvWordingTrust",
+      ),
+      "assessed",
+      "a v3 snapshot keeps its assessment trust label",
+    )
+    assert.ok(
+      await evaluate(
+        `document.querySelector('textarea').value.includes(${JSON.stringify(userText)})`,
+      ),
+      "assessed reload keeps the reviewed wording",
+    )
+    assert.equal(
+      await evaluate(savedProfileExpression),
+      originalProfile,
+      "assessed reload never mutates the canonical Profile",
+    )
+    console.log(
+      fixture.locale +
+        ": issue #127 legacy v2 unverified regardless of freshness, no provider call or Profile mutation, one-page export; v3 assessed survives reload",
     )
   }
 } finally {
