@@ -3,6 +3,7 @@ import {
   CURATED_CV_KEY,
   stableCvFacts,
   cvSupportStatus,
+  cvWordingTrust,
   summarySourceIds,
   createCuratedCv,
   parseCuratedCv,
@@ -169,6 +170,10 @@ export default function CvPage() {
   const supportStatus = curated
     ? cvSupportStatus(curated, profileDocument)
     : null
+  // ADR 0003 / issue #127: wording trust is separate from source freshness. A
+  // saved v1/v2 snapshot predates the assessment, so its wording is unverified
+  // and never silently promoted to machine-supported.
+  const wordingTrust = curated ? cvWordingTrust(curated) : null
   const revision = JSON.stringify([
     profileDocument,
     state.repository,
@@ -1211,6 +1216,16 @@ export default function CvPage() {
                         : supportStatus === "stale"
                           ? "cv.supportStale"
                           : "cv.supportCurrent",
+                    )}
+                  </p>
+                  {/* ADR 0003 / issue #127: wording trust is a separate axis from
+                  source freshness. Legacy snapshots are unverified regardless of
+                  whether their referenced revisions are still current. */}
+                  <p className="mt-2" data-cv-wording-trust={wordingTrust}>
+                    {t(
+                      wordingTrust === "assessed"
+                        ? "cv.wordingAssessed"
+                        : "cv.wordingUnverified",
                     )}
                   </p>
                   <details className="mt-2">

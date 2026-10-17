@@ -963,6 +963,24 @@ export function cvSupportStatus(
   return "current"
 }
 
+// ADR 0003 / issue #127: saved-CV wording trust. A version 1 or 2 snapshot
+// predates the statement assessment, so its summary and any supporting rewrites
+// are historical machine wording: `unverified`. Only a version 3 snapshot with
+// complete, self-consistent provenance is `assessed`. Trust is derived from the
+// stored metadata, never re-observed against the live Profile, and is a separate
+// axis from `cvSupportStatus` freshness. Loading an older snapshot can therefore
+// never silently upgrade its wording to machine-supported, and a malformed or
+// incomplete v3 document that lost its provenance reads as unverified rather
+// than assessed.
+export type CvWordingTrust = "unverified" | "assessed"
+export function cvWordingTrust(saved: CuratedCv): CvWordingTrust {
+  return saved.version === 3 &&
+    Array.isArray(saved.sources) &&
+    validateCvReviewRecords(saved.provenance, saved.sources)
+    ? "assessed"
+    : "unverified"
+}
+
 export function createCuratedCv(
   repo: ProfessionalRepository,
   facts: CvFact[],
