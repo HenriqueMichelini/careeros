@@ -7,8 +7,15 @@ import {
   createCuratedCv,
   parseCuratedCv,
   generateCv,
+  acceptCvResult,
+  cvReviewRemoved,
+  cvReviewResolved,
+  cvReviewUnits,
+  emptyCvReview,
   CvGenerationError,
   type CvResult,
+  type CvReviewUnit,
+  type CvSupportStatus,
   type CuratedCv,
 } from "../lib/cvGeneration"
 import CvDensityControl from "../components/CvDensityControl"
@@ -150,6 +157,7 @@ export default function CvPage() {
   const [generation, setGeneration] = useState(false)
   const [generationError, setGenerationError] = useState("")
   const [pending, setPending] = useState<CvResult | null>(null)
+  const [review, setReview] = useState(emptyCvReview)
   const pendingRevision = useRef("")
   const controller = useRef<AbortController | null>(null)
   const requestId = useRef(0)
@@ -177,6 +185,8 @@ export default function CvPage() {
     setGeneration(false)
     setPending(null)
   }, [revision])
+  // A new proposal starts with no review decisions recorded.
+  useEffect(() => setReview(emptyCvReview), [pending])
   useEffect(
     () => () => {
       controller.current?.abort()
@@ -229,10 +239,13 @@ export default function CvPage() {
       return
     }
     try {
+      // Revalidate the reviewed content at acceptance instead of trusting the
+      // rendered state: unresolved machine wording is rejected, not promoted.
+      const reviewed = acceptCvResult(pending, liveFacts, review)
       const saved = createCuratedCv(
         state.repository,
         liveFacts,
-        pending,
+        reviewed,
         state.cvLanguage,
         preferences.density,
         profileDocument ?? undefined,
@@ -247,10 +260,60 @@ export default function CvPage() {
       setChoices(nextChoices)
       setPending(null)
       setGenerationError("")
-    } catch {
-      setGenerationError("save")
+    } catch (error) {
+      setGenerationError(
+        error instanceof Error && error.message === "unresolved_output"
+          ? "unresolved"
+          : "save",
+      )
     }
   }
+  // ADR 0003 review gate: every generated statement is a review unit. A support
+  // response (v3) is only accepted once each retained unit is supported; the
+  // user resolves the rest by discarding a sentence or reverting a rewrite.
+  const reviewUnits = pending ? cvReviewUnits(pending) : null
+  const reviewResolved = pending ? cvReviewResolved(pending, review) : true
+  const reviewHasSummary = reviewUnits
+    ? reviewUnits.some(
+        (unit) => unit.kind === "summary" && !cvReviewRemoved(unit, review),
+      )
+    : true
+  const retainedSummary = pending
+    ? pending.summary
+        .filter(
+          (_item, index) =>
+            !review.discardedSummaryIds.includes(`summary:${index}`),
+        )
+        .map((s) => s.text)
+        .join(" ")
+    : ""
+  const supportLabel = (status: CvSupportStatus) =>
+    t(
+      ({
+        supported: "cv.reviewSupported",
+        uncertain: "cv.reviewUncertain",
+        unsupported: "cv.reviewUnsupported",
+      } as const)[status],
+    )
+  const toggleReview = (unit: CvReviewUnit) =>
+    setReview((previous) =>
+      unit.kind === "summary"
+        ? {
+            ...previous,
+            discardedSummaryIds: previous.discardedSummaryIds.includes(unit.id)
+              ? previous.discardedSummaryIds.filter((id) => id !== unit.id)
+              : [...previous.discardedSummaryIds, unit.id],
+          }
+        : {
+            ...previous,
+            revertedWordingIds: (() => {
+              const id = unit.id.slice("wording:".length)
+              return previous.revertedWordingIds.includes(id)
+                ? previous.revertedWordingIds.filter((item) => item !== id)
+                : [...previous.revertedWordingIds, id]
+            })(),
+          },
+    )
   const sufficient = liveFacts.some((f) =>
     [
       "skills",
@@ -1197,6 +1260,7 @@ export default function CvPage() {
                       timeout: "cv.generateErrorTimeout",
                       invalid_output: "cv.generateErrorOutput",
                       save: "cv.saveError",
+                      unresolved: "cv.reviewBlockedError",
                     } as const)[(generationError as "input")] ||
                       "cv.generateErrorOutage",
                   )}
@@ -1208,8 +1272,109 @@ export default function CvPage() {
                     {t("cv.generateReview")}
                   </p>
                   <p className="mb-3 text-xs leading-5" data-generated-summary>
-                    {pending.summary.map((s) => s.text).join(" ")}
+                    {retainedSummary}
                   </p>
+                  {reviewUnits && (
+                    <div
+                      data-cv-review
+                      className="mb-3 border border-[var(--color-border)] p-3"
+                    >
+                      <p className="mb-1 text-xs font-semibold">
+                        {t("cv.reviewTitle")}
+                      </p>
+                      <p className="mb-2 text-xs leading-5">
+                        {t("cv.reviewIntro")}
+                      </p>
+                      <ul className="space-y-3">
+                        {reviewUnits.map((unit) => {
+                          const removed = cvReviewRemoved(unit, review)
+                          const cited = liveFacts.filter((f) =>
+                            unit.sourceIds.includes(f.id),
+                          )
+                          return (
+                            <li
+                              key={unit.id}
+                              data-cv-review-unit
+                              data-cv-review-kind={unit.kind}
+                              data-cv-review-status={unit.status}
+                              data-cv-review-removed={removed || undefined}
+                              className="border-t border-[var(--color-border)] pt-2 first:border-t-0 first:pt-0"
+                            >
+                              <p
+                                className="text-[10px] uppercase tracking-widest text-[var(--color-muted-fg)]"
+                                data-cv-review-status-label
+                              >
+                                {t(
+                                  unit.kind === "summary"
+                                    ? "cv.reviewUnitSummary"
+                                    : "cv.reviewUnitWording",
+                                )}{" "}
+                                · {supportLabel(unit.status)}
+                                {removed ? ` · ${t("cv.reviewRemoved")}` : ""}
+                              </p>
+                              <p
+                                className={`text-xs leading-5 ${
+                                  removed
+                                    ? "text-[var(--color-muted-fg)] line-through"
+                                    : ""
+                                }`}
+                                data-cv-review-text
+                              >
+                                {unit.text}
+                              </p>
+                              {unit.reason && (
+                                <p
+                                  className="mt-1 text-xs leading-5"
+                                  data-cv-review-reason
+                                >
+                                  {t("cv.reviewReason")}: {unit.reason}
+                                </p>
+                              )}
+                              <details className="mt-1 text-xs leading-5">
+                                <summary>
+                                  {t("cv.reviewCitedFacts", {
+                                    count: cited.length,
+                                  })}
+                                </summary>
+                                <ul className="mt-1 space-y-2">
+                                  {cited.map((f) => (
+                                    <li key={f.id}>
+                                      <p className="whitespace-pre-wrap break-words">
+                                        {f.text}
+                                      </p>
+                                      {f.reference && (
+                                        <p className="break-all text-[10px] text-[var(--color-muted-fg)]">
+                                          {f.reference.id} ·{" "}
+                                          {t("cv.sourceRevision", {
+                                            revision: f.reference.revision,
+                                          })}
+                                        </p>
+                                      )}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </details>
+                              <button
+                                type="button"
+                                aria-pressed={removed}
+                                data-cv-review-toggle
+                                onClick={() => toggleReview(unit)}
+                                className="mt-2 text-xs underline"
+                              >
+                                {unit.kind === "summary"
+                                  ? removed
+                                    ? t("cv.reviewKeepSentence")
+                                    : t("cv.reviewDiscardSentence")
+                                  : removed
+                                    ? t("cv.reviewUseRewrite")
+                                    : t("cv.reviewRevertRewrite")}
+                              </button>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    </div>
+                  )}
                   <p className="mb-3 text-xs leading-5">
                     {t("cv.sourceCaution")}
                   </p>
@@ -1279,10 +1444,24 @@ export default function CvPage() {
                   <p className="mb-3 text-xs leading-5">
                     {t("cv.generateReplaceNote")}
                   </p>
+                  {reviewUnits && !reviewResolved && (
+                    <p
+                      role="alert"
+                      data-cv-review-blocked
+                      className="mb-3 text-xs leading-5"
+                    >
+                      {t(
+                        reviewHasSummary
+                          ? "cv.reviewBlocked"
+                          : "cv.reviewEmpty",
+                      )}
+                    </p>
+                  )}
                   <button
                     type="button"
+                    disabled={!reviewResolved}
                     onClick={acceptGeneration}
-                    className="w-full bg-[var(--color-accent)] p-2 text-xs text-white"
+                    className="w-full bg-[var(--color-accent)] p-2 text-xs text-white disabled:opacity-50"
                   >
                     {t("cv.generateAccept")}
                   </button>

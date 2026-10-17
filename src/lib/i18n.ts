@@ -127,6 +127,27 @@ const messages = {
     "cv.generateReplaceNote":
       "Accepting replaces the CV content and its selection/wording edits. Profile and application drafts stay separate. Check page fit after acceptance and revise any overflow.",
     "cv.generateAccept": "Accept and replace CV",
+    "cv.reviewTitle": "Review each generated statement",
+    "cv.reviewIntro":
+      "Each sentence and rewrite was assessed against its cited facts. Uncertain or unsupported wording cannot be accepted as verified: discard the sentence or revert the rewrite. Source freshness stays separate from this assessment.",
+    "cv.reviewUnitSummary": "Summary sentence",
+    "cv.reviewUnitWording": "Supporting rewrite",
+    "cv.reviewSupported": "Supported",
+    "cv.reviewUncertain": "Uncertain",
+    "cv.reviewUnsupported": "Unsupported",
+    "cv.reviewReason": "Assessment reason",
+    "cv.reviewCitedFacts": "Review {{count}} cited facts",
+    "cv.reviewDiscardSentence": "Discard this sentence",
+    "cv.reviewKeepSentence": "Keep this sentence",
+    "cv.reviewRevertRewrite": "Revert this rewrite",
+    "cv.reviewUseRewrite": "Use this rewrite",
+    "cv.reviewRemoved": "Removed from this CV",
+    "cv.reviewBlocked":
+      "Resolve the remaining uncertain or unsupported statements before accepting: discard the sentence or revert the rewrite, or generate again.",
+    "cv.reviewEmpty":
+      "Keep at least one reviewed summary sentence. If you remove all summary content, write your own summary; no filler is added.",
+    "cv.reviewBlockedError":
+      "The proposal still contains unresolved statements. Review it again before accepting.",
     "cv.generateErrorInput":
       "The professional Profile is empty, invalid or too large for this request. Review it and generate again deliberately.",
     "cv.generateErrorRate":
@@ -1026,6 +1047,27 @@ const messages = {
     "cv.generateReplaceNote":
       "Aceitar substitui o conteúdo do CV e suas edições de seleção/texto. Perfil e candidaturas ficam separados. Confira o ajuste à página depois de aceitar e revise excessos.",
     "cv.generateAccept": "Aceitar e substituir CV",
+    "cv.reviewTitle": "Revise cada afirmação gerada",
+    "cv.reviewIntro":
+      "Cada frase e reescrita foi avaliada em relação aos fatos citados. Texto incerto ou sem apoio não pode ser aceito como verificado: descarte a frase ou reverta a reescrita. A atualidade da fonte é separada desta avaliação.",
+    "cv.reviewUnitSummary": "Frase do resumo",
+    "cv.reviewUnitWording": "Reescrita de apoio",
+    "cv.reviewSupported": "Com apoio",
+    "cv.reviewUncertain": "Incerto",
+    "cv.reviewUnsupported": "Sem apoio",
+    "cv.reviewReason": "Motivo da avaliação",
+    "cv.reviewCitedFacts": "Revisar {{count}} fatos citados",
+    "cv.reviewDiscardSentence": "Descartar esta frase",
+    "cv.reviewKeepSentence": "Manter esta frase",
+    "cv.reviewRevertRewrite": "Reverter esta reescrita",
+    "cv.reviewUseRewrite": "Usar esta reescrita",
+    "cv.reviewRemoved": "Removido deste CV",
+    "cv.reviewBlocked":
+      "Resolva as afirmações incertas ou sem apoio antes de aceitar: descarte a frase ou reverta a reescrita, ou gere novamente.",
+    "cv.reviewEmpty":
+      "Mantenha pelo menos uma frase revisada do resumo. Se remover todo o resumo, escreva o seu próprio resumo; nenhum texto é inventado.",
+    "cv.reviewBlockedError":
+      "A proposta ainda contém afirmações não resolvidas. Revise novamente antes de aceitar.",
     "cv.generateErrorInput":
       "O Perfil profissional está vazio, inválido ou grande demais para esta solicitação. Revise e gere novamente.",
     "cv.generateErrorRate":

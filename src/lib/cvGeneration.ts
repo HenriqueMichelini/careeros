@@ -26,6 +26,28 @@ export interface CvFact {
   evidence?: ProfileEvidence[]
   context?: ProfileRef[]
 }
+// ADR 0003 statement-support contract (issue #125). One review unit exists per
+// generated summary sentence and per optional rewrite, keyed by the
+// server-assigned id `summary:<index>` / `wording:<sourceId>`.
+export const CV_SUPPORT_POLICY = "cv-statement-support-v1"
+// ADR 0003: switching the production request to the v3 statement-support
+// contract is the coordinated activation owned by #128. Until then the client
+// keeps the legacy v2 request, but still consumes a v3 response whenever an
+// activated backend (or a controlled fixture) returns one.
+export const CV_SUPPORT_REQUEST = false
+export type CvSupportStatus = "supported" | "uncertain" | "unsupported"
+export interface CvSupportStatement {
+  id: string
+  text: string
+  sourceIds: string[]
+  status: CvSupportStatus
+  reason: string
+}
+export interface CvSupport {
+  policyVersion: string
+  assessment: "complete" | "unavailable"
+  statements: CvSupportStatement[]
+}
 export interface CvResult {
   summary: {
     sourceId?: string
@@ -34,6 +56,9 @@ export interface CvResult {
   }[]
   selected: string[]
   wording?: Record<string, string>
+  // Present only for the opt-in v3 response; absence means legacy v2 wording
+  // without a per-statement machine judgment.
+  support?: CvSupport
 }
 export interface CuratedCv {
   version: 1 | 2
@@ -396,6 +421,184 @@ export function summarySourceIds(s: CvResult["summary"][number]): string[] {
       : []
 }
 
+// Canonical review units repeat the server's ordering: summary items first, then
+// rewrites by ascending source id. Support records must match these exactly.
+export function cvSupportUnits(result: CvResult) {
+  const units: {
+    id: string
+    kind: "summary" | "wording"
+    text: string
+    sourceIds: string[]
+  }[] = result.summary.map((s, index) => ({
+    id: `summary:${index}`,
+    kind: "summary" as const,
+    text: s.text,
+    sourceIds: summarySourceIds(s),
+  }))
+  const wording = result.wording ?? {}
+  for (const id of Object.keys(wording).sort())
+    units.push({
+      id: `wording:${id}`,
+      kind: "wording" as const,
+      text: wording[id],
+      sourceIds: [id],
+    })
+  return units
+}
+
+// The assessment is untrusted client-side input: require one record per review
+// unit, exact repeated text/citations and known statuses. A missing, duplicated,
+// reordered or misassociated record fails closed; an unavailable assessment must
+// already present every unit as uncertain.
+export function validateCvSupport(
+  value: unknown,
+  result: CvResult,
+): value is CvSupport {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false
+  const support = value as CvSupport
+  if (
+    !["assessment,policyVersion,statements"].includes(
+      Object.keys(support).sort().join(","),
+    ) ||
+    support.policyVersion !== CV_SUPPORT_POLICY ||
+    !["complete", "unavailable"].includes(support.assessment) ||
+    !Array.isArray(support.statements)
+  )
+    return false
+  const units = cvSupportUnits(result)
+  if (!units.length || support.statements.length !== units.length) return false
+  const byId = new Map<string, CvSupportStatement>()
+  for (const statement of support.statements) {
+    if (
+      !statement ||
+      !["id,reason,sourceIds,status,text"].includes(
+        Object.keys(statement).sort().join(","),
+      ) ||
+      typeof statement.id !== "string" ||
+      typeof statement.text !== "string" ||
+      typeof statement.reason !== "string" ||
+      !Array.isArray(statement.sourceIds) ||
+      statement.sourceIds.some((id) => typeof id !== "string") ||
+      !["supported", "uncertain", "unsupported"].includes(statement.status) ||
+      new TextEncoder().encode(statement.reason).length > 500 ||
+      byId.has(statement.id)
+    )
+      return false
+    if (
+      support.assessment === "unavailable" &&
+      statement.status !== "uncertain"
+    )
+      return false
+    byId.set(statement.id, statement)
+  }
+  return units.every((unit) => {
+    const statement = byId.get(unit.id)
+    return (
+      !!statement &&
+      statement.text === unit.text &&
+      statement.sourceIds.length === unit.sourceIds.length &&
+      statement.sourceIds.every((id, index) => id === unit.sourceIds[index])
+    )
+  })
+}
+
+// Review decisions never change machine text; they remove or restore whole
+// review units. Discarding a summary sentence drops it from the accepted
+// summary. Reverting a rewrite drops the proposed wording and falls back to the
+// verbatim source fact. Until #126, unresolved wording can only be removed.
+export interface CvReviewDecisions {
+  discardedSummaryIds: string[]
+  revertedWordingIds: string[]
+}
+export const emptyCvReview: CvReviewDecisions = {
+  discardedSummaryIds: [],
+  revertedWordingIds: [],
+}
+export interface CvReviewUnit {
+  id: string
+  kind: "summary" | "wording"
+  text: string
+  sourceIds: string[]
+  status: CvSupportStatus
+  reason: string
+}
+export function cvReviewUnits(result: CvResult): CvReviewUnit[] | null {
+  if (!result.support) return null
+  const statusById = new Map(
+    result.support.statements.map((statement) => [statement.id, statement]),
+  )
+  return cvSupportUnits(result).flatMap((unit) => {
+    const statement = statusById.get(unit.id)
+    return statement
+      ? [{ ...unit, status: statement.status, reason: statement.reason }]
+      : []
+  })
+}
+export function cvReviewRemoved(
+  unit: Pick<CvReviewUnit, "id" | "kind">,
+  decisions: CvReviewDecisions,
+): boolean {
+  return unit.kind === "summary"
+    ? decisions.discardedSummaryIds.includes(unit.id)
+    : decisions.revertedWordingIds.includes(unit.id.slice("wording:".length))
+}
+export function cvReviewResolved(
+  result: CvResult,
+  decisions: CvReviewDecisions,
+): boolean {
+  const units = cvReviewUnits(result)
+  if (!units) return true
+  if (
+    !units.some(
+      (unit) => unit.kind === "summary" && !cvReviewRemoved(unit, decisions),
+    )
+  )
+    return false
+  return units.every(
+    (unit) => unit.status === "supported" || cvReviewRemoved(unit, decisions),
+  )
+}
+
+// Acceptance revalidates shape, support correspondence and reference identity
+// instead of trusting rendered state, then returns the reviewed content with the
+// machine judgments dropped. Global acceptance never promotes unresolved text.
+export function acceptCvResult(
+  result: CvResult,
+  facts: CvFact[],
+  decisions: CvReviewDecisions,
+): CvResult {
+  const { support, ...core } = result
+  if (!validateCvResult(core, facts)) throw new Error("invalid_output")
+  if (support && !validateCvSupport(support, result))
+    throw new Error("invalid_output")
+  if (!support) return core
+  const units = cvReviewUnits(result)!
+  if (
+    units.some(
+      (unit) =>
+        unit.status !== "supported" && !cvReviewRemoved(unit, decisions),
+    )
+  )
+    throw new Error("unresolved_output")
+  const discarded = new Set(decisions.discardedSummaryIds)
+  const reverted = new Set(decisions.revertedWordingIds)
+  const resolved: CvResult = {
+    summary: core.summary.filter(
+      (_item, index) => !discarded.has(`summary:${index}`),
+    ),
+    selected: core.selected,
+    ...(core.wording
+      ? {
+          wording: Object.fromEntries(
+            Object.entries(core.wording).filter(([id]) => !reverted.has(id)),
+          ),
+        }
+      : {}),
+  }
+  if (!validateCvResult(resolved, facts)) throw new Error("invalid_output")
+  return resolved
+}
+
 export function cvSupportStatus(
   saved: CuratedCv,
   doc: ProfileDocument | null,
@@ -471,8 +674,19 @@ export function createCuratedCv(
   density: CvDensity = "balanced",
   document?: ProfileDocument,
 ): CuratedCv {
-  if (!validateCvResult(result, facts)) throw new Error("invalid_output")
-  const selected = result.selected.map((id) => facts.find((f) => f.id === id)!)
+  const { support, ...core } = result
+  if (!validateCvResult(core, facts)) throw new Error("invalid_output")
+  if (support) {
+    if (!validateCvSupport(support, result)) throw new Error("invalid_output")
+    // A global acceptance can never carry unresolved machine wording: every
+    // retained summary item and rewrite must be supported (or removed upstream
+    // by review, which drops the whole support object).
+    if (
+      support.statements.some((statement) => statement.status !== "supported")
+    )
+      throw new Error("unresolved_output")
+  }
+  const selected = core.selected.map((id) => facts.find((f) => f.id === id)!)
   if (
     document &&
     selected.some(
@@ -490,7 +704,7 @@ export function createCuratedCv(
     throw new Error("invalid_output")
   const content = selected.map((f) => ({
     ...f,
-    text: result.wording?.[f.id] ?? f.text,
+    text: core.wording?.[f.id] ?? f.text,
   }))
   const snapshot = structuredClone(repo)
   const has = (section: string, id: string) =>
@@ -553,7 +767,7 @@ export function createCuratedCv(
     ...(document
       ? {
           sourceProfileId: document.id,
-          summarySources: structuredClone(result.summary),
+          summarySources: structuredClone(core.summary),
           // Include original contact and protected entity metadata rendered implicitly.
           context: document.facts
             .filter(
@@ -601,7 +815,7 @@ export function createCuratedCv(
         }
       : {}),
     repository: snapshot,
-    summary: result.summary.map((s) => s.text).join(" "),
+    summary: core.summary.map((s) => s.text).join(" "),
     sources: structuredClone(selected),
     cvLanguage,
     density,
@@ -791,7 +1005,12 @@ export async function generateCv(
         : {}),
     }
   })
-  const body = JSON.stringify({ facts: outbound, cvLanguage, density })
+  const body = JSON.stringify({
+    facts: outbound,
+    cvLanguage,
+    density,
+    ...(CV_SUPPORT_REQUEST ? { statementSupport: true } : {}),
+  })
   if (
     !facts.length ||
     facts.length > 500 ||
@@ -841,6 +1060,26 @@ export async function generateCv(
         : "outage",
     )
   }
+  // v3 is identified by schemaVersion, not by the presence of support, so an
+  // unknown version never falls back to accepting unassessed legacy wording.
+  if (
+    (payload as { schemaVersion?: unknown } | null)?.schemaVersion !== undefined
+  ) {
+    const value = payload as { schemaVersion: unknown } & CvResult
+    const core: CvResult = {
+      summary: value.summary,
+      selected: value.selected,
+      ...(value.wording !== undefined ? { wording: value.wording } : {}),
+    }
+    if (
+      value.schemaVersion !== 3 ||
+      !validateCvResult(core, facts) ||
+      !validateCvSupport(value.support, core)
+    )
+      throw new CvGenerationError("invalid_output")
+    return { ...core, support: value.support }
+  }
+  if (CV_SUPPORT_REQUEST) throw new CvGenerationError("invalid_output")
   if (!validateCvResult(payload, facts))
     throw new CvGenerationError("invalid_output")
   return payload

@@ -995,6 +995,157 @@ try {
   console.log(
     "Empty guidance; stale edit and provider error paths preserve valid CV; no real provider calls",
   )
+  // ADR 0003 / issue #125: a v3 proposal exposes per-statement support. The
+  // unresolved gate, partial discard/reversion and cancellation are exercised
+  // with controlled fixtures; this is enforcement, not a live-quality claim.
+  const v3Fetch = `window.__calls=0;window.fetch=async(url,options)=>{
+    window.__calls++;window.__outbound=JSON.parse(options.body);
+    const facts=window.__outbound.facts;
+    const description=facts.find(f=>f.field==='description');
+    const achievement=facts.find(f=>f.field==='achievements');
+    const selected=facts.filter(f=>['skills','title','company','startDate','endDate','description','achievements','degree','institution','graduationDate','name','highlights'].includes(f.field)).map(f=>f.id);
+    const rewrite=description.text.replace(/\\.$/,'')+' with measurable scope.';
+    const summary=[{sourceIds:[description.id],text:description.text},{sourceIds:[achievement.id],text:achievement.text}];
+    window.__v3={summary,selected,wording:{[description.id]:rewrite}};
+    const statements=[
+      {id:'summary:0',text:description.text,sourceIds:[description.id],status:'supported',reason:'direct source match'},
+      {id:'summary:1',text:achievement.text,sourceIds:[achievement.id],status:'uncertain',reason:'insufficient evidence'},
+      {id:'wording:'+description.id,text:rewrite,sourceIds:[description.id],status:'unsupported',reason:'introduces scope'}
+    ];
+    return new Response(JSON.stringify({schemaVersion:3,...window.__v3,support:{policyVersion:'cv-statement-support-v1',assessment:'complete',statements}}),{status:200,headers:{'Content-Type':'application/json'}});
+  }`
+  for (const fixture of fixtures) {
+    const repo = structuredClone(fixture.repo)
+    const generate = fixture.locale === "en" ? "Generate CV" : "Gerar currículo"
+    const accept =
+      fixture.locale === "en"
+        ? "Accept and replace CV"
+        : "Aceitar e substituir CV"
+    const cancel =
+      fixture.locale === "en"
+        ? "Cancel / discard proposal"
+        : "Cancelar / descartar proposta"
+    const acceptDisabled = `Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()===${JSON.stringify(accept)}).disabled`
+    const toggle = (kind, status) =>
+      evaluate(
+        `document.querySelector('[data-cv-review-kind="${kind}"][data-cv-review-status="${status}"] [data-cv-review-toggle]').click()`,
+      )
+    await openCv(repo, fixture.locale, true)
+    await evaluate(v3Fetch)
+    await click(generate)
+    await until("!!document.querySelector('[data-generated-summary]')")
+    assert.equal(
+      await evaluate("window.__outbound.statementSupport"),
+      undefined,
+      "activation stays with #128; the client only consumes v3 when returned",
+    )
+    assert.equal(
+      await evaluate(
+        "document.querySelectorAll('[data-cv-review-unit]').length",
+      ),
+      3,
+    )
+    assert.deepEqual(
+      await evaluate(
+        "Array.from(document.querySelectorAll('[data-cv-review-unit]')).map(u=>u.dataset.cvReviewStatus)",
+      ),
+      ["supported", "uncertain", "unsupported"],
+    )
+    assert.ok(
+      await evaluate(
+        "document.querySelector('[data-cv-review]').textContent.includes('insufficient evidence')",
+      ),
+      "each statement shows its assessment reason",
+    )
+    const firstSummary = await evaluate("window.__v3.summary[0].text")
+    const secondSummary = await evaluate("window.__v3.summary[1].text")
+    assert.ok(
+      await evaluate(
+        `document.querySelector('[data-cv-review]').textContent.includes(${JSON.stringify(firstSummary)})`,
+      ),
+      "cited original fact is shown beside the statement",
+    )
+    assert.equal(
+      await evaluate(acceptDisabled),
+      true,
+      "unresolved machine wording cannot be accepted",
+    )
+    assert.ok(
+      await evaluate("!!document.querySelector('[data-cv-review-blocked]')"),
+      "blocked acceptance is announced",
+    )
+    assert.ok(
+      await evaluate(
+        "Array.from(document.querySelectorAll('[data-cv-review] button')).every(b=>b.tagName==='BUTTON'&&b.tabIndex>=0&&b.getAttribute('aria-pressed')!==null)",
+      ),
+      "review controls are native focusable buttons",
+    )
+    await toggle("summary", "uncertain")
+    assert.equal(
+      await evaluate(acceptDisabled),
+      true,
+      "the unsupported rewrite still blocks acceptance",
+    )
+    await toggle("wording", "unsupported")
+    await until("!document.querySelector('[data-cv-review-blocked]')")
+    const retained = await evaluate(
+      "document.querySelector('[data-generated-summary]').textContent",
+    )
+    assert.ok(
+      !retained.includes(secondSummary),
+      "discarded sentence leaves the accepted summary",
+    )
+    await click(accept)
+    await until("!!localStorage.getItem('careeros_curated_cv_v1')")
+    const saved = await evaluate(
+      "JSON.parse(localStorage.getItem('careeros_curated_cv_v1'))",
+    )
+    const savedRaw = await evaluate(
+      "localStorage.getItem('careeros_curated_cv_v1')",
+    )
+    assert.equal(saved.version, 2)
+    assert.equal(saved.summary, retained)
+    assert.equal(saved.summarySources.length, 1)
+    assert.equal(
+      saved.repository.experience[0].description,
+      firstSummary,
+      "reverted rewrite restores the verbatim source wording",
+    )
+    // Removing every summary sentence blocks acceptance without invented filler,
+    // and cancelling preserves the accepted CV.
+    await evaluate(v3Fetch)
+    await click(generate)
+    await until("!!document.querySelector('[data-generated-summary]')")
+    // Discard both summary sentences, leaving only an unresolved rewrite.
+    await toggle("summary", "supported")
+    await until(
+      "document.querySelectorAll('[data-cv-review-unit][data-cv-review-removed]').length===1",
+    )
+    await toggle("summary", "uncertain")
+    await until(
+      "document.querySelectorAll('[data-cv-review-unit][data-cv-review-removed]').length===2",
+    )
+    assert.equal(await evaluate(acceptDisabled), true)
+    assert.ok(
+      await evaluate("!!document.querySelector('[data-cv-review-blocked]')"),
+    )
+    assert.ok(
+      await evaluate(
+        "document.querySelector('[data-cv-review-blocked]').textContent.trim().length>0",
+      ),
+      "removing all summary content surfaces a blocking message",
+    )
+    await click(cancel)
+    assert.equal(
+      await evaluate("localStorage.getItem('careeros_curated_cv_v1')"),
+      savedRaw,
+      "cancelling the proposal preserves the accepted CV",
+    )
+    console.log(
+      fixture.locale +
+        ": v3 per-statement review gate; unresolved blocked, discard/revert persists the reviewed subset, all-summary removal blocked, cancel preserves the accepted CV",
+    )
+  }
 } finally {
   socket?.close()
   chrome.kill()
