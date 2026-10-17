@@ -1,0 +1,162 @@
+{
+  "version": "lab-test-adapter-observations-v2",
+  "baseCommit": "b7595505882995530af158f54b05e9e6938b039e",
+  "reviewedCodeCommit": "4930e62d40101f3ac34ab0f9848e4d980f19f2ae",
+  "fixtureVersion": "lab-process-fixtures-v2",
+  "fixtureSHA256": "0f9469797d9ba65ed5d356a5d0f8bd5832415c989287488c13df70525bd5650b",
+  "priorManifestSHA256": "e70d17376f35429f7fc9b1c1c93c29670b68bddf36bbfc40b5f343e038f611f4",
+  "files": [
+    {
+      "path": "docs/evaluations/test-adapters/observations.v2/go-canonical.v1.json",
+      "sha256": "95ae4ebbb4d98845163c6a99eb22130ee2ee141a99d763d1db3ce37dd51385d4",
+      "bytes": 38818,
+      "caseId": "go-canonical",
+      "engineState": "completed",
+      "assertionVerdict": "pass",
+      "operationalOutcome": "passed",
+      "attemptedSteps": 1,
+      "skippedSteps": 0,
+      "runtimeVersions": {
+        "bubblewrap": "bubblewrap 0.12.0",
+        "chrome": "Google Chrome 155.0.8059.79",
+        "go": "go version go1.26.4 linux/amd64",
+        "node": "v24.15.0",
+        "supervisor": "go1.26.4"
+      }
+    },
+    {
+      "path": "docs/evaluations/test-adapters/observations.v2/node-field-tooling.v1.json",
+      "sha256": "1ddc44e68459d8da7a039dc7074bbdb89e10bb6486388ed59aa6b3676aa42f1d",
+      "bytes": 42986,
+      "caseId": "node-field-tooling",
+      "engineState": "completed",
+      "assertionVerdict": "pass",
+      "operationalOutcome": "passed",
+      "attemptedSteps": 1,
+      "skippedSteps": 0,
+      "runtimeVersions": {
+        "bubblewrap": "bubblewrap 0.12.0",
+        "chrome": "Google Chrome 155.0.8059.79",
+        "go": "go version go1.26.4 linux/amd64",
+        "node": "v24.15.0",
+        "supervisor": "go1.26.4"
+      }
+    },
+    {
+      "path": "docs/evaluations/test-adapters/observations.v2/browser-resume-review.v1.json",
+      "sha256": "f2d7d9ca0cbe5fc7e7670532d724328d75037ff383c0b006c3d4cd659670acf5",
+      "bytes": 1294709,
+      "caseId": "browser-resume-review",
+      "engineState": "completed",
+      "assertionVerdict": "pass",
+      "operationalOutcome": "passed",
+      "attemptedSteps": 1,
+      "skippedSteps": 0,
+      "runtimeVersions": {
+        "bubblewrap": "bubblewrap 0.12.0",
+        "chrome": "Google Chrome 155.0.8059.79",
+        "go": "go version go1.26.4 linux/amd64",
+        "node": "v24.15.0",
+        "supervisor": "go1.26.4"
+      }
+    },
+    {
+      "path": "docs/evaluations/test-adapters/observations.v2/browser-canonical-edit.v1.json",
+      "sha256": "fa2722cc18a2133fa2a7982935ab80b99697b8f0206a4904d5d3cc898bde965e",
+      "bytes": 120805,
+      "caseId": "browser-canonical-edit",
+      "engineState": "completed",
+      "assertionVerdict": "fail",
+      "operationalOutcome": "assertion_failed",
+      "attemptedSteps": 1,
+      "skippedSteps": 0,
+      "runtimeVersions": {
+        "bubblewrap": "bubblewrap 0.12.0",
+        "chrome": "Google Chrome 155.0.8059.79",
+        "go": "go version go1.26.4 linux/amd64",
+        "node": "v24.15.0",
+        "supervisor": "go1.26.4"
+      }
+    },
+    {
+      "path": "docs/evaluations/test-adapters/observations.v2/browser-enrichment.v1.json",
+      "sha256": "b7a0447f2f3fc2cb965a99165c6fee6df903825afbcd39fa7aaaccf332e06aa1",
+      "bytes": 963665,
+      "caseId": "browser-enrichment",
+      "engineState": "completed",
+      "assertionVerdict": "fail",
+      "operationalOutcome": "assertion_failed",
+      "attemptedSteps": 1,
+      "skippedSteps": 0,
+      "runtimeVersions": {
+        "bubblewrap": "bubblewrap 0.12.0",
+        "chrome": "Google Chrome 155.0.8059.79",
+        "go": "go version go1.26.4 linux/amd64",
+        "node": "v24.15.0",
+        "supervisor": "go1.26.4"
+      }
+    },
+    {
+      "path": "docs/evaluations/test-adapters/observations.v2/native-print-capability.v1.json",
+      "sha256": "de5fd73d5b4454cf83860dd6e3b391c1f8d41367af39befec53725897a93e19a",
+      "bytes": 37713,
+      "caseId": "native-print-capability",
+      "engineState": "failed",
+      "assertionVerdict": "blocked",
+      "operationalOutcome": "native_print_unavailable",
+      "attemptedSteps": 0,
+      "skippedSteps": 1,
+      "runtimeVersions": {
+        "bubblewrap": "bubblewrap 0.12.0",
+        "chrome": "Google Chrome 155.0.8059.79",
+        "go": "go version go1.26.4 linux/amd64",
+        "node": "v24.15.0",
+        "supervisor": "go1.26.4"
+      }
+    },
+    {
+      "path": "docs/evaluations/test-adapters/observations.v2/probe-assertion.v1.json",
+      "sha256": "041f20bb0fab21280d939b30b9cf6c3537804a50e3cf97169f1f0d35beb0c9ef",
+      "bytes": 39728,
+      "caseId": "probe-assertion",
+      "engineState": "completed",
+      "assertionVerdict": "fail",
+      "operationalOutcome": "assertion_failed",
+      "attemptedSteps": 1,
+      "skippedSteps": 0,
+      "runtimeVersions": {
+        "bubblewrap": "bubblewrap 0.12.0",
+        "chrome": "Google Chrome 155.0.8059.79",
+        "go": "go version go1.26.4 linux/amd64",
+        "node": "v24.15.0",
+        "supervisor": "go1.26.4"
+      }
+    },
+    {
+      "path": "docs/evaluations/test-adapters/observations.v2/probe-crash.v1.json",
+      "sha256": "c344f690557b5e91a0695c390102e366604227cde3895eee1cd211fa59f9f1ad",
+      "bytes": 38314,
+      "caseId": "probe-crash",
+      "engineState": "failed",
+      "assertionVerdict": "blocked",
+      "operationalOutcome": "crashed",
+      "attemptedSteps": 1,
+      "skippedSteps": 0,
+      "runtimeVersions": {
+        "bubblewrap": "bubblewrap 0.12.0",
+        "chrome": "Google Chrome 155.0.8059.79",
+        "go": "go version go1.26.4 linux/amd64",
+        "node": "v24.15.0",
+        "supervisor": "go1.26.4"
+      }
+    }
+  ],
+  "typedArtifacts": 26,
+  "origin": "synthetic-offline-local-host",
+  "limits": [
+    "Finite existing tests only; no new semantic, live provider, deployed, native-PDF or population acceptance claims",
+    "Canonical-edit and enrichment overflow failures remain failures; their cause is unverified",
+    "Compiler VCS metadata may be unavailable in go test; source snapshots alone do not independently prove binary correspondence",
+    "V1 inputs/reports remain immutable; V2 reflects bounded guard-probe cleanup and shared test setup"
+  ]
+}
