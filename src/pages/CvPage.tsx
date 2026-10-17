@@ -7,7 +7,8 @@ import {
   createCuratedCv,
   parseCuratedCv,
   generateCv,
-  acceptCvResult,
+  cvReviewConfirmed,
+  cvReviewEdited,
   cvReviewRemoved,
   cvReviewResolved,
   cvReviewUnits,
@@ -240,15 +241,16 @@ export default function CvPage() {
     }
     try {
       // Revalidate the reviewed content at acceptance instead of trusting the
-      // rendered state: unresolved machine wording is rejected, not promoted.
-      const reviewed = acceptCvResult(pending, liveFacts, review)
+      // rendered state: unresolved machine wording is rejected, not promoted,
+      // and explicit edits/confirmations are recorded with user provenance.
       const saved = createCuratedCv(
         state.repository,
         liveFacts,
-        reviewed,
+        pending,
         state.cvLanguage,
         preferences.density,
         profileDocument ?? undefined,
+        review,
       )
       // Preserve the valid previous document if storage cannot accept its replacement.
       const nextChoices = { ...emptyCvChoices(), summary: saved.summary }
@@ -278,13 +280,19 @@ export default function CvPage() {
         (unit) => unit.kind === "summary" && !cvReviewRemoved(unit, review),
       )
     : true
+  // The preview shows the wording acceptance will actually store: removed
+  // sentences drop out and explicit user edits replace the machine text.
   const retainedSummary = pending
     ? pending.summary
-        .filter(
-          (_item, index) =>
-            !review.discardedSummaryIds.includes(`summary:${index}`),
+        .map((s, index) =>
+          review.discardedSummaryIds.includes(`summary:${index}`)
+            ? null
+            : (cvReviewEdited(
+                { id: `summary:${index}`, text: s.text },
+                review,
+              ) ?? s.text),
         )
-        .map((s) => s.text)
+        .filter((text): text is string => text !== null)
         .join(" ")
     : ""
   const supportLabel = (status: CvSupportStatus) =>
@@ -314,6 +322,33 @@ export default function CvPage() {
             })(),
           },
     )
+  const setUnitEdit = (unit: CvReviewUnit, text: string) =>
+    setReview((previous) => ({
+      ...previous,
+      editedText: { ...(previous.editedText ?? {}), [unit.id]: text },
+      confirmedIds: (previous.confirmedIds ?? []).filter(
+        (id) => id !== unit.id,
+      ),
+    }))
+  const clearUnitEdit = (unit: CvReviewUnit) =>
+    setReview((previous) => {
+      const editedText = { ...(previous.editedText ?? {}) }
+      delete editedText[unit.id]
+      return { ...previous, editedText }
+    })
+  const toggleConfirm = (unit: CvReviewUnit) =>
+    setReview((previous) => {
+      const editedText = { ...(previous.editedText ?? {}) }
+      delete editedText[unit.id]
+      const confirmedIds = previous.confirmedIds ?? []
+      return {
+        ...previous,
+        editedText,
+        confirmedIds: confirmedIds.includes(unit.id)
+          ? confirmedIds.filter((id) => id !== unit.id)
+          : [...confirmedIds, unit.id],
+      }
+    })
   const sufficient = liveFacts.some((f) =>
     [
       "skills",
@@ -1288,6 +1323,10 @@ export default function CvPage() {
                       <ul className="space-y-3">
                         {reviewUnits.map((unit) => {
                           const removed = cvReviewRemoved(unit, review)
+                          const edited = cvReviewEdited(unit, review)
+                          const confirmed = cvReviewConfirmed(unit, review)
+                          const editing =
+                            review.editedText?.[unit.id] !== undefined
                           const cited = liveFacts.filter((f) =>
                             unit.sourceIds.includes(f.id),
                           )
@@ -1309,9 +1348,27 @@ export default function CvPage() {
                                     ? "cv.reviewUnitSummary"
                                     : "cv.reviewUnitWording",
                                 )}{" "}
-                                · {supportLabel(unit.status)}
+                                {/* User-authored wording has no active machine
+                                status; any earlier assessment is history only. */}
+                                {removed || (!edited && !confirmed)
+                                  ? ` · ${supportLabel(unit.status)}`
+                                  : ""}
                                 {removed ? ` · ${t("cv.reviewRemoved")}` : ""}
                               </p>
+                              {!removed && (edited || confirmed) && (
+                                <p
+                                  className="text-[10px] uppercase tracking-widest text-[var(--color-accent)]"
+                                  data-cv-review-provenance={
+                                    edited ? "user_edited" : "user_confirmed"
+                                  }
+                                >
+                                  {t(
+                                    edited
+                                      ? "cv.reviewEditedByUser"
+                                      : "cv.reviewConfirmedByUser",
+                                  )}
+                                </p>
+                              )}
                               <p
                                 className={`text-xs leading-5 ${
                                   removed
@@ -1320,7 +1377,7 @@ export default function CvPage() {
                                 }`}
                                 data-cv-review-text
                               >
-                                {unit.text}
+                                {edited ?? unit.text}
                               </p>
                               {unit.reason && (
                                 <p
@@ -1369,6 +1426,65 @@ export default function CvPage() {
                                     ? t("cv.reviewUseRewrite")
                                     : t("cv.reviewRevertRewrite")}
                               </button>
+                              {!removed && (
+                                <div className="mt-2 border-l border-[var(--color-border)] pl-2">
+                                  <p className="mb-1 text-[10px] text-[var(--color-muted-fg)]">
+                                    {t("cv.reviewCorrectionNote")}
+                                  </p>
+                                  <div className="flex flex-wrap gap-3">
+                                    <button
+                                      type="button"
+                                      aria-pressed={editing}
+                                      data-cv-review-edit-toggle
+                                      onClick={() =>
+                                        editing
+                                          ? clearUnitEdit(unit)
+                                          : setUnitEdit(unit, unit.text)
+                                      }
+                                      className="text-xs underline"
+                                    >
+                                      {t(
+                                        editing
+                                          ? "cv.reviewCancelEdit"
+                                          : "cv.reviewEditText",
+                                      )}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      aria-pressed={confirmed}
+                                      data-cv-review-confirm
+                                      onClick={() => toggleConfirm(unit)}
+                                      className="text-xs underline"
+                                    >
+                                      {t(
+                                        confirmed
+                                          ? "cv.reviewUnconfirm"
+                                          : "cv.reviewConfirm",
+                                      )}
+                                    </button>
+                                  </div>
+                                  {editing && (
+                                    <div className="mt-2">
+                                      <textarea
+                                        data-cv-review-edit-input
+                                        aria-label={t("cv.reviewEditText")}
+                                        rows={2}
+                                        value={
+                                          review.editedText?.[unit.id] ??
+                                          unit.text
+                                        }
+                                        onChange={(event) =>
+                                          setUnitEdit(unit, event.target.value)
+                                        }
+                                        className="w-full resize-y border border-[var(--color-border)] bg-[var(--color-card)] p-2 text-xs"
+                                      />
+                                      <p className="text-[10px] text-[var(--color-muted-fg)]">
+                                        {t("cv.reviewEditHint")}
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </li>
                           )
                         })}

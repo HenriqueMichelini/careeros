@@ -129,7 +129,7 @@ const messages = {
     "cv.generateAccept": "Accept and replace CV",
     "cv.reviewTitle": "Review each generated statement",
     "cv.reviewIntro":
-      "Each sentence and rewrite was assessed against its cited facts. Uncertain or unsupported wording cannot be accepted as verified: discard the sentence or revert the rewrite. Source freshness stays separate from this assessment.",
+      "Each sentence and rewrite was assessed against its cited facts. Uncertain or unsupported wording cannot be accepted as verified: discard the sentence, revert the rewrite, edit the wording yourself, or confirm it as your own. Source freshness stays separate from this assessment.",
     "cv.reviewUnitSummary": "Summary sentence",
     "cv.reviewUnitWording": "Supporting rewrite",
     "cv.reviewSupported": "Supported",
@@ -142,8 +142,20 @@ const messages = {
     "cv.reviewRevertRewrite": "Revert this rewrite",
     "cv.reviewUseRewrite": "Use this rewrite",
     "cv.reviewRemoved": "Removed from this CV",
+    "cv.reviewCorrectionNote":
+      "Editing or confirming records your own wording; it is not machine-verified and never changes your Profile.",
+    "cv.reviewEditText": "Edit this wording",
+    "cv.reviewCancelEdit": "Stop editing",
+    "cv.reviewConfirm": "Confirm as my own wording",
+    "cv.reviewUnconfirm": "Remove my confirmation",
+    "cv.reviewEditHint":
+      "Your edited text is accepted as your own wording, kept with its cited sources as history. It is never labeled machine-supported.",
+    "cv.reviewEditedByUser":
+      "Edited by you — your own wording, not machine-verified",
+    "cv.reviewConfirmedByUser":
+      "Confirmed by you — your own wording, not machine-verified",
     "cv.reviewBlocked":
-      "Resolve the remaining uncertain or unsupported statements before accepting: discard the sentence or revert the rewrite, or generate again.",
+      "Resolve the remaining uncertain or unsupported statements before accepting: discard the sentence, revert the rewrite, edit the wording yourself, or confirm it as your own — or generate again.",
     "cv.reviewEmpty":
       "Keep at least one reviewed summary sentence. If you remove all summary content, write your own summary; no filler is added.",
     "cv.reviewBlockedError":
@@ -1049,7 +1061,7 @@ const messages = {
     "cv.generateAccept": "Aceitar e substituir CV",
     "cv.reviewTitle": "Revise cada afirmação gerada",
     "cv.reviewIntro":
-      "Cada frase e reescrita foi avaliada em relação aos fatos citados. Texto incerto ou sem apoio não pode ser aceito como verificado: descarte a frase ou reverta a reescrita. A atualidade da fonte é separada desta avaliação.",
+      "Cada frase e reescrita foi avaliada em relação aos fatos citados. Texto incerto ou sem apoio não pode ser aceito como verificado: descarte a frase, reverta a reescrita, edite o texto você mesmo ou confirme-o como seu. A atualidade da fonte é separada desta avaliação.",
     "cv.reviewUnitSummary": "Frase do resumo",
     "cv.reviewUnitWording": "Reescrita de apoio",
     "cv.reviewSupported": "Com apoio",
@@ -1062,8 +1074,20 @@ const messages = {
     "cv.reviewRevertRewrite": "Reverter esta reescrita",
     "cv.reviewUseRewrite": "Usar esta reescrita",
     "cv.reviewRemoved": "Removido deste CV",
+    "cv.reviewCorrectionNote":
+      "Editar ou confirmar registra o seu próprio texto; ele não é verificado por máquina e nunca altera o seu Perfil.",
+    "cv.reviewEditText": "Editar este texto",
+    "cv.reviewCancelEdit": "Parar de editar",
+    "cv.reviewConfirm": "Confirmar como meu texto",
+    "cv.reviewUnconfirm": "Remover minha confirmação",
+    "cv.reviewEditHint":
+      "O texto editado é aceito como seu, mantendo as fontes citadas como histórico. Ele nunca é marcado como comprovado por máquina.",
+    "cv.reviewEditedByUser":
+      "Editado por você — texto próprio, não verificado por máquina",
+    "cv.reviewConfirmedByUser":
+      "Confirmado por você — texto próprio, não verificado por máquina",
     "cv.reviewBlocked":
-      "Resolva as afirmações incertas ou sem apoio antes de aceitar: descarte a frase ou reverta a reescrita, ou gere novamente.",
+      "Resolva as afirmações incertas ou sem apoio antes de aceitar: descarte a frase, reverta a reescrita, edite o texto você mesmo ou confirme-o como seu — ou gere novamente.",
     "cv.reviewEmpty":
       "Mantenha pelo menos uma frase revisada do resumo. Se remover todo o resumo, escreva o seu próprio resumo; nenhum texto é inventado.",
     "cv.reviewBlockedError":
