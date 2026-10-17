@@ -4,6 +4,11 @@ import { readFileSync, writeFileSync, mkdtempSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import ts from "typescript"
+import {
+  v3Response,
+  v3ResponseExpression,
+  repositoryDefaults,
+} from "./cv-support-fixtures.mjs"
 const path = join(
   mkdtempSync(join(tmpdir(), "cv-generation-")),
   "generation.mjs",
@@ -186,7 +191,7 @@ test("requested density travels with facts and CV language; accepted density sur
       let outbound
       globalThis.fetch = async (_, options) => {
         outbound = JSON.parse(options.body)
-        return new Response(JSON.stringify(response))
+        return new Response(JSON.stringify(v3Response(response)))
       }
       const result = await generateCv(
         facts,
@@ -413,10 +418,12 @@ test("only minimized stable facts leave the client; evidence and contact stay lo
       assert.ok(!options.body.includes("PRIVATE-EXCERPT"))
       assert.equal(outbound.facts[0].evidence, undefined)
       return new Response(
-        JSON.stringify({
-          summary: [{ sourceIds: ["skill-a"], text: facts[0].text }],
-          selected: ["skill-a"],
-        }),
+        JSON.stringify(
+          v3Response({
+            summary: [{ sourceIds: ["skill-a"], text: facts[0].text }],
+            selected: ["skill-a"],
+          }),
+        ),
       )
     }
     await generateCv(facts, "en", "sk-test", new AbortController().signal)
@@ -487,9 +494,14 @@ test("saved support context excludes unrelated private Profile fields", () => {
   assert.ok(!JSON.stringify(saved).includes("PRIVATE-SALARY"))
 })
 
-test("EN/PT production-handler results reach client acceptance without changing protected facts", async () => {
+// ADR 0003 / issue #128: after coordinated activation the production client
+// requests the v3 assessment, so a legacy (non-opt-in) handler response is no
+// longer a client request path. This test keeps the retained legacy-response
+// corpus as a source of fresh production-handler output and feeds it straight
+// into the client validation/acceptance functions. The activated HTTP path is
+// covered by the v3 integration check.
+test("EN/PT production-handler results remain valid client acceptance inputs without changing protected facts", async () => {
   const { execFileSync } = await import("node:child_process")
-  const { generateCv } = await import(path)
   const root = new URL("..", import.meta.url).pathname
   const outputPath = join(
     mkdtempSync(join(tmpdir(), "cv-reliability-")),
@@ -525,149 +537,88 @@ test("EN/PT production-handler results reach client acceptance without changing 
       "utf8",
     ),
   )
-  const originalFetch = globalThis.fetch
-  try {
-    for (const c of corpus.cases) {
-      const run = report.runs.find((r) => r.id === c.id)
-      const facts = c.request.facts.map((f) => ({ ...f, evidence: [] }))
-      let calls = 0
-      globalThis.fetch = async () => {
-        calls++
-        return new Response(JSON.stringify(run.output), { status: run.status })
-      }
-      if (c.role === "negative_control") {
-        await assert.rejects(
-          () =>
-            generateCv(
-              facts,
-              c.language,
-              "sk-controlled",
-              new AbortController().signal,
-            ),
-          /invalid_output/,
-          c.id,
-        )
-        assert.equal(calls, 1, c.id)
+  for (const c of corpus.cases) {
+    const run = report.runs.find((r) => r.id === c.id)
+    const facts = c.request.facts.map((f) => ({ ...f, evidence: [] }))
+    if (c.role === "negative_control") {
+      assert.equal(run.status, 502, c.id)
+      assert.equal(validateCvResult(run.output, facts), false, c.id)
+      assert.equal((run.calls ?? []).length, 1, c.id)
+      continue
+    }
+    assert.equal(run.status, 200, c.id)
+    assert.equal((run.calls ?? []).length, 1, c.id)
+    const result = run.output
+    assert.ok(validateCvResult(result, facts), c.id)
+    assert.ok(result.summary.length > 0, c.id)
+    const repo = {
+      ...structuredClone(profile),
+      skills: "",
+      tools: "",
+      competencies: "",
+      experience: [],
+      projects: [],
+      education: [],
+      certifications: [],
+      languages: [],
+    }
+    for (const f of facts) {
+      if (!f.entryId) {
+        repo[f.field] = f.text
         continue
       }
-      const result = await generateCv(
+      let entry = repo[f.section].find((e) => e.id === f.entryId)
+      if (!entry) {
+        entry = { id: f.entryId, ...repositoryDefaults[f.section] }
+        repo[f.section].push(entry)
+      }
+      entry[f.field] = f.text
+    }
+    const original = structuredClone(repo)
+    const doc = facts[0].reference
+      ? {
+          id: "synthetic-profile",
+          revision: 1,
+          entities: [],
+          evidence: [],
+          links: [],
+          facts: facts.map((f) => ({ ...f, value: f.text, revision: 1 })),
+        }
+      : undefined
+    for (const density of ["compact", "balanced", "detailed"]) {
+      const saved = createCuratedCv(
+        repo,
         facts,
+        result,
         c.language,
-        "sk-controlled",
-        new AbortController().signal,
+        density,
+        doc,
       )
-      assert.equal(calls, 1, c.id)
-      assert.ok(validateCvResult(result, facts), c.id)
-      assert.ok(result.summary.length > 0, c.id)
-      const repo = {
-        ...structuredClone(profile),
-        skills: "",
-        tools: "",
-        competencies: "",
-        experience: [],
-        projects: [],
-        education: [],
-        certifications: [],
-        languages: [],
-      }
-      for (const f of facts) {
-        if (!f.entryId) {
-          repo[f.field] = f.text
-          continue
-        }
-        let entry = repo[f.section].find((e) => e.id === f.entryId)
-        if (!entry) {
-          const defaults = {
-            experience: {
-              title: "",
-              company: "",
-              startDate: "",
-              endDate: "",
-              current: false,
-              location: "",
-              description: "",
-              responsibilities: "",
-              achievements: "",
-            },
-            projects: {
-              name: "",
-              description: "",
-              technologies: "",
-              url: "",
-              highlights: "",
-            },
-            education: {
-              degree: "",
-              institution: "",
-              location: "",
-              graduationDate: "",
-              details: "",
-            },
-            certifications: {
-              name: "",
-              issuer: "",
-              date: "",
-              credentialId: "",
-              url: "",
-            },
-            languages: { name: "", proficiency: "" },
-          }
-          entry = { id: f.entryId, ...defaults[f.section] }
-          repo[f.section].push(entry)
-        }
-        entry[f.field] = f.text
-      }
-      const original = structuredClone(repo)
-      const doc = facts[0].reference
-        ? {
-            id: "synthetic-profile",
-            revision: 1,
-            entities: [],
-            evidence: [],
-            links: [],
-            facts: facts.map((f) => ({ ...f, value: f.text, revision: 1 })),
-          }
-        : undefined
-      for (const density of ["compact", "balanced", "detailed"]) {
-        const saved = createCuratedCv(
-          repo,
-          facts,
-          result,
-          c.language,
-          density,
-          doc,
+      assert.equal(saved.cvLanguage, c.language)
+      assert.equal(saved.density, density)
+      assert.deepEqual(parseCuratedCv(JSON.stringify(saved)), saved, c.id)
+      assert.deepEqual(repo, original, c.id)
+      assert.deepEqual(
+        saved.sources.map((f) => f.text),
+        result.selected.map((id) => facts.find((f) => f.id === id).text),
+        c.id,
+      )
+      if (c.id.endsWith("heavy")) {
+        assert.equal(saved.repository.experience.length, 1)
+        assert.equal(saved.repository.experience[0].company, "Harbor 18")
+        assert.equal(saved.repository.experience[0].startDate, "2021")
+        assert.equal(saved.repository.experience[0].endDate, "2024")
+        assert.equal(saved.repository.education[0].degree, "BSc Design")
+        assert.equal(
+          saved.repository.certifications[0].name,
+          "Design Certificate",
         )
-        assert.equal(saved.cvLanguage, c.language)
-        assert.equal(saved.density, density)
-        assert.deepEqual(parseCuratedCv(JSON.stringify(saved)), saved, c.id)
-        assert.deepEqual(repo, original, c.id)
-        assert.deepEqual(
-          saved.sources.map((f) => f.text),
-          result.selected.map((id) => facts.find((f) => f.id === id).text),
-          c.id,
-        )
-        if (c.id.endsWith("heavy")) {
-          assert.equal(saved.repository.experience.length, 1)
-          assert.equal(saved.repository.experience[0].company, "Harbor 18")
-          assert.equal(saved.repository.experience[0].startDate, "2021")
-          assert.equal(saved.repository.experience[0].endDate, "2024")
-          assert.equal(saved.repository.education[0].degree, "BSc Design")
-          assert.equal(
-            saved.repository.certifications[0].name,
-            "Design Certificate",
-          )
-          assert.equal(
-            saved.repository.languages[0].proficiency,
-            "Intermediate",
-          )
-          assert.equal(saved.repository.projects[0].technologies, "Python")
-          assert.match(saved.summary, /20%/)
-          assert.ok(!saved.repository.projects[0].highlights.includes("20%"))
-        }
+        assert.equal(saved.repository.languages[0].proficiency, "Intermediate")
+        assert.equal(saved.repository.projects[0].technologies, "Python")
+        assert.match(saved.summary, /20%/)
+        assert.ok(!saved.repository.projects[0].highlights.includes("20%"))
       }
     }
-  } finally {
-    globalThis.fetch = originalFetch
   }
 })
 
@@ -811,8 +762,8 @@ test("client consumes a v3 response and rejects an incomplete or unknown-version
       "sk-test",
       new AbortController().signal,
     )
-    // Activation is #128: the legacy request is unchanged until then.
-    assert.equal(outbound.statementSupport, undefined)
+    // ADR 0003 / issue #128: activation sends the v3 request.
+    assert.equal(outbound.statementSupport, true)
     assert.equal(result.support.assessment, "complete")
     assert.deepEqual(
       cvReviewUnits(result).map((unit) => [unit.id, unit.status]),
@@ -849,17 +800,13 @@ test("client consumes a v3 response and rejects an incomplete or unknown-version
       () => generateCv(facts, "en", "sk-test", new AbortController().signal),
       /invalid_output/,
     )
-    // A legacy v2 response without any version stays accepted.
+    // A legacy v2 response without any requested assessment is rejected rather
+    // than silently accepting unassessed machine wording.
     respond(core)
-    const legacy = await generateCv(
-      facts,
-      "en",
-      "sk-test",
-      new AbortController().signal,
+    await assert.rejects(
+      () => generateCv(facts, "en", "sk-test", new AbortController().signal),
+      /invalid_output/,
     )
-    assert.equal(legacy.support, undefined)
-    assert.equal(cvReviewUnits(legacy), null)
-    assert.ok(cvReviewResolved(legacy, emptyCvReview))
   } finally {
     globalThis.fetch = original
   }
@@ -1489,4 +1436,24 @@ test("an assessed v3 snapshot round-trips with its trust intact in EN/PT", () =>
     assert.equal(cvWordingTrust(reloaded), "assessed")
     assert.deepEqual(reloaded, saved)
   }
+})
+
+// The browser check injects the controlled v3 wrapper as a page expression
+// string because a browser page cannot import this module. Guard against the
+// two encodings of the same contract drifting apart.
+test("the module and browser expression fixtures encode the same v3 contract", () => {
+  const core = {
+    summary: [
+      { sourceIds: ["a"], text: "Alpha." },
+      { sourceId: "b", text: "Beta." },
+    ],
+    selected: ["a", "b"],
+    wording: { b: "Beta rewrite." },
+  }
+  const statuses = { "summary:1": "unsupported", "wording:b": "uncertain" }
+  const fromModule = v3Response(core, statuses)
+  const fromExpression = JSON.parse(
+    new Function(`return (${v3ResponseExpression})`)()(core, statuses),
+  )
+  assert.deepEqual(fromExpression, fromModule)
 })

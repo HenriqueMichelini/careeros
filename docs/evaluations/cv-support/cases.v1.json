@@ -1,0 +1,763 @@
+{
+  "version": "cv-support-fixtures-v1",
+  "cases": [
+    {
+      "id": "en-support-kubernetes-unsupported",
+      "task": "cv_generation",
+      "language": "en",
+      "split": "development",
+      "tags": ["cv-support", "retained-reproduction", "unsupported-technology"],
+      "request": {
+        "cvLanguage": "en",
+        "density": "balanced",
+        "statementSupport": true,
+        "facts": [
+          {
+            "id": "java",
+            "section": "skills",
+            "entryId": "",
+            "field": "skills",
+            "text": "Java"
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [
+            {
+              "sourceIds": ["java"],
+              "text": "Builds production Kubernetes platforms."
+            }
+          ],
+          "selected": ["java"],
+          "wording": []
+        },
+        {
+          "judgments": [
+            {
+              "id": "summary:0",
+              "status": "unsupported",
+              "reason": "The cited fact names Java only, which does not entail Kubernetes platforms."
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "selected-java",
+          "group": "selected",
+          "match": { "text": "^java$" }
+        }
+      ],
+      "forbidden": [],
+      "role": "acceptance",
+      "notes": "Retained #78/#122 Java-only to Kubernetes reproduction. The candidate is returned; the controlled assessment marks the machine sentence unsupported so the client gate blocks acceptance. Synthetic judgment only."
+    },
+    {
+      "id": "en-support-responsibility-unsupported",
+      "task": "cv_generation",
+      "language": "en",
+      "split": "heldout",
+      "tags": ["cv-support", "held-out", "unsupported-responsibility"],
+      "request": {
+        "cvLanguage": "en",
+        "density": "balanced",
+        "statementSupport": true,
+        "facts": [
+          {
+            "id": "desc",
+            "section": "experience",
+            "entryId": "e1",
+            "field": "description",
+            "text": "Filed routine reports."
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [
+            {
+              "sourceIds": ["desc"],
+              "text": "Owns company-wide strategy."
+            }
+          ],
+          "selected": ["desc"],
+          "wording": []
+        },
+        {
+          "judgments": [
+            {
+              "id": "summary:0",
+              "status": "unsupported",
+              "reason": "Filing routine reports does not establish owning company strategy."
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "selected-desc",
+          "group": "selected",
+          "match": { "text": "^desc$" }
+        }
+      ],
+      "forbidden": [],
+      "role": "acceptance",
+      "notes": "Held-out ordinary responsibility beyond the retained technology pair. Controlled assessment classification only."
+    },
+    {
+      "id": "en-support-qualification-unsupported",
+      "task": "cv_generation",
+      "language": "en",
+      "split": "heldout",
+      "tags": ["cv-support", "held-out", "unsupported-qualification"],
+      "request": {
+        "cvLanguage": "en",
+        "density": "balanced",
+        "statementSupport": true,
+        "facts": [
+          {
+            "id": "deg",
+            "section": "education",
+            "entryId": "s1",
+            "field": "degree",
+            "text": "BSc Design"
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [
+            {
+              "sourceIds": ["deg"],
+              "text": "Completed a postgraduate degree in Computer Science."
+            }
+          ],
+          "selected": ["deg"],
+          "wording": []
+        },
+        {
+          "judgments": [
+            {
+              "id": "summary:0",
+              "status": "unsupported",
+              "reason": "The cited degree is BSc Design; no postgraduate computer science qualification is established."
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "selected-deg",
+          "group": "selected",
+          "match": { "text": "^deg$" }
+        }
+      ],
+      "forbidden": [],
+      "role": "acceptance",
+      "notes": "Held-out unsupported qualification outside the deterministic strength-marker list, so it reaches the assessment rather than a hard guard."
+    },
+    {
+      "id": "en-support-paraphrase-supported",
+      "task": "cv_generation",
+      "language": "en",
+      "split": "development",
+      "tags": ["cv-support", "benign", "supported-paraphrase"],
+      "request": {
+        "cvLanguage": "en",
+        "density": "balanced",
+        "statementSupport": true,
+        "facts": [
+          {
+            "id": "ach",
+            "section": "experience",
+            "entryId": "e1",
+            "field": "achievements",
+            "text": "Reduced latency by 20%."
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [
+            {
+              "sourceIds": ["ach"],
+              "text": "Cut latency by 20%."
+            }
+          ],
+          "selected": ["ach"],
+          "wording": []
+        },
+        {
+          "judgments": [
+            {
+              "id": "summary:0",
+              "status": "supported",
+              "reason": "Faithful paraphrase; the metric and meaning are preserved."
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "supported-summary",
+          "group": "summary",
+          "match": { "text": "^Cut latency by 20%\\.$" }
+        },
+        {
+          "id": "selected-ach",
+          "group": "selected",
+          "match": { "text": "^ach$" }
+        }
+      ],
+      "forbidden": [],
+      "role": "acceptance",
+      "notes": "Benign supported paraphrase that must stay usable, so the gate does not over-block. Synthetic supported judgment."
+    },
+    {
+      "id": "en-support-translation-supported",
+      "task": "cv_generation",
+      "language": "en",
+      "split": "heldout",
+      "tags": ["cv-support", "benign", "supported-translation"],
+      "request": {
+        "cvLanguage": "en",
+        "density": "balanced",
+        "statementSupport": true,
+        "facts": [
+          {
+            "id": "ach",
+            "section": "experience",
+            "entryId": "e1",
+            "field": "achievements",
+            "text": "Reduziu a latência em 20%."
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [
+            {
+              "sourceIds": ["ach"],
+              "text": "Reduced latency by 20%."
+            }
+          ],
+          "selected": ["ach"],
+          "wording": []
+        },
+        {
+          "judgments": [
+            {
+              "id": "summary:0",
+              "status": "supported",
+              "reason": "Faithful cross-language translation; the metric and meaning are preserved."
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "supported-summary",
+          "group": "summary",
+          "match": { "text": "^Reduced latency by 20%\\.$" }
+        },
+        {
+          "id": "selected-ach",
+          "group": "selected",
+          "match": { "text": "^ach$" }
+        }
+      ],
+      "forbidden": [],
+      "role": "acceptance",
+      "notes": "Benign supported cross-language translation (a Portuguese source fact rendered in English) that must remain usable. Synthetic supported judgment."
+    },
+    {
+      "id": "en-support-assessment-unavailable",
+      "task": "cv_generation",
+      "language": "en",
+      "split": "development",
+      "tags": ["cv-support", "fail-closed", "assessment-unavailable"],
+      "request": {
+        "cvLanguage": "en",
+        "density": "balanced",
+        "statementSupport": true,
+        "facts": [
+          {
+            "id": "skill",
+            "section": "skills",
+            "entryId": "",
+            "field": "skills",
+            "text": "Research"
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [
+            {
+              "sourceIds": ["skill"],
+              "text": "Uses research."
+            }
+          ],
+          "selected": ["skill"],
+          "wording": []
+        },
+        {
+          "judgments": [
+            {
+              "id": "summary:0",
+              "status": "supported",
+              "reason": "Unused: the controlled assessment transport returns HTTP 500."
+            }
+          ]
+        }
+      ],
+      "providerStatuses": [200, 500],
+      "gold": [
+        {
+          "id": "supported-summary",
+          "group": "summary",
+          "match": { "text": "^Uses research\\.$" }
+        },
+        {
+          "id": "selected-skill",
+          "group": "selected",
+          "match": { "text": "^skill$" }
+        }
+      ],
+      "forbidden": [],
+      "role": "acceptance",
+      "notes": "Assessment outage fails closed: the candidate returns with every statement uncertain, so nothing is accepted as supported."
+    },
+    {
+      "id": "en-support-hard-guard-cross-owner",
+      "task": "cv_generation",
+      "language": "en",
+      "split": "heldout",
+      "tags": ["cv-support", "held-out", "hard-guard"],
+      "request": {
+        "cvLanguage": "en",
+        "density": "balanced",
+        "statementSupport": true,
+        "facts": [
+          {
+            "id": "a1",
+            "section": "experience",
+            "entryId": "e1",
+            "field": "achievements",
+            "text": "Reduced latency by 20%."
+          },
+          {
+            "id": "a2",
+            "section": "experience",
+            "entryId": "e2",
+            "field": "achievements",
+            "text": "Improved onboarding by 30%."
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [
+            {
+              "sourceIds": ["a1", "a2"],
+              "text": "Reduced latency by 20% and improved onboarding by 30%."
+            }
+          ],
+          "selected": ["a1", "a2"],
+          "wording": []
+        }
+      ],
+      "gold": [
+        {
+          "id": "selected-a1",
+          "group": "selected",
+          "match": { "text": "^a1$" }
+        }
+      ],
+      "forbidden": [],
+      "role": "negative_control",
+      "expectedFailures": ["HTTP 502"],
+      "notes": "Held-out cross-owner combination is a deterministic hard guard: it fails before any assessment call, so no machine wording is assessed or returned for acceptance."
+    },
+    {
+      "id": "pt-support-kubernetes-unsupported",
+      "task": "cv_generation",
+      "language": "pt-BR",
+      "split": "heldout",
+      "tags": ["cv-support", "retained-reproduction", "unsupported-technology"],
+      "request": {
+        "cvLanguage": "pt-BR",
+        "density": "balanced",
+        "statementSupport": true,
+        "facts": [
+          {
+            "id": "java",
+            "section": "skills",
+            "entryId": "",
+            "field": "skills",
+            "text": "Java"
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [
+            {
+              "sourceIds": ["java"],
+              "text": "Desenvolve plataformas Kubernetes em produção."
+            }
+          ],
+          "selected": ["java"],
+          "wording": []
+        },
+        {
+          "judgments": [
+            {
+              "id": "summary:0",
+              "status": "unsupported",
+              "reason": "O fato citado menciona apenas Java e não sustenta plataformas Kubernetes."
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "selected-java",
+          "group": "selected",
+          "match": { "text": "^java$" }
+        }
+      ],
+      "forbidden": [],
+      "role": "acceptance",
+      "notes": "Retained Portuguese reproduction of the Java-only to Kubernetes case. Synthetic judgment only."
+    },
+    {
+      "id": "pt-support-responsibility-unsupported",
+      "task": "cv_generation",
+      "language": "pt-BR",
+      "split": "heldout",
+      "tags": ["cv-support", "held-out", "unsupported-responsibility"],
+      "request": {
+        "cvLanguage": "pt-BR",
+        "density": "balanced",
+        "statementSupport": true,
+        "facts": [
+          {
+            "id": "desc",
+            "section": "experience",
+            "entryId": "e1",
+            "field": "description",
+            "text": "Preenchia relatórios de rotina."
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [
+            {
+              "sourceIds": ["desc"],
+              "text": "Define a estratégia da empresa."
+            }
+          ],
+          "selected": ["desc"],
+          "wording": []
+        },
+        {
+          "judgments": [
+            {
+              "id": "summary:0",
+              "status": "unsupported",
+              "reason": "Preencher relatórios de rotina não estabelece a definição da estratégia da empresa."
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "selected-desc",
+          "group": "selected",
+          "match": { "text": "^desc$" }
+        }
+      ],
+      "forbidden": [],
+      "role": "acceptance",
+      "notes": "Held-out Portuguese ordinary responsibility beyond the retained technology pair. Controlled classification only."
+    },
+    {
+      "id": "pt-support-qualification-unsupported",
+      "task": "cv_generation",
+      "language": "pt-BR",
+      "split": "heldout",
+      "tags": ["cv-support", "held-out", "unsupported-qualification"],
+      "request": {
+        "cvLanguage": "pt-BR",
+        "density": "balanced",
+        "statementSupport": true,
+        "facts": [
+          {
+            "id": "deg",
+            "section": "education",
+            "entryId": "s1",
+            "field": "degree",
+            "text": "Bacharelado em Design"
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [
+            {
+              "sourceIds": ["deg"],
+              "text": "Concluiu pós-graduação em Computação."
+            }
+          ],
+          "selected": ["deg"],
+          "wording": []
+        },
+        {
+          "judgments": [
+            {
+              "id": "summary:0",
+              "status": "unsupported",
+              "reason": "O título citado é Bacharelado em Design, sem pós-graduação em Computação."
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "selected-deg",
+          "group": "selected",
+          "match": { "text": "^deg$" }
+        }
+      ],
+      "forbidden": [],
+      "role": "acceptance",
+      "notes": "Held-out Portuguese unsupported qualification outside the deterministic strength-marker list."
+    },
+    {
+      "id": "pt-support-paraphrase-supported",
+      "task": "cv_generation",
+      "language": "pt-BR",
+      "split": "heldout",
+      "tags": ["cv-support", "benign", "supported-paraphrase"],
+      "request": {
+        "cvLanguage": "pt-BR",
+        "density": "balanced",
+        "statementSupport": true,
+        "facts": [
+          {
+            "id": "ach",
+            "section": "experience",
+            "entryId": "e1",
+            "field": "achievements",
+            "text": "Reduziu a latência em 20%."
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [
+            {
+              "sourceIds": ["ach"],
+              "text": "Cortou a latência em 20%."
+            }
+          ],
+          "selected": ["ach"],
+          "wording": []
+        },
+        {
+          "judgments": [
+            {
+              "id": "summary:0",
+              "status": "supported",
+              "reason": "Paráfrase fiel; a métrica e o significado são preservados."
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "supported-summary",
+          "group": "summary",
+          "match": { "text": "^Cortou a latência em 20%\\.$" }
+        },
+        {
+          "id": "selected-ach",
+          "group": "selected",
+          "match": { "text": "^ach$" }
+        }
+      ],
+      "forbidden": [],
+      "role": "acceptance",
+      "notes": "Benign supported Portuguese paraphrase that must remain usable. Synthetic supported judgment."
+    },
+    {
+      "id": "pt-support-translation-supported",
+      "task": "cv_generation",
+      "language": "pt-BR",
+      "split": "heldout",
+      "tags": ["cv-support", "benign", "supported-translation"],
+      "request": {
+        "cvLanguage": "pt-BR",
+        "density": "balanced",
+        "statementSupport": true,
+        "facts": [
+          {
+            "id": "ach",
+            "section": "experience",
+            "entryId": "e1",
+            "field": "achievements",
+            "text": "Reduced latency by 20%."
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [
+            {
+              "sourceIds": ["ach"],
+              "text": "Reduziu a latência em 20%."
+            }
+          ],
+          "selected": ["ach"],
+          "wording": []
+        },
+        {
+          "judgments": [
+            {
+              "id": "summary:0",
+              "status": "supported",
+              "reason": "Tradução fiel entre idiomas; a métrica e o significado são preservados."
+            }
+          ]
+        }
+      ],
+      "gold": [
+        {
+          "id": "supported-summary",
+          "group": "summary",
+          "match": { "text": "^Reduziu a latência em 20%\\.$" }
+        },
+        {
+          "id": "selected-ach",
+          "group": "selected",
+          "match": { "text": "^ach$" }
+        }
+      ],
+      "forbidden": [],
+      "role": "acceptance",
+      "notes": "Benign supported cross-language translation (an English source fact rendered in Portuguese) that must remain usable. Synthetic supported judgment."
+    },
+    {
+      "id": "pt-support-assessment-unavailable",
+      "task": "cv_generation",
+      "language": "pt-BR",
+      "split": "heldout",
+      "tags": ["cv-support", "fail-closed", "assessment-unavailable"],
+      "request": {
+        "cvLanguage": "pt-BR",
+        "density": "balanced",
+        "statementSupport": true,
+        "facts": [
+          {
+            "id": "skill",
+            "section": "skills",
+            "entryId": "",
+            "field": "skills",
+            "text": "Pesquisa"
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [
+            {
+              "sourceIds": ["skill"],
+              "text": "Usa pesquisa."
+            }
+          ],
+          "selected": ["skill"],
+          "wording": []
+        },
+        {
+          "judgments": [
+            {
+              "id": "summary:0",
+              "status": "supported",
+              "reason": "Não utilizado: o transporte controlado da avaliação retorna HTTP 500."
+            }
+          ]
+        }
+      ],
+      "providerStatuses": [200, 500],
+      "gold": [
+        {
+          "id": "supported-summary",
+          "group": "summary",
+          "match": { "text": "^Usa pesquisa\\.$" }
+        },
+        {
+          "id": "selected-skill",
+          "group": "selected",
+          "match": { "text": "^skill$" }
+        }
+      ],
+      "forbidden": [],
+      "role": "acceptance",
+      "notes": "Portuguese assessment outage fails closed with every statement uncertain."
+    },
+    {
+      "id": "pt-support-hard-guard-cross-owner",
+      "task": "cv_generation",
+      "language": "pt-BR",
+      "split": "heldout",
+      "tags": ["cv-support", "held-out", "hard-guard"],
+      "request": {
+        "cvLanguage": "pt-BR",
+        "density": "balanced",
+        "statementSupport": true,
+        "facts": [
+          {
+            "id": "a1",
+            "section": "experience",
+            "entryId": "e1",
+            "field": "achievements",
+            "text": "Reduziu a latência em 20%."
+          },
+          {
+            "id": "a2",
+            "section": "experience",
+            "entryId": "e2",
+            "field": "achievements",
+            "text": "Melhorou a integração em 30%."
+          }
+        ]
+      },
+      "provider": [
+        {
+          "summary": [
+            {
+              "sourceIds": ["a1", "a2"],
+              "text": "Reduziu a latência em 20% e melhorou a integração em 30%."
+            }
+          ],
+          "selected": ["a1", "a2"],
+          "wording": []
+        }
+      ],
+      "gold": [
+        {
+          "id": "selected-a1",
+          "group": "selected",
+          "match": { "text": "^a1$" }
+        }
+      ],
+      "forbidden": [],
+      "role": "negative_control",
+      "expectedFailures": ["HTTP 502"],
+      "notes": "Portuguese cross-owner combination is a deterministic hard guard that fails before any assessment call."
+    }
+  ]
+}

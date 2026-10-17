@@ -1,4 +1,5 @@
 import { savedProfileExpression } from "./profile-browser-storage.mjs"
+import { v3ResponseExpression } from "./cv-support-fixtures.mjs"
 // Browser PDF integration check. Run with: npm run test:cv-pdf
 // Requires Google Chrome, pdfinfo, and pdftotext on PATH.
 import assert from "node:assert/strict"
@@ -260,7 +261,7 @@ try {
     )
   const controlled = async () =>
     evaluate(
-      `window.__calls=0;window.fetch=async(url,options)=>{window.__calls++;window.__outbound=JSON.parse(options.body);const facts=window.__outbound.facts;const summary=facts.find(f=>f.field==='description');const selected=facts.filter(f=>['skills','title','company','startDate','endDate','description','achievements','degree','institution','graduationDate','name','highlights'].includes(f.field)).map(f=>f.id);return new Response(JSON.stringify({summary:[{sourceId:summary.id,text:summary.text}],selected}),{status:200,headers:{'Content-Type':'application/json'}})}`,
+      `window.__calls=0;window.fetch=async(url,options)=>{window.__calls++;window.__outbound=JSON.parse(options.body);const facts=window.__outbound.facts;const summary=facts.find(f=>f.field==='description');const selected=facts.filter(f=>['skills','title','company','startDate','endDate','description','achievements','degree','institution','graduationDate','name','highlights'].includes(f.field)).map(f=>f.id);return new Response((${v3ResponseExpression})({summary:[{sourceId:summary.id,text:summary.text}],selected}),{status:200,headers:{'Content-Type':'application/json'}})}`,
     )
   for (const fixture of fixtures) {
     const repo = {
@@ -471,7 +472,7 @@ try {
       "localStorage.getItem('careeros_curated_cv_v1')",
     )
     const accepted = JSON.parse(acceptedRaw)
-    assert.equal(accepted.version, 2)
+    assert.equal(accepted.version, 3)
     assert.ok(
       await evaluate(
         "document.querySelector('[data-cv-saved-support]').textContent.includes('ACCEPTED-EXCERPT') && document.querySelector('[data-cv-saved-support]').textContent.includes('professional_information')",
@@ -510,7 +511,7 @@ try {
     )
     // A persisted v1 CV remains independent: never map positional IDs to live facts.
     await evaluate(
-      `(() => {const saved=JSON.parse(localStorage.getItem('careeros_curated_cv_v1'));saved.version=1;delete saved.sourceProfileId;delete saved.context;delete saved.summarySources;saved.sources.forEach((f,i)=>{f.id='f'+i;delete f.reference;delete f.owner;delete f.evidence});localStorage.setItem('careeros_curated_cv_v1',JSON.stringify(saved));location.reload()})()`,
+      `(() => {const saved=JSON.parse(localStorage.getItem('careeros_curated_cv_v1'));saved.version=1;delete saved.sourceProfileId;delete saved.context;delete saved.summarySources;delete saved.provenance;saved.sources.forEach((f,i)=>{f.id='f'+i;delete f.reference;delete f.owner;delete f.evidence});localStorage.setItem('careeros_curated_cv_v1',JSON.stringify(saved));location.reload()})()`,
     )
     await until("!!document.querySelector('header button')")
     await evaluate("document.querySelector('header button:last-child').click()")
@@ -613,7 +614,7 @@ try {
   }
   await openCv(heavy, "en")
   await evaluate(
-    `window.fetch=async(url,options)=>{const facts=JSON.parse(options.body).facts;const summary=facts.find(f=>f.text.startsWith('Product leader designing useful services.'));const role=facts.find(f=>f.text==='Impact Studio');const ids=facts.filter(f=>f.entryId===role.entryId && f.field!=='responsibilities' || f.section==='education' || f.section==='projects' || f.text==='Research' || f.text==='Design').map(f=>f.id);return new Response(JSON.stringify({summary:[{sourceId:summary.id,text:'Product leader using research to design customer-facing services.'}],selected:ids,wording:{[summary.id]:'Designed customer-facing services using research.'}}),{status:200})}`,
+    `window.fetch=async(url,options)=>{const facts=JSON.parse(options.body).facts;const summary=facts.find(f=>f.text.startsWith('Product leader designing useful services.'));const role=facts.find(f=>f.text==='Impact Studio');const ids=facts.filter(f=>f.entryId===role.entryId && f.field!=='responsibilities' || f.section==='education' || f.section==='projects' || f.text==='Research' || f.text==='Design').map(f=>f.id);return new Response((${v3ResponseExpression})({summary:[{sourceId:summary.id,text:'Product leader using research to design customer-facing services.'}],selected:ids,wording:{[summary.id]:'Designed customer-facing services using research.'}}),{status:200})}`,
   )
   await click("Generate CV")
   await until("!!document.querySelector('[data-generated-summary]')")
@@ -764,7 +765,7 @@ try {
         const anchors=['title','company','startDate','endDate','current'];
         const selected=density==='compact' ? primary.filter(f=>anchors.includes(f.field)||f.field==='description') :
           density==='balanced' ? facts.filter(f=>f.entryId===source.entryId || f.section==='skills') : facts;
-        return new Response(JSON.stringify({summary:[{sourceId:source.id,text:source.text}],selected:selected.map(f=>f.id)}),{status:200})
+        return new Response((${v3ResponseExpression})({summary:[{sourceId:source.id,text:source.text}],selected:selected.map(f=>f.id)}),{status:200})
       }`)
       for (const density of ["compact", "balanced", "detailed"]) {
         const before = await evaluate(
@@ -980,7 +981,7 @@ try {
   }
   await openCv({ ...blank, education: fixtures[0].repo.education }, "en")
   await evaluate(
-    `window.fetch=async(url,options)=>{const facts=JSON.parse(options.body).facts;const degree=facts.find(f=>f.field==='degree');return new Response(JSON.stringify({summary:[{sourceId:degree.id,text:'Education includes a BSc Design.'}],selected:facts.map(f=>f.id)}),{status:200})}`,
+    `window.fetch=async(url,options)=>{const facts=JSON.parse(options.body).facts;const degree=facts.find(f=>f.field==='degree');return new Response((${v3ResponseExpression})({summary:[{sourceId:degree.id,text:'Education includes a BSc Design.'}],selected:facts.map(f=>f.id)}),{status:200})}`,
   )
   await click("Generate CV")
   await until("!!document.querySelector('[data-generated-summary]')")
@@ -1043,8 +1044,8 @@ try {
     await until("!!document.querySelector('[data-generated-summary]')")
     assert.equal(
       await evaluate("window.__outbound.statementSupport"),
-      undefined,
-      "activation stays with #128; the client only consumes v3 when returned",
+      true,
+      "activation sends the v3 statement-support request",
     )
     assert.equal(
       await evaluate(
@@ -1531,6 +1532,195 @@ try {
     console.log(
       fixture.locale +
         ": issue #127 legacy v2 unverified regardless of freshness, no provider call or Profile mutation, one-page export; v3 assessed survives reload",
+    )
+  }
+  // ADR 0003 / issue #128: coordinated activation end-to-end in the browser.
+  // A fully valid synthetic canonical Profile whose only skill is `Java` drives
+  // the retained Java-only -> Kubernetes case in EN and PT-BR. The controlled
+  // assessor marks the machine sentence unsupported; the review gate blocks
+  // acceptance, the 390px layout stays keyboard-accessible, the user removes the
+  // unsupported sentence, and the accepted v3 snapshot survives save/reload
+  // without mutating the canonical Profile. Controlled fixtures only: this
+  // establishes enforcement, not live assessor accuracy.
+  const pressKey = async (name, code, windowsVirtualKeyCode) => {
+    await call("Input.dispatchKeyEvent", {
+      type: "keyDown",
+      key: name,
+      code,
+      windowsVirtualKeyCode,
+      ...(name === "Enter" ? { text: "\r" } : {}),
+    })
+    await call("Input.dispatchKeyEvent", {
+      type: "keyUp",
+      key: name,
+      code,
+      windowsVirtualKeyCode,
+    })
+  }
+  for (const fixture of fixtures) {
+    const repo = {
+      ...structuredClone(fixture.repo),
+      skills: "Java",
+      competencies: "",
+      tools: "",
+    }
+    const supportedText = fixture.locale === "en" ? "Uses Java." : "Usa Java."
+    const claim =
+      fixture.locale === "en"
+        ? "Builds production Kubernetes platforms."
+        : "Desenvolve plataformas Kubernetes em produção."
+    const generate = fixture.locale === "en" ? "Generate CV" : "Gerar currículo"
+    const accept =
+      fixture.locale === "en"
+        ? "Accept and replace CV"
+        : "Aceitar e substituir CV"
+    const acceptButton = `Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()===${JSON.stringify(accept)})`
+    await openCv(repo, fixture.locale, true)
+    assert.equal(
+      await evaluate(
+        `(async()=>{const {validateProfileDocument}=await import('/src/lib/profileDocument.ts');const doc=JSON.parse(localStorage.getItem('careeros_profile_v2'));const java=doc.facts.find(f=>f.value==='Java');return validateProfileDocument(doc)&&!!java})()`,
+      ),
+      true,
+      "browser flow starts from a fully valid synthetic canonical Profile",
+    )
+    const originalProfile = await evaluate(savedProfileExpression)
+    await evaluate(`window.__supportCalls=0;window.fetch=async(url,options)=>{
+      window.__supportCalls++;window.__outbound=JSON.parse(options.body);
+      const java=window.__outbound.facts.find(f=>f.text==='Java');
+      return new Response((${v3ResponseExpression})({summary:[{sourceIds:[java.id],text:${JSON.stringify(supportedText)}},{sourceIds:[java.id],text:${JSON.stringify(claim)}}],selected:[java.id]},{'summary:1':'unsupported'}),{status:200,headers:{'Content-Type':'application/json'}})
+    }`)
+    await click(generate)
+    await until("!!document.querySelector('[data-generated-summary]')")
+    assert.equal(
+      await evaluate("window.__outbound.statementSupport"),
+      true,
+      "the activated client requests the v3 assessment",
+    )
+    assert.equal(
+      await evaluate("window.__supportCalls"),
+      1,
+      "activation makes exactly one generation request",
+    )
+    assert.equal(
+      await evaluate(
+        "window.__outbound.facts.some(f=>f.text!=='Java'&&f.field==='skills')",
+      ),
+      false,
+      "the retained case starts from a Java-only skill fact",
+    )
+    assert.equal(
+      await evaluate(
+        "document.querySelectorAll('[data-cv-review-unit]').length",
+      ),
+      2,
+    )
+    assert.equal(
+      await evaluate(
+        "document.querySelector('[data-cv-review-unit][data-cv-review-status=\"unsupported\"] [data-cv-review-text]').textContent",
+      ),
+      claim,
+      "the unsupported machine sentence is shown for review",
+    )
+    assert.equal(
+      await evaluate(`${acceptButton}.disabled`),
+      true,
+      "the unsupported machine claim blocks acceptance",
+    )
+    // 390px: the review controls stay reachable with no horizontal overflow.
+    await call("Emulation.setDeviceMetricsOverride", {
+      width: 390,
+      height: 844,
+      deviceScaleFactor: 1,
+      mobile: false,
+    })
+    await until("document.documentElement.scrollWidth<=innerWidth")
+    assert.ok(
+      await evaluate("document.documentElement.scrollWidth<=innerWidth"),
+      "390px review flow fits without horizontal overflow",
+    )
+    // Keyboard: focus the native toggle, remove the unsupported unit with Enter,
+    // then Tab to the now-enabled Accept control and submit with Enter.
+    const toggle =
+      "document.querySelector('[data-cv-review-unit][data-cv-review-status=\"unsupported\"] [data-cv-review-toggle]')"
+    await evaluate(`${toggle}.focus()`)
+    assert.equal(
+      await evaluate(`document.activeElement===${toggle}`),
+      true,
+      "the review toggle is keyboard focusable",
+    )
+    await pressKey("Enter", "Enter", 13)
+    await until(
+      "!!document.querySelector('[data-cv-review-unit][data-cv-review-removed]')",
+    )
+    assert.equal(
+      await evaluate(`${acceptButton}.disabled`),
+      false,
+      "removing the unsupported sentence enables acceptance",
+    )
+    let reached = false
+    for (let attempt = 0; attempt < 80 && !reached; attempt++) {
+      if (await evaluate(`document.activeElement===${acceptButton}`))
+        reached = true
+      else await pressKey("Tab", "Tab", 9)
+    }
+    assert.ok(reached, "Accept is keyboard reachable after review")
+    await pressKey("Enter", "Enter", 13)
+    await until("!!localStorage.getItem('careeros_curated_cv_v1')")
+    const savedRaw = await evaluate(
+      "localStorage.getItem('careeros_curated_cv_v1')",
+    )
+    const saved = JSON.parse(savedRaw)
+    assert.equal(saved.version, 3)
+    assert.ok(
+      !saved.summary.includes(claim),
+      "the unsupported machine sentence never reaches the accepted CV",
+    )
+    assert.equal(
+      saved.summary.includes(supportedText),
+      true,
+      "the supported machine sentence remains usable",
+    )
+    assert.deepEqual(
+      saved.provenance.map((r) => [r.id, r.origin, r.decision]),
+      [
+        ["summary:0", "generated", "keep_generated"],
+        ["summary:1", "generated", "discard"],
+      ],
+      "the reviewed removal is retained as provenance history",
+    )
+    await call("Emulation.setDeviceMetricsOverride", {
+      width: 1440,
+      height: 1000,
+      deviceScaleFactor: 1,
+      mobile: false,
+    })
+    await evaluate("location.reload()")
+    await until("!!document.querySelector('header button')")
+    await evaluate("document.querySelector('header button:last-child').click()")
+    await until("document.querySelectorAll('nav button').length===4")
+    await evaluate("document.querySelectorAll('nav button')[2].click()")
+    await until("!!document.querySelector('.cv-paper-content')")
+    assert.equal(
+      await evaluate("document.querySelector('textarea').value"),
+      saved.summary,
+      "reload preserves the reviewed accepted summary",
+    )
+    assert.ok(
+      !(
+        await evaluate(
+          "document.querySelector('.cv-paper-content').textContent",
+        )
+      ).includes(claim),
+      "the reloaded CV never renders the unsupported claim",
+    )
+    assert.equal(
+      await evaluate(savedProfileExpression),
+      originalProfile,
+      "activation and review never mutate the canonical Profile",
+    )
+    console.log(
+      fixture.locale +
+        ": issue #128 activation; Java-only canonical Profile blocks the Kubernetes claim, 390px keyboard review removes it, v3 save/reload keeps the supported sentence",
     )
   }
 } finally {

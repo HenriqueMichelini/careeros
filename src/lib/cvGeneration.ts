@@ -30,11 +30,12 @@ export interface CvFact {
 // generated summary sentence and per optional rewrite, keyed by the
 // server-assigned id `summary:<index>` / `wording:<sourceId>`.
 export const CV_SUPPORT_POLICY = "cv-statement-support-v1"
-// ADR 0003: switching the production request to the v3 statement-support
-// contract is the coordinated activation owned by #128. Until then the client
-// keeps the legacy v2 request, but still consumes a v3 response whenever an
-// activated backend (or a controlled fixture) returns one.
-export const CV_SUPPORT_REQUEST = false
+// ADR 0003: #128 owns the coordinated activation. The production request now
+// opts into the v3 statement-support contract, so every deliberate generation is
+// assessed and the client never falls back to accepting unassessed wording. A
+// response without the requested assessment is rejected rather than silently
+// persisting machine wording as verified.
+export const CV_SUPPORT_REQUEST = true
 export type CvSupportStatus = "supported" | "uncertain" | "unsupported"
 export interface CvSupportStatement {
   id: string
