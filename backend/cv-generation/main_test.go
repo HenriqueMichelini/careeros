@@ -1,6 +1,7 @@
 package cvgeneration
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -256,5 +257,354 @@ func TestSparseSummaryIsRequiredByOutboundProviderContract(t *testing.T) {
 	handler.ServeHTTP(rec, req)
 	if rec.Code != 502 {
 		t.Fatalf("handler did not reach controlled provider: %d", rec.Code)
+	}
+}
+
+// ---- ADR 0003 (#124) statement-support handler contract ----
+
+// providerScript.status 0 simulates a provider transport failure (timeout).
+type providerScript struct {
+	status int
+	body   string
+}
+
+func rawEnvelope(finish, refusal, content string) string {
+	raw, _ := json.Marshal(map[string]any{"choices": []any{map[string]any{"finish_reason": finish, "message": map[string]any{"content": content, "refusal": refusal}}}})
+	return string(raw)
+}
+func envelope(content string) string { return rawEnvelope("stop", "", content) }
+
+// scripted captures every outbound provider body so tests can assert call counts
+// and bounds. Exhausted scripts fail the call instead of silently reusing data.
+func scripted(script ...providerScript) (roundTrip, *[]string) {
+	calls := &[]string{}
+	return func(r *http.Request) (*http.Response, error) {
+		raw, _ := io.ReadAll(r.Body)
+		*calls = append(*calls, string(raw))
+		index := len(*calls) - 1
+		if index >= len(script) {
+			return &http.Response{StatusCode: 500, Body: io.NopCloser(strings.NewReader(""))}, nil
+		}
+		if script[index].status == 0 {
+			return nil, context.DeadlineExceeded
+		}
+		return &http.Response{StatusCode: script[index].status, Body: io.NopCloser(strings.NewReader(script[index].body))}, nil
+	}, calls
+}
+
+func generationContent(claim string, ids ...string) string {
+	sources := make([]any, 0, len(ids))
+	for _, id := range ids {
+		sources = append(sources, id)
+	}
+	raw, _ := json.Marshal(map[string]any{"summary": []any{map[string]any{"sourceIds": sources, "text": claim}}, "selected": sources, "wording": []any{}})
+	return string(raw)
+}
+func judgmentContent(id, status, reason string) string {
+	raw, _ := json.Marshal(map[string]any{"judgments": []any{map[string]any{"id": id, "status": status, "reason": reason}}})
+	return string(raw)
+}
+
+type v3Envelope struct {
+	SchemaVersion int `json:"schemaVersion"`
+	Summary       []struct {
+		SourceID  string   `json:"sourceId"`
+		SourceIDs []string `json:"sourceIds"`
+		Text      string   `json:"text"`
+	} `json:"summary"`
+	Selected []string `json:"selected"`
+	Support  struct {
+		PolicyVersion string `json:"policyVersion"`
+		Assessment    string `json:"assessment"`
+		Statements    []struct {
+			ID        string   `json:"id"`
+			Text      string   `json:"text"`
+			SourceIDs []string `json:"sourceIds"`
+			Status    string   `json:"status"`
+			Reason    string   `json:"reason"`
+		} `json:"statements"`
+	} `json:"support"`
+}
+
+func generateThroughHandler(t *testing.T, transport roundTrip, body any) *httptest.ResponseRecorder {
+	t.Helper()
+	raw, err := json.Marshal(body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest("POST", "/api/cv/generate", strings.NewReader(string(raw)))
+	req.Header.Set("X-OpenAI-Api-Key", "sk-controlled")
+	rec := httptest.NewRecorder()
+	NewHandlerWithClient(&http.Client{Transport: transport}).ServeHTTP(rec, req)
+	return rec
+}
+func decodeV3(t *testing.T, rec *httptest.ResponseRecorder) v3Envelope {
+	t.Helper()
+	var out v3Envelope
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatalf("response is not v3: %v %s", err, rec.Body.String())
+	}
+	return out
+}
+func providerRequest(t *testing.T, raw string) map[string]any {
+	t.Helper()
+	var body map[string]any
+	if err := json.Unmarshal([]byte(raw), &body); err != nil {
+		t.Fatalf("provider body not json: %v", err)
+	}
+	return body
+}
+
+// A well-formed generated claim with valid citations but no semantic support must
+// never be marked supported, in EN or PT-BR, and the backend must not certify it
+// from citations alone. The retained Java -> Kubernetes reproduction is included.
+func TestStatementSupportRequiresSemanticSupportNotCitations(t *testing.T) {
+	facts := []fact{{ID: "java", Section: "skills", Field: "skills", Text: "Java"}}
+	for _, tc := range []struct {
+		id, language, claim string
+	}{
+		{"en-kubernetes", "en", "Builds production Kubernetes platforms."},
+		{"pt-kubernetes", "pt-BR", "Desenvolve plataformas Kubernetes em produção."},
+		{"en-tool", "en", "Operates Kubernetes clusters in production."},
+		{"pt-responsibility", "pt-BR", "Gerencia a contratação e a mentoria de engenheiros."},
+		{"en-qualification", "en", "Maintains Kubernetes administration credentials."},
+	} {
+		t.Run(tc.id, func(t *testing.T) {
+			transport, calls := scripted(
+				providerScript{200, envelope(generationContent(tc.claim, "java"))},
+				providerScript{200, envelope(judgmentContent("summary:0", "unsupported", "Cited Java fact does not support this claim."))},
+			)
+			rec := generateThroughHandler(t, transport, map[string]any{"cvLanguage": tc.language, "statementSupport": true, "facts": facts})
+			if rec.Code != 200 {
+				t.Fatalf("status %d: %s", rec.Code, rec.Body.String())
+			}
+			if len(*calls) != 2 {
+				t.Fatalf("provider calls %d, want exactly generation + one assessment", len(*calls))
+			}
+			out := decodeV3(t, rec)
+			if out.SchemaVersion != 3 || out.Support.PolicyVersion != supportPolicyVersion || out.Support.Assessment != "complete" {
+				t.Fatalf("support envelope: %+v", out)
+			}
+			if len(out.Support.Statements) != 1 {
+				t.Fatalf("statements: %+v", out.Support.Statements)
+			}
+			statement := out.Support.Statements[0]
+			if statement.Status == "supported" {
+				t.Fatalf("valid citation was certified as supported: %+v", statement)
+			}
+			if statement.Status != "unsupported" || statement.ID != "summary:0" || statement.Text != tc.claim || len(statement.SourceIDs) != 1 || statement.SourceIDs[0] != "java" {
+				t.Fatalf("statement: %+v", statement)
+			}
+		})
+	}
+}
+
+// Any assessment failure leaves generated wording uncertain and recoverable; it
+// must never be upgraded to supported and must never fail the request.
+func TestUnavailableAssessmentFailsClosed(t *testing.T) {
+	facts := []fact{{ID: "java", Section: "skills", Field: "skills", Text: "Java"}}
+	generation := generationContent("Builds production Kubernetes platforms.", "java")
+	valid := judgmentContent("summary:0", "supported", "ok")
+	for _, tc := range []struct {
+		name     string
+		response providerScript
+	}{
+		{"outage", providerScript{500, ""}},
+		{"rate_limit", providerScript{429, ""}},
+		{"timeout", providerScript{}},
+		{"refusal", providerScript{200, rawEnvelope("stop", "declined", "")}},
+		{"truncated", providerScript{200, rawEnvelope("length", "", valid)}},
+		{"malformed", providerScript{200, envelope("{bad")}},
+		{"no_judgments", providerScript{200, envelope(`{"judgments":[]}`)}},
+		{"unknown_id", providerScript{200, envelope(judgmentContent("summary:9", "supported", "ok"))}},
+		{"unknown_status", providerScript{200, envelope(judgmentContent("summary:0", "maybe", "ok"))}},
+		{"unknown_field", providerScript{200, envelope(strings.Replace(valid, `}]}`, `,"extra":1}]}`, 1))}},
+		{"duplicate", providerScript{200, envelope(`{"judgments":[{"id":"summary:0","status":"supported","reason":"ok"},{"id":"summary:0","status":"supported","reason":"ok"}]}`)}},
+		{"extra_judgment", providerScript{200, envelope(`{"judgments":[{"id":"summary:0","status":"supported","reason":"ok"},{"id":"summary:1","status":"supported","reason":"ok"}]}`)}},
+		{"oversize_reason", providerScript{200, envelope(judgmentContent("summary:0", "supported", strings.Repeat("x", maxReasonBytes+1)))}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			transport, calls := scripted(providerScript{200, envelope(generation)}, tc.response)
+			rec := generateThroughHandler(t, transport, map[string]any{"cvLanguage": "en", "statementSupport": true, "facts": facts})
+			if rec.Code != 200 {
+				t.Fatalf("recoverable candidate lost: %d %s", rec.Code, rec.Body.String())
+			}
+			if len(*calls) != 2 {
+				t.Fatalf("provider calls %d, want 2", len(*calls))
+			}
+			out := decodeV3(t, rec)
+			if out.Support.Assessment != "unavailable" {
+				t.Fatalf("assessment %q: %+v", out.Support.Assessment, out.Support)
+			}
+			if len(out.Support.Statements) != 1 || out.Support.Statements[0].Status != "uncertain" || out.Support.Statements[0].Reason != supportUnavailableReason {
+				t.Fatalf("statements: %+v", out.Support.Statements)
+			}
+		})
+	}
+}
+
+// Faithful paraphrases/translations that the assessor supports stay usable; the
+// existing heuristic guards are not a substitute for the assessment.
+func TestSupportedParaphraseRemainsUsable(t *testing.T) {
+	facts := []fact{{ID: "d", Section: "experience", EntryID: "e", Field: "description", Text: "Used research to improve services by 20%."}}
+	transport, calls := scripted(
+		providerScript{200, envelope(generationContent("Improved services by 20% using research.", "d"))},
+		providerScript{200, envelope(judgmentContent("summary:0", "supported", "Faithful paraphrase of the cited fact."))},
+	)
+	rec := generateThroughHandler(t, transport, map[string]any{"cvLanguage": "pt-BR", "statementSupport": true, "facts": facts})
+	if rec.Code != 200 || len(*calls) != 2 {
+		t.Fatalf("status %d calls %d", rec.Code, len(*calls))
+	}
+	out := decodeV3(t, rec)
+	if out.Support.Assessment != "complete" || out.Support.Statements[0].Status != "supported" {
+		t.Fatalf("supported paraphrase rejected: %+v", out.Support)
+	}
+}
+
+// Rewrites are separate review units with server-assigned IDs and a judgment is
+// required for each one.
+func TestWordingUnitsAreAssessedSeparately(t *testing.T) {
+	facts := []fact{{ID: "d", Section: "experience", EntryID: "e", Field: "description", Text: "Designed customer services."}}
+	generation := `{"summary":[{"sourceIds":["d"],"text":"Designed customer services."}],"selected":["d"],"wording":[{"sourceId":"d","text":"Designed customer services for clients."}]}`
+	t.Run("complete", func(t *testing.T) {
+		transport, calls := scripted(
+			providerScript{200, envelope(generation)},
+			providerScript{200, envelope(`{"judgments":[{"id":"summary:0","status":"supported","reason":"ok"},{"id":"wording:d","status":"supported","reason":"ok"}]}`)},
+		)
+		rec := generateThroughHandler(t, transport, map[string]any{"cvLanguage": "en", "statementSupport": true, "facts": facts})
+		if rec.Code != 200 || len(*calls) != 2 {
+			t.Fatalf("status %d calls %d: %s", rec.Code, len(*calls), rec.Body.String())
+		}
+		out := decodeV3(t, rec)
+		if len(out.Support.Statements) != 2 || out.Support.Statements[0].ID != "summary:0" || out.Support.Statements[1].ID != "wording:d" {
+			t.Fatalf("units: %+v", out.Support.Statements)
+		}
+		if out.Support.Statements[1].SourceIDs[0] != "d" {
+			t.Fatalf("rewrite citation: %+v", out.Support.Statements[1])
+		}
+	})
+	t.Run("missing_wording_judgment", func(t *testing.T) {
+		transport, _ := scripted(
+			providerScript{200, envelope(generation)},
+			providerScript{200, envelope(judgmentContent("summary:0", "supported", "ok"))},
+		)
+		rec := generateThroughHandler(t, transport, map[string]any{"cvLanguage": "en", "statementSupport": true, "facts": facts})
+		out := decodeV3(t, rec)
+		if rec.Code != 200 || out.Support.Assessment != "unavailable" {
+			t.Fatalf("incomplete judgments not rejected: %d %+v", rec.Code, out.Support)
+		}
+	})
+}
+
+// The assessment is opt-in: without it the legacy v2 response and a single
+// provider call are preserved, and the control flag never reaches a provider.
+func TestStatementSupportIsOptIn(t *testing.T) {
+	facts := []fact{{ID: "java", Section: "skills", Field: "skills", Text: "Java"}}
+	transport, calls := scripted(providerScript{200, envelope(generationContent("Java", "java"))})
+	rec := generateThroughHandler(t, transport, map[string]any{"cvLanguage": "en", "facts": facts})
+	if rec.Code != 200 || len(*calls) != 1 {
+		t.Fatalf("legacy status %d calls %d: %s", rec.Code, len(*calls), rec.Body.String())
+	}
+	var legacy map[string]json.RawMessage
+	if err := json.Unmarshal(rec.Body.Bytes(), &legacy); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := legacy["schemaVersion"]; ok {
+		t.Fatal("legacy client received schemaVersion")
+	}
+	if _, ok := legacy["support"]; ok {
+		t.Fatal("legacy client received support metadata")
+	}
+	if strings.Contains((*calls)[0], "statementSupport") {
+		t.Fatal("control flag reached the generation provider")
+	}
+}
+
+// The bounded assessment request carries only cited facts, keeps the approved
+// ceilings, and never adds retries, a second model or unrelated data.
+func TestAssessmentRequestIsBoundedAndCited(t *testing.T) {
+	facts := []fact{
+		{ID: "java", Section: "skills", Field: "skills", Text: "Java"},
+		{ID: "d", Section: "experience", EntryID: "e", Field: "achievements", Text: "Reduced wait by 20%."},
+	}
+	transport, calls := scripted(
+		providerScript{200, envelope(generationContent("Reduced wait by 20%.", "d"))},
+		providerScript{200, envelope(judgmentContent("summary:0", "supported", "ok"))},
+	)
+	rec := generateThroughHandler(t, transport, map[string]any{"cvLanguage": "en", "statementSupport": true, "facts": facts})
+	if rec.Code != 200 || len(*calls) != 2 {
+		t.Fatalf("status %d calls %d", rec.Code, len(*calls))
+	}
+	for index, want := range []string{"curated_cv_v2", "cv_statement_support_v1"} {
+		body := providerRequest(t, (*calls)[index])
+		if body["model"] != "gpt-6-luna" || body["reasoning_effort"] != "none" || body["max_completion_tokens"] != float64(4000) {
+			t.Fatalf("call %d policy: %v", index, body)
+		}
+		format := body["response_format"].(map[string]any)["json_schema"].(map[string]any)
+		if format["name"] != want || format["strict"] != true {
+			t.Fatalf("call %d schema: %v", index, format["name"])
+		}
+		if len((*calls)[index]) > maxAssessmentPayload {
+			t.Fatalf("call %d exceeded payload bound", index)
+		}
+	}
+	assessment := providerRequest(t, (*calls)[1])
+	messages := assessment["messages"].([]any)
+	if !strings.Contains(messages[0].(map[string]any)["content"].(string), "Valid source IDs establish traceability only") {
+		t.Fatal("assessment policy missing")
+	}
+	var payload assessmentPayload
+	if err := json.Unmarshal([]byte(messages[1].(map[string]any)["content"].(string)), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if len(payload.Statements) != 1 || payload.Statements[0].ID != "summary:0" {
+		t.Fatalf("statements: %+v", payload.Statements)
+	}
+	if len(payload.Facts) != 1 || payload.Facts[0].ID != "d" {
+		t.Fatalf("assessment received uncited or unrelated facts: %+v", payload.Facts)
+	}
+}
+
+// Deterministic hard guards still fail before any assessment; no assessment can
+// override them and no extra provider call is made.
+func TestHardGuardsFailBeforeAssessment(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		facts      []fact
+		generation string
+	}{
+		{"invented_number", []fact{{ID: "f0", Section: "experience", EntryID: "e", Field: "achievements", Text: "Reduced wait by 20%."}}, generationContent("Reduced wait by 90%.", "f0")},
+		{"negation_stripped", []fact{{ID: "f0", Section: "experience", EntryID: "e", Field: "achievements", Text: "Did not reduce wait by 20%."}}, generationContent("Reduced wait by 20%.", "f0")},
+		{"cross_owner_mix", []fact{{ID: "a", Section: "experience", EntryID: "e1", Field: "achievements", Text: "Reduced wait by 20%."}, {ID: "b", Section: "experience", EntryID: "e2", Field: "achievements", Text: "Designed services."}}, generationContent("Designed services and reduced wait by 20%.", "a", "b")},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			transport, calls := scripted(
+				providerScript{200, envelope(tc.generation)},
+				providerScript{200, envelope(judgmentContent("summary:0", "supported", "ok"))},
+			)
+			rec := generateThroughHandler(t, transport, map[string]any{"cvLanguage": "en", "statementSupport": true, "facts": tc.facts})
+			if rec.Code != 502 || !strings.Contains(rec.Body.String(), "invalid_output") {
+				t.Fatalf("guard not enforced: %d %s", rec.Code, rec.Body.String())
+			}
+			if len(*calls) != 1 {
+				t.Fatalf("assessment called after a hard failure: %d", len(*calls))
+			}
+		})
+	}
+}
+
+// Assessment is skipped, never truncated, when it cannot fit the approved
+// serialized capacity: the candidate stays available with uncertain status.
+func TestAssessmentCapacityIsBounded(t *testing.T) {
+	calls := 0
+	a := app{client: &http.Client{Transport: roundTrip(func(*http.Request) (*http.Response, error) {
+		calls++
+		return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(""))}, nil
+	})}}
+	in := request{CvLanguage: "en", Facts: []fact{{ID: "big", Section: "experience", EntryID: "e", Field: "achievements", Text: strings.Repeat("x", maxAssessmentPayload+1)}}}
+	out := result{Summary: []excerpt{{SourceID: "big", Text: strings.Repeat("x", maxAssessmentPayload+1)}}, Selected: []string{"big"}}
+	support := a.assess(t.Context(), "sk-test", in, out)
+	if calls != 0 || support.Assessment != "unavailable" || len(support.Statements) != 1 || support.Statements[0].Status != "uncertain" || support.Statements[0].Reason != supportUnavailableReason {
+		t.Fatalf("capacity guard: calls %d support %+v", calls, support)
 	}
 }
