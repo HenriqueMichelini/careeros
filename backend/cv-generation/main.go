@@ -96,10 +96,13 @@ type resultV3 struct {
 	Support       support           `json:"support"`
 }
 
+// judgment is the assessment wire record. Pointer members distinguish a missing
+// or null field from a present empty string, so an incomplete model judgment
+// fails closed instead of silently defaulting a statement toward supported.
 type judgment struct {
-	ID     string `json:"id"`
-	Status string `json:"status"`
-	Reason string `json:"reason"`
+	ID     *string `json:"id"`
+	Status *string `json:"status"`
+	Reason *string `json:"reason"`
 }
 type assessmentStatement struct {
 	ID        string   `json:"id"`
@@ -587,14 +590,19 @@ func unavailableSupport(units []supportStatement) support {
 }
 
 // completeSupport requires exactly one valid judgment per review unit, with no
-// extras, duplicates or unknown statuses, then attaches canonical text/citations.
+// extras, duplicates, unknown statuses or incomplete records, then attaches
+// canonical text/citations. Every member must be a present JSON string: a
+// missing or null id/status/reason is an incomplete judgment and fails closed.
 func completeSupport(units []supportStatement, judgments []judgment) (support, bool) {
 	byID := map[string]judgment{}
 	for _, item := range judgments {
-		if _, duplicate := byID[item.ID]; duplicate || !oneOf(item.Status, "supported", "uncertain", "unsupported") || len(item.Reason) > maxReasonBytes {
+		if item.ID == nil || item.Status == nil || item.Reason == nil {
 			return support{}, false
 		}
-		byID[item.ID] = item
+		if _, duplicate := byID[*item.ID]; duplicate || !oneOf(*item.Status, "supported", "uncertain", "unsupported") || len(*item.Reason) > maxReasonBytes {
+			return support{}, false
+		}
+		byID[*item.ID] = item
 	}
 	if len(byID) != len(units) {
 		return support{}, false
@@ -605,7 +613,7 @@ func completeSupport(units []supportStatement, judgments []judgment) (support, b
 		if !ok {
 			return support{}, false
 		}
-		unit.Status, unit.Reason = item.Status, item.Reason
+		unit.Status, unit.Reason = *item.Status, *item.Reason
 		statements = append(statements, unit)
 	}
 	return support{PolicyVersion: supportPolicyVersion, Assessment: "complete", Statements: statements}, true
@@ -662,6 +670,12 @@ func (a app) assess(ctx context.Context, key string, in request, out result) sup
 	}
 	complete, ok := completeSupport(units, wire.Judgments)
 	if !ok {
+		return unavailableSupport(units)
+	}
+	// ADR 0003: request cancellation or the shared deadline ends processing and
+	// prevents acceptance of the pending assessment. Recheck after the response
+	// was read and validated so valid bytes are never accepted once canceled.
+	if ctx.Err() != nil {
 		return unavailableSupport(units)
 	}
 	outcome = "complete"

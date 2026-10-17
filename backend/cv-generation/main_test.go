@@ -422,6 +422,9 @@ func TestUnavailableAssessmentFailsClosed(t *testing.T) {
 		{"duplicate", providerScript{200, envelope(`{"judgments":[{"id":"summary:0","status":"supported","reason":"ok"},{"id":"summary:0","status":"supported","reason":"ok"}]}`)}},
 		{"extra_judgment", providerScript{200, envelope(`{"judgments":[{"id":"summary:0","status":"supported","reason":"ok"},{"id":"summary:1","status":"supported","reason":"ok"}]}`)}},
 		{"oversize_reason", providerScript{200, envelope(judgmentContent("summary:0", "supported", strings.Repeat("x", maxReasonBytes+1)))}},
+		{"missing_reason", providerScript{200, envelope(`{"judgments":[{"id":"summary:0","status":"supported"}]}`)}},
+		{"null_reason", providerScript{200, envelope(`{"judgments":[{"id":"summary:0","status":"supported","reason":null}]}`)}},
+		{"typed_reason", providerScript{200, envelope(`{"judgments":[{"id":"summary:0","status":"supported","reason":7}]}`)}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			transport, calls := scripted(providerScript{200, envelope(generation)}, tc.response)
@@ -440,6 +443,45 @@ func TestUnavailableAssessmentFailsClosed(t *testing.T) {
 				t.Fatalf("statements: %+v", out.Support.Statements)
 			}
 		})
+	}
+}
+
+// ADR 0003: request cancellation ends processing and prevents acceptance of the
+// pending assessment. Valid judgment bytes already read must not be accepted as
+// complete once the request is canceled.
+func TestCancellationEndsAssessmentProcessing(t *testing.T) {
+	facts := []fact{{ID: "java", Section: "skills", Field: "skills", Text: "Java"}}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	calls := 0
+	transport := roundTrip(func(r *http.Request) (*http.Response, error) {
+		calls++
+		body := generationContent("Builds production Kubernetes platforms.", "java")
+		if calls == 2 {
+			// The request is canceled while the assessment response is in flight.
+			cancel()
+			body = judgmentContent("summary:0", "supported", "ok")
+		}
+		return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(envelope(body)))}, nil
+	})
+	raw, _ := json.Marshal(map[string]any{"cvLanguage": "en", "statementSupport": true, "facts": facts})
+	req := httptest.NewRequest("POST", "/api/cv/generate", strings.NewReader(string(raw)))
+	req.Header.Set("X-OpenAI-Api-Key", "sk-controlled")
+	req = req.WithContext(ctx)
+	rec := httptest.NewRecorder()
+	NewHandlerWithClient(&http.Client{Transport: transport}).ServeHTTP(rec, req)
+	if calls != 2 {
+		t.Fatalf("provider calls %d, want generation + one assessment", calls)
+	}
+	if rec.Code != 200 {
+		t.Fatalf("recoverable candidate lost: %d %s", rec.Code, rec.Body.String())
+	}
+	out := decodeV3(t, rec)
+	if out.Support.Assessment != "unavailable" {
+		t.Fatalf("cancelled request accepted a completed assessment: %+v", out.Support)
+	}
+	if len(out.Support.Statements) != 1 || out.Support.Statements[0].Status != "uncertain" || out.Support.Statements[0].Reason != supportUnavailableReason {
+		t.Fatalf("cancelled statement not uncertain: %+v", out.Support.Statements)
 	}
 }
 
