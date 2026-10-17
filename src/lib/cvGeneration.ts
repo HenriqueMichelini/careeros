@@ -61,9 +61,12 @@ export interface CvResult {
   support?: CvSupport
 }
 export interface CuratedCv {
-  version: 1 | 2
+  version: 1 | 2 | 3
   sourceProfileId?: string
   summarySources?: CvResult["summary"]
+  // ADR 0003 / issue #126: per-statement accepted decisions and user provenance.
+  // Present only on version 3 snapshots produced from an assessed v3 result.
+  provenance?: CvReviewRecord[]
   context?: {
     reference: ProfileRef
     value: unknown
@@ -292,9 +295,44 @@ export function groundedCvText(text: unknown, source: string): text is string {
   if (negatives.test(input) && !negatives.test(output)) return false
   return true
 }
+// Explicit user-authored corrections (#126) are the user's own assertion. They
+// still require a valid shape and unchanged cited references, but the
+// deterministic numeric/marker grounding applies to machine text only. The
+// `authored` override carries the exact accepted user text per retained summary
+// index and wording source, so validation never accepts unrecorded text.
+export interface CvAuthoredText {
+  summary?: (string | undefined)[]
+  wording?: Record<string, string>
+}
+export function userAuthoredCvText(text: unknown): text is string {
+  return (
+    typeof text === "string" &&
+    !!text.trim() &&
+    new TextEncoder().encode(text).length <= 12_288
+  )
+}
+function authoredWordingValid(
+  id: string,
+  text: unknown,
+  authored: CvAuthoredText | undefined,
+  fact: CvFact,
+): boolean {
+  if (authored?.wording?.[id] === text) return userAuthoredCvText(text)
+  return (
+    groundedCvText(text, fact.text) &&
+    !(
+      fact.kind === "statement" &&
+      (fact.intent !== "actual" ||
+        fact.assertion !== "affirmed" ||
+        fact.certainty !== "certain") &&
+      text !== fact.text
+    )
+  )
+}
 export function validateCvResult(
   value: unknown,
   facts: CvFact[],
+  authored?: CvAuthoredText,
 ): value is CvResult {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false
   const r = value as CvResult
@@ -363,16 +401,11 @@ export function validateCvResult(
             "highlights",
             "details",
           ].includes(byId.get(id)!.field) ||
-          !groundedCvText(text, byId.get(id)!.text) ||
-          (byId.get(id)!.kind === "statement" &&
-            (byId.get(id)!.intent !== "actual" ||
-              byId.get(id)!.assertion !== "affirmed" ||
-              byId.get(id)!.certainty !== "certain") &&
-            text !== byId.get(id)!.text),
+          !authoredWordingValid(id, text, authored, byId.get(id)!),
       ))
   )
     return false
-  return r.summary.every((s) => {
+  return r.summary.every((s, index) => {
     if (
       !s ||
       !["sourceId,text", "sourceIds,text"].includes(
@@ -399,6 +432,9 @@ export function validateCvResult(
       sources.filter((f) => f.entryId).map((f) => `${f.section}:${f.entryId}`),
     )
     if (owners.size > 1) return false
+    // An explicit user-authored rewrite is accepted with shape and reference
+    // checks only; it is recorded with user provenance, never machine support.
+    if (authored?.summary?.[index] === s.text) return userAuthoredCvText(s.text)
     if (
       sources.some(
         (f) =>
@@ -502,13 +538,18 @@ export function validateCvSupport(
   })
 }
 
-// Review decisions never change machine text; they remove or restore whole
-// review units. Discarding a summary sentence drops it from the accepted
+// Review decisions either remove a whole review unit (discard/revert) or
+// replace/keep its wording through an explicit per-statement edit or
+// confirmation. Discarding a summary sentence drops it from the accepted
 // summary. Reverting a rewrite drops the proposed wording and falls back to the
-// verbatim source fact. Until #126, unresolved wording can only be removed.
+// verbatim source fact. `editedText`/`confirmedIds` (#126) are explicit
+// user-authored corrections; ordinary typing or global acceptance never
+// constitutes a confirmation.
 export interface CvReviewDecisions {
   discardedSummaryIds: string[]
   revertedWordingIds: string[]
+  editedText?: Record<string, string>
+  confirmedIds?: string[]
 }
 export const emptyCvReview: CvReviewDecisions = {
   discardedSummaryIds: [],
@@ -521,6 +562,25 @@ export interface CvReviewUnit {
   sourceIds: string[]
   status: CvSupportStatus
   reason: string
+}
+export type CvReviewOrigin = "generated" | "user_edited" | "user_confirmed"
+export type CvReviewDecision = "keep_generated" | "discard" | "revert_to_source" | "edit" | "confirm"
+// The original machine judgment is retained only as history. It never becomes
+// the active status of user-authored text, and it does not authenticate it.
+export interface CvReviewOriginal {
+  text: string
+  sourceIds: string[]
+  status: CvSupportStatus
+  reason: string
+}
+export interface CvReviewRecord {
+  id: string
+  kind: "summary" | "wording"
+  decision: CvReviewDecision
+  origin: CvReviewOrigin
+  text: string
+  sourceIds: string[]
+  original?: CvReviewOriginal
 }
 export function cvReviewUnits(result: CvResult): CvReviewUnit[] | null {
   if (!result.support) return null
@@ -542,6 +602,24 @@ export function cvReviewRemoved(
     ? decisions.discardedSummaryIds.includes(unit.id)
     : decisions.revertedWordingIds.includes(unit.id.slice("wording:".length))
 }
+// An explicit edit only counts when it changes the machine wording. Typing the
+// exact generated text is not an edit and never promotes an unresolved unit;
+// the user must confirm it explicitly instead.
+export function cvReviewEdited(
+  unit: Pick<CvReviewUnit, "id" | "text">,
+  decisions: CvReviewDecisions,
+): string | undefined {
+  const text = decisions.editedText?.[unit.id]
+  return typeof text === "string" && text.trim() && text !== unit.text
+    ? text
+    : undefined
+}
+export function cvReviewConfirmed(
+  unit: Pick<CvReviewUnit, "id">,
+  decisions: CvReviewDecisions,
+): boolean {
+  return !!decisions.confirmedIds?.includes(unit.id)
+}
 export function cvReviewResolved(
   result: CvResult,
   decisions: CvReviewDecisions,
@@ -555,48 +633,267 @@ export function cvReviewResolved(
   )
     return false
   return units.every(
-    (unit) => unit.status === "supported" || cvReviewRemoved(unit, decisions),
+    (unit) =>
+      unit.status === "supported" ||
+      cvReviewRemoved(unit, decisions) ||
+      cvReviewEdited(unit, decisions) !== undefined ||
+      cvReviewConfirmed(unit, decisions),
   )
 }
 
-// Acceptance revalidates shape, support correspondence and reference identity
-// instead of trusting rendered state, then returns the reviewed content with the
-// machine judgments dropped. Global acceptance never promotes unresolved text.
+export interface CvResolvedReview {
+  result: CvResult
+  provenance?: CvReviewRecord[]
+  authored?: CvAuthoredText
+}
+// Review resolution revalidates the pending result instead of trusting rendered
+// state. Removed units are dropped, user-authored units keep their provenance
+// with the machine judgment as history, and every remaining machine unit must
+// already be supported. Global acceptance never promotes unresolved text.
+export function resolveCvReview(
+  result: CvResult,
+  facts: CvFact[],
+  decisions: CvReviewDecisions,
+): CvResolvedReview {
+  const { support, ...core } = result
+  if (!validateCvResult(core, facts)) throw new Error("invalid_output")
+  if (!support) return { result: core }
+  if (!validateCvSupport(support, result)) throw new Error("invalid_output")
+  const units = cvReviewUnits(result)!
+  const byId = new Map(units.map((unit) => [unit.id, unit]))
+  const original = (unit: CvReviewUnit): CvReviewOriginal => ({
+    text: unit.text,
+    sourceIds: [...unit.sourceIds],
+    status: unit.status,
+    reason: unit.reason,
+  })
+  const record = (
+    unit: CvReviewUnit,
+    decision: CvReviewDecision,
+    origin: CvReviewOrigin,
+    text: string,
+    sourceIds: string[],
+    history: boolean,
+  ): CvReviewRecord => ({
+    id: unit.id,
+    kind: unit.kind,
+    decision,
+    origin,
+    text,
+    sourceIds,
+    ...(history ? { original: original(unit) } : {}),
+  })
+  const provenance: CvReviewRecord[] = []
+  const summary: CvResult["summary"] = []
+  const authoredSummary: (string | undefined)[] = []
+  result.summary.forEach((item, index) => {
+    const unit = byId.get(`summary:${index}`)!
+    if (cvReviewRemoved(unit, decisions)) {
+      provenance.push(record(unit, "discard", "generated", "", [], true))
+      return
+    }
+    const edited = cvReviewEdited(unit, decisions)
+    if (edited !== undefined) {
+      summary.push({ sourceIds: [...unit.sourceIds], text: edited })
+      authoredSummary.push(edited)
+      provenance.push(
+        record(unit, "edit", "user_edited", edited, [...unit.sourceIds], true),
+      )
+      return
+    }
+    if (cvReviewConfirmed(unit, decisions)) {
+      summary.push({ sourceIds: summarySourceIds(item), text: item.text })
+      authoredSummary.push(undefined)
+      provenance.push(
+        record(
+          unit,
+          "confirm",
+          "user_confirmed",
+          item.text,
+          summarySourceIds(item),
+          true,
+        ),
+      )
+      return
+    }
+    if (unit.status !== "supported") throw new Error("unresolved_output")
+    summary.push({ sourceIds: summarySourceIds(item), text: item.text })
+    authoredSummary.push(undefined)
+    provenance.push(
+      record(
+        unit,
+        "keep_generated",
+        "generated",
+        item.text,
+        summarySourceIds(item),
+        false,
+      ),
+    )
+  })
+  const wording: Record<string, string> = {}
+  const authoredWording: Record<string, string> = {}
+  for (const id of Object.keys(core.wording ?? {}).sort()) {
+    const unit = byId.get(`wording:${id}`)!
+    const text = core.wording![id]
+    if (decisions.revertedWordingIds.includes(id)) {
+      provenance.push(
+        record(unit, "revert_to_source", "generated", "", [], true),
+      )
+      continue
+    }
+    const edited = cvReviewEdited(unit, decisions)
+    if (edited !== undefined) {
+      wording[id] = edited
+      authoredWording[id] = edited
+      provenance.push(record(unit, "edit", "user_edited", edited, [id], true))
+      continue
+    }
+    if (cvReviewConfirmed(unit, decisions)) {
+      wording[id] = text
+      provenance.push(
+        record(unit, "confirm", "user_confirmed", text, [id], true),
+      )
+      continue
+    }
+    if (unit.status !== "supported") throw new Error("unresolved_output")
+    wording[id] = text
+    provenance.push(
+      record(unit, "keep_generated", "generated", text, [id], false),
+    )
+  }
+  const resolved: CvResult = {
+    summary,
+    selected: core.selected,
+    ...(core.wording ? { wording } : {}),
+  }
+  const authored: CvAuthoredText = {
+    summary: authoredSummary,
+    wording: authoredWording,
+  }
+  if (!validateCvResult(resolved, facts, authored))
+    throw new Error("invalid_output")
+  return { result: resolved, provenance, authored }
+}
 export function acceptCvResult(
   result: CvResult,
   facts: CvFact[],
   decisions: CvReviewDecisions,
 ): CvResult {
-  const { support, ...core } = result
-  if (!validateCvResult(core, facts)) throw new Error("invalid_output")
-  if (support && !validateCvSupport(support, result))
-    throw new Error("invalid_output")
-  if (!support) return core
-  const units = cvReviewUnits(result)!
-  if (
-    units.some(
-      (unit) =>
-        unit.status !== "supported" && !cvReviewRemoved(unit, decisions),
+  return resolveCvReview(result, facts, decisions).result
+}
+
+// Saved provenance is untrusted on reload: it must have a known decision,
+// matching origin, valid cited references and a preserved original judgment for
+// every authored/removed unit. Machine support can never be attached to user
+// text, so an incomplete or unknown record cannot default to supported.
+export function validateCvReviewRecords(
+  value: unknown,
+  sources: CvFact[],
+): value is CvReviewRecord[] {
+  if (!Array.isArray(value) || !value.length) return false
+  const available = new Set(sources.map((f) => f.id))
+  const seen = new Set<string>()
+  const decisions: CvReviewDecision[] = [
+    "keep_generated",
+    "discard",
+    "revert_to_source",
+    "edit",
+    "confirm",
+  ]
+  const origins: CvReviewOrigin[] = [
+    "generated",
+    "user_edited",
+    "user_confirmed",
+  ]
+  const removed: CvReviewDecision[] = ["discard", "revert_to_source"]
+  for (const record of value as CvReviewRecord[]) {
+    if (!record || typeof record !== "object" || Array.isArray(record))
+      return false
+    if (
+      ![
+        "decision,id,kind,origin,sourceIds,text",
+        "decision,id,kind,origin,original,sourceIds,text",
+      ].includes(Object.keys(record).sort().join(","))
     )
-  )
-    throw new Error("unresolved_output")
-  const discarded = new Set(decisions.discardedSummaryIds)
-  const reverted = new Set(decisions.revertedWordingIds)
-  const resolved: CvResult = {
-    summary: core.summary.filter(
-      (_item, index) => !discarded.has(`summary:${index}`),
-    ),
-    selected: core.selected,
-    ...(core.wording
-      ? {
-          wording: Object.fromEntries(
-            Object.entries(core.wording).filter(([id]) => !reverted.has(id)),
-          ),
-        }
-      : {}),
+      return false
+    if (
+      typeof record.id !== "string" ||
+      !record.id ||
+      seen.has(record.id) ||
+      !["summary", "wording"].includes(record.kind)
+    )
+      return false
+    seen.add(record.id)
+    if (
+      !decisions.includes(record.decision) ||
+      !origins.includes(record.origin) ||
+      typeof record.text !== "string" ||
+      new TextEncoder().encode(record.text).length > 12_288 ||
+      !Array.isArray(record.sourceIds) ||
+      record.sourceIds.some(
+        (id) => typeof id !== "string" || !available.has(id),
+      )
+    )
+      return false
+    const hasOriginal =
+      record.decision === "edit" ||
+      record.decision === "confirm" ||
+      removed.includes(record.decision)
+    if (hasOriginal !== (record.original !== undefined)) return false
+    if (record.kind === "summary") {
+      if (!/^summary:\d+$/.test(record.id)) return false
+      // Authored/kept records cite their sources; removed records keep none.
+      if (!removed.includes(record.decision) && !record.sourceIds.length)
+        return false
+      if (removed.includes(record.decision) && record.sourceIds.length)
+        return false
+    } else {
+      const id = record.id.slice("wording:".length)
+      if (record.id !== `wording:${id}`) return false
+      if (removed.includes(record.decision)) {
+        if (record.sourceIds.length) return false
+      } else if (record.sourceIds.length !== 1 || record.sourceIds[0] !== id)
+        return false
+    }
+    // User provenance is never machine support, and removals never keep text.
+    if (record.decision === "keep_generated" && record.origin !== "generated")
+      return false
+    if (record.decision === "edit" && record.origin !== "user_edited")
+      return false
+    if (record.decision === "confirm" && record.origin !== "user_confirmed")
+      return false
+    if (removed.includes(record.decision)) {
+      if (record.origin !== "generated" || record.text !== "") return false
+    } else if (!record.text.trim()) return false
+    if (record.original !== undefined) {
+      const history = record.original
+      if (
+        !history ||
+        typeof history !== "object" ||
+        Array.isArray(history) ||
+        !["reason,sourceIds,status,text"].includes(
+          Object.keys(history).sort().join(","),
+        ) ||
+        typeof history.text !== "string" ||
+        new TextEncoder().encode(history.text).length > 12_288 ||
+        typeof history.reason !== "string" ||
+        new TextEncoder().encode(history.reason).length > 500 ||
+        !["supported", "uncertain", "unsupported"].includes(history.status) ||
+        !Array.isArray(history.sourceIds) ||
+        history.sourceIds.some(
+          (id) => typeof id !== "string" || !available.has(id),
+        )
+      )
+        return false
+      if (
+        (record.decision === "edit" || record.decision === "confirm") &&
+        (history.sourceIds.length !== record.sourceIds.length ||
+          history.sourceIds.some((id, index) => id !== record.sourceIds[index]))
+      )
+        return false
+    }
   }
-  if (!validateCvResult(resolved, facts)) throw new Error("invalid_output")
-  return resolved
+  return true
 }
 
 export function cvSupportStatus(
@@ -673,19 +970,26 @@ export function createCuratedCv(
   cvLanguage: Locale,
   density: CvDensity = "balanced",
   document?: ProfileDocument,
+  review?: CvReviewDecisions,
 ): CuratedCv {
-  const { support, ...core } = result
-  if (!validateCvResult(core, facts)) throw new Error("invalid_output")
-  if (support) {
-    if (!validateCvSupport(support, result)) throw new Error("invalid_output")
-    // A global acceptance can never carry unresolved machine wording: every
-    // retained summary item and rewrite must be supported (or removed upstream
-    // by review, which drops the whole support object).
-    if (
-      support.statements.some((statement) => statement.status !== "supported")
-    )
-      throw new Error("unresolved_output")
+  // With explicit review decisions, resolution records user provenance and
+  // drops removed units. Without them the legacy acceptance path is unchanged:
+  // a v3 result carrying any unresolved statement is still rejected.
+  const resolved = review ? resolveCvReview(result, facts, review) : undefined
+  const { support, ...stripped } = result
+  const core = resolved?.result ?? stripped
+  if (!resolved) {
+    if (!validateCvResult(core, facts)) throw new Error("invalid_output")
+    if (support) {
+      if (!validateCvSupport(support, result)) throw new Error("invalid_output")
+      if (
+        support.statements.some((statement) => statement.status !== "supported")
+      )
+        throw new Error("unresolved_output")
+    }
   }
+  const provenance = resolved?.provenance
+  if (provenance && !document) throw new Error("invalid_output")
   const selected = core.selected.map((id) => facts.find((f) => f.id === id)!)
   if (
     document &&
@@ -763,7 +1067,7 @@ export function createCuratedCv(
   snapshot.currentSalary = ""
   snapshot.desiredSalary = ""
   return {
-    version: document ? 2 : 1,
+    version: provenance ? 3 : document ? 2 : 1,
     ...(document
       ? {
           sourceProfileId: document.id,
@@ -814,6 +1118,7 @@ export function createCuratedCv(
             })),
         }
       : {}),
+    ...(provenance ? { provenance } : {}),
     repository: snapshot,
     summary: core.summary.map((s) => s.text).join(" "),
     sources: structuredClone(selected),
@@ -832,7 +1137,7 @@ export function parseCuratedCv(raw: string | null): CuratedCv | null {
     }
     if (
       !value ||
-      ![1, 2].includes(value.version) ||
+      ![1, 2, 3].includes(value.version) ||
       !["en", "pt-BR"].includes(value.cvLanguage) ||
       typeof value.summary !== "string" ||
       !Array.isArray(value.sources) ||
@@ -910,7 +1215,7 @@ export function parseCuratedCv(raw: string | null): CuratedCv | null {
       )
     )
       return null
-    if (value.version === 2) {
+    if (value.version === 2 || value.version === 3) {
       const ref = (r: ProfileRef | undefined) =>
         !!r &&
         r.profileId === value.sourceProfileId &&
@@ -918,6 +1223,17 @@ export function parseCuratedCv(raw: string | null): CuratedCv | null {
         !!r.id &&
         Number.isSafeInteger(r.revision) &&
         r.revision > 0
+      // A v3 snapshot must carry complete, coherent provenance for every
+      // retained statement, and its retained summary records must correspond
+      // positionally to the stored summary sources. Invalid metadata can never
+      // default to machine-supported content.
+      const provenance = value.version === 3 ? value.provenance : undefined
+      const retained = Array.isArray(provenance)
+        ? provenance.filter(
+            (record) =>
+              record.kind === "summary" && record.decision !== "discard",
+          )
+        : []
       if (
         typeof value.sourceProfileId !== "string" ||
         !value.sourceProfileId ||
@@ -946,12 +1262,32 @@ export function parseCuratedCv(raw: string | null): CuratedCv | null {
             ),
         ) ||
         !Array.isArray(value.summarySources) ||
+        (value.version === 3 &&
+          (!validateCvReviewRecords(provenance, value.sources) ||
+            retained.length !== value.summarySources.length ||
+            retained.some((record, index) => {
+              const ids = summarySourceIds(value.summarySources![index])
+              return (
+                record.text !== value.summarySources![index].text ||
+                ids.length !== record.sourceIds.length ||
+                ids.some((id, position) => id !== record.sourceIds[position])
+              )
+            }))) ||
         !validateCvResult(
           {
             summary: value.summarySources,
             selected: value.sources.map((f) => f.id),
           },
           value.sources,
+          value.version === 3
+            ? {
+                summary: value.summarySources.map((_item, index) =>
+                  retained[index]?.origin === "user_edited"
+                    ? retained[index].text
+                    : undefined,
+                ),
+              }
+            : undefined,
         )
       )
         return null

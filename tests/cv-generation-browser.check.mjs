@@ -1103,9 +1103,22 @@ try {
     const savedRaw = await evaluate(
       "localStorage.getItem('careeros_curated_cv_v1')",
     )
-    assert.equal(saved.version, 2)
+    assert.equal(saved.version, 3)
     assert.equal(saved.summary, retained)
     assert.equal(saved.summarySources.length, 1)
+    assert.deepEqual(
+      saved.provenance.map((r) => [r.id, r.origin, r.decision]),
+      [
+        ["summary:0", "generated", "keep_generated"],
+        ["summary:1", "generated", "discard"],
+        [
+          "wording:" + saved.sources.find((f) => f.field === "description").id,
+          "generated",
+          "revert_to_source",
+        ],
+      ],
+      "reviewed removals are kept as provenance history",
+    )
     assert.equal(
       saved.repository.experience[0].description,
       firstSummary,
@@ -1144,6 +1157,220 @@ try {
     console.log(
       fixture.locale +
         ": v3 per-statement review gate; unresolved blocked, discard/revert persists the reviewed subset, all-summary removal blocked, cancel preserves the accepted CV",
+    )
+  }
+  // ADR 0003 / issue #126: explicit user-authored corrections carry their own
+  // provenance through accept/save/reload. Controlled fixtures only; this is
+  // enforcement, not a live-quality or certification claim.
+  const provenanceFetch = `window.__calls=0;window.fetch=async(url,options)=>{
+    window.__calls++;window.__outbound=JSON.parse(options.body);
+    const facts=window.__outbound.facts;
+    const description=facts.find(f=>f.field==='description');
+    const achievement=facts.find(f=>f.field==='achievements');
+    const selected=facts.filter(f=>['skills','title','company','startDate','endDate','description','achievements','degree','institution','graduationDate','name','highlights'].includes(f.field)).map(f=>f.id);
+    const rewrite=description.text.replace(/\\.$/,'')+' with measurable scope.';
+    const summary=[{sourceIds:[description.id],text:description.text},{sourceIds:[achievement.id],text:achievement.text}];
+    window.__provenance={description:description.text,achievement:achievement.text,rewrite};
+    const statements=[
+      {id:'summary:0',text:description.text,sourceIds:[description.id],status:'supported',reason:'direct source match'},
+      {id:'summary:1',text:achievement.text,sourceIds:[achievement.id],status:'uncertain',reason:'insufficient evidence'},
+      {id:'wording:'+description.id,text:rewrite,sourceIds:[description.id],status:'unsupported',reason:'introduces scope'}
+    ];
+    return new Response(JSON.stringify({schemaVersion:3,summary,selected,wording:{[description.id]:rewrite},support:{policyVersion:'cv-statement-support-v1',assessment:'complete',statements}}),{status:200,headers:{'Content-Type':'application/json'}});
+  }`
+  for (const fixture of fixtures) {
+    const repo = structuredClone(fixture.repo)
+    const generate = fixture.locale === "en" ? "Generate CV" : "Gerar currículo"
+    const accept =
+      fixture.locale === "en"
+        ? "Accept and replace CV"
+        : "Aceitar e substituir CV"
+    const acceptDisabled = `Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()===${JSON.stringify(accept)}).disabled`
+    const userText =
+      fixture.locale === "en"
+        ? "I improved onboarding for 30 teams."
+        : "Melhorei a integração para 30 equipes."
+    await openCv(repo, fixture.locale)
+    const originalProfile = await evaluate(savedProfileExpression)
+    await evaluate(provenanceFetch)
+    await click(generate)
+    await until("!!document.querySelector('[data-generated-summary]')")
+    assert.equal(await evaluate(acceptDisabled), true)
+    // Edit the uncertain sentence with an explicit per-statement action.
+    await evaluate(
+      "document.querySelector('[data-cv-review-status=\"uncertain\"] [data-cv-review-edit-toggle]').click()",
+    )
+    await until("!!document.querySelector('[data-cv-review-edit-input]')")
+    assert.equal(
+      await evaluate(
+        "document.querySelector('[data-cv-review-edit-input]').value===window.__provenance.achievement",
+      ),
+      true,
+      "editing starts from the machine wording",
+    )
+    await evaluate(
+      `{const el=document.querySelector('[data-cv-review-edit-input]');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(el,${JSON.stringify(userText)});el.dispatchEvent(new Event('input',{bubbles:true}))}`,
+    )
+    assert.ok(
+      await evaluate(
+        '!!document.querySelector(\'[data-cv-review-status="uncertain"] [data-cv-review-provenance="user_edited"]\')',
+      ),
+      "edited wording is labeled as user-authored",
+    )
+    assert.equal(
+      await evaluate(
+        "document.querySelector('[data-cv-review-status=\"uncertain\"] [data-cv-review-text]').textContent",
+      ),
+      userText,
+      "the reviewed row shows the user's own wording",
+    )
+    assert.ok(
+      (
+        await evaluate(
+          "document.querySelector('[data-generated-summary]').textContent",
+        )
+      ).includes(userText),
+      "the acceptance preview reflects the user's own wording",
+    )
+    assert.equal(
+      await evaluate(
+        `document.querySelector('[data-cv-review-status="uncertain"] [data-cv-review-status-label]').textContent.includes(${JSON.stringify(
+          fixture.locale === "en" ? "Uncertain" : "Incerto",
+        )})`,
+      ),
+      false,
+      "user-authored wording carries no active machine status",
+    )
+    assert.equal(
+      await evaluate(acceptDisabled),
+      true,
+      "the unsupported rewrite still blocks acceptance",
+    )
+    // Confirm the unsupported rewrite as the user's own wording.
+    await evaluate(
+      "document.querySelector('[data-cv-review-status=\"unsupported\"] [data-cv-review-confirm]').click()",
+    )
+    await until("!document.querySelector('[data-cv-review-blocked]')")
+    assert.ok(
+      await evaluate(
+        '!!document.querySelector(\'[data-cv-review-status="unsupported"] [data-cv-review-provenance="user_confirmed"]\')',
+      ),
+      "confirmed wording is labeled as user-authored",
+    )
+    await click(accept)
+    await until("!!localStorage.getItem('careeros_curated_cv_v1')")
+    const savedRaw = await evaluate(
+      "localStorage.getItem('careeros_curated_cv_v1')",
+    )
+    const saved = JSON.parse(savedRaw)
+    assert.equal(saved.version, 3, "authored corrections persist as version 3")
+    assert.equal(await evaluate(savedProfileExpression), originalProfile)
+    assert.equal(
+      saved.summary.includes(userText),
+      true,
+      "accepted summary keeps the user's own wording",
+    )
+    assert.deepEqual(
+      saved.provenance.map((r) => [r.id, r.origin, r.decision]),
+      [
+        ["summary:0", "generated", "keep_generated"],
+        ["summary:1", "user_edited", "edit"],
+        [
+          "wording:" + saved.sources.find((f) => f.field === "description").id,
+          "user_confirmed",
+          "confirm",
+        ],
+      ],
+      "each statement keeps its own provenance and decision",
+    )
+    const editedRecord = saved.provenance.find(
+      (r) => r.origin === "user_edited",
+    )
+    assert.equal(editedRecord.original.status, "uncertain")
+    assert.equal(
+      saved.provenance.some((r) => "status" in r),
+      false,
+      "no accepted user text carries a machine status",
+    )
+    // Reload preserves text, provenance, references and decisions atomically.
+    await evaluate("location.reload()")
+    await until("!!document.querySelector('header button')")
+    await evaluate("document.querySelector('header button:last-child').click()")
+    await until("document.querySelectorAll('nav button').length===4")
+    await evaluate("document.querySelectorAll('nav button')[2].click()")
+    await until("!!document.querySelector('.cv-paper-content')")
+    assert.equal(
+      await evaluate("localStorage.getItem('careeros_curated_cv_v1')"),
+      savedRaw,
+      "reload preserves the accepted v3 document byte for byte",
+    )
+    assert.equal(
+      await evaluate("document.querySelector('textarea').value"),
+      saved.summary,
+      "reload preserves the user-authored summary",
+    )
+    // A later Profile edit never rewrites the accepted correction.
+    await evaluate(
+      `(async () => { const {editProfile,validateProfileDocument}=await import('/src/lib/profileDocument.ts'); const key='careeros_profile_v2'; const doc=JSON.parse(localStorage.getItem(key)); const next=editProfile(doc,{type:'fact',id:${JSON.stringify(saved.sources[0].id)},patch:{value:'Changed source'}});if(!validateProfileDocument(next))throw new Error('invalid changed Profile fixture');localStorage.setItem(key,JSON.stringify(next));location.reload(); })()`,
+    )
+    await until("!!document.querySelector('header button')")
+    await evaluate("document.querySelector('header button:last-child').click()")
+    await until("document.querySelectorAll('nav button').length===4")
+    await evaluate("document.querySelectorAll('nav button')[2].click()")
+    await until("!!document.querySelector('[data-cv-saved-support]')")
+    assert.ok(
+      await evaluate(
+        "!!document.querySelector('[data-cv-saved-support] [role=status]')",
+      ),
+      "a changed source reference marks the accepted CV stale",
+    )
+    assert.equal(
+      await evaluate("localStorage.getItem('careeros_curated_cv_v1')"),
+      savedRaw,
+      "stale support never rewrites the accepted authored provenance",
+    )
+    // A failed primary write preserves the previous accepted CV and pending work.
+    await evaluate(provenanceFetch)
+    await click(generate)
+    await until("!!document.querySelector('[data-generated-summary]')")
+    await evaluate(
+      "document.querySelector('[data-cv-review-status=\"uncertain\"] [data-cv-review-edit-toggle]').click()",
+    )
+    await until("!!document.querySelector('[data-cv-review-edit-input]')")
+    await evaluate(
+      `{const el=document.querySelector('[data-cv-review-edit-input]');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(el,${JSON.stringify(userText)});el.dispatchEvent(new Event('input',{bubbles:true}))}`,
+    )
+    await evaluate(
+      "document.querySelector('[data-cv-review-status=\"unsupported\"] [data-cv-review-confirm]').click()",
+    )
+    await until("!document.querySelector('[data-cv-review-blocked]')")
+    await evaluate(
+      `window.__originalSet=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key==='careeros_curated_cv_v1')throw new DOMException('quota','QuotaExceededError');return window.__originalSet.call(this,key,value)}`,
+    )
+    await click(accept)
+    await until("!!document.querySelector('[data-cv-generation] [role=alert]')")
+    assert.equal(
+      await evaluate("localStorage.getItem('careeros_curated_cv_v1')"),
+      savedRaw,
+      "failed save keeps the previous accepted CV",
+    )
+    assert.ok(
+      await evaluate("!!document.querySelector('[data-generated-summary]')"),
+      "the reviewed proposal stays available after a failed save",
+    )
+    await evaluate("Storage.prototype.setItem=window.__originalSet")
+    await click(
+      fixture.locale === "en"
+        ? "Cancel / discard proposal"
+        : "Cancelar / descartar proposta",
+    )
+    assert.equal(
+      await evaluate("localStorage.getItem('careeros_curated_cv_v1')"),
+      savedRaw,
+    )
+    console.log(
+      fixture.locale +
+        ": v3 user provenance; edit/confirm accepted as version 3, reload and stale reference preserve authorship, failed save keeps the previous CV",
     )
   }
 } finally {

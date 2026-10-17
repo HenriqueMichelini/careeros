@@ -34,7 +34,12 @@ const {
   cvSupportUnits,
   cvReviewUnits,
   cvReviewResolved,
+  cvReviewEdited,
+  cvReviewConfirmed,
   acceptCvResult,
+  resolveCvReview,
+  validateCvReviewRecords,
+  userAuthoredCvText,
   emptyCvReview,
 } = await import(path)
 const profile = {
@@ -932,4 +937,401 @@ test("all-supported v3 content is accepted with judgments and discards applied",
   })
   assert.deepEqual(reverted.wording, {})
   assert.ok(validateCvResult(reverted, facts))
+})
+
+// ADR 0003 / issue #126 user-authored provenance. An explicit edit or
+// confirmation is recorded as the user's own wording and never inherits the
+// machine judgment; only a real text change resolves an unresolved unit.
+const reviewCore = () => {
+  const facts = cvFacts(profile)
+  const skill = facts.find((f) => f.field === "skills")
+  const achievement = facts.find((f) => f.field === "achievements")
+  const desc = facts.find((f) => f.field === "description")
+  const core = {
+    summary: [
+      { sourceIds: [skill.id], text: skill.text },
+      { sourceIds: [achievement.id], text: achievement.text },
+    ],
+    selected: [skill.id, achievement.id, desc.id],
+    wording: { [desc.id]: desc.text },
+  }
+  const support = gateSupport([
+    gateStatement("summary:0", skill.text, [skill.id], "supported", "direct"),
+    gateStatement(
+      "summary:1",
+      achievement.text,
+      [achievement.id],
+      "unsupported",
+      "invented scope",
+    ),
+    gateStatement(
+      `wording:${desc.id}`,
+      desc.text,
+      [desc.id],
+      "uncertain",
+      "ambiguous",
+    ),
+  ])
+  return { facts, skill, achievement, desc, core, result: { ...core, support } }
+}
+
+test("explicit edits and confirmations record user provenance and never inherit machine support", () => {
+  const { facts, skill, achievement, desc, result } = reviewCore()
+  const decisions = {
+    discardedSummaryIds: [],
+    revertedWordingIds: [],
+    editedText: { "summary:1": "Own claim: improved service outcomes." },
+    confirmedIds: [`wording:${desc.id}`],
+  }
+  assert.ok(cvReviewResolved(result, decisions))
+  const {
+    result: resolved,
+    provenance,
+    authored,
+  } = resolveCvReview(result, facts, decisions)
+  assert.deepEqual(resolved.summary, [
+    { sourceIds: [skill.id], text: skill.text },
+    {
+      sourceIds: [achievement.id],
+      text: "Own claim: improved service outcomes.",
+    },
+  ])
+  assert.deepEqual(resolved.wording, { [desc.id]: desc.text })
+  // The edited/confirmed text is carried as the exact authored value.
+  assert.equal(authored.summary[1], "Own claim: improved service outcomes.")
+  assert.equal(authored.summary[0], undefined)
+  assert.deepEqual(authored.wording, {})
+  const byUnit = Object.fromEntries(provenance.map((r) => [r.id, r]))
+  assert.deepEqual([byUnit["summary:0"].origin, byUnit["summary:0"].decision], [
+    "generated",
+    "keep_generated",
+  ])
+  assert.equal(byUnit["summary:0"].original, undefined)
+  assert.deepEqual([byUnit["summary:1"].origin, byUnit["summary:1"].decision], [
+    "user_edited",
+    "edit",
+  ])
+  assert.deepEqual(byUnit["summary:1"].original, {
+    text: achievement.text,
+    sourceIds: [achievement.id],
+    status: "unsupported",
+    reason: "invented scope",
+  })
+  assert.deepEqual(
+    [
+      byUnit[`wording:${desc.id}`].origin,
+      byUnit[`wording:${desc.id}`].decision,
+    ],
+    ["user_confirmed", "confirm"],
+  )
+  assert.equal(byUnit[`wording:${desc.id}`].original.status, "uncertain")
+  // User text is never exposed with a machine status.
+  assert.ok(
+    provenance
+      .filter((r) => r.origin !== "generated")
+      .every((r) => !("status" in r)),
+  )
+  assert.ok(validateCvReviewRecords(provenance, facts))
+})
+
+test("only a changed, non-empty wording resolves an unresolved unit", () => {
+  const { facts, achievement, desc, result } = reviewCore()
+  // Keep the supported summary and rewrite so only `summary:1` stays unresolved.
+  const wordingSupported = {
+    ...result,
+    support: {
+      ...result.support,
+      statements: result.support.statements.map((statement) =>
+        statement.id === `wording:${desc.id}`
+          ? { ...statement, status: "supported" }
+          : statement,
+      ),
+    },
+  }
+  // `editedText` equal to the machine text is not an edit and never promotes it.
+  const asTyped = {
+    ...emptyCvReview,
+    editedText: { "summary:1": achievement.text },
+  }
+  assert.equal(cvReviewResolved(wordingSupported, asTyped), false)
+  assert.equal(
+    cvReviewEdited({ id: "summary:1", text: achievement.text }, asTyped),
+    undefined,
+  )
+  assert.throws(
+    () => resolveCvReview(wordingSupported, facts, asTyped),
+    /unresolved_output/,
+  )
+  // An empty edit is not a correction either.
+  const blank = { ...emptyCvReview, editedText: { "summary:1": "   " } }
+  assert.equal(cvReviewResolved(wordingSupported, blank), false)
+  assert.throws(
+    () => resolveCvReview(wordingSupported, facts, blank),
+    /unresolved_output/,
+  )
+  // A real edit resolves the unit and records user provenance.
+  const realEdit = {
+    ...emptyCvReview,
+    editedText: { "summary:1": "Own statement about impact." },
+  }
+  assert.ok(cvReviewResolved(wordingSupported, realEdit))
+  // Clearing an edit restores the original machine judgment.
+  const allSupported = {
+    ...result,
+    support: {
+      ...result.support,
+      statements: result.support.statements.map((statement) => ({
+        ...statement,
+        status: "supported",
+      })),
+    },
+  }
+  const supportedEdit = {
+    ...emptyCvReview,
+    editedText: { "summary:0": "Reworded supported statement." },
+  }
+  assert.equal(
+    resolveCvReview(allSupported, facts, supportedEdit).provenance.find(
+      (r) => r.id === "summary:0",
+    ).origin,
+    "user_edited",
+  )
+  assert.equal(
+    resolveCvReview(allSupported, facts, emptyCvReview).provenance.find(
+      (r) => r.id === "summary:0",
+    ).origin,
+    "generated",
+  )
+  assert.ok(userAuthoredCvText("ok"))
+  assert.equal(userAuthoredCvText("  "), false)
+  assert.equal(userAuthoredCvText("x".repeat(12_289)), false)
+})
+
+test("the machine numeric guard applies to machine text but not to an explicit user edit", () => {
+  const { facts, achievement, desc, result } = reviewCore()
+  const edited = "Reduced wait by 90%."
+  const machineRewrite = {
+    summary: [{ sourceIds: [achievement.id], text: edited }],
+    selected: [achievement.id],
+  }
+  // Machine text that introduces an unsupported metric is still rejected.
+  assert.equal(validateCvResult(machineRewrite, facts), false)
+  // The same text is accepted only when recorded as the user's own wording.
+  assert.ok(validateCvResult(machineRewrite, facts, { summary: [edited] }))
+  const decisions = {
+    ...emptyCvReview,
+    editedText: { "summary:1": edited },
+  }
+  const wordingSupported = {
+    ...result,
+    support: {
+      ...result.support,
+      statements: result.support.statements.map((statement) =>
+        statement.id === `wording:${desc.id}`
+          ? { ...statement, status: "supported" }
+          : statement,
+      ),
+    },
+  }
+  const { result: resolved } = resolveCvReview(
+    wordingSupported,
+    facts,
+    decisions,
+  )
+  assert.equal(resolved.summary[1].text, edited)
+  // The supported machine unit is untouched.
+  assert.deepEqual(resolved.summary[0], result.summary[0])
+})
+
+const provenanceDocument = () => ({
+  id: "profile-b",
+  revision: 1,
+  entities: [
+    { id: "role-b", revision: 1, kind: "experience", legacyId: "role-legacy" },
+  ],
+  evidence: [],
+  links: [],
+  facts: [
+    {
+      id: "desc-b",
+      revision: 1,
+      owner: { profileId: "profile-b", id: "role-b", revision: 1 },
+      context: [],
+      field: "description",
+      order: 0,
+      kind: "legacy_block",
+      value: "Designed customer services.",
+      assertion: "unknown",
+      intent: "unknown",
+      certainty: "unknown",
+      support: "unsupported",
+    },
+    {
+      id: "impact-b",
+      revision: 1,
+      owner: { profileId: "profile-b", id: "role-b", revision: 1 },
+      context: [],
+      field: "achievements",
+      order: 1,
+      kind: "legacy_block",
+      value: "Reduced wait by 20%.",
+      assertion: "unknown",
+      intent: "unknown",
+      certainty: "unknown",
+      support: "unsupported",
+    },
+  ],
+})
+
+test("an accepted v3 snapshot persists provenance and round-trips without changing the Profile", () => {
+  const doc = provenanceDocument()
+  const original = structuredClone(doc)
+  const facts = stableCvFacts(doc)
+  const desc = facts.find((f) => f.field === "description")
+  const impact = facts.find((f) => f.field === "achievements")
+  const result = {
+    summary: [{ sourceIds: [desc.id], text: desc.text }],
+    selected: [desc.id, impact.id],
+    wording: { [impact.id]: impact.text },
+    support: gateSupport([
+      gateStatement("summary:0", desc.text, [desc.id], "supported", "direct"),
+      gateStatement(
+        `wording:${impact.id}`,
+        impact.text,
+        [impact.id],
+        "uncertain",
+        "unclear",
+      ),
+    ]),
+  }
+  const decisions = {
+    discardedSummaryIds: [],
+    revertedWordingIds: [],
+    editedText: { "summary:0": "Designed customer services for 30 teams." },
+    confirmedIds: [`wording:${impact.id}`],
+  }
+  const saved = createCuratedCv(
+    profile,
+    facts,
+    result,
+    "pt-BR",
+    "compact",
+    doc,
+    decisions,
+  )
+  assert.equal(saved.version, 3)
+  assert.equal(saved.summary, "Designed customer services for 30 teams.")
+  assert.deepEqual(
+    saved.provenance.map((r) => [r.id, r.origin, r.decision]),
+    [
+      ["summary:0", "user_edited", "edit"],
+      [`wording:${impact.id}`, "user_confirmed", "confirm"],
+    ],
+  )
+  assert.deepEqual(parseCuratedCv(JSON.stringify(saved)), saved)
+  assert.equal(cvSupportStatus(saved, doc), "current")
+  assert.deepEqual(doc, original)
+  // A user confirmation cannot waive the source identity guard.
+  const other = provenanceDocument()
+  other.facts[0].revision = 2
+  assert.equal(cvSupportStatus(saved, other), "stale")
+})
+
+test("malformed or incomplete v3 provenance never loads as an accepted CV", () => {
+  const doc = provenanceDocument()
+  const facts = stableCvFacts(doc)
+  const desc = facts.find((f) => f.field === "description")
+  const impact = facts.find((f) => f.field === "achievements")
+  const result = {
+    summary: [{ sourceIds: [desc.id], text: desc.text }],
+    selected: [desc.id, impact.id],
+    wording: { [impact.id]: impact.text },
+    support: gateSupport([
+      gateStatement("summary:0", desc.text, [desc.id], "supported", "direct"),
+      gateStatement(
+        `wording:${impact.id}`,
+        impact.text,
+        [impact.id],
+        "supported",
+        "direct",
+      ),
+    ]),
+  }
+  const saved = createCuratedCv(
+    profile,
+    facts,
+    result,
+    "en",
+    "balanced",
+    doc,
+    emptyCvReview,
+  )
+  assert.equal(saved.version, 3)
+  assert.ok(validateCvReviewRecords(saved.provenance, facts))
+  assert.deepEqual(parseCuratedCv(JSON.stringify(saved)), saved)
+  const mutate = (change) => {
+    const value = structuredClone(saved)
+    change(value)
+    assert.equal(parseCuratedCv(JSON.stringify(value)), null)
+  }
+  // Origin/decision mismatch would silently mislabel user text.
+  mutate((v) => (v.provenance[0].origin = "user_confirmed"))
+  mutate((v) => (v.provenance[0].decision = "confirm"))
+  // Unknown citations and unknown decisions are rejected.
+  mutate((v) => (v.provenance[0].sourceIds = ["ghost"]))
+  mutate((v) => (v.provenance[0].decision = "approve"))
+  // Missing provenance cannot fall back to unverified v2 content.
+  mutate((v) => delete v.provenance)
+  mutate((v) => (v.provenance = []))
+  // A record that does not correspond to the stored summary is rejected.
+  mutate((v) =>
+    v.provenance.push({
+      id: "summary:9",
+      kind: "summary",
+      decision: "keep_generated",
+      origin: "generated",
+      text: "Ghost sentence.",
+      sourceIds: [desc.id],
+    }),
+  )
+  mutate((v) => (v.provenance[0].text = "Rewritten without a record."))
+  // A fabricated original judgment on a kept machine record is rejected.
+  mutate(
+    (v) =>
+      (v.provenance[0].original = {
+        text: v.provenance[0].text,
+        sourceIds: [...v.provenance[0].sourceIds],
+        status: "supported",
+        reason: "fabricated",
+      }),
+  )
+})
+
+test("reverting a rewrite and discarding a sentence keep their decisions as history", () => {
+  const { facts, skill, achievement, desc, result } = reviewCore()
+  const decisions = {
+    discardedSummaryIds: ["summary:1"],
+    revertedWordingIds: [desc.id],
+  }
+  const { result: resolved, provenance } = resolveCvReview(
+    result,
+    facts,
+    decisions,
+  )
+  assert.deepEqual(resolved.summary, [
+    { sourceIds: [skill.id], text: skill.text },
+  ])
+  assert.deepEqual(resolved.wording, {})
+  const byUnit = Object.fromEntries(provenance.map((r) => [r.id, r]))
+  assert.deepEqual([byUnit["summary:1"].decision, byUnit["summary:1"].text], [
+    "discard",
+    "",
+  ])
+  assert.equal(byUnit["summary:1"].original.text, achievement.text)
+  assert.deepEqual(
+    [byUnit[`wording:${desc.id}`].decision, byUnit[`wording:${desc.id}`].text],
+    ["revert_to_source", ""],
+  )
+  assert.equal(byUnit[`wording:${desc.id}`].original.status, "uncertain")
+  assert.ok(validateCvReviewRecords(provenance, facts))
 })
