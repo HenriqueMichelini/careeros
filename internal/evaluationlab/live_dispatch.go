@@ -191,6 +191,7 @@ func (g *LiveGuard) Dispatch(ctx context.Context, authorization GuardAuthorizati
 	observed, callErr := transport(callCtx, cloneJSON(spec), credential)
 	elapsed := float64(time.Since(started)) / float64(time.Millisecond)
 	canceled := callCtx.Err() != nil
+	timedOut := errors.Is(ctx.Err(), context.DeadlineExceeded) || errors.Is(secret.ctx.Err(), context.DeadlineExceeded) || errors.Is(callErr, context.DeadlineExceeded)
 	stop()
 	cancel()
 	credential = ""
@@ -200,10 +201,10 @@ func (g *LiveGuard) Dispatch(ctx context.Context, authorization GuardAuthorizati
 	call := &record.Calls[len(record.Calls)-1]
 	call.FinishedAt = g.options.Now().UTC().Format(time.RFC3339Nano)
 	outcome := observed.Outcome
-	if canceled {
-		outcome = "canceled"
-	} else if errors.Is(callErr, context.DeadlineExceeded) {
+	if timedOut {
 		outcome = "timeout"
+	} else if canceled {
+		outcome = "canceled"
 	} else if callErr != nil {
 		outcome = "transport_failure"
 	}
@@ -246,7 +247,11 @@ func (g *LiveGuard) Dispatch(ctx context.Context, authorization GuardAuthorizati
 	call.Call = observed.Call
 	call.State = outcome
 	if record.State == "canceled" || record.State == "expired" || g.closed {
-		call.State = "canceled"
+		if record.State == "expired" {
+			call.State = "timeout"
+		} else {
+			call.State = "canceled"
+		}
 		if record.State != "expired" {
 			record.State = "canceled"
 		}
@@ -325,15 +330,15 @@ func (g *LiveGuard) Report(id string) (GuardReport, error) {
 	}
 	usage, err := SummarizeDispatches(ledger, record.Preflight.Prices)
 	if err != nil {
-		if record.State == "unknown-final" {
+		return GuardReport{}, err
+	}
+	if record.State == "unknown-final" {
+		usage.TotalUSD = nil
+	}
+	for _, call := range record.Calls {
+		if call.State == "unknown-final" {
 			usage.TotalUSD = nil
 		}
-		for _, call := range record.Calls {
-			if call.State == "unknown-final" {
-				usage.TotalUSD = nil
-			}
-		}
-		return GuardReport{}, err
 	}
 	return GuardReport{Metrics: guardMetrics(record, usage, len(cases), len(legs)), AttemptedLogicalCases: len(cases), AttemptedHTTPAttempts: len(legs), Comparison: cloneJSON(record.Comparison), Version: LiveGuardVersion, Preflight: cloneJSON(record.Preflight), Approval: cloneJSON(record.Approval), State: record.State, AttemptedCalls: len(record.Calls), ReservedTokenUnits: record.ReservedTokenUnits, UnreachedCalls: len(record.Preflight.Dispatches) - len(record.Calls), Calls: cloneJSON(record.Calls), Usage: usage, Limits: []string{"Controlled guard verification only; no actual provider dispatch, experiment approval, quality or population claim.", "Reserved token units are not provider-observed tokens or a dollar cap; unavailable prices/usage leave full cost unavailable."}}, nil
 }

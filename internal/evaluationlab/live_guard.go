@@ -170,7 +170,7 @@ func (g *LiveGuard) Preflight(request LivePreflightRequest) (LivePreflight, erro
 	preflight := LivePreflight{PriceSnapshotVersion: request.PriceSnapshotVersion, Prices: cloneJSON(request.Prices), Version: LiveGuardVersion, ID: newLabID(), Instance: g.instance, Origin: "controlled-verification-only", ExpiresAt: g.options.Now().Add(time.Duration(request.ApprovalLifetimeMS) * time.Millisecond).UTC().Format(time.RFC3339Nano), Plan: clonePlan(request.Plan), MaxTokenUnits: request.MaxTokenUnits, MaxOutputTokens: request.MaxOutputTokens, Dispatches: cloneJSON(request.Dispatches), Recipients: []string{}, Policy: "one-active-run; concurrency=1; exact-order; stop-on-first-failure; no-retry/repair/fallback/resume; nonrefundable-reservations; unknown-total-cost-unavailable", Retention: "private bounded append-only guard evidence; no credentials or authorization tokens"}
 	source := semanticeval.Hash(sourceRaw)
 	preflight.Identities = map[string]string{"fixture": request.Plan.Provenance.FixtureHash, "labels": versionedHash("lab-label-fixture-set-v1", request.Plan.InputHashes), "source": source, "prompt": "lab-prompt-source-envelope-v1:" + source, "scorer": scorer, "schema": ResultVersion, "strategy": source, "runtime": request.Plan.RuntimeVersion}
-	fixtures, err := g.guardFixtures(request.Plan)
+	fixtures, leafOrder, err := g.guardFixtures(request.Plan)
 	if err != nil {
 		return LivePreflight{}, err
 	}
@@ -179,12 +179,21 @@ func (g *LiveGuard) Preflight(request LivePreflightRequest) (LivePreflight, erro
 	stages := map[string]bool{}
 	leafHTTP := map[string]string{}
 	recipients := map[string]bool{}
+	nextLeaf := 0
+	previousLeaf := ""
 	for i := range preflight.Dispatches {
 		call := &preflight.Dispatches[i]
 		if call.LeafID == "" {
 			call.LeafID = call.CaseID
 		}
 		leafKey := call.CaseID + "/" + call.LeafID
+		if leafKey != previousLeaf {
+			if nextLeaf >= len(leafOrder) || leafOrder[nextLeaf] != leafKey {
+				return LivePreflight{}, fmt.Errorf("dispatch leaf order does not match frozen plan")
+			}
+			nextLeaf++
+			previousLeaf = leafKey
+		}
 		fixture, ok := fixtures[leafKey]
 		if !ok || call.HTTPID == "" || len(call.HTTPID) > 128 || call.Stage == "" || len(call.Stage) > 128 || call.ID != "" || call.PayloadHash != "" || call.PayloadKind != "" || call.TokenReservation < request.MaxOutputTokens || call.TokenReservation > 1000000 || call.MaxOutputTokens != 0 && call.MaxOutputTokens != request.MaxOutputTokens {
 			return LivePreflight{}, fmt.Errorf("exact bounded owned dispatch required")
@@ -242,14 +251,15 @@ func (g *LiveGuard) Preflight(request LivePreflightRequest) (LivePreflight, erro
 	g.records[preflight.ID] = record
 	return cloneJSON(preflight), nil
 }
-func (g *LiveGuard) guardFixtures(plan Plan) (map[string]json.RawMessage, error) {
+func (g *LiveGuard) guardFixtures(plan Plan) (map[string]json.RawMessage, []string, error) {
 	var corpus struct {
 		Cases []semanticeval.Case `json:"cases"`
 	}
 	if err := json.Unmarshal(g.planner.assets[plan.Selection.Suite], &corpus); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	result := map[string]json.RawMessage{}
+	order := []string{}
 	var collect func(semanticeval.Case, string) error
 	collect = func(c semanticeval.Case, root string) error {
 		if c.Task == "cv_generation" {
@@ -267,6 +277,7 @@ func (g *LiveGuard) guardFixtures(plan Plan) (map[string]json.RawMessage, error)
 			return err
 		}
 		result[root+"/"+c.ID] = c.Request
+		order = append(order, root+"/"+c.ID)
 		return nil
 	}
 	for _, id := range plan.CaseOrder {
@@ -274,17 +285,17 @@ func (g *LiveGuard) guardFixtures(plan Plan) (map[string]json.RawMessage, error)
 		for _, c := range corpus.Cases {
 			if c.ID == id {
 				if err := collect(c, c.ID); err != nil {
-					return nil, err
+					return nil, nil, err
 				}
 				found = true
 				break
 			}
 		}
 		if !found {
-			return nil, fmt.Errorf("owned semantic cohort required")
+			return nil, nil, fmt.Errorf("owned semantic cohort required")
 		}
 	}
-	return result, nil
+	return result, order, nil
 }
 func livePreflightHash(preflight LivePreflight) string {
 	preflight.Hash = ""

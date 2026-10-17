@@ -171,3 +171,63 @@ func TestGuardSequenceKeepsLogicalCaseHTTPAndProviderLegsSeparate(t *testing.T) 
 		t.Fatal("sequence conflated logical, HTTP or provider counters")
 	}
 }
+
+func TestGuardPreflightRejectsReorderedCasesAndSequenceLeaves(t *testing.T) {
+	for _, scenario := range []struct {
+		name          string
+		cases, leaves []string
+	}{
+		{"cases", []string{"en-fact", "pt-fact"}, []string{"en-fact", "pt-fact"}},
+		{"sequence", []string{"en-clarification"}, []string{"en-clarification-initial", "en-clarification-answer"}},
+	} {
+		t.Run(scenario.name, func(t *testing.T) {
+			store, err := lab.OpenFileStore(t.TempDir(), lab.StoreOptions{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer store.Close()
+			raw, err := os.ReadFile("../../docs/evaluations/workflow-settings/cases.v1.json")
+			if err != nil {
+				t.Fatal(err)
+			}
+			provenance, err := lab.CaptureSource("../..")
+			if err != nil {
+				t.Fatal(err)
+			}
+			planner, err := lab.NewPlanner(map[string][]byte{"workflow-settings": raw}, provenance)
+			if err != nil {
+				t.Fatal(err)
+			}
+			guard, err := lab.NewLiveGuard(planner, store, lab.LiveGuardOptions{Enabled: true})
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer guard.Close()
+			plan, err := planner.Plan(lab.Selection{Suite: "workflow-settings", Mode: "controlled", Configuration: "current", CaseIDs: scenario.cases}, lab.ExecutionCaps{MaxCases: 2, MaxHTTPAttempts: 2, MaxProviderCalls: 10, MaxArtifactBytes: 2 << 20, DeadlineMS: 5000})
+			if err != nil {
+				t.Fatal(err)
+			}
+			specs := []lab.GuardDispatchSpec{}
+			for i, leaf := range scenario.leaves {
+				root := scenario.cases[0]
+				if len(scenario.cases) > 1 {
+					root = scenario.cases[i]
+				}
+				specs = append(specs, lab.GuardDispatchSpec{CaseID: root, LeafID: leaf, HTTPID: leaf, Stage: "gate", Recipient: "api.typesafe.ai", Model: "jev-1.13.0", TokenReservation: 1000})
+			}
+			request := lab.LivePreflightRequest{Plan: plan, MaxTokenUnits: 3000, MaxOutputTokens: 100, ApprovalLifetimeMS: 60000, Dispatches: specs}
+			if _, err = guard.Preflight(request); err != nil {
+				t.Fatal("ordered schedule rejected", err)
+			}
+			request.Dispatches = []lab.GuardDispatchSpec{specs[1], specs[0]}
+			if _, err = guard.Preflight(request); err == nil {
+				t.Fatal("reordered frozen cohort accepted")
+			}
+			request.Dispatches = []lab.GuardDispatchSpec{specs[0], specs[1], specs[0]}
+			request.Dispatches[2].Stage = "review"
+			if _, err = guard.Preflight(request); err == nil {
+				t.Fatal("noncontiguous leaf stages accepted")
+			}
+		})
+	}
+}

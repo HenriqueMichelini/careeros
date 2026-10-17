@@ -1,0 +1,50 @@
+{
+  "version": "lab-live-comparison-v1",
+  "id": "ed69235e337d94286a76e59b358d8437",
+  "hash": "9c101e03d0ac051afd05537682793bfbd0abcffe6bc29d4bb3f7dde30aca3dac",
+  "changedDimension": "configuration",
+  "schedule": [
+    {
+      "preflightId": "ceb1bcad001b46098109e857f07da73b",
+      "preflightHash": "4d98312ee50e9d8b8acf38e5d03a44e7e8fa6fbf32fba6e9baa83ad98e9e098e",
+      "caseId": "en-fact",
+      "configuration": "current",
+      "language": "en",
+      "exposureGroup": "en-fact"
+    },
+    {
+      "preflightId": "64f9152897f06df67708571340a0b655",
+      "preflightHash": "47cf302582a9f85464993bb07fec7b1ce5b5130cad9f963715488dc3eb314c88",
+      "caseId": "en-fact",
+      "configuration": "luna-low",
+      "language": "en",
+      "exposureGroup": "en-fact"
+    },
+    {
+      "preflightId": "6ff33d9ec6d27a9f19cfebd9f3e570a7",
+      "preflightHash": "8d96819f7692e82b3139d38d4149de231bc38dad554b3b472907ea231a5f8104",
+      "caseId": "pt-fact",
+      "configuration": "luna-low",
+      "language": "pt-BR",
+      "exposureGroup": "pt-fact"
+    },
+    {
+      "preflightId": "9aacc17c2e26c7d4b1c50aef98c9ee7f",
+      "preflightHash": "477703b2c891272b978c60cd94defac2c5cef611689091ec1ba9daddb790569f",
+      "caseId": "pt-fact",
+      "configuration": "current",
+      "language": "pt-BR",
+      "exposureGroup": "pt-fact"
+    }
+  ],
+  "budgetPerConfiguration": {
+    "maxCases": 2,
+    "maxHttpAttempts": 2,
+    "maxProviderCalls": 10,
+    "maxArtifactBytes": 2097152,
+    "deadlineMs": 10000
+  },
+  "tokenUnitsPerConfiguration": 6000,
+  "maxOutputTokens": 100,
+  "pooling": "none; finite paired cases, languages and exposure groups remain separate"
+}

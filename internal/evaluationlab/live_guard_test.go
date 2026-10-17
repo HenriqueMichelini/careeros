@@ -275,22 +275,39 @@ func TestGuardRestartKeepsUnknownFinalAndCannotRedispatch(t *testing.T) {
 	}
 	defer store.Close()
 	guard, preflight := guardExample(t, store)
+	specs := append([]lab.GuardDispatchSpec{}, preflight.Dispatches...)
+	for i := range specs {
+		specs[i].ID, specs[i].PayloadHash, specs[i].PayloadKind = "", "", ""
+	}
+	specs[0].Recipient, specs[0].Model = "api.openai.com", "gpt-6-luna"
+	preflight, err = guard.Preflight(lab.LivePreflightRequest{Plan: preflight.Plan, MaxTokenUnits: 3000, MaxOutputTokens: 100, ApprovalLifetimeMS: 60000, Dispatches: specs, PriceSnapshotVersion: "controlled-fictional-prices-v1", Prices: []semanticeval.Rate{{Model: "gpt-6-luna", AsOf: "2026-10-17", Input: 1, Output: 2}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	writes = 1 // The next three writes retain approval, intent, then the failed result.
+
 	challenge, err := guard.Approval(preflight.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	token, err := guard.Authorize(lab.GuardApproval{PreflightID: preflight.ID, Hash: preflight.Hash, Actor: lab.ReviewActor{ID: "controlled-human-example", Type: "human"}, Confirmation: challenge.Confirmation, Rationale: "Controlled restart test only"}, map[string]string{"api.openai.com": "synthetic-openai", "api.typesafe.ai": "synthetic-jev"})
+	token, err := guard.Authorize(lab.GuardApproval{PreflightID: preflight.ID, Hash: preflight.Hash, Actor: lab.ReviewActor{ID: "controlled-human-example", Type: "human"}, Confirmation: challenge.Confirmation, Rationale: "Controlled restart test only"}, map[string]string{"api.openai.com": "synthetic-openai"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	count := 0
 	transport := func(context.Context, lab.GuardDispatchSpec, string) (lab.GuardCallObservation, error) {
 		count++
-		return lab.GuardCallObservation{Outcome: "completed", Call: semanticeval.Call{ReturnedModel: "jev-1.13.0", Status: 200}}, nil
+		input, output, zero := int64(10), int64(5), int64(0)
+		return lab.GuardCallObservation{Outcome: "completed", Call: semanticeval.Call{ReturnedModel: "gpt-6-luna", Status: 200, InputTokens: &input, OutputTokens: &output, CachedTokens: &zero, CacheWriteTokens: &zero, ReasoningTokens: &zero}}, nil
 	}
 	if err = guard.Dispatch(context.Background(), token, preflight.Dispatches[0].ID, transport); err == nil || count != 1 {
 		t.Fatal("result write failure hidden")
 	}
+	inMemory, err := guard.Report(preflight.ID)
+	if err != nil || inMemory.State != "unknown-final" || inMemory.Usage.TotalUSD != nil || inMemory.Usage.KnownUSD == nil || *inMemory.Usage.KnownUSD <= 0 {
+		t.Fatal("unknown-final report invented full cost or lost known subtotal", inMemory.Usage)
+	}
+
 	guard.Close()
 	restarted, _ := guardExample(t, store)
 	report, err := restarted.Report(preflight.ID)
@@ -682,5 +699,38 @@ func retainGuardExample(t *testing.T, name string, value any) {
 	}
 	if err = os.WriteFile(filepath.Join(directory, name), raw, 0600); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestGuardCallerDeadlineRetainsTimeoutAndNonrefundableAttempt(t *testing.T) {
+	guard, preflight := guardExample(t)
+	challenge, err := guard.Approval(preflight.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	token, err := guard.Authorize(lab.GuardApproval{PreflightID: preflight.ID, Hash: challenge.Hash, Actor: lab.ReviewActor{ID: "controlled-human-example", Type: "human"}, Confirmation: challenge.Confirmation, Rationale: "Controlled timeout attribution"}, map[string]string{"api.openai.com": "synthetic-openai", "api.typesafe.ai": "synthetic-jev"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+	calls := 0
+	err = guard.Dispatch(ctx, token, preflight.Dispatches[0].ID, func(ctx context.Context, _ lab.GuardDispatchSpec, _ string) (lab.GuardCallObservation, error) {
+		calls++
+		<-ctx.Done()
+		return lab.GuardCallObservation{}, ctx.Err()
+	})
+	if err == nil {
+		t.Fatal("timeout completed")
+	}
+	report, err := guard.Report(preflight.ID)
+	if err != nil || report.Calls[0].State != "timeout" || report.AttemptedCalls != 1 || report.ReservedTokenUnits != 1000 || report.UnreachedCalls != 2 {
+		t.Fatal("timeout attribution or admission lost", report.Calls)
+	}
+	if err = guard.Dispatch(context.Background(), token, preflight.Dispatches[1].ID, func(context.Context, lab.GuardDispatchSpec, string) (lab.GuardCallObservation, error) {
+		calls++
+		return lab.GuardCallObservation{}, nil
+	}); err == nil || calls != 1 {
+		t.Fatal("timed out run continued")
 	}
 }

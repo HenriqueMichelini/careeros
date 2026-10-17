@@ -36,11 +36,11 @@ M17–M19 expose finite guard outcomes/admissions; M21 retains nullable simulate
 
 ## Representative evidence
 
-The `examples/` v1 artifacts come from public controlled tests:
+The immutable `examples/` v1 artifacts retain the initial implementation observations. The v2 artifacts were regenerated after review fixes for unknown-final pricing, frozen leaf order and timeout attribution; neither version is live evidence. Current v2 public controlled examples:
 
-- `preflight.v1.json`, `approval.v1.json`, `guard-success.v1.json`: three bounded synthetic provider legs, secret-free local test receipt and unavailable real cost/quality.
-- `unknown-final.v1.json`: restart after result-retention failure preserves the admitted intent, reservation and inability to resume.
-- `comparison.v1.json`, `comparison-observations.v1.json`: finite EN/PT configuration interleaving with exact per-run correspondence; controlled outcomes only.
+- `preflight.v2.json`, `approval.v2.json`, `guard-success.v2.json`: three bounded synthetic provider legs, secret-free local test receipt and unavailable real cost/quality.
+- `unknown-final.v2.json`: restart after result-retention failure preserves the admitted intent, reservation and inability to resume.
+- `comparison.v2.json`, `comparison-observations.v2.json`: finite EN/PT configuration interleaving with exact per-run correspondence; controlled outcomes only.
 
 Separate deliberate regeneration (IDs/source observations change):
 
@@ -48,4 +48,4 @@ Separate deliberate regeneration (IDs/source observations change):
 LAB_GUARD_EVIDENCE_DIR=/tmp/lab-guard-examples GOCACHE=/tmp/careeros-go-cache go test ./internal/evaluationlab -run 'Test(ControlledGuardAuthorization|GuardRestart|GuardFrozenComparison)' -count=1
 ```
 
-Required controlled tests cover disabled/enabled preflight-only HTTP, altered hash/plan/recipient, expiry, agent rejection, credential sentinels, racing caps and distinct IDs, duplicate/out-of-order calls, cancellation, failure classes, usage overflow, absent/partial prices, pre/post-dispatch retention failures, unknown-final restart, sequence counters, fair interleaving and zero attempted external networking. Full verification and final review results are recorded in the PR/issue; these artifacts do not prove real model quality, live calibration or release acceptance.
+Required controlled tests cover disabled/enabled preflight-only HTTP, altered hash/plan/recipient, expiry, agent rejection, credential sentinels, racing caps and distinct IDs, duplicate/out-of-order calls and frozen leaf schedules, cancellation and timeout attribution, failure classes, usage overflow, absent/partial prices, pre/post-dispatch retention failures, unknown-final restart, sequence counters, fair interleaving and zero attempted external networking. Full verification and final review results are recorded in the PR/issue; these artifacts do not prove real model quality, live calibration or release acceptance.
