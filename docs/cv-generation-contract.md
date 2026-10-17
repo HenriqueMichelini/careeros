@@ -42,6 +42,34 @@ The client also rejects over-capacity projections before HTTP. Bounds remain 500
 
 Schema contract follows [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs): all object fields are required and objects reject additional properties. Domain validation remains necessary beyond structural enforcement.
 
-## Approved statement-support extension (#123; implementation pending)
+## Approved statement-support extension (#123; backend implemented in #124)
 
-[ADR 0003](adr/0003-general-cv-statement-support.md) defines the approved bounded independent assessment, per-statement support/provenance contract, v3 response and saved-document migration, and dependencies for #124–#128. The preceding sections describe the current implementation; v3 is a future contract until those slices are integrated. Existing freshness and source links do not establish semantic support. No runtime change or live-provider validation was performed for this decision.
+[ADR 0003](adr/0003-general-cv-statement-support.md) defines the approved bounded independent assessment, per-statement support/provenance contract, v3 response and saved-document migration, and dependencies for #124–#128. The preceding sections describe the legacy response; v3 is an opt-in contract until the client gate in #125/#128 consumes it. Existing freshness and source links do not establish semantic support. No live-provider validation was performed.
+
+### Backend activation and response (#124)
+
+A request opts into the v3 response with `statementSupport: true`. Without it, the response is the unchanged legacy `{summary, selected, wording}` schema and exactly one provider call is made, so an older client acceptance path never receives assessed wording as if it were certified.
+
+With the flag, generation is followed by at most one independent support assessment using the same `gpt-6-luna` model, `reasoning_effort: none` and 4,000 completion-token ceiling. Assessment reuses the single 25-second workflow deadline (it is never reset or extended) and sends only the generated statements plus the deduplicated cited facts and their context metadata, capped at 128 KiB. The response keeps `summary`, `selected` and `wording` and adds:
+
+```json
+{
+  "schemaVersion": 3,
+  "summary": [{ "sourceIds": ["fact-id"], "text": "..." }],
+  "selected": ["fact-id"],
+  "wording": {},
+  "support": {
+    "policyVersion": "cv-statement-support-v1",
+    "assessment": "complete",
+    "statements": [
+      { "id": "summary:0", "text": "...", "sourceIds": ["fact-id"], "status": "supported", "reason": "..." }
+    ]
+  }
+}
+```
+
+Review units are `summary:<index>` and `wording:<sourceId>`; there is exactly one record per summary item and rewrite, with no extras, duplicates, missing statuses or unknown versions. `status` is `supported`, `uncertain` or `unsupported` and `reason` is bounded to 500 bytes. Valid source IDs establish traceability only and never support.
+
+Any assessment failure — timeout, outage, key rejection, rate limit, refusal, truncation, malformed, incomplete, duplicate or unknown judgments, or an over-capacity payload — is recoverable and fail-closed: `assessment` becomes `unavailable` and every statement becomes `uncertain` with reason `assessment_unavailable`. The generated candidate is still returned. The deterministic structure, reference, numeric, negation, owner and qualifier guards run before assessment and remain hard failures that no assessment can override, so a hard-guard failure returns `invalid_output` without any assessment call. Assessment is a model judgment, not certification, and is not semantic proof.
+
+Backend implementation and handler tests intercept all provider traffic with synthetic EN/PT fixtures and assert call counts, ceilings and fail-closed outcomes. Client acceptance, provenance and legacy-load behavior remain #125–#128; coordinated activation is #128.
