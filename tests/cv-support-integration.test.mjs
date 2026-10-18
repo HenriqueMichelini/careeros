@@ -54,6 +54,11 @@ const corpus = JSON.parse(
     "utf8",
   ),
 )
+// Expected statuses, call counts and per-unit judgments are declared by the
+// fixture, independently of the handler that returns them. The runner ignores
+// this test-only map; the integration test asserts the handler output against it
+// before deciding whether acceptance should succeed.
+const expectations = corpus.expectations
 
 const clientPath = join(
   mkdtempSync(join(tmpdir(), "cv-support-client-")),
@@ -212,12 +217,22 @@ test("the controlled corpus is a v3 assessment run over the local production han
     true,
     "activation requests the v3 assessment",
   )
+  // Every case carries an independent expectation and no stale expectation is
+  // left behind.
+  assert.deepEqual(
+    Object.keys(expectations).sort(),
+    corpus.cases.map((c) => c.id).sort(),
+  )
   for (const fixture of corpus.cases) {
     const run = report.runs.find((r) => r.id === fixture.id)
+    const expected = expectations[fixture.id]
     assert.ok(run, fixture.id)
     assert.equal(run.mode, "controlled", fixture.id)
     assert.equal(run.language, fixture.language, fixture.id)
     assert.equal(run.task, "cv_generation", fixture.id)
+    // Expected status and call count come from the fixture, not the run.
+    assert.equal(run.status, expected.status, fixture.id)
+    assert.equal((run.calls ?? []).length, expected.calls, fixture.id)
     // No corpus run may exceed the one generation call plus the single
     // assessment call; a hard guard fails before the assessment is attempted.
     assert.ok((run.calls ?? []).length <= 2, fixture.id)
@@ -251,20 +266,20 @@ test("the client requests the v3 assessment and joins real handler output with r
     assert.equal(outbound.statementSupport, true, fixture.id)
     assert.equal(outbound.cvLanguage, fixture.language, fixture.id)
 
+    const expected = expectations[fixture.id]
     if (fixture.role === "negative_control") {
-      // Deterministic hard guard: one generation call, no assessment call, and
-      // the client never receives machine wording to accept.
-      assert.equal(run.status, 502, fixture.id)
-      assert.equal((run.calls ?? []).length, 1, fixture.id)
+      // Deterministic hard guard: the fixture expects one generation call and no
+      // assessment, so the client never receives machine wording to accept.
+      assert.equal(run.status, expected.status, fixture.id)
+      assert.equal((run.calls ?? []).length, expected.calls, fixture.id)
       assert.equal(error?.message, "invalid_output", fixture.id)
       assert.equal(result, undefined, fixture.id)
-      summary.push(`${fixture.id}\t502\thard-guard\t1 call`)
+      summary.push(`${fixture.id}\t${run.status}\thard-guard\t1 call`)
       continue
     }
 
-    assert.equal(run.status, 200, fixture.id)
-    // One generation call plus exactly one assessment call.
-    assert.equal((run.calls ?? []).length, 2, fixture.id)
+    assert.equal(run.status, expected.status, fixture.id)
+    assert.equal((run.calls ?? []).length, expected.calls, fixture.id)
     assert.equal(run.output.schemaVersion, 3, fixture.id)
     assert.ok(!error, `${fixture.id}: ${error?.message}`)
     assert.ok(validateCvSupport(result.support, result), fixture.id)
@@ -274,10 +289,23 @@ test("the client requests the v3 assessment and joins real handler output with r
       fixture.id,
     )
 
+    // Assert the handler's assessment against the fixture expectation before
+    // selecting the acceptance path. A regression that promoted an unsupported
+    // judgment to supported fails here instead of silently accepting it.
     const units = cvReviewUnits(result)
     assert.equal(units.length, cvSupportUnits(result).length, fixture.id)
+    assert.equal(result.support.assessment, expected.assessment, fixture.id)
+    for (const unit of units)
+      assert.equal(
+        unit.status,
+        expected.judgments[unit.id],
+        `${fixture.id} ${unit.id}`,
+      )
+    const expectedUnresolved = Object.values(expected.judgments).some(
+      (status) => status !== "supported",
+    )
 
-    if (units.every((u) => u.status === "supported")) {
+    if (!expectedUnresolved) {
       // A supported machine sentence stays usable: no false reject.
       try {
         assert.equal(cvReviewResolved(result, emptyCvReview), true, fixture.id)
@@ -341,7 +369,7 @@ test("the client requests the v3 assessment and joins real handler output with r
       fixture.id,
     )
 
-    if (result.support.assessment === "unavailable") {
+    if (expected.assessment === "unavailable") {
       // Assessment outage fails closed: every unit is already uncertain, so the
       // user must explicitly confirm before anything is persisted.
       assert.equal(result.support.assessment, "unavailable", fixture.id)

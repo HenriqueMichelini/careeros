@@ -37,7 +37,7 @@ machine-verified wording.
 ## Corpus
 
 `docs/evaluations/cv-support/cases.v1.json` (`version: cv-support-fixtures-v1`,
-fixture hash `3f0fa7b179dd3f89131c66fbf3b4632a54f2dae485265cbdc385de7eb1887056`),
+fixture hash `009c6ff0b7981b3bcb77bb12ea7ed73005a5544d54ed4cae4ec2530e20899122`),
 14 synthetic cases — 7 EN and 7 PT-BR. The retained reproduction and the benign
 cases are the `development` split; the new held-out ordinary claims, the
 cross-language translations and the hard-guard control are the `heldout` split:
@@ -75,6 +75,14 @@ travel unchanged.
 Kubernetes case in EN and PT-BR against a valid synthetic canonical Profile,
 covering the desktop and 390px keyboard-accessible flow, review removal,
 acceptance, save/reload and the absence of any Profile mutation.
+
+The expected HTTP status, call count and per-unit judgment for every case are
+declared by the fixture's `expectations` map, independent of the handler. The
+integration test asserts the returned assessment and each unit status against
+that map before choosing the acceptance path and counting false
+acceptances/rejections, so a regression that returned a different judgment fails
+the check instead of being scored as a clean run. A mutation that promoted every
+returned judgment to `supported` fails on the first fixture-expectation assertion.
 
 ## Results
 
