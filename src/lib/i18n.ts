@@ -102,6 +102,10 @@ const messages = {
       "Profile support has changed. This saved CV and your edits remain unchanged; review the original sources before reuse.",
     "cv.supportCurrent":
       "Referenced Profile revisions are unchanged. Review wording for accuracy before reuse.",
+    "cv.wordingUnverified":
+      "Generated wording in this saved CV predates statement assessment, so it is unverified. Review each claim against its original sources before reuse.",
+    "cv.wordingAssessed":
+      "This saved CV keeps each statement's review decision. Machine-supported wording stays separate from wording you authored yourself.",
     "cv.sourceRevision": "revision {{revision}}",
     "cv.sourceCaution":
       "Source links show traceability, not proof that wording is faithful. Compare each claim with its original support.",
@@ -127,6 +131,39 @@ const messages = {
     "cv.generateReplaceNote":
       "Accepting replaces the CV content and its selection/wording edits. Profile and application drafts stay separate. Check page fit after acceptance and revise any overflow.",
     "cv.generateAccept": "Accept and replace CV",
+    "cv.reviewTitle": "Review each generated statement",
+    "cv.reviewIntro":
+      "Each sentence and rewrite was assessed against its cited facts. Uncertain or unsupported wording cannot be accepted as verified: discard the sentence, revert the rewrite, edit the wording yourself, or confirm it as your own. Source freshness stays separate from this assessment.",
+    "cv.reviewUnitSummary": "Summary sentence",
+    "cv.reviewUnitWording": "Supporting rewrite",
+    "cv.reviewSupported": "Supported",
+    "cv.reviewUncertain": "Uncertain",
+    "cv.reviewUnsupported": "Unsupported",
+    "cv.reviewReason": "Assessment reason",
+    "cv.reviewCitedFacts": "Review {{count}} cited facts",
+    "cv.reviewDiscardSentence": "Discard this sentence",
+    "cv.reviewKeepSentence": "Keep this sentence",
+    "cv.reviewRevertRewrite": "Revert this rewrite",
+    "cv.reviewUseRewrite": "Use this rewrite",
+    "cv.reviewRemoved": "Removed from this CV",
+    "cv.reviewCorrectionNote":
+      "Editing or confirming records your own wording; it is not machine-verified and never changes your Profile.",
+    "cv.reviewEditText": "Edit this wording",
+    "cv.reviewCancelEdit": "Stop editing",
+    "cv.reviewConfirm": "Confirm as my own wording",
+    "cv.reviewUnconfirm": "Remove my confirmation",
+    "cv.reviewEditHint":
+      "Your edited text is accepted as your own wording, kept with its cited sources as history. It is never labeled machine-supported.",
+    "cv.reviewEditedByUser":
+      "Edited by you — your own wording, not machine-verified",
+    "cv.reviewConfirmedByUser":
+      "Confirmed by you — your own wording, not machine-verified",
+    "cv.reviewBlocked":
+      "Resolve the remaining uncertain or unsupported statements before accepting: discard the sentence, revert the rewrite, edit the wording yourself, or confirm it as your own — or generate again.",
+    "cv.reviewEmpty":
+      "Keep at least one reviewed summary sentence. If you remove all summary content, write your own summary; no filler is added.",
+    "cv.reviewBlockedError":
+      "The proposal still contains unresolved statements. Review it again before accepting.",
     "cv.generateErrorInput":
       "The professional Profile is empty, invalid or too large for this request. Review it and generate again deliberately.",
     "cv.generateErrorRate":
@@ -1001,6 +1038,10 @@ const messages = {
       "O apoio no Perfil mudou. Este CV salvo e suas edições continuam iguais; revise as fontes originais antes de reutilizar.",
     "cv.supportCurrent":
       "As revisões referenciadas do Perfil continuam iguais. Revise a precisão do texto antes de reutilizar.",
+    "cv.wordingUnverified":
+      "O texto gerado neste currículo salvo é anterior à avaliação por afirmação e, portanto, não é verificado. Revise cada afirmação com suas fontes originais antes de reutilizar.",
+    "cv.wordingAssessed":
+      "Este currículo salvo mantém a decisão de revisão de cada afirmação. O texto com apoio da máquina permanece separado do texto escrito por você.",
     "cv.sourceRevision": "revisão {{revision}}",
     "cv.sourceCaution":
       "Os vínculos mostram rastreabilidade, não provam a fidelidade do texto. Compare cada afirmação com o apoio original.",
@@ -1026,6 +1067,39 @@ const messages = {
     "cv.generateReplaceNote":
       "Aceitar substitui o conteúdo do CV e suas edições de seleção/texto. Perfil e candidaturas ficam separados. Confira o ajuste à página depois de aceitar e revise excessos.",
     "cv.generateAccept": "Aceitar e substituir CV",
+    "cv.reviewTitle": "Revise cada afirmação gerada",
+    "cv.reviewIntro":
+      "Cada frase e reescrita foi avaliada em relação aos fatos citados. Texto incerto ou sem apoio não pode ser aceito como verificado: descarte a frase, reverta a reescrita, edite o texto você mesmo ou confirme-o como seu. A atualidade da fonte é separada desta avaliação.",
+    "cv.reviewUnitSummary": "Frase do resumo",
+    "cv.reviewUnitWording": "Reescrita de apoio",
+    "cv.reviewSupported": "Com apoio",
+    "cv.reviewUncertain": "Incerto",
+    "cv.reviewUnsupported": "Sem apoio",
+    "cv.reviewReason": "Motivo da avaliação",
+    "cv.reviewCitedFacts": "Revisar {{count}} fatos citados",
+    "cv.reviewDiscardSentence": "Descartar esta frase",
+    "cv.reviewKeepSentence": "Manter esta frase",
+    "cv.reviewRevertRewrite": "Reverter esta reescrita",
+    "cv.reviewUseRewrite": "Usar esta reescrita",
+    "cv.reviewRemoved": "Removido deste CV",
+    "cv.reviewCorrectionNote":
+      "Editar ou confirmar registra o seu próprio texto; ele não é verificado por máquina e nunca altera o seu Perfil.",
+    "cv.reviewEditText": "Editar este texto",
+    "cv.reviewCancelEdit": "Parar de editar",
+    "cv.reviewConfirm": "Confirmar como meu texto",
+    "cv.reviewUnconfirm": "Remover minha confirmação",
+    "cv.reviewEditHint":
+      "O texto editado é aceito como seu, mantendo as fontes citadas como histórico. Ele nunca é marcado como comprovado por máquina.",
+    "cv.reviewEditedByUser":
+      "Editado por você — texto próprio, não verificado por máquina",
+    "cv.reviewConfirmedByUser":
+      "Confirmado por você — texto próprio, não verificado por máquina",
+    "cv.reviewBlocked":
+      "Resolva as afirmações incertas ou sem apoio antes de aceitar: descarte a frase, reverta a reescrita, edite o texto você mesmo ou confirme-o como seu — ou gere novamente.",
+    "cv.reviewEmpty":
+      "Mantenha pelo menos uma frase revisada do resumo. Se remover todo o resumo, escreva o seu próprio resumo; nenhum texto é inventado.",
+    "cv.reviewBlockedError":
+      "A proposta ainda contém afirmações não resolvidas. Revise novamente antes de aceitar.",
     "cv.generateErrorInput":
       "O Perfil profissional está vazio, inválido ou grande demais para esta solicitação. Revise e gere novamente.",
     "cv.generateErrorRate":

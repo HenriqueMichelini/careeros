@@ -117,6 +117,14 @@ func Import(raw []byte) (ImportResult, error) {
 		return ImportResult{}, err
 	}
 	r.Provenance.UnavailableReasons = []string{"historical dirty-tree identity, embedded dependency completeness, runtime constraints and inference-era label exposure may be unavailable"}
+	if document.Version == CVEvidenceVersion {
+		cases, err := DeriveCVEvidence(raw)
+		if err != nil {
+			return ImportResult{}, err
+		}
+		r.Cases = cases
+		return r, nil
+	}
 	if len(document.Attempts) > 0 {
 		r.Format = "diagnostics-legacy-v1"
 		for _, item := range document.Attempts {

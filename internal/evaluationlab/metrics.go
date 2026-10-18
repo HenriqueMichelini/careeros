@@ -87,6 +87,9 @@ func Metrics(imported ImportResult) []Metric {
 		metrics = append(metrics, workflowMetrics(imported)...)
 		metrics = append(metrics, dispatchMetrics(imported)...)
 		metrics = append(metrics, matchingMetrics(imported)...)
+		if imported.OriginalVersion == CVEvidenceVersion {
+			metrics = append(metrics, cvIntegrityMetrics(imported.Cases, imported.OriginalHash)...)
+		}
 	}
 	return metrics
 }

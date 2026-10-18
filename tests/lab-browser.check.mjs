@@ -70,11 +70,13 @@ try {
   })
   let next = 0,
     mockStatus = null,
-    holdPath = ""
+    holdPath = "",
+    failPath = ""
   const held = []
   const pending = new Map(),
     external = [],
     starts = [],
+    writes = [],
     exceptions = []
   const call = (method, params = {}) =>
     new Promise((resolve, reject) => {
@@ -96,7 +98,20 @@ try {
     if (event.method === "Fetch.requestPaused") {
       const request = event.params.request,
         url = request.url
-      if (url === origin + "/lab/api/status" && mockStatus) {
+      if (url.startsWith(origin + "/") && request.method !== "GET")
+        writes.push(request.method + " " + url)
+      if (failPath && url.includes(failPath)) {
+        void call("Fetch.fulfillRequest", {
+          requestId: event.params.requestId,
+          responseCode: 503,
+          responseHeaders: [
+            { name: "Content-Type", value: "application/json" },
+          ],
+          body: Buffer.from(
+            JSON.stringify({ message: "Synthetic stored read failure" }),
+          ).toString("base64"),
+        })
+      } else if (url === origin + "/lab/api/status" && mockStatus) {
         void call("Fetch.fulfillRequest", {
           requestId: event.params.requestId,
           responseCode: 200,
@@ -305,6 +320,80 @@ try {
   assert.ok(
     readFileSync(join(work, `evaluation-${en}.md`), "utf8").includes("lab-"),
   )
+  // Reselecting the terminal run must load again without a page refresh.
+  const beforeStoredReads = starts.length
+  const selectStored = async (id) => {
+    await evaluate(
+      `(()=>{const row=[...document.querySelectorAll('#history-title ~ .table tbody tr')].find(r=>r.innerText.includes(${JSON.stringify(id)}));if(!row)throw new Error('Stored row unavailable');row.querySelector('button').click()})()`,
+    )
+  }
+  await selectStored(en)
+  await until(
+    `document.querySelector('#run-title')?.parentElement.innerText.includes('Engine completed')`,
+    "reselected stored run results without refresh",
+  )
+  await button("en-fact")
+  await until(`!!document.querySelector('article[aria-label="Case evidence"]')`)
+  assert.equal(
+    starts.length,
+    beforeStoredReads,
+    "stored selection restarted execution",
+  )
+  for (const endpoint of ["view", "events"]) {
+    failPath = `/runs/${en}/${endpoint}`
+    await selectStored(en)
+    await until(
+      `document.querySelector('#run-title')?.parentElement.querySelector('[role="alert"]')?.innerText.includes('Synthetic stored read failure')`,
+      "stored read error shown locally",
+    )
+    assert.equal(
+      await evaluate(
+        `document.querySelector('#run-title').parentElement.innerText.includes('Reading the existing run')`,
+      ),
+      false,
+      "failed read still presented as loading",
+    )
+    const beforeRetry = writes.length
+    failPath = ""
+    await button("Retry")
+    await until(
+      `document.querySelector('#run-title')?.parentElement.innerText.includes('Engine completed')&&!document.querySelector('#run-title').parentElement.querySelector('[role="alert"]')`,
+      "local read retry without refresh",
+    )
+    await button("en-fact")
+    await until(
+      `document.querySelector('article[aria-label="Case evidence"]')?.innerText.includes('en-fact')`,
+    )
+    assert.equal(
+      writes.length,
+      beforeRetry,
+      "Retry issued a mutation or restarted execution",
+    )
+  }
+  // A failed read of a followed run must recover on its own, like the
+  // pre-existing read cadence, instead of stalling until Retry.
+  failPath = `/runs/${en}/view`
+  await selectStored(en)
+  await until(
+    `document.querySelector('#run-title')?.parentElement.querySelector('[role="alert"]')?.innerText.includes('Synthetic stored read failure')`,
+    "stored read failure shown before auto-recovery",
+  )
+  failPath = ""
+  await until(
+    `document.querySelector('#run-title')?.parentElement.innerText.includes('Engine completed')&&!document.querySelector('#run-title').parentElement.querySelector('[role="alert"]')`,
+    "stored read recovered without Retry",
+    300,
+  )
+  failPath = `/runs/${en}/cases/`
+  await button("en-fact")
+  await until(
+    `document.querySelector('[aria-label="Case loading error"]')?.innerText.includes('Synthetic stored read failure')`,
+  )
+  const beforeCaseRetry = writes.length
+  failPath = ""
+  await button("Retry case")
+  await until(`!!document.querySelector('article[aria-label="Case evidence"]')`)
+  assert.equal(writes.length, beforeCaseRetry, "case Retry issued a mutation")
   const beforeReload = starts.length
   await call("Page.reload")
   await until(
@@ -323,9 +412,7 @@ try {
   const alternate = await choose("workflow-settings", "en-fact", "luna-low")
   assert.notEqual(current, alternate)
   const openStored = async (id) => {
-    await evaluate(
-      `(()=>{const row=[...document.querySelectorAll('#history-title ~ .table tbody tr')].find(r=>r.innerText.includes(${JSON.stringify(id)}));if(!row)throw new Error('Stored row unavailable');row.querySelector('button').click()})()`,
-    )
+    await selectStored(id)
     await until(
       `location.hash==='#run='+${JSON.stringify(id)}&&document.querySelector('#run-title')?.parentElement.innerText.includes('Engine completed')`,
     )
@@ -336,6 +423,25 @@ try {
       await call("Fetch.continueRequest", { requestId })
     await pause(300)
   }
+  // A late view response must not replace the newly selected run.
+  holdPath = `/runs/${current}/view`
+  await selectStored(current)
+  for (let i = 0; i < 100 && !held.length; i++) await pause(10)
+  assert.equal(held.length, 1, "view request not captured")
+  await openStored(alternate)
+  const selectedResults = await evaluate(
+    `document.querySelector('#run-title').parentElement.innerText`,
+  )
+  await releaseHeld()
+  assert.equal(
+    await evaluate(
+      `document.querySelector('#run-title').parentElement.innerText`,
+    ),
+    selectedResults,
+    "late view replaced selected results",
+  )
+  await button("en-fact")
+  await until(`!!document.querySelector('article[aria-label="Case evidence"]')`)
   await openStored(current)
   holdPath = `/runs/${current}/cases/`
   await button("en-fact")
@@ -551,6 +657,36 @@ try {
     )
     await evaluate("window.scrollTo(0,0)")
   }
+  await choose(
+    "cv-integrity-evidence",
+    "en-support-kubernetes-unsupported",
+    "owner-retained-v1",
+  )
+  await button("en-support-kubernetes-unsupported")
+  await until(
+    `document.querySelector('article[aria-label="Case evidence"] h3')?.textContent.includes('en-support-kubernetes-unsupported')`,
+  )
+  await evaluate(
+    `document.querySelectorAll('article[aria-label="Case evidence"] details').forEach(d=>d.open=true)`,
+  )
+  assert.ok(
+    await evaluate(
+      `document.querySelector('article[aria-label="Case evidence"]').innerText.includes('Builds production Kubernetes platforms.')`,
+    ),
+    "CV original machine wording missing",
+  )
+  assert.ok(
+    await evaluate(
+      `document.querySelector('article[aria-label="Case evidence"]').innerText.includes('user_edited')`,
+    ),
+    "CV correction provenance missing",
+  )
+  assert.ok(
+    await evaluate(
+      `document.querySelector('#run-title').parentElement.innerText.includes('assertion fail')`,
+    ),
+    "original CV scorer failure hidden",
+  )
   for (const width of [390, 1440]) {
     await call("Emulation.setDeviceMetricsOverride", {
       width,
@@ -568,7 +704,7 @@ try {
   assert.deepEqual(external, [], "Lab requested external network resources")
   assert.deepEqual(exceptions, [], "browser runtime exception")
   console.log(
-    "PASS actual Lab launch → fixed Node driver and isolated Resume harness with typed artifact download → selective semantic/settings/retrieval/section runs → lazy detail → JSON/Markdown export → refresh/reconnect without restart → cancel → indexed history filters → compatible/incompatible comparisons → malformed/quarantined imports → deliberate deletion; synthetic UI preflight faults; keyboard and 390px layout; zero browser storage/external requests.",
+    "PASS actual Lab launch → fixed Node driver and isolated Resume harness with typed artifact download → selective semantic/settings/retrieval/section runs → lazy detail → same-run reselection → local read failure/Retry with zero mutations and read self-recovery → stale-view rejection → JSON/Markdown export → refresh/reconnect without restart → cancel → indexed history filters → compatible/incompatible comparisons → malformed/quarantined imports → deliberate deletion; synthetic UI preflight faults; keyboard and 390px layout; zero browser storage/external requests.",
   )
   console.log("Evidence:", work)
 } finally {

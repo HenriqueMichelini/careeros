@@ -393,6 +393,20 @@ func (r *Runner) execute(parent context.Context, state *runState) {
 		r.mu.Unlock()
 		var actual json.RawMessage
 		switch state.plan.Selection.Suite {
+		case "cv-integrity-evidence":
+			var rows []ImportedCase
+			rows, err = DeriveCVEvidence(r.planner.assets["cv-integrity-evidence"])
+			if err == nil {
+				for _, row := range rows {
+					if row.ID == id {
+						actual = row.Actual
+						r.mu.Lock()
+						state.record.Cases[index].Review = row.Review
+						r.mu.Unlock()
+						break
+					}
+				}
+			}
 		case "semantic-quality", "workflow-settings", "section-review":
 			c, lookupErr := r.semanticCase(state.plan.Selection.Suite, id)
 			if lookupErr != nil {
@@ -569,6 +583,28 @@ func (r *Runner) semanticCase(suite, id string) (semanticeval.Case, error) {
 	return semanticeval.Case{}, fmt.Errorf("case not present in frozen fixture")
 }
 func (r *Runner) plannedCases(plan Plan) ([]ImportedCase, error) {
+	if plan.Selection.Suite == "cv-integrity-evidence" {
+		rows, err := DeriveCVEvidence(r.planner.assets[plan.Selection.Suite])
+		if err != nil {
+			return nil, err
+		}
+		result := []ImportedCase{}
+		for _, id := range plan.CaseOrder {
+			for _, c := range rows {
+				if c.ID == id {
+					c.Identity = newLabID()
+					c.LeafIdentity = ""
+					c.Actual = nil
+					c.Review = nil
+					c.EngineState = "planned"
+					c.AssertionVerdict = "skipped"
+					c.OperationalOutcome = "unknown"
+					result = append(result, c)
+				}
+			}
+		}
+		return result, nil
+	}
 	var corpus struct {
 		Cases []json.RawMessage `json:"cases"`
 	}
@@ -651,6 +687,17 @@ func plannedCase(raw json.RawMessage, configuration string) (ImportedCase, error
 	return c, nil
 }
 func (r *Runner) interpretCase(c *ImportedCase, suite string) {
+	if suite == "cv-integrity-evidence" {
+		if c.Kind == "workflow-result" {
+			var run semanticeval.RunResult
+			_ = json.Unmarshal(c.Actual, &run)
+			interpretCVCase(c)
+			c.OperationalOutcome = semanticeval.OperationalOutcome(run)
+		} else {
+			c.AssertionVerdict = "unavailable"
+		}
+		return
+	}
 	if suite == "test-adapters" {
 		var report ProcessResult
 		_ = json.Unmarshal(c.Actual, &report)

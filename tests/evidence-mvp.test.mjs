@@ -565,6 +565,11 @@ for (const [
           selected: [skill.id],
           summary: [{ sourceId: skill.id, text: "Rust" }],
         },
+        {
+          judgments: [
+            { id: "summary:0", status: "supported", reason: "direct" },
+          ],
+        },
       ],
       () =>
         generateCv(
