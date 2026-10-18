@@ -55,7 +55,8 @@ export function App() {
     [events, setEvents] = useState<EventPage | null>(null),
     [caseEvidence, setCaseEvidence] = useState<CaseEvidence | null>(null)
   const [runRead, setRunRead] = useState(0),
-    [runError, setRunError] = useState("")
+    [runError, setRunError] = useState(""),
+    [eventError, setEventError] = useState("")
   const runSequence = useRef(0)
   const [caseError, setCaseError] = useState<{
     identity: string
@@ -158,6 +159,7 @@ export function App() {
     runSequence.current++
     setRunRead((prior) => prior + 1)
     setRunError("")
+    setEventError("")
     caseSequence.current++
     setRunId(id)
     location.hash = "run=" + id
@@ -216,6 +218,7 @@ export function App() {
               }`,
             )
             if (!current()) return
+            setEventError("")
             epoch = page.epoch
             cursor = page.next
             setEvents((prior) => ({
@@ -229,10 +232,7 @@ export function App() {
             if (!current()) return
             epoch = ""
             cursor = 0
-            setRunError(
-              "Stored events unavailable. Retry reloads stored evidence; execution is not restarted. " +
-                errorText(e),
-            )
+            setEventError("Stored events unavailable: " + errorText(e))
           }
         }
         if (active(result)) timer = setTimeout(poll, 1000)
@@ -241,7 +241,12 @@ export function App() {
           void attempt(refreshStatus)
         }
       } catch (e) {
-        if (current()) setRunError("Stored run unavailable: " + errorText(e))
+        if (current()) {
+          setRunError("Stored run unavailable: " + errorText(e))
+          // Keep reading instead of stranding progress behind a manual Retry:
+          // the previous cadence retried a failed read three seconds later.
+          timer = setTimeout(poll, 3000)
+        }
       }
     }
     void poll()
@@ -815,9 +820,10 @@ export function App() {
             not establish semantic support or client acceptance.
           </p>
           <p className="identity">{runId}</p>
-          {runError && (
+          {(runError || eventError) && (
             <div role="alert" className="notice error">
-              <p>{runError}</p>
+              {runError && <p>{runError}</p>}
+              {eventError && <p>{eventError}</p>}
               <button onClick={() => openRun(runId)}>Retry</button>
               <p>Reload stored evidence only; execution is not restarted.</p>
             </div>
@@ -1006,6 +1012,7 @@ export function App() {
                       runSequence.current++
                       caseSequence.current++
                       setRunError("")
+                      setEventError("")
                       setRunId("")
                       setView(null)
                       location.hash = ""

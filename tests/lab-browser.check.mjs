@@ -370,6 +370,20 @@ try {
       "Retry issued a mutation or restarted execution",
     )
   }
+  // A failed read of a followed run must recover on its own, like the
+  // pre-existing read cadence, instead of stalling until Retry.
+  failPath = `/runs/${en}/view`
+  await selectStored(en)
+  await until(
+    `document.querySelector('#run-title')?.parentElement.querySelector('[role="alert"]')?.innerText.includes('Synthetic stored read failure')`,
+    "stored read failure shown before auto-recovery",
+  )
+  failPath = ""
+  await until(
+    `document.querySelector('#run-title')?.parentElement.innerText.includes('Engine completed')&&!document.querySelector('#run-title').parentElement.querySelector('[role="alert"]')`,
+    "stored read recovered without Retry",
+    300,
+  )
   failPath = `/runs/${en}/cases/`
   await button("en-fact")
   await until(
@@ -398,9 +412,7 @@ try {
   const alternate = await choose("workflow-settings", "en-fact", "luna-low")
   assert.notEqual(current, alternate)
   const openStored = async (id) => {
-    await evaluate(
-      `(()=>{const row=[...document.querySelectorAll('#history-title ~ .table tbody tr')].find(r=>r.innerText.includes(${JSON.stringify(id)}));if(!row)throw new Error('Stored row unavailable');row.querySelector('button').click()})()`,
-    )
+    await selectStored(id)
     await until(
       `location.hash==='#run='+${JSON.stringify(id)}&&document.querySelector('#run-title')?.parentElement.innerText.includes('Engine completed')`,
     )
@@ -692,7 +704,7 @@ try {
   assert.deepEqual(external, [], "Lab requested external network resources")
   assert.deepEqual(exceptions, [], "browser runtime exception")
   console.log(
-    "PASS actual Lab launch → fixed Node driver and isolated Resume harness with typed artifact download → selective semantic/settings/retrieval/section runs → lazy detail → same-run reselection → local read failure/Retry with zero mutations → stale-view rejection → JSON/Markdown export → refresh/reconnect without restart → cancel → indexed history filters → compatible/incompatible comparisons → malformed/quarantined imports → deliberate deletion; synthetic UI preflight faults; keyboard and 390px layout; zero browser storage/external requests.",
+    "PASS actual Lab launch → fixed Node driver and isolated Resume harness with typed artifact download → selective semantic/settings/retrieval/section runs → lazy detail → same-run reselection → local read failure/Retry with zero mutations and read self-recovery → stale-view rejection → JSON/Markdown export → refresh/reconnect without restart → cancel → indexed history filters → compatible/incompatible comparisons → malformed/quarantined imports → deliberate deletion; synthetic UI preflight faults; keyboard and 390px layout; zero browser storage/external requests.",
   )
   console.log("Evidence:", work)
 } finally {
