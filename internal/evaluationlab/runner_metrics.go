@@ -18,7 +18,14 @@ func nativeMetrics(record RunRecord, plan Plan) []Metric {
 		value := float64(n)
 		metrics = append(metrics, Metric{ID: "M18", Version: "lab-metrics-v1", Measure: count.name, Mode: record.Context.Mode, Source: plan.Hash, ObservationCount: &n, Eligible: n, Evaluated: n, Units: "count", Estimator: "frozen-plan progress and observed controlled dispatch ledger", Value: &value})
 	}
-	if plan.Selection.Suite == "test-adapters" {
+	if plan.Selection.Suite == "cv-integrity-evidence" {
+		metrics = append(metrics, cvIntegrityMetrics(record.Cases, plan.InputHashes[plan.Selection.Suite])...)
+		for _, metric := range workflowMetrics(ImportResult{OriginMode: "controlled-retained", OriginalHash: plan.InputHashes[plan.Selection.Suite], Cases: record.Cases}) {
+			if metric.ID != "M18" {
+				metrics = append(metrics, metric)
+			}
+		}
+	} else if plan.Selection.Suite == "test-adapters" {
 		metrics = append(metrics, processMetrics(record, plan)...)
 	} else if plan.Selection.Suite == "section-review" {
 		metrics = append(metrics, sectionMetrics(record, plan)...)

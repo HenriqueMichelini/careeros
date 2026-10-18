@@ -551,6 +551,36 @@ try {
     )
     await evaluate("window.scrollTo(0,0)")
   }
+  await choose(
+    "cv-integrity-evidence",
+    "en-support-kubernetes-unsupported",
+    "owner-retained-v1",
+  )
+  await button("en-support-kubernetes-unsupported")
+  await until(
+    `document.querySelector('article[aria-label="Case evidence"] h3')?.textContent.includes('en-support-kubernetes-unsupported')`,
+  )
+  await evaluate(
+    `document.querySelectorAll('article[aria-label="Case evidence"] details').forEach(d=>d.open=true)`,
+  )
+  assert.ok(
+    await evaluate(
+      `document.querySelector('article[aria-label="Case evidence"]').innerText.includes('Builds production Kubernetes platforms.')`,
+    ),
+    "CV original machine wording missing",
+  )
+  assert.ok(
+    await evaluate(
+      `document.querySelector('article[aria-label="Case evidence"]').innerText.includes('user_edited')`,
+    ),
+    "CV correction provenance missing",
+  )
+  assert.ok(
+    await evaluate(
+      `document.querySelector('#run-title').parentElement.innerText.includes('assertion fail')`,
+    ),
+    "original CV scorer failure hidden",
+  )
   for (const width of [390, 1440]) {
     await call("Emulation.setDeviceMetricsOverride", {
       width,

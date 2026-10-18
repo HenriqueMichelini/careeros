@@ -43,6 +43,7 @@ func TestInProcessCatalogSuitesExecuteDirectlyWithoutExternalTransport(t *testin
 	}
 	labels := read("qualification-evidence/cases.json")
 	assets := map[string][]byte{"semantic-quality": read("semantic-quality/cases.v2.json"), "workflow-settings": read("workflow-settings/cases.v1.json"), "qualification-evidence": labels, "application-context": labels, "application-baseline": read("semantic-quality/controlled.v2.json"), "section-review": read("section-review/cases.v1.json")}
+	assets["cv-integrity-evidence"] = read("cv-lab/evidence.v1.json")
 	var external atomic.Int64
 	original := http.DefaultTransport
 	http.DefaultTransport = deniedTransport{calls: &external}
@@ -56,7 +57,7 @@ func TestInProcessCatalogSuitesExecuteDirectlyWithoutExternalTransport(t *testin
 			if err != nil {
 				t.Fatal(err)
 			}
-			plan, err := p.Plan(lab.Selection{Suite: suite.ID, Mode: suite.Modes[0], Configuration: "current"}, lab.ExecutionCaps{MaxCases: 100, MaxHTTPAttempts: 100, MaxProviderCalls: 500, MaxArtifactBytes: 8 << 20, DeadlineMS: 10000})
+			plan, err := p.Plan(lab.Selection{Suite: suite.ID, Mode: suite.Modes[0], Configuration: suite.Configurations[0]}, lab.ExecutionCaps{MaxCases: 100, MaxHTTPAttempts: 100, MaxProviderCalls: 500, MaxArtifactBytes: 8 << 20, DeadlineMS: 10000})
 			if err != nil {
 				t.Fatal(err)
 			}

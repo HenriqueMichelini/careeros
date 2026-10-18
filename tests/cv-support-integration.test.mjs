@@ -6,6 +6,8 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import ts from "typescript"
 import { repositoryDefaults } from "./cv-support-fixtures.mjs"
+import { createHash } from "node:crypto"
+import { after } from "node:test"
 
 // ADR 0003 / issue #128: end-to-end controlled verification of the activated
 // statement-support contract.
@@ -59,6 +61,55 @@ const corpus = JSON.parse(
 // this test-only map; the integration test asserts the handler output against it
 // before deciding whether acceptance should succeed.
 const expectations = corpus.expectations
+
+// Optional evidence receipt for LAB-09. This only records observations made by
+// the owning integration check; it does not alter assertions or trust labels.
+const observations = []
+after(() => {
+  if (!process.env.CV_LAB_EVIDENCE_OUTPUT) return
+  const hashes = Object.fromEntries(
+    [
+      "tests/cv-support-integration.test.mjs",
+      "tests/cv-support-fixtures.mjs",
+      "src/lib/cvGeneration.ts",
+      "backend/cv-generation/main.go",
+    ].map((path) => [
+      path,
+      createHash("sha256")
+        .update(readFileSync(join(root, path)))
+        .digest("hex"),
+    ]),
+  )
+  writeFileSync(
+    process.env.CV_LAB_EVIDENCE_OUTPUT,
+    JSON.stringify(
+      {
+        version: "cv-lab-evidence-v1",
+        mode: "controlled",
+        started: report.started,
+        fixtureVersion: corpus.version,
+        fixtureHash: report.fixtureHash,
+        sourceHashes: hashes,
+        ownerReportBytes: readFileSync(outputPath).toString("base64"),
+        ownerReportHash: createHash("sha256")
+          .update(readFileSync(outputPath))
+          .digest("hex"),
+        fixtureBytes: readFileSync(
+          join(root, "docs/evaluations/cv-support/cases.v1.json"),
+        ).toString("base64"),
+        cases: corpus.cases,
+        observations,
+        limits: [
+          "Scripted judgments; independent semantic adjudication pending",
+          "In-process serialization/reparse is not durable browser storage",
+          "No live provider quality, billing, deployment or PDF acceptance",
+        ],
+      },
+      null,
+      2,
+    ) + "\n",
+  )
+})
 
 const clientPath = join(
   mkdtempSync(join(tmpdir(), "cv-support-client-")),
@@ -274,6 +325,16 @@ test("the client requests the v3 assessment and joins real handler output with r
       assert.equal((run.calls ?? []).length, expected.calls, fixture.id)
       assert.equal(error?.message, "invalid_output", fixture.id)
       assert.equal(result, undefined, fixture.id)
+      observations.push({
+        id: fixture.id,
+        request: outbound,
+        document,
+        expected,
+        error: error.message,
+        units: [],
+        acceptedAsIs: false,
+        durable: "unavailable",
+      })
       summary.push(`${fixture.id}\t${run.status}\thard-guard\t1 call`)
       continue
     }
@@ -338,6 +399,18 @@ test("the client requests the v3 assessment and joins real handler output with r
           fixture.id,
         )
         assert.deepEqual(document, canonicalDocument(rawFacts), fixture.id)
+        observations.push({
+          id: fixture.id,
+          request: outbound,
+          document,
+          expected,
+          units,
+          acceptedAsIs: true,
+          snapshot: saved,
+          reloaded: parseCuratedCv(JSON.stringify(saved)),
+          freshness: cvSupportStatus(saved, document),
+          durable: "unavailable",
+        })
       } catch (thrown) {
         falseRejects += 1
         throw thrown
@@ -402,6 +475,19 @@ test("the client requests the v3 assessment and joins real handler output with r
         ),
         fixture.id,
       )
+      observations.push({
+        id: fixture.id,
+        request: outbound,
+        document,
+        expected,
+        units,
+        acceptedAsIs,
+        decisions: { ...emptyCvReview, confirmedIds: units.map((u) => u.id) },
+        snapshot: confirmed,
+        reloaded: parseCuratedCv(JSON.stringify(confirmed)),
+        freshness: cvSupportStatus(confirmed, document),
+        durable: "unavailable",
+      })
       summary.push(`${fixture.id}\t${run.status}\tconfirmed\t2 calls`)
       continue
     }
@@ -437,6 +523,19 @@ test("the client requests the v3 assessment and joins real handler output with r
       `${fixture.id}: the unsupported machine sentence never persists`,
     )
     assert.ok(resolved.summary.length, fixture.id)
+    observations.push({
+      id: fixture.id,
+      request: outbound,
+      document,
+      expected,
+      units,
+      acceptedAsIs,
+      decisions,
+      snapshot: edited,
+      reloaded: parseCuratedCv(JSON.stringify(edited)),
+      freshness: cvSupportStatus(edited, document),
+      durable: "unavailable",
+    })
     summary.push(`${fixture.id}\t${run.status}\tblocked+edited\t2 calls`)
   }
 

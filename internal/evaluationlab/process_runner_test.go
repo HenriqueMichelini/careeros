@@ -401,7 +401,7 @@ func TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes(t *testing.T) {
 
 func processPlanner(t *testing.T) *lab.Planner {
 	t.Helper()
-	raw, err := os.ReadFile("../../docs/evaluations/test-adapters/cases.v2.json")
+	raw, err := os.ReadFile("../../docs/evaluations/test-adapters/cases.v3.json")
 	if err != nil {
 		t.Fatal(err)
 	}

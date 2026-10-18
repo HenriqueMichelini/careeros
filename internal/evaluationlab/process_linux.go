@@ -29,7 +29,7 @@ func NewProcessAdapter(root string) (*ProcessAdapter, error) {
 	if err != nil {
 		return nil, err
 	}
-	raw, err := os.ReadFile(filepath.Join(canonical, "docs/evaluations/test-adapters/cases.v2.json"))
+	raw, err := os.ReadFile(filepath.Join(canonical, "docs/evaluations/test-adapters/cases.v3.json"))
 	if err != nil {
 		return nil, err
 	}
