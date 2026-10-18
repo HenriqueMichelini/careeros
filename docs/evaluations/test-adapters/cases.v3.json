@@ -1,0 +1,725 @@
+{
+  "version": "lab-process-fixtures-v3",
+  "sourcePolicy": "fixed reviewed source bytes; no credential or personal browser paths mounted",
+  "sources": {
+    "backend/application-draft/answers_contract_test.go": "59f86d85bc8c72fe8bf2c18af51b2734c2a3ba9bbd3ff43127456bfa8388f106",
+    "backend/application-draft/artifact_citations.go": "0b95a1b6c30f773a620bff1abaf491d0aa72a0f74b5f2522295faa8755c7676d",
+    "backend/application-draft/artifacts.go": "9157275ae61860fb4a22b2b73f00bc4f6fa51cf467bbfde44decacf08e0bef94",
+    "backend/application-draft/artifacts_contract_test.go": "486b0bbced0e2f2e10f8ed843036329d9e4c3967f88521778d2b03ba763878b9",
+    "backend/application-draft/capture_contract_test.go": "730d30470fcc4478b74675b9ef1e13e71112b7d8be727e27607a3b3c934914a6",
+    "backend/application-draft/context.go": "b997f6663bce5931ed42bd55272a90150d81fd5b4607dc1b0a078616ce419f0d",
+    "backend/application-draft/context_contract_test.go": "fa2cc7dcf78b4f3279e176d287465674ea80df50908e10eeec50e92d26d888a7",
+    "backend/application-draft/handler_contract_test.go": "54f18a396bd8da7143ba686947a419094857f0394b41f1950683fb53456938ea",
+    "backend/application-draft/main.go": "82f22bd8341e0cbc34bfbe6f5223339dcc05d16df3ca0f3c65ae1eb520ae90a8",
+    "backend/application-draft/main_test.go": "1ce5f70ae468803cbcb61854ce6511eabfed4c438ddf94210d9c6c5ebe1e328e",
+    "backend/application-draft/private_capture_test.go": "1da1152f0890657ad38491af200b6d8819da420de4da8ab8f62cbe65390d45dd",
+    "backend/application-draft/resume.go": "2a7e07487502b4281f696cd9d5644917883a14a56de4a232185a2c52a8ec41eb",
+    "backend/application-draft/resume_contract_test.go": "1d66e8537030258a30a70e0cc5b87b9bcd3e42013eb59ef38760e24a38a3ba09",
+    "backend/application-draft/strength_contract_test.go": "6603165b729d51cf8130f96049a0f4bd9f6d2bbfdb46f2ec810ad9ed072f3fbb",
+    "backend/cv-generation/main.go": "84cbd2af26239171494a7194b7aef1b8e16930d0d882e3386175f37cf8c0ef88",
+    "backend/cv-generation/main_test.go": "986b8cf5daa20e4bc7d66ae0e5b3aad637801a2188ab98d322d99816e04838d0",
+    "backend/profile-ingestion/apply_answer.go": "80dbd95d994f23b23054f63167fcdec00ff7bf71164b8a703d1ab6f1c4879df4",
+    "backend/profile-ingestion/apply_answer_test.go": "0cb0b96a7563c534a8a9171c22be6ef8942b475ca9be7b373d428c291337dc6a",
+    "backend/profile-ingestion/clarification.go": "ecf2f3e4a8f5ee1ad9568fcb3a95d51989c6f1defbcb1968a2d2f87de6a30224",
+    "backend/profile-ingestion/clarification_test.go": "6441a1bc6dbe8448f3229ed0607348b2892ab3f60506fd9264cf95b8abc8adfc",
+    "backend/profile-ingestion/continuation.go": "82740318485d394b7da53bc8fb07b3a64970631d7e5701bfa5b528faeb9d0dce",
+    "backend/profile-ingestion/continuation_test.go": "78a219cd192702b05b9c976b654c04250864e9998b0c0133be4dd2d2522c714b",
+    "backend/profile-ingestion/evidence.go": "4876473c643235ecbea26aeca8529a94eb63a1b7153b674ed476c945880d81fb",
+    "backend/profile-ingestion/evidence_test.go": "ea196481e61792ce18658e4d4210c9da692650538e2891e4f26f91de7b537166",
+    "backend/profile-ingestion/field_gate_test.go": "7be21b17f23be876a8ec2b09e57520d9625b6f4c9af96117e72a62f8fa5bc5e2",
+    "backend/profile-ingestion/main.go": "bd4457e3431111ed0b75c192d1d4247270cf4c0147e547f2df713db5707f65be",
+    "backend/profile-ingestion/main_test.go": "94d261246a2cf736367cf57ff0ee2eb66c553d3f41907bf68d5ffb8ee15fffde",
+    "backend/profile-ingestion/omitted_claim_test.go": "c54331c0dd809a08e0423d49950c93d68f2956707bfee97f6fd14363f8ac56b2",
+    "backend/profile-ingestion/outcomes.go": "294a1f47824acb8204c127dab22ff071161825b97eca9ab70aaf519cc795c6c5",
+    "backend/profile-ingestion/outcomes_test.go": "7de2b84647d1ba2ce013f08ac00074dbbbda6525262ecafce1bc9b1db7ae2040",
+    "backend/profile-ingestion/preparation_test.go": "06d23c1ac70f8d998f4bb84cf0c6d8fdd88773cf1c13e09b9fa52ae7db69cfd7",
+    "backend/profile-ingestion/source.go": "045846d98e8eaf488cedbd5e3526c8bcb1f7b9520d93211e9d20765abcf56250",
+    "backend/profile-review/main.go": "d12c429cf4d24627a1ec85b8ea82619ce66d030b6955d3c39365e1b54596ce8b",
+    "backend/profile-review/main_test.go": "905a7186dd43bc97327e37f4c3a76853c7dea24077f36f49e0df359ad75580f7",
+    "backend/profile-review/proposal_test.go": "8e3280cf51839256731957ba3f3a124e1aa6f07cc04ead62dbf2316990f1ee91",
+    "backend/profile-review/testdata/section-rewrite.v1.json": "b7a50b0d37a93742b41f14534a3c26ef8a1515224af330782814a14e23fa6af5",
+    "backend/qualification-gaps/evidence_test.go": "28994e88844234900f1a6b0483606336be0a3d9b68ce2ce7ee8db60ccb440192",
+    "backend/qualification-gaps/job_context_test.go": "b381bf322b87f92ff9ef97b78e1baa7ad9af6fa264111bc29cc385e8e2483150",
+    "backend/qualification-gaps/job_gate_test.go": "9e2aa0ce0b2aa539b5583c54246c4af41a2d164beff13ddbb23d25acc3f47ee3",
+    "backend/qualification-gaps/main.go": "031605715830504f5bea936c038afb5ff1caa7e8b8d170694bde83a6427d3653",
+    "backend/qualification-gaps/main_test.go": "5c0684fab7915fa2297d82f414a1e2c1f7cc281473e7f609fc90b6a7a6d9ed95",
+    "backend/qualification-gaps/private_capture_test.go": "c40c1e6a4bbf5a8ad8359305eb0fe2ac093e77c0dbbe3aa649bd1632d352d600",
+    "backend/qualification-gaps/reuse_contract_test.go": "fe9414e0fe58934f3699735d5695ee1a63f8774f95b180078259e86dbf5b7e10",
+    "docs/evaluations/field-validation-cases.json": "432cd674d07801f44c174f462121780ae84d4ba348c3411c6e4ce7cda211bfd8",
+    "docs/evaluations/field-validation-confirmatory-cases.json": "e871c367f188c0e3427529017ed35aab5ace0d0bcef94018ec2c386b29dddf0c",
+    "docs/evaluations/field-validation-followup-cases.json": "1f66f6affdaf4e3021037ed255bdac03d4d9c6ae72458d2ada03b6344a5cf5d0",
+    "docs/evaluations/field-validation-workflow-cases.json": "8c5656c8d0b2b1618b7c84c382f66c34d8b29d0d2a973c87edd45129df4a5199",
+    "docs/evaluations/qualification-evidence/cases.json": "6caa5ddf5077785da0a3865a23b9956ccb72080748e688c6b15479c9b1be2684",
+    "docs/evaluations/section-review/cases.v1.json": "928f87641f3ee7e2310926a6da5aa89548d3271827421c7ad3b77fa7565b8cc6",
+    "docs/evaluations/semantic-quality/cases.cv-reliability.v1.json": "bf320deaa3cc573084acf293421988749b34ac875f495636c9e5d2ffa0740e32",
+    "docs/evaluations/semantic-quality/cases.stable-cv.v1.json": "7c212dab6d3790ae2769f03ad7095dcdf676a6002958bd7b4ad8433bb2f58175",
+    "docs/evaluations/semantic-quality/cases.v2.json": "b46dc852078c0e76fe9e0eeddcdba09514a41c75e43967383a4fdf5a08af3550",
+    "docs/evaluations/workflow-settings/cases.v1.json": "5abb0e79d7f64ddf867dc9a6839349e104ce9de89c113f1e4092bc3c3acffe76",
+    "docs/release-evidence/issue-52/invalid-job-citation.controlled.json": "842508664d4ad48339b23503dc3e1df09f638aff981d22e695bf5ac2e0e9e60b",
+    "docs/release-evidence/issue-52/truncated-job-source.controlled.json": "fb71927e3b52cfb7f3bb09533513f151e140c59c5244aadebae46b479dcb6179",
+    "docs/release-evidence/issue-65/live.v1.json": "14f6e3b16a740c83d41a39f3141a0ac6589000b3489cb094ad2ddcc290d4c47c",
+    "go.mod": "04c911efda2df8e2ff4a0e2e44899c57d4c522a803909b4517ee71b9c212ded6",
+    "go.sum": "abb6f44d9df3a572ef62e35c482920df2ec2afc1236cee7485e149bf41c8cfab",
+    "index.html": "93839a15a88fe6c1b9b41f3597756bd60b26a9c1f2ee18de3cc12f91ffd19eed",
+    "internal/aidiagnostics/diagnostics.go": "53707cdcf46fa34374f37c8bc6bbb66f56714a32054d5a312b67587c18b05736",
+    "internal/aidiagnostics/handler_test.go": "b5b53fa955c477f8db4d9daf786d51aa77543f80d54fbeddeb858a6370a5412e",
+    "internal/aidiagnostics/outcomes.go": "8d6c873ed0155afcd82d5021e000aee6375c5d670abc4801793308615c8247ca",
+    "internal/aidiagnostics/report.go": "0423fa0bdffb42410aaed01b82a83fcf0e7be7401adca65552af3e3f15861f8e",
+    "internal/aidiagnostics/report_test.go": "1698170ababc8f7c774fda6488245e968fcc6118031d33be60fd554ee6de9723",
+    "internal/aidiagnostics/usage.go": "abbfd99df7ccc66ad90ba5ee3940ddfdedadcdd85c817a04cf8c9f50e5cf57a8",
+    "internal/fieldvalidation/decision.go": "ea91586b299eb51a97dc38ec236a24468deff5c4df24b5ac97f3b91af096701d",
+    "internal/fieldvalidation/questions.json": "8ca85f674db2cf8e3d9e8c14e3fab18ac3df9c8fdf1903f6dbbc6db7d8715b5c",
+    "internal/jobcontext/context.go": "955c24940bdfd364a96398fe81ce702f53675614f4433b4e6dbc628249beda3c",
+    "internal/netlifyproxy/handler.go": "6b028dc34cec313353118a6aa170022a3c756c863c84048556f6f7734bb01a63",
+    "internal/netlifyproxy/handler_test.go": "1fd8d82e947a3003f9c978c8c9b1ffab4c9a24a3a737aa10345b7a08d614daf2",
+    "internal/openaihttp/completion.go": "2dd6661c94b059629ca195b5634c6df0aba5bb99cd49bdb463393b8166808da6",
+    "internal/openaihttp/post.go": "232ff7088a18ad5ba078ebc794fbe7abf1706b8e6c7d8d4753f47af5e8401037",
+    "internal/preprocessing/bounds.go": "e3547d44cc5cdbdbd30b61af6e19d91ee55805821337c66c3b551115bfc2d59d",
+    "internal/preprocessing/bounds_test.go": "61732fe07c81de5a8cc875daeb31b5bf6186f7e55e6ea0586d3a7f051f4536e3",
+    "internal/preprocessing/literals.go": "e3671a0d57d4d6fe9130da1a5d3d064ef96c2c4334b5b6417ca68a1a229fd9c4",
+    "internal/preprocessing/normalize.go": "05972e24aa8933f46004f4b9db3c2255722b15428ae4634a4013686ed561758e",
+    "internal/preprocessing/normalize_test.go": "9f6e508ddba96c8fa47db6c090850d05b243a27afdfa2c3a1e394858dfe21ae5",
+    "internal/preprocessing/portions.go": "ae615ed637fd4694b5914eedd6fa71497f9f8b9f11d86828d943c67b297f3ab0",
+    "internal/preprocessing/repetitions.go": "e3f06c3a82b2d5db13efc4e8bb1a8117f6e2a2a977419ecebdefd97552d52b6d",
+    "internal/preprocessing/repetitions_test.go": "6b1f25e63f0f4be8643f121896767a46513a2d9248a83fce5aba545a8d461581",
+    "internal/preprocessing/structure.go": "407e7e159ddd5b5ec4ffd53860c42a6f7a9c994624583465792316532f3934a8",
+    "internal/preprocessing/structure_test.go": "f0eb7611e57d2d7c7df2848c5d032adfb751485ecf6a7e48cdcaeae6d7994885",
+    "internal/preprocessing/testdata/preservation.v1.json": "fe05b77a920066c31cb0d51281bc2939004ffbbd4969d4af38c23ea434f5f2a0",
+    "internal/preprocessing/unicode.go": "81fce5273954081051dcf1eef4ebc353bb3efae2d9ae21d55c157af2b968532b",
+    "internal/preprocessing/verification_test.go": "ca510ecb45424ed35f1a1d9571afa09907c5e74a65d9a07b382e1774900c39b3",
+    "internal/profiledocument/contract.json": "f85a94a13b04b914e914be2ea6a05348ee601f699a0437be22f355997701e995",
+    "internal/profiledocument/document.go": "732ae46b1e68da2fc7727d3bf576c0401c5d815bae59aaab8a66ecc544090a8a",
+    "internal/profiledocument/document_test.go": "e5177a2dd542d7de0d7d1966527aceac4cfa58f078ad16fd528443971770b114",
+    "internal/profiledocument/fixtures.json": "f427133e02f3e1fe7bd73825e991fe344817c0f8f7e6850e4347e1d9d54a6857",
+    "internal/profilevalidation/json.go": "e6e3b96eb4dce8f3ba34b3f6be48a363764710701a3fdf9e3c4ebe2bc1552606",
+    "internal/profilevalidation/profile.go": "8b81e178ec7828c7d4a23636a53bc7c2d4f73c27398d47cf5578b7e246cb2e6d",
+    "internal/profilevalidation/qualifications.go": "aca768f86a7424c9520879ef41265f5299ff3c79640d9d66071595ec4bb8e8a5",
+    "internal/profilevalidation/qualifications_test.go": "c8ad616ece18555bba1113f8b9ffd59ff287cf9c837c307babaa2b9f6196b96e",
+    "internal/qualificationmatching/fields.json": "f5932218f3fad1ed27106af55911e781c65cf8be56c0f2ec23dac49da1d8926a",
+    "internal/qualificationmatching/matching.go": "2894c43beabc3fc4c8b39b83d539af6e16f429971758a5e73bd0f8e9a3d00b6a",
+    "internal/releasecapture/admission.go": "91b2e092edfaae7ba463387862c1e4b9035a8a636e57de4cf865caf82108bcb0",
+    "internal/releasecapture/capture.go": "3ebd11208109e79336987d5f08850b6e517f352c3eb900e9e48ad5b5c5a27f54",
+    "internal/releasecapture/transport.go": "d477b41c5ac0eea77153066e386c57a21e44b7cf07a6a343978cfa52de0e0572",
+    "internal/semanticeval/adapter.go": "7242cdfe3ee74bc0b76cbb0db4e7e8ec30f196f2a21237a41b368c080bf93932",
+    "internal/semanticeval/batch.go": "bcec8814069eedcf452c8efd65122763ff5903de7d625c53896d62895ec2ff8d",
+    "internal/semanticeval/batch_test.go": "eae5fbe987afafb2bd83a43e4b9a4b6bd91554a23ee8a47b946ddcb7ab4244ec",
+    "internal/semanticeval/comparison.go": "d5f55d67888e150967e6f71e4174852a0c28d33c39765df26eb35a9fd794e213",
+    "internal/semanticeval/comparison_test.go": "095525311c164b5923a61bed2a692388c82c2562ee24c8331057bbeebdf39938",
+    "internal/semanticeval/configuration.go": "1143d81b65a9a69071c0b318b8078591529a728289d4fa930ff9ffa26e26521d",
+    "internal/semanticeval/configuration_test.go": "efbdbaba4d55d32a64d59a36d8f005161ffc31314a65f734b738f38d48f69f01",
+    "internal/semanticeval/context.go": "7b0e915e7f51d3ae9e37cae6cc2eb17cfd50ec0c662876269125f5c09bdb1c58",
+    "internal/semanticeval/context_test.go": "4ca013e3a3f13664745158b2796560ab26eb72bde6d890bdd41fb7a8f7bc472a",
+    "internal/semanticeval/profile_review.go": "c75ee365ab142193fa4e9124eb27eca335342950bf83f571042966c192d102cf",
+    "internal/semanticeval/profile_review_context_test.go": "0283ebd1ea45bb1211108d52c3010b8b7059de0aa303acaf02bc47e8c9461ed8",
+    "internal/semanticeval/profile_review_corpus_test.go": "ea092a7bf0228658261b19674729a97cadc6386153004304b8b26f4d3a3122b2",
+    "internal/semanticeval/profile_review_test.go": "0a39888bce38e451e2da02efb165e00977880c8455aa0889e1bf96f9f6c66293",
+    "internal/semanticeval/score.go": "973374f2b79816ba163ce0637463e7526b50802819ee349e4bb11badc98ba5a9",
+    "internal/semanticeval/score_test.go": "fdb3c90ecc007f43ed212b5bbea202cdff959c3ee89aede9ea42b64a5e05e0a4",
+    "internal/testsupport/job.go": "fa023221954832e11d9bea0d86c6958ca3a7788fea330847290beb955e4f28b1",
+    "lab/process/browser-diagnostics.mjs": "7784f6aa5c295ce6434ee351994e911d6b6b458499817d0e5086ef130cdefeb1",
+    "lab/process/probes.mjs": "8d8266108254cbfd9fc7d70a1bb77b921b010ccf92479ce1d4b685ab17609e6a",
+    "package-lock.json": "597c48cedf6a1ce92adfe0017616445833ab63da9f101770742983d9c3d3b3ba",
+    "package.json": "20184208b34f21514fe9a726cd2108a91317604e2748e495251b3085a46cce0c",
+    "scripts/field-validation/collect.mjs": "038986989fc27605779d6a8b440b7182ae1aa8ba67f4fd2c6597bb03a936ed28",
+    "scripts/field-validation/contract.mjs": "c89568e77dc430cebd80ea863073482649348e8e9aa018fd1c859b2df0f3452d",
+    "scripts/field-validation/credentials.mjs": "bc65d5d887776f605a051e237e4724d6fb88cf3d964b7b60eaceff6554692da8",
+    "scripts/field-validation/evaluate.mjs": "d22d53dd233cfd60129110c893fffe0c27ebd97c5e0d674c87bc0bf706d7b0ca",
+    "scripts/field-validation/experiment.mjs": "9729943cf0064062411b963841ea9d57ab7bb32aef91cb7e8e72809102dfc395",
+    "scripts/field-validation/measure-workflow.mjs": "b1e6411b86dd9a47fc2df6c0bcd839c23cf9e117c742bc82e00f8c08d6cae580",
+    "scripts/field-validation/report-integration.mjs": "3dfee77e24dd4f113bc0b5786dd427937aa4532913a2ef1a1450810552da2fe9",
+    "scripts/semantic-quality/main.go": "f73b365fe9a41ffe0f5466a0b22c34083ef6c33a38b39cff8c2daec15f8cd23d",
+    "src/App.tsx": "2a3b9f200728e10f09db7587f3037217ff96260e6ec99c1be81fbf82f3d03037",
+    "src/components/ApplyProfileEnrichment.tsx": "47a4322d6ff2621088db4bcdd5626c6c9a5ba131f51b69752b6f2b80638df695",
+    "src/components/ArtifactReviewPanel.tsx": "40f71652ee6e944acf3cd67fb40c66549b416fcca82197d81b87a4a871196b9f",
+    "src/components/CareerSourceSupport.tsx": "8fa3a19404efd2aeb894d246b81cea25b185810c80fa03a47751d28019140703",
+    "src/components/CvDensityControl.tsx": "79f242eebc31da70cee5c2c1a831a054d9e9fd90d8b05e5b222f15700dc4fd73",
+    "src/components/CvFontSizeControl.tsx": "4ba563a8d34da5ac53e7ac86b5b4f40b28d58b3fe8af2d0b69049012855bd4fc",
+    "src/components/CvPaper.tsx": "f098fddffab73a5c027b7ad5e29df842fb7b4f36754d8a8ad9aaf963d4aaf0fe",
+    "src/components/FactDetails.tsx": "c4c9f93dcbe926e9f1e77183249e6782a631900ca9e06476dfd2527ad6b75a6d",
+    "src/components/GeneratedResumePreview.tsx": "fa4017cf91c2759e0fcc797197ed1db0b4f83b4b6341345dd5f18df9ac92d9e1",
+    "src/components/IngestionClarification.tsx": "3c4f5150369b15e4afbd92774964920537a983cc33d1b9acf80d50b8e87d9001",
+    "src/components/IngestionOutcomes.tsx": "f64d969422caf78ef6036eb840a85eb31420c350d81510acdff277ca28f9290e",
+    "src/components/JobContextReview.tsx": "0d9383739e049f28b4d8d7cc65a170788ecb085dca1624d5594762018f712c9d",
+    "src/components/LanguageSelector.tsx": "3949c0a805453f0969ff752f080e4f697d4159ae52bc31a381381f32ca375b38",
+    "src/components/Layout.tsx": "5b044e782d359bd84361ca00423f56b799eb683bc83d1275a2d97c4167209083",
+    "src/components/RequirementEvidenceReview.tsx": "dbc1b17fa43bab2b3b692bcd74adab8d8960f8b5dbf1daa0cad47b699bde4d98",
+    "src/components/ResumeReviewPanel.tsx": "9228d1c513ce31fd8af1f8883c596feb00d35f973a250688414b9875e241d443",
+    "src/index.css": "4ab16199080877f7a9b9118de81bc44fd56c87a09744d0f9b43400eda2ff7c4e",
+    "src/lib/ai.ts": "687fd77301429e799eb18afbd704850aa6dc48beb5fac65edf9a37f9b65a07f6",
+    "src/lib/artifactReview.ts": "855572547dcd0050497a4729ad8366c4b9e80abf97d6e628afae6c379292a571",
+    "src/lib/cover-letter.ts": "bc9ff14f2d80c3183e926bd96566d1e92e0b8ccd803bbc6e89210d149b133fd2",
+    "src/lib/cv.ts": "7901cdb86451a5b9bd307bd3960fc3b69207041f309c9fabdf3e9c2b5d7ac57e",
+    "src/lib/cvGeneration.ts": "2f292f9cbfe751691dd04fd3b4447939fa6fc479aad440d4b152f890cc32830f",
+    "src/lib/cvPreferences.ts": "70c4736822328e17ee8d51f01443b93ff9a07b98dfe8f8cb2aafd3069f05beac",
+    "src/lib/fieldDecision.ts": "5af7cb6a4ed51b7796400f05f8cfb4fd6fb353aaff1f3d18224dc75d611a7fe6",
+    "src/lib/i18n.ts": "76d1c60d60e4285c79e00da4e07585784f254c720b1acd77916a11259d1b5ac3",
+    "src/lib/ingestion.ts": "d6b92cb2731ac8b996088a50af794f6f409e6659ad80220efcc6905086e9bd71",
+    "src/lib/ingestionDocument.ts": "35eda0e7407d3ec9bc1c39ea34e7e727c9c35d21581878e724ccd19a4a2574a8",
+    "src/lib/jobContext.ts": "61990ba20726fb6b7df7b44eea7b29e98535bced0f3b07a3c63d77c66b2f8a5b",
+    "src/lib/jsonEquality.ts": "6bb4aef1ee7b3b8e58b0076c0e64221e1119b216fd9e9be2a03a4be3c1456003",
+    "src/lib/profile.ts": "0f230c80882a416303468be34c6873393f5f20c20901f6d4f3027535ff49221b",
+    "src/lib/profileDocument.ts": "2704c85b37d660f9b17a25d2f90b443e1ba01e724cef3bb403efda2e800cc58b",
+    "src/lib/profileLabels.ts": "f67f57199da085e701cccef6999789be0cad7099f16604e6be3d822c115fe3b7",
+    "src/lib/profileStorage.ts": "cc0ab0b87ad3b5135a884386f6e2593e12dd2358383d065463bd68d7cc79a460",
+    "src/lib/qualificationEvidence.ts": "5a72c2f72fba5a31d63a139937eb896910f411ca1ea5a7062124ef5733962cc1",
+    "src/lib/qualificationMessages.json": "957e31cad6ae8fecc6472043afafa332dd46de1eccf8552953b8649163a14407",
+    "src/lib/resume.ts": "9e52d47886d8c41df0e4330e3bf3b375106d00a340e9943e46f8729625135122",
+    "src/lib/resumeReview.ts": "49a00ca52cc44fed9aae1bc3e2e4380a52609dbab69b9f3386cb814945e7f50e",
+    "src/lib/sectionReview.ts": "71a9ae389b263a04b74be4c5c0326c8a78f4306c0b43ea23a6e4927318380ef6",
+    "src/lib/store.tsx": "62b8920a78d8ab378c4ddebf01f72fa9b4320c883aa9c0f09fa1903385c07f51",
+    "src/lib/types.ts": "d6cf03da6bfd60588cbcb158e848520d00936af8bcf180e8ba44cc5cd1c2665a",
+    "src/main.tsx": "5f49dce6e6cc4b5d678cf529ef892af0ab7dfa6afb300b11ad559224019b8b05",
+    "src/pages/CvPage.tsx": "83c16cf68fb3d10d5be6c7818ccfb4030e2cc889b5842bda521094af1b4148ac",
+    "src/pages/HomePage.tsx": "2a3b4949914a68f33397dab5cb8ec04e1aedcb16148961e72ab9e8d7dfe20dd8",
+    "src/pages/LandingPage.tsx": "944d1d231378af219684c2d03c1baef8e37f51852e87b783154170ac120a105d",
+    "src/pages/RepositoryPage.tsx": "026372f345a7807f32e09f489fa35f2e329eaed4c4db02c502f363c08843d285",
+    "src/pages/ResultsPage.tsx": "ee089995c9009fb33b8b546919bad3554008a3cfc2a904dfd5b6a7d7d5396c38",
+    "src/vite-env.d.ts": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5",
+    "tests/application-reuse-browser.check.mjs": "57d0d9280a02ff96c0d59bec7bfeeafa1b4ea1da5e72df82a4e843a70c9d4fcf",
+    "tests/apply-checklist.check.mjs": "2e12f85d1da169d526e4d5ddd0be69bf25ebd356d2ff6df22acbd0583b85b5d8",
+    "tests/apply-enrichment-browser.scenarios.mjs": "e1bea7e1f178980e0ec8c67ccf10967b434b1fb258e01c1e19f71c8766b533bd",
+    "tests/artifact-review.test.mjs": "8a13b8cab12a73005831966e1faf74a6812a00e2626b12277616c5a5f3187220",
+    "tests/contact-profile.test.mjs": "e6edaf88ef30ee0d3810ea6de33a83ec7aadc9d5c4a7c5424afbdff51f87855c",
+    "tests/cv-choices.test.mjs": "4db08cf106caaa280d016401123dc3d24affaa08eec78fa7c9a8103be861c516",
+    "tests/cv-generation-browser.check.mjs": "5ae56077e9072bbf57ea922edd1cbc8d17b05be595a9b6f314aba1ee918780ba",
+    "tests/cv-generation.test.mjs": "2350e325945ca5bf0e5034a4f2b1d8433b4ec6c16cffadc1ab6e6b615d33f925",
+    "tests/cv-pdf.check.mjs": "c93fa2ec566dfdd1a50368a5ce93a3cb36327d68ea23a0d40d782392537c8e36",
+    "tests/cv-preferences.test.mjs": "4dfed7d394fffa3b032ad91ee37b62522129728eadbc39285de36c45384b5f2b",
+    "tests/cv-shared-preview.check.mjs": "8f3a4555f8f2f2003c007fa59e405b87eecec4bd3b25307d832813d7892f9a18",
+    "tests/cv-support-fixtures.mjs": "7a7283f3eaca0b0f435108b8d6e2c746be4ea2eca4c42c2347498062a4724002",
+    "tests/evidence-mvp.test.mjs": "675e8c038292e7c24bd5ab0a1887e0e2aa690c1747078d53e0262ff4c02b4277",
+    "tests/field-validation.test.mjs": "0ed98c81c638a90a075ac652fbcfd0401e22aeb8302ac374692b23bc0f4c4818",
+    "tests/ingestion-browser.check.mjs": "0ebbaeb83ce80deeff102c7c4db5d71e0fb3c4dfd33e6607c72502fb8beae849",
+    "tests/ingestion-fixtures.mjs": "bd2e6d4db52985a90ac02e71453f6dc3287fb54013e452d0a248dbeb084f4fef",
+    "tests/ingestion.test.mjs": "302139f7470a412fcbbb3b1045c0be0d6ebcedd1326948077b03848d8c173d56",
+    "tests/inspection-browser-fixture.mjs": "8183ec1155a0e4dde669c4a4bc8974d3b9e30deddfeb02ebc8ca2dbb9b3aa6ed",
+    "tests/job-context-fixtures.mjs": "e6d886db0b5838d0e15a096fdf0f083c2d92af005ef7bce2f8327acb02c5e0a4",
+    "tests/keyboard-flow.mjs": "94d5bfbd08e0ebb356811606fbd5a4b82da15e1949b31a136b91d3e584607c64",
+    "tests/preview-inspection-browser.check.mjs": "6100f91ffe2b9770d4a90baf4b6f4bee368d004e4ce5bc29539971da072c8eb3",
+    "tests/preview-inspection-harness.mjs": "ffb645f59f45bacd8a3b453fce0d7d5e99d1e8e2e033cfc222bdc81b355b818c",
+    "tests/preview-provider-browser.check.mjs": "a66699e6b95618c143b9c1401dc03852b5b559779fba326b1cc5765f0301b0d7",
+    "tests/profile-browser-storage.mjs": "4aba0b5d9efcdf82edce93986a3c194e1357b9ee5e13da28354fcad88864de6c",
+    "tests/profile-document.test.mjs": "b21671d99975a4be4f379c3c7f5ff54a430127386202d46e2cf3c444039135f3",
+    "tests/profile-edit-browser.check.mjs": "39de40de784ce3456a1ed2a2be5913f2861d00c49158bf5133d44d0a3bcd7b8e",
+    "tests/qualification-evidence.test.mjs": "165191eb7c95cf507109f8b75952efe382df0b145b225b13e6c366bd46bbe13d",
+    "tests/results-firefox-print.check.mjs": "34d993a728555fe134363e50184e1bd23060897abe4289cf9554ecc72b204333",
+    "tests/results-release-checks.mjs": "354d7943a0ad0466c25e32a105f0e725ed282d0aee2c68f2e4d1ea3ea25cdbc6",
+    "tests/resume-review-browser.check.mjs": "914bf05bceb563afc7a25cc1e3b00be5c93f60d491c48529bf48c0afa0c4f749",
+    "tests/resume-review.test.mjs": "d689883ba3e59f8dc46704e1967af969d3fbf3b04a4619cc884144379b11703e",
+    "tests/reviewed-resume-fixture.mjs": "58bfdd541a1e99b58ddf7cdddea655570d441a02aec66efd0350a7fd3250092f",
+    "tests/section-review-browser.check.mjs": "76c79bd326ce8c5f90b6f8f9101a297e6481ed8e35d3693ee71e2c4f0ebb9c9f",
+    "tests/section-review-evaluation.test.mjs": "23731cb7c3cd2a1f279595ec69107f17d06e6ae74b3b46405423ef3c85d53f2b",
+    "tsconfig.json": "262da4f7f6fbc9a9cb833a4139a4a2869d8e18df3ab5e8b1cf58c463ced66653",
+    "vite.config.ts": "58bb010de2c3c81f02c89748e51d1ecee9525f551cd726767379577284f9a1b9"
+  },
+  "cases": [
+    {
+      "id": "go-preprocessing",
+      "task": "preprocessing_contracts",
+      "language": "language-independent",
+      "tags": [
+        "source-preservation",
+        "go-contracts"
+      ],
+      "selector": "go-preprocessing",
+      "expectedOutcome": "passed",
+      "coverage": [
+        "mechanical normalization and source preservation through existing Go tests"
+      ],
+      "requiredTools": [
+        "go",
+        "bubblewrap"
+      ],
+      "split": "development",
+      "sourceId": "go-preprocessing",
+      "exposureGroup": "existing-tests"
+    },
+    {
+      "id": "node-profile-document",
+      "task": "canonical_profile_contracts",
+      "language": "en+pt-BR",
+      "tags": [
+        "canonical-migration-edit-save-concurrency",
+        "node-contracts"
+      ],
+      "selector": "node-profile-document",
+      "expectedOutcome": "passed",
+      "coverage": [
+        "existing public canonical Profile, review, stale-source and transaction tests"
+      ],
+      "requiredTools": [
+        "node",
+        "bubblewrap"
+      ],
+      "split": "development",
+      "sourceId": "node-profile-document",
+      "exposureGroup": "existing-tests"
+    },
+    {
+      "id": "browser-section-review",
+      "task": "section_review_browser_contracts",
+      "language": "en+pt-BR",
+      "tags": [
+        "section-review",
+        "review-edit-reject-apply",
+        "browser-layout"
+      ],
+      "selector": "browser-section-review",
+      "expectedOutcome": "passed",
+      "coverage": [
+        "existing synthetic section review, cross-tab, cancellation, quota, stale source and desktop/390px browser tests"
+      ],
+      "requiredTools": [
+        "node",
+        "chrome",
+        "bubblewrap"
+      ],
+      "split": "development",
+      "sourceId": "browser-section-review",
+      "exposureGroup": "existing-tests"
+    },
+    {
+      "id": "probe-isolation",
+      "task": "lab_isolation_contracts",
+      "language": "language-independent",
+      "tags": [
+        "privacy-invariant",
+        "environment-filesystem-network-sentinels"
+      ],
+      "selector": "probe-isolation",
+      "expectedOutcome": "passed",
+      "coverage": [
+        "four finite injected environment/home/host-file/host-loopback isolation opportunities; no universal privacy claim"
+      ],
+      "requiredTools": [
+        "node",
+        "bubblewrap"
+      ],
+      "split": "development",
+      "sourceId": "probe-isolation",
+      "exposureGroup": "guard-probes"
+    },
+    {
+      "id": "probe-hang-tree",
+      "task": "lab_process_lifecycle_contracts",
+      "language": "language-independent",
+      "tags": [
+        "negative-guard",
+        "child-grandchild-cancellation-deadline"
+      ],
+      "selector": "probe-hang-tree",
+      "expectedOutcome": "canceled-or-timed-out",
+      "coverage": [
+        "fixed detached child/grandchild tree; intentionally runs until explicit cancellation or deadline"
+      ],
+      "requiredTools": [
+        "node",
+        "bubblewrap"
+      ],
+      "split": "development",
+      "sourceId": "probe-hang-tree",
+      "exposureGroup": "guard-probes"
+    },
+    {
+      "id": "probe-output",
+      "task": "lab_process_lifecycle_contracts",
+      "language": "language-independent",
+      "tags": [
+        "negative-guard",
+        "bounded-output"
+      ],
+      "selector": "probe-output",
+      "expectedOutcome": "output_limited",
+      "coverage": [
+        "fixed output flood must stop at the byte cap and leave following tests unreached"
+      ],
+      "requiredTools": [
+        "node",
+        "bubblewrap"
+      ],
+      "split": "development",
+      "sourceId": "probe-output",
+      "exposureGroup": "guard-probes"
+    },
+    {
+      "id": "probe-tool-missing",
+      "task": "lab_process_environment_contracts",
+      "language": "language-independent",
+      "tags": [
+        "negative-guard",
+        "missing-tool"
+      ],
+      "selector": "probe-tool-missing",
+      "expectedOutcome": "tool_missing",
+      "coverage": [
+        "Known unavailable runtime; must block without spawning or executing a replacement"
+      ],
+      "requiredTools": [
+        "unavailable-test-runtime",
+        "bubblewrap"
+      ],
+      "split": "development",
+      "sourceId": "probe-tool-missing",
+      "exposureGroup": "guard-probes"
+    },
+    {
+      "id": "probe-crash",
+      "selector": "probe-crash",
+      "task": "lab_process_environment_contracts",
+      "language": "language-independent",
+      "tags": [
+        "negative-guard",
+        "crash"
+      ],
+      "expectedOutcome": "crashed",
+      "coverage": [
+        "Deliberate SIGKILL; exit signal evidence does not prove the cause of arbitrary harness crashes"
+      ],
+      "requiredTools": [
+        "node",
+        "bubblewrap"
+      ],
+      "split": "development",
+      "sourceId": "probe-crash",
+      "exposureGroup": "guard-probes"
+    },
+    {
+      "id": "native-print-capability",
+      "selector": "native-print-capability",
+      "task": "native_export_capability",
+      "language": "language-independent",
+      "tags": [
+        "capability-gap",
+        "native-print"
+      ],
+      "expectedOutcome": "native_print_unavailable",
+      "coverage": [
+        "No automated observation of native print dialog/save; screenshot or CDP PDF never establishes native export"
+      ],
+      "requiredTools": [],
+      "split": "development",
+      "sourceId": "native-print-capability",
+      "exposureGroup": "existing-tests"
+    },
+    {
+      "id": "node-field-tooling",
+      "selector": "node-field-tooling",
+      "task": "offline_field_tooling_contracts",
+      "language": "en+pt-BR",
+      "tags": [
+        "offline",
+        "injected-helpers"
+      ],
+      "expectedOutcome": "passed",
+      "coverage": [
+        "Existing field-validation Node tests with injected collect/experiment/evaluate helpers; live CLI is never selected"
+      ],
+      "requiredTools": [
+        "node",
+        "bubblewrap"
+      ],
+      "split": "development",
+      "sourceId": "node-field-tooling",
+      "exposureGroup": "existing-tests"
+    },
+    {
+      "id": "go-canonical",
+      "selector": "go-canonical",
+      "task": "canonical_profile_contracts",
+      "language": "en+pt-BR",
+      "tags": [
+        "migration",
+        "edit",
+        "save",
+        "concurrency"
+      ],
+      "expectedOutcome": "passed",
+      "coverage": [
+        "Existing fixed entry points: ./internal/profiledocument; finite controlled tests, not exhaustive workflow or live quality coverage"
+      ],
+      "requiredTools": [
+        "go",
+        "bubblewrap"
+      ],
+      "split": "development",
+      "sourceId": "go-canonical",
+      "exposureGroup": "existing-tests"
+    },
+    {
+      "id": "go-ingestion",
+      "selector": "go-ingestion",
+      "task": "ingestion_contracts",
+      "language": "en+pt-BR",
+      "tags": [
+        "clarification",
+        "continuation",
+        "enrichment"
+      ],
+      "expectedOutcome": "passed",
+      "coverage": [
+        "Existing fixed entry points: ./backend/profile-ingestion, ./backend/profile-review; finite controlled tests, not exhaustive workflow or live quality coverage"
+      ],
+      "requiredTools": [
+        "go",
+        "bubblewrap"
+      ],
+      "split": "development",
+      "sourceId": "go-ingestion",
+      "exposureGroup": "existing-tests"
+    },
+    {
+      "id": "go-job-application",
+      "selector": "go-job-application",
+      "task": "job_application_contracts",
+      "language": "en+pt-BR",
+      "tags": [
+        "job-context",
+        "reuse",
+        "resume",
+        "artifact"
+      ],
+      "expectedOutcome": "passed",
+      "coverage": [
+        "Existing fixed entry points: ./backend/qualification-gaps, ./backend/application-draft; finite controlled tests, not exhaustive workflow or live quality coverage"
+      ],
+      "requiredTools": [
+        "go",
+        "bubblewrap"
+      ],
+      "split": "development",
+      "sourceId": "go-job-application",
+      "exposureGroup": "existing-tests"
+    },
+    {
+      "id": "go-cv",
+      "selector": "go-cv",
+      "task": "cv_v2_contracts",
+      "language": "en+pt-BR",
+      "tags": [
+        "existing-cv-v2",
+        "not-cv-v3-certification"
+      ],
+      "expectedOutcome": "passed",
+      "coverage": [
+        "Existing fixed entry points: ./backend/cv-generation; finite controlled tests, not exhaustive workflow or live quality coverage"
+      ],
+      "requiredTools": [
+        "go",
+        "bubblewrap"
+      ],
+      "split": "development",
+      "sourceId": "go-cv",
+      "exposureGroup": "existing-tests"
+    },
+    {
+      "id": "node-ingestion",
+      "selector": "node-ingestion",
+      "task": "ingestion_client_contracts",
+      "language": "en+pt-BR",
+      "tags": [
+        "clarification",
+        "continuation",
+        "enrichment"
+      ],
+      "expectedOutcome": "passed",
+      "coverage": [
+        "Existing fixed entry points: tests/ingestion.test.mjs; finite controlled tests, not exhaustive workflow or live quality coverage"
+      ],
+      "requiredTools": [
+        "node",
+        "bubblewrap"
+      ],
+      "split": "development",
+      "sourceId": "node-ingestion",
+      "exposureGroup": "existing-tests"
+    },
+    {
+      "id": "node-job-reuse",
+      "selector": "node-job-reuse",
+      "task": "job_reuse_client_contracts",
+      "language": "en+pt-BR",
+      "tags": [
+        "qualification",
+        "profile-contact"
+      ],
+      "expectedOutcome": "passed",
+      "coverage": [
+        "Existing fixed entry points: tests/qualification-evidence.test.mjs, tests/contact-profile.test.mjs; finite controlled tests, not exhaustive workflow or live quality coverage"
+      ],
+      "requiredTools": [
+        "node",
+        "bubblewrap"
+      ],
+      "split": "development",
+      "sourceId": "node-job-reuse",
+      "exposureGroup": "existing-tests"
+    },
+    {
+      "id": "node-artifact-review",
+      "selector": "node-artifact-review",
+      "task": "artifact_review_client_contracts",
+      "language": "en+pt-BR",
+      "tags": [
+        "cv",
+        "resume",
+        "review",
+        "export"
+      ],
+      "expectedOutcome": "passed",
+      "coverage": [
+        "Existing fixed entry points: tests/cv-choices.test.mjs, tests/cv-preferences.test.mjs, tests/cv-generation.test.mjs, tests/resume-review.test.mjs, tests/artifact-review.test.mjs; finite controlled tests, not exhaustive workflow or live quality coverage"
+      ],
+      "requiredTools": [
+        "node",
+        "bubblewrap",
+        "go"
+      ],
+      "split": "development",
+      "sourceId": "node-artifact-review",
+      "exposureGroup": "existing-tests"
+    },
+    {
+      "id": "browser-canonical-edit",
+      "selector": "browser-canonical-edit",
+      "task": "canonical_profile_browser_contracts",
+      "language": "en+pt-BR",
+      "tags": [
+        "manual-edit",
+        "save"
+      ],
+      "expectedOutcome": "passed",
+      "coverage": [
+        "Existing fixed entry points: tests/profile-edit-browser.check.mjs; finite controlled tests, not exhaustive workflow or live quality coverage"
+      ],
+      "requiredTools": [
+        "node",
+        "bubblewrap",
+        "chrome"
+      ],
+      "split": "development",
+      "sourceId": "browser-canonical-edit",
+      "exposureGroup": "existing-tests"
+    },
+    {
+      "id": "browser-ingestion",
+      "selector": "browser-ingestion",
+      "task": "ingestion_browser_contracts",
+      "language": "en+pt-BR",
+      "tags": [
+        "clarification",
+        "continuation"
+      ],
+      "expectedOutcome": "passed",
+      "coverage": [
+        "Existing fixed entry points: tests/ingestion-browser.check.mjs; finite controlled tests, not exhaustive workflow or live quality coverage"
+      ],
+      "requiredTools": [
+        "node",
+        "bubblewrap",
+        "chrome"
+      ],
+      "split": "development",
+      "sourceId": "browser-ingestion",
+      "exposureGroup": "existing-tests"
+    },
+    {
+      "id": "browser-enrichment",
+      "selector": "browser-enrichment",
+      "task": "apply_enrichment_browser_contracts",
+      "language": "en+pt-BR",
+      "tags": [
+        "review",
+        "apply",
+        "save"
+      ],
+      "expectedOutcome": "passed",
+      "coverage": [
+        "Existing fixed entry points: tests/apply-checklist.check.mjs; finite controlled tests, not exhaustive workflow or live quality coverage"
+      ],
+      "requiredTools": [
+        "node",
+        "bubblewrap",
+        "chrome"
+      ],
+      "split": "development",
+      "sourceId": "browser-enrichment",
+      "exposureGroup": "existing-tests"
+    },
+    {
+      "id": "browser-application-reuse",
+      "selector": "browser-application-reuse",
+      "task": "application_reuse_browser_contracts",
+      "language": "en+pt-BR",
+      "tags": [
+        "reuse",
+        "job"
+      ],
+      "expectedOutcome": "passed",
+      "coverage": [
+        "Existing fixed entry points: tests/application-reuse-browser.check.mjs; finite controlled tests, not exhaustive workflow or live quality coverage"
+      ],
+      "requiredTools": [
+        "node",
+        "bubblewrap",
+        "chrome"
+      ],
+      "split": "development",
+      "sourceId": "browser-application-reuse",
+      "exposureGroup": "existing-tests"
+    },
+    {
+      "id": "browser-resume-review",
+      "selector": "browser-resume-review",
+      "task": "resume_review_export_browser_contracts",
+      "language": "en+pt-BR",
+      "tags": [
+        "resume",
+        "review",
+        "export",
+        "cdp-pdf"
+      ],
+      "expectedOutcome": "passed",
+      "coverage": [
+        "Existing fixed entry points: tests/resume-review-browser.check.mjs; finite controlled tests, not exhaustive workflow or live quality coverage"
+      ],
+      "requiredTools": [
+        "node",
+        "bubblewrap",
+        "chrome"
+      ],
+      "split": "development",
+      "sourceId": "browser-resume-review",
+      "exposureGroup": "existing-tests"
+    },
+    {
+      "id": "probe-assertion",
+      "selector": "probe-assertion",
+      "task": "lab_process_assertion_contracts",
+      "language": "language-independent",
+      "tags": [
+        "negative-guard",
+        "assertion-regression"
+      ],
+      "expectedOutcome": "assertion_failed",
+      "coverage": [
+        "Deliberate Node assertion failure must complete engine with fail verdict, distinct from blocked/crashed"
+      ],
+      "requiredTools": [
+        "node",
+        "bubblewrap"
+      ],
+      "split": "development",
+      "sourceId": "probe-assertion",
+      "exposureGroup": "guard-probes"
+    }
+  ],
+  "coverageGaps": [
+    "Native print dialog/save is unobserved and remains unavailable",
+    "Existing CV v2 tests do not certify future CV v3 or pending owner issues #124-#128",
+    "Selectors inventory existing tests only; no new injection corpus, universal security/semantic quality coverage, or complete browser/platform matrix",
+    "Per-driver exit assertion is available; nested assertion denominator and durable user acceptance are unavailable",
+    "First isolated inventory observation: canonical edit and enrichment harnesses report horizontal-overflow assertions; retain failures without claiming cause or fixing product UI in this Lab slice. External fonts are blocked; causality is unverified."
+  ],
+  "derivedFromSHA256": "4ef2e16d03f030ecbe2862f7bf24e4e622191c8af2649589f06297da44fe572f",
+  "changeRationale": "Bound the intentional flood itself and remove unused descendant temp writes; preserve existing isolation sentinel boundaries and immutable v1 observations."
+}

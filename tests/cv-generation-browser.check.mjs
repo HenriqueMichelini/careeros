@@ -8,8 +8,23 @@ import { mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { createServer } from "node:net"
+import { createHash } from "node:crypto"
 
+const labObservations = []
 const root = new URL("..", import.meta.url).pathname
+const labSourceHashes = Object.fromEntries(
+  [
+    "tests/cv-generation-browser.check.mjs",
+    "tests/cv-support-fixtures.mjs",
+    "src/lib/cvGeneration.ts",
+    "src/pages/CvPage.tsx",
+  ].map((path) => [
+    path,
+    createHash("sha256")
+      .update(readFileSync(join(root, path)))
+      .digest("hex"),
+  ]),
+)
 const work = mkdtempSync(join(tmpdir(), "careeros-cv-generation-"))
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 const port = await new Promise((resolve) => {
@@ -220,7 +235,22 @@ try {
       if (await evaluate(expression)) return
       await pause(100)
     }
-    throw new Error(`Timed out: ${expression}`)
+    writeFileSync(
+      join(work, "timeout.json"),
+      JSON.stringify(
+        {
+          expression,
+          state: await evaluate(
+            "({text:document.body.innerText,outbound:window.__outbound,calls:window.__calls})",
+          ),
+        },
+        null,
+        2,
+      ),
+    )
+    throw new Error(
+      `Timed out: ${expression}; state retained in ${work}/timeout.json`,
+    )
   }
   const openCv = async (repo, locale, withEvidence = false) => {
     await call("Page.navigate", { url: `http://127.0.0.1:${port}/` })
@@ -1162,6 +1192,16 @@ try {
       savedRaw,
       "cancelling the proposal preserves the accepted CV",
     )
+    labObservations.push({
+      id: `${fixture.locale}-browser-discard-revert`,
+      language: fixture.locale,
+      kind: "browser-review",
+      request: await evaluate("window.__outbound"),
+      snapshot: saved,
+      allSummaryRemovedBlocked: true,
+      cancellationPreserved: true,
+      durable: "localStorage-observed",
+    })
     console.log(
       fixture.locale +
         ": v3 per-statement review gate; unresolved blocked, discard/revert persists the reviewed subset, all-summary removal blocked, cancel preserves the accepted CV",
@@ -1376,6 +1416,16 @@ try {
       await evaluate("localStorage.getItem('careeros_curated_cv_v1')"),
       savedRaw,
     )
+    labObservations.push({
+      id: `${fixture.locale}-browser-user-provenance`,
+      language: fixture.locale,
+      kind: "browser-review",
+      snapshot: saved,
+      sourceFreshnessAfterEdit: "stale",
+      quotaPreservedPrevious: true,
+      proposalRecoverable: true,
+      durable: "localStorage-observed",
+    })
     console.log(
       fixture.locale +
         ": v3 user provenance; edit/confirm accepted as version 3, reload and stale reference preserve authorship, failed save keeps the previous CV",
@@ -1529,6 +1579,15 @@ try {
       originalProfile,
       "assessed reload never mutates the canonical Profile",
     )
+    labObservations.push({
+      id: `${fixture.locale}-browser-legacy-v2`,
+      language: fixture.locale,
+      kind: "browser-legacy",
+      snapshot: legacy,
+      trust: "unverified",
+      providerCalls: 0,
+      durable: "localStorage-observed",
+    })
     console.log(
       fixture.locale +
         ": issue #127 legacy v2 unverified regardless of freshness, no provider call or Profile mutation, one-page export; v3 assessed survives reload",
@@ -1626,6 +1685,7 @@ try {
       true,
       "the unsupported machine claim blocks acceptance",
     )
+    const labRequest = await evaluate("window.__outbound")
     // 390px: the review controls stay reachable with no horizontal overflow.
     await call("Emulation.setDeviceMetricsOverride", {
       width: 390,
@@ -1718,11 +1778,44 @@ try {
       originalProfile,
       "activation and review never mutate the canonical Profile",
     )
+    labObservations.push({
+      id: `${fixture.locale}-browser-kubernetes-discard`,
+      language: fixture.locale,
+      kind: "browser-review",
+      request: labRequest,
+      snapshot: saved,
+      reloadedSnapshot: await evaluate(
+        "JSON.parse(localStorage.getItem('careeros_curated_cv_v1'))",
+      ),
+      claim,
+      supportedText,
+      durable: "localStorage-observed",
+      viewports: [1440, 390],
+      keyboard: true,
+    })
     console.log(
       fixture.locale +
         ": issue #128 activation; Java-only canonical Profile blocks the Kubernetes claim, 390px keyboard review removes it, v3 save/reload keeps the supported sentence",
     )
   }
+  if (process.env.CV_LAB_BROWSER_OUTPUT)
+    writeFileSync(
+      process.env.CV_LAB_BROWSER_OUTPUT,
+      JSON.stringify(
+        {
+          version: "cv-lab-browser-v1",
+          sourceHashes: labSourceHashes,
+          mode: "controlled-browser",
+          observations: labObservations,
+          limits: [
+            "Controlled fetch responses; separate source identities from handler corpus",
+            "No live provider or native PDF claim",
+          ],
+        },
+        null,
+        2,
+      ) + "\n",
+    )
 } finally {
   socket?.close()
   chrome.kill()

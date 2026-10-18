@@ -1,7 +1,7 @@
 // Static catalog bound to the reviewed source/selector manifest.
 package evaluationlab
 
-const processFixtureHash = "0f9469797d9ba65ed5d356a5d0f8bd5832415c989287488c13df70525bd5650b"
+const processFixtureHash = "c3fb7be93b892adca689c9798370d89bac305454ae3268055488f25376e7c595"
 
 func init() {
 	suiteCatalog = append(suiteCatalog, Suite{
@@ -27,7 +27,7 @@ func init() {
 			{ID: "go-canonical", Hash: "5aede83a9aef3b5571733e3728c9afe452f095941d15ce4fb6c5fcd8a4bb9d17", Workflow: "canonical_profile_contracts", Language: "en+pt-BR", Split: "development", ExposureGroup: "existing-tests", RequiredSteps: 0, MaximumCalls: 0},
 			{ID: "go-ingestion", Hash: "fe01597babae3718806319ed2bb002e400b9d9341bfe1c055b4fbaf7263b9f45", Workflow: "ingestion_contracts", Language: "en+pt-BR", Split: "development", ExposureGroup: "existing-tests", RequiredSteps: 0, MaximumCalls: 0},
 			{ID: "go-job-application", Hash: "fc15e0a682a97076ec9459351692c194cd66aea97c20b13d644c0e4a0ec67e71", Workflow: "job_application_contracts", Language: "en+pt-BR", Split: "development", ExposureGroup: "existing-tests", RequiredSteps: 0, MaximumCalls: 0},
-			{ID: "go-cv", Hash: "5dafb3d1c20583b244b0c751512252694254a2185240510881a6b9777ff4b19f", Workflow: "cv_v2_contracts", Language: "en+pt-BR", Split: "development", ExposureGroup: "existing-tests", RequiredSteps: 0, MaximumCalls: 0},
+			{ID: "go-cv", Hash: "5dafb3d1c20583b244b0c751512252694254a2185240510881a6b9777ff4b19f", Workflow: "cv_contracts", Language: "en+pt-BR", Split: "development", ExposureGroup: "existing-tests", RequiredSteps: 0, MaximumCalls: 0},
 			{ID: "node-ingestion", Hash: "0de48e17b8ec5fc251fd15a1037751fb6c2b0d941b13f45cebf146dfed59ff97", Workflow: "ingestion_client_contracts", Language: "en+pt-BR", Split: "development", ExposureGroup: "existing-tests", RequiredSteps: 0, MaximumCalls: 0},
 			{ID: "node-job-reuse", Hash: "3e6f8de7ff4aae7e34aa8f0ba96731772e56e348ee22707ef576e4937cae42d8", Workflow: "job_reuse_client_contracts", Language: "en+pt-BR", Split: "development", ExposureGroup: "existing-tests", RequiredSteps: 0, MaximumCalls: 0},
 			{ID: "node-artifact-review", Hash: "e3dfdd2317f74f4c85031b7d08f1b93073a5a4401de8190159b00d354cf699a7", Workflow: "artifact_review_client_contracts", Language: "en+pt-BR", Split: "development", ExposureGroup: "existing-tests", RequiredSteps: 0, MaximumCalls: 0},
