@@ -54,6 +54,13 @@ export function App() {
     [view, setView] = useState<View | null>(null),
     [events, setEvents] = useState<EventPage | null>(null),
     [caseEvidence, setCaseEvidence] = useState<CaseEvidence | null>(null)
+  const [runRead, setRunRead] = useState(0),
+    [runError, setRunError] = useState("")
+  const runSequence = useRef(0)
+  const [caseError, setCaseError] = useState<{
+    identity: string
+    message: string
+  } | null>(null)
   const caseSequence = useRef(0)
   const planSequence = useRef(0)
   const invalidatePlan = () => {
@@ -146,10 +153,16 @@ export function App() {
     if (sequence === historySequence.current) setHistory(page)
   }
   const openRun = (id: string) => {
+    // Every selection is a fresh read, even when React retains the same ID.
+    // Invalidate in-flight reads immediately, before the next effect cleanup.
+    runSequence.current++
+    setRunRead((prior) => prior + 1)
+    setRunError("")
     caseSequence.current++
     setRunId(id)
     location.hash = "run=" + id
     setCaseEvidence(null)
+    setCaseError(null)
     setView(null)
     setEvents(null)
     setConfirmDelete("")
@@ -158,14 +171,15 @@ export function App() {
   const loadCase = async (identity: string) => {
     const sequence = ++caseSequence.current
     setCaseEvidence(null)
-    setError("")
+    setCaseError(null)
     try {
       const evidence = await request<CaseEvidence>(
         `runs/${runId}/cases/${encodeURIComponent(identity)}`,
       )
       if (sequence === caseSequence.current) setCaseEvidence(evidence)
     } catch (e) {
-      if (sequence === caseSequence.current) setError(errorText(e))
+      if (sequence === caseSequence.current)
+        setCaseError({ identity, message: errorText(e) })
     }
   }
   useEffect(() => {
@@ -180,6 +194,8 @@ export function App() {
   }, [offset, historyFilters])
   useEffect(() => {
     if (!runId) return
+    const sequence = runSequence.current
+    const current = () => !stopped && sequence === runSequence.current
     let stopped = false,
       timer: ReturnType<typeof setTimeout> | undefined
     let epoch = "",
@@ -187,7 +203,8 @@ export function App() {
     const poll = async () => {
       try {
         const result = await request<View>(`runs/${runId}/view`)
-        if (stopped) return
+        if (!current()) return
+        setRunError("")
         setView(result)
         setNow(Date.now())
         // Imports have no live/checkpoint journal. They never start execution.
@@ -198,7 +215,7 @@ export function App() {
                 epoch ? "&epoch=" + encodeURIComponent(epoch) : ""
               }`,
             )
-            if (stopped) return
+            if (!current()) return
             epoch = page.epoch
             cursor = page.next
             setEvents((prior) => ({
@@ -209,24 +226,22 @@ export function App() {
               ].slice(-100),
             }))
           } catch (e) {
+            if (!current()) return
             epoch = ""
             cursor = 0
-            setNotice(
-              "Event cursor unavailable or changed. The next read resets the cursor; execution is not restarted. " +
+            setRunError(
+              "Stored events unavailable. Retry reloads stored evidence; execution is not restarted. " +
                 errorText(e),
             )
           }
         }
         if (active(result)) timer = setTimeout(poll, 1000)
         else {
-          void refreshHistory()
-          void refreshStatus()
+          void attempt(refreshHistory)
+          void attempt(refreshStatus)
         }
       } catch (e) {
-        if (!stopped) {
-          setError("Reconnect/read unavailable: " + errorText(e))
-          timer = setTimeout(poll, 3000)
-        }
+        if (current()) setRunError("Stored run unavailable: " + errorText(e))
       }
     }
     void poll()
@@ -234,7 +249,7 @@ export function App() {
       stopped = true
       if (timer) clearTimeout(timer)
     }
-  }, [runId])
+  }, [runId, runRead])
   const changeSuite = (id: string) => {
     const s = catalog.find((s) => s.id === id)
     setSuite(id)
@@ -800,6 +815,13 @@ export function App() {
             not establish semantic support or client acceptance.
           </p>
           <p className="identity">{runId}</p>
+          {runError && (
+            <div role="alert" className="notice error">
+              <p>{runError}</p>
+              <button onClick={() => openRun(runId)}>Retry</button>
+              <p>Reload stored evidence only; execution is not restarted.</p>
+            </div>
+          )}
           {view ? (
             <>
               <p>
@@ -929,6 +951,22 @@ export function App() {
                   </tbody>
                 </table>
               </div>
+              {caseError && (
+                <div
+                  role="alert"
+                  aria-label="Case loading error"
+                  className="notice error"
+                >
+                  <p>{caseError.message}</p>
+                  <button onClick={() => void loadCase(caseError.identity)}>
+                    Retry case
+                  </button>
+                  <p>
+                    Reload stored case evidence only; execution is not
+                    restarted.
+                  </p>
+                </div>
+              )}
               {caseEvidence && (
                 <div key={runId + ":" + caseEvidence.identity}>
                   <CaseDetail evidence={caseEvidence} />
@@ -965,7 +1003,9 @@ export function App() {
                       await request(`runs/${runId}/delete`, {
                         confirmId: confirmDelete,
                       })
+                      runSequence.current++
                       caseSequence.current++
+                      setRunError("")
                       setRunId("")
                       setView(null)
                       location.hash = ""
@@ -979,9 +1019,11 @@ export function App() {
                 </button>
               </details>
             </>
-          ) : (
-            <p>Reading the existing run; execution is not restarted.</p>
-          )}
+          ) : !runError ? (
+            <p role="status">
+              Reading the existing run; execution is not restarted.
+            </p>
+          ) : null}
         </section>
       )}
       <section aria-labelledby="compare-title">
