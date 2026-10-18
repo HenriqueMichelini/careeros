@@ -1,5 +1,81 @@
 {
   "version": "cv-support-fixtures-v1",
+  "expectations": {
+    "en-support-kubernetes-unsupported": {
+      "status": 200,
+      "calls": 2,
+      "assessment": "complete",
+      "judgments": { "summary:0": "unsupported" }
+    },
+    "en-support-responsibility-unsupported": {
+      "status": 200,
+      "calls": 2,
+      "assessment": "complete",
+      "judgments": { "summary:0": "unsupported" }
+    },
+    "en-support-qualification-unsupported": {
+      "status": 200,
+      "calls": 2,
+      "assessment": "complete",
+      "judgments": { "summary:0": "unsupported" }
+    },
+    "en-support-paraphrase-supported": {
+      "status": 200,
+      "calls": 2,
+      "assessment": "complete",
+      "judgments": { "summary:0": "supported" }
+    },
+    "en-support-translation-supported": {
+      "status": 200,
+      "calls": 2,
+      "assessment": "complete",
+      "judgments": { "summary:0": "supported" }
+    },
+    "en-support-assessment-unavailable": {
+      "status": 200,
+      "calls": 2,
+      "assessment": "unavailable",
+      "judgments": { "summary:0": "uncertain" }
+    },
+    "en-support-hard-guard-cross-owner": { "status": 502, "calls": 1 },
+    "pt-support-kubernetes-unsupported": {
+      "status": 200,
+      "calls": 2,
+      "assessment": "complete",
+      "judgments": { "summary:0": "unsupported" }
+    },
+    "pt-support-responsibility-unsupported": {
+      "status": 200,
+      "calls": 2,
+      "assessment": "complete",
+      "judgments": { "summary:0": "unsupported" }
+    },
+    "pt-support-qualification-unsupported": {
+      "status": 200,
+      "calls": 2,
+      "assessment": "complete",
+      "judgments": { "summary:0": "unsupported" }
+    },
+    "pt-support-paraphrase-supported": {
+      "status": 200,
+      "calls": 2,
+      "assessment": "complete",
+      "judgments": { "summary:0": "supported" }
+    },
+    "pt-support-translation-supported": {
+      "status": 200,
+      "calls": 2,
+      "assessment": "complete",
+      "judgments": { "summary:0": "supported" }
+    },
+    "pt-support-assessment-unavailable": {
+      "status": 200,
+      "calls": 2,
+      "assessment": "unavailable",
+      "judgments": { "summary:0": "uncertain" }
+    },
+    "pt-support-hard-guard-cross-owner": { "status": 502, "calls": 1 }
+  },
   "cases": [
     {
       "id": "en-support-kubernetes-unsupported",
