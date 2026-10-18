@@ -113,6 +113,14 @@ func DeriveCVEvidence(raw []byte) ([]ImportedCase, error) {
 				return nil, fmt.Errorf("%s: %w", source.ID, err)
 			}
 			c.Review = bytes.Clone(observation)
+			var stages cvClientObservation
+			_ = json.Unmarshal(observation, &stages)
+			if len(stages.Snapshot) == 0 {
+				c.UnavailableReasons = append(c.UnavailableReasons, "client snapshot stage unavailable")
+			}
+			if len(stages.Reloaded) == 0 {
+				c.UnavailableReasons = append(c.UnavailableReasons, "client serialization/reload stage unavailable")
+			}
 			delete(observations, source.ID)
 		} else {
 			c.Review = json.RawMessage(`{"state":"unavailable","reason":"owner client observation missing"}`)
@@ -218,6 +226,7 @@ func joinCVObservation(request, actual, observation json.RawMessage, language st
 	var original struct {
 		Facts      []factIdentity
 		CVLanguage string `json:"cvLanguage"`
+		Density    string `json:"density"`
 	}
 	var client struct {
 		Request struct {
@@ -233,6 +242,7 @@ func joinCVObservation(request, actual, observation json.RawMessage, language st
 				}
 			}
 			CVLanguage       string `json:"cvLanguage"`
+			Density          string `json:"density"`
 			StatementSupport bool   `json:"statementSupport"`
 		} `json:"request"`
 		Units    []cvStatement `json:"units"`
@@ -254,7 +264,7 @@ func joinCVObservation(request, actual, observation json.RawMessage, language st
 			} `json:"support"`
 		} `json:"output"`
 	}
-	if json.Unmarshal(request, &original) != nil || json.Unmarshal(observation, &client) != nil || json.Unmarshal(actual, &run) != nil || client.Request.CVLanguage != language || run.Language != language || !client.Request.StatementSupport || len(original.Facts) != len(client.Request.Facts) {
+	if json.Unmarshal(request, &original) != nil || json.Unmarshal(observation, &client) != nil || json.Unmarshal(actual, &run) != nil || original.CVLanguage != language || client.Request.Density != original.Density || client.Request.CVLanguage != language || run.Language != language || !client.Request.StatementSupport || len(original.Facts) != len(client.Request.Facts) {
 		return fmt.Errorf("CV request facts/language mismatch")
 	}
 	// stableCvFacts assigns positional legacy entry aliases. Resolve ownership
@@ -308,7 +318,7 @@ func joinCVObservation(request, actual, observation json.RawMessage, language st
 			return fmt.Errorf("CV statement text/source/status mismatch")
 		}
 	}
-	return nil
+	return joinCVSnapshot(observation, language)
 }
 func equalJSON(a, b any) bool {
 	left, _ := json.Marshal(a)

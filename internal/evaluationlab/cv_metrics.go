@@ -35,6 +35,12 @@ func cvIntegrityMetrics(cases []ImportedCase, source string) []Metric {
 		var run semanticeval.RunResult
 		_ = json.Unmarshal(c.Actual, &run)
 		unsupported, accepted, missing, userAssertions := 0, 0, 0, 0
+		pending := 0
+		for _, status := range expected.Contract.Judgments {
+			if status == "unsupported" {
+				pending++
+			}
+		}
 		var snapshot struct {
 			Provenance []struct {
 				ID, Text, Origin, Decision string
@@ -72,26 +78,24 @@ func cvIntegrityMetrics(cases []ImportedCase, source string) []Metric {
 			m.Value = nil
 			m.UnavailableReason = "client acceptance observation missing"
 			if observed.ID == "" {
-				for _, status := range expected.Contract.Judgments {
-					if status == "unsupported" {
-						m.Eligible++
-						m.Missing++
-					}
-				}
+				m.Eligible = pending
+				m.Missing = pending
+				m.Evaluated = 0
 			}
 		}
 		metrics = append(metrics, m)
 		unsafe := CountMetric("M15", "scripted-unsafe-case-acceptance", boolCount(accepted > 0), boolCount(unsupported > 0), "controlled", source)
 		unsafe.Estimator = "one unsafe case with any accepted unsupported machine unit; scripted enforcement cohort only"
-		if m.Value == nil && unsupported > 0 {
+		if m.Value == nil && pending > 0 {
 			unsafe.Value = nil
 			unsafe.UnavailableReason = m.UnavailableReason
 			unsafe.Missing = 1
 			unsafe.Evaluated = 0
+			unsafe.Eligible = 1
 		}
 		metrics = append(metrics, unsafe)
 		adjudicated := CountMetric("M15", "adjudicated-unsupported-active-machine-acceptance", 0, 0, "controlled", source)
-		adjudicated.Missing = unsupported
+		adjudicated.Missing = pending
 		adjudicated.UnavailableReason = "independent human adjudication pending; scripted labels and explicit user assertions excluded"
 		metrics = append(metrics, adjudicated)
 		for _, item := range []struct {
@@ -105,14 +109,32 @@ func cvIntegrityMetrics(cases []ImportedCase, source string) []Metric {
 			n := item.value
 			value := float64(n)
 			metrics = append(metrics, Metric{ID: item.id, Version: "lab-metrics-v1", Measure: item.name, Mode: "controlled-retained", Source: source, Value: &value, ObservationCount: &n, Eligible: n, Evaluated: n, Units: "count", Estimator: "immutable owner observation; replay makes zero generation/assessment dispatches"})
+			if len(c.Actual) == 0 {
+				last := &metrics[len(metrics)-1]
+				last.Value = nil
+				last.ObservationCount = nil
+				last.Eligible = 1
+				last.Evaluated = 0
+				last.Missing = 1
+				last.UnavailableReason = "retained case was not reached by this replay"
+			}
 		}
 		for _, item := range []struct {
 			id, name string
 			value    int
-		}{{"M15", "pending-scripted-unsupported-statements", unsupported}, {"M27", "explicit-user-assertion-cohort", userAssertions}} {
+		}{{"M15", "pending-scripted-unsupported-statements", pending}, {"M27", "explicit-user-assertion-cohort", userAssertions}} {
 			n := item.value
 			value := float64(n)
 			metrics = append(metrics, Metric{ID: item.id, Version: "lab-metrics-v1", Measure: item.name, Mode: "controlled", Source: source, Value: &value, ObservationCount: &n, Eligible: n, Evaluated: n, Units: "count", Estimator: "joined original machine units or separate user-edited/confirmed provenance records"})
+			if item.id == "M27" && run.Status == 200 && (len(observed.Snapshot) == 0 || string(observed.Snapshot) == "null") {
+				last := &metrics[len(metrics)-1]
+				last.Value = nil
+				last.ObservationCount = nil
+				last.Eligible = 1
+				last.Evaluated = 0
+				last.Missing = 1
+				last.UnavailableReason = "snapshot provenance stage missing"
+			}
 		}
 		for _, gap := range []struct{ id, reason string }{
 			{"M09", "owner structural and causal rejection opportunities are not exhaustively labeled"},
