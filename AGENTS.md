@@ -1,3 +1,6 @@
+# RTK
+Use RTK for shell commands: `~/.codex/RTK.md`
+
 # figma-make-app
 
 React + Vite + Tailwind CSS project running inside Figma Make.
