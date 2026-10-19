@@ -1,3 +1,4 @@
+import { createBrowserEvaluation } from "./browser-evaluation.mjs"
 import { stagedBrowserFixtures } from "./ingestion-fixtures.mjs"
 import { enrichmentScenarios } from "./apply-enrichment-browser.scenarios.mjs"
 import { reviewedDraftFixture } from "./reviewed-resume-fixture.mjs"
@@ -149,10 +150,10 @@ try {
   })
   let nextId = 0
   const pending = new Map()
-  let mainFrameNavigation = 0
+  const browserEvaluation = createBrowserEvaluation(pause)
   socket.onmessage = ({ data }) => {
     const message = JSON.parse(data)
-    if (message.method === "Page.frameNavigated" && !message.params.frame.parentId) mainFrameNavigation++
+    browserEvaluation.observe(message)
     if (!message.id) return
     const callback = pending.get(message.id)
     pending.delete(message.id)
@@ -165,26 +166,7 @@ try {
       pending.set(id, { resolve, reject })
       socket.send(JSON.stringify({ id, method, params }))
     })
-  const evaluate = async (expression) => {
-    const previousNavigation = mainFrameNavigation
-    const result = await call("Runtime.evaluate", {
-      expression,
-      returnByValue: true,
-      awaitPromise: true,
-    })
-    if (result.exceptionDetails)
-      throw new Error(
-        result.exceptionDetails.exception?.description ||
-          result.exceptionDetails.text,
-      )
-    if (expression.includes("location.reload()")) {
-      for (let attempt = 0; mainFrameNavigation === previousNavigation; attempt++) {
-        if (attempt === 100) throw new Error("Reload did not navigate the main frame")
-        await pause(20)
-      }
-    }
-    return result.result.value
-  }
+  const evaluate = (expression) => browserEvaluation.evaluate(call, expression)
   const until = async (expression) => {
     for (let attempt = 0; attempt < 100; attempt++) {
       if (await evaluate(expression)) return
