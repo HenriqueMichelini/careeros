@@ -178,7 +178,7 @@ func TestUnsafeNewEntryWithholdsAllLinkedClaims(t *testing.T) {
 	claims := []claim{{ID: "c1", Targets: []string{"experience"}}, {ID: "c2", Targets: []string{"experience"}}}
 	valid := []operation{{ClaimID: "c1", Target: "experience", EntryID: "new:c1", Field: "company", Action: "add", Value: "Aster"}, {ClaimID: "c1", Target: "experience", EntryID: "new:c1", Field: "title", Action: "add", Value: "Engineer"}}
 	raw := append(append([]operation{}, valid...), operation{ClaimID: "c2", Target: "experience", EntryID: "new:c1", Field: "responsibilities", Action: "add", Value: "Built APIs"})
-	filtered, unresolved := filterUnsafeNewGroups(valid, raw, claims, map[string]bool{"c2": true}, nil)
+	filtered, unresolved := filterUnsafeNewGroups(valid, raw, claims, map[string]bool{"c2": true}, nil, nil)
 	if len(filtered) != 0 || len(unresolved) != 2 {
 		t.Fatalf("filtered %#v unresolved %#v", filtered, unresolved)
 	}
@@ -188,7 +188,7 @@ func TestUnknownClaimWithholdsItsNewEntryGroup(t *testing.T) {
 	claims := []claim{{ID: "c1", Targets: []string{"projects"}}}
 	valid := []operation{{ClaimID: "c1", Target: "projects", EntryID: "new:c1", Field: "name", Action: "add", Value: "Harbor"}}
 	raw := append(append([]operation{}, valid...), operation{ClaimID: "unknown", Target: "projects", EntryID: "new:c1", Field: "highlights", Action: "add", Value: "Invented result"})
-	filtered, unresolved := filterUnsafeNewGroups(valid, raw, claims, map[string]bool{}, map[string]bool{"projects/new:c1": true})
+	filtered, unresolved := filterUnsafeNewGroups(valid, raw, claims, map[string]bool{}, map[string]bool{"projects/new:c1": true}, nil)
 	if len(filtered) != 0 || len(unresolved) != 1 || unresolved[0] != "c1" {
 		t.Fatalf("filtered %#v unresolved %#v", filtered, unresolved)
 	}

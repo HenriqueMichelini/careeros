@@ -341,11 +341,12 @@ func TestSubmissionExtractHandlesUnicodeBoundaries(t *testing.T) {
 	}
 }
 
-// Stage kinds owned by later tickets are rejected without touching v1 behavior.
+// Stage kinds that are not part of the contract are rejected without touching
+// v1 behavior.
 func TestSubmissionUnsupportedStagesAreRejected(t *testing.T) {
 	calls := &submissionCalls{}
 	a := submissionApp(calls, `{"claims":[]}`)
-	for _, kind := range []string{SubmissionStageReconcile, "compare"} {
+	for _, kind := range []string{"compare", "verify"} {
 		in := request{Input: "I use Java.", Profile: profile(), Stage: &stageRequest{SubmissionStageVersion, kind}}
 		w := send(t, a.handler(), in)
 		if w.Code != 400 || !strings.Contains(w.Body.String(), `"error":"`+SubmissionErrStage+`"`) {

@@ -73,16 +73,8 @@ func (a app) submissionAssemble(ctx context.Context, w http.ResponseWriter, in r
 		return
 	}
 	var planReceipt submissionPlanReceipt
-	if code := a.openSubmission(submissionPlanDomain, in.PlanReceipt, &planReceipt); code != "" {
-		fail(SubmissionErrorStatus(code), code)
-		return
-	}
-	if planReceipt.Version != submissionReceiptVersion || planReceipt.Binding != submissionRequestBinding(in) {
-		fail(400, SubmissionErrReceipt)
-		return
-	}
-	if planReceipt.ExpiresAt <= time.Now().UnixMilli() {
-		fail(400, SubmissionErrReceiptExpired)
+	if httpStatus, code := a.openVerifiedReceipt(submissionPlanDomain, in.PlanReceipt, in, &planReceipt); code != "" {
+		fail(httpStatus, code)
 		return
 	}
 	plan := planReceipt.Plan

@@ -72,9 +72,9 @@ type SubmissionPlanResponse struct {
 	Plan        SubmissionPlan  `json:"plan"`
 }
 
-// submission dispatches version-2 submission stages. Plan, extract and
-// assembly are implemented here; reconciliation (#186) is not yet supported and
-// is rejected as `stage` without touching v1 behavior. Assembly is provider-free.
+// submission dispatches version-2 submission stages. Plan, extract, assembly and
+// reconciliation are implemented here; an unknown kind is rejected as `stage`
+// without touching v1 behavior. Assembly is provider-free.
 func (a app) submission(ctx context.Context, w http.ResponseWriter, r *http.Request, in request, raw []byte, key string, status *int, outcome *string) {
 	fail := func(s int, code string) {
 		*status = s
@@ -93,9 +93,61 @@ func (a app) submission(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		a.submissionExtract(ctx, w, r, in, raw, key, stage, status, outcome, fail)
 	case SubmissionStageAssemble:
 		a.submissionAssemble(ctx, w, in, raw, stage, fail)
+	case SubmissionStageReconcile:
+		a.submissionReconcile(ctx, w, r, in, raw, key, stage, status, outcome, fail)
 	default:
 		fail(SubmissionErrorStatus(SubmissionErrStage), SubmissionErrStage)
 	}
+}
+
+// submissionDecision classifies the exact complete original with the retained
+// professional-information classifier and, on a non-accepting outcome, writes
+// the existing decision envelope and reports false. It is the single
+// whole-original field gate for every protected submission stage.
+func (a app) submissionDecision(ctx context.Context, w http.ResponseWriter, r *http.Request, in request, status *int, outcome *string) bool {
+	decision := fieldvalidation.Classify(ctx, a.client, r.Header.Get("X-TypeSafe-Api-Key"), fieldvalidation.ProfessionalInformation, in.Input)
+	if decision.Outcome.Kind == "accept" {
+		return true
+	}
+	*outcome = decision.Outcome.Kind
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	if decision.Outcome.Kind == "service_failure" {
+		*status = codeStatus(decision.Outcome.Reason)
+		w.WriteHeader(*status)
+	}
+	_ = json.NewEncoder(w).Encode(map[string]any{"decision": decision})
+	return false
+}
+
+// submissionReceiptHeader exposes the version/binding/expiry header shared by
+// the purpose-separated submission handoffs.
+type submissionReceiptHeader interface {
+	receiptHeader() (string, string, int64)
+}
+
+func (r submissionPlanReceipt) receiptHeader() (string, string, int64) {
+	return r.Version, r.Binding, r.ExpiresAt
+}
+
+func (r submissionContextReceiptPayload) receiptHeader() (string, string, int64) {
+	return r.Version, r.Binding, r.ExpiresAt
+}
+
+// openVerifiedReceipt opens one signed handoff and verifies its version, exact
+// request binding and expiry before any further work. It returns the mapped
+// HTTP status and error code, or an empty code when the handoff is valid.
+func (a app) openVerifiedReceipt(domain, receipt string, in request, dst submissionReceiptHeader) (int, string) {
+	if code := a.openSubmission(domain, receipt, dst); code != "" {
+		return SubmissionErrorStatus(code), code
+	}
+	version, binding, expires := dst.receiptHeader()
+	if version != submissionReceiptVersion || binding != submissionRequestBinding(in) {
+		return 400, SubmissionErrReceipt
+	}
+	if expires <= time.Now().UnixMilli() {
+		return 400, SubmissionErrReceiptExpired
+	}
+	return 0, ""
 }
 
 // submissionPlan performs only bounded local work: preparation and the
@@ -163,16 +215,8 @@ func (a app) submissionExtract(ctx context.Context, w http.ResponseWriter, r *ht
 		return
 	}
 	var receipt submissionPlanReceipt
-	if code := a.openSubmission(submissionPlanDomain, in.PlanReceipt, &receipt); code != "" {
-		fail(SubmissionErrorStatus(code), code)
-		return
-	}
-	if receipt.Version != submissionReceiptVersion || receipt.Binding != submissionRequestBinding(in) {
-		fail(400, SubmissionErrReceipt)
-		return
-	}
-	if receipt.ExpiresAt <= time.Now().UnixMilli() {
-		fail(400, SubmissionErrReceiptExpired)
+	if httpStatus, code := a.openVerifiedReceipt(submissionPlanDomain, in.PlanReceipt, in, &receipt); code != "" {
+		fail(httpStatus, code)
 		return
 	}
 	plan := receipt.Plan
@@ -218,15 +262,7 @@ func (a app) submissionExtract(ctx context.Context, w http.ResponseWriter, r *ht
 		fail(504, "timeout")
 		return
 	}
-	decision := fieldvalidation.Classify(ctx, a.client, r.Header.Get("X-TypeSafe-Api-Key"), fieldvalidation.ProfessionalInformation, in.Input)
-	if decision.Outcome.Kind != "accept" {
-		*outcome = decision.Outcome.Kind
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		if decision.Outcome.Kind == "service_failure" {
-			*status = codeStatus(decision.Outcome.Reason)
-			w.WriteHeader(*status)
-		}
-		_ = json.NewEncoder(w).Encode(map[string]any{"decision": decision})
+	if !a.submissionDecision(ctx, w, r, in, status, outcome) {
 		return
 	}
 	view := planned.Portions[batchIndex].View

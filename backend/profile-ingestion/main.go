@@ -858,41 +858,8 @@ Return {"operations":[{"claimId":"c1","target":"skills","entryId":"","field":"sk
 		byID[c.ID] = c
 	}
 	seen := map[string]bool{}
-	invalidClaims := map[string]bool{}
-	invalidGroups := map[string]bool{}
-	unplaced := 0
-	valid := make([]operation, 0, len(out.Operations))
-	for i := range out.Operations {
-		op := &out.Operations[i]
-		c, ok := byID[op.ClaimID]
-		reason := operationRejectionReason(op, c, ok, byID, p, seen)
-		if reason == "" && op.EntryID != "" {
-			for _, id := range op.SupportingClaimIDs {
-				for _, other := range out.Operations {
-					if other.ClaimID == id && other.Target == op.Target && other.EntryID != op.EntryID {
-						reason = "support_scope"
-					}
-				}
-			}
-		}
-		if reason == "duplicate_operation" {
-			continue
-		}
-		if reason != "" {
-			log.Printf("profile_ingestion stage=compare reason=%s", reason)
-			if strings.HasPrefix(op.EntryID, "new:") {
-				invalidGroups[op.Target+"/"+op.EntryID] = true
-			}
-			if ok {
-				invalidClaims[op.ClaimID] = true
-			} else {
-				unplaced++
-			}
-			continue
-		}
-		valid = append(valid, *op)
-	}
-	filtered, unresolved := filterUnsafeNewGroups(valid, out.Operations, claims, invalidClaims, invalidGroups)
+	valid, invalidClaims, invalidGroups, unplaced := validatedOperations(&out, byID, byID, p, seen, "compare")
+	filtered, unresolved := filterUnsafeNewGroups(valid, out.Operations, claims, invalidClaims, invalidGroups, nil)
 	ledger.rejected = map[string]bool{}
 	for _, id := range unresolved {
 		ledger.rejected[id] = true
@@ -1028,7 +995,7 @@ func suppressRepeatedCapabilityFacts(ops []operation, p profilevalidation.Profil
 	return filtered
 }
 
-func filterUnsafeNewGroups(valid, raw []operation, claims []claim, invalidClaims, invalidGroups map[string]bool) ([]operation, []string) {
+func filterUnsafeNewGroups(valid, raw []operation, claims []claim, invalidClaims, invalidGroups, established map[string]bool) ([]operation, []string) {
 	type group struct {
 		target  string
 		anchor  string
@@ -1062,12 +1029,18 @@ func filterUnsafeNewGroups(valid, raw []operation, claims []claim, invalidClaims
 	for changed := true; changed; {
 		changed = false
 		for key, g := range groups {
-			unsafe := invalidGroups[key] || !g.members[g.anchor]
-			if g.target == "experience" {
-				unsafe = unsafe || !g.fields["company"] || !g.fields["title"]
-			}
-			for _, field := range requiredEntryFields(g.target) {
-				unsafe = unsafe || !g.fields[field]
+			// An anchor already established by provisional context was validated in
+			// its own focus batch; a focus claim may add detail to it without
+			// re-supplying its complete identity fields.
+			anchorEstablished := established[g.anchor]
+			unsafe := invalidGroups[key] || (!g.members[g.anchor] && !anchorEstablished)
+			if !anchorEstablished {
+				if g.target == "experience" {
+					unsafe = unsafe || !g.fields["company"] || !g.fields["title"]
+				}
+				for _, field := range requiredEntryFields(g.target) {
+					unsafe = unsafe || !g.fields[field]
+				}
 			}
 			for id := range g.members {
 				unsafe = unsafe || invalidClaims[id]
@@ -1097,6 +1070,55 @@ func filterUnsafeNewGroups(valid, raw []operation, claims []claim, invalidClaims
 	}
 	return filtered, unresolved
 }
+
+// validatedOperations applies the shared operation-rejection loop to one
+// provider proposal. `owner` names the claims that may own an operation and
+// supplies the claim used for target and ownership checks; `known` is the map
+// claim-id references are validated against (the complete claim set). Owned
+// claims rejected for an unsafe operation are recorded in invalidClaims, unsafe
+// new-entry groups in invalidGroups, and rejected ids outside the owner set are
+// counted as unplaced. `seen` is shared so callers can continue de-duplicating
+// operations they derive afterwards, and `stage` labels the metadata-only
+// diagnostic. It returns the accepted operations, the two invalid sets and the
+// unplaced count.
+func validatedOperations(out *proposal, owner, known map[string]claim, p profilevalidation.Profile, seen map[string]bool, stage string) ([]operation, map[string]bool, map[string]bool, int) {
+	invalidClaims := map[string]bool{}
+	invalidGroups := map[string]bool{}
+	unplaced := 0
+	valid := make([]operation, 0, len(out.Operations))
+	for i := range out.Operations {
+		op := &out.Operations[i]
+		c, ok := owner[op.ClaimID]
+		reason := operationRejectionReason(op, c, ok, known, p, seen)
+		if reason == "" && op.EntryID != "" {
+			for _, id := range op.SupportingClaimIDs {
+				for _, other := range out.Operations {
+					if other.ClaimID == id && other.Target == op.Target && other.EntryID != op.EntryID {
+						reason = "support_scope"
+					}
+				}
+			}
+		}
+		if reason == "duplicate_operation" {
+			continue
+		}
+		if reason != "" {
+			log.Printf("profile_ingestion stage=%s reason=%s", stage, reason)
+			if strings.HasPrefix(op.EntryID, "new:") {
+				invalidGroups[op.Target+"/"+op.EntryID] = true
+			}
+			if ok {
+				invalidClaims[op.ClaimID] = true
+			} else {
+				unplaced++
+			}
+			continue
+		}
+		valid = append(valid, *op)
+	}
+	return valid, invalidClaims, invalidGroups, unplaced
+}
+
 func operationRejectionReason(op *operation, c claim, known bool, claims map[string]claim, p profilevalidation.Profile, seen map[string]bool) string {
 	if !known {
 		return "unknown_claim"
