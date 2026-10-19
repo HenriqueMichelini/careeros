@@ -1,0 +1,12 @@
+{
+  "name": "stage-unknown-kind",
+  "check": "stage",
+  "stage": {
+    "version": 2,
+    "kind": "compare"
+  },
+  "expect": {
+    "ok": false,
+    "error": "stage"
+  }
+}

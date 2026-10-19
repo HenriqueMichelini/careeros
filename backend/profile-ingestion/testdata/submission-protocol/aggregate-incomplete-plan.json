@@ -1,0 +1,83 @@
+{
+  "name": "aggregate-incomplete-plan",
+  "check": "aggregate",
+  "manifest": {
+    "protocolVersion": "profile-submission-v1",
+    "sourceId": "src1",
+    "profileId": "prof1",
+    "runId": "run1",
+    "planVersion": "portions-v1",
+    "status": "insufficient_capacity",
+    "complete": false,
+    "originalBytes": 30,
+    "preparedBytes": 12,
+    "batches": [
+      {
+        "index": 0,
+        "primary": [
+          {
+            "Start": 0,
+            "End": 12
+          }
+        ],
+        "context": [],
+        "preparedBytes": 12,
+        "payloadBytes": 100
+      }
+    ],
+    "remaining": [
+      {
+        "Start": 12,
+        "End": 30
+      }
+    ]
+  },
+  "aggregate": {
+    "protocolVersion": "profile-submission-v1",
+    "sourceId": "src1",
+    "profileId": "prof1",
+    "runId": "run1",
+    "planVersion": "portions-v1",
+    "batches": [
+      {
+        "index": 0,
+        "primary": [
+          {
+            "Start": 0,
+            "End": 12
+          }
+        ],
+        "claimIds": [
+          "run1/0/c1"
+        ],
+        "claimCount": 1,
+        "skippedCount": 0
+      },
+      {
+        "index": 1,
+        "primary": [
+          {
+            "Start": 12,
+            "End": 30
+          }
+        ],
+        "claimIds": [
+          "run1/1/c1",
+          "run1/1/c2"
+        ],
+        "claimCount": 2,
+        "skippedCount": 0
+      }
+    ],
+    "coverage": {
+      "validClaims": 3,
+      "invalidClaims": 0,
+      "discoveryComplete": false,
+      "capacity": "within_limit"
+    }
+  },
+  "expect": {
+    "ok": false,
+    "error": "manifest_incomplete"
+  }
+}

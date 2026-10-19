@@ -1,0 +1,12 @@
+{
+  "name": "stage-unknown-version",
+  "check": "stage",
+  "stage": {
+    "version": 3,
+    "kind": "plan"
+  },
+  "expect": {
+    "ok": false,
+    "error": "version"
+  }
+}

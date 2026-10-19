@@ -1,0 +1,8 @@
+{
+  "name": "portion-max",
+  "check": "portion",
+  "bytes": 2000,
+  "expect": {
+    "ok": true
+  }
+}

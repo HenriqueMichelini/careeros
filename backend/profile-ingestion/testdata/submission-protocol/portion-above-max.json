@@ -1,0 +1,9 @@
+{
+  "name": "portion-above-max",
+  "check": "portion",
+  "bytes": 2001,
+  "expect": {
+    "ok": false,
+    "error": "capacity"
+  }
+}

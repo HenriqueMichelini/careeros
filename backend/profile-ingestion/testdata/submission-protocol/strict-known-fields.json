@@ -1,0 +1,15 @@
+{
+  "name": "strict-known-fields",
+  "check": "strict",
+  "value": {
+    "version": 2,
+    "kind": "plan"
+  },
+  "allowed": [
+    "version",
+    "kind"
+  ],
+  "expect": {
+    "ok": true
+  }
+}

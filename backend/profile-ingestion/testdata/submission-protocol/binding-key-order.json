@@ -1,0 +1,29 @@
+{
+  "name": "binding-key-order",
+  "check": "binding",
+  "left": {
+    "a": 1,
+    "b": {
+      "c": 2,
+      "d": 3
+    },
+    "e": [
+      1,
+      2
+    ]
+  },
+  "right": {
+    "e": [
+      1,
+      2
+    ],
+    "b": {
+      "d": 3,
+      "c": 2
+    },
+    "a": 1
+  },
+  "expect": {
+    "ok": true
+  }
+}

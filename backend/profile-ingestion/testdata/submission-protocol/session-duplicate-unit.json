@@ -1,0 +1,30 @@
+{
+  "name": "session-duplicate-unit",
+  "check": "session",
+  "session": {
+    "protocolVersion": "profile-submission-v1",
+    "submissionId": "sub1",
+    "status": "reviewing",
+    "totalBatches": 2,
+    "placedBatches": [
+      0,
+      1
+    ],
+    "selections": [
+      {
+        "unitId": "u1",
+        "status": "pending",
+        "dependencies": []
+      },
+      {
+        "unitId": "u1",
+        "status": "saved",
+        "dependencies": []
+      }
+    ]
+  },
+  "expect": {
+    "ok": false,
+    "error": "manifest_incomplete"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "name": "plan-primary-overlap",
+  "check": "manifest",
+  "original": "abcdefghijklmnopqrstuvwxyz1234",
+  "manifest": {
+    "protocolVersion": "profile-submission-v1",
+    "sourceId": "src1",
+    "profileId": "prof1",
+    "runId": "run1",
+    "planVersion": "portions-v1",
+    "status": "ready",
+    "complete": true,
+    "originalBytes": 30,
+    "preparedBytes": 30,
+    "batches": [
+      {
+        "index": 0,
+        "primary": [
+          {
+            "Start": 0,
+            "End": 20
+          }
+        ],
+        "context": [],
+        "preparedBytes": 20,
+        "payloadBytes": 100
+      },
+      {
+        "index": 1,
+        "primary": [
+          {
+            "Start": 10,
+            "End": 30
+          }
+        ],
+        "context": [],
+        "preparedBytes": 20,
+        "payloadBytes": 100
+      }
+    ],
+    "remaining": []
+  },
+  "expect": {
+    "ok": false,
+    "error": "manifest_incomplete"
+  }
+}

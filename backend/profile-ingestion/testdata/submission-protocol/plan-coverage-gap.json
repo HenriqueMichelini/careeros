@@ -1,0 +1,41 @@
+{
+  "name": "plan-coverage-gap",
+  "check": "manifest",
+  "original": "abcdefghijklmnopqrstuvwxyz1234",
+  "manifest": {
+    "protocolVersion": "profile-submission-v1",
+    "sourceId": "src1",
+    "profileId": "prof1",
+    "runId": "run1",
+    "planVersion": "portions-v1",
+    "status": "insufficient_capacity",
+    "complete": false,
+    "originalBytes": 30,
+    "preparedBytes": 12,
+    "batches": [
+      {
+        "index": 0,
+        "primary": [
+          {
+            "Start": 0,
+            "End": 12
+          }
+        ],
+        "context": [],
+        "preparedBytes": 12,
+        "payloadBytes": 100
+      }
+    ],
+    "remaining": [
+      {
+        "Start": 20,
+        "End": 30
+      }
+    ],
+    "capacity": "indivisible_or_context_capacity"
+  },
+  "expect": {
+    "ok": false,
+    "error": "manifest_incomplete"
+  }
+}

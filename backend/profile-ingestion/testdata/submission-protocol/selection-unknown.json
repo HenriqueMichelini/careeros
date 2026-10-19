@@ -1,0 +1,13 @@
+{
+  "name": "selection-unknown",
+  "check": "selection",
+  "selection": {
+    "unitId": "u1",
+    "status": "maybe",
+    "dependencies": []
+  },
+  "expect": {
+    "ok": false,
+    "error": "state"
+  }
+}

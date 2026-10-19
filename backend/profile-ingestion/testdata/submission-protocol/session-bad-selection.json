@@ -1,0 +1,25 @@
+{
+  "name": "session-bad-selection",
+  "check": "session",
+  "session": {
+    "protocolVersion": "profile-submission-v1",
+    "submissionId": "sub1",
+    "status": "reviewing",
+    "totalBatches": 2,
+    "placedBatches": [
+      0,
+      1
+    ],
+    "selections": [
+      {
+        "unitId": "u1",
+        "status": "maybe",
+        "dependencies": []
+      }
+    ]
+  },
+  "expect": {
+    "ok": false,
+    "error": "state"
+  }
+}

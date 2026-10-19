@@ -1,0 +1,12 @@
+{
+  "name": "selection-pending",
+  "check": "selection",
+  "selection": {
+    "unitId": "u1",
+    "status": "pending",
+    "dependencies": []
+  },
+  "expect": {
+    "ok": true
+  }
+}

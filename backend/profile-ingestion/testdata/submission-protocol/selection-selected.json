@@ -1,0 +1,12 @@
+{
+  "name": "selection-selected",
+  "check": "selection",
+  "selection": {
+    "unitId": "u1",
+    "status": "selected",
+    "dependencies": []
+  },
+  "expect": {
+    "ok": true
+  }
+}

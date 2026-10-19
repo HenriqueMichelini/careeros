@@ -1,0 +1,9 @@
+{
+  "name": "status-unknown",
+  "check": "status",
+  "status": "complete",
+  "expect": {
+    "ok": false,
+    "error": "state"
+  }
+}
