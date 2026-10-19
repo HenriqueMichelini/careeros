@@ -26,8 +26,9 @@ const submissionReceiptVersion = "profile-ingestion-submission-v1/" + receiptVer
 // accepts. Any other key is `input` (SubmissionFieldsError); planning/assembly
 // never invent or silently drop fields.
 var (
-	submissionPlanFields    = []string{"stage", "input", "profile", "document"}
-	submissionExtractFields = []string{"stage", "input", "profile", "document", "planReceipt", "batchIndex"}
+	submissionPlanFields     = []string{"stage", "input", "profile", "document"}
+	submissionExtractFields  = []string{"stage", "input", "profile", "document", "planReceipt", "batchIndex"}
+	submissionAssemblyFields = []string{"stage", "input", "profile", "document", "planReceipt", "batchReceipts"}
 )
 
 // submissionPlanReceipt is the authenticated plan handoff. It binds the exact
@@ -71,9 +72,9 @@ type SubmissionPlanResponse struct {
 	Plan        SubmissionPlan  `json:"plan"`
 }
 
-// submission dispatches version-2 submission stages. Plan and extract are
-// implemented here; assembly (#185) and reconciliation (#186) are not yet
-// supported and are rejected as `stage` without touching v1 behavior.
+// submission dispatches version-2 submission stages. Plan, extract and
+// assembly are implemented here; reconciliation (#186) is not yet supported and
+// is rejected as `stage` without touching v1 behavior. Assembly is provider-free.
 func (a app) submission(ctx context.Context, w http.ResponseWriter, r *http.Request, in request, raw []byte, key string, status *int, outcome *string) {
 	fail := func(s int, code string) {
 		*status = s
@@ -90,6 +91,8 @@ func (a app) submission(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		a.submissionPlan(ctx, w, in, raw, stage, fail)
 	case SubmissionStageExtract:
 		a.submissionExtract(ctx, w, r, in, raw, key, stage, status, outcome, fail)
+	case SubmissionStageAssemble:
+		a.submissionAssemble(ctx, w, in, raw, stage, fail)
 	default:
 		fail(SubmissionErrorStatus(SubmissionErrStage), SubmissionErrStage)
 	}

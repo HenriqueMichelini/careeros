@@ -315,7 +315,7 @@ func TestSubmissionExtractHandlesUnicodeBoundaries(t *testing.T) {
 func TestSubmissionUnsupportedStagesAreRejected(t *testing.T) {
 	calls := &submissionCalls{}
 	a := submissionApp(calls, `{"claims":[]}`)
-	for _, kind := range []string{SubmissionStageAssemble, SubmissionStageReconcile, "compare"} {
+	for _, kind := range []string{SubmissionStageReconcile, "compare"} {
 		in := request{Input: "I use Java.", Profile: profile(), Stage: &stageRequest{SubmissionStageVersion, kind}}
 		w := send(t, a.handler(), in)
 		if w.Code != 400 || !strings.Contains(w.Body.String(), `"error":"`+SubmissionErrStage+`"`) {
