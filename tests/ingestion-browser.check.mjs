@@ -1,4 +1,4 @@
-import {withIngestionLedger} from "./ingestion-fixtures.mjs"
+import {withIngestionLedger, stagedBrowserFixtures} from "./ingestion-fixtures.mjs"
 import { savedProfileExpression } from "./profile-browser-storage.mjs"
 import { keyboardFlow } from "./keyboard-flow.mjs"
 // Browser regression for raw professional-information review and explicit apply.
@@ -134,8 +134,10 @@ try {
   })
   let nextId = 0
   const pending = new Map()
+  let mainFrameNavigation = 0
   socket.onmessage = ({ data }) => {
     const message = JSON.parse(data)
+    if (message.method === "Page.frameNavigated" && !message.params.frame.parentId) mainFrameNavigation++
     if (!message.id) return
     const callback = pending.get(message.id)
     pending.delete(message.id)
@@ -149,6 +151,7 @@ try {
       socket.send(JSON.stringify({ id, method, params }))
     })
   const evaluate = async (expression) => {
+    const previousNavigation = mainFrameNavigation
     const result = await call("Runtime.evaluate", {
       expression,
       returnByValue: true,
@@ -160,6 +163,12 @@ try {
         result.exceptionDetails.exception?.description ||
           result.exceptionDetails.text,
       )
+    if (expression.includes("location.reload()")) {
+      for (let attempt = 0; mainFrameNavigation === previousNavigation; attempt++) {
+        if (attempt === 100) throw new Error("Reload did not navigate the main frame")
+        await pause(20)
+      }
+    }
     return result.result.value
   }
   const until = async (expression) => {
@@ -173,6 +182,7 @@ try {
   }
   await call("Page.enable")
   await call("Page.addScriptToEvaluateOnNewDocument", {source: String.raw`
+    ${stagedBrowserFixtures}
     window.__portionResponse = async (raw, init = {status:200}) => {
       if (typeof raw === 'string') raw = JSON.parse(raw);
       if (raw.claims && raw.coverage && raw.decision?.outcome.kind === 'accept') {
@@ -384,6 +394,43 @@ try {
             : "Revisar alterações sugeridas"
         const initial = await saved()
         const text = locale === "en" ? "I use Java" : "Eu uso Java"
+        // Exercise the actual staged transport independently of legacy domain
+        // fixture adaptation, including the original HTML gateway failure.
+        await fill(text)
+        const emptyStageResult = { decision: {version:1,field:"professional_information",outcome:{kind:"accept"}}, ...withIngestionLedger({claims:[],operations:[],unverifiedClaimCount:0,unplacedOperationCount:0}) }
+        await evaluate(`window.__rawStagedFixtures=true;window.__stageCalls=[];window.__failComparison=true;window.fetch=async(url,options)=>{
+          const body=JSON.parse(options.body);window.__stageCalls.push(body.stage.kind);
+          if(body.stage.kind==='extract')return new Promise(resolve=>window.__releaseExtraction=()=>resolve(new Response(JSON.stringify({stage:{version:1,kind:'extract'},receipt:'controlled.'+'s'.repeat(43),expiresAt:Date.now()+600000,decision:{version:1,field:'professional_information',outcome:{kind:'accept'}}}))));
+          return new Promise(resolve=>window.__releaseComparison=async()=>resolve(window.__failComparison ? new Response('<HTML><TITLE>Inactivity Timeout</TITLE></HTML>',{status:504}) : await window.__portionResponse(${JSON.stringify(emptyStageResult)})));
+        }`)
+        await evaluate(`${byText(review)}.click()`)
+        await until(`document.body.innerText.includes(${JSON.stringify(locale === "en" ? "Extracting information" : "Extraindo informações")})`)
+        assert.deepEqual(await evaluate("window.__stageCalls"), ["extract"])
+        assert.equal(await saved(), initial)
+        await evaluate("window.__releaseExtraction()")
+        await until(`window.__stageCalls.length===2 && document.body.innerText.includes(${JSON.stringify(locale === "en" ? "Preparing changes" : "Preparando alterações")})`)
+        await evaluate("window.__releaseComparison()")
+        await until("!!document.querySelector('#ingestion-feedback')")
+        assert.match(await evaluate("document.querySelector('#ingestion-feedback').textContent"), locale === "en" ? /timed out/ : /tempo limite/)
+        assert.deepEqual(await evaluate("window.__stageCalls"), ["extract", "reconcile"])
+        assert.equal(await evaluate("document.querySelector('#ingestion-text').value"), text)
+        assert.equal(await saved(), initial)
+        await evaluate(`window.__failComparison=false;${byText(review)}.click()`)
+        await until(`window.__stageCalls.length===3 && document.body.innerText.includes(${JSON.stringify(locale === "en" ? "Preparing changes" : "Preparando alterações")})`)
+        await evaluate("window.__releaseComparison()")
+        await until("window.__stageCalls.length===3 && document.querySelector('#ingestion-text').getAttribute('aria-busy')!=='true'")
+        assert.deepEqual(await evaluate("window.__stageCalls"), ["extract", "reconcile", "reconcile"])
+        assert.equal(await saved(), initial)
+        await fill(text + " changed")
+        await evaluate(`${byText(review)}.click()`)
+        await until("window.__stageCalls.length===4")
+        await fill(text + " changed again")
+        await evaluate("window.__releaseExtraction()")
+        await pause(80)
+        assert.deepEqual(await evaluate("window.__stageCalls"), ["extract", "reconcile", "reconcile", "extract"])
+        assert.equal(await saved(), initial)
+        assert.ok(await evaluate("document.documentElement.scrollWidth<=innerWidth"))
+        await evaluate("window.__rawStagedFixtures=false")
         // UTF-8 byte feedback must preserve the entire original at the boundary.
         const atLimit = "é".repeat(15000)
         await fill(atLimit)

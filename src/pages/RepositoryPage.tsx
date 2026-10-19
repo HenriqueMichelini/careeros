@@ -34,6 +34,8 @@ import {
   ingestionMaxBytes,
   previewValues,
   ingestProfile,
+  createIngestionSession,
+  type IngestionStage,
   mergeClarification,
   IngestionError,
   IngestionOperation,
@@ -650,6 +652,9 @@ export default function RepositoryPage() {
   )
   const [isIngesting, setIsIngesting] = useState(false)
   const discardDialog = useRef<HTMLDialogElement>(null)
+  const ingestionSession = useRef(createIngestionSession())
+  const [ingestionStage, setIngestionStage] =
+    useState<IngestionStage>("extract")
   const ingestionRequest = useRef(0)
   const ingestionController = useRef<AbortController | null>(null)
   const reviewRequest = useRef(0)
@@ -669,6 +674,7 @@ export default function RepositoryPage() {
   useEffect(
     () => () => {
       ingestionController.current?.abort()
+      ingestionSession.current.clear()
       reviewRequest.current += 1
       reviewController.current?.abort()
       dispatch({ type: "SET_REVIEWING", payload: false })
@@ -736,6 +742,7 @@ export default function RepositoryPage() {
     ) {
       ingestionRequest.current += 1
       ingestionController.current?.abort()
+      ingestionSession.current.clear()
       setIsIngesting(false)
       setIngestionResult(null)
       setContinuation(null)
@@ -748,6 +755,7 @@ export default function RepositoryPage() {
   }, [profileDocument, t, state.profileError])
 
   function resetContinuation() {
+    ingestionSession.current.clear()
     setContinuation(null)
     setProcessedPortions([])
     setAttemptedPortions([])
@@ -756,6 +764,7 @@ export default function RepositoryPage() {
   function discardIngestion() {
     ingestionRequest.current += 1
     ingestionController.current?.abort()
+    ingestionSession.current.clear()
     setIsIngesting(false)
     setRevisionRequiredFor(null)
     setIngestionText("")
@@ -770,6 +779,7 @@ export default function RepositoryPage() {
   function changeIngestionText(value: string) {
     ingestionRequest.current += 1
     ingestionController.current?.abort()
+    ingestionSession.current.clear()
     setIsIngesting(false)
     setIngestionText(value)
     resetContinuation()
@@ -815,6 +825,14 @@ export default function RepositoryPage() {
         state.typesafeKey,
         snapshot ?? undefined,
         { index, bytes },
+        undefined,
+        undefined,
+        {
+          session: ingestionSession.current,
+          onStage: (stage) => {
+            if (ingestionRequest.current === requestId) setIngestionStage(stage)
+          },
+        },
       )
       if (ingestionRequest.current !== requestId) return
       if (currentReviewContext.current.revision !== snapshot?.revision)
@@ -840,7 +858,11 @@ export default function RepositoryPage() {
         key: "repo.reviewErrorKey",
         rate_limit: "repo.reviewErrorRateLimit",
         outage: "repo.reviewErrorOutage",
-        timeout: "repo.reviewErrorTimeout",
+        timeout: "repo.ingestTimeout",
+        cancelled: "repo.ingestCancelled",
+        configuration: "repo.ingestConfiguration",
+        receipt_invalid: "repo.ingestReceiptInvalid",
+        receipt_expired: "repo.ingestReceiptExpired",
         truncated: "repo.ingestErrorTruncated",
         invalid_output: "repo.ingestErrorInvalidOutput",
         preparation: "repo.ingestErrorPreparation",
@@ -875,6 +897,7 @@ export default function RepositoryPage() {
   function cancelClarification() {
     ingestionRequest.current++
     ingestionController.current?.abort()
+    ingestionSession.current.clear()
     setIsIngesting(false)
   }
 
@@ -904,6 +927,13 @@ export default function RepositoryPage() {
         snapshot,
         undefined,
         { claim, answer },
+        undefined,
+        {
+          session: ingestionSession.current,
+          onStage: (stage) => {
+            if (ingestionRequest.current === requestId) setIngestionStage(stage)
+          },
+        },
       )
       if (ingestionRequest.current !== requestId)
         throw new IngestionError("cancelled")
@@ -1686,7 +1716,11 @@ export default function RepositoryPage() {
               )}
               {isIngesting && (
                 <p role="status" className="text-sm mt-3">
-                  {t("field.working")}
+                  {t(
+                    ingestionStage === "extract"
+                      ? "repo.ingestExtracting"
+                      : "repo.ingestReconciling",
+                  )}
                 </p>
               )}
               {ingestionFeedback && (

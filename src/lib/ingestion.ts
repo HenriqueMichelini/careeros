@@ -1072,6 +1072,119 @@ function sameSourceReference(
   )
 }
 
+export type IngestionStage = "extract" | "reconcile"
+export interface IngestionSession {
+  clear(): void
+}
+type Handoff = {
+  identity: string
+  receipt: string
+  expiresAt: number
+}
+const handoffs = new WeakMap<IngestionSession, Handoff>()
+
+// Each review owner holds its own transient session. Nothing enters storage.
+export function createIngestionSession(): IngestionSession {
+  const session = {
+    clear() {
+      handoffs.delete(session)
+    },
+  }
+  return session
+}
+
+function canonicalRequest(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalRequest).join(",")}]`
+  if (value !== null && typeof value === "object")
+    return `{${Object.entries(value)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, item]) => `${JSON.stringify(key)}:${canonicalRequest(item)}`)
+      .join(",")}}`
+  return JSON.stringify(value)
+}
+
+function ingestionTransportError(signal: AbortSignal): IngestionError {
+  return new IngestionError(
+    signal.aborted
+      ? signal.reason?.name === "TimeoutError"
+        ? "timeout"
+        : "cancelled"
+      : "outage",
+  )
+}
+
+async function sendIngestionStage(
+  body: object,
+  apiKey: string,
+  typesafeKey: string,
+  workflowSignal: AbortSignal,
+): Promise<Record<string, unknown>> {
+  const signal = AbortSignal.any([workflowSignal, AbortSignal.timeout(29_000)])
+  let response: Response
+  let raw: unknown
+  try {
+    signal.throwIfAborted()
+    response = await fetch("/api/profile/ingest", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-OpenAI-Api-Key": apiKey,
+        "X-TypeSafe-Api-Key": typesafeKey,
+      },
+      body: JSON.stringify(body),
+      cache: "no-store",
+      signal,
+    })
+    try {
+      raw = await response.json()
+    } catch {
+      if (signal.aborted) throw ingestionTransportError(signal)
+      raw = null
+    }
+    signal.throwIfAborted()
+  } catch (error) {
+    if (error instanceof IngestionError) throw error
+    throw ingestionTransportError(signal)
+  }
+  const decision = record(raw)
+    ? parseFieldDecision(raw.decision, "professional_information")
+    : null
+  if (decision && decision.outcome.kind !== "accept") {
+    if (!record(raw) || !keys(raw, ["decision"]))
+      throw new IngestionError("invalid_output")
+    throw new IngestionError("field_decision", decision)
+  }
+  if (record(raw) && "decision" in raw && !decision)
+    throw new IngestionError("invalid_output")
+  if (!response.ok) {
+    const code =
+      record(raw) &&
+      typeof raw.error === "string" &&
+      [
+        "input",
+        "key",
+        "rate_limit",
+        "outage",
+        "timeout",
+        "truncated",
+        "invalid_output",
+        "preparation",
+        "capacity",
+        "configuration",
+        "receipt_invalid",
+        "receipt_expired",
+        "cancelled",
+      ].includes(raw.error)
+        ? raw.error
+        : response.status === 504
+          ? "timeout"
+          : "outage"
+    throw new IngestionError(code)
+  }
+  if (!decision || !record(raw)) throw new IngestionError("invalid_output")
+  return raw
+}
+
 export async function ingestProfile(
   input: string,
   profile: ProfessionalRepository,
@@ -1085,6 +1198,10 @@ export async function ingestProfile(
     answer: string
   },
   applyAnswer?: ApplyAnswerReview,
+  options: {
+    session?: IngestionSession
+    onStage?: (stage: IngestionStage) => void
+  } = {},
 ): Promise<IngestionResult> {
   if (
     !input.trim() ||
@@ -1099,65 +1216,94 @@ export async function ingestProfile(
       portion)
   )
     throw new IngestionError("input")
-  let response: Response
+  const session = options.session ?? createIngestionSession()
+  const request = {
+    input,
+    profile: withContactFields(profile),
+    ...(document ? { document } : {}),
+    ...(applyAnswer ? { applyAnswer } : {}),
+    ...(portion ? { portion } : {}),
+    ...(clarification ? { clarification } : {}),
+  }
+  const identity = canonicalRequest([request, apiKey, typesafeKey])
+  const workflowSignal = signal
+    ? AbortSignal.any([signal, AbortSignal.timeout(65_000)])
+    : AbortSignal.timeout(65_000)
+  let handoff = handoffs.get(session)
+  if (handoff && handoff.identity !== identity) {
+    session.clear()
+    handoff = undefined
+  }
+  if (handoff && handoff.expiresAt <= Date.now()) {
+    session.clear()
+    throw new IngestionError("receipt_expired")
+  }
+  let raw: Record<string, unknown>
   try {
-    response = await fetch("/api/profile/ingest", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-OpenAI-Api-Key": apiKey,
-        "X-TypeSafe-Api-Key": typesafeKey,
+    workflowSignal.throwIfAborted()
+    if (!handoff) {
+      options.onStage?.("extract")
+      const extracted = await sendIngestionStage(
+        { ...request, stage: { version: 1, kind: "extract" } },
+        apiKey,
+        typesafeKey,
+        workflowSignal,
+      )
+      if (
+        !record(extracted.stage) ||
+        !keys(extracted.stage, ["version", "kind"]) ||
+        extracted.stage.version !== 1 ||
+        extracted.stage.kind !== "extract" ||
+        typeof extracted.receipt !== "string" ||
+        extracted.receipt.length > 174807 ||
+        !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]{43}$/.test(extracted.receipt) ||
+        typeof extracted.expiresAt !== "number" ||
+        !Number.isSafeInteger(extracted.expiresAt) ||
+        extracted.expiresAt <= Date.now() ||
+        extracted.expiresAt > Date.now() + 610_000
+      )
+        throw new IngestionError("invalid_output")
+      handoff = {
+        identity,
+        receipt: extracted.receipt,
+        expiresAt: extracted.expiresAt,
+      }
+      handoffs.set(session, handoff)
+    }
+    workflowSignal.throwIfAborted()
+    options.onStage?.("reconcile")
+    raw = await sendIngestionStage(
+      {
+        ...request,
+        stage: { version: 1, kind: "reconcile" },
+        receipt: handoff.receipt,
       },
-      body: JSON.stringify({
-        input,
-        profile: withContactFields(profile),
-        ...(document ? { document } : {}),
-        ...(applyAnswer ? { applyAnswer } : {}),
-        ...(portion ? { portion } : {}),
-        ...(clarification ? { clarification } : {}),
-      }),
-      cache: "no-store",
-      signal: signal
-        ? AbortSignal.any([signal, AbortSignal.timeout(55_000)])
-        : AbortSignal.timeout(55_000),
-    })
+      apiKey,
+      typesafeKey,
+      workflowSignal,
+    )
   } catch (error) {
-    throw new IngestionError(
-      error instanceof DOMException && error.name === "TimeoutError"
-        ? "timeout"
-        : "outage",
+    const code =
+      error instanceof IngestionError
+        ? error.code
+        : ingestionTransportError(workflowSignal).code
+    if (
+      [
+        "field_decision",
+        "receipt_invalid",
+        "receipt_expired",
+        "cancelled",
+        "stale",
+        "input",
+        "configuration",
+      ].includes(code) &&
+      handoffs.get(session) === handoff
     )
+      session.clear()
+    throw error instanceof IngestionError
+      ? error
+      : ingestionTransportError(workflowSignal)
   }
-  const raw = await response.json().catch(() => null)
-  const decision = record(raw)
-    ? parseFieldDecision(raw.decision, "professional_information")
-    : null
-  if (decision && decision.outcome.kind !== "accept") {
-    if (!record(raw) || !keys(raw, ["decision"]))
-      throw new IngestionError("invalid_output")
-    throw new IngestionError("field_decision", decision)
-  }
-  if (record(raw) && "decision" in raw && !decision)
-    throw new IngestionError("invalid_output")
-  if (!response.ok)
-    throw new IngestionError(
-      record(raw) &&
-        typeof raw.error === "string" &&
-        [
-          "input",
-          "key",
-          "rate_limit",
-          "outage",
-          "timeout",
-          "truncated",
-          "invalid_output",
-          "preparation",
-          "capacity",
-        ].includes(raw.error)
-        ? raw.error
-        : "outage",
-    )
-  if (!decision || !record(raw)) throw new IngestionError("invalid_output")
   const { decision: _decision, ...proposals } = raw
   if (!("outcomes" in proposals)) throw new IngestionError("invalid_output")
   const result = validateIngestionResult(proposals, input, profile, document)
@@ -1295,6 +1441,11 @@ export async function ingestProfile(
     result.continuation = (progress as unknown as IngestionContinuation)
   } else if (raw.continuation !== undefined)
     throw new IngestionError("invalid_output")
+  if (workflowSignal.aborted) {
+    if (handoffs.get(session) === handoff) session.clear()
+    throw ingestionTransportError(workflowSignal)
+  }
+  if (handoffs.get(session) === handoff) session.clear()
   return result
 }
 

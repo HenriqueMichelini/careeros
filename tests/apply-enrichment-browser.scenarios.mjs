@@ -23,6 +23,7 @@ export async function enrichmentScenarios({
     "document.readyState==='complete' && !!document.querySelector('header button')",
   )
   await clickApply()
+  assert.equal(await evaluate("typeof Object.getOwnPropertyDescriptor(window,'fetch').set"), "function", "staged fixture adapter installed after reload")
   await evaluate(
     "window.__pending=[];window.fetch=(url,options)=>new Promise((resolve,reject)=>window.__pending.push({url,options,resolve,reject}))",
   )
@@ -240,6 +241,18 @@ export async function enrichmentScenarios({
     await evaluate("document.querySelector('[data-enrichment-answer]').value"),
     answer,
   )
+  if (mode === "success") {
+    await evaluate(`window.__rawStagedFixtures=true;window.__domainFetch=window.fetch;window.__enrichmentStages=[];window.__comparisonFailed=false;window.fetch=async(url,options)=>{
+      const body=JSON.parse(options.body);window.__enrichmentStages.push({stage:body.stage.kind,requestId:body.applyAnswer.requestId});
+      if(body.stage.kind==='extract')return new Response(JSON.stringify({stage:{version:1,kind:'extract'},receipt:'controlled.'+'s'.repeat(43),expiresAt:Date.now()+600000,decision:{version:1,field:'professional_information',outcome:{kind:'accept'}}}));
+      if(!window.__comparisonFailed){window.__comparisonFailed=true;return new Response('<HTML>Inactivity Timeout</HTML>',{status:504})}
+      return window.__domainFetch(url,options);
+    }`)
+    await evaluate("document.querySelector('[data-enrichment-review]').click()")
+    await until("window.__enrichmentStages.length===2 && !document.querySelector('[data-enrichment-cancel]')")
+    assert.deepEqual(await evaluate("window.__enrichmentStages.map(s=>s.stage)"), ["extract", "reconcile"])
+    assert.equal(await evaluate("localStorage.getItem('careeros_profile_v2')"), original)
+  }
   await evaluate("document.querySelector('[data-enrichment-review]').click()")
   await until("window.__pending.length===1")
   fixture.applyAnswer = await evaluate(
@@ -247,6 +260,11 @@ export async function enrichmentScenarios({
   )
   await respond(fixture)
   await until("!!document.querySelector('[data-enrichment-save]')")
+  if (mode === "success") {
+    assert.deepEqual(await evaluate("window.__enrichmentStages.map(s=>s.stage)"), ["extract", "reconcile", "reconcile"])
+    assert.equal(await evaluate("new Set(window.__enrichmentStages.map(s=>s.requestId)).size"), 1, "Apply request identity survives comparison-only retry")
+    await evaluate("window.fetch=window.__domainFetch;window.__rawStagedFixtures=false")
+  }
   assert.equal(
     await evaluate("document.querySelector('[data-enrichment-save]').disabled"),
     true,

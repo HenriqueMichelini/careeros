@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -25,6 +26,8 @@ const maxBody = 160 << 10
 const timeout = 24 * time.Second
 
 type request struct {
+	Stage         *stageRequest             `json:"stage,omitempty"`
+	Receipt       string                    `json:"receipt,omitempty"`
 	ApplyAnswer   *applyAnswerRequest       `json:"applyAnswer,omitempty"`
 	Clarification *clarificationRequest     `json:"clarification,omitempty"`
 	Portion       *portionRequest           `json:"portion,omitempty"`
@@ -88,7 +91,10 @@ type result struct {
 	UnresolvedClaimIds     []string                 `json:"unresolvedClaimIds"`
 	UnplacedOperationCount int                      `json:"unplacedOperationCount"`
 }
-type app struct{ client *http.Client }
+type app struct {
+	client     *http.Client
+	signingKey []byte
+}
 
 var scalarFields = map[string]bool{"careerGoals": true, "skills": true, "competencies": true, "tools": true, "employmentStatus": true, "currentSalary": true, "desiredSalary": true, "additionalInfo": true, "fullName": true, "email": true, "phone": true, "location": true, "professionalLinks": true}
 var experienceFields = map[string]bool{"company": true, "title": true, "startDate": true, "endDate": true, "current": true, "location": true, "description": true, "responsibilities": true, "achievements": true}
@@ -102,12 +108,12 @@ var collectionFields = map[string]map[string]bool{
 var statuses = map[string]bool{"employed-full-time": true, "employed-part-time": true, "employed-contract": true, "freelance": true, "looking": true, "open": true, "unemployed": true, "student": true}
 var legacyStatuses = map[string]bool{"Employed": true, "Employed — Full-time": true, "Employed — Part-time": true, "Employed — Contract": true, "Freelance / Self-employed": true, "Actively looking for work": true, "Open to opportunities (not actively searching)": true, "Unemployed": true, "Student": true}
 
-func NewHandler() http.Handler { return (app{client: &http.Client{Timeout: timeout}}).handler() }
+func NewHandler() http.Handler { return NewHandlerWithClient(&http.Client{Timeout: timeout}) }
 
 // NewHandlerWithClient uses the production workflow with an explicit provider
 // transport, allowing local evaluation without changing process-wide networking.
 func NewHandlerWithClient(client *http.Client) http.Handler {
-	return (app{client: client}).handler()
+	return (app{client: client, signingKey: []byte(os.Getenv("PROFILE_INGESTION_SIGNING_KEY"))}).handler()
 }
 
 func (a app) handler() http.Handler {
@@ -116,6 +122,11 @@ func (a app) handler() http.Handler {
 	return aidiagnostics.Workflow("profile_ingestion", mux)
 }
 func (a app) ingest(w http.ResponseWriter, r *http.Request) {
+	parent := r.Context()
+	// Start before decoding/preparation, including all local work in the budget.
+	ctx, cancel := context.WithTimeout(r.Context(), stageTimeout)
+	defer cancel()
+	r = r.WithContext(ctx)
 	w.Header().Set("Cache-Control", "no-store")
 	start := time.Now()
 	status := 200
@@ -135,13 +146,19 @@ func (a app) ingest(w http.ResponseWriter, r *http.Request) {
 		fail(401, "key")
 		return
 	}
-	raw, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxBody))
+	stopBodyRead := context.AfterFunc(ctx, func() { _ = r.Body.Close() })
+	raw, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxStageBody))
+	stopBodyRead()
 	if err != nil {
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			fail(504, "timeout")
+			return
+		}
 		fail(400, "input")
 		return
 	}
 	var shape map[string]json.RawMessage
-	if json.Unmarshal(raw, &shape) != nil || (len(shape) < 2 || len(shape) > 6) || shape["input"] == nil || shape["profile"] == nil {
+	if json.Unmarshal(raw, &shape) != nil || (len(shape) < 2 || len(shape) > 8) || shape["input"] == nil || shape["profile"] == nil {
 		fail(400, "input")
 		return
 	}
@@ -151,6 +168,17 @@ func (a app) ingest(w http.ResponseWriter, r *http.Request) {
 	if dec.Decode(&in) != nil || dec.Decode(new(any)) != io.EOF || !completeIngestionProfile(shape["profile"]) || !validInput(in) {
 		fail(400, "input")
 		return
+	}
+	if !validStage(in) || (in.Stage == nil || in.Stage.Kind != "reconcile") && len(raw) > maxBody {
+		fail(400, "input")
+		return
+	}
+	// Legacy clients retain their existing total request budget.
+	if in.Stage == nil {
+		cancel()
+		ctx, cancel = context.WithTimeout(parent, 52*time.Second)
+		defer cancel()
+		r = r.WithContext(ctx)
 	}
 	if in.Clarification != nil && (in.Portion != nil || !validClarification(in.Input, *in.Clarification)) {
 		fail(400, "input")
@@ -168,6 +196,21 @@ func (a app) ingest(w http.ResponseWriter, r *http.Request) {
 	if !prepareApplyAnswer(in, ledger) {
 		fail(400, "input")
 		return
+	}
+	var handoff *extractionReceipt
+	if in.Stage != nil {
+		if len(a.signingKey) < 32 {
+			fail(503, "configuration")
+			return
+		}
+		if in.Stage.Kind == "reconcile" {
+			var code string
+			handoff, code = a.verifyReceipt(in)
+			if code != "" {
+				fail(400, code)
+				return
+			}
+		}
 	}
 	prepared, err := preprocessing.PrepareBoundedWithContext(r.Context(), in.Input, fieldvalidation.ProfessionalInformation)
 	if err != nil {
@@ -192,8 +235,10 @@ func (a app) ingest(w http.ResponseWriter, r *http.Request) {
 			progress.Regions = append(progress.Regions, p.View.Original)
 		}
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), 52*time.Second)
-	defer cancel()
+	if ctx.Err() != nil {
+		fail(504, "timeout")
+		return
+	}
 	decision := fieldvalidation.Classify(ctx, a.client, r.Header.Get("X-TypeSafe-Api-Key"), fieldvalidation.ProfessionalInformation, in.Input)
 	if decision.Outcome.Kind != "accept" {
 		outcome = decision.Outcome.Kind
@@ -220,6 +265,12 @@ func (a app) ingest(w http.ResponseWriter, r *http.Request) {
 			_ = json.NewEncoder(w).Encode(map[string]any{"decision": answerDecision})
 			return
 		}
+	}
+	if handoff != nil {
+		claims, unverifiedCount = handoff.Claims, handoff.UnverifiedCount
+		ledger.skipped = handoff.Skipped
+		ledger.comparisonInstruction = handoff.ComparisonInstruction
+	} else if in.Clarification != nil {
 		claims, unverifiedCount, code = a.clarify(ctx, key, *in.Clarification, ledger)
 	} else {
 		claims, unverifiedCount, code = a.extract(ctx, key, prepared.Source, ledger)
@@ -227,6 +278,20 @@ func (a app) ingest(w http.ResponseWriter, r *http.Request) {
 	if code != "" {
 		log.Printf("profile_ingestion stage=extract outcome=%s", code)
 		fail(codeStatus(code), code)
+		return
+	}
+	if in.Stage != nil && in.Stage.Kind == "extract" {
+		receipt, expiresAt, code := a.issueReceipt(in, claims, unverifiedCount, ledger)
+		if code != "" {
+			fail(codeStatus(code), code)
+			return
+		}
+		if ctx.Err() != nil {
+			fail(504, "timeout")
+			return
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(map[string]any{"stage": in.Stage, "receipt": receipt, "expiresAt": expiresAt, "decision": decision, "claims": claims, "coverage": coverageFor(len(claims), unverifiedCount), "skippedClaims": ledger.skipped, "continuation": progress})
 		return
 	}
 	ops, unresolvedIDs, unplacedCount, code := a.compare(ctx, key, claims, in.Profile, ledger)
@@ -237,6 +302,10 @@ func (a app) ingest(w http.ResponseWriter, r *http.Request) {
 	}
 	if !applyOperationsWithinTarget(in.ApplyAnswer, ledger.document, ops) {
 		fail(502, "invalid_output")
+		return
+	}
+	if ctx.Err() != nil {
+		fail(504, "timeout")
 		return
 	}
 	if progress != nil {
@@ -330,11 +399,24 @@ func providerPayload(prompt, schemaName string, schema map[string]any) []byte {
 }
 
 func (a app) sendProvider(ctx context.Context, key string, body []byte, requiredField string) ([]byte, string) {
-	callCtx, cancel, resp, err := openaihttp.Post(ctx, a.client, timeout, key, body)
+	if errors.Is(ctx.Err(), context.Canceled) {
+		return nil, "cancelled"
+	}
+	budget := timeout
+	if deadline, ok := ctx.Deadline(); ok && time.Until(deadline)-500*time.Millisecond < budget {
+		budget = time.Until(deadline) - 500*time.Millisecond
+	}
+	if budget <= 0 {
+		return nil, "timeout"
+	}
+	callCtx, cancel, resp, err := openaihttp.Post(ctx, a.client, budget, key, body)
 	defer cancel()
 	if err != nil {
-		if errors.Is(callCtx.Err(), context.DeadlineExceeded) {
+		if errors.Is(callCtx.Err(), context.DeadlineExceeded) || openaihttp.IsTimeout(err) {
 			return nil, "timeout"
+		}
+		if errors.Is(ctx.Err(), context.Canceled) {
+			return nil, "cancelled"
 		}
 		return nil, "outage"
 	}
@@ -352,6 +434,9 @@ func (a app) sendProvider(ctx context.Context, key string, body []byte, required
 	if decodeErr != nil {
 		if errors.Is(callCtx.Err(), context.DeadlineExceeded) || openaihttp.IsTimeout(decodeErr) {
 			return nil, "timeout"
+		}
+		if errors.Is(callCtx.Err(), context.Canceled) {
+			return nil, "cancelled"
 		}
 		if errors.Is(decodeErr, openaihttp.ErrTruncated) {
 			return nil, "truncated"
@@ -379,7 +464,7 @@ func exactArray(raw []byte, name string) bool {
 	return ok && strings.HasPrefix(strings.TrimSpace(string(item)), "[")
 }
 func (a app) extract(ctx context.Context, key string, source preprocessing.Source, contexts ...*reconciliationContext) (res []claim, skippedCount int, codeResult string) {
-	ctx, finish := aidiagnostics.Start(ctx, "extraction", "profile-claims-prompt-v6/schema-v2/source-resolution-v1/portions-v1/clarifications-v1/apply-answer-v1")
+	ctx, finish := aidiagnostics.Start(ctx, "extraction", extractionVersion)
 	defer func() { finish(codeResult) }()
 	reject := func(reason string) ([]claim, int, string) {
 		log.Printf("profile_ingestion stage=extract reason=%s", reason)
@@ -691,7 +776,7 @@ func mentionsURL(s string) bool {
 	return strings.Contains(s, "http") || strings.Contains(s, "www.") || strings.Contains(s, "url") || strings.Contains(s, "github.com")
 }
 func (a app) compare(ctx context.Context, key string, claims []claim, p profilevalidation.Profile, contexts ...*reconciliationContext) (res []operation, unresolved []string, unplacedCount int, codeResult string) {
-	ctx, finish := aidiagnostics.Start(ctx, "reconciliation", "profile-operations-prompt-v5/schema-v3/dispositions-v1/clarifications-v1/apply-answer-v1")
+	ctx, finish := aidiagnostics.Start(ctx, "reconciliation", comparisonVersion)
 	defer func() { finish(codeResult) }()
 	ledger := &reconciliationContext{}
 	if len(contexts) > 0 {

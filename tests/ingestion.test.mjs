@@ -1,4 +1,4 @@
-import {withIngestionLedger} from "./ingestion-fixtures.mjs"
+import {withIngestionLedger, stagedFixtureFetch} from "./ingestion-fixtures.mjs"
 import test from "node:test"
 import assert from "node:assert/strict"
 import { readFileSync, writeFileSync } from "node:fs"
@@ -27,8 +27,15 @@ const profileCompiled = ts.transpileModule(
 writeFileSync(join(tmpdir(), `careeros-profile-${process.pid}.mjs`), profileCompiled)
 const output = join(tmpdir(), "careeros-ingestion-" + process.pid + ".mjs")
 writeFileSync(output, compiled)
-const { validateIngestionResult, previewIngestion, beforeValue, afterValue, previewValues, validProfile, ingestProfile } =
+const { validateIngestionResult, previewIngestion, beforeValue, afterValue, previewValues, validProfile, ingestProfile: actualIngestProfile, createIngestionSession } =
   await import(output)
+
+// Existing domain fixtures exercise the same final validators through the staged protocol.
+async function ingestProfile(...args) {
+  const handler = globalThis.fetch
+  globalThis.fetch = stagedFixtureFetch(handler)
+  try { return await actualIngestProfile(...args) } finally { globalThis.fetch = handler }
+}
 
 const profile = () => ({
   careerGoals: "",
@@ -63,6 +70,122 @@ const profile = () => ({
   currentSalary: "",
   desiredSalary: "",
   additionalInfo: "",
+})
+
+test("gateway HTML 504 is a timeout rather than a service outage", async () => {
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = async () => new Response(
+    '<HTML><TITLE>Inactivity Timeout</TITLE><H1>Inactivity Timeout</H1>Too much time has passed without sending any data for document.</HTML>',
+    { status: 504, headers: { "Content-Type": "text/html" } },
+  )
+  try {
+    await assert.rejects(actualIngestProfile("I use Java.", profile(), "sk-inert"), { code: "timeout" })
+  } finally { globalThis.fetch = originalFetch }
+})
+
+const stageAccepted = { version: 1, field: "professional_information", outcome: { kind: "accept" } }
+const extractionResponse = (expiresAt = Date.now() + 600000) => new Response(JSON.stringify({
+  stage: { version: 1, kind: "extract" }, receipt: `controlled.${"s".repeat(43)}`, expiresAt, decision: stageAccepted,
+}))
+const emptyReconciliation = () => new Response(JSON.stringify({ decision: stageAccepted, ...withIngestionLedger({ claims: [], operations: [], unverifiedClaimCount: 0, unplacedOperationCount: 0 }) }))
+
+test("staged client retries comparison only, with actual progress and no automatic retry", async () => {
+  const originalFetch = globalThis.fetch, session = createIngestionSession(), stages = [], progress = []
+  let fail = true
+  const before = profile(), unchanged = structuredClone(before)
+  globalThis.fetch = async (_url, options) => {
+    const body = JSON.parse(options.body)
+    stages.push(body.stage.kind)
+    assert.deepEqual(body.stage, { version: 1, kind: body.stage.kind })
+    assert.equal(body.input, "I use Java.")
+    if (body.stage.kind === "extract") return extractionResponse()
+    assert.equal(body.receipt, `controlled.${"s".repeat(43)}`)
+    if (fail) return new Response("<HTML>Inactivity Timeout</HTML>", { status: 504 })
+    return emptyReconciliation()
+  }
+  const run = () => actualIngestProfile("I use Java.", before, "sk-inert", undefined, "inert", undefined, undefined, undefined, undefined, { session, onStage: stage => progress.push(stage) })
+  try {
+    await assert.rejects(run(), { code: "timeout" })
+    assert.deepEqual(stages, ["extract", "reconcile"])
+    fail = false
+    await run()
+    assert.deepEqual(stages, ["extract", "reconcile", "reconcile"])
+    assert.deepEqual(progress, stages)
+    assert.deepEqual(before, unchanged)
+    await run()
+    assert.deepEqual(stages.slice(-2), ["extract", "reconcile"], "successful results do not retain a retry receipt")
+  } finally { globalThis.fetch = originalFetch }
+})
+
+test("source, Profile and portion changes discard a failed comparison receipt", async () => {
+  const originalFetch = globalThis.fetch, session = createIngestionSession(), stages = []
+  globalThis.fetch = async (_url, options) => {
+    const body = JSON.parse(options.body); stages.push(body.stage.kind)
+    return body.stage.kind === "extract" ? extractionResponse() : new Response("gateway", { status: 504 })
+  }
+  const run = (input, before, portion) => actualIngestProfile(input, before, "sk-inert", undefined, "inert", undefined, portion, undefined, undefined, { session })
+  try {
+    for (const [input, before, portion] of [
+      ["Java", profile(), undefined], ["Java changed", profile(), undefined],
+      ["Java changed", { ...profile(), skills: "Go" }, undefined],
+      ["Java changed", { ...profile(), skills: "Go" }, { index: 0, bytes: 800 }],
+    ]) await assert.rejects(run(input, before, portion), { code: "timeout" })
+    assert.deepEqual(stages, Array(4).fill(["extract", "reconcile"]).flat())
+  } finally { globalThis.fetch = originalFetch }
+})
+
+test("cancellation between stages and during response reads cannot dispatch comparison", async () => {
+  const originalFetch = globalThis.fetch
+  try {
+    for (const point of ["before", "between", "body"]) {
+      const controller = new AbortController(), stages = []
+      if (point === "before") controller.abort()
+      globalThis.fetch = async (_url, options) => {
+        stages.push(JSON.parse(options.body).stage.kind)
+        if (point === "body") return { status: 200, ok: true, json: async () => { controller.abort(); throw new DOMException("aborted", "AbortError") } }
+        controller.abort()
+        return extractionResponse()
+      }
+      await assert.rejects(actualIngestProfile("Java", profile(), "sk-inert", controller.signal), { code: "cancelled" })
+      assert.deepEqual(stages, point === "before" ? [] : ["extract"])
+    }
+  } finally { globalThis.fetch = originalFetch }
+})
+
+test("expired receipt requires an explicit restart without silent extraction", async () => {
+  const originalFetch = globalThis.fetch, originalNow = Date.now, session = createIngestionSession()
+  let calls = 0, now = originalNow()
+  Date.now = () => now
+  globalThis.fetch = async (_url, options) => {
+    calls++
+    return JSON.parse(options.body).stage.kind === "extract" ? extractionResponse(now + 1000) : new Response("gateway", { status: 504 })
+  }
+  const run = () => actualIngestProfile("Java", profile(), "sk-inert", undefined, "inert", undefined, undefined, undefined, undefined, { session })
+  try {
+    await assert.rejects(run(), { code: "timeout" }); assert.equal(calls, 2)
+    now += 2000
+    await assert.rejects(run(), { code: "receipt_expired" }); assert.equal(calls, 2)
+    await assert.rejects(run(), { code: "timeout" }); assert.equal(calls, 4)
+    session.clear()
+    await assert.rejects(run(), { code: "timeout" }); assert.equal(calls, 6)
+  } finally { globalThis.fetch = originalFetch; Date.now = originalNow }
+})
+
+test("malformed comparison results retain extraction for deliberate retry", async () => {
+  const originalFetch = globalThis.fetch, session = createIngestionSession(), stages = []
+  let malformed = true
+  globalThis.fetch = async (_url, options) => {
+    const stage = JSON.parse(options.body).stage.kind; stages.push(stage)
+    return stage === "extract" ? extractionResponse() : malformed
+      ? new Response(JSON.stringify({decision:stageAccepted,operations:[]})) : emptyReconciliation()
+  }
+  const run = () => actualIngestProfile("Java", profile(), "sk-inert", undefined, "inert", undefined, undefined, undefined, undefined, {session})
+  try {
+    await assert.rejects(run(), {code:"invalid_output"})
+    malformed = false
+    await run()
+    assert.deepEqual(stages,["extract","reconcile","reconcile"])
+  } finally {globalThis.fetch=originalFetch}
 })
 const op = (overrides = {}) => ({
   claimId: "c1",
