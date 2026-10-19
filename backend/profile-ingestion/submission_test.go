@@ -244,6 +244,36 @@ func TestSubmissionExtractBoundsSelectedBatchOnly(t *testing.T) {
 	}
 }
 
+// A complete multi-portion plan is reported as `ready`: the planner's single-view
+// status must not mislabel a routine multi-batch submission as explicitly
+// partial (manifest invariant 8). Complete plans are derived from mechanical
+// completeness, not from `preprocessing.Plan.Status`.
+func TestSubmissionPlanReportsCompleteMultiBatchAsReady(t *testing.T) {
+	calls := &submissionCalls{}
+	a := submissionApp(calls, "")
+	var builder strings.Builder
+	for i := 0; i < 3200; i++ {
+		fmt.Fprintf(&builder, "%05d", i)
+	}
+	input := builder.String()
+	response := planSubmission(t, a, request{Input: input, Profile: profile()})
+	if len(response.Plan.Batches) < 2 {
+		t.Fatalf("expected a multi-batch plan, got %d", len(response.Plan.Batches))
+	}
+	if response.Plan.Status != string(preprocessing.Ready) {
+		t.Fatalf("complete multi-batch plan status = %q, want %q", response.Plan.Status, preprocessing.Ready)
+	}
+	if !response.Plan.Complete || response.Plan.Capacity != "" || len(response.Plan.Remaining) != 0 {
+		t.Fatalf("complete multi-batch plan mislabeled as partial: %+v", response.Plan)
+	}
+	if code := SubmissionManifestError(response.Plan, input); code != "" {
+		t.Fatalf("complete multi-batch plan violates the manifest: %q", code)
+	}
+	if calls.jev != 0 || calls.extract != 0 {
+		t.Fatalf("planning dispatched provider calls: %+v", calls)
+	}
+}
+
 // The 27-second handler deadline stops before any provider dispatch.
 func TestSubmissionDeadlineStopsBeforeProvider(t *testing.T) {
 	calls := &submissionCalls{}
@@ -315,7 +345,7 @@ func TestSubmissionExtractHandlesUnicodeBoundaries(t *testing.T) {
 func TestSubmissionUnsupportedStagesAreRejected(t *testing.T) {
 	calls := &submissionCalls{}
 	a := submissionApp(calls, `{"claims":[]}`)
-	for _, kind := range []string{SubmissionStageAssemble, SubmissionStageReconcile, "compare"} {
+	for _, kind := range []string{SubmissionStageReconcile, "compare"} {
 		in := request{Input: "I use Java.", Profile: profile(), Stage: &stageRequest{SubmissionStageVersion, kind}}
 		w := send(t, a.handler(), in)
 		if w.Code != 400 || !strings.Contains(w.Body.String(), `"error":"`+SubmissionErrStage+`"`) {

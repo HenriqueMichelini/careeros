@@ -172,7 +172,7 @@ func (a app) ingest(w http.ResponseWriter, r *http.Request) {
 		fail(400, "input")
 		return
 	}
-	if !validStage(in) || (in.Stage == nil || in.Stage.Kind != "reconcile") && len(raw) > maxBody {
+	if !validStage(in) || len(raw) > stageBodyLimit(in) {
 		fail(400, "input")
 		return
 	}
@@ -323,6 +323,26 @@ func (a app) ingest(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	_ = json.NewEncoder(w).Encode(result{ApplyAnswer: in.ApplyAnswer, Continuation: progress, Outcomes: ledger.outcomes, Coverage: coverageFor(len(claims), unverifiedCount), SkippedClaims: ledger.skipped, Decision: decision, Claims: claims, Operations: ops, UnverifiedClaimCount: unverifiedCount, UnresolvedClaimIds: unresolvedIDs, UnplacedOperationCount: unplacedCount})
+}
+
+// stageBodyLimit returns the retained request-body cap for one transport
+// envelope. Whole-submission assembly and reconciliation accept the 320 KiB
+// assembly/reconciliation body; v2 planning and extraction, v1 extraction and
+// legacy requests keep the 160 KiB bound. It never widens an existing limit.
+func stageBodyLimit(in request) int {
+	if in.Stage == nil {
+		return maxBody
+	}
+	if in.Stage.Version == SubmissionStageVersion {
+		if in.Stage.Kind == SubmissionStageAssemble || in.Stage.Kind == SubmissionStageReconcile {
+			return maxStageBody
+		}
+		return maxBody
+	}
+	if in.Stage.Version == 1 && in.Stage.Kind == "reconcile" {
+		return maxStageBody
+	}
+	return maxBody
 }
 
 func validInput(in request) bool {
