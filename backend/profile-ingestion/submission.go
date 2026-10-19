@@ -72,9 +72,9 @@ type SubmissionPlanResponse struct {
 	Plan        SubmissionPlan  `json:"plan"`
 }
 
-// submission dispatches version-2 submission stages. Plan, extract and
-// assembly are implemented here; reconciliation (#186) is not yet supported and
-// is rejected as `stage` without touching v1 behavior. Assembly is provider-free.
+// submission dispatches version-2 submission stages. Plan, extract, assembly and
+// reconciliation are implemented here; an unknown kind is rejected as `stage`
+// without touching v1 behavior. Assembly is provider-free.
 func (a app) submission(ctx context.Context, w http.ResponseWriter, r *http.Request, in request, raw []byte, key string, status *int, outcome *string) {
 	fail := func(s int, code string) {
 		*status = s
@@ -93,6 +93,8 @@ func (a app) submission(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		a.submissionExtract(ctx, w, r, in, raw, key, stage, status, outcome, fail)
 	case SubmissionStageAssemble:
 		a.submissionAssemble(ctx, w, in, raw, stage, fail)
+	case SubmissionStageReconcile:
+		a.submissionReconcile(ctx, w, r, in, raw, key, stage, status, outcome, fail)
 	default:
 		fail(SubmissionErrorStatus(SubmissionErrStage), SubmissionErrStage)
 	}

@@ -892,7 +892,7 @@ Return {"operations":[{"claimId":"c1","target":"skills","entryId":"","field":"sk
 		}
 		valid = append(valid, *op)
 	}
-	filtered, unresolved := filterUnsafeNewGroups(valid, out.Operations, claims, invalidClaims, invalidGroups)
+	filtered, unresolved := filterUnsafeNewGroups(valid, out.Operations, claims, invalidClaims, invalidGroups, nil)
 	ledger.rejected = map[string]bool{}
 	for _, id := range unresolved {
 		ledger.rejected[id] = true
@@ -1028,7 +1028,7 @@ func suppressRepeatedCapabilityFacts(ops []operation, p profilevalidation.Profil
 	return filtered
 }
 
-func filterUnsafeNewGroups(valid, raw []operation, claims []claim, invalidClaims, invalidGroups map[string]bool) ([]operation, []string) {
+func filterUnsafeNewGroups(valid, raw []operation, claims []claim, invalidClaims, invalidGroups, established map[string]bool) ([]operation, []string) {
 	type group struct {
 		target  string
 		anchor  string
@@ -1062,12 +1062,18 @@ func filterUnsafeNewGroups(valid, raw []operation, claims []claim, invalidClaims
 	for changed := true; changed; {
 		changed = false
 		for key, g := range groups {
-			unsafe := invalidGroups[key] || !g.members[g.anchor]
-			if g.target == "experience" {
-				unsafe = unsafe || !g.fields["company"] || !g.fields["title"]
-			}
-			for _, field := range requiredEntryFields(g.target) {
-				unsafe = unsafe || !g.fields[field]
+			// An anchor already established by provisional context was validated in
+			// its own focus batch; a focus claim may add detail to it without
+			// re-supplying its complete identity fields.
+			anchorEstablished := established[g.anchor]
+			unsafe := invalidGroups[key] || (!g.members[g.anchor] && !anchorEstablished)
+			if !anchorEstablished {
+				if g.target == "experience" {
+					unsafe = unsafe || !g.fields["company"] || !g.fields["title"]
+				}
+				for _, field := range requiredEntryFields(g.target) {
+					unsafe = unsafe || !g.fields[field]
+				}
 			}
 			for id := range g.members {
 				unsafe = unsafe || invalidClaims[id]

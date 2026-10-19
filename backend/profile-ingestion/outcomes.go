@@ -49,6 +49,10 @@ type reconciliationContext struct {
 	outcomes              []claimOutcome
 	skipped               []skippedClaim
 	rejected              map[string]bool
+	// provisional marks aggregate claims supplied only as provisional task data in
+	// a focus reconciliation. They may support, link or anchor a focus decision but
+	// never receive their own outcome or operation.
+	provisional map[string]bool
 }
 
 var outcomeKinds = []string{"change", "exact_duplicate", "overlap", "additional_support", "contradiction", "correction", "clarification", "unsupported", "unresolved"}
@@ -415,7 +419,7 @@ func reconcileOutcomes(claims []claim, ops []operation, unresolved []string, l *
 			}
 		}
 	}
-	filtered = completeOutcomeOperations(filtered, claims, outcomes)
+	filtered = completeOutcomeOperations(filtered, claims, outcomes, l.provisional)
 	for i := range outcomes {
 		outcomes[i].OperationIndexes = nil
 	}
@@ -441,7 +445,9 @@ func reconcileOutcomes(claims []claim, ops []operation, unresolved []string, l *
 
 // Withholding one patch must also withhold dependent patches and incomplete
 // new entries. The resulting indexes describe only the actual returned patch.
-func completeOutcomeOperations(ops []operation, claims []claim, outcomes []claimOutcome) []operation {
+// A provisional context claim already established by another focus batch can
+// satisfy a support dependency without receiving its own operation.
+func completeOutcomeOperations(ops []operation, claims []claim, outcomes []claimOutcome, provisional map[string]bool) []operation {
 	for {
 		retained := make([]operation, 0, len(ops))
 		present := map[string]bool{}
@@ -455,13 +461,13 @@ func completeOutcomeOperations(ops []operation, claims []claim, outcomes []claim
 		for _, op := range ops {
 			allowed := present[op.ClaimID]
 			for _, id := range op.SupportingClaimIDs {
-				allowed = allowed && present[id]
+				allowed = allowed && (present[id] || provisional[id])
 			}
 			if allowed {
 				retained = append(retained, op)
 			}
 		}
-		retained, _ = filterUnsafeNewGroups(retained, ops, claims, map[string]bool{}, map[string]bool{})
+		retained, _ = filterUnsafeNewGroups(retained, ops, claims, map[string]bool{}, map[string]bool{}, provisional)
 		if len(retained) == len(ops) {
 			return retained
 		}
