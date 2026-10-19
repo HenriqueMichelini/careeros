@@ -424,6 +424,31 @@ export function validateIngestionResult(
   profile: ProfessionalRepository,
   document?: ProfileDocument,
 ): IngestionResult {
+  return validateIngestion(raw, input, profile, document, false)
+}
+
+// validateIngestionAggregate is the #189 submission-level validator. It applies
+// exactly the same per-record rules as the single-result validator, but the
+// aggregate assembled from many bounded responses may legitimately exceed the
+// per-response 30/60 caps. Those caps stay enforced per bounded response by the
+// submission controller (#187); the aggregate outcome ledger is owned by the
+// submission review (#183), so only the flat count caps relax here.
+export function validateIngestionAggregate(
+  raw: unknown,
+  input: string,
+  profile: ProfessionalRepository,
+  document?: ProfileDocument,
+): IngestionResult {
+  return validateIngestion(raw, input, profile, document, true)
+}
+
+function validateIngestion(
+  raw: unknown,
+  input: string,
+  profile: ProfessionalRepository,
+  document: ProfileDocument | undefined,
+  aggregate: boolean,
+): IngestionResult {
   if (
     !record(raw) ||
     !keys(
@@ -458,9 +483,10 @@ export function validateIngestionResult(
     !Number.isInteger(raw.unplacedOperationCount) ||
     raw.unplacedOperationCount < 0 ||
     raw.unplacedOperationCount > 60 ||
-    raw.claims.length > 30 ||
-    raw.claims.length + raw.unverifiedClaimCount > 30 ||
-    raw.operations.length > 60
+    (!aggregate &&
+      (raw.claims.length > 30 ||
+        raw.claims.length + raw.unverifiedClaimCount > 30 ||
+        raw.operations.length > 60))
   )
     throw new IngestionError("invalid_output")
   const claims: IngestionClaim[] = []
@@ -673,7 +699,9 @@ export function validateIngestionResult(
         throw new IngestionError("invalid_output")
     }
   }
-  const ledger = validateOutcomeLedger(raw, claims, operations, input, document)
+  const ledger = aggregate
+    ? {}
+    : validateOutcomeLedger(raw, claims, operations, input, document)
   return {
     ...ledger,
     ...(raw.applyAnswer
