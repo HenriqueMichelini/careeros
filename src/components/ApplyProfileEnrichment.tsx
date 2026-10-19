@@ -3,6 +3,8 @@ import { useI18n, useStore } from "../lib/store"
 import {
   beforeValue,
   ingestProfile,
+  createIngestionSession,
+  type IngestionStage,
   IngestionError,
   mergeClarification,
   previewIngestion,
@@ -54,6 +56,13 @@ export default function ApplyProfileEnrichment({
   const [savedIds, setSavedIds] = useState<string[]>([])
   const [dismissed, setDismissed] = useState<string[]>([])
   const [blocked, setBlocked] = useState<string | null>(null)
+  const ingestionSession = useRef(createIngestionSession())
+  const retryMetadata = useRef<{
+    identity: string
+    metadata: ApplyAnswerReview
+  } | null>(null)
+  const [ingestionStage, setIngestionStage] =
+    useState<IngestionStage>("extract")
   const attempt = useRef(0)
   const controller = useRef<AbortController | null>(null)
   const inFlight = useRef(false)
@@ -79,12 +88,16 @@ export default function ApplyProfileEnrichment({
     if (saving) return
     attempt.current++
     controller.current?.abort()
+    ingestionSession.current.clear()
+    retryMetadata.current = null
     setWorking(false)
   }
   useEffect(
     () => () => {
       attempt.current++
       controller.current?.abort()
+      ingestionSession.current.clear()
+      retryMetadata.current = null
     },
     [],
   )
@@ -92,6 +105,8 @@ export default function ApplyProfileEnrichment({
     // Late responses cannot adopt another Profile snapshot. Preserve recovery text.
     attempt.current++
     controller.current?.abort()
+    ingestionSession.current.clear()
+    retryMetadata.current = null
     if (state.profileError) setReviewInvalidated(true)
     if (!saving) setWorking(false)
   }, [profileDocument, generationActive, state.profileError])
@@ -116,7 +131,23 @@ export default function ApplyProfileEnrichment({
         t(
           error instanceof IngestionError && error.code === "stale"
             ? "repo.ingestStale"
-            : "enrichment.failed",
+            : (error instanceof IngestionError &&
+                ({
+                  timeout: "repo.ingestTimeout",
+                  configuration: "repo.ingestConfiguration",
+                  receipt_invalid: "repo.ingestReceiptInvalid",
+                  receipt_expired: "repo.ingestReceiptExpired",
+                  cancelled: "repo.ingestCancelled",
+                  invalid_output: "repo.ingestErrorInvalidOutput",
+                  input: "repo.ingestErrorInput",
+                  capacity: "repo.ingestErrorCapacity",
+                  preparation: "repo.ingestErrorPreparation",
+                  truncated: "repo.ingestErrorTruncated",
+                  key: "repo.reviewErrorKey",
+                  rate_limit: "repo.reviewErrorRateLimit",
+                  outage: "repo.reviewErrorOutage",
+                } as Record<string, TranslationKey>)[error.code]) ||
+                "enrichment.failed",
         ),
       )
   }
@@ -147,27 +178,39 @@ export default function ApplyProfileEnrichment({
       setFeedback(t("repo.ingestStale"))
       return
     }
+    const metadataIdentity = JSON.stringify([
+      answer.id,
+      input,
+      snapshot.id,
+      snapshot.revision,
+      selected?.id,
+      selected?.revision,
+      answer.language,
+    ])
     const metadata: ApplyAnswerReview = clarification
       ? review!.result.applyAnswer!
-      : {
-          version: 1,
-          requestId: crypto.randomUUID(),
-          language: answer.language,
-          profile: {
-            profileId: snapshot.id,
-            id: snapshot.id,
-            revision: snapshot.revision,
-          },
-          ...(selected
-            ? {
-                target: {
-                  profileId: snapshot.id,
-                  id: selected.id,
-                  revision: selected.revision,
-                },
-              }
-            : {}),
-        }
+      : retryMetadata.current?.identity === metadataIdentity
+        ? retryMetadata.current.metadata
+        : {
+            version: 1,
+            requestId: crypto.randomUUID(),
+            language: answer.language,
+            profile: {
+              profileId: snapshot.id,
+              id: snapshot.id,
+              revision: snapshot.revision,
+            },
+            ...(selected
+              ? {
+                  target: {
+                    profileId: snapshot.id,
+                    id: selected.id,
+                    revision: selected.revision,
+                  },
+                }
+              : {}),
+          }
+    retryMetadata.current = { identity: metadataIdentity, metadata }
     const id = ++attempt.current
     controller.current = new AbortController()
     setWorking(true)
@@ -191,6 +234,12 @@ export default function ApplyProfileEnrichment({
             }
           : undefined,
         metadata,
+        {
+          session: ingestionSession.current,
+          onStage: (stage) => {
+            if (id === attempt.current) setIngestionStage(stage)
+          },
+        },
       )
       if (id !== attempt.current) {
         if (clarification) throw new IngestionError("cancelled")
@@ -329,6 +378,8 @@ export default function ApplyProfileEnrichment({
                 value={inputs[answer.id] ?? answer.text}
                 readOnly={disabled || savedIds.includes(answer.id)}
                 onChange={(e) => {
+                  ingestionSession.current.clear()
+                  retryMetadata.current = null
                   setInputs((v) => ({ ...v, [answer.id]: e.target.value }))
                   setReview(null)
                   setFeedback("")
@@ -348,6 +399,8 @@ export default function ApplyProfileEnrichment({
                     value={targets[answer.id] ?? ""}
                     disabled={disabled}
                     onChange={(e) => {
+                      ingestionSession.current.clear()
+                      retryMetadata.current = null
                       setTargets((v) => ({ ...v, [answer.id]: e.target.value }))
                       setReview(null)
                     }}
@@ -556,6 +609,15 @@ export default function ApplyProfileEnrichment({
             )}
           </article>
         ))}
+      {busy && !saving && (
+        <p role="status" className="text-sm">
+          {t(
+            ingestionStage === "extract"
+              ? "repo.ingestExtracting"
+              : "repo.ingestReconciling",
+          )}
+        </p>
+      )}
       {busy && !saving && (
         <button
           data-enrichment-cancel

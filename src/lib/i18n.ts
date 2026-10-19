@@ -436,6 +436,18 @@ const messages = {
     "repo.ingestPortionDismiss":
       "Dismiss remaining suggestions for this portion",
     "repo.ingestPortionRetry": "Retry first unfinished portion",
+    "repo.ingestExtracting": "Extracting information…",
+    "repo.ingestReconciling": "Preparing changes…",
+    "repo.ingestTimeout":
+      "Processing timed out. Your text is preserved. Review again to retry; completed extraction is reused while valid.",
+    "repo.ingestCancelled":
+      "Review canceled. Your saved Profile was not changed.",
+    "repo.ingestConfiguration":
+      "Profile ingestion is not configured on this server. The server signing key must be configured before reviewing.",
+    "repo.ingestReceiptInvalid":
+      "This review is no longer valid. Review again to restart extraction.",
+    "repo.ingestReceiptExpired":
+      "This review expired. Review again to restart extraction.",
     "repo.ingestPortionSmaller":
       "Restart with smaller portions (saved facts stay)",
     "repo.ingestReviewNote":
@@ -1374,6 +1386,18 @@ const messages = {
     "repo.ingestPortionDismiss": "Dispensar sugestões restantes desta parte",
     "repo.ingestPortionRetry":
       "Tentar novamente a primeira parte não concluída",
+    "repo.ingestExtracting": "Extraindo informações…",
+    "repo.ingestReconciling": "Preparando alterações…",
+    "repo.ingestTimeout":
+      "O processamento excedeu o tempo limite. Seu texto foi preservado. Revise novamente para tentar; a extração concluída será reutilizada enquanto válida.",
+    "repo.ingestCancelled":
+      "Revisão cancelada. Seu Perfil salvo não foi alterado.",
+    "repo.ingestConfiguration":
+      "A importação não está configurada neste servidor. Configure a chave de assinatura do servidor antes de revisar.",
+    "repo.ingestReceiptInvalid":
+      "Esta revisão não é mais válida. Revise novamente para reiniciar a extração.",
+    "repo.ingestReceiptExpired":
+      "Esta revisão expirou. Revise novamente para reiniciar a extração.",
     "repo.ingestPortionSmaller":
       "Reiniciar com partes menores (fatos salvos permanecem)",
     "repo.ingestReviewNote":

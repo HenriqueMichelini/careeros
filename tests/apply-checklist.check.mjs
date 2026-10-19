@@ -1,3 +1,5 @@
+import { createBrowserEvaluation } from "./browser-evaluation.mjs"
+import { stagedBrowserFixtures } from "./ingestion-fixtures.mjs"
 import { enrichmentScenarios } from "./apply-enrichment-browser.scenarios.mjs"
 import { reviewedDraftFixture } from "./reviewed-resume-fixture.mjs"
 import { jobContextFixture } from "./job-context-fixtures.mjs"
@@ -148,8 +150,10 @@ try {
   })
   let nextId = 0
   const pending = new Map()
+  const browserEvaluation = createBrowserEvaluation(pause)
   socket.onmessage = ({ data }) => {
     const message = JSON.parse(data)
+    browserEvaluation.observe(message)
     if (!message.id) return
     const callback = pending.get(message.id)
     pending.delete(message.id)
@@ -162,26 +166,16 @@ try {
       pending.set(id, { resolve, reject })
       socket.send(JSON.stringify({ id, method, params }))
     })
-  const evaluate = async (expression) => {
-    const result = await call("Runtime.evaluate", {
-      expression,
-      returnByValue: true,
-      awaitPromise: true,
-    })
-    if (result.exceptionDetails)
-      throw new Error(
-        result.exceptionDetails.exception?.description ||
-          result.exceptionDetails.text,
-      )
-    return result.result.value
-  }
+  const evaluate = (expression) => browserEvaluation.evaluate(call, expression)
   const until = async (expression) => {
     for (let attempt = 0; attempt < 100; attempt++) {
       if (await evaluate(expression)) return
       await pause(100)
     }
-    throw new Error(`Timed out: ${expression}`)
+    throw new Error(`Timed out: ${expression}; ${JSON.stringify(await evaluate("({feedback:document.querySelector('[data-apply-enrichment]')?.innerText,pending:(window.__pending??[]).map(p=>({url:p.url,stage:JSON.parse(p.options.body).stage}))})"))}`)
   }
+  await call("Page.enable")
+  await call("Page.addScriptToEvaluateOnNewDocument", { source: stagedBrowserFixtures })
   await call("Page.navigate", { url: `http://127.0.0.1:${port}/` })
   await until(
     "document.readyState === 'complete' && !!document.querySelector('header button')",
