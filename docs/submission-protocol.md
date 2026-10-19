@@ -21,13 +21,23 @@ units can be dispatched sequentially without weakening any #178/#41 boundary.
 
 ## Canonical object-key handling
 
-JSON object key order is not identity. A binding is computed by decoding the
-value, re-encoding it with object keys in sorted order and array order
-preserved, and hashing the result (SHA-256, lowercase hex). Numbers keep their
-original literal (Go decodes with `UseNumber`). Values are not normalized,
-translated or trimmed, and array order is significant. `requestBinding` in
-`backend/profile-ingestion/stages.go` and `canonicalBinding` in
-`src/lib/ingestionProtocol.ts` are the reference implementations.
+JSON object key order is not identity. A **canonical form** is produced by
+decoding the value and re-encoding it with object keys in sorted order, while
+array order is preserved and numbers keep their original literal (Go decodes
+with `UseNumber`). Values are not normalized, translated or trimmed.
+
+- Go computes a **binding** as the lowercase SHA-256 hex of that canonical form
+  (`canonicalBinding`); `requestBinding` in `backend/profile-ingestion/stages.go`
+  uses it.
+- The browser produces the same shape as a string (`canonicalForm` in
+  `src/lib/ingestionProtocol.ts`) and compares it as a local identity key.
+
+The two are **not** byte-compared across runtimes: Go and JavaScript differ in
+HTML escaping and number formatting, so each runtime only ever compares a binding
+against another it produced itself.
+
+`submissionFieldsError` rejects any field outside an envelope's allowed set as
+`input`; strict object-key handling never silently drops or invents fields.
 
 ## Budgets
 
@@ -120,8 +130,11 @@ Response embeds a signed `plan` plus the workflow `decision`:
 
 ### Manifest invariants
 
-1. `protocolVersion` is `profile-submission-v1`; `status` is `ready` or
-   `insufficient_capacity`; `complete` is `remaining` empty.
+1. `protocolVersion` is `profile-submission-v1`; `planVersion` is
+   `preprocessing.PlanningVersion` (`portions-v1`); `sourceId`, `profileId` and
+   `runId` are present. `status` is `ready` or `insufficient_capacity`;
+   `insufficient_capacity` carries a known `capacity` reason and `ready` carries
+   none. `complete` is `remaining` empty.
 2. `originalBytes` equals the UTF-8 length of the original; `preparedBytes` is
    within the 60,000-byte prepared-workflow bound.
 3. Batch indices are `0..n-1` in order and `n <= 256`.
@@ -218,7 +231,11 @@ complete original with Jev, and makes one bounded generation call.
 
 ## Submission result and session state
 
-The consolidated review is a single in-memory `SubmissionResult`:
+The consolidated review is a single in-memory `SubmissionResult`. Request
+envelopes are `SubmissionExtractionRequest` (`planReceipt`, `batchIndex`),
+`SubmissionAssemblyRequest` (`planReceipt`, `batchReceipts[]`) and
+`SubmissionReconciliationRequest` (`contextReceipt`, `focus`); they share the
+existing `{input, profile, document?, stage}` transport body.
 
 ```ts
 interface SubmissionResult {
@@ -229,14 +246,22 @@ interface SubmissionResult {
   documentId?: string
   runId: string
   plan: SubmissionPlan
-  batches: { index: number; claims: IngestionClaim[]; skippedClaims: IngestionSkippedClaim[] }[]
+  batches: { index: number; claims: { id: string }[]; skippedClaims: unknown[] }[]
   context: SubmissionAggregate
-  focus: { claimIds: string[] }[]
-  operations: IngestionOperation[]
-  outcomes: IngestionOutcome[]
+  focus: { focus: { claimIds: string[] }; operations: unknown[]; outcomes: unknown[] }[]
   coverage: SubmissionCoverage
 }
 ```
+
+Result invariants (`submissionResultError`): `protocolVersion` matches; claim
+ids are unique across batches; each focus batch passes `submissionFocusError` and
+carries at most 60 operations; `coverage.validClaims`/`invalidClaims` equal the
+batch claim and skipped totals; `coverage.discoveryComplete` is `false`.
+
+Session state (`SubmissionSession`) carries the lifecycle `status`, placed-batch
+bookkeeping and one `SubmissionSelection` per selectable unit
+(`unitId`, `status`, `dependencies`). Selection `unitId`s are unique and each
+status is `pending`, `selected` or `saved`, else `state` or `manifest_incomplete`.
 
 Review starts with **no selection**. Each selectable unit is *pending* (proposed,
 not saved), then *selected* (included in the current selection) and finally
@@ -287,8 +312,9 @@ New codes extend the retained v1 set:
 | Code | HTTP | Meaning |
 | --- | --- | --- |
 | `input` | 400 | malformed/oversized request, bad key shape |
-| `version` | 400 | unknown protocol or stage version |
+| `version` | 400 | unknown protocol, stage or plan version |
 | `stage` | 400 | invalid stage kind or stage-only fields |
+| `state` | 400 | invalid plan status/capacity, session status or selection status |
 | `manifest_incomplete` | 400 | missing/duplicate batch, or coverage gap/overlap |
 | `batch_mismatch` | 400 | identity/plan/batch binding mismatch |
 | `context_invalid` | 400 | context outside primary coverage, tampered/forged context |

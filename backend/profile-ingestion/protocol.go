@@ -81,77 +81,112 @@ const (
 	SubmissionErrReceiptExpired = "receipt_expired"
 )
 
+// Submission coverage capacities.
+const (
+	SubmissionCapacityExhausted = "possibly_exhausted"
+	SubmissionCapacityWithin    = "within_limit"
+)
+
+// Submission plan capacity reasons mirror preprocessing.CapacityReason.
+var submissionCapacityReasons = []string{
+	"original_size", "single_view_capacity", "indivisible_or_context_capacity", "portion_count",
+}
+
+// Selection states: pending and selected are transient browser memory; only
+// saved work persists through the canonical save.
+const (
+	SubmissionSelectionPending  = "pending"
+	SubmissionSelectionSelected = "selected"
+	SubmissionSelectionSaved    = "saved"
+)
+
 // submissionSessionStatuses is the client-owned review lifecycle vocabulary.
 var submissionSessionStatuses = []string{
 	"idle", "planning", "extracting", "assembling", "reconciling", "reviewing",
 	"saving", "saved", "paused", "stopped", "failed", "expired", "stale", "discarded",
 }
 
-// SubmissionStageError validates a stage envelope version and kind.
-func SubmissionStageError(s submissionStage) string {
-	if s.Version != SubmissionStageVersion {
-		return SubmissionErrVersion
-	}
-	switch s.Kind {
-	case SubmissionStagePlan, SubmissionStageExtract, SubmissionStageAssemble, SubmissionStageReconcile:
-		return ""
-	}
-	return SubmissionErrStage
-}
-
-// ValidPortionBudget reports whether a requested portion budget is within the
-// retained 200-2,000 prepared-byte range.
-func ValidPortionBudget(b int) bool {
-	return b >= SubmissionMinPreparedBytes && b <= SubmissionMaxPreparedBytes
-}
-
-// PortionBudgetError names the rejection code for an out-of-range portion budget.
-func PortionBudgetError(b int) string {
-	if ValidPortionBudget(b) {
-		return ""
-	}
-	return SubmissionErrCapacity
-}
-
-// ValidSubmissionStatus reports whether a client lifecycle status is known.
-func ValidSubmissionStatus(s string) bool {
-	for _, known := range submissionSessionStatuses {
-		if known == s {
-			return true
-		}
-	}
-	return false
-}
-
-// SubmissionStatusError names the rejection code for an unknown lifecycle status.
-func SubmissionStatusError(s string) string {
-	if ValidSubmissionStatus(s) {
-		return ""
-	}
-	return SubmissionErrState
-}
-
-// SubmissionCountsError checks the planner portion cap and the per-bounded-result
-// claim and operation caps. Aggregate claim totals may exceed the per-batch cap.
-func SubmissionCountsError(batches, claims, operations int) string {
-	if batches < 0 || claims < 0 || operations < 0 {
-		return SubmissionErrManifest
-	}
-	if batches > SubmissionPortionCap || claims > SubmissionBatchClaimCap || operations > SubmissionBatchOpCap {
-		return SubmissionErrCapacity
-	}
-	return ""
-}
-
-// GlobalClaimID namespaces a batch-local claim id at the assembly boundary.
-func GlobalClaimID(runID string, batchIndex int, localID string) string {
-	return runID + "/" + strconv.Itoa(batchIndex) + "/" + localID
-}
-
-// submissionStage is the stage envelope for plan/extract/assemble/reconcile.
-type submissionStage struct {
+// SubmissionStage is the plan/extract/assemble/reconcile stage envelope.
+type SubmissionStage struct {
 	Version int    `json:"version"`
 	Kind    string `json:"kind"`
+}
+
+// SubmissionExtractionRequest binds one bounded extraction batch to its plan.
+type SubmissionExtractionRequest struct {
+	PlanReceipt string `json:"planReceipt"`
+	BatchIndex  int    `json:"batchIndex"`
+}
+
+// SubmissionAssemblyRequest supplies the complete set of extraction receipts.
+type SubmissionAssemblyRequest struct {
+	PlanReceipt   string   `json:"planReceipt"`
+	BatchReceipts []string `json:"batchReceipts"`
+}
+
+// SubmissionReconciliationRequest binds one focus batch to the aggregate context.
+type SubmissionReconciliationRequest struct {
+	ContextReceipt string          `json:"contextReceipt"`
+	Focus          SubmissionFocus `json:"focus"`
+}
+
+// SubmissionExtractionResponse is one authenticated bounded extraction result.
+type SubmissionExtractionResponse struct {
+	Stage           SubmissionStage    `json:"stage"`
+	BatchReceipt    string             `json:"batchReceipt"`
+	ExpiresAt       int64              `json:"expiresAt"`
+	BatchIndex      int                `json:"batchIndex"`
+	Claims          []claim            `json:"claims"`
+	UnverifiedCount int                `json:"unverifiedCount"`
+	SkippedClaims   []skippedClaim     `json:"skippedClaims"`
+	Coverage        SubmissionCoverage `json:"coverage"`
+}
+
+// SubmissionBatchResult is one batch's validated extraction in a submission result.
+type SubmissionBatchResult struct {
+	Index         int            `json:"index"`
+	Claims        []claim        `json:"claims"`
+	SkippedClaims []skippedClaim `json:"skippedClaims"`
+}
+
+// SubmissionFocusResult is the reconciled output for one focus batch.
+type SubmissionFocusResult struct {
+	Focus      SubmissionFocus `json:"focus"`
+	Operations []operation     `json:"operations"`
+	Outcomes   []claimOutcome  `json:"outcomes"`
+}
+
+// SubmissionResult is the consolidated in-memory review of one submission.
+type SubmissionResult struct {
+	ProtocolVersion string                  `json:"protocolVersion"`
+	SubmissionID    string                  `json:"submissionId"`
+	SourceID        string                  `json:"sourceId"`
+	ProfileID       string                  `json:"profileId"`
+	DocumentID      string                  `json:"documentId,omitempty"`
+	RunID           string                  `json:"runId"`
+	Plan            SubmissionPlan          `json:"plan"`
+	Batches         []SubmissionBatchResult `json:"batches"`
+	Context         SubmissionAggregate     `json:"context"`
+	Focus           []SubmissionFocusResult `json:"focus"`
+	Coverage        SubmissionCoverage      `json:"coverage"`
+}
+
+// SubmissionSelection is one selectable destination unit and its dependencies.
+// Status is pending, selected or saved.
+type SubmissionSelection struct {
+	UnitID       string   `json:"unitId"`
+	Status       string   `json:"status"`
+	Dependencies []string `json:"dependencies"`
+}
+
+// SubmissionSession is transient browser session state. Nothing here is stored.
+type SubmissionSession struct {
+	ProtocolVersion string                `json:"protocolVersion"`
+	SubmissionID    string                `json:"submissionId"`
+	Status          string                `json:"status"`
+	TotalBatches    int                   `json:"totalBatches"`
+	PlacedBatches   []int                 `json:"placedBatches"`
+	Selections      []SubmissionSelection `json:"selections"`
 }
 
 // SubmissionBatch is one bounded extraction unit. Primary ranges are unique
@@ -217,15 +252,112 @@ type SubmissionFocus struct {
 }
 
 // canonicalBinding hashes a value with object keys sorted and array order and
-// number literals preserved. This is the reference canonicalization for request
-// identity and submission handoff binding.
+// number literals preserved. It is the server-side request/handoff binding.
 func canonicalBinding(v any) string {
+	sum := sha256.Sum256(canonicalForm(v))
+	return hex.EncodeToString(sum[:])
+}
+
+// canonicalForm renders the canonical serialization hashed by canonicalBinding.
+func canonicalForm(v any) []byte {
 	decoder := json.NewDecoder(bytes.NewReader(mustJSON(v)))
 	decoder.UseNumber()
 	var canonical any
 	_ = decoder.Decode(&canonical)
-	sum := sha256.Sum256(mustJSON(canonical))
-	return hex.EncodeToString(sum[:])
+	return mustJSON(canonical)
+}
+
+// SubmissionStageError validates a stage envelope version and kind.
+func SubmissionStageError(s SubmissionStage) string {
+	if s.Version != SubmissionStageVersion {
+		return SubmissionErrVersion
+	}
+	switch s.Kind {
+	case SubmissionStagePlan, SubmissionStageExtract, SubmissionStageAssemble, SubmissionStageReconcile:
+		return ""
+	}
+	return SubmissionErrStage
+}
+
+// SubmissionFieldsError rejects unknown fields. Callers pass the exact allowed
+// field set for the envelope; any extra key is `input`.
+func SubmissionFieldsError(raw []byte, allowed ...string) string {
+	var fields map[string]json.RawMessage
+	if json.Unmarshal(raw, &fields) != nil {
+		return SubmissionErrInput
+	}
+	permitted := map[string]bool{}
+	for _, name := range allowed {
+		permitted[name] = true
+	}
+	for name := range fields {
+		if !permitted[name] {
+			return SubmissionErrInput
+		}
+	}
+	return ""
+}
+
+// ValidPortionBudget reports whether a requested portion budget is within the
+// retained 200-2,000 prepared-byte range.
+func ValidPortionBudget(b int) bool {
+	return b >= SubmissionMinPreparedBytes && b <= SubmissionMaxPreparedBytes
+}
+
+// PortionBudgetError names the rejection code for an out-of-range portion budget.
+func PortionBudgetError(b int) string {
+	if ValidPortionBudget(b) {
+		return ""
+	}
+	return SubmissionErrCapacity
+}
+
+// ValidSubmissionStatus reports whether a client lifecycle status is known.
+func ValidSubmissionStatus(s string) bool {
+	for _, known := range submissionSessionStatuses {
+		if known == s {
+			return true
+		}
+	}
+	return false
+}
+
+// SubmissionStatusError names the rejection code for an unknown lifecycle status.
+func SubmissionStatusError(s string) string {
+	if ValidSubmissionStatus(s) {
+		return ""
+	}
+	return SubmissionErrState
+}
+
+// ValidSelectionStatus reports whether a selection state is pending/selected/saved.
+func ValidSelectionStatus(s string) bool {
+	return s == SubmissionSelectionPending || s == SubmissionSelectionSelected || s == SubmissionSelectionSaved
+}
+
+// SubmissionSelectionError names the rejection code for an unknown selection state.
+func SubmissionSelectionError(s string) string {
+	if ValidSelectionStatus(s) {
+		return ""
+	}
+	return SubmissionErrState
+}
+
+// SubmissionCountsError checks the planner portion cap and the per-bounded-result
+// claim and operation caps. Aggregate claim totals may exceed the per-batch cap.
+func SubmissionCountsError(batches, claims, operations int) string {
+	if batches < 0 || claims < 0 || operations < 0 {
+		return SubmissionErrInput
+	}
+	if batches > SubmissionPortionCap || claims > SubmissionBatchClaimCap || operations > SubmissionBatchOpCap {
+		return SubmissionErrCapacity
+	}
+	return ""
+}
+
+// GlobalClaimID namespaces a batch-local claim id at the assembly boundary.
+func GlobalClaimID(runID string, batchIndex int, localID string) string {
+	return runID + "/" + strconv.Itoa(batchIndex) + "/" + localID
 }
 
 // SubmissionManifestError verifies a plan against its exact original text.
@@ -233,7 +365,20 @@ func SubmissionManifestError(plan SubmissionPlan, original string) string {
 	if plan.ProtocolVersion != SubmissionProtocolVersion {
 		return SubmissionErrVersion
 	}
+	if plan.PlanVersion != preprocessing.PlanningVersion {
+		return SubmissionErrVersion
+	}
+	if plan.SourceID == "" || plan.ProfileID == "" || plan.RunID == "" {
+		return SubmissionErrManifest
+	}
 	if plan.Status != string(preprocessing.Ready) && plan.Status != string(preprocessing.InsufficientCapacity) {
+		return SubmissionErrState
+	}
+	if plan.Status == string(preprocessing.InsufficientCapacity) {
+		if !contains(submissionCapacityReasons, plan.Capacity) {
+			return SubmissionErrState
+		}
+	} else if plan.Capacity != "" {
 		return SubmissionErrState
 	}
 	if !utf8.ValidString(original) {
@@ -336,7 +481,7 @@ func SubmissionAggregateError(agg SubmissionAggregate, plan SubmissionPlan) stri
 		return SubmissionErrManifest
 	}
 	if agg.Coverage.DiscoveryComplete ||
-		(agg.Coverage.Capacity != "within_limit" && agg.Coverage.Capacity != "possibly_exhausted") {
+		(agg.Coverage.Capacity != SubmissionCapacityWithin && agg.Coverage.Capacity != SubmissionCapacityExhausted) {
 		return SubmissionErrCoverage
 	}
 	if len(mustJSON(agg)) > SubmissionContextBytes {
@@ -363,6 +508,61 @@ func SubmissionFocusError(focus SubmissionFocus, agg SubmissionAggregate) string
 			return SubmissionErrFocus
 		}
 		seen[id] = true
+	}
+	return ""
+}
+
+// SubmissionResultError verifies the consolidated review envelope.
+func SubmissionResultError(result SubmissionResult) string {
+	if result.ProtocolVersion != SubmissionProtocolVersion {
+		return SubmissionErrVersion
+	}
+	if result.Coverage.DiscoveryComplete {
+		return SubmissionErrCoverage
+	}
+	ids := map[string]bool{}
+	validClaims, invalidClaims := 0, 0
+	for _, batch := range result.Batches {
+		for _, c := range batch.Claims {
+			if c.ID == "" || ids[c.ID] {
+				return SubmissionErrManifest
+			}
+			ids[c.ID] = true
+			validClaims++
+		}
+		invalidClaims += len(batch.SkippedClaims)
+	}
+	for _, focus := range result.Focus {
+		if code := SubmissionFocusError(focus.Focus, result.Context); code != "" {
+			return code
+		}
+		if len(focus.Operations) > SubmissionBatchOpCap {
+			return SubmissionErrCapacity
+		}
+	}
+	if result.Coverage.ValidClaims != validClaims || result.Coverage.InvalidClaims != invalidClaims {
+		return SubmissionErrManifest
+	}
+	return ""
+}
+
+// SubmissionSessionError verifies transient session state and its selections.
+func SubmissionSessionError(session SubmissionSession) string {
+	if session.ProtocolVersion != SubmissionProtocolVersion {
+		return SubmissionErrVersion
+	}
+	if code := SubmissionStatusError(session.Status); code != "" {
+		return code
+	}
+	units := map[string]bool{}
+	for _, selection := range session.Selections {
+		if selection.UnitID == "" || units[selection.UnitID] {
+			return SubmissionErrManifest
+		}
+		units[selection.UnitID] = true
+		if code := SubmissionSelectionError(selection.Status); code != "" {
+			return code
+		}
 	}
 	return ""
 }

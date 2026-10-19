@@ -1,0 +1,17 @@
+{
+  "name": "strict-unknown-field",
+  "check": "strict",
+  "value": {
+    "version": 2,
+    "kind": "plan",
+    "extra": true
+  },
+  "allowed": [
+    "version",
+    "kind"
+  ],
+  "expect": {
+    "ok": false,
+    "error": "input"
+  }
+}

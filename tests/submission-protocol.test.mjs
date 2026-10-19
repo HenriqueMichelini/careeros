@@ -30,6 +30,8 @@ function fixtureResult(fixture) {
       return result(proto.portionBudgetError(fixture.bytes))
     case "status":
       return result(proto.submissionStatusError(fixture.status))
+    case "selection":
+      return result(proto.submissionSelectionError(fixture.selection.status))
     case "counts":
       return result(
         proto.submissionCountsError({
@@ -38,8 +40,10 @@ function fixtureResult(fixture) {
           operations: fixture.operations,
         }),
       )
+    case "strict":
+      return result(proto.submissionFieldsError(fixture.value, fixture.allowed))
     case "binding":
-      return proto.canonicalBinding(fixture.left) === proto.canonicalBinding(fixture.right)
+      return proto.canonicalForm(fixture.left) === proto.canonicalForm(fixture.right)
         ? result("")
         : result("stale")
     case "manifest":
@@ -48,6 +52,10 @@ function fixtureResult(fixture) {
       return result(proto.submissionAggregateError(fixture.aggregate, fixture.manifest))
     case "focus":
       return result(proto.submissionFocusError(fixture.focus, fixture.aggregate))
+    case "result":
+      return result(proto.submissionResultError(fixture.result))
+    case "session":
+      return result(proto.submissionSessionError(fixture.session))
     default:
       return { ok: false, code: "unknown_check" }
   }
@@ -66,10 +74,10 @@ for (const file of fixtureFiles) {
 
 test("submission binding ignores object key order but not values", () => {
   assert.equal(
-    proto.canonicalBinding({ a: 1, b: { c: 2, d: 3 }, e: [1, 2] }),
-    proto.canonicalBinding({ e: [1, 2], b: { d: 3, c: 2 }, a: 1 }),
+    proto.canonicalForm({ a: 1, b: { c: 2, d: 3 }, e: [1, 2] }),
+    proto.canonicalForm({ e: [1, 2], b: { d: 3, c: 2 }, a: 1 }),
   )
-  assert.notEqual(proto.canonicalBinding({ a: 1 }), proto.canonicalBinding({ a: 2 }))
+  assert.notEqual(proto.canonicalForm({ a: 1 }), proto.canonicalForm({ a: 2 }))
 })
 
 test("a whole-submission aggregate legitimately exceeds the per-batch claim cap", () => {

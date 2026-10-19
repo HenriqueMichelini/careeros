@@ -16,18 +16,23 @@ import (
 type protocolFixture struct {
 	Name       string              `json:"name"`
 	Check      string              `json:"check"`
-	Stage      submissionStage     `json:"stage"`
+	Stage      SubmissionStage     `json:"stage"`
 	Bytes      int                 `json:"bytes"`
 	Status     string              `json:"status"`
 	Batches    int                 `json:"batches"`
 	Claims     int                 `json:"claims"`
 	Operations int                 `json:"operations"`
+	Value      json.RawMessage     `json:"value"`
+	Allowed    []string            `json:"allowed"`
 	Left       json.RawMessage     `json:"left"`
 	Right      json.RawMessage     `json:"right"`
 	Original   string              `json:"original"`
 	Manifest   SubmissionPlan      `json:"manifest"`
 	Aggregate  SubmissionAggregate `json:"aggregate"`
 	Focus      SubmissionFocus     `json:"focus"`
+	Result     SubmissionResult    `json:"result"`
+	Selection  SubmissionSelection `json:"selection"`
+	Session    SubmissionSession   `json:"session"`
 	Expect     struct {
 		OK    bool   `json:"ok"`
 		Error string `json:"error"`
@@ -51,8 +56,12 @@ func protocolFixtureResult(f protocolFixture) (bool, string) {
 		code = PortionBudgetError(f.Bytes)
 	case "status":
 		code = SubmissionStatusError(f.Status)
+	case "selection":
+		code = SubmissionSelectionError(f.Selection.Status)
 	case "counts":
 		code = SubmissionCountsError(f.Batches, f.Claims, f.Operations)
+	case "strict":
+		code = SubmissionFieldsError(f.Value, f.Allowed...)
 	case "binding":
 		if rawBinding(f.Left) != rawBinding(f.Right) {
 			code = SubmissionErrStale
@@ -63,6 +72,10 @@ func protocolFixtureResult(f protocolFixture) (bool, string) {
 		code = SubmissionAggregateError(f.Aggregate, f.Manifest)
 	case "focus":
 		code = SubmissionFocusError(f.Focus, f.Aggregate)
+	case "result":
+		code = SubmissionResultError(f.Result)
+	case "session":
+		code = SubmissionSessionError(f.Session)
 	default:
 		return false, "unknown_check"
 	}
@@ -130,7 +143,7 @@ func TestSubmissionAggregateAllowsManyBatches(t *testing.T) {
 		ProtocolVersion: SubmissionProtocolVersion,
 		SourceID:        "src", ProfileID: "prof", RunID: "run", PlanVersion: preprocessing.PlanningVersion,
 		Batches:  []SubmissionAggregateBatch{batch(0, 20, 1), batch(1, 20, 0)},
-		Coverage: SubmissionCoverage{ValidClaims: 40, InvalidClaims: 1, Capacity: "possibly_exhausted"},
+		Coverage: SubmissionCoverage{ValidClaims: 40, InvalidClaims: 1, Capacity: SubmissionCapacityExhausted},
 	}
 	if code := SubmissionAggregateError(aggregate, plan); code != "" {
 		t.Fatalf("aggregate of 40 claims rejected: %q", code)
@@ -143,6 +156,8 @@ func TestSubmissionAggregateAllowsManyBatches(t *testing.T) {
 func TestSubmissionErrorStatusMapping(t *testing.T) {
 	cases := map[string]int{
 		SubmissionErrVersion:  400,
+		SubmissionErrStage:    400,
+		SubmissionErrState:    400,
 		SubmissionErrManifest: 400,
 		SubmissionErrBatch:    400,
 		SubmissionErrContext:  400,

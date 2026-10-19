@@ -47,6 +47,8 @@ export const submissionErrors = {
   unicode: "unicode_boundary",
   capacity: "capacity",
   stale: "stale",
+  receiptInvalid: "receipt_invalid",
+  receiptExpired: "receipt_expired",
 } as const
 export type SubmissionErrorCode = (typeof submissionErrors)[keyof typeof submissionErrors]
 
@@ -69,6 +71,19 @@ export const submissionStatuses = [
   "discarded",
 ] as const
 export type SubmissionStatus = (typeof submissionStatuses)[number]
+
+export const submissionPlanCapacityReasons = [
+  "original_size",
+  "single_view_capacity",
+  "indivisible_or_context_capacity",
+  "portion_count",
+] as const
+
+export const submissionCapacityWithin = "within_limit"
+export const submissionCapacityExhausted = "possibly_exhausted"
+
+export const submissionSelectionStatuses = ["pending", "selected", "saved"] as const
+export type SubmissionSelectionStatus = (typeof submissionSelectionStatuses)[number]
 
 export interface SubmissionRange {
   Start: number
@@ -104,6 +119,21 @@ export interface SubmissionPlan {
   remaining: SubmissionRange[]
 }
 
+export interface SubmissionExtractionRequest {
+  planReceipt: string
+  batchIndex: number
+}
+
+export interface SubmissionAssemblyRequest {
+  planReceipt: string
+  batchReceipts: string[]
+}
+
+export interface SubmissionReconciliationRequest {
+  contextReceipt: string
+  focus: SubmissionFocus
+}
+
 export interface SubmissionAggregateBatch {
   index: number
   primary: SubmissionRange[]
@@ -134,7 +164,48 @@ export interface SubmissionFocus {
   claimIds: string[]
 }
 
-// GlobalClaimId namespaces a batch-local claim id at the assembly boundary.
+export interface SubmissionBatchResult {
+  index: number
+  claims: { id: string }[]
+  skippedClaims: unknown[]
+}
+
+export interface SubmissionFocusResult {
+  focus: SubmissionFocus
+  operations: unknown[]
+  outcomes: unknown[]
+}
+
+export interface SubmissionResult {
+  protocolVersion: string
+  submissionId: string
+  sourceId: string
+  profileId: string
+  documentId?: string
+  runId: string
+  plan: SubmissionPlan
+  batches: SubmissionBatchResult[]
+  context: SubmissionAggregate
+  focus: SubmissionFocusResult[]
+  coverage: SubmissionCoverage
+}
+
+export interface SubmissionSelection {
+  unitId: string
+  status: string
+  dependencies: string[]
+}
+
+export interface SubmissionSession {
+  protocolVersion: string
+  submissionId: string
+  status: string
+  totalBatches: number
+  placedBatches: number[]
+  selections: SubmissionSelection[]
+}
+
+// globalClaimId namespaces a batch-local claim id at the assembly boundary.
 export function globalClaimId(runId: string, batchIndex: number, localId: string): string {
   return `${runId}/${batchIndex}/${localId}`
 }
@@ -156,15 +227,28 @@ function canonicalJson(value: unknown): string {
   return encoded === undefined ? "null" : encoded
 }
 
-// canonicalBinding is the reference request/handoff binding: object key order is
-// ignored; array order and number literals are preserved.
-export function canonicalBinding(value: unknown): string {
+// canonicalForm is the browser reference canonicalization: object key order is
+// ignored; array order and number literals are preserved. The server hashes the
+// same shape with SHA-256 to form its request/handoff binding. The two are never
+// byte-compared across runtimes (Go and JavaScript differ in HTML escaping and
+// number formatting); each runtime only compares bindings it produced itself.
+export function canonicalForm(value: unknown): string {
   return canonicalJson(value)
 }
 
 export function submissionStageError(stage: SubmissionStage): string {
   if (stage.version !== submissionStageVersion) return submissionErrors.version
   return (submissionStages as readonly string[]).includes(stage.kind) ? "" : submissionErrors.stage
+}
+
+// submissionFieldsError rejects unknown fields: any key outside the exact
+// allowed set for an envelope is `input`.
+export function submissionFieldsError(value: unknown, allowed: string[]): string {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return submissionErrors.input
+  const permitted = new Set(allowed)
+  for (const key of Object.keys(value as Record<string, unknown>))
+    if (!permitted.has(key)) return submissionErrors.input
+  return ""
 }
 
 export function portionBudgetError(bytes: number): string {
@@ -177,12 +261,16 @@ export function submissionStatusError(status: string): string {
   return (submissionStatuses as readonly string[]).includes(status) ? "" : submissionErrors.state
 }
 
+export function submissionSelectionError(status: string): string {
+  return (submissionSelectionStatuses as readonly string[]).includes(status) ? "" : submissionErrors.state
+}
+
 export function submissionCountsError(counts: {
   batches: number
   claims: number
   operations: number
 }): string {
-  if (counts.batches < 0 || counts.claims < 0 || counts.operations < 0) return submissionErrors.manifest
+  if (counts.batches < 0 || counts.claims < 0 || counts.operations < 0) return submissionErrors.input
   if (
     counts.batches > submissionBudgets.portionCap ||
     counts.claims > submissionBudgets.batchClaimCap ||
@@ -208,7 +296,10 @@ function withinAny(range: SubmissionRange, ranges: SubmissionRange[]): boolean {
 }
 
 function sameRanges(a: SubmissionRange[], b: SubmissionRange[]): boolean {
-  return a.length === b.length && a.every((range, index) => range.Start === b[index].Start && range.End === b[index].End)
+  return (
+    a.length === b.length &&
+    a.every((range, index) => range.Start === b[index].Start && range.End === b[index].End)
+  )
 }
 
 function tiles(ranges: SubmissionRange[], total: number): boolean {
@@ -223,7 +314,13 @@ function tiles(ranges: SubmissionRange[], total: number): boolean {
 
 export function submissionManifestError(plan: SubmissionPlan, original: string): string {
   if (plan.protocolVersion !== submissionProtocolVersion) return submissionErrors.version
+  if (plan.planVersion !== "portions-v1") return submissionErrors.version
+  if (!plan.sourceId || !plan.profileId || !plan.runId) return submissionErrors.manifest
   if (plan.status !== "ready" && plan.status !== "insufficient_capacity") return submissionErrors.state
+  if (plan.status === "insufficient_capacity") {
+    if (!(submissionPlanCapacityReasons as readonly string[]).includes(plan.capacity ?? ""))
+      return submissionErrors.state
+  } else if (plan.capacity) return submissionErrors.state
   const bytes = encoder.encode(original)
   const total = bytes.length
   if (plan.originalBytes !== total) return submissionErrors.manifest
@@ -297,7 +394,8 @@ export function submissionAggregateError(aggregate: SubmissionAggregate, plan: S
     return submissionErrors.manifest
   if (
     aggregate.coverage.discoveryComplete ||
-    (aggregate.coverage.capacity !== "within_limit" && aggregate.coverage.capacity !== "possibly_exhausted")
+    (aggregate.coverage.capacity !== submissionCapacityWithin &&
+      aggregate.coverage.capacity !== submissionCapacityExhausted)
   )
     return submissionErrors.coverage
   if (utf8Length(JSON.stringify(aggregate)) > submissionBudgets.contextBytes) return submissionErrors.capacity
@@ -313,6 +411,44 @@ export function submissionFocusError(focus: SubmissionFocus, aggregate: Submissi
   for (const id of focus.claimIds) {
     if (!id || seen.has(id) || !known.has(id)) return submissionErrors.focus
     seen.add(id)
+  }
+  return ""
+}
+
+export function submissionResultError(result: SubmissionResult): string {
+  if (result.protocolVersion !== submissionProtocolVersion) return submissionErrors.version
+  if (result.coverage.discoveryComplete) return submissionErrors.coverage
+  const ids = new Set<string>()
+  let validClaims = 0
+  let invalidClaims = 0
+  for (const batch of result.batches) {
+    for (const claim of batch.claims) {
+      if (!claim.id || ids.has(claim.id)) return submissionErrors.manifest
+      ids.add(claim.id)
+      validClaims++
+    }
+    invalidClaims += batch.skippedClaims.length
+  }
+  for (const focus of result.focus) {
+    const code = submissionFocusError(focus.focus, result.context)
+    if (code) return code
+    if (focus.operations.length > submissionBudgets.batchOperationCap) return submissionErrors.capacity
+  }
+  if (result.coverage.validClaims !== validClaims || result.coverage.invalidClaims !== invalidClaims)
+    return submissionErrors.manifest
+  return ""
+}
+
+export function submissionSessionError(session: SubmissionSession): string {
+  if (session.protocolVersion !== submissionProtocolVersion) return submissionErrors.version
+  const status = submissionStatusError(session.status)
+  if (status) return status
+  const units = new Set<string>()
+  for (const selection of session.selections) {
+    if (!selection.unitId || units.has(selection.unitId)) return submissionErrors.manifest
+    units.add(selection.unitId)
+    const selectionStatus = submissionSelectionError(selection.status)
+    if (selectionStatus) return selectionStatus
   }
   return ""
 }

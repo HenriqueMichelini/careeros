@@ -31,7 +31,8 @@
         "Start": 20,
         "End": 30
       }
-    ]
+    ],
+    "capacity": "indivisible_or_context_capacity"
   },
   "expect": {
     "ok": false,
