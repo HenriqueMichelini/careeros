@@ -1,0 +1,14 @@
+{
+  "name": "binding-value-change",
+  "check": "binding",
+  "left": {
+    "a": 1
+  },
+  "right": {
+    "a": 2
+  },
+  "expect": {
+    "ok": false,
+    "error": "stale"
+  }
+}

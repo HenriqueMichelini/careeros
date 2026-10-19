@@ -1,0 +1,8 @@
+{
+  "name": "status-saved",
+  "check": "status",
+  "status": "saved",
+  "expect": {
+    "ok": true
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "portion-min",
+  "check": "portion",
+  "bytes": 200,
+  "expect": {
+    "ok": true
+  }
+}

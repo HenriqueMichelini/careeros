@@ -1,0 +1,9 @@
+{
+  "name": "portion-below-min",
+  "check": "portion",
+  "bytes": 199,
+  "expect": {
+    "ok": false,
+    "error": "capacity"
+  }
+}

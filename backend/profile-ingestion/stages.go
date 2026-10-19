@@ -1,12 +1,9 @@
 package profileingestion
 
 import (
-	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/hex"
-	"encoding/json"
 	"strings"
 	"time"
 
@@ -61,12 +58,7 @@ func requestBinding(in request) string {
 	in.Stage, in.Receipt = nil, ""
 	// Canonicalize object keys (including RawMessage document keys), preserving
 	// numbers and array order. JSON property order is not Profile identity.
-	decoder := json.NewDecoder(bytes.NewReader(mustJSON(in)))
-	decoder.UseNumber()
-	var canonical any
-	_ = decoder.Decode(&canonical)
-	sum := sha256.Sum256(mustJSON(canonical))
-	return hex.EncodeToString(sum[:])
+	return canonicalBinding(in)
 }
 
 func receiptMAC(key, payload []byte) []byte {

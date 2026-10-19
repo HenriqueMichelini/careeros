@@ -1,0 +1,10 @@
+{
+  "name": "counts-at-limits",
+  "check": "counts",
+  "batches": 256,
+  "claims": 30,
+  "operations": 60,
+  "expect": {
+    "ok": true
+  }
+}

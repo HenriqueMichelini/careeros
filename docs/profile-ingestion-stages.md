@@ -17,6 +17,22 @@ and clarification requests independently validate the question/answer context.
 Normal staged ingestion therefore makes two Jev calls and two OpenAI calls.
 No request waits for both OpenAI stages.
 
+## Whole-submission amendment
+
+The v1 flow above remains a **bounded unit**: at most one extraction result. The
+whole-submission contract ([docs/submission-protocol.md](./submission-protocol.md),
+issue #182) layers versioned `plan`/`extract`/`assemble`/`reconcile` stages on the
+same route so one foreground action can run many bounded units sequentially.
+
+It **amends #178's former per-click attempt**: the 27-second handlers, 29-second
+browser requests and 65-second bounded-unit budgets are retained unchanged, and a
+new **absolute 300-second foreground submission cap** is added. The cap includes
+planning and all local work, finite manifest-based sequential dispatch, assembly
+and reconciliation, with first-failure stop. There is no completion-time
+guarantee, no rolling timeout reset per batch, no parallel provider fan-out and
+no automatic retry/replan/fallback. The v1 staged and legacy callers, including
+Apply enrichment, keep their existing behavior.
+
 ## Required server configuration
 
 Before deploying updated clients, configure `PROFILE_INGESTION_SIGNING_KEY` in

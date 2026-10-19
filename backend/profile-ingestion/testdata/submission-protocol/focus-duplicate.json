@@ -1,0 +1,101 @@
+{
+  "name": "focus-duplicate",
+  "check": "focus",
+  "manifest": {
+    "protocolVersion": "profile-submission-v1",
+    "sourceId": "src1",
+    "profileId": "prof1",
+    "runId": "run1",
+    "planVersion": "portions-v1",
+    "status": "ready",
+    "complete": true,
+    "originalBytes": 30,
+    "preparedBytes": 30,
+    "batches": [
+      {
+        "index": 0,
+        "primary": [
+          {
+            "Start": 0,
+            "End": 12
+          }
+        ],
+        "context": [],
+        "preparedBytes": 12,
+        "payloadBytes": 100
+      },
+      {
+        "index": 1,
+        "primary": [
+          {
+            "Start": 12,
+            "End": 30
+          }
+        ],
+        "context": [
+          {
+            "Start": 0,
+            "End": 4
+          }
+        ],
+        "preparedBytes": 18,
+        "payloadBytes": 100
+      }
+    ],
+    "remaining": []
+  },
+  "aggregate": {
+    "protocolVersion": "profile-submission-v1",
+    "sourceId": "src1",
+    "profileId": "prof1",
+    "runId": "run1",
+    "planVersion": "portions-v1",
+    "batches": [
+      {
+        "index": 0,
+        "primary": [
+          {
+            "Start": 0,
+            "End": 12
+          }
+        ],
+        "claimIds": [
+          "run1/0/c1"
+        ],
+        "claimCount": 1,
+        "skippedCount": 0
+      },
+      {
+        "index": 1,
+        "primary": [
+          {
+            "Start": 12,
+            "End": 30
+          }
+        ],
+        "claimIds": [
+          "run1/1/c1",
+          "run1/1/c2"
+        ],
+        "claimCount": 2,
+        "skippedCount": 0
+      }
+    ],
+    "coverage": {
+      "validClaims": 3,
+      "invalidClaims": 0,
+      "discoveryComplete": false,
+      "capacity": "within_limit"
+    }
+  },
+  "focus": {
+    "claimIds": [
+      "run1/1/c1",
+      "run1/1/c1"
+    ]
+  },
+  "expect": {
+    "ok": false,
+    "error": "focus_invalid"
+  }
+}

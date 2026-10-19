@@ -1,0 +1,11 @@
+{
+  "name": "stage-valid-plan",
+  "check": "stage",
+  "stage": {
+    "version": 2,
+    "kind": "plan"
+  },
+  "expect": {
+    "ok": true
+  }
+}

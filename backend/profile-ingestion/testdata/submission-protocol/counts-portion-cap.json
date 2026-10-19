@@ -1,0 +1,11 @@
+{
+  "name": "counts-portion-cap",
+  "check": "counts",
+  "batches": 257,
+  "claims": 0,
+  "operations": 0,
+  "expect": {
+    "ok": false,
+    "error": "capacity"
+  }
+}

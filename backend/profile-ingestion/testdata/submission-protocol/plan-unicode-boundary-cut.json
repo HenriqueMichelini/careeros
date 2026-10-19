@@ -1,0 +1,47 @@
+{
+  "name": "plan-unicode-boundary-cut",
+  "check": "manifest",
+  "original": "héllo",
+  "manifest": {
+    "protocolVersion": "profile-submission-v1",
+    "sourceId": "src1",
+    "profileId": "prof1",
+    "runId": "run1",
+    "planVersion": "portions-v1",
+    "status": "ready",
+    "complete": true,
+    "originalBytes": 6,
+    "preparedBytes": 6,
+    "batches": [
+      {
+        "index": 0,
+        "primary": [
+          {
+            "Start": 0,
+            "End": 2
+          }
+        ],
+        "context": [],
+        "preparedBytes": 2,
+        "payloadBytes": 40
+      },
+      {
+        "index": 1,
+        "primary": [
+          {
+            "Start": 2,
+            "End": 6
+          }
+        ],
+        "context": [],
+        "preparedBytes": 4,
+        "payloadBytes": 40
+      }
+    ],
+    "remaining": []
+  },
+  "expect": {
+    "ok": false,
+    "error": "unicode_boundary"
+  }
+}

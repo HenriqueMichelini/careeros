@@ -1,0 +1,125 @@
+{
+  "name": "aggregate-claim-over-cap",
+  "check": "aggregate",
+  "manifest": {
+    "protocolVersion": "profile-submission-v1",
+    "sourceId": "src1",
+    "profileId": "prof1",
+    "runId": "run1",
+    "planVersion": "portions-v1",
+    "status": "ready",
+    "complete": true,
+    "originalBytes": 30,
+    "preparedBytes": 30,
+    "batches": [
+      {
+        "index": 0,
+        "primary": [
+          {
+            "Start": 0,
+            "End": 12
+          }
+        ],
+        "context": [],
+        "preparedBytes": 12,
+        "payloadBytes": 100
+      },
+      {
+        "index": 1,
+        "primary": [
+          {
+            "Start": 12,
+            "End": 30
+          }
+        ],
+        "context": [
+          {
+            "Start": 0,
+            "End": 4
+          }
+        ],
+        "preparedBytes": 18,
+        "payloadBytes": 100
+      }
+    ],
+    "remaining": []
+  },
+  "aggregate": {
+    "protocolVersion": "profile-submission-v1",
+    "sourceId": "src1",
+    "profileId": "prof1",
+    "runId": "run1",
+    "planVersion": "portions-v1",
+    "batches": [
+      {
+        "index": 0,
+        "primary": [
+          {
+            "Start": 0,
+            "End": 12
+          }
+        ],
+        "claimIds": [
+          "run1/0/c1",
+          "run1/0/c2",
+          "run1/0/c3",
+          "run1/0/c4",
+          "run1/0/c5",
+          "run1/0/c6",
+          "run1/0/c7",
+          "run1/0/c8",
+          "run1/0/c9",
+          "run1/0/c10",
+          "run1/0/c11",
+          "run1/0/c12",
+          "run1/0/c13",
+          "run1/0/c14",
+          "run1/0/c15",
+          "run1/0/c16",
+          "run1/0/c17",
+          "run1/0/c18",
+          "run1/0/c19",
+          "run1/0/c20",
+          "run1/0/c21",
+          "run1/0/c22",
+          "run1/0/c23",
+          "run1/0/c24",
+          "run1/0/c25",
+          "run1/0/c26",
+          "run1/0/c27",
+          "run1/0/c28",
+          "run1/0/c29",
+          "run1/0/c30",
+          "run1/0/c31"
+        ],
+        "claimCount": 31,
+        "skippedCount": 0
+      },
+      {
+        "index": 1,
+        "primary": [
+          {
+            "Start": 12,
+            "End": 30
+          }
+        ],
+        "claimIds": [
+          "run1/1/c1",
+          "run1/1/c2"
+        ],
+        "claimCount": 2,
+        "skippedCount": 0
+      }
+    ],
+    "coverage": {
+      "validClaims": 3,
+      "invalidClaims": 0,
+      "discoveryComplete": false,
+      "capacity": "within_limit"
+    }
+  },
+  "expect": {
+    "ok": false,
+    "error": "capacity"
+  }
+}

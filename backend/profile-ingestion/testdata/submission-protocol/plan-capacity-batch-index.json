@@ -1,0 +1,35 @@
+{
+  "name": "plan-capacity-batch-index",
+  "check": "manifest",
+  "original": "abcdefghij",
+  "manifest": {
+    "protocolVersion": "profile-submission-v1",
+    "sourceId": "src1",
+    "profileId": "prof1",
+    "runId": "run1",
+    "planVersion": "portions-v1",
+    "status": "ready",
+    "complete": true,
+    "originalBytes": 10,
+    "preparedBytes": 10,
+    "batches": [
+      {
+        "index": 1,
+        "primary": [
+          {
+            "Start": 0,
+            "End": 10
+          }
+        ],
+        "context": [],
+        "preparedBytes": 10,
+        "payloadBytes": 100
+      }
+    ],
+    "remaining": []
+  },
+  "expect": {
+    "ok": false,
+    "error": "manifest_incomplete"
+  }
+}

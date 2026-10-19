@@ -1,0 +1,8 @@
+{
+  "name": "status-paused",
+  "check": "status",
+  "status": "paused",
+  "expect": {
+    "ok": true
+  }
+}
