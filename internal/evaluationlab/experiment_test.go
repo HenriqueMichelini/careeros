@@ -293,6 +293,104 @@ func TestExperimentRejectsKnownDriftAlongsideMissingMetadata(t *testing.T) {
 	}
 }
 
+func TestExperimentRejectsDuplicateCohortWithMissingFixtureMetadata(t *testing.T) {
+	def, err := lab.FreezeExperiment(experimentDefinition())
+	if err != nil {
+		t.Fatal(err)
+	}
+	left, right := experimentEvidence(def, 0), experimentEvidence(def, 1)
+	duplicate := right.Cases[0]
+	duplicate.OriginalFixtureHash = ""
+	right.Cases = append(right.Cases, duplicate)
+	result := lab.CheckExperiment(def, left, right)
+	duplicateFound, missingFound := false, false
+	for _, reason := range result.Reasons {
+		duplicateFound = duplicateFound || (reason.Code == "case_mismatch" && strings.Contains(reason.Detail, "duplicate"))
+		missingFound = missingFound || (reason.Code == "metadata_missing" && reason.Field == "right.cases.originalFixture.hash")
+	}
+	if result.Status != "invalid" || !duplicateFound || !missingFound {
+		t.Fatalf("known duplicate or missing fixture metadata hidden: %+v", result)
+	}
+}
+
+func TestExperimentRejectsUnexpectedCaseWithMissingInputMetadata(t *testing.T) {
+	def, err := lab.FreezeExperiment(experimentDefinition())
+	if err != nil {
+		t.Fatal(err)
+	}
+	left, right := experimentEvidence(def, 0), experimentEvidence(def, 1)
+	right.Cases[0].CaseID = "unexpected-case"
+	right.Cases[0].InputHash = ""
+	result := lab.CheckExperiment(def, left, right)
+	cohortFound, missingFound := false, false
+	for _, reason := range result.Reasons {
+		cohortFound = cohortFound || (reason.Code == "case_mismatch" && reason.Field == "right.cases")
+		missingFound = missingFound || (reason.Code == "metadata_missing" && reason.Field == "right.cases.input.hash")
+	}
+	if result.Status != "invalid" || !cohortFound || !missingFound {
+		t.Fatalf("known unexpected case or missing input metadata hidden: %+v", result)
+	}
+}
+
+func TestExperimentRejectsChangedCohortSizeWithMissingMetadata(t *testing.T) {
+	source := experimentDefinition()
+	second := source.Cases[0]
+	second.CaseID = "second-case"
+	source.Cases = append(source.Cases, second)
+	def, err := lab.FreezeExperiment(source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	left, right := experimentEvidence(def, 0), experimentEvidence(def, 1)
+	right.Cases = right.Cases[:1]
+	right.Cases[0].OriginalFixtureHash = ""
+	result := lab.CheckExperiment(def, left, right)
+	cohortFound, missingFound := false, false
+	for _, reason := range result.Reasons {
+		cohortFound = cohortFound || (reason.Code == "case_mismatch" && reason.Field == "right.cases")
+		missingFound = missingFound || (reason.Code == "metadata_missing" && reason.Field == "right.cases.originalFixture.hash")
+	}
+	if result.Status != "invalid" || !cohortFound || !missingFound {
+		t.Fatalf("known cohort size change or missing metadata hidden: %+v", result)
+	}
+}
+
+func TestExperimentIncompleteCohortWithoutKnownMismatchStaysUnavailable(t *testing.T) {
+	def, err := lab.FreezeExperiment(experimentDefinition())
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		name string
+		edit func(*lab.ExperimentEvidence)
+	}{
+		{"fixture identity", func(e *lab.ExperimentEvidence) { e.Cases[0].OriginalFixtureHash = "" }},
+		{"input identity", func(e *lab.ExperimentEvidence) { e.Cases[0].InputHash = "" }},
+		{"partial pairing identity", func(e *lab.ExperimentEvidence) {
+			e.Cases[0].CaseID = ""
+			e.Cases[0].InputHash = ""
+			e.Cases[0].RepeatOrdinal = 0
+		}},
+		{"unknown case", func(e *lab.ExperimentEvidence) { e.Cases[0] = lab.TaskCaseRef{} }},
+		{"absent cohort", func(e *lab.ExperimentEvidence) { e.Cases = nil }},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			left, right := experimentEvidence(def, 0), experimentEvidence(def, 1)
+			test.edit(&right)
+			result := lab.CheckExperiment(def, left, right)
+			if result.Status != "unavailable" || len(result.Reasons) == 0 {
+				t.Fatalf("incomplete evidence became equality or known invalidity: %+v", result)
+			}
+			for _, reason := range result.Reasons {
+				if reason.Code != "metadata_missing" {
+					t.Fatalf("unknown identity treated as known mismatch: %+v", result)
+				}
+			}
+		})
+	}
+}
+
 func TestExperimentPreservesStrictComparatorAndRejectsUnsupportedPolicy(t *testing.T) {
 	strict := lab.ComparisonContract{FixtureHash: "f", LabelHash: "l", SourceVersion: "s", PromptVersion: "p", SchemaVersion: "j", ScorerVersion: "e", StrategyVersion: "t", BudgetVersion: "b", RuntimeVersion: "r", Mode: "controlled", Configuration: "current"}
 	changed := strict

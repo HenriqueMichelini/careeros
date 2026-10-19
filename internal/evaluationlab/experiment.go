@@ -445,20 +445,45 @@ func sortedExperimentKeys[T any](values map[string]T) []string {
 	return keys
 }
 
-// Missing input/labels do not hide a known mismatch in the other fields. Match
-// only the available declared case/repetition scope before checking those values.
+// Missing metadata does not hide known cohort changes. Unknown identity fields
+// can match a frozen case, but never establish a duplicate or an unpaired case.
 func compareKnownExperimentCases(result *ExperimentCompatibility, prefix string, expected, actual []TaskCaseRef) {
+	if len(actual) != 0 && len(actual) != len(expected) {
+		result.add("invalid", "case_mismatch", prefix, "matching task cohort sizes required")
+	}
 	index := map[taskPairKey]TaskCaseRef{}
 	for _, ref := range expected {
 		key := taskKey(ref)
 		key.InputHash = ""
 		index[key] = ref
 	}
+	seen := map[taskPairKey]bool{}
 	for _, ref := range actual {
 		key := taskKey(ref)
+		if key.TaskVersion != "" && key.CaseID != "" && key.InputHash != "" && key.Language != "" && key.RepeatOrdinal != 0 {
+			if seen[key] {
+				result.add("invalid", "case_mismatch", prefix, "duplicate task/repetition key")
+			}
+			seen[key] = true
+		}
 		key.InputHash = ""
 		if match, ok := index[key]; ok {
 			compareExperimentFields(result, prefix, "case_mismatch", caseFields(match), caseFields(ref))
+		} else {
+			possibleMatch := false
+			for _, candidate := range expected {
+				if (strings.TrimSpace(ref.TaskVersion) == "" || ref.TaskVersion == candidate.TaskVersion) &&
+					(strings.TrimSpace(ref.CaseID) == "" || ref.CaseID == candidate.CaseID) &&
+					(strings.TrimSpace(ref.InputHash) == "" || ref.InputHash == candidate.InputHash) &&
+					(strings.TrimSpace(ref.Language) == "" || ref.Language == candidate.Language) &&
+					(ref.RepeatOrdinal == 0 || ref.RepeatOrdinal == candidate.RepeatOrdinal) {
+					possibleMatch = true
+					break
+				}
+			}
+			if !possibleMatch {
+				result.add("invalid", "case_mismatch", prefix, "unpaired shared task input or repetition")
+			}
 		}
 	}
 }
