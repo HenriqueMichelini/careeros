@@ -2,6 +2,7 @@ import {
   previewIngestion,
   beforeValue,
   IngestionError,
+  validateIngestionAggregate,
   validateIngestionResult,
   type IngestionOperation,
   type IngestionResult,
@@ -17,11 +18,17 @@ import {
 
 // Pointers establish traceability, never semantic truth. Only explicit apply
 // enters this transaction; pending claims and the complete paste are transient.
+//
+// `options.aggregate` selects the #189 submission-level validator: the selection
+// legitimately spans many bounded results, so the flat 30/60 count caps relax
+// while every per-record, evidence and provenance rule stays exact. The default
+// single-result path is unchanged.
 export function applyIngestionDocument(
   doc: ProfileDocument,
   snapshot: ProfileDocument,
   input: string,
   result: IngestionResult,
+  options: { aggregate?: boolean } = {},
 ): ProfileDocument {
   if (
     !validateProfileDocument(doc) ||
@@ -29,7 +36,10 @@ export function applyIngestionDocument(
   )
     throw new IngestionError("stale")
   const view = profileView(doc)
-  validateIngestionResult(
+  const validate = options.aggregate
+    ? validateIngestionAggregate
+    : validateIngestionResult
+  validate(
     {
       ...result,
       operations: result.operations.map(
