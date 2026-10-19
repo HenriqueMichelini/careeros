@@ -102,14 +102,33 @@ func ExtractTaskSidecar(suiteID string, raw []byte, caseID string) (TaskSidecar,
 		}
 	}
 	var metadata struct {
-		Task     string  `json:"task"`
-		Language string  `json:"language"`
-		Split    string  `json:"split"`
-		SourceID *string `json:"sourceId"`
+		Task             string    `json:"task"`
+		Language         string    `json:"language"`
+		Split            string    `json:"split"`
+		SourceID         *string   `json:"sourceId"`
+		Role             *string   `json:"role"`
+		Notes            *string   `json:"notes"`
+		Tags             []*string `json:"tags"`
+		Forbidden        []*string `json:"forbidden"`
+		Entities         []*string `json:"entities"`
+		ExpectedFailures []*string `json:"expectedFailures"`
+		ProviderStatuses []*int    `json:"providerStatuses"`
 	}
 	encoded, _ := json.Marshal(selected)
 	if err := json.Unmarshal(encoded, &metadata); err != nil {
 		return TaskSidecar{}, err
+	}
+	for _, values := range [][]*string{metadata.Tags, metadata.Forbidden, metadata.Entities, metadata.ExpectedFailures} {
+		for _, value := range values {
+			if value == nil {
+				return TaskSidecar{}, fmt.Errorf("task string-array members must be strings")
+			}
+		}
+	}
+	for _, status := range metadata.ProviderStatuses {
+		if status == nil {
+			return TaskSidecar{}, fmt.Errorf("task provider status members must be integers")
+		}
 	}
 	if metadata.Task != "profile_ingestion" {
 		return TaskSidecar{}, fmt.Errorf("unsupported task sidecar workflow")
@@ -126,9 +145,25 @@ func ExtractTaskSidecar(suiteID string, raw []byte, caseID string) (TaskSidecar,
 	if json.Unmarshal(request["input"], &original) != nil || bytes.Equal(request["input"], []byte("null")) || json.Unmarshal(request["profile"], &profile) != nil || profile == nil {
 		return TaskSidecar{}, fmt.Errorf("original text and initial Profile required")
 	}
-	var gold []map[string]json.RawMessage
+	var gold []struct {
+		ID       string             `json:"id"`
+		Group    string             `json:"group"`
+		Match    map[string]*string `json:"match"`
+		Optional *bool              `json:"optional"`
+		Source   *string            `json:"source"`
+	}
 	if json.Unmarshal(selected["gold"], &gold) != nil || len(gold) == 0 {
 		return TaskSidecar{}, fmt.Errorf("independent gold array required")
+	}
+	for _, atom := range gold {
+		if atom.ID == "" || atom.Group == "" || len(atom.Match) == 0 {
+			return TaskSidecar{}, fmt.Errorf("gold atom ID, group and match required")
+		}
+		for _, pattern := range atom.Match {
+			if pattern == nil {
+				return TaskSidecar{}, fmt.Errorf("gold match members must be strings")
+			}
+		}
 	}
 	for _, field := range []string{"provider", "providerEnvelopes", "providerStatuses", "forbidden", "entities", "expectedFailures"} {
 		if value, ok := selected[field]; ok {

@@ -128,6 +128,114 @@ func TestTaskSidecarRejectsAmbiguousFixtureShapes(t *testing.T) {
 	}
 }
 
+func TestTaskSidecarRejectsMalformedGoldAtoms(t *testing.T) {
+	raw := taskFixture(t)
+	for _, test := range []struct {
+		name string
+		atom any
+	}{
+		{"null atom", nil},
+		{"empty atom", map[string]any{}},
+		{"missing id", map[string]any{"group": "claims", "match": map[string]any{"text": "Java"}}},
+		{"null id", map[string]any{"id": nil, "group": "claims", "match": map[string]any{"text": "Java"}}},
+		{"missing group", map[string]any{"id": "java", "match": map[string]any{"text": "Java"}}},
+		{"empty group", map[string]any{"id": "java", "group": "", "match": map[string]any{"text": "Java"}}},
+		{"missing match", map[string]any{"id": "java", "group": "claims"}},
+		{"empty match", map[string]any{"id": "java", "group": "claims", "match": map[string]any{}}},
+		{"null match", map[string]any{"id": "java", "group": "claims", "match": nil}},
+		{"non-string match", map[string]any{"id": "java", "group": "claims", "match": map[string]any{"text": 1}}},
+		{"null match member", map[string]any{"id": "java", "group": "claims", "match": map[string]any{"text": nil}}},
+		{"non-boolean optional", map[string]any{"id": "java", "group": "claims", "match": map[string]any{"text": "Java"}, "optional": "yes"}},
+		{"non-string source", map[string]any{"id": "java", "group": "claims", "match": map[string]any{"text": "Java"}, "source": map[string]any{"bad": "shape"}}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			candidate := mutateTaskFixture(t, raw, func(c map[string]any) { c["gold"] = []any{test.atom} })
+			if _, err := lab.ExtractTaskSidecar("semantic-quality", candidate, "en-fact"); err == nil {
+				t.Fatal("malformed gold atom received a canonical expectation identity")
+			}
+		})
+	}
+}
+
+func TestTaskSidecarRejectsMalformedTypedFixtureMembers(t *testing.T) {
+	raw := taskFixture(t)
+	for _, test := range []struct {
+		field string
+		value any
+	}{
+		{"role", map[string]any{"bad": "shape"}},
+		{"notes", []any{"not a scalar"}},
+		{"tags", []any{1}},
+		{"forbidden", []any{map[string]any{"bad": "shape"}}},
+		{"entities", []any{false}},
+		{"expectedFailures", []any{[]any{"nested"}}},
+		{"providerStatuses", []any{"200"}},
+		{"providerStatuses", []any{200.5}},
+	} {
+		t.Run(test.field, func(t *testing.T) {
+			candidate := mutateTaskFixture(t, raw, func(c map[string]any) { c[test.field] = test.value })
+			if _, err := lab.ExtractTaskSidecar("semantic-quality", candidate, "en-fact"); err == nil {
+				t.Fatal("malformed typed fixture member received a canonical identity")
+			}
+		})
+	}
+	for _, field := range []string{"tags", "forbidden", "entities", "expectedFailures", "providerStatuses"} {
+		t.Run(field+" null member", func(t *testing.T) {
+			candidate := mutateTaskFixture(t, raw, func(c map[string]any) { c[field] = []any{nil} })
+			if _, err := lab.ExtractTaskSidecar("semantic-quality", candidate, "en-fact"); err == nil {
+				t.Fatal("null array member received a canonical identity")
+			}
+		})
+	}
+}
+
+func TestTaskSidecarPreservesRegisteredFixturesAndOptionalNulls(t *testing.T) {
+	raw := taskFixture(t)
+	var corpus struct {
+		Cases []struct{ ID, Task string }
+	}
+	if err := json.Unmarshal(raw, &corpus); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range corpus.Cases {
+		if c.Task != "profile_ingestion" {
+			continue
+		}
+		t.Run(c.ID, func(t *testing.T) {
+			sidecar, err := lab.ExtractTaskSidecar("semantic-quality", raw, c.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if sidecar.SourceAdmission != "approved-synthetic" || !bytes.Equal(sidecar.OriginalFixture.Original, raw) {
+				t.Fatal("registered fixture provenance or original bytes changed")
+			}
+		})
+	}
+	for _, field := range []string{"role", "labelRevision", "boundaryInvariants", "document", "revision", "userAnswers"} {
+		t.Run(field+" absent versus null", func(t *testing.T) {
+			absent, err := lab.ExtractTaskSidecar("semantic-quality", mutateTaskFixture(t, raw, func(c map[string]any) { delete(c, field) }), "en-fact")
+			if err != nil {
+				t.Fatal(err)
+			}
+			null, err := lab.ExtractTaskSidecar("semantic-quality", mutateTaskFixture(t, raw, func(c map[string]any) { c[field] = nil }), "en-fact")
+			if err != nil {
+				t.Fatal(err)
+			}
+			inputField := field == "document" || field == "revision" || field == "userAnswers"
+			if (absent.Ref.InputHash != null.Ref.InputHash) != inputField || (absent.Ref.ExpectationHash != null.Ref.ExpectationHash) == inputField || absent.ScriptHash != null.ScriptHash {
+				t.Fatal("optional null was lost or changed an independent identity")
+			}
+		})
+	}
+	optionalAtomNulls := mutateTaskFixture(t, raw, func(c map[string]any) {
+		atom := c["gold"].([]any)[0].(map[string]any)
+		atom["optional"], atom["source"] = nil, nil
+	})
+	if _, err := lab.ExtractTaskSidecar("semantic-quality", optionalAtomNulls, "en-fact"); err != nil {
+		t.Fatalf("optional atom nulls rejected: %v", err)
+	}
+}
+
 func TestTaskSidecarCanonicalIdentityPreservesValuesAndOriginalBytes(t *testing.T) {
 	raw := taskFixture(t)
 	baseline, err := lab.ExtractTaskSidecar("semantic-quality", raw, "en-fact")
