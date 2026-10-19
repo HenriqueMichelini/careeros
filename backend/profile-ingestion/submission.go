@@ -278,6 +278,16 @@ func submissionManifest(source preprocessing.Source, profileID, documentID strin
 			PayloadBytes:  portion.PayloadBytes,
 		})
 	}
+	// The preprocessing planner reports `ready` only for a complete single view;
+	// a complete multi-portion plan carries `insufficient_capacity` with a valid
+	// reason. The submission contract treats `status != ready` as an explicitly
+	// partial plan (manifest invariant 8), so derive status/capacity from
+	// mechanical completeness instead of the single-view status.
+	complete := planned.Complete && len(planned.Unprocessed) == 0
+	status, capacity := string(preprocessing.InsufficientCapacity), string(planned.Reason)
+	if complete {
+		status, capacity = string(preprocessing.Ready), ""
+	}
 	manifest := SubmissionPlan{
 		ProtocolVersion: SubmissionProtocolVersion,
 		SourceID:        source.ID(),
@@ -285,9 +295,9 @@ func submissionManifest(source preprocessing.Source, profileID, documentID strin
 		DocumentID:      documentID,
 		RunID:           submissionRunID(profileID),
 		PlanVersion:     preprocessing.PlanningVersion,
-		Status:          string(planned.Status),
-		Complete:        planned.Complete,
-		Capacity:        string(planned.Reason),
+		Status:          status,
+		Complete:        complete,
+		Capacity:        capacity,
 		OriginalBytes:   len(source.Original()),
 		PreparedBytes:   planned.PreparedBytes,
 		Batches:         batches,

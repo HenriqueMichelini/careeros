@@ -91,10 +91,9 @@ func (a app) submissionAssemble(ctx context.Context, w http.ResponseWriter, in r
 		return
 	}
 	// Assembly requires a complete plan: a gap would mean a silently selected
-	// subset of the submission. The planner reports a complete multi-portion plan
-	// as `insufficient_capacity` (only a complete single view is `ready`) with an
-	// empty `remaining`, so completeness is `Complete`/`remaining`, not the
-	// status string.
+	// subset of the submission. `submissionManifest` reports a complete plan as
+	// `ready` with empty `remaining`/`capacity`, so this completeness check
+	// coincides with `status == ready`.
 	if !plan.Complete || len(plan.Remaining) != 0 {
 		fail(400, SubmissionErrManifest)
 		return
