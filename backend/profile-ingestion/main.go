@@ -26,14 +26,19 @@ const maxBody = 160 << 10
 const timeout = 24 * time.Second
 
 type request struct {
-	Stage         *stageRequest             `json:"stage,omitempty"`
-	Receipt       string                    `json:"receipt,omitempty"`
-	ApplyAnswer   *applyAnswerRequest       `json:"applyAnswer,omitempty"`
-	Clarification *clarificationRequest     `json:"clarification,omitempty"`
-	Portion       *portionRequest           `json:"portion,omitempty"`
-	Document      json.RawMessage           `json:"document,omitempty"`
-	Input         string                    `json:"input"`
-	Profile       profilevalidation.Profile `json:"profile"`
+	Stage          *stageRequest             `json:"stage,omitempty"`
+	Receipt        string                    `json:"receipt,omitempty"`
+	ApplyAnswer    *applyAnswerRequest       `json:"applyAnswer,omitempty"`
+	Clarification  *clarificationRequest     `json:"clarification,omitempty"`
+	Portion        *portionRequest           `json:"portion,omitempty"`
+	Document       json.RawMessage           `json:"document,omitempty"`
+	PlanReceipt    string                    `json:"planReceipt,omitempty"`
+	BatchIndex     *int                      `json:"batchIndex,omitempty"`
+	BatchReceipts  []string                  `json:"batchReceipts,omitempty"`
+	ContextReceipt string                    `json:"contextReceipt,omitempty"`
+	Focus          *SubmissionFocus          `json:"focus,omitempty"`
+	Input          string                    `json:"input"`
+	Profile        profilevalidation.Profile `json:"profile"`
 }
 type meaning struct {
 	Assertion string `json:"assertion"`
@@ -137,9 +142,7 @@ func (a app) ingest(w http.ResponseWriter, r *http.Request) {
 	fail := func(s int, c string) {
 		status = s
 		outcome = c
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(s)
-		_ = json.NewEncoder(w).Encode(map[string]string{"error": c})
+		writeStageError(w, s, c)
 	}
 	key := strings.TrimSpace(r.Header.Get("X-OpenAI-Api-Key"))
 	if !strings.HasPrefix(key, "sk-") || strings.HasPrefix(key, "sk-ant-") || len(key) > 512 {
@@ -158,7 +161,7 @@ func (a app) ingest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var shape map[string]json.RawMessage
-	if json.Unmarshal(raw, &shape) != nil || (len(shape) < 2 || len(shape) > 8) || shape["input"] == nil || shape["profile"] == nil {
+	if json.Unmarshal(raw, &shape) != nil || (len(shape) < 2 || len(shape) > 13) || shape["input"] == nil || shape["profile"] == nil {
 		fail(400, "input")
 		return
 	}
@@ -171,6 +174,13 @@ func (a app) ingest(w http.ResponseWriter, r *http.Request) {
 	}
 	if !validStage(in) || (in.Stage == nil || in.Stage.Kind != "reconcile") && len(raw) > maxBody {
 		fail(400, "input")
+		return
+	}
+	// Version-2 submission stages are dispatched before the retained v1/legacy
+	// setup so their provider-free planning and pre-dispatch verification run on
+	// the same 27-second handler budget without altering earlier behavior.
+	if in.Stage != nil && in.Stage.Version == SubmissionStageVersion {
+		a.submission(ctx, w, r, in, raw, key, &status, &outcome)
 		return
 	}
 	// Legacy clients retain their existing total request budget.
@@ -332,6 +342,13 @@ func codeStatus(c string) int {
 	default:
 		return 502
 	}
+}
+
+// writeStageError emits the shared {"error":"<code>"} body with no-store already set.
+func writeStageError(w http.ResponseWriter, status int, code string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(map[string]string{"error": code})
 }
 func objectSchema(properties map[string]any, required ...string) map[string]any {
 	return map[string]any{"type": "object", "properties": properties, "required": required, "additionalProperties": false}

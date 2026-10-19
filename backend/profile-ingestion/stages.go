@@ -41,6 +41,10 @@ func validStage(in request) bool {
 	if in.Stage == nil {
 		return in.Receipt == ""
 	}
+	if in.Stage.Version == SubmissionStageVersion {
+		// Submission stages carry a signed handoff, never the v1 receipt.
+		return in.Receipt == ""
+	}
 	if in.Stage.Version != 1 {
 		return false
 	}
