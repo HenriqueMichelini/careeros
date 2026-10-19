@@ -3,13 +3,9 @@ package profileingestion
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
-	"strings"
-	"time"
 
 	"professional-information-repo/internal/aidiagnostics"
-	"professional-information-repo/internal/fieldvalidation"
 	"professional-information-repo/internal/preprocessing"
 	"professional-information-repo/internal/profiledocument"
 )
@@ -58,16 +54,8 @@ func (a app) submissionReconcile(ctx context.Context, w http.ResponseWriter, r *
 		return
 	}
 	var receipt submissionContextReceiptPayload
-	if code := a.openSubmission(submissionContextDomain, in.ContextReceipt, &receipt); code != "" {
-		fail(SubmissionErrorStatus(code), code)
-		return
-	}
-	if receipt.Version != submissionReceiptVersion || receipt.Binding != submissionRequestBinding(in) {
-		fail(400, SubmissionErrReceipt)
-		return
-	}
-	if receipt.ExpiresAt <= time.Now().UnixMilli() {
-		fail(400, SubmissionErrReceiptExpired)
+	if httpStatus, code := a.openVerifiedReceipt(submissionContextDomain, in.ContextReceipt, in, &receipt); code != "" {
+		fail(httpStatus, code)
 		return
 	}
 	// Reconstruct the plan/source/Profile/document/aggregate identity from the
@@ -96,15 +84,7 @@ func (a app) submissionReconcile(ctx context.Context, w http.ResponseWriter, r *
 	}
 	// Whole-original Jev classification is mandatory on every protected
 	// reconciliation request, exactly as for a bounded extraction.
-	decision := fieldvalidation.Classify(ctx, a.client, r.Header.Get("X-TypeSafe-Api-Key"), fieldvalidation.ProfessionalInformation, in.Input)
-	if decision.Outcome.Kind != "accept" {
-		*outcome = decision.Outcome.Kind
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		if decision.Outcome.Kind == "service_failure" {
-			*status = codeStatus(decision.Outcome.Reason)
-			w.WriteHeader(*status)
-		}
-		_ = json.NewEncoder(w).Encode(map[string]any{"decision": decision})
+	if !a.submissionDecision(ctx, w, r, in, status, outcome) {
 		return
 	}
 	ledger := &reconciliationContext{document: document, skipped: []skippedClaim{}, provisional: provisional}
@@ -140,40 +120,9 @@ func (a app) submissionReconcile(ctx context.Context, w http.ResponseWriter, r *
 	for _, c := range universe {
 		byID[c.ID] = c
 	}
-	seen := map[string]bool{}
-	invalidClaims := map[string]bool{}
-	invalidGroups := map[string]bool{}
-	valid := make([]operation, 0, len(out.Operations))
-	for i := range out.Operations {
-		op := &out.Operations[i]
-		c, ok := byFocus[op.ClaimID]
-		// A dangling claim id or an out-of-focus (context-only) claim id can never
-		// own an operation; the affected focus claim stays unresolved.
-		reason := operationRejectionReason(op, c, ok, byID, in.Profile, seen)
-		if reason == "" && op.EntryID != "" {
-			for _, id := range op.SupportingClaimIDs {
-				for _, other := range out.Operations {
-					if other.ClaimID == id && other.Target == op.Target && other.EntryID != op.EntryID {
-						reason = "support_scope"
-					}
-				}
-			}
-		}
-		if reason == "duplicate_operation" {
-			continue
-		}
-		if reason != "" {
-			log.Printf("profile_ingestion stage=reconcile reason=%s", reason)
-			if strings.HasPrefix(op.EntryID, "new:") {
-				invalidGroups[op.Target+"/"+op.EntryID] = true
-			}
-			if ok {
-				invalidClaims[op.ClaimID] = true
-			}
-			continue
-		}
-		valid = append(valid, *op)
-	}
+	// A dangling claim id or an out-of-focus (context-only) claim id can never
+	// own an operation; the affected focus claim stays unresolved.
+	valid, invalidClaims, invalidGroups, _ := validatedOperations(&out, byFocus, byID, in.Profile, map[string]bool{}, "reconcile")
 	filtered, unresolved := filterUnsafeNewGroups(valid, out.Operations, focusClaims, invalidClaims, invalidGroups, provisional)
 	ledger.rejected = map[string]bool{}
 	for _, id := range unresolved {
