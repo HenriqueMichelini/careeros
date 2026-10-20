@@ -64,8 +64,11 @@ import type { ProfileDocument } from "./profileDocument"
 import type { ProfessionalRepository } from "./types"
 import {
   buildReviewPlan,
+  clearReviewSelection,
   editReviewUnit,
   reviewSelectionError,
+  selectReviewAdditions,
+  selectReviewGroup,
   selectReviewUnit,
   toSubmissionSelections,
   transferReviewState,
@@ -1118,6 +1121,33 @@ export class SubmissionController {
     this.state.selectionRevision += 1
   }
 
+  // selectGroup/selectAdditions/clearSelection are the presenter's bulk
+  // selection seams. Like selectUnit they operate only on the retained review,
+  // retain edits, and bump selectionRevision so a delayed save is rejected.
+  selectGroup(
+    destinationId: string,
+    status: "selected" | "pending",
+  ): void {
+    const plan = this.getReviewPlan()
+    if (!plan) throw new IngestionError(submissionErrors.state)
+    this.reviewPlan = selectReviewGroup(plan, destinationId, status)
+    this.state.selectionRevision += 1
+  }
+
+  selectAdditions(): void {
+    const plan = this.getReviewPlan()
+    if (!plan) throw new IngestionError(submissionErrors.state)
+    this.reviewPlan = selectReviewAdditions(plan)
+    this.state.selectionRevision += 1
+  }
+
+  clearSelection(): void {
+    const plan = this.getReviewPlan()
+    if (!plan) throw new IngestionError(submissionErrors.state)
+    this.reviewPlan = clearReviewSelection(plan)
+    this.state.selectionRevision += 1
+  }
+
   // editUnit retains reviewed wording in memory across remount and focused
   // clarification. It never approves or saves; the machine proposal stays
   // available for provenance.
@@ -1278,6 +1308,23 @@ export class SubmissionController {
       if (this.clarificationAttempt?.token === token)
         this.clarificationAttempt = null
     }
+  }
+
+  // completeSave records a durable submission save without discarding the
+  // in-memory plan immediately. The caller must only invoke it after the
+  // canonical transaction acknowledged the exact pinned snapshot. It clears the
+  // submitted draft so a remount/beforeunload check no longer reports work that
+  // is already safe in the Profile.
+  completeSave(): void {
+    if (this.state.status !== "reviewing" || !this.state.applicable)
+      throw new IngestionError(submissionErrors.state)
+    this.cancelClarification()
+    this.state.status = "saved"
+    this.state.input = ""
+    this.state.error = ""
+    this.state.reason = ""
+    this.state.applicable = false
+    this.state.selectionRevision += 1
   }
 
   // cancelClarification aborts only the focused answer and returns to the same

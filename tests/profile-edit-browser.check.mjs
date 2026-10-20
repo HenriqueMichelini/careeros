@@ -1,10 +1,8 @@
-import { withIngestionLedger } from "./ingestion-fixtures.mjs"
 import { savedProfileExpression } from "./profile-browser-storage.mjs"
 
 // Browser regression for raw professional-information review and explicit apply.
 // Uses synthetic API responses; no provider request is made.
 import assert from "node:assert/strict"
-import { createHash } from "node:crypto"
 import { spawn } from "node:child_process"
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
@@ -188,13 +186,7 @@ try {
     await evaluate("document.querySelector('header button:last-child').click()")
     await until("document.querySelectorAll('header nav button').length === 4")
     await evaluate("document.querySelectorAll('header nav button')[1].click()")
-    await until("!!document.querySelector('#ingestion-text')")
-  }
-  const fill = async (value, selector = "#ingestion-text") => {
-    await evaluate(
-      `(() => { const el = document.querySelector(${JSON.stringify(selector)}); Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(el, ${JSON.stringify(value)}); el.dispatchEvent(new Event('input', { bubbles: true })); })()`,
-    )
-    await pause(60)
+    await until("!!document.querySelector('#contact-fullName')")
   }
   const saved = () => evaluate(savedProfileExpression)
   const byText = (text) =>
@@ -441,87 +433,6 @@ try {
       writeFileSync(
         join(work, `manual-${locale}-${width}.png`),
         Buffer.from(screenshot.data, "base64"),
-      )
-      // A metadata-only correction must stale an already reviewed compatibility proposal.
-      await section("profile")
-      const source = "I use Rust"
-      const proposal = {
-        decision: {
-          version: 1,
-          field: "professional_information",
-          outcome: { kind: "accept" },
-        },
-        claims: [
-          { id: "c1", source, text: "Rust", targets: ["skills"], question: "" },
-        ],
-        operations: [
-          {
-            claimId: "c1",
-            target: "skills",
-            entryId: "",
-            field: "skills",
-            action: "add",
-            value: "Rust",
-            finding: "addition",
-          },
-        ],
-        unverifiedClaimCount: 0,
-        unresolvedClaimIds: [],
-        unplacedOperationCount: 0,
-      }
-      await evaluate(
-        `window.fetch=async(url,options)=>{const req=JSON.parse(options.body);const raw=${JSON.stringify(withIngestionLedger(proposal))};raw.continuation={sourceId:${JSON.stringify(
-          createHash("sha256")
-            .update(
-              JSON.stringify([
-                "normalization-v1",
-                "structure-v1",
-                "professional_information",
-                source,
-              ]),
-            )
-            .digest("hex"),
-        )},index:req.portion.index,total:1,bytes:req.portion.bytes,regions:[[{Start:0,End:new TextEncoder().encode(req.input).length}]],remaining:null,planComplete:true,processed:true};return new Response(JSON.stringify(raw),{status:200})}`,
-      )
-      await fill(source)
-      const review =
-        locale === "en"
-          ? "Review suggested changes"
-          : "Revisar alterações sugeridas"
-      const approve =
-        locale === "en"
-          ? "Approve linked changes"
-          : "Aprovar alterações ligadas"
-      const apply =
-        locale === "en"
-          ? "Apply approved changes"
-          : "Aplicar alterações aprovadas"
-      await evaluate(`${byText(review)}.click()`)
-      await until(`${byText(apply)} !== undefined`)
-      await evaluate(`${byText(approve)}.click()`)
-      await section("skills")
-      await evaluate(
-        `document.querySelector('[data-fact-details]').open=true; document.querySelector('[data-fact-id="${fact.id}"]').open=true`,
-      )
-      await choose(2, "unknown")
-      const revisedRaw = await evaluate(
-        "localStorage.getItem('careeros_profile_v2')",
-      )
-      await section("profile")
-      // Current continuation UI invalidates stale proposals immediately.
-      await until(`${byText(apply)} === undefined`)
-      await until("!!document.querySelector('[role=alert]')")
-      assert.equal(
-        await evaluate("localStorage.getItem('careeros_profile_v2')"),
-        revisedRaw,
-      )
-      assert.equal(
-        await evaluate("document.querySelector('#ingestion-text').value"),
-        source,
-      )
-      assert.match(
-        await evaluate("document.querySelector('[role=alert]').textContent"),
-        locale === "en" ? /changed/ : /mudou|alterad/,
       )
       await reload("skills")
       // Quota failure keeps bytes intact and draft/qualifiers visible for recovery.

@@ -452,6 +452,55 @@ const messages = {
       "Restart with smaller portions (saved facts stay)",
     "repo.ingestReviewNote":
       "Nothing is selected. Review the source and each before/after value, then approve the changes you want.",
+    "repo.submission.closed":
+      "Everything in your Profile can be edited below. Use this entry when you want to paste raw professional information and review proposed changes before saving.",
+    "repo.submission.add": "Add information",
+    "repo.submission.guide":
+      "Paste a CV, notes or individual career facts. Nothing is organized, approved or saved until you review the proposed destinations and values.",
+    "repo.submission.disclosures": "Privacy, keys and input use",
+    "repo.submission.decisionRetained":
+      "The last submission was rejected or needs revised wording. Change the pasted text before preparing changes again.",
+    "repo.submission.prepare": "Prepare changes",
+    "repo.submission.stop": "Stop",
+    "repo.submission.resume": "Resume processing",
+    "repo.submission.retry": "Retry processing",
+    "repo.submission.retained": "Your pasted information is retained:",
+    "repo.submission.editText": "Edit text",
+    "repo.submission.restart": "Start a new submission",
+    "repo.submission.assembling":
+      "Checking wording, duplicates and conflicts…",
+    "repo.submission.tooLong":
+      "This text is longer than 30,000 bytes. Shorten it or add it in smaller pieces.",
+    "repo.submission.submitted": "Your pasted information ({{bytes}} bytes)",
+    "repo.submission.partial":
+      "Some pasted regions could not be fully processed. Any unresolved items stay visible below; this review does not claim that every fact was found.",
+    "repo.submission.save": "Save to Profile",
+    "repo.submission.saving": "Saving to Profile…",
+    "repo.submission.retrySave": "Retry save",
+    "repo.submission.selection":
+      "{{selected}} of {{selectable}} changes selected · {{attention}} need attention",
+    "repo.submission.selectionNone":
+      "No changes selected · {{attention}} need attention",
+    "repo.submission.saveFailed":
+      "Not saved. Your selection and review are retained. Review the feedback, then retry save; no provider request is made.",
+    "repo.submission.saveStorage":
+      "Not saved: browser storage rejected the write. Free storage or allow site storage, then retry save. Your review stays here and no provider request is made.",
+    "repo.submission.saveStale":
+      "Not saved: the saved Profile changed. Reload the saved Profile, then retry save. Your review stays here and no provider request is made.",
+    "repo.submission.saveLock":
+      "Not saved: another tab is saving the Profile. Wait for it to finish, then retry save. Your review stays here and no provider request is made.",
+    "repo.submission.saveValidation":
+      "Not saved: the selection did not form one valid transaction. Review the marked changes, then retry save.",
+    "repo.submission.invalidated":
+      "Your Profile, keys or pasted text changed, so this submission can no longer continue and nothing was saved. Edit the text or discard and start again.",
+    "repo.submission.profileUnavailable":
+      "The saved Profile is unavailable or changed. Use the recovery feedback above before preparing changes; your text is retained.",
+    "repo.submission.saved": "Saved to your Profile",
+    "repo.submission.savedNote":
+      "Only the changes you selected were saved. The pasted text stays only in this session and is no longer retained here.",
+    "repo.submission.addMore": "Add more information",
+    "repo.submission.discardDescription":
+      "Your pasted text and unapplied suggestions will be removed. Saved Profile facts are unchanged.",
     "repo.ingestSource": "Source",
     "repo.clarificationAnswer": "Your answer",
     "repo.clarificationReview": "Review revised proposal",
@@ -1489,6 +1538,55 @@ const messages = {
       "Reiniciar com partes menores (fatos salvos permanecem)",
     "repo.ingestReviewNote":
       "Nada está selecionado. Confira a fonte e os valores antes/depois e aprove as alterações desejadas.",
+    "repo.submission.closed":
+      "Tudo no seu Perfil pode ser editado abaixo. Use esta entrada para colar informações profissionais brutas e revisar as alterações propostas antes de salvar.",
+    "repo.submission.add": "Adicionar informações",
+    "repo.submission.guide":
+      "Cole um currículo, anotações ou fatos profissionais individuais. Nada é organizado, aprovado ou salvo até você revisar os destinos e valores propostos.",
+    "repo.submission.disclosures": "Privacidade, chaves e uso de entradas",
+    "repo.submission.decisionRetained":
+      "O último envio foi rejeitado ou precisa de redação revisada. Altere o texto colado antes de preparar alterações novamente.",
+    "repo.submission.prepare": "Preparar alterações",
+    "repo.submission.stop": "Parar",
+    "repo.submission.resume": "Retomar processamento",
+    "repo.submission.retry": "Tentar processar novamente",
+    "repo.submission.retained": "Seu texto colado foi preservado:",
+    "repo.submission.editText": "Editar texto",
+    "repo.submission.restart": "Iniciar novo envio",
+    "repo.submission.assembling":
+      "Verificando redação, duplicatas e conflitos…",
+    "repo.submission.tooLong":
+      "Este texto excede 30.000 bytes. Reduza-o ou adicione-o em partes menores.",
+    "repo.submission.submitted": "Suas informações coladas ({{bytes}} bytes)",
+    "repo.submission.partial":
+      "Algumas regiões coladas não puderam ser totalmente processadas. Itens não resolvidos, se houver, permanecem visíveis abaixo; esta revisão não afirma que todos os fatos foram encontrados.",
+    "repo.submission.save": "Salvar no Perfil",
+    "repo.submission.saving": "Salvando no Perfil…",
+    "repo.submission.retrySave": "Tentar salvar novamente",
+    "repo.submission.selection":
+      "{{selected}} de {{selectable}} alterações selecionadas · {{attention}} precisam de atenção",
+    "repo.submission.selectionNone":
+      "Nenhuma alteração selecionada · {{attention}} precisam de atenção",
+    "repo.submission.saveFailed":
+      "Não salvo. Sua seleção e revisão foram preservadas. Confira o retorno e tente salvar novamente; nenhuma chamada ao provedor é feita.",
+    "repo.submission.saveStorage":
+      "Não salvo: o armazenamento do navegador recusou a gravação. Libere espaço ou permita o armazenamento do site e tente salvar novamente. Sua revisão permanece aqui e nenhuma chamada ao provedor é feita.",
+    "repo.submission.saveStale":
+      "Não salvo: o Perfil salvo mudou. Recarregue o Perfil salvo e tente salvar novamente. Sua revisão permanece aqui e nenhuma chamada ao provedor é feita.",
+    "repo.submission.saveLock":
+      "Não salvo: outra aba está salvando o Perfil. Aguarde terminar e tente salvar novamente. Sua revisão permanece aqui e nenhuma chamada ao provedor é feita.",
+    "repo.submission.saveValidation":
+      "Não salvo: a seleção não formou uma transação válida. Confira as alterações indicadas e tente salvar novamente.",
+    "repo.submission.invalidated":
+      "Seu Perfil, chaves ou texto colado mudaram; este envio não pode continuar e nada foi salvo. Edite o texto ou descarte e comece de novo.",
+    "repo.submission.profileUnavailable":
+      "O Perfil salvo não está disponível ou mudou. Use o retorno de recuperação acima antes de preparar alterações; seu texto foi preservado.",
+    "repo.submission.saved": "Salvo no seu Perfil",
+    "repo.submission.savedNote":
+      "Somente as alterações selecionadas foram salvas. O texto colado permanece apenas nesta sessão e não é mais retido aqui.",
+    "repo.submission.addMore": "Adicionar mais informações",
+    "repo.submission.discardDescription":
+      "Seu texto colado e as sugestões não aplicadas serão removidos. Fatos já salvos no Perfil não mudam.",
     "repo.ingestSource": "Fonte",
     "repo.clarificationAnswer": "Sua resposta",
     "repo.clarificationReview": "Revisar proposta atualizada",
