@@ -452,6 +452,55 @@ const messages = {
       "Restart with smaller portions (saved facts stay)",
     "repo.ingestReviewNote":
       "Nothing is selected. Review the source and each before/after value, then approve the changes you want.",
+    "repo.submission.closed":
+      "Everything in your Profile can be edited below. Use this entry when you want to paste raw professional information and review proposed changes before saving.",
+    "repo.submission.add": "Add information",
+    "repo.submission.guide":
+      "Paste a CV, notes or individual career facts. Nothing is organized, approved or saved until you review the proposed destinations and values.",
+    "repo.submission.disclosures": "Privacy, keys and input use",
+    "repo.submission.decisionRetained":
+      "The last submission was rejected or needs revised wording. Change the pasted text before preparing changes again.",
+    "repo.submission.prepare": "Prepare changes",
+    "repo.submission.stop": "Stop",
+    "repo.submission.resume": "Resume processing",
+    "repo.submission.retry": "Retry processing",
+    "repo.submission.retained": "Your pasted information is retained:",
+    "repo.submission.editText": "Edit text",
+    "repo.submission.restart": "Start a new submission",
+    "repo.submission.assembling":
+      "Checking wording, duplicates and conflicts…",
+    "repo.submission.tooLong":
+      "This text is longer than 30,000 bytes. Shorten it or add it in smaller pieces.",
+    "repo.submission.submitted": "Your pasted information ({{bytes}} bytes)",
+    "repo.submission.partial":
+      "Some pasted regions could not be fully processed. Any unresolved items stay visible below; this review does not claim that every fact was found.",
+    "repo.submission.save": "Save to Profile",
+    "repo.submission.saving": "Saving to Profile…",
+    "repo.submission.retrySave": "Retry save",
+    "repo.submission.selection":
+      "{{selected}} of {{selectable}} changes selected · {{attention}} need attention",
+    "repo.submission.selectionNone":
+      "No changes selected · {{attention}} need attention",
+    "repo.submission.saveFailed":
+      "Not saved. Your selection and review are retained. Review the feedback, then retry save; no provider request is made.",
+    "repo.submission.saveStorage":
+      "Not saved: browser storage rejected the write. Free storage or allow site storage, then retry save. Your review stays here and no provider request is made.",
+    "repo.submission.saveStale":
+      "Not saved: the saved Profile changed. Reload the saved Profile, then retry save. Your review stays here and no provider request is made.",
+    "repo.submission.saveLock":
+      "Not saved: another tab is saving the Profile. Wait for it to finish, then retry save. Your review stays here and no provider request is made.",
+    "repo.submission.saveValidation":
+      "Not saved: the selection did not form one valid transaction. Review the marked changes, then retry save.",
+    "repo.submission.invalidated":
+      "Your Profile, keys or pasted text changed, so this submission can no longer continue and nothing was saved. Edit the text or discard and start again.",
+    "repo.submission.profileUnavailable":
+      "The saved Profile is unavailable or changed. Use the recovery feedback above before preparing changes; your text is retained.",
+    "repo.submission.saved": "Saved to your Profile",
+    "repo.submission.savedNote":
+      "Only the changes you selected were saved. The pasted text stays only in this session and is no longer retained here.",
+    "repo.submission.addMore": "Add more information",
+    "repo.submission.discardDescription":
+      "Your pasted text and unapplied suggestions will be removed. Saved Profile facts are unchanged.",
     "repo.ingestSource": "Source",
     "repo.clarificationAnswer": "Your answer",
     "repo.clarificationReview": "Review revised proposal",
@@ -575,6 +624,93 @@ const messages = {
       "This text exceeds the preparation capacity. Try a smaller portion. Your input and saved Profile are unchanged.",
     "repo.ingestErrorInput":
       "Enter up to 30,000 UTF-8 bytes of professional information and check the current Profile fields.",
+    "review.heading": "Review changes",
+    "review.summaryChanges": "{{count}} to review",
+    "review.summaryAttention": "{{count}} need attention",
+    "review.summaryBlocked": "{{count}} cannot be saved yet",
+    "review.summaryDuplicates": "{{count}} already in your Profile",
+    "review.summarySelected": "{{count}} selected",
+    "review.noChange": "Everything you pasted is already in your Profile.",
+    "review.noChangeNote": "Nothing needs approval or saving.",
+    "review.duplicateSummary": "Already in your Profile ({{count}})",
+    "review.selectAdditions": "Select clear additions",
+    "review.clearSelection": "Clear selection",
+    "review.selectGroup": "Select all in {{destination}}",
+    "review.selectGroupLabel": "Select group",
+    "review.selectUnit": "Select {{value}}",
+    "review.newEntry": "New entry",
+    "review.edit": "Edit",
+    "review.editSave": "Save wording",
+    "review.editCancel": "Cancel",
+    "review.preview": "Preview",
+    "review.edited": "Your wording",
+    "review.remove": "Remove",
+    "review.attachSource": "Attach source",
+    "review.evidenceNote":
+      "Evidence only. This excerpt is attached as support; wording is unchanged.",
+    "review.currentValue": "Current",
+    "review.duplicate": "Already in your Profile",
+    "review.blocked": "Cannot be saved yet",
+    "review.blocked.incomplete_identity":
+      "the entry is missing required identity details",
+    "review.blocked.incomplete_anchor":
+      "the entry identity is not anchored to a clear statement",
+    "review.blocked.stale": "the saved entry changed",
+    "review.blocked.shared_support":
+      "the supporting statement already belongs to another entry",
+    "review.blocked.dangling_support":
+      "its supporting statement is not part of this review",
+    "review.blocked.dependency_cycle":
+      "its supporting statements depend on each other",
+    "review.blocked.dependency_blocked":
+      "another required change cannot be saved",
+    "review.blocked.state": "its selection state is invalid",
+    "review.blocked.clarification":
+      "answer this clarification first, or leave it unresolved",
+    "review.blocked.conflict":
+      "resolve the competing values first, or leave them unresolved",
+    "review.blocked.unsupported":
+      "add supporting evidence first, or leave it unresolved",
+    "review.blocked.unresolved":
+      "compare it again first, or leave it unresolved",
+    "review.attention.conflict": "Conflicting values",
+    "review.attention.clarification": "Needs clarification",
+    "review.attention.unsupported": "No supporting excerpt",
+    "review.attention.unresolved": "Could not be compared",
+    "review.attentionReason": "Why approval is blocked",
+    "review.question": "Question",
+    "review.answer": "Answer",
+    "review.answerLabel": "Your answer",
+    "review.answerStatus": "Revising…",
+    "review.answerTooLong": "Answer must be 1,000 UTF-8 bytes or less.",
+    "review.answerUnchanged": "Change the answer before trying again.",
+    "review.answerExpired":
+      "This clarification expired. Your pending review and unrelated changes are preserved; start a new review to answer it.",
+    "review.leaveOut": "Leave out / keep unresolved",
+    "review.keptUnresolved":
+      "Kept unresolved. Nothing will be saved for this item; unrelated changes remain available.",
+    "review.source": "Source",
+    "review.sourceOriginal": "Original paste",
+    "review.sourceClarification": "Clarification answer",
+    "review.sourceDetails": "Details",
+    "review.sourceClaimId": "Statement ID",
+    "review.sourceOccurrence": "Occurrence",
+    "review.sourceComparison": "Comparison note",
+    "review.technicalDetails": "Technical details",
+    "review.sourceIdentifier": "Source ID",
+    "review.sourceBatch": "Batch",
+    "review.sourceFinding": "Finding",
+    "review.sourceOutcome": "Outcome",
+    "review.sourceRevision": "Revision",
+    "review.normalization": "Normalization",
+    "review.inProfile": "In your Profile",
+    "review.relatedStatement": "Competing statement",
+    "review.meaningNegated": "Stated as not having this",
+    "review.meaningAspiration": "A goal, not current experience",
+    "review.meaningUncertain": "Uncertain",
+    "review.meaningUnknown": "Unclear",
+    "review.meaningApproximate": "Approximate",
+    "review.meaningUnknownDate": "Date unknown",
     "repo.status.unspecified": "Not specified",
     "repo.section.profile": "PROFILE",
     "repo.section.profileDesc": "Edit your professional details by section",
@@ -1402,6 +1538,55 @@ const messages = {
       "Reiniciar com partes menores (fatos salvos permanecem)",
     "repo.ingestReviewNote":
       "Nada está selecionado. Confira a fonte e os valores antes/depois e aprove as alterações desejadas.",
+    "repo.submission.closed":
+      "Tudo no seu Perfil pode ser editado abaixo. Use esta entrada para colar informações profissionais brutas e revisar as alterações propostas antes de salvar.",
+    "repo.submission.add": "Adicionar informações",
+    "repo.submission.guide":
+      "Cole um currículo, anotações ou fatos profissionais individuais. Nada é organizado, aprovado ou salvo até você revisar os destinos e valores propostos.",
+    "repo.submission.disclosures": "Privacidade, chaves e uso de entradas",
+    "repo.submission.decisionRetained":
+      "O último envio foi rejeitado ou precisa de redação revisada. Altere o texto colado antes de preparar alterações novamente.",
+    "repo.submission.prepare": "Preparar alterações",
+    "repo.submission.stop": "Parar",
+    "repo.submission.resume": "Retomar processamento",
+    "repo.submission.retry": "Tentar processar novamente",
+    "repo.submission.retained": "Seu texto colado foi preservado:",
+    "repo.submission.editText": "Editar texto",
+    "repo.submission.restart": "Iniciar novo envio",
+    "repo.submission.assembling":
+      "Verificando redação, duplicatas e conflitos…",
+    "repo.submission.tooLong":
+      "Este texto excede 30.000 bytes. Reduza-o ou adicione-o em partes menores.",
+    "repo.submission.submitted": "Suas informações coladas ({{bytes}} bytes)",
+    "repo.submission.partial":
+      "Algumas regiões coladas não puderam ser totalmente processadas. Itens não resolvidos, se houver, permanecem visíveis abaixo; esta revisão não afirma que todos os fatos foram encontrados.",
+    "repo.submission.save": "Salvar no Perfil",
+    "repo.submission.saving": "Salvando no Perfil…",
+    "repo.submission.retrySave": "Tentar salvar novamente",
+    "repo.submission.selection":
+      "{{selected}} de {{selectable}} alterações selecionadas · {{attention}} precisam de atenção",
+    "repo.submission.selectionNone":
+      "Nenhuma alteração selecionada · {{attention}} precisam de atenção",
+    "repo.submission.saveFailed":
+      "Não salvo. Sua seleção e revisão foram preservadas. Confira o retorno e tente salvar novamente; nenhuma chamada ao provedor é feita.",
+    "repo.submission.saveStorage":
+      "Não salvo: o armazenamento do navegador recusou a gravação. Libere espaço ou permita o armazenamento do site e tente salvar novamente. Sua revisão permanece aqui e nenhuma chamada ao provedor é feita.",
+    "repo.submission.saveStale":
+      "Não salvo: o Perfil salvo mudou. Recarregue o Perfil salvo e tente salvar novamente. Sua revisão permanece aqui e nenhuma chamada ao provedor é feita.",
+    "repo.submission.saveLock":
+      "Não salvo: outra aba está salvando o Perfil. Aguarde terminar e tente salvar novamente. Sua revisão permanece aqui e nenhuma chamada ao provedor é feita.",
+    "repo.submission.saveValidation":
+      "Não salvo: a seleção não formou uma transação válida. Confira as alterações indicadas e tente salvar novamente.",
+    "repo.submission.invalidated":
+      "Seu Perfil, chaves ou texto colado mudaram; este envio não pode continuar e nada foi salvo. Edite o texto ou descarte e comece de novo.",
+    "repo.submission.profileUnavailable":
+      "O Perfil salvo não está disponível ou mudou. Use o retorno de recuperação acima antes de preparar alterações; seu texto foi preservado.",
+    "repo.submission.saved": "Salvo no seu Perfil",
+    "repo.submission.savedNote":
+      "Somente as alterações selecionadas foram salvas. O texto colado permanece apenas nesta sessão e não é mais retido aqui.",
+    "repo.submission.addMore": "Adicionar mais informações",
+    "repo.submission.discardDescription":
+      "Seu texto colado e as sugestões não aplicadas serão removidos. Fatos já salvos no Perfil não mudam.",
     "repo.ingestSource": "Fonte",
     "repo.clarificationAnswer": "Sua resposta",
     "repo.clarificationReview": "Revisar proposta atualizada",
@@ -1527,6 +1712,94 @@ const messages = {
       "Este texto excede a capacidade de preparação. Tente uma parte menor. Seu texto e Perfil salvo foram preservados.",
     "repo.ingestErrorInput":
       "Informe até 30.000 bytes UTF-8 de dados profissionais e confira os campos atuais do Perfil.",
+    "review.heading": "Revisar alterações",
+    "review.summaryChanges": "{{count}} para revisar",
+    "review.summaryAttention": "{{count}} precisam de atenção",
+    "review.summaryBlocked": "{{count}} ainda não podem ser salvos",
+    "review.summaryDuplicates": "{{count}} já estão no seu Perfil",
+    "review.summarySelected": "{{count}} selecionadas",
+    "review.noChange": "Tudo o que você colou já está no seu Perfil.",
+    "review.noChangeNote": "Nada precisa de aprovação ou salvamento.",
+    "review.duplicateSummary": "Já está no seu Perfil ({{count}})",
+    "review.selectAdditions": "Selecionar adições claras",
+    "review.clearSelection": "Limpar seleção",
+    "review.selectGroup": "Selecionar tudo em {{destination}}",
+    "review.selectGroupLabel": "Selecionar grupo",
+    "review.selectUnit": "Selecionar {{value}}",
+    "review.newEntry": "Nova entrada",
+    "review.edit": "Editar",
+    "review.editSave": "Salvar texto",
+    "review.editCancel": "Cancelar",
+    "review.preview": "Prévia",
+    "review.edited": "Seu texto",
+    "review.remove": "Remover",
+    "review.attachSource": "Anexar fonte",
+    "review.evidenceNote":
+      "Somente evidência. Este trecho é anexado como apoio; o texto não muda.",
+    "review.currentValue": "Atual",
+    "review.duplicate": "Já está no seu Perfil",
+    "review.blocked": "Ainda não pode ser salvo",
+    "review.blocked.incomplete_identity":
+      "faltam dados de identidade obrigatórios da entrada",
+    "review.blocked.incomplete_anchor":
+      "a identidade da entrada não está ancorada em uma declaração clara",
+    "review.blocked.stale": "a entrada salva mudou",
+    "review.blocked.shared_support":
+      "a declaração de apoio já pertence a outra entrada",
+    "review.blocked.dangling_support":
+      "sua declaração de apoio não faz parte desta revisão",
+    "review.blocked.dependency_cycle":
+      "suas declarações de apoio dependem umas das outras",
+    "review.blocked.dependency_blocked":
+      "outra alteração obrigatória não pode ser salva",
+    "review.blocked.state": "seu estado de seleção é inválido",
+    "review.blocked.clarification":
+      "responda a este esclarecimento primeiro, ou deixe-o em aberto",
+    "review.blocked.conflict":
+      "resolva os valores conflitantes primeiro, ou deixe-os em aberto",
+    "review.blocked.unsupported":
+      "adicione um trecho de apoio primeiro, ou deixe em aberto",
+    "review.blocked.unresolved":
+      "compare novamente primeiro, ou deixe em aberto",
+    "review.attention.conflict": "Valores conflitantes",
+    "review.attention.clarification": "Precisa de esclarecimento",
+    "review.attention.unsupported": "Sem trecho de apoio",
+    "review.attention.unresolved": "Não foi possível comparar",
+    "review.attentionReason": "Por que a aprovação está bloqueada",
+    "review.question": "Pergunta",
+    "review.answer": "Responder",
+    "review.answerLabel": "Sua resposta",
+    "review.answerStatus": "Revisando…",
+    "review.answerTooLong":
+      "A resposta deve ter no máximo 1.000 bytes UTF-8.",
+    "review.answerUnchanged": "Altere a resposta antes de tentar novamente.",
+    "review.answerExpired":
+      "Este esclarecimento expirou. Sua revisão pendente e as demais alterações foram preservadas; inicie uma nova revisão para responder.",
+    "review.leaveOut": "Deixar de fora / manter em aberto",
+    "review.keptUnresolved":
+      "Mantido em aberto. Nada será salvo para este item; as demais alterações continuam disponíveis.",
+    "review.source": "Fonte",
+    "review.sourceOriginal": "Texto original",
+    "review.sourceClarification": "Resposta de esclarecimento",
+    "review.sourceDetails": "Detalhes",
+    "review.sourceClaimId": "ID da declaração",
+    "review.sourceOccurrence": "Ocorrência",
+    "review.sourceComparison": "Nota de comparação",
+    "review.technicalDetails": "Detalhes técnicos",
+    "review.sourceIdentifier": "ID da fonte",
+    "review.sourceBatch": "Lote",
+    "review.sourceFinding": "Resultado",
+    "review.sourceOutcome": "Comparação",
+    "review.sourceRevision": "Revisão",
+    "review.normalization": "Normalização",
+    "review.inProfile": "No seu Perfil",
+    "review.relatedStatement": "Declaração concorrente",
+    "review.meaningNegated": "Declarado como não tendo isto",
+    "review.meaningAspiration": "Um objetivo, não experiência atual",
+    "review.meaningUncertain": "Incerto",
+    "review.meaningUnknown": "Pouco claro",
+    "review.meaningApproximate": "Aproximado",
+    "review.meaningUnknownDate": "Data desconhecida",
     "repo.status.unspecified": "Não informado",
     "repo.section.profile": "PERFIL",
     "repo.section.profileDesc": "Edite seus dados profissionais por seção",

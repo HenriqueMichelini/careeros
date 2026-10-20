@@ -8,6 +8,7 @@ import (
 	"professional-information-repo/internal/aidiagnostics"
 	"professional-information-repo/internal/preprocessing"
 	"professional-information-repo/internal/profiledocument"
+	"professional-information-repo/internal/profilevalidation"
 )
 
 // submissionReconcileFields names the exact transport keys a reconciliation-focus
@@ -88,28 +89,45 @@ func (a app) submissionReconcile(ctx context.Context, w http.ResponseWriter, r *
 		return
 	}
 	ledger := &reconciliationContext{document: document, skipped: []skippedClaim{}, provisional: provisional}
-	ledger.candidates = candidateFacts(universe, in.Profile, document)
-	projected := projection(universe, in.Profile)
-	data := map[string]any{"claims": focusClaims, "provisionalClaims": provisionalClaims, "profile": projected, "existingFacts": ledger.candidates}
-	prompt := submissionReconcilePrompt(data)
-
-	genCtx, finish := aidiagnostics.Start(ctx, "reconciliation", comparisonVersion)
-	rawProvider, code := a.provider(genCtx, key, prompt, "profile_operations", comparisonSchema(universe, in.Profile))
-	finish(code)
+	ops, outcomes, code := a.submissionCompare(ctx, key, focusClaims, universe, provisionalClaims, provisional, in.Profile, document, ledger)
 	if code != "" {
 		fail(stageCodeStatus(code), code)
 		return
 	}
+	if ctx.Err() != nil {
+		fail(504, "timeout")
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	_ = json.NewEncoder(w).Encode(SubmissionReconciliationResponse{Stage: stage, Focus: *in.Focus, Operations: ops, Outcomes: outcomes})
+}
+
+// submissionCompare runs exactly one bounded reconciliation generation over a
+// focus/provisional split, validates its operations against the authenticated
+// claim identities and returns only the focus claims' outcomes. Clarification
+// reuses it after revising the affected claim so both paths share the same
+// ownership, conflict and provenance rules. An optional clarification
+// comparison instruction is appended to the retained prompt.
+func (a app) submissionCompare(ctx context.Context, key string, focusClaims, universe, provisionalClaims []claim, provisional map[string]bool, p profilevalidation.Profile, document *profiledocument.Document, ledger *reconciliationContext) ([]operation, []claimOutcome, string) {
+	ledger.candidates = candidateFacts(universe, p, document)
+	projected := projection(universe, p)
+	data := map[string]any{"claims": focusClaims, "provisionalClaims": provisionalClaims, "profile": projected, "existingFacts": ledger.candidates}
+	prompt := submissionReconcilePrompt(data) + ledger.comparisonInstruction
+
+	genCtx, finish := aidiagnostics.Start(ctx, "reconciliation", comparisonVersion)
+	rawProvider, code := a.provider(genCtx, key, prompt, "profile_operations", comparisonSchema(universe, p))
+	finish(code)
+	if code != "" {
+		return nil, nil, code
+	}
 	var out proposal
 	if !proposalShape(rawProvider) || !strict(rawProvider, &out) || len(out.Outcomes) > SubmissionBatchClaimCap {
-		fail(502, "invalid_output")
-		return
+		return nil, nil, "invalid_output"
 	}
 	// At most 60 operations for at most 30 focus claims: a declared bound is
 	// rejected, never silently truncated.
 	if len(out.Operations) > SubmissionBatchOpCap {
-		fail(400, SubmissionErrCapacity)
-		return
+		return nil, nil, SubmissionErrCapacity
 	}
 	ledger.proposed = out.Outcomes
 	byFocus := map[string]claim{}
@@ -122,7 +140,7 @@ func (a app) submissionReconcile(ctx context.Context, w http.ResponseWriter, r *
 	}
 	// A dangling claim id or an out-of-focus (context-only) claim id can never
 	// own an operation; the affected focus claim stays unresolved.
-	valid, invalidClaims, invalidGroups, _ := validatedOperations(&out, byFocus, byID, in.Profile, map[string]bool{}, "reconcile")
+	valid, invalidClaims, invalidGroups, _ := validatedOperations(&out, byFocus, byID, p, map[string]bool{}, "reconcile")
 	filtered, unresolved := filterUnsafeNewGroups(valid, out.Operations, focusClaims, invalidClaims, invalidGroups, provisional)
 	ledger.rejected = map[string]bool{}
 	for _, id := range unresolved {
@@ -130,16 +148,10 @@ func (a app) submissionReconcile(ctx context.Context, w http.ResponseWriter, r *
 	}
 	ops := filtered
 	if document == nil {
-		ops = suppressRepeatedCapabilityFacts(filtered, in.Profile)
+		ops = suppressRepeatedCapabilityFacts(filtered, p)
 	}
 	ops, outcomes, _ := reconcileOutcomes(universe, ops, unresolved, ledger)
-	outcomes = submissionFocusOutcomes(outcomes, focusClaims)
-	if ctx.Err() != nil {
-		fail(504, "timeout")
-		return
-	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	_ = json.NewEncoder(w).Encode(SubmissionReconciliationResponse{Stage: stage, Focus: *in.Focus, Operations: ops, Outcomes: outcomes})
+	return ops, submissionFocusOutcomes(outcomes, focusClaims), ""
 }
 
 // submissionFocusContext reconstructs the deterministic plan and the aggregate

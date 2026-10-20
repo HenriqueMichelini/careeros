@@ -26,6 +26,7 @@ const (
 	SubmissionStageExtract   = "extract"
 	SubmissionStageAssemble  = "assemble"
 	SubmissionStageReconcile = "reconcile"
+	SubmissionStageClarify   = "clarify"
 )
 
 // Submission budgets. Existing #41/#178 bounds are referenced, not re-declared,
@@ -43,6 +44,8 @@ const (
 	SubmissionExtractBodyBytes   = maxBody
 	SubmissionAssemblyBodyBytes  = maxStageBody
 	SubmissionReconcileBodyBytes = maxStageBody
+	SubmissionClarifyBodyBytes   = maxStageBody
+	SubmissionClarifyAnswerBytes = 1000
 )
 
 const (
@@ -273,7 +276,7 @@ func SubmissionStageError(s SubmissionStage) string {
 		return SubmissionErrVersion
 	}
 	switch s.Kind {
-	case SubmissionStagePlan, SubmissionStageExtract, SubmissionStageAssemble, SubmissionStageReconcile:
+	case SubmissionStagePlan, SubmissionStageExtract, SubmissionStageAssemble, SubmissionStageReconcile, SubmissionStageClarify:
 		return ""
 	}
 	return SubmissionErrStage

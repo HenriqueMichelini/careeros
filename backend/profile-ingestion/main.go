@@ -37,6 +37,8 @@ type request struct {
 	BatchReceipts  []string                  `json:"batchReceipts,omitempty"`
 	ContextReceipt string                    `json:"contextReceipt,omitempty"`
 	Focus          *SubmissionFocus          `json:"focus,omitempty"`
+	Claim          *claim                    `json:"claim,omitempty"`
+	Answer         *string                   `json:"answer,omitempty"`
 	Input          string                    `json:"input"`
 	Profile        profilevalidation.Profile `json:"profile"`
 }
@@ -326,15 +328,15 @@ func (a app) ingest(w http.ResponseWriter, r *http.Request) {
 }
 
 // stageBodyLimit returns the retained request-body cap for one transport
-// envelope. Whole-submission assembly and reconciliation accept the 320 KiB
-// assembly/reconciliation body; v2 planning and extraction, v1 extraction and
+// envelope. Whole-submission assembly, reconciliation and focused clarification
+// accept the 320 KiB stage body; v2 planning and extraction, v1 extraction and
 // legacy requests keep the 160 KiB bound. It never widens an existing limit.
 func stageBodyLimit(in request) int {
 	if in.Stage == nil {
 		return maxBody
 	}
 	if in.Stage.Version == SubmissionStageVersion {
-		if in.Stage.Kind == SubmissionStageAssemble || in.Stage.Kind == SubmissionStageReconcile {
+		if in.Stage.Kind == SubmissionStageAssemble || in.Stage.Kind == SubmissionStageReconcile || in.Stage.Kind == SubmissionStageClarify {
 			return maxStageBody
 		}
 		return maxBody

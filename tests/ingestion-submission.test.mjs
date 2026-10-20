@@ -55,6 +55,7 @@ for (const name of [
 
 const submission = await import(join(temp, "ingestionSubmission.mjs"))
 const protocol = await import(join(temp, "ingestionProtocol.mjs"))
+const ingestion = await import(join(temp, "ingestion.mjs"))
 const review = await import(join(temp, "ingestionReview.mjs"))
 const profileDocument = await import(join(temp, "profileDocument.mjs"))
 const profileModule = await import(join(temp, "profile.mjs"))
@@ -235,6 +236,7 @@ function harness(overrides = {}) {
     if (kind === "plan") return planResponse()
     if (kind === "extract") return extractionResponse(body.batchIndex)
     if (kind === "assemble") return assemblyResponse()
+    if (kind === "clarify") return overrides[kind]?.(body, keys, signal)
     return reconciliationResponse(body.focus.claimIds)
   }
   const transport = {
@@ -242,6 +244,7 @@ function harness(overrides = {}) {
     extract: (body, keys, signal) => respond("extract", body, keys, signal),
     assemble: (body, keys, signal) => respond("assemble", body, keys, signal),
     reconcile: (body, keys, signal) => respond("reconcile", body, keys, signal),
+    clarify: (body, keys, signal) => respond("clarify", body, keys, signal),
   }
   return { calls, transport }
 }
@@ -269,6 +272,16 @@ function controllerFor(transport, timeouts = makeTimeouts()) {
     controller: submission.createSubmissionController({
       transport,
       runtime: { now: () => NOW, id: () => "sub-187", timeout: timeouts.timeout },
+    }),
+  }
+}
+
+function controllerForAt(transport, now, timeouts = makeTimeouts()) {
+  return {
+    timeouts,
+    controller: submission.createSubmissionController({
+      transport,
+      runtime: { now, id: () => "sub-187", timeout: timeouts.timeout },
     }),
   }
 }
@@ -601,6 +614,38 @@ test("the transport adapter POSTs v2 envelopes with the user keys and maps failu
     async () => new Response("<html>Inactivity Timeout</html>", { status: 504 }),
   )
   await assert.rejects(gateway.plan(body, keys, signal), { code: "timeout" })
+
+  // A decision envelope is a typed decision even when the HTTP status is a
+  // failure: rephrasing/attack can never be flattened into a transport error.
+  const decision = {
+    decision: {
+      version: 1,
+      field: "professional_information",
+      outcome: { kind: "request_rephrasing" },
+    },
+  }
+  for (const status of [200, 503]) {
+    const decided = submission.createSubmissionTransport(
+      async () => new Response(JSON.stringify(decision), { status }),
+    )
+    await assert.rejects(
+      decided.clarify(
+        {
+          stage: { version: 2, kind: "clarify" },
+          input: original,
+          profile: baseProfile(),
+          contextReceipt: receipt("context"),
+          claim: { id: clarifyClaimId },
+          answer: "It was full time.",
+        },
+        keys,
+        signal,
+      ),
+      (error) =>
+        error.code === "field_decision" &&
+        error.decision?.outcome.kind === "request_rephrasing",
+    )
+  }
 })
 
 test("the pin seam reports staleness for a changed snapshot", () => {
@@ -625,4 +670,419 @@ test("the pin seam reports staleness for a changed snapshot", () => {
     submission.submissionPinError(pin, { input: original, profile, planVersion: "portions-v2" }),
     "stale",
   )
+})
+
+// --- Focused clarification (#191) -------------------------------------------
+
+const clarifyClaimId = `${RUN_ID}/0/c0`
+const clarifyAnswer = "I used TypeScript at Acme."
+
+function clarificationOperation(claimId, value = "TypeScript") {
+  return {
+    claimId,
+    target: "skills",
+    entryId: "",
+    field: "skills",
+    action: "add",
+    value,
+    finding: "addition",
+  }
+}
+
+function clarificationOutcome(claimId, kind = "change", reason = "resolved") {
+  return {
+    claimId,
+    kind,
+    reason,
+    relatedFacts: [],
+    relatedClaimIds: [],
+  }
+}
+
+function clarificationResponse(
+  claimId,
+  {
+    answer = clarifyAnswer,
+    operations = [clarificationOperation(claimId)],
+    outcomeKind = "change",
+    reason = "resolved",
+    priorSupport = [],
+  } = {},
+) {
+  const support = [...priorSupport]
+  if (!support.some((source) => source.source === answer && source.origin === "clarification_answer"))
+    support.push({ source: answer, origin: "clarification_answer" })
+  return {
+    stage: { version: 2, kind: "clarify" },
+    claim: {
+      id: claimId,
+      source: segments[0],
+      text: "I used TypeScript at Acme",
+      targets: operations.length ? ["skills"] : [],
+      question: operations.length ? "" : "Who used TypeScript?",
+      supportingSources: support,
+    },
+    focus: { claimIds: [claimId] },
+    operations,
+    outcomes: [clarificationOutcome(claimId, outcomeKind, reason)],
+  }
+}
+
+function clarificationReconcile(target) {
+  return (body) => ({
+    stage: { version: 2, kind: "reconcile" },
+    focus: { claimIds: [...body.focus.claimIds] },
+    operations: body.focus.claimIds
+      .filter((claimId) => claimId !== target)
+      .map((claimId) => ({
+        claimId,
+        target: "skills",
+        entryId: "",
+        field: "skills",
+        action: "add",
+        value: `Skill ${claimId}`,
+        finding: "addition",
+      })),
+    outcomes: body.focus.claimIds.map((claimId) =>
+      claimId === target
+        ? {
+            claimId,
+            kind: "clarification",
+            reason: "Role type missing.",
+            relatedFacts: [],
+            relatedClaimIds: [],
+          }
+        : {
+            claimId,
+            kind: "change",
+            reason: "validated_operation",
+            relatedFacts: [],
+            relatedClaimIds: [],
+          },
+    ),
+  })
+}
+
+async function clarifiedController(overrides = {}) {
+  const snapshot = makeSnapshot()
+  const { calls, transport } = harness({
+    reconcile: clarificationReconcile(clarifyClaimId),
+    ...overrides,
+  })
+  const { controller } = controllerFor(transport)
+  const result = await controller.start(snapshot, keys)
+  return { snapshot, calls, controller, result }
+}
+
+test("bulk selection seams preserve the review and completeSave clears only saved work", async () => {
+  const { transport } = harness()
+  const { controller } = controllerFor(transport)
+  await controller.start(makeSnapshot(), keys)
+  const plan = controller.getReviewPlan()
+  const destination = plan.destinations.find(
+    (entry) => entry.selectableUnitIds.length > 0,
+  )
+  assert.ok(destination)
+  const revision = controller.getState().selectionRevision
+  controller.selectGroup(destination.id, "selected")
+  assert.ok(
+    destination.selectableUnitIds.every(
+      (id) => controller.getReviewPlan().units.find((unit) => unit.id === id).status === "selected",
+    ),
+  )
+  assert.equal(controller.canSave().allowed, true)
+  controller.clearSelection()
+  assert.ok(
+    controller.getReviewPlan().units.every((unit) => unit.status === "pending"),
+  )
+  controller.selectAdditions()
+  const selected = controller
+    .getReviewPlan()
+    .units.filter((unit) => unit.status === "selected")
+  assert.ok(selected.length > 0)
+  assert.ok(selected.every((unit) => unit.kind === "addition"))
+  assert.equal(
+    controller.getState().selectionRevision,
+    revision + 3,
+  )
+  assert.equal(controller.unsaved(), true)
+  controller.completeSave()
+  assert.equal(controller.getState().status, "saved")
+  assert.equal(controller.getState().applicable, false)
+  assert.equal(controller.getState().input, "")
+  assert.equal(controller.unsaved(), false)
+  assert.equal(controller.getResult(), null)
+  assert.equal(controller.canSave().allowed, false)
+})
+
+test("focused clarification replaces one claim and retains unrelated selection and wording", async () => {
+  const stages = []
+  const { snapshot, calls, controller } = await clarifiedController({
+    clarify: () => clarificationResponse(clarifyClaimId),
+  })
+  const before = controller.getReviewPlan()
+  const control = before.units.find(
+    (unit) => unit.kind === "clarification" && unit.claimIds.includes(clarifyClaimId),
+  )
+  assert.ok(control)
+  const unrelated = before.units.find(
+    (unit) =>
+      unit.kind === "addition" &&
+      unit.selectable &&
+      !unit.claimIds.includes(clarifyClaimId),
+  )
+  assert.ok(unrelated)
+  const unrelatedClaimId = unrelated.claimIds[0]
+  controller.selectUnit(unrelated.id, "selected")
+  controller.editUnit(unrelated.id, unrelated.field, "Reviewed wording")
+  const revision = controller.getState().selectionRevision
+  const planCalls = calls.length
+  const contextReceipt = controller.getState().contextReceipt
+
+  const outcome = await controller.answerClarification(
+    clarifyClaimId,
+    clarifyAnswer,
+    { onStage: (stage) => stages.push(stage) },
+  )
+
+  // Exactly one clarification request: no plan/extract/reconcile restart.
+  assert.deepEqual(calls.slice(planCalls).map((call) => call.kind), ["clarify"])
+  const request = calls.at(-1)
+  assert.deepEqual(request.body.stage, { version: 2, kind: "clarify" })
+  assert.equal(request.body.contextReceipt, contextReceipt)
+  assert.equal(request.body.claim.id, clarifyClaimId)
+  assert.equal(request.body.answer, clarifyAnswer)
+  assert.equal(request.body.input, original)
+  assert.deepEqual(request.body.profile, expectedProfile)
+  assert.deepEqual(request.body.document, snapshot.document)
+  assert.deepEqual(request.keys, keys)
+  assert.deepEqual(stages, ["clarify"])
+  assert.equal(outcome.claimId, clarifyClaimId)
+  assert.equal(controller.getState().status, "reviewing")
+  assert.equal(controller.getState().clarification.status, "answered")
+  assert.equal(controller.getState().selectionRevision, revision + 1)
+  assert.ok(controller.getResult())
+  assert.equal(protocol.submissionResultError(controller.getResult()), "")
+
+  const revisedClaim = controller
+    .getResult()
+    .batches.flatMap((batch) => batch.claims)
+    .find((claim) => claim.id === clarifyClaimId)
+  assert.equal(revisedClaim.source, segments[0])
+  assert.deepEqual(revisedClaim.supportingSources, [
+    { source: clarifyAnswer, origin: "clarification_answer" },
+  ])
+  const focus = controller
+    .getResult()
+    .focus.find((entry) => entry.focus.claimIds.includes(clarifyClaimId))
+  assert.equal(
+    focus.operations.filter((operation) => operation.claimId === clarifyClaimId).length,
+    1,
+  )
+  assert.equal(
+    focus.outcomes.filter((entry) => entry.claimId === clarifyClaimId).length,
+    1,
+  )
+
+  const after = controller.getReviewPlan()
+  assert.equal(
+    after.units.some(
+      (unit) => unit.kind === "clarification" && unit.claimIds.includes(clarifyClaimId),
+    ),
+    false,
+  )
+  const retained = after.units.find((unit) =>
+    unit.claimIds.includes(unrelatedClaimId),
+  )
+  assert.ok(retained)
+  assert.equal(retained.status, "selected")
+  assert.equal(retained.values[0].proposed, "Reviewed wording")
+  assert.equal(
+    review.reviewUnitEdited(after, retained.id),
+    true,
+  )
+  assert.equal(controller.canSave().allowed, true)
+})
+
+test("rephrasing blocks the same answer and a changed answer may retry", async () => {
+  let clarifyCalls = 0
+  const { controller } = await clarifiedController({
+    clarify: (body) => {
+      clarifyCalls += 1
+      if (clarifyCalls === 1)
+        throw new ingestion.IngestionError("field_decision", {
+          version: 1,
+          field: "professional_information",
+          outcome: { kind: "request_rephrasing" },
+        })
+      return clarificationResponse(clarifyClaimId, { answer: body.answer })
+    },
+  })
+  const planBefore = controller.getReviewPlan()
+  const resultBefore = controller.getResult()
+
+  await assert.rejects(
+    controller.answerClarification(clarifyClaimId, "same answer"),
+    { code: "field_decision" },
+  )
+  assert.equal(clarifyCalls, 1)
+  assert.equal(controller.getState().clarification.status, "blocked")
+  assert.equal(controller.getState().clarification.decision, "request_rephrasing")
+  assert.equal(controller.getResult(), resultBefore)
+  assert.equal(controller.getReviewPlan(), planBefore)
+  await assert.rejects(
+    controller.answerClarification(clarifyClaimId, "same answer"),
+    { code: "answer_unchanged" },
+  )
+  assert.equal(clarifyCalls, 1)
+
+  await controller.answerClarification(clarifyClaimId, "changed answer")
+  assert.equal(clarifyCalls, 2)
+  assert.equal(controller.getState().clarification.status, "answered")
+  assert.equal(controller.getState().status, "reviewing")
+})
+
+test("clarification cancellation and receipt expiry retain the pending submission", async () => {
+  // A late response after explicit cancellation is ignored.
+  {
+    let resolveClarify
+    const pending = new Promise((resolve) => {
+      resolveClarify = resolve
+    })
+    const { controller } = await clarifiedController({
+      clarify: () => pending,
+    })
+    const planBefore = controller.getReviewPlan()
+    const resultBefore = controller.getResult()
+    const answer = controller.answerClarification(clarifyClaimId, "late answer")
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    controller.cancelClarification()
+    resolveClarify(clarificationResponse(clarifyClaimId, { answer: "late answer" }))
+    await assert.rejects(answer, { code: "cancelled" })
+    assert.equal(controller.getResult(), resultBefore)
+    assert.equal(controller.getReviewPlan(), planBefore)
+    assert.equal(controller.getState().status, "reviewing")
+    assert.equal(controller.getState().clarification.status, "idle")
+  }
+
+  // Receipt expiry affects only the focused action: no restart is required for
+  // unrelated reviewed changes.
+  {
+    let now = NOW
+    const { transport } = harness({
+      reconcile: clarificationReconcile(clarifyClaimId),
+    })
+    const { controller, timeouts } = controllerForAt(transport, () => now)
+    await controller.start(makeSnapshot(), keys)
+    const plan = controller.getReviewPlan()
+    const unrelated = plan.units.find(
+      (unit) => unit.kind === "addition" && unit.selectable,
+    )
+    controller.selectUnit(unrelated.id, "selected")
+    now = NOW + 600_001
+    await assert.rejects(
+      controller.answerClarification(clarifyClaimId, "I used TypeScript."),
+      { code: "receipt_expired" },
+    )
+    assert.equal(controller.getState().status, "reviewing")
+    assert.equal(controller.getState().restartRequired, false)
+    assert.equal(controller.getState().stale, false)
+    assert.equal(controller.getState().clarification.status, "expired")
+    assert.ok(controller.getResult())
+    assert.equal(controller.canSave().allowed, true)
+    assert.equal(
+      timeouts.entries.some((entry) => entry.controller.signal.aborted),
+      false,
+    )
+  }
+})
+
+test("repeat answers retain prior clarification evidence without duplicates", async () => {
+  const answers = []
+  const { controller } = await clarifiedController({
+    clarify: (body) => {
+      answers.push(body.claim.supportingSources ?? [])
+      return clarificationResponse(clarifyClaimId, {
+        answer: body.answer,
+        priorSupport: body.claim.supportingSources ?? [],
+        operations: [],
+        outcomeKind: "clarification",
+        reason: "unknown_owner",
+      })
+    },
+  })
+  await controller.answerClarification(clarifyClaimId, "I used TypeScript.")
+  await controller.answerClarification(clarifyClaimId, "I used TypeScript daily.")
+  assert.equal(answers.length, 2)
+  assert.deepEqual(answers[1], [
+    { source: "I used TypeScript.", origin: "clarification_answer" },
+  ])
+  const revised = controller
+    .getResult()
+    .batches.flatMap((batch) => batch.claims)
+    .find((claim) => claim.id === clarifyClaimId)
+  assert.deepEqual(revised.supportingSources, [
+    { source: "I used TypeScript.", origin: "clarification_answer" },
+    { source: "I used TypeScript daily.", origin: "clarification_answer" },
+  ])
+  assert.equal(controller.getState().clarification.status, "answered")
+})
+
+test("a failed clarification keeps the review and an unknown answer stays unresolved", async () => {
+  // Transport failure: retained result and plan, no automatic retry.
+  {
+    const { calls, controller } = await clarifiedController({
+      clarify: () => {
+        throw Object.assign(new Error("outage"), { code: "outage" })
+      },
+    })
+    const resultBefore = controller.getResult()
+    const planBefore = controller.getReviewPlan()
+    const count = calls.length
+    await assert.rejects(
+      controller.answerClarification(clarifyClaimId, "I used Java."),
+      { code: "outage" },
+    )
+    assert.equal(calls.length, count + 1)
+    assert.equal(controller.getResult(), resultBefore)
+    assert.equal(controller.getReviewPlan(), planBefore)
+    assert.equal(controller.getState().clarification.status, "failed")
+    assert.equal(controller.getState().status, "reviewing")
+  }
+
+  // Unknown answer: the revised claim keeps a material question and creates no
+  // operation; a dependent destination is recomputed instead of hidden.
+  {
+    const { controller } = await clarifiedController({
+      clarify: () =>
+        clarificationResponse(clarifyClaimId, {
+          answer: "I do not know who used TypeScript.",
+          operations: [],
+          outcomeKind: "clarification",
+          reason: "unknown_owner",
+        }),
+    })
+    await controller.answerClarification(
+      clarifyClaimId,
+      "I do not know who used TypeScript.",
+    )
+    const revised = controller
+      .getResult()
+      .batches.flatMap((batch) => batch.claims)
+      .find((claim) => claim.id === clarifyClaimId)
+    assert.equal(revised.question, "Who used TypeScript?")
+    assert.equal(
+      controller
+        .getResult()
+        .focus.flatMap((entry) => entry.operations)
+        .some((operation) => operation.claimId === clarifyClaimId),
+      false,
+    )
+    const unit = controller
+      .getReviewPlan()
+      .units.find((candidate) => candidate.claimIds.includes(clarifyClaimId))
+    assert.equal(unit.kind, "clarification")
+    assert.equal(unit.question, "Who used TypeScript?")
+    assert.equal(controller.getState().status, "reviewing")
+  }
 })
