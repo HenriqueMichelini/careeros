@@ -421,7 +421,7 @@ func compareExperimentFields(result *ExperimentCompatibility, prefix, code strin
 	for _, key := range sortedExperimentKeys(keys) {
 		want, wok := expected[key]
 		got, gok := actual[key]
-		if (wok && want == "") || (gok && got == "") {
+		if (wok && strings.TrimSpace(want) == "") || (gok && strings.TrimSpace(got) == "") {
 			continue
 		}
 		if !wok {
@@ -453,36 +453,47 @@ func compareKnownExperimentCases(result *ExperimentCompatibility, prefix string,
 	}
 	index := map[taskPairKey]TaskCaseRef{}
 	for _, ref := range expected {
-		key := taskKey(ref)
-		key.InputHash = ""
-		index[key] = ref
+		index[taskKey(ref)] = ref
 	}
 	seen := map[taskPairKey]bool{}
 	for _, ref := range actual {
 		key := taskKey(ref)
-		if key.TaskVersion != "" && key.CaseID != "" && key.InputHash != "" && key.Language != "" && key.RepeatOrdinal != 0 {
+		if strings.TrimSpace(key.TaskVersion) != "" && strings.TrimSpace(key.CaseID) != "" && strings.TrimSpace(key.InputHash) != "" && strings.TrimSpace(key.Language) != "" && key.RepeatOrdinal > 0 {
 			if seen[key] {
 				result.add("invalid", "case_mismatch", prefix, "duplicate task/repetition key")
 			}
 			seen[key] = true
 		}
-		key.InputHash = ""
 		if match, ok := index[key]; ok {
 			compareExperimentFields(result, prefix, "case_mismatch", caseFields(match), caseFields(ref))
 		} else {
 			possibleMatch := false
+			var knownMismatch []ExperimentReason
 			for _, candidate := range expected {
 				if (strings.TrimSpace(ref.TaskVersion) == "" || ref.TaskVersion == candidate.TaskVersion) &&
 					(strings.TrimSpace(ref.CaseID) == "" || ref.CaseID == candidate.CaseID) &&
 					(strings.TrimSpace(ref.InputHash) == "" || ref.InputHash == candidate.InputHash) &&
 					(strings.TrimSpace(ref.Language) == "" || ref.Language == candidate.Language) &&
 					(ref.RepeatOrdinal == 0 || ref.RepeatOrdinal == candidate.RepeatOrdinal) {
-					possibleMatch = true
-					break
+					candidateResult := ExperimentCompatibility{Status: "valid"}
+					compareExperimentFields(&candidateResult, prefix, "case_mismatch", caseFields(candidate), caseFields(ref))
+					if candidateResult.Status == "valid" {
+						possibleMatch = true
+						break
+					}
+					if knownMismatch == nil {
+						knownMismatch = candidateResult.Reasons
+					}
 				}
 			}
 			if !possibleMatch {
-				result.add("invalid", "case_mismatch", prefix, "unpaired shared task input or repetition")
+				if knownMismatch == nil {
+					result.add("invalid", "case_mismatch", prefix, "unpaired shared task input or repetition")
+				} else {
+					for _, reason := range knownMismatch {
+						result.add("invalid", reason.Code, reason.Field, reason.Detail)
+					}
+				}
 			}
 		}
 	}

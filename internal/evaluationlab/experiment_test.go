@@ -391,6 +391,178 @@ func TestExperimentIncompleteCohortWithoutKnownMismatchStaysUnavailable(t *testi
 	}
 }
 
+func TestExperimentMissingPairKeyComponentsCannotProveDuplicates(t *testing.T) {
+	fields := []struct {
+		name string
+		set  func(*lab.TaskCaseRef, string)
+	}{
+		{"caseId", func(ref *lab.TaskCaseRef, value string) { ref.CaseID = value }},
+		{"taskVersion", func(ref *lab.TaskCaseRef, value string) { ref.TaskVersion = value }},
+		{"inputHash", func(ref *lab.TaskCaseRef, value string) { ref.InputHash = value }},
+		{"language", func(ref *lab.TaskCaseRef, value string) { ref.Language = value }},
+	}
+	for _, field := range fields {
+		t.Run(field.name, func(t *testing.T) {
+			source := experimentDefinition()
+			second := source.Cases[0]
+			second.CaseID = "second-case"
+			source.Cases = append(source.Cases, second)
+			def, err := lab.FreezeExperiment(source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, missing := range []string{"", " \t\n"} {
+				t.Run("missing="+missing, func(t *testing.T) {
+					left, right := experimentEvidence(def, 0), experimentEvidence(def, 1)
+					right.Cases[1] = right.Cases[0]
+					for i := range right.Cases {
+						field.set(&right.Cases[i], missing)
+					}
+					result := lab.CheckExperiment(def, left, right)
+					if result.Status != "unavailable" || len(result.Reasons) == 0 {
+						t.Fatalf("missing pairing identity became known invalidity: %+v", result)
+					}
+					for _, reason := range result.Reasons {
+						if reason.Code != "metadata_missing" {
+							t.Fatalf("unknown pairing identity proved a mismatch: %+v", result)
+						}
+					}
+				})
+			}
+			left, right := experimentEvidence(def, 0), experimentEvidence(def, 1)
+			right.Cases[1] = right.Cases[0]
+			right.Cases[1].OriginalFixtureHash = ""
+			result := lab.CheckExperiment(def, left, right)
+			duplicateFound := false
+			for _, reason := range result.Reasons {
+				duplicateFound = duplicateFound || (reason.Code == "case_mismatch" && strings.Contains(reason.Detail, "duplicate"))
+			}
+			if result.Status != "invalid" || !duplicateFound {
+				t.Fatalf("known duplicate hidden by unrelated missing metadata: %+v", result)
+			}
+		})
+	}
+
+	source := experimentDefinition()
+	source.RepeatCount = 2
+	second := source.Cases[0]
+	second.RepeatOrdinal = 2
+	source.Cases = append(source.Cases, second)
+	def, err := lab.FreezeExperiment(source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, ordinal := range []int{0, -1} {
+		left, right := experimentEvidence(def, 0), experimentEvidence(def, 1)
+		for i := range right.Cases {
+			right.Cases[i].RepeatOrdinal = ordinal
+		}
+		result := lab.CheckExperiment(def, left, right)
+		want := "unavailable"
+		if ordinal < 0 {
+			want = "invalid"
+		}
+		if result.Status != want {
+			t.Fatalf("ordinal %d: want %s, got %+v", ordinal, want, result)
+		}
+		for _, reason := range result.Reasons {
+			if strings.Contains(reason.Detail, "duplicate") {
+				t.Fatalf("nonpositive ordinal proved a duplicate: %+v", result)
+			}
+		}
+	}
+}
+
+func TestExperimentPairsDistinctInputsWithoutLosingTheirIdentity(t *testing.T) {
+	for _, distinctLabels := range []bool{false, true} {
+		name := "same labels"
+		if distinctLabels {
+			name = "distinct labels"
+		}
+		t.Run(name, func(t *testing.T) {
+			source := experimentDefinition()
+			second := source.Cases[0]
+			second.InputHash = strings.Repeat("1", 64)
+			if distinctLabels {
+				second.ExpectationHash = strings.Repeat("2", 64)
+			}
+			source.Cases = append(source.Cases, second)
+			def, err := lab.FreezeExperiment(source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			tests := []struct {
+				name, status string
+				edit         func(*lab.ExperimentEvidence)
+			}{
+				{"exact evidence", "valid", func(e *lab.ExperimentEvidence) {}},
+				{"known input drift", "invalid", func(e *lab.ExperimentEvidence) { e.Cases[0].InputHash = strings.Repeat("3", 64) }},
+				{"unknown input with matching labels", "unavailable", func(e *lab.ExperimentEvidence) { e.Cases[0].InputHash = "" }},
+				{"unknown input with conflicting labels", "invalid", func(e *lab.ExperimentEvidence) {
+					e.Cases[0].InputHash = ""
+					e.Cases[0].ExpectationHash = strings.Repeat("3", 64)
+				}},
+				{"known input with conflicting labels", "invalid", func(e *lab.ExperimentEvidence) { e.Cases[0].ExpectationHash = strings.Repeat("3", 64) }},
+			}
+			for _, test := range tests {
+				t.Run(test.name, func(t *testing.T) {
+					left, right := experimentEvidence(def, 0), experimentEvidence(def, 1)
+					test.edit(&right)
+					result := lab.CheckExperiment(def, left, right)
+					if result.Status != test.status {
+						t.Fatalf("want %s, got %+v", test.status, result)
+					}
+				})
+			}
+		})
+	}
+}
+
+func TestExperimentMissingDigestIdentityStaysUnavailable(t *testing.T) {
+	def, err := lab.FreezeExperiment(experimentDefinition())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, field := range []func(*lab.DigestRef, string){
+		func(ref *lab.DigestRef, value string) { ref.ID = value },
+		func(ref *lab.DigestRef, value string) { ref.Version = value },
+		func(ref *lab.DigestRef, value string) { ref.Hash = value },
+	} {
+		for _, missing := range []string{"", " \t\n"} {
+			left, right := experimentEvidence(def, 0), experimentEvidence(def, 1)
+			field(&right.Evaluator, missing)
+			result := lab.CheckExperiment(def, left, right)
+			if result.Status != "unavailable" || len(result.Reasons) == 0 {
+				t.Fatalf("missing digest identity became known invalidity: %+v", result)
+			}
+			for _, reason := range result.Reasons {
+				if reason.Code != "metadata_missing" {
+					t.Fatalf("unknown digest identity proved a mismatch: %+v", result)
+				}
+			}
+		}
+	}
+}
+
+func TestExperimentKeepsKnownIdentityBytesExact(t *testing.T) {
+	source := experimentDefinition()
+	second := source.Cases[0]
+	second.CaseID = " " + second.CaseID + " "
+	source.Cases = append(source.Cases, second)
+	def, err := lab.FreezeExperiment(source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	left, right := experimentEvidence(def, 0), experimentEvidence(def, 1)
+	if result := lab.CheckExperiment(def, left, right); result.Status != "valid" {
+		t.Fatalf("distinct known case identities were normalized: %+v", result)
+	}
+	right.Evaluator.ID = " " + right.Evaluator.ID + " "
+	if result := lab.CheckExperiment(def, left, right); result.Status != "invalid" {
+		t.Fatalf("known digest identity drift was normalized: %+v", result)
+	}
+}
+
 func TestExperimentPreservesStrictComparatorAndRejectsUnsupportedPolicy(t *testing.T) {
 	strict := lab.ComparisonContract{FixtureHash: "f", LabelHash: "l", SourceVersion: "s", PromptVersion: "p", SchemaVersion: "j", ScorerVersion: "e", StrategyVersion: "t", BudgetVersion: "b", RuntimeVersion: "r", Mode: "controlled", Configuration: "current"}
 	changed := strict
