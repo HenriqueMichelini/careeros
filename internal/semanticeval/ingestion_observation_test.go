@@ -3,7 +3,10 @@ package semanticeval_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"reflect"
+	"strconv"
+	"strings"
 	"testing"
 
 	eval "professional-information-repo/internal/semanticeval"
@@ -43,6 +46,216 @@ func TestNormalizeLegacyIngestionPreservesReviewableEvidence(t *testing.T) {
 	if _, err := json.Marshal(got); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestNormalizeIngestionRejectsCaseAliasesBeforeProjection(t *testing.T) {
+	for _, tc := range []struct{ name, from, to string }{
+		{"claim alias only", `"text":"May use Java"`, `"Text":"I am a Java expert"`},
+		{"claim canonical and alias", `"text":"May use Java"`, `"text":"May use Java","Text":"I am a Java expert"`},
+		{"meaning", `"certainty":"uncertain"`, `"certainty":"uncertain","Certainty":"certain"`},
+		{"temporal", `"precision":"approximate"`, `"Precision":"approximate"`},
+		{"source reference", `"originalStart":0`, `"originalStart":0,"OriginalStart":7`},
+		{"supporting source", `"origin":"original"`, `"Origin":"original"`},
+		{"disposition", `"reason":"owner unknown"`, `"reason":"owner unknown","Reason":"owner known"`},
+		{"coverage", `"validClaims":1`, `"validClaims":1,"ValidClaims":1`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			raw := bytes.Replace([]byte(legacyProposal), []byte(tc.from), []byte(tc.to), 1)
+			o := eval.NormalizeLegacyIngestion(eval.IngestionResponseEvidence{ID: "alias", Status: 200, Body: raw})
+			if o.Availability["endpoint"].Available || len(o.Issues) == 0 || len(o.Claims) != 0 {
+				t.Fatalf("case alias admitted as exact producer evidence: issues=%+v claims=%+v", o.Issues, o.Claims)
+			}
+			if !bytes.Equal(o.Raw[0].Response.Body, raw) {
+				t.Fatal("lost raw alias evidence")
+			}
+		})
+	}
+}
+
+func TestNormalizeSubmissionIngestionUsesExactProducerFieldNames(t *testing.T) {
+	control := eval.NormalizeSubmissionIngestion(submissionEvidence())
+	if !control.Availability["endpoint"].Available {
+		t.Fatalf("canonical staged control unavailable: %+v", control.Issues)
+	}
+	for _, tc := range []struct{ name, stage, from, alias string }{
+		{"stage", "plan", `"version":2`, `"Version":2`},
+		{"plan", "plan", `"originalBytes":34`, `"OriginalBytes":34`},
+		{"plan batch", "plan", `"payloadBytes":100`, `"PayloadBytes":100`},
+		{"plan primary range", "plan", `"Start":0`, `"start":0`},
+		{"assembly", "assembly", `"profileId":"profile"`, `"ProfileId":"profile"`},
+		{"assembly batch", "assembly", `"skippedCount":0`, `"SkippedCount":0`},
+		{"assembly primary range", "assembly", `"End":12`, `"end":12`},
+		{"extraction", "extract", `"batchIndex":0`, `"BatchIndex":0`},
+		{"extracted claim", "extract", `"text":"Uses Java"`, `"Text":"Uses Java"`},
+		{"focus", "focus", `"claimIds":["r/0/c1"]`, `"ClaimIds":["r/0/c1"]`},
+		{"operation", "focus", `"value":"Java"`, `"Value":"Java"`},
+	} {
+		for _, duplicate := range []bool{false, true} {
+			t.Run(tc.name+"/duplicate="+fmt.Sprint(duplicate), func(t *testing.T) {
+				e := submissionEvidence()
+				var response *eval.IngestionResponseEvidence
+				switch tc.stage {
+				case "plan":
+					response = &e.Plan
+				case "assembly":
+					response = &e.Assembly
+				case "extract":
+					response = &e.Batches[0]
+				case "focus":
+					response = &e.Focus[0]
+				}
+				replacement := tc.alias
+				if duplicate {
+					replacement = tc.from + "," + tc.alias
+				}
+				response.Body = bytes.Replace(response.Body, []byte(tc.from), []byte(replacement), 1)
+				o := eval.NormalizeSubmissionIngestion(e)
+				if o.Availability["endpoint"].Available || !hasIngestionIssue(o, response.ID, "malformed_or_unknown_schema", "") {
+					t.Fatalf("case alias admitted: %+v", o.Issues)
+				}
+				assertIngestionRaw(t, o, *response)
+			})
+		}
+	}
+}
+
+func hasIngestionIssue(o eval.IngestionProposalObservation, responseID, code, path string) bool {
+	for _, issue := range o.Issues {
+		if issue.ResponseID == responseID && issue.Code == code && issue.Path == path {
+			return true
+		}
+	}
+	return false
+}
+
+func assertIngestionRaw(t *testing.T, o eval.IngestionProposalObservation, response eval.IngestionResponseEvidence) {
+	t.Helper()
+	for _, raw := range o.Raw {
+		if raw.Response.ID == response.ID && bytes.Equal(raw.Response.Body, response.Body) && raw.SHA256 == eval.Hash(response.Body) {
+			return
+		}
+	}
+	t.Fatal("lost original raw evidence or hash")
+}
+
+func TestNormalizeIngestionRequiresCompleteRelatedFactReferences(t *testing.T) {
+	for _, staged := range []bool{false, true} {
+		for _, key := range []string{"profileId", "id", "revision"} {
+			for _, null := range []bool{false, true} {
+				t.Run(fmt.Sprintf("staged=%v/%s/null=%v", staged, key, null), func(t *testing.T) {
+					r := eval.IngestionResponseEvidence{ID: "fact", Status: 200, Body: []byte(legacyProposal)}
+					e := submissionEvidence()
+					if staged {
+						r = e.Focus[0]
+					}
+					// Known wrong ownership and explicit zero revision are evidence for
+					// a later evaluator, rather than grounds for semantic repair.
+					r.Body = bytes.Replace(r.Body, []byte(`"relatedFacts":[]`), []byte(`"relatedFacts":[{"profileId":"wrong-owner","id":"f1","revision":0}]`), 1)
+					normalize := func(response eval.IngestionResponseEvidence) eval.IngestionProposalObservation {
+						if staged {
+							e.Focus[0] = response
+							return eval.NormalizeSubmissionIngestion(e)
+						}
+						return eval.NormalizeLegacyIngestion(response)
+					}
+					control := normalize(r)
+					if !control.Availability["endpoint"].Available || control.Outcomes[0].RelatedFacts[0].ProfileID != "wrong-owner" || control.Outcomes[0].RelatedFacts[0].Revision != 0 {
+						t.Fatalf("complete observed fact reference changed: %+v", control.Issues)
+					}
+					r.Body = changeJSON(t, r.Body, func(v map[string]any) {
+						fact := v["outcomes"].([]any)[0].(map[string]any)["relatedFacts"].([]any)[0].(map[string]any)
+						if null {
+							fact[key] = nil
+						} else {
+							delete(fact, key)
+						}
+					})
+					o := normalize(r)
+					if o.Availability["endpoint"].Available || o.Availability["dispositions"].Available || !hasIngestionIssue(o, r.ID, "missing_field", "/outcomes/0/relatedFacts/0/"+key) {
+						t.Fatalf("missing/null fact reference became a known value: %+v", o.Issues)
+					}
+					assertIngestionRaw(t, o, r)
+				})
+			}
+		}
+	}
+}
+
+func TestNormalizeSubmissionIngestionRequiresNestedProducerMetadata(t *testing.T) {
+	for _, tc := range []struct{ stage, path, keys string }{
+		{"plan", "/stage", "version kind"},
+		{"plan", "/plan", "protocolVersion sourceId profileId runId planVersion status complete originalBytes preparedBytes batches remaining"},
+		{"plan", "/plan/batches/0", "index primary context preparedBytes payloadBytes"},
+		{"plan", "/plan/batches/0/primary/0", "Start End"},
+		{"plan", "/plan/batches/0/context/0", "Start End"},
+		{"plan", "/plan/remaining/0", "Start End"},
+		{"assembly", "/stage", "version kind"},
+		{"assembly", "/context", "protocolVersion sourceId profileId runId planVersion batches coverage"},
+		{"assembly", "/context/batches/0", "index primary claimIds claimCount skippedCount"},
+		{"assembly", "/context/batches/0/primary/0", "Start End"},
+		{"assembly", "/context/coverage", "validClaims invalidClaims discoveryComplete capacity"},
+		{"extract", "/stage", "version kind"},
+		{"focus", "/stage", "version kind"},
+	} {
+		for _, key := range strings.Fields(tc.keys) {
+			for _, null := range []bool{false, true} {
+				t.Run(fmt.Sprintf("%s%s/%s/null=%v", tc.stage, tc.path, key, null), func(t *testing.T) {
+					e := submissionEvidence()
+					e.Plan.Body = changeJSON(t, e.Plan.Body, func(v map[string]any) {
+						jsonRecord(t, v, "/plan/batches/0")["context"] = []any{map[string]any{"Start": 0, "End": 3}}
+						if tc.path == "/plan/remaining/0" {
+							jsonRecord(t, v, "/plan")["remaining"] = []any{map[string]any{"Start": 12, "End": 34}}
+						}
+					})
+					control := eval.NormalizeSubmissionIngestion(e)
+					if tc.path != "/plan/remaining/0" && !control.Availability["endpoint"].Available {
+						t.Fatalf("canonical metadata unavailable: %+v", control.Issues)
+					}
+					var r *eval.IngestionResponseEvidence
+					switch tc.stage {
+					case "plan":
+						r = &e.Plan
+					case "assembly":
+						r = &e.Assembly
+					case "extract":
+						r = &e.Batches[0]
+					case "focus":
+						r = &e.Focus[0]
+					}
+					r.Body = changeJSON(t, r.Body, func(v map[string]any) {
+						record := jsonRecord(t, v, tc.path)
+						if null {
+							record[key] = nil
+						} else {
+							delete(record, key)
+						}
+					})
+					o := eval.NormalizeSubmissionIngestion(e)
+					if o.Availability["endpoint"].Available || !hasIngestionIssue(o, r.ID, "missing_field", tc.path+"/"+key) {
+						t.Fatalf("missing/null producer metadata became a known value: %+v", o.Issues)
+					}
+					assertIngestionRaw(t, o, *r)
+				})
+			}
+		}
+	}
+}
+
+func jsonRecord(t *testing.T, object map[string]any, path string) map[string]any {
+	t.Helper()
+	var current any = object
+	for _, part := range strings.Split(strings.TrimPrefix(path, "/"), "/") {
+		if array, ok := current.([]any); ok {
+			index, err := strconv.Atoi(part)
+			if err != nil || index < 0 || index >= len(array) {
+				t.Fatalf("invalid test fixture array path %s", path)
+			}
+			current = array[index]
+		} else {
+			current = current.(map[string]any)[part]
+		}
+	}
+	return current.(map[string]any)
 }
 
 func TestNormalizeLegacyIngestionDistinguishesKnownEmptyFromUnavailable(t *testing.T) {
@@ -135,12 +348,12 @@ func TestNormalizeLegacyIngestionDeclinesBrokenReferencesAndCoverage(t *testing.
 
 func submissionEvidence() eval.SubmissionIngestionEvidence {
 	return eval.SubmissionIngestionEvidence{
-		Plan: eval.IngestionResponseEvidence{ID: "plan", Status: 200, Body: []byte(`{"stage":{"version":2,"kind":"plan"},"planReceipt":"plan-receipt","expiresAt":1,"plan":{"protocolVersion":"profile-submission-v1","sourceId":"source","profileId":"profile","runId":"r","planVersion":"portions-v1","status":"ready","complete":true,"originalBytes":34,"preparedBytes":34,"batches":[{"index":0,"primary":[{"start":0,"end":12}],"context":[],"preparedBytes":12,"payloadBytes":100},{"index":1,"primary":[{"start":12,"end":34}],"context":[],"preparedBytes":22,"payloadBytes":100}],"remaining":[]}}`)},
+		Plan: eval.IngestionResponseEvidence{ID: "plan", Status: 200, Body: []byte(`{"stage":{"version":2,"kind":"plan"},"planReceipt":"plan-receipt","expiresAt":1,"plan":{"protocolVersion":"profile-submission-v1","sourceId":"source","profileId":"profile","runId":"r","planVersion":"portions-v1","status":"ready","complete":true,"originalBytes":34,"preparedBytes":34,"batches":[{"index":0,"primary":[{"Start":0,"End":12}],"context":[],"preparedBytes":12,"payloadBytes":100},{"index":1,"primary":[{"Start":12,"End":34}],"context":[],"preparedBytes":22,"payloadBytes":100}],"remaining":[]}}`)},
 		Batches: []eval.IngestionResponseEvidence{
 			{ID: "extract0", Status: 200, Body: []byte(`{"stage":{"version":2,"kind":"extract"},"batchReceipt":"batch0","expiresAt":1,"batchIndex":0,"claims":[{"id":"c1","source":"I use Java.","text":"Uses Java","targets":["skills"],"question":""}],"unverifiedCount":0,"skippedClaims":[],"coverage":{"validClaims":1,"invalidClaims":0,"discoveryComplete":false,"capacity":"within_limit"}}`)},
 			{ID: "extract1", Status: 200, Body: []byte(`{"stage":{"version":2,"kind":"extract"},"batchReceipt":"batch1","expiresAt":1,"batchIndex":1,"claims":[{"id":"c1","source":"At Atlas I use Python.","text":"Uses Python at Atlas","targets":["projects"],"question":""}],"unverifiedCount":0,"skippedClaims":[],"coverage":{"validClaims":1,"invalidClaims":0,"discoveryComplete":false,"capacity":"possibly_exhausted"}}`)},
 		},
-		Assembly: eval.IngestionResponseEvidence{ID: "assembly", Status: 200, Body: []byte(`{"stage":{"version":2,"kind":"assemble"},"contextReceipt":"context","expiresAt":1,"context":{"protocolVersion":"profile-submission-v1","sourceId":"source","profileId":"profile","runId":"r","planVersion":"portions-v1","batches":[{"index":0,"primary":[{"start":0,"end":12}],"claimIds":["r/0/c1"],"claimCount":1,"skippedCount":0},{"index":1,"primary":[{"start":12,"end":34}],"claimIds":["r/1/c1"],"claimCount":1,"skippedCount":0}],"coverage":{"validClaims":2,"invalidClaims":0,"discoveryComplete":false,"capacity":"possibly_exhausted"}}}`)},
+		Assembly: eval.IngestionResponseEvidence{ID: "assembly", Status: 200, Body: []byte(`{"stage":{"version":2,"kind":"assemble"},"contextReceipt":"context","expiresAt":1,"context":{"protocolVersion":"profile-submission-v1","sourceId":"source","profileId":"profile","runId":"r","planVersion":"portions-v1","batches":[{"index":0,"primary":[{"Start":0,"End":12}],"claimIds":["r/0/c1"],"claimCount":1,"skippedCount":0},{"index":1,"primary":[{"Start":12,"End":34}],"claimIds":["r/1/c1"],"claimCount":1,"skippedCount":0}],"coverage":{"validClaims":2,"invalidClaims":0,"discoveryComplete":false,"capacity":"possibly_exhausted"}}}`)},
 		Focus: []eval.IngestionResponseEvidence{
 			{ID: "focus0", Status: 200, Body: []byte(`{"stage":{"version":2,"kind":"reconcile"},"focus":{"claimIds":["r/0/c1"]},"operations":[{"claimId":"r/0/c1","supportingClaimIds":["r/0/c1"],"target":"skills","entryId":"","field":"skills","action":"add","value":"Java","finding":"addition"}],"outcomes":[{"claimId":"r/0/c1","kind":"change","reason":"new skill","relatedFacts":[],"relatedClaimIds":[],"operationIndexes":[0]}]}`)},
 			{ID: "focus1", Status: 200, Body: []byte(`{"stage":{"version":2,"kind":"reconcile"},"focus":{"claimIds":["r/1/c1"]},"operations":[{"claimId":"r/1/c1","supportingClaimIds":["r/1/c1"],"target":"projects","entryId":"new:r/1/c1","field":"name","action":"add","value":"Atlas","finding":"addition"}],"outcomes":[{"claimId":"r/1/c1","kind":"change","reason":"new project","relatedFacts":[],"relatedClaimIds":[],"operationIndexes":[0]}]}`)},

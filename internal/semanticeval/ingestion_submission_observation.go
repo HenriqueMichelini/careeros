@@ -52,6 +52,7 @@ func NormalizeSubmissionIngestion(evidence SubmissionIngestionEvidence) Ingestio
 	if !planOK || !assemblyOK {
 		return o
 	}
+	o.validateSubmissionMetadata(evidence.Plan, evidence.Assembly)
 	o.stage(evidence.Plan, plan.Stage, ingestion.SubmissionStagePlan)
 	o.stage(evidence.Assembly, assembly.Stage, ingestion.SubmissionStageAssemble)
 	if plan.PlanReceipt == "" || assembly.ContextReceipt == "" {
@@ -63,12 +64,6 @@ func NormalizeSubmissionIngestion(evidence SubmissionIngestionEvidence) Ingestio
 	if code := ingestion.SubmissionAggregateError(assembly.Context, plan.Plan); code != "" {
 		o.unavailable("assembly_"+code, evidence.Assembly.ID, "/context")
 	}
-	o.requireFields(evidence.Plan, evidence.Plan.Body, "", "endpoint", "stage", "planReceipt", "expiresAt", "plan")
-	o.requireFields(evidence.Assembly, evidence.Assembly.Body, "", "endpoint", "stage", "contextReceipt", "expiresAt", "context")
-	planRaw := rawField(evidence.Plan.Body, "plan")
-	o.requireFields(evidence.Plan, planRaw, "/plan", "endpoint", "protocolVersion", "sourceId", "profileId", "runId", "planVersion", "status", "complete", "originalBytes", "preparedBytes", "batches", "remaining")
-	o.requireArray(evidence.Plan, planRaw, "/plan", "batches", "endpoint")
-	o.requireArray(evidence.Plan, planRaw, "/plan", "remaining", "endpoint")
 	capacity := "within_limit"
 	parsed := map[int]submissionExtractionWire{}
 	responses := map[int]IngestionResponseEvidence{}
@@ -206,8 +201,40 @@ func NormalizeSubmissionIngestion(evidence SubmissionIngestionEvidence) Ingestio
 	return o
 }
 func (o *IngestionProposalObservation) stage(r IngestionResponseEvidence, s ingestion.SubmissionStage, kind string) {
+	o.requireFields(r, rawField(r.Body, "stage"), "/stage", "", "version", "kind")
 	if s.Version != ingestion.SubmissionStageVersion || s.Kind != kind {
 		o.unavailable("stage_contract", r.ID, "/stage")
+	}
+}
+
+// Validate observed presence before using decoded zero values as plan/membership
+// metadata. These fields bind the whole proposal, so incomplete metadata makes
+// all facets unavailable without repairing producer values or ownership.
+func (o *IngestionProposalObservation) validateSubmissionMetadata(plan, assembly IngestionResponseEvidence) {
+	o.requireFields(plan, plan.Body, "", "", "stage", "planReceipt", "expiresAt", "plan")
+	o.requireFields(assembly, assembly.Body, "", "", "stage", "contextReceipt", "expiresAt", "context")
+	p := rawField(plan.Body, "plan")
+	o.requireFields(plan, p, "/plan", "", "protocolVersion", "sourceId", "profileId", "runId", "planVersion", "status", "complete", "originalBytes", "preparedBytes", "batches", "remaining")
+	for i, batch := range rawIngestionArray(p, "batches") {
+		path := "/plan/batches/" + strconv.Itoa(i)
+		o.requireFields(plan, batch, path, "", "index", "primary", "context", "preparedBytes", "payloadBytes")
+		o.requireSubmissionRanges(plan, batch, path, "primary", "context")
+	}
+	o.requireSubmissionRanges(plan, p, "/plan", "remaining")
+	c := rawField(assembly.Body, "context")
+	o.requireFields(assembly, c, "/context", "", "protocolVersion", "sourceId", "profileId", "runId", "planVersion", "batches", "coverage")
+	for i, batch := range rawIngestionArray(c, "batches") {
+		path := "/context/batches/" + strconv.Itoa(i)
+		o.requireFields(assembly, batch, path, "", "index", "primary", "claimIds", "claimCount", "skippedCount")
+		o.requireSubmissionRanges(assembly, batch, path, "primary")
+	}
+}
+
+func (o *IngestionProposalObservation) requireSubmissionRanges(r IngestionResponseEvidence, raw []byte, path string, fields ...string) {
+	for _, field := range fields {
+		for i, item := range rawIngestionArray(raw, field) {
+			o.requireFields(r, item, path+"/"+field+"/"+strconv.Itoa(i), "", "Start", "End")
+		}
 	}
 }
 func ingestionUnresolvedKind(kind string) bool {

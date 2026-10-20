@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"reflect"
 	"strconv"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -264,6 +266,10 @@ func (o *IngestionProposalObservation) decode(r IngestionResponseEvidence, targe
 		o.unavailable("malformed_or_unknown_schema", r.ID, "")
 		return false
 	}
+	if !exactIngestionFields(r.Body, reflect.TypeOf(target)) {
+		o.unavailable("malformed_or_unknown_schema", r.ID, "")
+		return false
+	}
 	decoder := json.NewDecoder(bytes.NewReader(r.Body))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(target); err != nil {
@@ -273,6 +279,57 @@ func (o *IngestionProposalObservation) decode(r IngestionResponseEvidence, targe
 	if err := decoder.Decode(new(any)); err != io.EOF {
 		o.unavailable("malformed_or_unknown_schema", r.ID, "")
 		return false
+	}
+	return true
+}
+
+// Match only the names the known producer structs actually emit. encoding/json
+// otherwise folds case, allowing an alias to overwrite a canonical field. Opaque
+// RawMessage metadata remains raw; it has no projected schema to interpret here.
+func exactIngestionFields(raw []byte, schema reflect.Type) bool {
+	for schema.Kind() == reflect.Pointer {
+		schema = schema.Elem()
+	}
+	if schema == reflect.TypeOf(json.RawMessage{}) {
+		return true
+	}
+	switch schema.Kind() {
+	case reflect.Struct:
+		var object map[string]json.RawMessage
+		if json.Unmarshal(raw, &object) != nil {
+			return false
+		}
+		fields := map[string]reflect.Type{}
+		for i := 0; i < schema.NumField(); i++ {
+			field := schema.Field(i)
+			if !field.IsExported() {
+				continue
+			}
+			name := strings.Split(field.Tag.Get("json"), ",")[0]
+			if name == "-" {
+				continue
+			}
+			if name == "" {
+				name = field.Name
+			}
+			fields[name] = field.Type
+		}
+		for name, value := range object {
+			field, known := fields[name]
+			if !known || !exactIngestionFields(value, field) {
+				return false
+			}
+		}
+	case reflect.Slice, reflect.Array:
+		var values []json.RawMessage
+		if json.Unmarshal(raw, &values) != nil {
+			return false
+		}
+		for _, value := range values {
+			if !exactIngestionFields(value, schema.Elem()) {
+				return false
+			}
+		}
 	}
 	return true
 }
@@ -287,10 +344,14 @@ func rawField(raw []byte, key string) json.RawMessage {
 	return object[key]
 }
 func (o *IngestionProposalObservation) requireFields(r IngestionResponseEvidence, raw []byte, path, facet string, keys ...string) {
+	var facets []string
+	if facet != "" {
+		facets = []string{facet}
+	}
 	for _, key := range keys {
 		value := rawField(raw, key)
 		if len(value) == 0 || bytes.Equal(bytes.TrimSpace(value), []byte("null")) {
-			o.unavailable("missing_field", r.ID, path+"/"+key, facet)
+			o.unavailable("missing_field", r.ID, path+"/"+key, facets...)
 		}
 	}
 }
@@ -390,6 +451,9 @@ func (o *IngestionProposalObservation) validateRecords(r IngestionResponseEviden
 			o.requireFields(r, rawOutcomes[i], path, "dispositions", "claimId", "kind", "reason", "relatedFacts", "relatedClaimIds")
 			o.requireArray(r, rawOutcomes[i], path, "relatedFacts", "dispositions")
 			o.requireArray(r, rawOutcomes[i], path, "relatedClaimIds", "dispositions")
+			for j, fact := range rawIngestionArray(rawOutcomes[i], "relatedFacts") {
+				o.requireFields(r, fact, path+"/relatedFacts/"+strconv.Itoa(j), "dispositions", "profileId", "id", "revision")
+			}
 		}
 		if !hasIngestionClaim(claims, v.ClaimID) || seen[v.ClaimID] {
 			o.unavailable("dangling_or_duplicate_reference", r.ID, path, "dispositions")
