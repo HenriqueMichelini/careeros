@@ -9,14 +9,15 @@ import (
 )
 
 type Provenance struct {
-	Commit             string              `json:"commit"`
-	DirtyHashes        map[string]string   `json:"dirtyHashes,omitempty"`
-	SourceHashes       map[string]string   `json:"sourceHashes,omitempty"`
-	FixtureHash        string              `json:"fixtureHash,omitempty"`
-	FixtureVersion     string              `json:"fixtureVersion,omitempty"`
-	FixtureHashes      map[string]string   `json:"fixtureHashes,omitempty"`
-	DerivedFrom        []ArtifactReference `json:"derivedFrom,omitempty"`
-	UnavailableReasons []string            `json:"unavailableReasons"`
+	Build              *BuildCorrespondence `json:"build,omitempty"`
+	Commit             string               `json:"commit"`
+	DirtyHashes        map[string]string    `json:"dirtyHashes,omitempty"`
+	SourceHashes       map[string]string    `json:"sourceHashes,omitempty"`
+	FixtureHash        string               `json:"fixtureHash,omitempty"`
+	FixtureVersion     string               `json:"fixtureVersion,omitempty"`
+	FixtureHashes      map[string]string    `json:"fixtureHashes,omitempty"`
+	DerivedFrom        []ArtifactReference  `json:"derivedFrom,omitempty"`
+	UnavailableReasons []string             `json:"unavailableReasons"`
 }
 
 type ArtifactReference struct {

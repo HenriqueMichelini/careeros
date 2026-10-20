@@ -7,11 +7,12 @@ import (
 
 // VariantDescriptor is catalog metadata; it contains no executable authority.
 type VariantDescriptor struct {
-	ID             string   `json:"id"`
-	AdapterVersion string   `json:"adapterVersion"`
-	SuiteID        string   `json:"suiteId"`
-	Modes          []string `json:"modes"`
-	Configurations []string `json:"configurations"`
+	BuildManifest  *VariantBuildReference `json:"buildManifest,omitempty"`
+	ID             string                 `json:"id"`
+	AdapterVersion string                 `json:"adapterVersion"`
+	SuiteID        string                 `json:"suiteId"`
+	Modes          []string               `json:"modes"`
+	Configurations []string               `json:"configurations"`
 }
 
 type variantRegistration struct {
@@ -81,7 +82,7 @@ func (v ResolvedVariant) Descriptor() VariantDescriptor {
 	}
 	for _, suite := range suiteCatalog {
 		if suite.ID == v.registration.suiteID {
-			return VariantDescriptor{ID: v.registration.id, AdapterVersion: "lab-native-adapter-v1", SuiteID: suite.ID, Modes: append([]string{}, suite.Modes...), Configurations: append([]string{}, suite.Configurations...)}
+			return variantDescriptor(*v.registration, suite)
 		}
 	}
 	return VariantDescriptor{}
@@ -91,8 +92,32 @@ func suiteVariants(suite Suite) []VariantDescriptor {
 	descriptors := []VariantDescriptor{}
 	for _, registration := range variantRegistry {
 		if registration.suiteID == suite.ID {
-			descriptors = append(descriptors, VariantDescriptor{ID: registration.id, AdapterVersion: "lab-native-adapter-v1", SuiteID: suite.ID, Modes: append([]string{}, suite.Modes...), Configurations: append([]string{}, suite.Configurations...)})
+			descriptors = append(descriptors, variantDescriptor(registration, suite))
 		}
 	}
 	return descriptors
+}
+
+// Compiled identity alone is inert; Plan.Provenance.Build records whether the
+// executing binary and launch inputs have verified correspondence.
+type VariantBuildReference struct {
+	Version           string `json:"version"`
+	Hash              string `json:"hash"`
+	VariantID         string `json:"variantId"`
+	Correspondence    string `json:"correspondence"`
+	UnavailableReason string `json:"unavailableReason,omitempty"`
+}
+
+func variantDescriptor(registration variantRegistration, suite Suite) VariantDescriptor {
+	descriptor := VariantDescriptor{BuildManifest: &VariantBuildReference{Version: BuildManifestVersion, VariantID: registration.id, Correspondence: "unavailable", UnavailableReason: "co-built compiled manifest unavailable"}, ID: registration.id, AdapterVersion: "lab-native-adapter-v1", SuiteID: suite.ID, Modes: append([]string{}, suite.Modes...), Configurations: append([]string{}, suite.Configurations...)}
+	compiled, err := CompiledBuildManifest()
+	if err == nil && compiled.Version == BuildManifestVersion && compiled.Hash == buildManifestHash(compiled) {
+		for _, variant := range compiled.Variants {
+			if variant.ID == registration.id {
+				descriptor.BuildManifest = &VariantBuildReference{Version: compiled.Version, Hash: compiled.Hash, VariantID: registration.id, Correspondence: "compiled-identity-only"}
+				break
+			}
+		}
+	}
+	return descriptor
 }

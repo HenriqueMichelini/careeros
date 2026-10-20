@@ -60,6 +60,9 @@ func NewPlanner(assets map[string][]byte, provenance ...Provenance) (*Planner, e
 	}
 	p := &Planner{assets: map[string][]byte{}, plans: map[string]Plan{}}
 	if len(provenance) == 1 {
+		if provenance[0].Build != nil && provenance[0].Build.Status != "verified" && provenance[0].Build.Status != "unavailable" {
+			return nil, fmt.Errorf("build correspondence mismatch or unknown status")
+		}
 		p.provenance = cloneJSON(provenance[0])
 	}
 	for id, raw := range assets {

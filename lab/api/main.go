@@ -3,8 +3,12 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"io/fs"
 	"net"
 	"net/http"
@@ -12,6 +16,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	lab "professional-information-repo/internal/evaluationlab"
+	"runtime"
 	"syscall"
 	"time"
 )
@@ -23,6 +28,7 @@ func main() {
 	}
 }
 func run() error {
+	buildInfo := flag.Bool("build-info", false, "inspect compiled manifest and local build correspondence without serving or opening history")
 	enableGuard := flag.Bool("enable-live-guard", false, "enable controlled guard preflight capability only; no real execution")
 	reviewer := flag.String("human-reviewer", "", "explicit local human domain reviewer; approval disabled when empty")
 	port := flag.Int("port", 0, "loopback port (0 selects an available port)")
@@ -39,6 +45,58 @@ func run() error {
 	provenance, err := lab.CaptureSource(root)
 	if err != nil {
 		return err
+	}
+
+	compiled, err := lab.CompiledBuildManifest()
+	if err != nil {
+		return err
+	}
+	launch, err := lab.CaptureBuildManifest(root)
+	if err != nil {
+		return err
+	}
+	executable, err := os.Executable()
+	if err != nil {
+		return err
+	}
+	var receipt lab.BuildReceipt
+	raw, readErr := os.ReadFile(filepath.Join(filepath.Dir(executable), "lab-build-receipt.json"))
+	if readErr == nil {
+		if len(raw) > 1<<20 || json.Unmarshal(raw, &receipt) != nil {
+			return fmt.Errorf("invalid local build receipt")
+		}
+	} else if !os.IsNotExist(readErr) {
+		return readErr
+	}
+	digestPath := executable
+	if runtime.GOOS == "linux" {
+		digestPath = "/proc/self/exe"
+	}
+	file, err := os.Open(digestPath)
+	if err != nil {
+		return err
+	}
+	hash := sha256.New()
+	_, err = io.Copy(hash, file)
+	file.Close()
+	if err != nil {
+		return err
+	}
+	correspondence := lab.CheckBuildCorrespondence(compiled, launch, receipt, hex.EncodeToString(hash.Sum(nil)))
+	provenance.Build = &correspondence
+	if *buildInfo {
+		if err := json.NewEncoder(os.Stdout).Encode(struct {
+			Build  lab.BuildCorrespondence `json:"build"`
+			Suites []lab.Suite             `json:"suites"`
+		}{correspondence, lab.Catalog()}); err != nil {
+			return err
+		}
+	}
+	if correspondence.Status == "mismatch" {
+		return fmt.Errorf("build correspondence mismatch")
+	}
+	if *buildInfo {
+		return nil
 	}
 	paths := map[string]string{"test-adapters": "test-adapters/cases.v3.json", "semantic-quality": "semantic-quality/cases.v2.json", "section-review": "section-review/cases.v1.json", "workflow-settings": "workflow-settings/cases.v1.json", "qualification-evidence": "qualification-evidence/cases.json", "application-context": "qualification-evidence/cases.json", "application-baseline": "semantic-quality/controlled.v2.json"}
 	fixtures := map[string][]byte{}
