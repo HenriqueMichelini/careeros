@@ -7,12 +7,14 @@ import { join } from "node:path"
 import { createBrowserEvaluation } from "./browser-evaluation.mjs"
 import { savedProfileExpression } from "./profile-browser-storage.mjs"
 
-// Browser evidence for the composed Profile ingestion journey (#192). Every
+// Browser evidence for the composed Profile ingestion journey (#192/#193). Every
 // provider response is synthetic; the canonical Profile is browser-local and no
 // live request or deployment is used.
 const root = new URL("..", import.meta.url).pathname
 const work = mkdtempSync(join(tmpdir(), "careeros-submission-journey-"))
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+let traceLabel = "baseline"
+const keyboardTrace = []
 const port = await new Promise((resolve) => {
   const server = createServer()
   server.listen(0, "127.0.0.1", () => {
@@ -20,6 +22,58 @@ const port = await new Promise((resolve) => {
     server.close(() => resolve(value))
   })
 })
+const copy = {
+  en: {
+    add: "Add information",
+    title: "Add professional information",
+    prepare: "Prepare changes",
+    stop: "Stop",
+    resume: "Resume processing",
+    retry: "Retry processing",
+    review: "Review changes",
+    selectAdditions: "Select clear additions",
+    save: "Save to Profile",
+    retrySave: "Retry save",
+    discard: "Discard",
+    keepEditing: "Keep editing",
+    answer: "Answer",
+    answerSubmit: "Review revised proposal",
+    edit: "Edit",
+    saveWording: "Save wording",
+    source: "Source",
+    edited: "Your wording",
+    saved: "Saved to your Profile",
+    addMore: "Add more information",
+    clarification: "Needs clarification",
+    duplicate: "Already in your Profile (1)",
+    attention: "Attention needed",
+  },
+  "pt-BR": {
+    add: "Adicionar informações",
+    title: "Adicionar informações profissionais",
+    prepare: "Preparar alterações",
+    stop: "Parar",
+    resume: "Retomar processamento",
+    retry: "Tentar processar novamente",
+    review: "Revisar alterações",
+    selectAdditions: "Selecionar adições claras",
+    save: "Salvar no Perfil",
+    retrySave: "Tentar salvar novamente",
+    discard: "Descartar",
+    keepEditing: "Continuar editando",
+    answer: "Responder",
+    answerSubmit: "Revisar proposta atualizada",
+    edit: "Editar",
+    saveWording: "Salvar texto",
+    source: "Fonte",
+    edited: "Seu texto",
+    saved: "Salvo no seu Perfil",
+    addMore: "Adicionar mais informações",
+    clarification: "Precisa de esclarecimento",
+    duplicate: "No seu Perfil (1)",
+    attention: "Atenção necessária",
+  },
+}
 const populated = {
   fullName: "Ada Lovelace",
   email: "ada@example.test",
@@ -27,8 +81,9 @@ const populated = {
   location: "",
   professionalLinks: "",
   careerGoals: "Build useful products.",
-  skills: "Research",
-  competencies: "",
+  skills: "React",
+  competencies:
+    "Existing competency: " + "b".repeat(180),
   tools: "",
   projects: [],
   education: [],
@@ -114,6 +169,58 @@ function journeyFetch(url, options) {
           ? "Which TypeScript version do you use?"
           : "",
     }
+    const richClaims = [
+      {
+        id: "c0",
+        source: body.input,
+        text: "I use Kubernetes.",
+        targets: ["skills"],
+        question: "",
+      },
+      {
+        id: "c1",
+        source: body.input,
+        text: "I also use Go.",
+        targets: ["careerGoals"],
+        question: "",
+      },
+      {
+        id: "c2",
+        source: body.input,
+        text: "I build with Terraform.",
+        targets: ["tools"],
+        question: "",
+      },
+      {
+        id: "c3",
+        source: body.input,
+        text: "I lead cross-functional delivery.",
+        targets: ["competencies"],
+        question: "",
+      },
+      {
+        id: "c4",
+        source: body.input,
+        text: "Build useful products.",
+        targets: ["careerGoals"],
+        question: "",
+      },
+      {
+        id: "c5",
+        source: body.input,
+        text: "Python",
+        targets: ["skills"],
+        question: "",
+      },
+      {
+        id: "c6",
+        source: body.input,
+        text: "French level is unclear.",
+        targets: [],
+        question: "What is your French level?",
+      },
+    ]
+    const claims = scenario === "rich" ? richClaims : [claim]
     const skipped =
       scenario === "partial" && body.batchIndex === 0
         ? [
@@ -132,11 +239,11 @@ function journeyFetch(url, options) {
         batchReceipt: receipt(`batch${body.batchIndex}`),
         expiresAt,
         batchIndex: body.batchIndex,
-        claims: [claim],
+        claims,
         unverifiedCount: skipped.length,
         skippedClaims: skipped,
         coverage: {
-          validClaims: 1,
+          validClaims: claims.length,
           invalidClaims: skipped.length,
           discoveryComplete: false,
           capacity: "within_limit",
@@ -161,7 +268,14 @@ function journeyFetch(url, options) {
   }
 
   if (body.stage?.kind === "assemble") {
-    const claimIds = batches.map((batch) => `${runId}/${batch.index}/c0`)
+    const richClaimIds = Array.from(
+      { length: 7 },
+      (_, index) => `${runId}/0/c${index}`,
+    )
+    const claimIds =
+      scenario === "rich"
+        ? richClaimIds
+        : batches.map((batch) => `${runId}/${batch.index}/c0`)
     return ok({
       stage: { version: 2, kind: "assemble" },
       contextReceipt: receipt("context"),
@@ -175,12 +289,13 @@ function journeyFetch(url, options) {
         batches: batches.map((batch, index) => ({
           index: batch.index,
           primary: batch.primary,
-          claimIds: [claimIds[index]],
-          claimCount: 1,
+          claimIds:
+            scenario === "rich" ? richClaimIds : [claimIds[index]],
+          claimCount: scenario === "rich" ? richClaimIds.length : 1,
           skippedCount: scenario === "partial" && index === 0 ? 1 : 0,
         })),
         coverage: {
-          validClaims: batches.length,
+          validClaims: scenario === "rich" ? richClaimIds.length : batches.length,
           invalidClaims: scenario === "partial" ? 1 : 0,
           discoveryComplete: false,
           capacity: "within_limit",
@@ -191,6 +306,99 @@ function journeyFetch(url, options) {
 
   if (body.stage?.kind === "reconcile") {
     const focused = body.focus.claimIds
+    if (scenario === "rich") {
+      const document = JSON.parse(
+        localStorage.getItem("careeros_profile_v2") || "null",
+      )
+      const factReference = (field, value) => {
+        const fact = document?.facts.find(
+          (candidate) =>
+            candidate.field === field && String(candidate.value) === value,
+        )
+        return fact
+          ? [
+              {
+                profileId: document.id,
+                id: fact.id,
+                revision: fact.revision,
+              },
+            ]
+          : []
+      }
+      const related = factReference("skills", "React")
+      const duplicateRelated = factReference(
+        "careerGoals",
+        "Build useful products.",
+      )
+      const longValue = `Cross-functional delivery across product, design and engineering, with measurable outcomes for customers in multiple regions. https://example.test/${"a".repeat(140)}`
+      const operation = (
+        claimId,
+        target,
+        value,
+        action = "add",
+        finding = "addition",
+      ) => ({
+        claimId,
+        target,
+        entryId: "",
+        field: target,
+        action,
+        value,
+        finding,
+      })
+      return ok({
+        stage: { version: 2, kind: "reconcile" },
+        focus: { claimIds: focused },
+        operations: [
+          operation(focused[0], "skills", "Kubernetes"),
+          operation(
+            focused[1],
+            "careerGoals",
+            "Build useful products and mentor.",
+            "update",
+            "in_place",
+          ),
+          operation(focused[2], "tools", "Terraform"),
+          operation(
+            focused[3],
+            "competencies",
+            longValue,
+            "update",
+            "in_place",
+          ),
+        ],
+        outcomes: [
+          ...focused.slice(0, 4).map((claimId) => ({
+            claimId,
+            kind: "change",
+            reason: "validated_operation",
+            relatedFacts: [],
+            relatedClaimIds: [],
+          })),
+          {
+            claimId: focused[4],
+            kind: "exact_duplicate",
+            reason: "verified_exact_alias_or_wording",
+            relatedFacts: duplicateRelated,
+            relatedClaimIds: [],
+          },
+          {
+            claimId: focused[5],
+            kind: "contradiction",
+            reason: "source_ambiguity",
+            relatedFacts: related,
+            relatedClaimIds: [focused[4]],
+          },
+          {
+            claimId: focused[6],
+            kind: "clarification",
+            reason: "source_ambiguity",
+            relatedFacts: [],
+            relatedClaimIds: [],
+          },
+        ],
+      })
+    }
     if (scenario === "duplicate")
       return ok({
         stage: { version: 2, kind: "reconcile" },
@@ -273,12 +481,13 @@ function journeyFetch(url, options) {
 
   if (body.stage?.kind === "clarify") {
     const answer = body.answer.trim()
+    const target = scenario === "rich" ? "additionalInfo" : "skills"
     const response = () =>
       ok({
         stage: { version: 2, kind: "clarify" },
         claim: {
           ...body.claim,
-          targets: ["skills"],
+          targets: [target],
           question: "",
           supportingSources: [
             { source: answer, origin: "clarification_answer" },
@@ -288,9 +497,9 @@ function journeyFetch(url, options) {
         operations: [
           {
             claimId: body.claim.id,
-            target: "skills",
+            target,
             entryId: "",
-            field: "skills",
+            field: target,
             action: "add",
             value: answer,
             finding: "addition",
@@ -402,7 +611,7 @@ try {
     }
     throw new Error(
       `Timed out: ${expression}\n${await evaluate(
-        "JSON.stringify({text:document.body.innerText.slice(0,2500),alerts:Array.from(document.querySelectorAll('[role=alert]')).map(e=>e.textContent),calls:window.__journeyCalls?.map(c=>c.kind),state:window.__journeyDebug})",
+        "JSON.stringify({text:document.body.innerText.slice(0,2500),alerts:Array.from(document.querySelectorAll('[role=alert]')).map(e=>e.textContent),saveError:document.querySelector('[data-save-error]')?.dataset.saveError,calls:window.__journeyCalls?.map(c=>c.kind),state:window.__journeyDebug})",
       )}`,
     )
   }
@@ -463,13 +672,14 @@ try {
       })()`,
     )
   }
-  const resetStorage = async (profile) => {
+  const resetStorage = async (profile, locale = "en") => {
     await evaluate(
       `(() => {
         localStorage.removeItem('careeros_profile_v2');
         ${profile ? `localStorage.setItem('careeros_repo', ${JSON.stringify(JSON.stringify(profile))});` : "localStorage.removeItem('careeros_repo');"}
         localStorage.setItem('careeros_apikey', 'synthetic-test-key');
         localStorage.setItem('careeros_typesafe_key', 'synthetic-typesafe');
+        localStorage.setItem('careeros_locale', ${JSON.stringify(locale)});
         location.reload();
       })()`,
     )
@@ -495,6 +705,213 @@ try {
           };
           window.__setPatched = true;
         }
+      })()`,
+    )
+  }
+
+  const setViewport = async (width) => {
+    await call("Emulation.setDeviceMetricsOverride", {
+      width,
+      height: width === 390 ? 844 : 1000,
+      deviceScaleFactor: 1,
+      mobile: false,
+    })
+    await pause(80)
+  }
+  const setLocale = async (locale) => {
+    await evaluate(
+      `(() => {
+        const el = document.querySelector('header select');
+        if (!el) throw new Error('Language selector is missing');
+        Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(el, ${JSON.stringify(locale)});
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      })()`,
+    )
+    await until(
+      `document.documentElement.lang === ${JSON.stringify(locale)}`,
+    )
+    await pause(100)
+  }
+  const pressKey = async (key, code, windowsVirtualKeyCode, text) => {
+    await call("Input.dispatchKeyEvent", {
+      type: "keyDown",
+      key,
+      code,
+      windowsVirtualKeyCode,
+      ...(text ? { text } : {}),
+    })
+    await call("Input.dispatchKeyEvent", {
+      type: "keyUp",
+      key,
+      code,
+      windowsVirtualKeyCode,
+    })
+    await pause(40)
+    const focus = await activeInfo()
+    keyboardTrace.push({
+      label: traceLabel,
+      key,
+      tag: focus.tag,
+      type: focus.type,
+      id: focus.id,
+      aria: focus.aria,
+      role: focus.role,
+      text: focus.text,
+      focusVisible: focus.focusVisible,
+    })
+  }
+  const pressEnter = () => pressKey("Enter", "Enter", 13, "\r")
+  const pressSpace = () => pressKey(" ", "Space", 32, " ")
+  const activeInfo = () =>
+    evaluate(
+      `(() => {
+        const el = document.activeElement;
+        return {
+          tag: el?.tagName || '',
+          type: el?.getAttribute?.('type') || '',
+          id: el?.id || '',
+          text: (el?.textContent || '').trim().replace(/\\s+/g, ' ').slice(0, 140),
+          aria: el?.getAttribute?.('aria-label') || '',
+          role: el?.getAttribute?.('role') || '',
+          dataAnswer: !!el?.hasAttribute?.('data-review-answer-open'),
+          reviewKind: el?.closest?.('[data-review-unit]')?.dataset?.reviewKind || '',
+          focusVisible: !!el?.matches?.(':focus-visible'),
+        };
+      })()`,
+    )
+  const openJourneyLocalized = async (labels) => {
+    if (!(await evaluate("!!document.querySelector('#submission-text')"))) {
+      await clickText(labels.add)
+      await until("!!document.querySelector('#submission-text')")
+    }
+  }
+  const assertNoOverflow = async (label) => {
+    const metrics = await evaluate(
+      `(() => {
+        const doc = document.documentElement;
+        const journey = document.querySelector('[data-submission-journey]');
+        const review = document.querySelector('#review-heading')?.closest('section');
+        const actions = document.querySelector('[data-submission-actions]');
+        const actionRects = actions
+          ? Array.from(actions.querySelectorAll('button,p')).map((el) => {
+              const rect = el.getBoundingClientRect();
+              return { left: rect.left, right: rect.right, text: el.textContent.trim().slice(0, 40) };
+            })
+          : [];
+        const smallTargets = Array.from(
+          journey?.querySelectorAll('button, summary, select, input[type=checkbox]') || [],
+        )
+          .map((el) => (el.tagName === 'INPUT' ? el.closest('label') || el : el))
+          .filter((el) => {
+            const rect = el.getBoundingClientRect();
+            const style = getComputedStyle(el);
+            return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+          })
+          .filter((el) => {
+            const rect = el.getBoundingClientRect();
+            return rect.width < 24 || rect.height < 24;
+          })
+          .map((el) => ({
+            tag: el.tagName,
+            text: (el.textContent || '').trim().slice(0, 40),
+            width: Math.round(el.getBoundingClientRect().width),
+            height: Math.round(el.getBoundingClientRect().height),
+          }));
+        return {
+          doc: [doc.scrollWidth, doc.clientWidth],
+          journey: journey ? [journey.scrollWidth, journey.clientWidth] : null,
+          review: review ? [review.scrollWidth, review.clientWidth] : null,
+          viewport: window.innerWidth,
+          actionPosition: actions ? getComputedStyle(actions).position : '',
+          actionRects,
+          smallTargets,
+        };
+      })()`,
+    )
+    assert.ok(
+      metrics.doc[0] <= metrics.doc[1] + 1,
+      `${label}: document overflows horizontally (${metrics.doc.join("/")})`,
+    )
+    if (metrics.journey)
+      assert.ok(
+        metrics.journey[0] <= metrics.journey[1] + 1,
+        `${label}: journey overflows horizontally (${metrics.journey.join("/")})`,
+      )
+    if (metrics.review)
+      assert.ok(
+        metrics.review[0] <= metrics.review[1] + 1,
+        `${label}: review overflows horizontally (${metrics.review.join("/")})`,
+      )
+    for (const rect of metrics.actionRects) {
+      assert.ok(
+        rect.left >= -1 && rect.right <= metrics.viewport + 1,
+        `${label}: action ${rect.text} is outside the page`,
+      )
+    }
+    assert.notEqual(
+      metrics.actionPosition,
+      "fixed",
+      `${label}: action footer must not cover review content`,
+    )
+    assert.notEqual(
+      metrics.actionPosition,
+      "sticky",
+      `${label}: action footer must remain in the review flow`,
+    )
+    assert.deepEqual(
+      metrics.smallTargets,
+      [],
+      `${label}: interactive target below 24px`,
+    )
+    return metrics
+  }
+  const assertSingleColumn = async (label) => {
+    const rects = await evaluate(
+      `Array.from(document.querySelectorAll('[data-review-destination]')).map((el) => {
+        const rect = el.getBoundingClientRect();
+        return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
+      })`,
+    )
+    assert.ok(rects.length > 1, `${label}: expected multiple destination groups`)
+    for (let index = 0; index < rects.length; index++) {
+      assert.ok(
+        Math.abs(rects[index].left - rects[0].left) < 1,
+        `${label}: destinations must share one mobile column`,
+      )
+      assert.ok(
+        rects[index].right <= rects[0].right + 1,
+        `${label}: destination exceeds the mobile column`,
+      )
+      if (index > 0)
+        assert.ok(
+          rects[index].top >= rects[index - 1].bottom - 1,
+          `${label}: destinations must stack vertically`,
+        )
+    }
+  }
+  const capture = async (name) => {
+    await evaluate(
+      `(() => {
+        document.activeElement?.blur?.();
+        document.documentElement.style.scrollBehavior = 'auto';
+        // Chromium's full-page capture stitches a sticky header at its current
+        // viewport offset. Keep the header in flow only for the capture so the
+        // retained evidence has no duplicated or clipped page chrome.
+        document.querySelector('.app-header')?.style.setProperty('position', 'static', 'important');
+        window.scrollTo(0, 0);
+        return new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      })()`,
+    )
+    await pause(200)
+    const shot = await call("Page.captureScreenshot", {
+      format: "png",
+      captureBeyondViewport: true,
+    })
+    writeFileSync(join(work, `${name}.png`), Buffer.from(shot.data, "base64"))
+    await evaluate(
+      `(() => {
+        document.querySelector('.app-header')?.style.removeProperty('position');
+        document.documentElement.style.scrollBehavior = '';
       })()`,
     )
   }
@@ -919,6 +1336,468 @@ try {
   )
   await evaluate("window.__peer.close()")
   console.log("PASS stale/cross-tab review, reload, explicit discard")
+
+  // Integrated presentation matrix (#193): the same composed journey in both
+  // locales at desktop and narrow widths. This adds long values/sources, many
+  // destination groups, duplicates, a conflict, a clarification, a save
+  // failure and a processing failure to the controlled scenarios above.
+  const richInput =
+    "I use Kubernetes. Fonte original: React. I also use Go. I build with Terraform. I lead cross-functional delivery for customers in many regions. I know French at an unclear level."
+  const rawEnumCodes = [
+    "validated_operation",
+    "verified_exact_alias_or_wording",
+    "source_ambiguity",
+    "exact_duplicate",
+    "in_place",
+    "addition",
+  ]
+  const selectedCount = () =>
+    evaluate(
+      "document.querySelectorAll('[data-review-unit] input[type=checkbox]:checked').length",
+    )
+  const assertNoRawEnums = async (label) => {
+    const text = await evaluate(
+      "document.querySelector('[data-submission-journey]').textContent",
+    )
+    for (const code of rawEnumCodes) {
+      const match = new RegExp(`\\b${code}\\b`).exec(text)
+      if (match)
+        console.log(
+          "DEBUG ENUM",
+          code,
+          text.slice(
+            Math.max(0, match.index - 120),
+            match.index + code.length + 400,
+          ),
+        )
+      assert.equal(match, null, `${label}: exposed internal enum ${code}`)
+    }
+  }
+  const journeyDialog = "document.querySelector('[data-submission-journey] dialog')"
+  const focusExpression = async (expression) => {
+    const found = await evaluate(`!!(${expression})`)
+    assert.ok(found, `Missing keyboard target: ${expression}`)
+    await evaluate(`(${expression}).focus()`)
+  }
+  for (const locale of ["en", "pt-BR"]) {
+    for (const width of [1440, 390]) {
+      const labels = copy[locale]
+      const tag = `${locale}-${width}`
+      traceLabel = `${tag} empty`
+      await setViewport(width)
+
+      // Empty Profile at this locale and width. The baseline scenario owns the
+      // save-failure retry; this matrix cell still runs one explicit save so the
+      // empty flow is exercised in every locale/width combination.
+      await resetStorage(null, locale)
+      await installMock("normal")
+      await watchWrites()
+      await openProfile()
+      await openJourneyLocalized(labels)
+      await until(
+        `document.querySelector('[data-submission-journey]').innerText.includes(${JSON.stringify(labels.title)})`,
+      )
+      await assertNoOverflow(`empty ${tag}`)
+      await capture(`empty-${tag}`)
+      traceLabel = `${tag} empty`
+      await fill("#submission-text", "I use TypeScript.")
+      await focusExpression(byText(labels.prepare))
+      await pressEnter()
+      await until("!!document.querySelector('#review-heading')")
+      await until("document.activeElement?.id === 'review-heading'")
+      await assertNoOverflow(`empty review ${tag}`)
+      await focusExpression(
+        "document.querySelector('[data-review-unit] input[type=checkbox]')",
+      )
+      await pressSpace()
+      await until(`${byText(labels.save)}.disabled === false`)
+      await focusExpression(byText(labels.save))
+      await pressEnter()
+      await until("!!document.querySelector('[data-submission-saved]')")
+      assert.equal(
+        await evaluate("window.__profileWrites"),
+        1,
+        `${tag}: empty Profile save did not write exactly once`,
+      )
+
+      // Populated Profile with many groups, long values/sources, duplicate,
+      // conflict and clarification.
+      await resetStorage(populated, locale)
+      await installMock("rich")
+      await watchWrites()
+      await openProfile()
+      await until("document.documentElement.lang === " + JSON.stringify(locale))
+      assert.equal(
+        await evaluate("!!document.querySelector('#submission-text')"),
+        false,
+      )
+      await openJourneyLocalized(labels)
+      traceLabel = `${tag} review`
+      await fill("#submission-text", richInput)
+      await focusExpression(byText(labels.prepare))
+      await pressEnter()
+      await until("!!document.querySelector('#review-heading')")
+      await until("document.activeElement?.id === 'review-heading'")
+      await until(
+        "document.querySelectorAll('[data-review-destination]').length >= 4",
+      )
+      assert.ok(
+        (await evaluate(
+          "document.querySelectorAll('[data-review-unit]').length",
+        )) >= 6,
+        `${tag}: expected many grouped changes`,
+      )
+      assert.equal(
+        await evaluate(
+          `document.querySelector('[data-submission-journey]').textContent.includes(${JSON.stringify(labels.duplicate)})`,
+        ),
+        true,
+        `${tag}: duplicate state is missing`,
+      )
+      assert.equal(
+        await evaluate(
+          "!!document.querySelector('[data-review-unit][data-review-kind=conflict]')",
+        ),
+        true,
+        `${tag}: conflict state is missing`,
+      )
+      assert.equal(
+        await evaluate(
+          "!!document.querySelector('[data-review-unit][data-review-kind=clarification]')",
+        ),
+        true,
+        `${tag}: clarification state is missing`,
+      )
+      await assertNoRawEnums(`review ${tag}`)
+      await assertNoOverflow(`review ${tag}`)
+      if (width === 390) await assertSingleColumn(`review ${tag}`)
+
+      // Long current/proposed values and a long source expand inside their
+      // destination, without clipping or losing context.
+      const longLayout = await evaluate(
+        `(() => {
+          const destination = Array.from(document.querySelectorAll('[data-review-destination]')).find((el) => el.textContent.includes('Cross-functional'));
+          const source = destination?.querySelector('details[data-review-source]');
+          if (source) source.open = true;
+          return {
+            destination: !!destination,
+            before: !!destination?.textContent.includes('Existing competency'),
+            after: !!destination?.textContent.includes('Cross-functional'),
+            source: !!source,
+            sourceContext: source?.closest('[data-review-destination]') === destination,
+          };
+        })()`,
+      )
+      assert.equal(longLayout.destination, true, `${tag}: long destination missing`)
+      assert.equal(longLayout.before, true, `${tag}: current value missing`)
+      assert.equal(longLayout.after, true, `${tag}: proposed value missing`)
+      assert.equal(longLayout.source, true, `${tag}: long source missing`)
+      assert.equal(
+        longLayout.sourceContext,
+        true,
+        `${tag}: expanded source lost its destination`,
+      )
+      await assertNoOverflow(`expanded source ${tag}`)
+      if (width === 390) {
+        const stacked = await evaluate(
+          `(() => {
+            const unit = Array.from(document.querySelectorAll('[data-review-unit]')).find((el) => el.textContent.includes('Cross-functional'));
+            if (!unit) return false;
+            const current = Array.from(unit.querySelectorAll('p')).find((el) => el.className.includes('line-through'));
+            const proposed = Array.from(unit.querySelectorAll('p')).find((el) => el.textContent.includes('Cross-functional') && !el.className.includes('line-through'));
+            if (!current || !proposed) return false;
+            return current.getBoundingClientRect().top >= proposed.getBoundingClientRect().bottom - 1;
+          })()`,
+        )
+        assert.equal(stacked, true, `${tag}: current/proposed values must stack`)
+      }
+
+      // Source expansion stays keyboard operable and keeps focus on its summary.
+      const sourceSummary =
+        "document.querySelector('[data-review-unit] details[data-review-source] summary')"
+      assert.equal(
+        await evaluate(`getComputedStyle(${sourceSummary}).display`),
+        "list-item",
+        `${tag}: source disclosure lost its native marker`,
+      )
+      await focusExpression(sourceSummary)
+      await pressEnter()
+      await until(
+        "document.querySelector('[data-review-unit] details[data-review-source]').open === true",
+      )
+      assert.equal(
+        await evaluate(`document.activeElement === ${sourceSummary}`),
+        true,
+      )
+      await pressEnter()
+      await until(
+        "document.querySelector('[data-review-unit] details[data-review-source]').open === false",
+      )
+      assert.equal(
+        await evaluate(`document.activeElement === ${sourceSummary}`),
+        true,
+      )
+      await capture(`review-${tag}`)
+
+      // A group toggle is keyboard operable and updates the selected summary.
+      const groupSkills = `Array.from(document.querySelectorAll('input[type=checkbox][aria-label]')).find((el) => el.getAttribute('aria-label').startsWith(${JSON.stringify(
+        locale === "en" ? "Select all in Skills" : "Selecionar tudo em Habilidades",
+      )}))`
+      await focusExpression(groupSkills)
+      await pressSpace()
+      await until(`(${groupSkills}).checked === true`)
+      const selectedBeforeLocale = await selectedCount()
+      assert.ok(selectedBeforeLocale > 0, `${tag}: group selection failed`)
+
+      // Edit is keyboard reachable; focus returns to the disclosure context and
+      // the selected state survives both the edit and a locale change.
+      const firstEdit = "document.querySelector('[data-review-unit] button[aria-expanded]')"
+      await focusExpression(firstEdit)
+      await pressEnter()
+      await until(
+        "!!document.querySelector('[data-review-unit] textarea')",
+      )
+      await evaluate(
+        "document.querySelector('[data-review-unit] textarea').focus(); document.querySelector('[data-review-unit] textarea').select()",
+      )
+      await call("Input.insertText", { text: "Kubernetes and Helm" })
+      await until(
+        "document.querySelector('[data-review-unit] textarea').value.includes('Helm')",
+      )
+      await focusExpression(
+        `Array.from(document.querySelectorAll('[data-review-unit] button')).find((el) => el.textContent.trim() === ${JSON.stringify(labels.saveWording)})`,
+      )
+      await pressEnter()
+      await until(
+        `document.querySelector('[data-submission-journey]').textContent.includes(${JSON.stringify(labels.edited)})`,
+      )
+      assert.equal(
+        await evaluate(`document.activeElement === (${firstEdit})`),
+        true,
+        `${tag}: saving an edit did not return focus to Edit`,
+      )
+      const sourceText = await evaluate(
+        "document.querySelector('[data-review-destination] details[data-review-source]')?.textContent || ''",
+      )
+      assert.match(sourceText, /Fonte original: React/)
+      const questionText = await evaluate(
+        "document.querySelector('[data-submission-journey]').textContent",
+      )
+      assert.match(questionText, /What is your French level\?/)
+      const otherLocale = locale === "en" ? "pt-BR" : "en"
+      const otherLabels = copy[otherLocale]
+      traceLabel = `${tag} locale ${otherLocale}`
+      await setLocale(otherLocale)
+      await until(
+        `document.querySelector('[data-submission-journey]').innerText.includes(${JSON.stringify(otherLabels.review)})`,
+      )
+      assert.equal(
+        await selectedCount(),
+        selectedBeforeLocale,
+        `${tag}: locale change reset selection`,
+      )
+      const switchedText = await evaluate(
+        "document.querySelector('[data-submission-journey]').textContent",
+      )
+      assert.match(switchedText, /Kubernetes and Helm/)
+      assert.match(switchedText, /Fonte original: React/)
+      assert.match(switchedText, /What is your French level\?/)
+      assert.equal(
+        await evaluate(`${byText(otherLabels.save)}.disabled`),
+        false,
+        `${tag}: locale change disabled a valid save`,
+      )
+      await assertNoRawEnums(`switched ${tag}`)
+      await assertNoOverflow(`switched ${tag}`)
+      traceLabel = `${tag} locale ${locale}`
+      await setLocale(locale)
+      await until(
+        `document.querySelector('[data-submission-journey]').innerText.includes(${JSON.stringify(labels.review)})`,
+      )
+      assert.equal(await selectedCount(), selectedBeforeLocale)
+      await assertNoRawEnums(`restored ${tag}`)
+
+      // Discard opens a focused native dialog and Escape returns to its trigger
+      // without discarding the review.
+      traceLabel = `${tag} discard dialog`
+      await focusExpression(byText(labels.discard))
+      await pressEnter()
+      await until(`${journeyDialog}?.open === true`)
+      await pause(80)
+      const dialogFocus = await activeInfo()
+      assert.match(
+        dialogFocus.text,
+        new RegExp(labels.keepEditing),
+        `${tag}: dialog did not focus the safe action`,
+      )
+      await pressKey("Tab", "Tab", 9)
+      const dialogSecond = await activeInfo()
+      assert.equal(
+        dialogSecond.text,
+        labels.discard,
+        `${tag}: dialog discard is not next in keyboard order`,
+      )
+      await pressKey("Escape", "Escape", 27)
+      await until(`${journeyDialog}?.open !== true`)
+      await pause(80)
+      assert.equal(
+        await evaluate(
+          `!document.activeElement.closest('dialog') && document.activeElement.textContent.trim() === ${JSON.stringify(labels.discard)}`,
+        ),
+        true,
+        `${tag}: Escape did not return focus to the discard trigger`,
+      )
+
+      // The clarification can be answered with the keyboard. Focus moves to
+      // the destination it now updates, not back to the top of the review.
+      traceLabel = `${tag} clarification`
+      const attentionSummary =
+        "document.querySelector('[data-review-unit][data-review-kind=clarification] [data-review-attention-summary]')"
+      await focusExpression(attentionSummary)
+      await pressEnter()
+      await until(
+        "document.querySelector('[data-review-unit][data-review-kind=clarification] details[data-review-attention]').open === true",
+      )
+      await focusExpression(
+        "document.querySelector('[data-review-unit][data-review-kind=clarification] [data-review-answer-open]')",
+      )
+      await pressEnter()
+      await until(
+        "document.activeElement?.tagName === 'TEXTAREA' && !!document.activeElement.closest('[data-review-unit][data-review-kind=clarification]')",
+      )
+      await call("Input.insertText", { text: "French B2" })
+      await until("document.activeElement.value === 'French B2'")
+      await focusExpression(
+        "document.querySelector('[data-review-unit][data-review-kind=clarification] [data-review-answer] button[type=submit]')",
+      )
+      await pressEnter()
+      await until(
+        "!document.querySelector('[data-review-unit][data-review-kind=clarification]')",
+      )
+      await until(
+        "(document.activeElement.closest('[data-review-unit]')?.textContent || '').includes('French B2')",
+      )
+      assert.notEqual(await evaluate("document.activeElement?.id"), "review-heading")
+
+      // Select every destination group, fail the first save, focus the alert,
+      // then retry without another provider call.
+      traceLabel = `${tag} save`
+      await evaluate(
+        `Array.from(document.querySelectorAll('[data-review-destination] input[type=checkbox][aria-label]')).filter((el) => /Select all in|Selecionar tudo em/.test(el.getAttribute('aria-label'))).forEach((el) => { if (!el.checked) el.click() })`,
+      )
+      await until(
+        `${byText(labels.save)} && ${byText(labels.save)}.disabled === false`,
+      )
+      const callsBeforeSave = await evaluate("window.__journeyCalls.length")
+      await evaluate("window.__failSaveOnce = true")
+      await focusExpression(byText(labels.save))
+      await pressEnter()
+      await until(`!!${byText(labels.retrySave)}`)
+      await pause(80)
+      assert.equal((await activeInfo()).role, "alert")
+      assert.equal(await evaluate("window.__profileWrites"), 0)
+      await capture(`save-failure-${tag}`)
+      await focusExpression(byText(labels.retrySave))
+      await pressEnter()
+      await until("!!document.querySelector('[data-submission-saved]')")
+      await pause(80)
+      assert.equal(
+        await evaluate(
+          "document.activeElement?.hasAttribute('data-submission-saved')",
+        ),
+        true,
+        `${tag}: saved status did not receive focus`,
+      )
+      assert.equal(await evaluate("window.__profileWrites"), 1)
+      assert.equal(
+        await evaluate("window.__journeyCalls.length"),
+        callsBeforeSave,
+        `${tag}: retrying a save called a provider`,
+      )
+      const saved = JSON.parse(await evaluate(savedProfileExpression))
+      assert.match(saved.skills, /Kubernetes/)
+      assert.match(saved.careerGoals, /mentor/)
+      assert.match(saved.tools, /Terraform/)
+      assert.match(saved.competencies, /Cross-functional/)
+      assert.match(saved.additionalInfo, /French B2/)
+      await assertNoOverflow(`saved ${tag}`)
+      await capture(`saved-${tag}`)
+      console.log(`PASS integrated EN/PT rich review ${tag}`)
+
+      // Processing failure and the distinct Stop/Resume/Retry/Discard controls.
+      traceLabel = `${tag} failure`
+      await resetStorage(null, locale)
+      await installMock("partial")
+      await watchWrites()
+      await openProfile()
+      await openJourneyLocalized(labels)
+      await fill(
+        "#submission-text",
+        "I use TypeScript. I led a payments project.",
+      )
+      await evaluate("window.__holdExtract = true")
+      await focusExpression(byText(labels.prepare))
+      await pressEnter()
+      await until("window.__extractHeld === true")
+      await until(
+        `document.activeElement?.textContent.trim() === ${JSON.stringify(labels.stop)}`,
+      )
+      await pressEnter()
+      await until("window.__extractAborted === true")
+      await until("!!document.querySelector('[data-submission-recovery]')")
+      await until(
+        "document.activeElement === document.querySelector('[data-submission-recovery]')",
+      )
+      await focusExpression(byText(labels.resume))
+      await pressEnter()
+      await until(`!!${byText(labels.retry)}`)
+      await until(
+        "document.activeElement === document.querySelector('[data-submission-recovery]')",
+      )
+      await assertNoOverflow(`processing failure ${tag}`)
+      await assertNoRawEnums(`processing failure ${tag}`)
+      await capture(`failure-${tag}`)
+      await focusExpression(byText(labels.retry))
+      await pressEnter()
+      await until("!!document.querySelector('#review-heading')")
+      await until("document.activeElement?.id === 'review-heading'")
+      await assertNoOverflow(`failure review ${tag}`)
+      await capture(`failure-review-${tag}`)
+
+      traceLabel = `${tag} failure discard`
+      await focusExpression(byText(labels.discard))
+      await pressEnter()
+      await until(`${journeyDialog}?.open === true`)
+      await pause(80)
+      assert.match((await activeInfo()).text, new RegExp(labels.keepEditing))
+      await pressKey("Tab", "Tab", 9)
+      assert.equal((await activeInfo()).text, labels.discard)
+      assert.equal(
+        await evaluate("!!document.activeElement.closest('dialog')"),
+        true,
+        `${tag}: dialog discard is not inside the dialog`,
+      )
+      await pressEnter()
+      await until(`${journeyDialog}?.open !== true`)
+      await until("!!document.querySelector('#submission-text')")
+      await pause(80)
+      assert.equal(
+        await evaluate("document.activeElement?.id"),
+        "submission-text",
+        `${tag}: discard did not return focus to the empty draft`,
+      )
+      assert.equal(
+        await evaluate("document.querySelector('#submission-text').value"),
+        "",
+      )
+      assert.equal(await evaluate("window.__profileWrites"), 0)
+      console.log(`PASS integrated EN/PT failure and keyboard controls ${tag}`)
+    }
+  }
+  writeFileSync(
+    join(work, "keyboard-trace.json"),
+    JSON.stringify(keyboardTrace, null, 2),
+  )
   console.log("Screenshots:", work)
 } finally {
   socket?.close()
