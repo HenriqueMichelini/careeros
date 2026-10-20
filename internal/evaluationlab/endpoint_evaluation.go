@@ -298,10 +298,13 @@ func checkEndpointDependencies(request IngestionEndpointRequest) ([]string, erro
 	if len(request.Task.Expectation) == 0 {
 		reasons = append(reasons, "expectation_missing")
 	}
+	if request.Task.OriginalFixture.Hash != "" && request.Task.OriginalFixture.Hash != request.Task.Ref.OriginalFixtureHash {
+		return nil, fmt.Errorf("original fixture hash mismatch")
+	}
 	if len(request.Task.OriginalFixture.Original) == 0 {
 		reasons = append(reasons, "original_fixture_missing")
 	} else {
-		if request.Task.OriginalFixture.Hash != request.Task.Ref.OriginalFixtureHash || semanticeval.Hash(request.Task.OriginalFixture.Original) != request.Task.Ref.OriginalFixtureHash {
+		if request.Task.OriginalFixture.Hash == "" || semanticeval.Hash(request.Task.OriginalFixture.Original) != request.Task.Ref.OriginalFixtureHash {
 			return nil, fmt.Errorf("original fixture hash mismatch")
 		}
 		canonical, err := ExtractTaskSidecar(request.Task.Ref.SuiteID, request.Task.OriginalFixture.Original, request.Task.Ref.CaseID)

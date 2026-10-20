@@ -309,11 +309,77 @@ func TestEvaluateIngestionEndpointDoesNotSilentlyInterpretUnsupportedLabels(t *t
 }
 
 func TestEvaluateIngestionEndpointKeepsKnownContradictionsBesideMissingMetadata(t *testing.T) {
-	r := endpointRequest(t, "en-fact")
-	r.Task.OriginalFixture.Original = nil
-	r.ExpectedEvaluator = &lab.DigestRef{ID: "ingestion-endpoint", Version: "ingestion-endpoint-evaluator-v1", Hash: strings.Repeat("c", 64)}
-	if _, err := lab.EvaluateIngestionEndpoint(r); err == nil {
-		t.Fatal("unrelated missing fixture hid known evaluator mismatch")
+	for _, identity := range []struct {
+		name                                     string
+		change                                   func(*lab.IngestionEndpointRequest)
+		needsFixture, needsEvaluatorDependencies bool
+	}{
+		{"fixture identity", func(r *lab.IngestionEndpointRequest) { r.Task.OriginalFixture.Hash = strings.Repeat("c", 64) }, false, false},
+		{"input identity", func(r *lab.IngestionEndpointRequest) { r.Task.Ref.InputHash = strings.Repeat("c", 64) }, false, false},
+		{"expectation identity", func(r *lab.IngestionEndpointRequest) { r.Task.Ref.ExpectationHash = strings.Repeat("c", 64) }, false, false},
+		{"task version", func(r *lab.IngestionEndpointRequest) { r.Task.Ref.TaskVersion = "other-task-v1" }, false, false},
+		{"case identity", func(r *lab.IngestionEndpointRequest) { r.Task.Ref.CaseID = "other-case" }, true, false},
+		{"evaluator identity", func(r *lab.IngestionEndpointRequest) {
+			r.ExpectedEvaluator = &lab.DigestRef{ID: "other-evaluator", Version: "ingestion-endpoint-evaluator-v1", Hash: strings.Repeat("c", 64)}
+		}, false, false},
+		{"evaluator version", func(r *lab.IngestionEndpointRequest) {
+			r.ExpectedEvaluator = &lab.DigestRef{ID: "ingestion-endpoint", Version: "other-version", Hash: strings.Repeat("c", 64)}
+		}, false, false},
+		{"evaluator hash", func(r *lab.IngestionEndpointRequest) {
+			r.ExpectedEvaluator = &lab.DigestRef{ID: "ingestion-endpoint", Version: "ingestion-endpoint-evaluator-v1", Hash: strings.Repeat("c", 64)}
+		}, false, true},
+	} {
+		for _, missing := range []struct {
+			name   string
+			change func(*lab.IngestionEndpointRequest)
+		}{
+			{"output", func(r *lab.IngestionEndpointRequest) { r.Evidence = lab.IngestionEndpointEvidence{} }},
+			{"fixture", func(r *lab.IngestionEndpointRequest) { r.Task.OriginalFixture.Original = nil }},
+			{"evaluator dependency", func(r *lab.IngestionEndpointRequest) {
+				delete(r.EvaluatorDependencies, "internal/evaluationlab/metrics.go")
+			}},
+		} {
+			if (missing.name == "fixture" && identity.needsFixture) || (missing.name == "evaluator dependency" && identity.needsEvaluatorDependencies) {
+				continue // Missing evidence removes the independently comparable identity.
+			}
+			t.Run(identity.name+" with missing "+missing.name, func(t *testing.T) {
+				r := endpointRequest(t, "en-fact")
+				identity.change(&r)
+				missing.change(&r)
+				if _, err := lab.EvaluateIngestionEndpoint(r); err == nil {
+					t.Fatal("missing evidence hid known identity contradiction")
+				}
+			})
+		}
+	}
+	for _, tc := range []struct {
+		name   string
+		change func(*lab.IngestionEndpointRequest)
+	}{
+		{"matching fixture identity", func(r *lab.IngestionEndpointRequest) {}},
+		{"absent fixture identity", func(r *lab.IngestionEndpointRequest) { r.Task.OriginalFixture.Hash = "" }},
+		{"case without comparable fixture", func(r *lab.IngestionEndpointRequest) { r.Task.Ref.CaseID = "other-case" }},
+		{"input without comparable bytes", func(r *lab.IngestionEndpointRequest) {
+			r.Task.Input = nil
+			r.Task.Ref.InputHash = strings.Repeat("c", 64)
+		}},
+		{"expectation without comparable bytes", func(r *lab.IngestionEndpointRequest) {
+			r.Task.Expectation = nil
+			r.Task.Ref.ExpectationHash = strings.Repeat("c", 64)
+		}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			r := endpointRequest(t, "en-fact")
+			r.Task.OriginalFixture.Original = nil
+			tc.change(&r)
+			got, err := lab.EvaluateIngestionEndpoint(r)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got.EndpointState != "unavailable" || got.Facets["proposal-operations"].Counts != nil {
+				t.Fatal("missing comparable evidence became a scored result")
+			}
+		})
 	}
 }
 
@@ -427,6 +493,51 @@ func TestReevaluateIngestionPairRejectsKnownMismatchesAndKeepsMissingSide(t *tes
 			delete(a.EvaluatorDependencies, "internal/evaluationlab/metrics.go")
 			b.EvaluatorDependencies["internal/semanticeval/score.go"] = strings.Repeat("e", 64)
 		}, true},
+		{"fixture identity beside missing fixture", func(a, b *lab.IngestionEndpointRequest, h []lab.EndpointEvaluationReceipt) {
+			b.Task.OriginalFixture.Original = nil
+			b.Task.OriginalFixture.Hash = strings.Repeat("e", 64)
+		}, true},
+		{"task identity beside missing fixture", func(a, b *lab.IngestionEndpointRequest, h []lab.EndpointEvaluationReceipt) {
+			b.Task.OriginalFixture.Original = nil
+			b.Task.Ref.TaskVersion = "other-task-v1"
+		}, true},
+		{"case identity beside missing fixture", func(a, b *lab.IngestionEndpointRequest, h []lab.EndpointEvaluationReceipt) {
+			b.Task.OriginalFixture.Original = nil
+			b.Task.Ref.CaseID = "other-case"
+		}, true},
+		{"input identity beside missing bytes", func(a, b *lab.IngestionEndpointRequest, h []lab.EndpointEvaluationReceipt) {
+			b.Task.OriginalFixture.Original = nil
+			b.Task.Input = nil
+			b.Task.Ref.InputHash = strings.Repeat("e", 64)
+		}, true},
+		{"expectation identity beside missing bytes", func(a, b *lab.IngestionEndpointRequest, h []lab.EndpointEvaluationReceipt) {
+			b.Task.OriginalFixture.Original = nil
+			b.Task.Expectation = nil
+			b.Task.Ref.ExpectationHash = strings.Repeat("e", 64)
+		}, true},
+		{"evaluator reference beside missing dependency", func(a, b *lab.IngestionEndpointRequest, h []lab.EndpointEvaluationReceipt) {
+			delete(b.EvaluatorDependencies, "internal/evaluationlab/metrics.go")
+			b.ExpectedEvaluator = &lab.DigestRef{ID: "other-evaluator", Version: "ingestion-endpoint-evaluator-v1", Hash: strings.Repeat("e", 64)}
+		}, true},
+		{"different supplied evaluator hashes beside missing dependencies", func(a, b *lab.IngestionEndpointRequest, h []lab.EndpointEvaluationReceipt) {
+			delete(a.EvaluatorDependencies, "internal/evaluationlab/metrics.go")
+			delete(b.EvaluatorDependencies, "internal/evaluationlab/metrics.go")
+			a.ExpectedEvaluator = &lab.DigestRef{ID: "ingestion-endpoint", Version: "ingestion-endpoint-evaluator-v1", Hash: strings.Repeat("d", 64)}
+			b.ExpectedEvaluator = &lab.DigestRef{ID: "ingestion-endpoint", Version: "ingestion-endpoint-evaluator-v1", Hash: strings.Repeat("e", 64)}
+		}, true},
+		{"missing fixture", func(a, b *lab.IngestionEndpointRequest, h []lab.EndpointEvaluationReceipt) {
+			b.Task.OriginalFixture.Original = nil
+		}, false},
+		{"missing fixture and its dependency hash", func(a, b *lab.IngestionEndpointRequest, h []lab.EndpointEvaluationReceipt) {
+			b.Task.OriginalFixture.Original = nil
+			b.Task.OriginalFixture.Hash = ""
+		}, false},
+		{"missing input", func(a, b *lab.IngestionEndpointRequest, h []lab.EndpointEvaluationReceipt) {
+			b.Task.Input = nil
+		}, false},
+		{"missing expectation", func(a, b *lab.IngestionEndpointRequest, h []lab.EndpointEvaluationReceipt) {
+			b.Task.Expectation = nil
+		}, false},
 		{"missing output", func(a, b *lab.IngestionEndpointRequest, h []lab.EndpointEvaluationReceipt) {
 			b.Evidence = lab.IngestionEndpointEvidence{}
 		}, false},
