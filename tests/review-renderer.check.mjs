@@ -165,6 +165,14 @@ try {
   assert.equal(current.summary.unresolved, 1)
   assert.equal(current.summary.duplicates, 1)
   assert.equal(current.summary.noChange, false)
+  const unresolvedReason = await normalized(
+    '[data-review-unit][data-review-kind="unresolved"]',
+  )
+  assert.match(
+    unresolvedReason,
+    /No safe change could be produced for this outcome\./,
+  )
+  assert.doesNotMatch(unresolvedReason, /comparison reason is unavailable/i)
   assert.equal(
     await evaluate(
       "Array.from(document.querySelectorAll('input[type=checkbox]')).every(el => !el.checked && !el.indeterminate)",

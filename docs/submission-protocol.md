@@ -225,6 +225,9 @@ complete original with Jev, and makes one bounded generation call.
   task data, never as saved or user-approved facts.
 - At most 60 operations for at most 30 focus claims; context-only claims may
   support/link decisions but never receive duplicate output.
+- An operation's `supportingClaimIds` must contain its owning claim. An empty
+  array is treated as implicit support from that owner; a non-empty list that
+  omits the owner is rejected.
 - Dangling operations, invented existing references, out-of-focus operations and
   oversized provider context are rejected.
 - Stable global temporary entity anchors and conservative identity rules apply

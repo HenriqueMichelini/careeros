@@ -16,7 +16,7 @@ const (
 	maxReceiptPayload = 128 << 10
 	receiptTTL        = 10 * time.Minute
 	extractionVersion = "profile-claims-prompt-v6/schema-v2/source-resolution-v1/portions-v1/clarifications-v1/apply-answer-v1"
-	comparisonVersion = "profile-operations-prompt-v5/schema-v3/dispositions-v1/clarifications-v1/apply-answer-v1"
+	comparisonVersion = "profile-operations-prompt-v6/schema-v3/dispositions-v1/clarifications-v1/apply-answer-v1"
 	receiptVersion    = "profile-ingestion-stages-v1/" + extractionVersion + "/" + comparisonVersion + "/" + preprocessing.RulesVersion + "/" + preprocessing.StructureVersion + "/" + preprocessing.PlanningVersion
 )
 

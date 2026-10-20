@@ -356,6 +356,47 @@ func runReconcile(t *testing.T, generation string, batches [][]claim, focus []st
 	return w.Code, got, calls
 }
 
+// The strict provider schema requires supportingClaimIds on every operation. A
+// schema-compliant empty array means the operation is supported by its own
+// claim; it must not be confused with an owned operation that omits itself from
+// an explicit support list.
+func TestSubmissionReconcileTreatsEmptySupportingClaimIdsAsOwner(t *testing.T) {
+	focus := reconcileGID(0, "c1")
+	generation := fmt.Sprintf(
+		`{"operations":[{"claimId":%q,"supportingClaimIds":[],"target":"skills","entryId":"","field":"skills","action":"add","value":"Alphabeta","finding":"addition"}],"outcomes":[{"claimId":%q,"kind":"change","reason":"new_skill","relatedFacts":[],"relatedClaimIds":[]}]}`,
+		focus, focus,
+	)
+	code, got, calls := runReconcile(t, generation, [][]claim{{fixtureClaim("c1", "Alpha beta", "skills")}}, []string{focus})
+	if code != 200 || calls.extract != 1 {
+		t.Fatalf("code=%d calls=%+v body=%+v", code, calls, got)
+	}
+	if !strings.Contains(calls.extractBodies[0], "supportingClaimIds containing its own claimId") {
+		t.Fatal("focus reconciliation prompt must require the owning claim in supportingClaimIds")
+	}
+	if len(got.Operations) != 1 || got.Operations[0].ClaimID != focus || got.Operations[0].Value != "Alphabeta" {
+		t.Fatalf("empty support was not resolved to the owning claim: %+v", got.Operations)
+	}
+	if len(got.Outcomes) != 1 || got.Outcomes[0].Kind != "change" || len(got.Outcomes[0].OperationIndexes) != 1 {
+		t.Fatalf("outcome did not retain the supported operation: %+v", got.Outcomes)
+	}
+}
+
+// Normalizing an empty provider support list must not weaken the rule for an
+// explicit list. An operation that names another claim but omits its owner is
+// still withheld.
+func TestSubmissionReconcileRejectsSupportThatOmitsOwner(t *testing.T) {
+	focus := reconcileGID(0, "c1")
+	other := reconcileGID(0, "c2")
+	generation := fmt.Sprintf(
+		`{"operations":[{"claimId":%q,"supportingClaimIds":[%q],"target":"skills","entryId":"","field":"skills","action":"add","value":"Alphabeta","finding":"addition"}],"outcomes":[{"claimId":%q,"kind":"change","reason":"new_skill","relatedFacts":[],"relatedClaimIds":[]}]}`,
+		focus, other, focus,
+	)
+	code, got, _ := runReconcile(t, generation, [][]claim{{fixtureClaim("c1", "Alpha beta", "skills"), fixtureClaim("c2", "Gamma delta", "skills")}}, []string{focus})
+	if code != 200 || len(got.Operations) != 0 || len(got.Outcomes) != 1 || got.Outcomes[0].Kind != "unresolved" {
+		t.Fatalf("code=%d ops=%+v outcomes=%+v", code, got.Operations, got.Outcomes)
+	}
+}
+
 // Dangling, out-of-focus and unsupported focus operations are withheld and leave
 // the affected focus claim unresolved; malformed and oversized generations are
 // rejected rather than truncated.
