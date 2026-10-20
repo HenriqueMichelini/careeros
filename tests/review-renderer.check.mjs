@@ -603,8 +603,14 @@ try {
     "Vue",
   )
   assert.equal(
-    await evaluate("document.activeElement?.id"),
-    "review-heading",
+    await evaluate(
+      `(() => {
+        const unit = Array.from(document.querySelectorAll('[data-review-unit]')).find((el) => el.textContent.includes('Contract'));
+        return !!unit && document.activeElement === unit.querySelector('input[type=checkbox]');
+      })()`,
+    ),
+    true,
+    "resolving a clarification focuses the destination it now updates",
   )
   assert.equal(
     await evaluate("localStorage.getItem('careeros_profile_v2')"),

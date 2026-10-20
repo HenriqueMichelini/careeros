@@ -478,9 +478,9 @@ const messages = {
     "repo.submission.saving": "Saving to Profile…",
     "repo.submission.retrySave": "Retry save",
     "repo.submission.selection":
-      "{{selected}} of {{selectable}} changes selected · {{attention}} need attention",
+      "{{selected}} of {{selectable}} changes selected · Attention needed: {{attention}}",
     "repo.submission.selectionNone":
-      "No changes selected · {{attention}} need attention",
+      "No changes selected · Attention needed: {{attention}}",
     "repo.submission.saveFailed":
       "Not saved. Your selection and review are retained. Review the feedback, then retry save; no provider request is made.",
     "repo.submission.saveStorage":
@@ -505,7 +505,7 @@ const messages = {
     "repo.clarificationAnswer": "Your answer",
     "repo.clarificationReview": "Review revised proposal",
     "repo.clarificationNote":
-      "Answer only what you know. Optional details can remain unknown. Nothing is saved until you approve and apply.",
+      "Answer only what you know. Optional details can remain unknown. Nothing is saved until you select changes and choose Save to Profile.",
     "repo.clarificationConflict":
       "Which statement should this proposal use? Explain any correction or leave it unresolved.",
     "repo.clarificationRevised":
@@ -626,10 +626,10 @@ const messages = {
       "Enter up to 30,000 UTF-8 bytes of professional information and check the current Profile fields.",
     "review.heading": "Review changes",
     "review.summaryChanges": "{{count}} to review",
-    "review.summaryAttention": "{{count}} need attention",
-    "review.summaryBlocked": "{{count}} cannot be saved yet",
+    "review.summaryAttention": "Attention needed: {{count}}",
+    "review.summaryBlocked": "To resolve: {{count}}",
     "review.summaryDuplicates": "{{count}} already in your Profile",
-    "review.summarySelected": "{{count}} selected",
+    "review.summarySelected": "Selected: {{count}}",
     "review.noChange": "Everything you pasted is already in your Profile.",
     "review.noChangeNote": "Nothing needs approval or saving.",
     "review.duplicateSummary": "Already in your Profile ({{count}})",
@@ -640,6 +640,8 @@ const messages = {
     "review.selectUnit": "Select {{value}}",
     "review.newEntry": "New entry",
     "review.edit": "Edit",
+    "review.editUnitName": "Edit {{value}}",
+    "review.cancelEditUnit": "Cancel editing {{value}}",
     "review.editSave": "Save wording",
     "review.editCancel": "Cancel",
     "review.preview": "Preview",
@@ -680,6 +682,7 @@ const messages = {
     "review.attentionReason": "Why approval is blocked",
     "review.question": "Question",
     "review.answer": "Answer",
+    "review.answerFor": "Answer: {{value}}",
     "review.answerLabel": "Your answer",
     "review.answerStatus": "Revising…",
     "review.answerTooLong": "Answer must be 1,000 UTF-8 bytes or less.",
@@ -687,9 +690,11 @@ const messages = {
     "review.answerExpired":
       "This clarification expired. Your pending review and unrelated changes are preserved; start a new review to answer it.",
     "review.leaveOut": "Leave out / keep unresolved",
+    "review.leaveOutFor": "Leave out: {{value}}",
     "review.keptUnresolved":
       "Kept unresolved. Nothing will be saved for this item; unrelated changes remain available.",
     "review.source": "Source",
+    "review.sourceFor": "Source for {{value}}",
     "review.sourceOriginal": "Original paste",
     "review.sourceClarification": "Clarification answer",
     "review.sourceDetails": "Details",
@@ -703,6 +708,33 @@ const messages = {
     "review.sourceOutcome": "Outcome",
     "review.sourceRevision": "Revision",
     "review.normalization": "Normalization",
+    "review.reason.validated_operation":
+      "Supported by the extracted statement",
+    "review.reason.verified_exact_alias_or_wording":
+      "Matches the wording already saved",
+    "review.reason.source_ambiguity": "The source is ambiguous",
+    "review.reason.unresolved": "The statement could not be compared",
+    "review.reason.unknown_owner":
+      "The source does not identify whose fact this is",
+    "review.reason.duplicate": "Already represented in the saved Profile",
+    "review.reason.fabricated":
+      "The proposed value is not supported by the source",
+    "review.reason.no_source": "No supporting excerpt was available",
+    "review.reason.other": "The comparison reason is unavailable",
+    "review.finding.addition": "Adds a value",
+    "review.finding.in_place": "Updates the existing value",
+    "review.finding.overlap": "Overlaps existing wording",
+    "review.finding.other": "Other change",
+    "review.outcome.change": "Change",
+    "review.outcome.exact_duplicate": "Already saved",
+    "review.outcome.overlap": "Overlap",
+    "review.outcome.additional_support": "Additional support",
+    "review.outcome.contradiction": "Conflict",
+    "review.outcome.correction": "Correction",
+    "review.outcome.clarification": "Needs clarification",
+    "review.outcome.unsupported": "No supporting excerpt",
+    "review.outcome.unresolved": "Could not compare",
+    "review.outcome.other": "Other result",
     "review.inProfile": "In your Profile",
     "review.relatedStatement": "Competing statement",
     "review.meaningNegated": "Stated as not having this",
@@ -1564,9 +1596,9 @@ const messages = {
     "repo.submission.saving": "Salvando no Perfil…",
     "repo.submission.retrySave": "Tentar salvar novamente",
     "repo.submission.selection":
-      "{{selected}} de {{selectable}} alterações selecionadas · {{attention}} precisam de atenção",
+      "{{selected}} de {{selectable}} alterações selecionadas · Atenção necessária: {{attention}}",
     "repo.submission.selectionNone":
-      "Nenhuma alteração selecionada · {{attention}} precisam de atenção",
+      "Nenhuma alteração selecionada · Atenção necessária: {{attention}}",
     "repo.submission.saveFailed":
       "Não salvo. Sua seleção e revisão foram preservadas. Confira o retorno e tente salvar novamente; nenhuma chamada ao provedor é feita.",
     "repo.submission.saveStorage":
@@ -1591,7 +1623,7 @@ const messages = {
     "repo.clarificationAnswer": "Sua resposta",
     "repo.clarificationReview": "Revisar proposta atualizada",
     "repo.clarificationNote":
-      "Responda apenas o que sabe. Detalhes opcionais podem continuar desconhecidos. Nada é salvo até você aprovar e aplicar.",
+      "Responda apenas o que sabe. Detalhes opcionais podem continuar desconhecidos. Nada é salvo até você selecionar alterações e escolher Salvar no Perfil.",
     "repo.clarificationConflict":
       "Qual declaração esta proposta deve usar? Explique a correção ou mantenha a questão em aberto.",
     "repo.clarificationRevised":
@@ -1714,13 +1746,13 @@ const messages = {
       "Informe até 30.000 bytes UTF-8 de dados profissionais e confira os campos atuais do Perfil.",
     "review.heading": "Revisar alterações",
     "review.summaryChanges": "{{count}} para revisar",
-    "review.summaryAttention": "{{count}} precisam de atenção",
-    "review.summaryBlocked": "{{count}} ainda não podem ser salvos",
-    "review.summaryDuplicates": "{{count}} já estão no seu Perfil",
-    "review.summarySelected": "{{count}} selecionadas",
+    "review.summaryAttention": "Atenção necessária: {{count}}",
+    "review.summaryBlocked": "Para resolver: {{count}}",
+    "review.summaryDuplicates": "{{count}} já no seu Perfil",
+    "review.summarySelected": "Seleção: {{count}}",
     "review.noChange": "Tudo o que você colou já está no seu Perfil.",
     "review.noChangeNote": "Nada precisa de aprovação ou salvamento.",
-    "review.duplicateSummary": "Já está no seu Perfil ({{count}})",
+    "review.duplicateSummary": "No seu Perfil ({{count}})",
     "review.selectAdditions": "Selecionar adições claras",
     "review.clearSelection": "Limpar seleção",
     "review.selectGroup": "Selecionar tudo em {{destination}}",
@@ -1728,6 +1760,8 @@ const messages = {
     "review.selectUnit": "Selecionar {{value}}",
     "review.newEntry": "Nova entrada",
     "review.edit": "Editar",
+    "review.editUnitName": "Editar {{value}}",
+    "review.cancelEditUnit": "Cancelar edição de {{value}}",
     "review.editSave": "Salvar texto",
     "review.editCancel": "Cancelar",
     "review.preview": "Prévia",
@@ -1768,6 +1802,7 @@ const messages = {
     "review.attentionReason": "Por que a aprovação está bloqueada",
     "review.question": "Pergunta",
     "review.answer": "Responder",
+    "review.answerFor": "Responder: {{value}}",
     "review.answerLabel": "Sua resposta",
     "review.answerStatus": "Revisando…",
     "review.answerTooLong":
@@ -1776,9 +1811,11 @@ const messages = {
     "review.answerExpired":
       "Este esclarecimento expirou. Sua revisão pendente e as demais alterações foram preservadas; inicie uma nova revisão para responder.",
     "review.leaveOut": "Deixar de fora / manter em aberto",
+    "review.leaveOutFor": "Deixar de fora: {{value}}",
     "review.keptUnresolved":
       "Mantido em aberto. Nada será salvo para este item; as demais alterações continuam disponíveis.",
     "review.source": "Fonte",
+    "review.sourceFor": "Fonte de {{value}}",
     "review.sourceOriginal": "Texto original",
     "review.sourceClarification": "Resposta de esclarecimento",
     "review.sourceDetails": "Detalhes",
@@ -1792,6 +1829,33 @@ const messages = {
     "review.sourceOutcome": "Comparação",
     "review.sourceRevision": "Revisão",
     "review.normalization": "Normalização",
+    "review.reason.validated_operation":
+      "Comprovado pela declaração extraída",
+    "review.reason.verified_exact_alias_or_wording":
+      "Corresponde ao texto já salvo",
+    "review.reason.source_ambiguity": "A fonte é ambígua",
+    "review.reason.unresolved": "Não foi possível comparar a declaração",
+    "review.reason.unknown_owner":
+      "A fonte não identifica a quem o fato pertence",
+    "review.reason.duplicate": "Já representado no Perfil salvo",
+    "review.reason.fabricated":
+      "O valor proposto não tem apoio na fonte",
+    "review.reason.no_source": "Nenhum trecho de apoio estava disponível",
+    "review.reason.other": "O motivo da comparação não está disponível",
+    "review.finding.addition": "Adiciona um valor",
+    "review.finding.in_place": "Atualiza o valor existente",
+    "review.finding.overlap": "Sobreposto ao texto existente",
+    "review.finding.other": "Outra alteração",
+    "review.outcome.change": "Alteração",
+    "review.outcome.exact_duplicate": "Já salvo",
+    "review.outcome.overlap": "Sobreposição",
+    "review.outcome.additional_support": "Apoio adicional",
+    "review.outcome.contradiction": "Conflito",
+    "review.outcome.correction": "Correção",
+    "review.outcome.clarification": "Precisa de esclarecimento",
+    "review.outcome.unsupported": "Sem trecho de apoio",
+    "review.outcome.unresolved": "Não foi possível comparar",
+    "review.outcome.other": "Outro resultado",
     "review.inProfile": "No seu Perfil",
     "review.relatedStatement": "Declaração concorrente",
     "review.meaningNegated": "Declarado como não tendo isto",

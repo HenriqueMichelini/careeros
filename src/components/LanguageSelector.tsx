@@ -23,7 +23,7 @@ export default function LanguageSelector({
               })
             : setUiLocale(event.target.value as typeof uiLocale)
         }
-        className="w-28 shrink-0 text-xs px-2 py-1.5 border bg-transparent focus:outline-none"
+        className="w-28 shrink-0 text-xs px-2 py-1.5 border bg-transparent focus-visible:outline-2 focus-visible:outline-offset-2"
         style={{
           fontFamily: "var(--font-mono)",
           borderColor: "var(--color-border)",

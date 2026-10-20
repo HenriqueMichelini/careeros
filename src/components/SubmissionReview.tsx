@@ -35,11 +35,104 @@ export interface SubmissionReviewProps {
 const muted = { color: "var(--color-muted-fg)" } as const
 const cardBorder = { borderColor: "var(--color-border)" } as const
 
+const entryTargets = new Set([
+  "experience",
+  "projects",
+  "education",
+  "certifications",
+  "languages",
+])
+
 function identityText(identity: ReviewIdentity[]): string {
   return identity
     .map((item) => item.value)
     .filter((value) => value.trim())
     .join(" · ")
+}
+
+// Provider outcomes carry stable machine codes. Translate the known codes for
+// the visible comparison copy and never leak an unknown enum into the UI.
+const reasonKeys: Record<string, TranslationKey> = {
+  validated_operation: "review.reason.validated_operation",
+  verified_exact_alias_or_wording:
+    "review.reason.verified_exact_alias_or_wording",
+  source_ambiguity: "review.reason.source_ambiguity",
+  unresolved: "review.reason.unresolved",
+  unknown_owner: "review.reason.unknown_owner",
+  duplicate: "review.reason.duplicate",
+  fabricated: "review.reason.fabricated",
+  no_source: "review.reason.no_source",
+}
+const findingKeys: Record<string, TranslationKey> = {
+  addition: "review.finding.addition",
+  in_place: "review.finding.in_place",
+  overlap: "review.finding.overlap",
+}
+const outcomeKeys: Record<string, TranslationKey> = {
+  change: "review.outcome.change",
+  exact_duplicate: "review.outcome.exact_duplicate",
+  overlap: "review.outcome.overlap",
+  additional_support: "review.outcome.additional_support",
+  contradiction: "review.outcome.contradiction",
+  correction: "review.outcome.correction",
+  clarification: "review.outcome.clarification",
+  unsupported: "review.outcome.unsupported",
+  unresolved: "review.outcome.unresolved",
+}
+const blockedReasons = new Set([
+  "incomplete_identity",
+  "incomplete_anchor",
+  "stale",
+  "shared_support",
+  "dangling_support",
+  "dependency_cycle",
+  "dependency_blocked",
+  "state",
+  "clarification",
+  "conflict",
+  "unsupported",
+  "unresolved",
+])
+
+function localizedCode(
+  value: string,
+  keys: Record<string, TranslationKey>,
+  fallback: TranslationKey,
+  t: (key: TranslationKey) => string,
+): string {
+  const parts = value
+    .split(" · ")
+    .map((part) => part.trim())
+    .filter(Boolean)
+  const translated = parts.map((part) => {
+    const key = keys[part]
+    if (key) return t(key)
+    // Unknown free-form wording can stay as written; unknown enum-like codes
+    // use the localized fallback instead of exposing an internal identifier.
+    return /^[a-z][a-z0-9_]*$/.test(part) ? t(fallback) : part
+  })
+  return [...new Set(translated)].join(" · ")
+}
+
+function blockedText(
+  reason: string,
+  t: (key: TranslationKey) => string,
+): string {
+  return t(
+    blockedReasons.has(reason)
+      ? (`review.blocked.${reason}` as TranslationKey)
+      : "review.blocked.state",
+  )
+}
+
+// Accessible names need the destination value for repeated controls, but a
+// multi-line excerpt should not become a paragraph-long checkbox label.
+function shortName(value: string, fallback: string): string {
+  const normalized = value.replace(/\s+/g, " ").trim()
+  if (!normalized) return fallback
+  return normalized.length > 96
+    ? `${normalized.slice(0, 93).trimEnd()}…`
+    : normalized
 }
 
 function meaningNotes(
@@ -84,12 +177,17 @@ function ReviewValues({ unit, target }: ReviewValuesProps) {
     <div className="space-y-2 min-w-0">
       {unit.values.map((value, index) => {
         const fieldLabel = t(profileFieldKey(target, value.field))
+        // A profile field already names its destination; only entry subfields
+        // need a second label inside the destination group.
+        const showFieldLabel = value.field !== target
         if (value.action === "remove")
           return (
             <div key={index} className="min-w-0">
-              <p className="text-xs" style={muted}>
-                {fieldLabel}
-              </p>
+              {showFieldLabel && (
+                <p className="text-xs" style={muted}>
+                  {fieldLabel}
+                </p>
+              )}
               <p className="text-sm break-words whitespace-pre-wrap">
                 {t("review.remove")}: {value.before || "—"}
               </p>
@@ -97,9 +195,11 @@ function ReviewValues({ unit, target }: ReviewValuesProps) {
           )
         return (
           <div key={index} className="min-w-0">
-            <p className="text-xs" style={muted}>
-              {fieldLabel}
-            </p>
+            {showFieldLabel && (
+              <p className="text-xs" style={muted}>
+                {fieldLabel}
+              </p>
+            )}
             <p className="text-sm break-words whitespace-pre-wrap">
               {value.proposed || "—"}
             </p>
@@ -136,9 +236,21 @@ function SourceDisclosure({
     !unit.batchIndexes.length
   )
     return null
+  const summaryValue = shortName(
+    unit.values.map((value) => value.proposed || value.before).find(Boolean) ||
+      unit.question ||
+      unit.sources[0]?.excerpt ||
+      "",
+    t("review.source"),
+  )
   return (
     <details className="mt-2 min-w-0" data-review-source>
-      <summary className="cursor-pointer text-xs">{t("review.source")}</summary>
+      <summary
+        className="cursor-pointer text-xs min-h-9 py-2"
+        aria-label={t("review.sourceFor", { value: summaryValue })}
+      >
+        {t("review.source")}
+      </summary>
       <div className="mt-2 space-y-2 min-w-0">
         {unit.sources.map((source, index) => (
           <div
@@ -157,7 +269,7 @@ function SourceDisclosure({
               : “{source.excerpt}”
             </p>
             <details className="mt-1">
-              <summary className="cursor-pointer text-xs">
+              <summary className="cursor-pointer text-xs min-h-9 py-2">
                 {t("review.sourceDetails")}
               </summary>
               <div className="mt-1 space-y-1 text-xs break-words">
@@ -188,8 +300,7 @@ function SourceDisclosure({
               <p className="text-xs break-words" style={muted}>
                 {t("review.sourceRevision")}: {fact.revision} ·{" "}
                 {t("review.normalization")}: {fact.normalization.observed} →{" "}
-                {fact.normalization.canonical ?? "—"} (
-                {fact.normalization.policy})
+                {fact.normalization.canonical ?? "—"}
               </p>
             </div>
           ))}
@@ -205,12 +316,18 @@ function SourceDisclosure({
           ))}
         {context && unit.reason && (
           <p className="text-xs break-words" style={muted}>
-            {t("review.sourceComparison")}: {unit.reason}
+            {t("review.sourceComparison")}:{" "}
+            {localizedCode(
+              unit.reason,
+              reasonKeys,
+              "review.reason.other",
+              t,
+            )}
           </p>
         )}
         {(unit.finding || unit.outcomeKind || unit.batchIndexes.length > 0) && (
           <details className="mt-1">
-            <summary className="cursor-pointer text-xs">
+            <summary className="cursor-pointer text-xs min-h-9 py-2">
               {t("review.technicalDetails")}
             </summary>
             <div className="mt-1 space-y-1 text-xs break-words" style={muted}>
@@ -224,12 +341,24 @@ function SourceDisclosure({
               )}
               {unit.finding && (
                 <p>
-                  {t("review.sourceFinding")}: {unit.finding}
+                  {t("review.sourceFinding")}:{" "}
+                  {localizedCode(
+                    unit.finding,
+                    findingKeys,
+                    "review.finding.other",
+                    t,
+                  )}
                 </p>
               )}
               {unit.outcomeKind && (
                 <p>
-                  {t("review.sourceOutcome")}: {unit.outcomeKind}
+                  {t("review.sourceOutcome")}:{" "}
+                  {localizedCode(
+                    unit.outcomeKind,
+                    outcomeKeys,
+                    "review.outcome.other",
+                    t,
+                  )}
                 </p>
               )}
             </div>
@@ -353,6 +482,11 @@ function AttentionUnit({
   const safeId = unit.id.replace(/[^a-zA-Z0-9_-]+/g, "-")
   const answerId = `answer-${safeId}`
   const question = unit.question
+  const kindLabel = t(`review.attention.${unit.kind}` as TranslationKey)
+  const attentionName = shortName(
+    question || unit.sources[0]?.excerpt || kindLabel,
+    kindLabel,
+  )
   const trimmed = answer.trim()
   const bytes = ingestionInputBytes(answer)
   const tooLong = bytes > 1000
@@ -375,7 +509,6 @@ function AttentionUnit({
       setAnswer("")
       setAnswerOpen(false)
       setFeedback(t("repo.clarificationRevised"))
-      setTimeout(() => document.getElementById("review-heading")?.focus(), 0)
     } catch (error) {
       if (error instanceof IngestionError && error.code === "cancelled") return
       const code = error instanceof IngestionError ? error.code : ""
@@ -409,10 +542,8 @@ function AttentionUnit({
       open={open}
       onToggle={(event) => setOpen(event.currentTarget.open)}
     >
-      <summary className="cursor-pointer min-w-0" data-review-attention-summary>
-        <span className="text-sm font-semibold block">
-          {t(`review.attention.${unit.kind}` as TranslationKey)}
-        </span>
+      <summary className="cursor-pointer min-w-0 min-h-9" data-review-attention-summary>
+        <span className="text-sm font-semibold block">{kindLabel}</span>
         {question && (
           <span className="text-sm break-words whitespace-pre-wrap block mt-1">
             {question}
@@ -435,16 +566,22 @@ function AttentionUnit({
           </span>
         ))}
         {unit.reason && (
-          <span className="text-xs break-words whitespace-pre-wrap block mt-1" style={muted}>
-            {t("review.attentionReason")}: {unit.reason}
+          <span
+            className="text-xs break-words whitespace-pre-wrap block mt-1"
+            style={muted}
+          >
+            {t("review.attentionReason")}:{" "}
+            {localizedCode(
+              unit.reason,
+              reasonKeys,
+              "review.reason.other",
+              t,
+            )}
           </span>
         )}
         {unit.blockedReason && (
           <span className="text-xs block mt-1" style={muted}>
-            {t("review.blocked")}:{" "}
-            {t(
-              `review.blocked.${unit.blockedReason}` as TranslationKey,
-            )}
+            {t("review.blocked")}: {blockedText(unit.blockedReason, t)}
           </span>
         )}
       </summary>
@@ -490,6 +627,7 @@ function AttentionUnit({
             <textarea
               id={answerId}
               autoFocus
+              aria-label={t("review.answerFor", { value: attentionName })}
               className="w-full min-w-0 border p-2 text-sm resize-y bg-transparent"
               rows={3}
               disabled={disabled || busy}
@@ -545,6 +683,7 @@ function AttentionUnit({
               ref={answerButton}
               type="button"
               data-review-answer-open
+              aria-label={t("review.answerFor", { value: attentionName })}
               className="border px-3 py-2 text-sm disabled:opacity-50"
               style={cardBorder}
               disabled={disabled || unavailable || expired}
@@ -559,6 +698,7 @@ function AttentionUnit({
               ref={leaveButton}
               type="button"
               data-review-leave-out
+              aria-label={t("review.leaveOutFor", { value: attentionName })}
               className="border px-3 py-2 text-sm disabled:opacity-50"
               style={cardBorder}
               disabled={disabled || leftOut}
@@ -609,6 +749,7 @@ function ReviewUnitRow({
     unit.values
       .map((value) => value.proposed || value.before)
       .find((value) => value) ?? unit.question
+  const accessibleValue = shortName(valueSummary, section)
   const checkboxId = `select-${safeId}`
   const control =
     unit.kind === "conflict" ||
@@ -626,35 +767,40 @@ function ReviewUnitRow({
 
   return (
     <div
-      className="mt-3 border p-3 min-w-0"
-      style={cardBorder}
+      className="mt-3 border p-3 min-w-0 focus:outline-2 focus:outline-offset-2"
+      style={{ ...cardBorder, outlineColor: "var(--color-fg)" }}
+      tabIndex={-1}
       data-review-unit={unit.id}
       data-review-kind={unit.kind}
     >
       <div className="flex items-start gap-3 min-w-0">
         {unit.selectable ? (
-          <input
-            id={checkboxId}
-            type="checkbox"
-            className="mt-1"
-            checked={unit.status === "selected"}
-            disabled={disabled}
-            aria-label={t("review.selectUnit", {
-              value: valueSummary || section,
-            })}
-            onChange={(event) => onSelectUnit(unit.id, event.target.checked)}
-          />
+          <label className="-ml-2 mt-0.5 flex min-h-11 min-w-11 shrink-0 cursor-pointer items-start justify-center pt-3">
+            <input
+              id={checkboxId}
+              type="checkbox"
+              className="h-5 w-5"
+              checked={unit.status === "selected"}
+              disabled={disabled}
+              aria-label={t("review.selectUnit", {
+                value: accessibleValue,
+              })}
+              onChange={(event) => onSelectUnit(unit.id, event.target.checked)}
+            />
+          </label>
         ) : (
           <span className="mt-1" aria-hidden>
             ·
           </span>
         )}
         <div className="min-w-0 flex-1">
-          <p className="text-xs" style={muted}>
-            {unit.kind === "evidence"
-              ? `${t("review.attachSource")} · ${section}`
-              : section}
-          </p>
+          {(entryTargets.has(target) || unit.kind === "evidence") && (
+            <p className="text-xs" style={muted}>
+              {unit.kind === "evidence"
+                ? `${t("review.attachSource")} · ${section}`
+                : section}
+            </p>
+          )}
           {unit.kind === "duplicate" && (
             <>
               <p className="text-sm font-semibold">{t("review.duplicate")}</p>
@@ -701,9 +847,7 @@ function ReviewUnitRow({
               unit.kind === "evidence") && (
               <p className="text-sm mt-1" role="note">
                 {t("review.blocked")}:{" "}
-                {t(
-                  `review.blocked.${unit.blockedReason || "state"}` as TranslationKey,
-                )}
+                {blockedText(unit.blockedReason || "state", t)}
               </p>
             )}
           {notes.length > 0 && (
@@ -722,9 +866,18 @@ function ReviewUnitRow({
                 id={editButtonId}
                 ref={editButton}
                 type="button"
-                className="text-xs underline"
+                className="text-xs underline min-h-9 min-w-11 text-left"
                 aria-expanded={editing}
                 aria-controls={`${editButtonId}-editor`}
+                aria-label={
+                  editing
+                    ? t("review.cancelEditUnit", {
+                        value: accessibleValue,
+                      })
+                    : t("review.editUnitName", {
+                        value: accessibleValue,
+                      })
+                }
                 disabled={disabled}
                 onClick={() => setEditing(!editing)}
               >
@@ -785,10 +938,11 @@ function GroupToggle({
   }, [state])
   if (!destination.selectableUnitIds.length) return null
   return (
-    <label className="flex items-center gap-2 text-xs">
+    <label className="flex min-h-11 cursor-pointer items-center gap-2 text-xs">
       <input
         ref={ref}
         type="checkbox"
+        className="h-5 w-5 shrink-0"
         checked={state === "all"}
         disabled={disabled}
         aria-label={t("review.selectGroup", {
@@ -840,7 +994,7 @@ export function SubmissionReview({
         </div>
         {duplicateUnits.length > 0 && (
           <details className="min-w-0">
-            <summary className="cursor-pointer text-sm">
+            <summary className="cursor-pointer text-sm min-h-9 py-2">
               {t("review.duplicateSummary", { count: duplicateUnits.length })}
             </summary>
             <ul className="mt-2 space-y-2 min-w-0">
@@ -938,8 +1092,9 @@ export function SubmissionReview({
         return (
           <article
             key={destination.id}
-            className="border p-4 min-w-0"
-            style={cardBorder}
+            className="border p-4 min-w-0 focus:outline-2 focus:outline-offset-2"
+            style={{ ...cardBorder, outlineColor: "var(--color-fg)" }}
+            tabIndex={-1}
             data-review-destination={destination.id}
           >
             <header className="flex flex-wrap items-start justify-between gap-3 min-w-0">
@@ -978,7 +1133,7 @@ export function SubmissionReview({
             ))}
             {duplicates.length > 0 && (
               <details className="mt-3 min-w-0">
-                <summary className="cursor-pointer text-sm">
+                <summary className="cursor-pointer text-sm min-h-9 py-2">
                   {t("review.duplicateSummary", { count: duplicates.length })}
                 </summary>
                 <ul className="mt-2 space-y-2 min-w-0">

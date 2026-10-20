@@ -94,12 +94,12 @@ function SubmissionDisclosures() {
   const { t } = useI18n()
   return (
     <details className="text-sm mb-4" data-submission-disclosures>
-      <summary className="cursor-pointer">
+      <summary className="cursor-pointer min-h-9 py-2">
         {t("repo.submission.disclosures")}
       </summary>
       <p className="mt-2">{t("field.disclosure")}</p>
       <details className="mt-2">
-        <summary className="cursor-pointer">{t("field.ruleTitle")}</summary>
+        <summary className="cursor-pointer min-h-9 py-2">{t("field.ruleTitle")}</summary>
         <p className="mt-2">{t("field.rule")}</p>
       </details>
     </details>
@@ -197,6 +197,15 @@ export default function SubmissionJourney() {
     : !state.typesafeKey.trim()
       ? t("field.typesafeMissing")
       : ""
+  const recoveryVisible = recoverable && !processing && !editing
+  const stopButton = useRef<HTMLButtonElement | null>(null)
+  const recovery = useRef<HTMLDivElement | null>(null)
+  const saveAlert = useRef<HTMLParagraphElement | null>(null)
+  const savedStatus = useRef<HTMLDivElement | null>(null)
+  const addButton = useRef<HTMLButtonElement | null>(null)
+  const previousOpen = useRef(open)
+  const previousProcessing = useRef(processing)
+  const previousReviewing = useRef(reviewing)
 
   const currentCandidate = useCallback(
     () => ({
@@ -225,6 +234,55 @@ export default function SubmissionJourney() {
     const code = controller.refresh(currentCandidate())
     if (code) sync()
   }, [currentCandidate, controller, flow.input, sync])
+
+  // Foreground state changes remove the control that started them. Move focus to
+  // the next useful control or status instead of leaving it on the body.
+  useEffect(() => {
+    if (processing && !previousProcessing.current)
+      requestAnimationFrame(() => stopButton.current?.focus())
+    previousProcessing.current = processing
+  }, [processing])
+
+  useEffect(() => {
+    if (reviewing && !previousReviewing.current)
+      requestAnimationFrame(() =>
+        document.getElementById("review-heading")?.focus(),
+      )
+    previousReviewing.current = reviewing
+  }, [reviewing])
+
+  useEffect(() => {
+    if (!recoveryVisible) return
+    requestAnimationFrame(() => recovery.current?.focus())
+  }, [recoveryVisible])
+
+  useEffect(() => {
+    if (!editing || !decision) return
+    requestAnimationFrame(() =>
+      document.getElementById("submission-text")?.focus(),
+    )
+  }, [decision, editing])
+
+  useEffect(() => {
+    if (!saveError) return
+    requestAnimationFrame(() => saveAlert.current?.focus())
+  }, [saveError])
+
+  useEffect(() => {
+    if (!saved) return
+    requestAnimationFrame(() => savedStatus.current?.focus())
+  }, [saved])
+
+  useEffect(() => {
+    const wasOpen = previousOpen.current
+    if (open && !wasOpen && editing)
+      requestAnimationFrame(() =>
+        document.getElementById("submission-text")?.focus(),
+      )
+    else if (!open && wasOpen)
+      requestAnimationFrame(() => addButton.current?.focus())
+    previousOpen.current = open
+  }, [open, editing])
 
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
@@ -333,6 +391,7 @@ export default function SubmissionJourney() {
   const confirmDiscard = () => {
     discardDialog.current?.close()
     const retained = flow.input || text
+    const keepDraft = discardIntent === "edit" || profileEmpty(repository)
     controller.discard()
     setDecision(null)
     setRunFeedback("")
@@ -349,6 +408,11 @@ export default function SubmissionJourney() {
       setOpen(profileEmpty(repository))
     }
     sync()
+    requestAnimationFrame(() => {
+      if (keepDraft)
+        document.getElementById("submission-text")?.focus()
+      else addButton.current?.focus()
+    })
   }
 
   const startEditing = () => openDiscard("edit")
@@ -403,6 +467,66 @@ export default function SubmissionJourney() {
     sync()
   }
 
+  // A resolved clarification replaces its claim-only row with the destination
+  // it now updates. Keep keyboard focus near that destination instead of
+  // sending it back to the top of the review.
+  const focusAfterClarification = (claimId: string) => {
+    let attempts = 0
+    const focusTarget = () => {
+      const updated = controller.getReviewPlan()
+      const unit = updated?.units.find((candidate) =>
+        candidate.claimIds.includes(claimId),
+      )
+      const row = Array.from(
+        document.querySelectorAll<HTMLElement>("[data-review-unit]"),
+      ).find((element) => element.dataset.reviewUnit === unit?.id)
+      const checkbox = row?.querySelector<HTMLElement>(
+        "input[type=checkbox]",
+      )
+      const target =
+        checkbox ??
+        row ??
+        Array.from(
+          document.querySelectorAll<HTMLElement>(
+            "[data-review-destination]",
+          ),
+        ).find(
+          (element) =>
+            element.dataset.reviewDestination ===
+            updated?.destinations.find((destination) =>
+              unit ? destination.unitIds.includes(unit.id) : false,
+            )?.id,
+        )
+      if (target) {
+        target.focus({ preventScroll: true })
+        target.scrollIntoView({ block: "center" })
+        return true
+      }
+      return false
+    }
+    const retry = () => {
+      if (focusTarget()) {
+        // A final owner render can replace the row after the first frame. Keep
+        // focus useful if React moved it back to the document body.
+        requestAnimationFrame(() => {
+          if (!document.activeElement || document.activeElement === document.body)
+            focusTarget()
+        })
+        return
+      }
+      if (attempts++ < 12) {
+        requestAnimationFrame(retry)
+        return
+      }
+      const actions = document.querySelector<HTMLElement>(
+        "[data-submission-actions]",
+      )
+      actions?.focus({ preventScroll: true })
+      actions?.scrollIntoView({ block: "nearest" })
+    }
+    requestAnimationFrame(retry)
+  }
+
   const stageStatus = (() => {
     if (flow.status === "planning") return t("repo.ingestWorking")
     if (flow.status === "extracting")
@@ -431,6 +555,7 @@ export default function SubmissionJourney() {
         <>
           <p className="text-sm mb-3">{t("repo.submission.closed")}</p>
           <button
+            ref={addButton}
             type="button"
             onClick={() => {
               setCompleted(false)
@@ -454,7 +579,7 @@ export default function SubmissionJourney() {
             <>
               <p className="text-sm mb-3">{t("repo.submission.guide")}</p>
               <details className="text-sm mb-3">
-                <summary className="cursor-pointer">
+                <summary className="cursor-pointer min-h-9 py-2">
                   {t("field.settings")}
                 </summary>
                 <label htmlFor="typesafe-key" className="block mt-2">
@@ -480,7 +605,7 @@ export default function SubmissionJourney() {
                 <p className="mt-2">{t("field.disclosure")}</p>
               </details>
               <details id="input-use-rule" className="text-sm mb-3">
-                <summary className="cursor-pointer">
+                <summary className="cursor-pointer min-h-9 py-2">
                   {t("field.ruleTitle")}
                 </summary>
                 <p className="mt-2">{t("field.rule")}</p>
@@ -534,6 +659,7 @@ export default function SubmissionJourney() {
             >
               <p>{stageStatus}</p>
               <button
+                ref={stopButton}
                 type="button"
                 onClick={() => {
                   controller.stop()
@@ -561,7 +687,14 @@ export default function SubmissionJourney() {
           )}
 
           {recoverable && !processing && !editing && (
-            <div className="text-sm mb-3 space-y-2" role="status">
+            <div
+              ref={recovery}
+              className="text-sm mb-3 space-y-2 focus:outline-2 focus:outline-offset-2"
+              style={{ outlineColor: "var(--color-fg)" }}
+              role="status"
+              tabIndex={-1}
+              data-submission-recovery
+            >
               {invalidated && (
                 <p role="alert">{t("repo.submission.invalidated")}</p>
               )}
@@ -676,7 +809,7 @@ export default function SubmissionJourney() {
       {reviewing && plan && (
         <>
           <details className="text-sm mb-4">
-            <summary className="cursor-pointer">
+            <summary className="cursor-pointer min-h-9 py-2">
               {t("repo.submission.submitted", { bytes })}
             </summary>
             <pre
@@ -725,22 +858,27 @@ export default function SubmissionJourney() {
               const unit = plan.units.find(
                 (candidate) => candidate.id === unitId,
               )
+              const claimId = unit?.claimIds[0]
               try {
-                if (!unit) throw new IngestionError("input")
-                await controller.answerClarification(
-                  unit.claimIds[0],
-                  answer,
-                  { onStage: emit, onProgress: emit },
-                )
+                if (!claimId) throw new IngestionError("input")
+                await controller.answerClarification(claimId, answer, {
+                  onStage: emit,
+                  onProgress: emit,
+                })
               } finally {
                 sync()
               }
+              focusAfterClarification(claimId)
             }}
           />
           <div
-            className="mt-5 border-t pt-4 flex flex-wrap items-center gap-3"
-            style={{ borderColor: "var(--color-border)" }}
+            className="mt-5 border-t pt-4 flex flex-wrap items-center gap-3 focus:outline-2 focus:outline-offset-2"
+            style={{
+              borderColor: "var(--color-border)",
+              outlineColor: "var(--color-fg)",
+            }}
             data-submission-actions
+            tabIndex={-1}
           >
             <button
               type="button"
@@ -787,7 +925,14 @@ export default function SubmissionJourney() {
             </button>
           </div>
           {saveError && (
-            <p role="alert" className="text-sm mt-3">
+            <p
+              ref={saveAlert}
+              role="alert"
+              className="text-sm mt-3 focus:outline-2 focus:outline-offset-2"
+              style={{ outlineColor: "var(--color-fg)" }}
+              tabIndex={-1}
+              data-save-error={saveError}
+            >
               {t(saveFailureKey(saveError))}
             </p>
           )}
@@ -795,7 +940,14 @@ export default function SubmissionJourney() {
       )}
 
       {saved && (
-        <div className="space-y-3" role="status">
+        <div
+          ref={savedStatus}
+          className="space-y-3 focus-visible:outline-2 focus-visible:outline-offset-2"
+          style={{ outlineColor: "var(--color-fg)" }}
+          role="status"
+          tabIndex={-1}
+          data-submission-saved
+        >
           <p className="text-sm font-semibold">{t("repo.submission.saved")}</p>
           <p className="text-sm">{t("repo.submission.savedNote")}</p>
           <button
@@ -807,6 +959,9 @@ export default function SubmissionJourney() {
               setEditing(true)
               setOpen(true)
               sync()
+              requestAnimationFrame(() =>
+                document.getElementById("submission-text")?.focus(),
+              )
             }}
             className="px-4 py-2 text-sm"
             style={{

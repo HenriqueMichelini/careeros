@@ -631,11 +631,49 @@ function Harness() {
                     outcome: { kind: "request_rephrasing" },
                   })
                 await new Promise((resolve) => setTimeout(resolve, 20))
-                setPlan((current) =>
-                  transferReviewState(current, clarificationPlan(true), [
-                    unit.claimIds[0],
-                  ]),
+                const claimId = unit.claimIds[0]
+                const revised = transferReviewState(plan, clarificationPlan(true), [
+                  claimId,
+                ])
+                setPlan(revised)
+                // Stand-in for the composed page owner. The resolved claim may
+                // become an addition or replacement, so resolve its unit id
+                // instead of assuming a row kind, then retry until React has
+                // committed that row.
+                const revisedUnit = revised.units.find((candidate) =>
+                  candidate.claimIds.includes(claimId),
                 )
+                let attempts = 0
+                const focusDestination = () => {
+                  const row = Array.from(
+                    document.querySelectorAll<HTMLElement>("[data-review-unit]"),
+                  ).find(
+                    (element) =>
+                      element.dataset.reviewUnit === revisedUnit?.id,
+                  )
+                  const target =
+                    row?.querySelector<HTMLElement>(
+                      "input[type=checkbox]",
+                    ) ?? row
+                  if (!target) return false
+                  target.focus({ preventScroll: true })
+                  target.scrollIntoView({ block: "center" })
+                  return true
+                }
+                const retryFocus = () => {
+                  if (focusDestination()) {
+                    requestAnimationFrame(() => {
+                      if (
+                        !document.activeElement ||
+                        document.activeElement === document.body
+                      )
+                        focusDestination()
+                    })
+                    return
+                  }
+                  if (attempts++ < 12) requestAnimationFrame(retryFocus)
+                }
+                requestAnimationFrame(retryFocus)
               }
             : undefined
         }
