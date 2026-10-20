@@ -54,26 +54,41 @@ func CompiledBuildManifest() (BuildManifest, error) {
 // a mismatch. It never upgrades launch-file hashes alone to execution identity.
 func CheckBuildCorrespondence(compiled, launch BuildManifest, receipt BuildReceipt, executingDigest string) BuildCorrespondence {
 	result := BuildCorrespondence{Version: "lab-build-correspondence-v1", Status: "unavailable", Reasons: []string{}}
-	if compiled.Version == "" {
-		result.Reasons = append(result.Reasons, "compiled manifest unavailable")
-		return result
+	if compiled.Version != "" {
+		result.Manifest = ptrBuildManifest(cloneJSON(compiled))
 	}
-	result.Manifest = ptrBuildManifest(cloneJSON(compiled))
-	if compiled.Version != BuildManifestVersion || compiled.Hash != buildManifestHash(compiled) || launch.Version != BuildManifestVersion || launch.Hash != buildManifestHash(launch) || compiled.Hash != launch.Hash {
-		result.Status = "mismatch"
-		result.Reasons = append(result.Reasons, "compiled manifest and launch dependencies differ or are invalid")
-		return result
+	if receipt.Version != "" || receipt.ManifestHash != "" || receipt.ExecutableHash != "" || receipt.LauncherHash != "" || receipt.Runtime != "" || len(receipt.Command) != 0 {
+		ownedReceipt := cloneJSON(receipt)
+		result.Receipt = &ownedReceipt
 	}
-	if receipt.Version == "" || executingDigest == "" {
-		result.Reasons = append(result.Reasons, "launcher receipt or executing binary digest unavailable")
-		return result
-	}
-	ownedReceipt := cloneJSON(receipt)
-	result.Receipt = &ownedReceipt
 	result.ExecutableHash = executingDigest
-	if receipt.Version != BuildReceiptVersion || !evidenceHash.MatchString(executingDigest) || receipt.ManifestHash != compiled.Hash || receipt.ExecutableHash != executingDigest || receipt.LauncherHash != compiled.Sources["scripts/lab.mjs"] || receipt.Runtime != compiled.Runtime || !reflect.DeepEqual(receipt.Command, BuildCommand()) {
+	// Check every independently supplied claim before classifying missing evidence.
+	// In particular, absent schema/digest evidence cannot hide a known conflict.
+	invalidHash := func(hash string) bool { return hash != "" && !evidenceHash.MatchString(hash) }
+	conflicts := func(a, b string) bool { return a != "" && b != "" && a != b }
+	for _, manifest := range []BuildManifest{compiled, launch} {
+		if manifest.Version != "" && manifest.Version != BuildManifestVersion || invalidHash(manifest.Hash) || manifest.Version == BuildManifestVersion && manifest.Hash != "" && manifest.Hash != buildManifestHash(manifest) {
+			result.Status = "mismatch"
+			result.Reasons = append(result.Reasons, "compiled manifest or launch dependencies are invalid")
+			return result
+		}
+		if conflicts(receipt.ManifestHash, manifest.Hash) || conflicts(receipt.LauncherHash, manifest.Sources["scripts/lab.mjs"]) || conflicts(receipt.Runtime, manifest.Runtime) {
+			result.Status = "mismatch"
+			result.Reasons = append(result.Reasons, "launcher receipt does not match supplied manifest, launcher or toolchain")
+			return result
+		}
+	}
+	if conflicts(compiled.Hash, launch.Hash) || receipt.Version != "" && receipt.Version != BuildReceiptVersion || invalidHash(executingDigest) || invalidHash(receipt.ManifestHash) || invalidHash(receipt.ExecutableHash) || invalidHash(receipt.LauncherHash) || conflicts(receipt.ExecutableHash, executingDigest) || len(receipt.Command) != 0 && !reflect.DeepEqual(receipt.Command, BuildCommand()) {
 		result.Status = "mismatch"
-		result.Reasons = append(result.Reasons, "launcher receipt does not match compiled manifest, executable, launcher or build recipe")
+		result.Reasons = append(result.Reasons, "compiled manifest, launcher receipt, executable or build recipe conflict")
+		return result
+	}
+	if compiled.Version == "" || compiled.Hash == "" || launch.Version == "" || launch.Hash == "" || compiled.Runtime == "" || compiled.Sources["scripts/lab.mjs"] == "" {
+		result.Reasons = append(result.Reasons, "compiled manifest or launch dependencies unavailable")
+		return result
+	}
+	if receipt.Version == "" || receipt.ManifestHash == "" || receipt.ExecutableHash == "" || receipt.LauncherHash == "" || receipt.Runtime == "" || len(receipt.Command) == 0 || executingDigest == "" {
+		result.Reasons = append(result.Reasons, "launcher receipt or executing binary digest incomplete or unavailable")
 		return result
 	}
 	result.Status = "verified"

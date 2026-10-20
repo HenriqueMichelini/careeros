@@ -16,15 +16,21 @@ hashes `/proc/self/exe`; other platforms use the executable path. Known mismatch
 stop startup before history or network listeners are opened. Missing compiled
 manifests or receipts stay `unavailable`, allowing ordinary local Go builds to
 retain the existing native Lab functionality without claiming build verification.
-`NewPlanner` also rejects a supplied mismatched or unknown correspondence status.
+Incomplete evidence stays unavailable only when the supplied fields contain no
+known contradiction. Each comparable receipt field is checked independently, so
+omitting a schema version or digest cannot hide a conflicting manifest, executable,
+launcher, toolchain or build recipe. `NewPlanner` also rejects a supplied mismatched
+or unknown correspondence status.
 
 `node scripts/lab.mjs --build-info` builds and inspects the real executable without
 building UI assets, opening history, or serving. `lab/.bin/lab-api --build-info`
 inspects the existing build. JSON includes correspondence and the catalog; a
 mismatch exits with status 1. `node tests/lab-build.check.mjs` verifies the actual
-co-build and rejects a changed classification template, receipt and executable;
-missing receipt evidence is explicitly unavailable. The smoke uses temporary
-synthetic source copies and restores its ignored artifacts.
+co-build and rejects a changed classification template, partial receipt conflicts
+and changed executable. Partial/absent receipts without known conflicts remain
+unavailable. Each partial receipt conflict also exercises real startup with a
+bounded child process and a temporary synthetic history path, asserting rejection
+before that path exists. The smoke uses temporary executable/receipt/source copies.
 
 ## Identity meanings
 

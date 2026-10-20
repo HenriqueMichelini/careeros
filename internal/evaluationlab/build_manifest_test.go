@@ -111,6 +111,96 @@ func TestCheckBuildCorrespondenceRejectsChangedBuildEvidenceAndKeepsAbsenceUnava
 	}
 }
 
+func TestCheckBuildCorrespondenceDoesNotLetMissingEvidenceMaskKnownConflicts(t *testing.T) {
+	manifest, err := lab.CaptureBuildManifest(manifestTree(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	executable := strings.Repeat("a", 64)
+	receipt := lab.BuildReceipt{Version: lab.BuildReceiptVersion, ManifestHash: manifest.Hash, ExecutableHash: executable, LauncherHash: manifest.Sources["scripts/lab.mjs"], Runtime: manifest.Runtime, Command: lab.BuildCommand()}
+	type evidence struct {
+		compiled, launch lab.BuildManifest
+		receipt          lab.BuildReceipt
+		digest           string
+	}
+	type change struct {
+		name  string
+		apply func(*evidence)
+	}
+	missing := []change{
+		{"receipt version", func(e *evidence) { e.receipt.Version = "" }},
+		{"manifest hash", func(e *evidence) { e.receipt.ManifestHash = "" }},
+		{"executable hash", func(e *evidence) { e.receipt.ExecutableHash = "" }},
+		{"launcher hash", func(e *evidence) { e.receipt.LauncherHash = "" }},
+		{"toolchain", func(e *evidence) { e.receipt.Runtime = "" }},
+		{"recipe", func(e *evidence) { e.receipt.Command = nil }},
+		{"compiled manifest", func(e *evidence) { e.compiled = lab.BuildManifest{} }},
+		{"compiled schema", func(e *evidence) { e.compiled.Version = "" }},
+		{"compiled hash", func(e *evidence) { e.compiled.Hash = "" }},
+		{"launch manifest", func(e *evidence) { e.launch = lab.BuildManifest{} }},
+		{"launch schema", func(e *evidence) { e.launch.Version = "" }},
+		{"launch hash", func(e *evidence) { e.launch.Hash = "" }},
+		{"executing digest", func(e *evidence) { e.digest = "" }},
+	}
+	conflicts := []change{
+		{"receipt version", func(e *evidence) { e.receipt.Version = "unsupported-receipt" }},
+		{"manifest hash", func(e *evidence) { e.receipt.ManifestHash = strings.Repeat("b", 64) }},
+		{"executable hash", func(e *evidence) { e.receipt.ExecutableHash = strings.Repeat("b", 64) }},
+		{"launcher hash", func(e *evidence) { e.receipt.LauncherHash = strings.Repeat("b", 64) }},
+		{"toolchain", func(e *evidence) { e.receipt.Runtime = "different-toolchain" }},
+		{"recipe", func(e *evidence) { e.receipt.Command = []string{"go", "run", "unowned"} }},
+		{"malformed receipt manifest hash", func(e *evidence) { e.receipt.ManifestHash = "invalid" }},
+		{"malformed receipt executable hash", func(e *evidence) { e.receipt.ExecutableHash = "invalid" }},
+		{"malformed receipt launcher hash", func(e *evidence) { e.receipt.LauncherHash = "invalid" }},
+		{"malformed executing digest", func(e *evidence) { e.digest = "invalid" }},
+	}
+	for _, absent := range missing {
+		t.Run(absent.name, func(t *testing.T) {
+			makeEvidence := func() evidence {
+				e := evidence{compiled: manifest, launch: manifest, receipt: receipt, digest: executable}
+				absent.apply(&e)
+				return e
+			}
+			e := makeEvidence()
+			if got := lab.CheckBuildCorrespondence(e.compiled, e.launch, e.receipt, e.digest); got.Status != "unavailable" {
+				t.Fatalf("absence alone must remain unavailable: %+v", got)
+			}
+			for _, conflict := range conflicts {
+				t.Run(conflict.name, func(t *testing.T) {
+					e := makeEvidence()
+					conflict.apply(&e)
+					want := "mismatch"
+					if absent.name == "executing digest" && conflict.name == "executable hash" {
+						want = "unavailable" // No actual digest remains to contradict this well-formed claim.
+					}
+					if got := lab.CheckBuildCorrespondence(e.compiled, e.launch, e.receipt, e.digest); got.Status != want {
+						t.Fatalf("missing %s with %s: want %s, got %+v", absent.name, conflict.name, want, got)
+					}
+				})
+			}
+		})
+	}
+	for _, absent := range []change{
+		{"receipt", func(e *evidence) { e.receipt = lab.BuildReceipt{} }},
+		{"compiled manifest", func(e *evidence) { e.compiled = lab.BuildManifest{} }},
+	} {
+		for _, conflict := range []change{
+			{"launch schema", func(e *evidence) { e.launch.Version = "unsupported-manifest" }},
+			{"launch hash", func(e *evidence) { e.launch.Hash = strings.Repeat("b", 64) }},
+			{"malformed launch hash", func(e *evidence) { e.launch.Hash = "invalid" }},
+		} {
+			t.Run(absent.name+" with "+conflict.name, func(t *testing.T) {
+				e := evidence{compiled: manifest, launch: manifest, receipt: receipt, digest: executable}
+				absent.apply(&e)
+				conflict.apply(&e)
+				if got := lab.CheckBuildCorrespondence(e.compiled, e.launch, e.receipt, e.digest); got.Status != "mismatch" {
+					t.Fatalf("missing evidence masked invalid launch manifest: %+v", got)
+				}
+			})
+		}
+	}
+}
+
 func TestResolvedVariantRetainsBuildEvidenceAndRejectsKnownMismatch(t *testing.T) {
 	manifest, err := lab.CaptureBuildManifest(manifestTree(t))
 	if err != nil {
