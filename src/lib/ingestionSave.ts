@@ -104,14 +104,32 @@ export function validateSubmissionSave(
       return "capacity"
     for (const id of batch.claimIds) batchOf.set(id, batch.index)
   }
-  const operationsByBatch = new Map<number, number>()
+  // The 60-operation bound belongs to each reconciliation focus response, not to
+  // an extraction batch: one focus may span batches and one batch may feed
+  // several responses. Validate the aggregate selection per response, while the
+  // extraction batch still answers only claim membership and its 30-claim cap.
+  const focusOf = new Map<string, number>()
+  for (const focus of submission.focus ?? []) {
+    if (focus.claimIds.length > submissionBudgets.batchClaimCap)
+      return "capacity"
+    for (const id of focus.claimIds) {
+      if (focusOf.has(id)) return "manifest_incomplete"
+      focusOf.set(id, focus.index)
+    }
+  }
+  const hasFocus = (submission.focus?.length ?? 0) > 0
+  const operationsByFocus = new Map<number, number>()
   for (const op of plan.operations) {
     if (!claims.has(op.claimId)) return "dangling_support"
-    const index = batchOf.get(op.claimId)
-    if (index === undefined) return "manifest_incomplete"
-    operationsByBatch.set(index, (operationsByBatch.get(index) ?? 0) + 1)
+    if (batchOf.get(op.claimId) === undefined) return "manifest_incomplete"
+    const focus = focusOf.get(op.claimId)
+    if (focus === undefined) {
+      if (hasFocus) return "manifest_incomplete"
+      continue
+    }
+    operationsByFocus.set(focus, (operationsByFocus.get(focus) ?? 0) + 1)
   }
-  for (const count of operationsByBatch.values())
+  for (const count of operationsByFocus.values())
     if (count > submissionBudgets.batchOperationCap) return "capacity"
 
   const selection = reviewSelectionError(plan)

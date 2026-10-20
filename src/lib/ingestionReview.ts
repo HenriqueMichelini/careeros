@@ -46,6 +46,13 @@ export interface ReviewBatchMembership {
   index: number
   claimIds: string[]
 }
+// One reconciliation focus response and the claims it accounted for. The
+// 60-operation bound belongs to a focus response, never to an extraction batch:
+// one focus may span batches and one batch may feed several responses.
+export interface ReviewFocusMembership {
+  index: number
+  claimIds: string[]
+}
 export interface ReviewSubmission {
   protocolVersion: string
   submissionId: string
@@ -55,6 +62,10 @@ export interface ReviewSubmission {
   documentId?: string
   planVersion: string
   batches: ReviewBatchMembership[]
+  // Reconciliation responses retained for per-response budget validation. A
+  // caller that only needs the review plan may omit it; the stage reader still
+  // enforces the per-response cap when the submission is ingested.
+  focus?: ReviewFocusMembership[]
   claims: IngestionClaim[]
   operations: IngestionOperation[]
   outcomes: IngestionOutcome[]

@@ -137,6 +137,7 @@ const submission = (overrides = {}) => ({
   profileId: "profile",
   planVersion: "portions-v1",
   batches: [],
+  focus: [],
   claims: [],
   operations: [],
   outcomes: [],
@@ -200,7 +201,11 @@ test("a selection above 30 claims and 60 operations saves in one transaction", a
     batches.push({ index, claimIds: ids })
   })
   const input = sources.join("\n")
-  const sub = submission({ batches, claims, operations })
+  const focus = batches.map((batch) => ({
+    index: batch.index,
+    claimIds: batch.claimIds,
+  }))
+  const sub = submission({ batches, focus, claims, operations })
   const snapshot = snapshotOf({
     skills: "React",
     additionalInfo: "Kept note",
@@ -247,6 +252,109 @@ test("a selection above 30 claims and 60 operations saves in one transaction", a
   )
   assert.equal(JSON.stringify(candidate).includes(input), false)
   assert.deepEqual(snapshot, untouched, "the pinned snapshot is never mutated")
+})
+
+test("the 60-operation bound is per reconciliation response, not per extraction batch", () => {
+  // Extraction batches [20, 20] claims and reconciliation responses [30, 60]
+  // operations. By extraction batch this looks like [20, 70], which is not a
+  // real bound: one focus spans both batches and each response respects its own
+  // 60-operation cap.
+  const claims = []
+  const firstIds = []
+  const secondIds = []
+  for (let index = 0; index < 20; index++) {
+    const id = `run/0/c${index}`
+    firstIds.push(id)
+    claims.push(claim(id, { source: `i use first${index}` }))
+  }
+  for (let index = 0; index < 20; index++) {
+    const id = `run/1/c${index}`
+    secondIds.push(id)
+    claims.push(claim(id, { source: `i use second${index}` }))
+  }
+  const focusFirst = [...firstIds, ...secondIds.slice(0, 10)]
+  const focusSecond = secondIds.slice(10)
+  const fields = [
+    "skills",
+    "tools",
+    "competencies",
+    "additionalInfo",
+    "careerGoals",
+    "desiredSalary",
+  ]
+  const operations = []
+  for (const id of focusFirst)
+    operations.push(operation(id, { value: `v-${id}` }))
+  for (const id of focusSecond)
+    for (const field of fields)
+      operations.push(
+        operation(id, { target: field, field, value: `${field}-${id}` }),
+      )
+  const sub = submission({
+    batches: [
+      { index: 0, claimIds: firstIds },
+      { index: 1, claimIds: secondIds },
+    ],
+    focus: [
+      { index: 0, claimIds: focusFirst },
+      { index: 1, claimIds: focusSecond },
+    ],
+    claims,
+    operations,
+  })
+  assert.equal(operations.length, 90, "aggregate exceeds the operation cap")
+  // Attributed to extraction batches: batch 0 = 20, batch 1 = 70.
+  assert.equal(
+    operations.filter((op) => op.claimId.startsWith("run/1/")).length,
+    70,
+  )
+  const snapshot = snapshotOf({
+    skills: "",
+    tools: "",
+    competencies: "",
+    additionalInfo: "",
+    careerGoals: "",
+    desiredSalary: "",
+  })
+  let plan = planOf(sub, snapshot)
+  plan = review.selectReviewAdditions(plan)
+  assert.equal(save.validateSubmissionSave(sub, snapshot, plan), "")
+})
+
+test("a reconciliation response above 60 operations is rejected as capacity", () => {
+  const claims = []
+  const ids = []
+  for (let index = 0; index < 11; index++) {
+    const id = `run/0/c${index}`
+    ids.push(id)
+    claims.push(claim(id, { source: `i use c${index}` }))
+  }
+  const fields = [
+    "skills",
+    "tools",
+    "competencies",
+    "additionalInfo",
+    "careerGoals",
+    "desiredSalary",
+  ]
+  const operations = []
+  for (const id of ids)
+    for (const field of fields)
+      operations.push(
+        operation(id, { target: field, field, value: `${field}-${id}` }),
+      )
+  // 11 claims x 6 fields = 66 operations in one response.
+  assert.equal(operations.length, 66)
+  const sub = submission({
+    batches: [{ index: 0, claimIds: ids }],
+    focus: [{ index: 0, claimIds: ids }],
+    claims,
+    operations,
+  })
+  const snapshot = snapshotOf({ skills: "" })
+  let plan = planOf(sub, snapshot)
+  plan = review.selectReviewAdditions(plan)
+  assert.equal(save.validateSubmissionSave(sub, snapshot, plan), "capacity")
 })
 
 test("the single-result validator still enforces the 30/60 caps; only the aggregate relaxes", () => {

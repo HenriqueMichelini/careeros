@@ -1532,6 +1532,10 @@ export function toReviewSubmission(result: SubmissionResult): ReviewSubmission {
       index: batch.index,
       claimIds: [...batch.claimIds],
     })),
+    focus: result.focus.map((focus, index) => ({
+      index,
+      claimIds: [...focus.focus.claimIds],
+    })),
     claims,
     operations,
     outcomes,
