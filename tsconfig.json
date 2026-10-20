@@ -29,6 +29,7 @@
   },
   "include": [
     "src",
+    "tests/review-harness.tsx",
     "vite.config.ts",
     "lab/ui",
     "vite.lab.config.ts"
