@@ -256,7 +256,7 @@ func (o *IngestionProposalObservation) decode(r IngestionResponseEvidence, targe
 		o.unavailable("missing_output", r.ID, "")
 		return false
 	}
-	if !utf8.Valid(r.Body) {
+	if !losslessIngestionUnicode(r.Body) {
 		o.unavailable("lossy_unicode", r.ID, "")
 		return false
 	}
@@ -450,4 +450,44 @@ func (o *IngestionProposalObservation) skippedMappings(r IngestionResponseEviden
 		o.requireFields(r, raw[i], path, "coverage", "index", "reason", "text", "source", "shortened")
 		o.mapping(r.ID, path, "skipped", strconv.Itoa(c.Index), "skipped:"+strconv.Itoa(offset+i))
 	}
+}
+
+// encoding/json replaces invalid UTF-8 and unpaired UTF-16 escapes with U+FFFD.
+// Decline those lossy inputs while allowing actual replacement characters,
+// valid surrogate pairs, and literal escaped backslashes to remain unchanged.
+func losslessIngestionUnicode(raw []byte) bool {
+	if !utf8.Valid(raw) {
+		return false
+	}
+	for i := 0; i < len(raw); i++ {
+		if raw[i] != '\\' {
+			continue
+		}
+		i++
+		if i >= len(raw) || raw[i] != 'u' {
+			continue
+		}
+		if i+4 >= len(raw) {
+			return false
+		}
+		value, err := strconv.ParseUint(string(raw[i+1:i+5]), 16, 16)
+		if err != nil {
+			return false
+		}
+		i += 4
+		if value >= 0xDC00 && value <= 0xDFFF {
+			return false
+		}
+		if value >= 0xD800 && value <= 0xDBFF {
+			if i+6 >= len(raw) || string(raw[i+1:i+3]) != `\u` {
+				return false
+			}
+			low, err := strconv.ParseUint(string(raw[i+3:i+7]), 16, 16)
+			if err != nil || low < 0xDC00 || low > 0xDFFF {
+				return false
+			}
+			i += 6
+		}
+	}
+	return true
 }

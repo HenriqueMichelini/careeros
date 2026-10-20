@@ -283,3 +283,28 @@ func TestNormalizeIngestionPreservesSkippedDispositionsAndTheirRawMapping(t *tes
 		t.Fatalf("lost skipped raw trace: %+v", o.Mappings)
 	}
 }
+
+func TestNormalizeLegacyIngestionDeclinesUnpairedEscapesWithoutLosingValidUnicode(t *testing.T) {
+	for _, tc := range []struct {
+		name, encoded, want string
+		available           bool
+	}{
+		{"unpaired high", `\ud800`, "", false}, {"unpaired low", `\udfff`, "", false},
+		{"valid pair", `\ud83d\ude80`, "🚀", true}, {"literal replacement", "�", "�", true},
+		{"escaped replacement", `\ufffd`, "�", true}, {"literal escape", `\\ud800`, "\\ud800", true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			raw := bytes.Replace([]byte(legacyProposal), []byte("May use Java"), []byte(tc.encoded), 1)
+			o := eval.NormalizeLegacyIngestion(eval.IngestionResponseEvidence{ID: "unicode", Status: 200, Body: raw})
+			if o.Availability["endpoint"].Available != tc.available {
+				t.Fatalf("lossy conversion availability=%v, want %v", o.Availability["endpoint"].Available, tc.available)
+			}
+			if tc.available && o.Claims[0].Text != tc.want {
+				t.Fatalf("Unicode text=%q, want %q", o.Claims[0].Text, tc.want)
+			}
+			if !bytes.Equal(o.Raw[0].Response.Body, raw) {
+				t.Fatal("lost original escaped bytes")
+			}
+		})
+	}
+}
