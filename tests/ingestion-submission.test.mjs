@@ -774,6 +774,47 @@ async function clarifiedController(overrides = {}) {
   return { snapshot, calls, controller, result }
 }
 
+test("bulk selection seams preserve the review and completeSave clears only saved work", async () => {
+  const { transport } = harness()
+  const { controller } = controllerFor(transport)
+  await controller.start(makeSnapshot(), keys)
+  const plan = controller.getReviewPlan()
+  const destination = plan.destinations.find(
+    (entry) => entry.selectableUnitIds.length > 0,
+  )
+  assert.ok(destination)
+  const revision = controller.getState().selectionRevision
+  controller.selectGroup(destination.id, "selected")
+  assert.ok(
+    destination.selectableUnitIds.every(
+      (id) => controller.getReviewPlan().units.find((unit) => unit.id === id).status === "selected",
+    ),
+  )
+  assert.equal(controller.canSave().allowed, true)
+  controller.clearSelection()
+  assert.ok(
+    controller.getReviewPlan().units.every((unit) => unit.status === "pending"),
+  )
+  controller.selectAdditions()
+  const selected = controller
+    .getReviewPlan()
+    .units.filter((unit) => unit.status === "selected")
+  assert.ok(selected.length > 0)
+  assert.ok(selected.every((unit) => unit.kind === "addition"))
+  assert.equal(
+    controller.getState().selectionRevision,
+    revision + 3,
+  )
+  assert.equal(controller.unsaved(), true)
+  controller.completeSave()
+  assert.equal(controller.getState().status, "saved")
+  assert.equal(controller.getState().applicable, false)
+  assert.equal(controller.getState().input, "")
+  assert.equal(controller.unsaved(), false)
+  assert.equal(controller.getResult(), null)
+  assert.equal(controller.canSave().allowed, false)
+})
+
 test("focused clarification replaces one claim and retains unrelated selection and wording", async () => {
   const stages = []
   const { snapshot, calls, controller } = await clarifiedController({

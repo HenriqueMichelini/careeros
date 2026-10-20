@@ -1,5 +1,4 @@
 import { savedProfileExpression } from "./profile-browser-storage.mjs"
-import { keyboardFlow } from "./keyboard-flow.mjs"
 // Browser regression for raw professional-information review and explicit apply.
 // Uses synthetic API responses; no provider request is made.
 import assert from "node:assert/strict"
@@ -185,9 +184,9 @@ try {
     await evaluate("document.querySelector('header button:last-child').click()")
     await until("document.querySelectorAll('header nav button').length === 4")
     await evaluate("document.querySelectorAll('header nav button')[1].click()")
-    await until("!!document.querySelector('#ingestion-text')")
+    await until("!!document.querySelector('#contact-fullName')")
   }
-  const fill = async (value, selector = "#ingestion-text") => {
+  const fill = async (value, selector = "#contact-fullName") => {
     await evaluate(
       `(() => { const el = document.querySelector(${JSON.stringify(selector)}); Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(el, ${JSON.stringify(value)}); el.dispatchEvent(new Event('input', { bubbles: true })); })()`,
     )
@@ -196,13 +195,6 @@ try {
   const saved = () => evaluate(savedProfileExpression)
   const byText = (text) =>
     `Array.from(document.querySelectorAll('button')).find(el=>el.textContent.trim()===${JSON.stringify(text)})`
-  const { keyboardFill, keyboardSubmit } = keyboardFlow({
-    call,
-    evaluate,
-    pause,
-    selector: "#ingestion-text",
-  })
-
   const mock = `window.fetch=async(url,options)=>{if(url!='/api/profile/review')throw new Error('Unexpected request');const body=JSON.parse(options.body);window.__reviewBody=body;const {reviewableFact}=await import('/src/lib/sectionReview.ts');const result={profileId:body.document.id,revision:body.document.revision,section:body.section,summary:'Clearer wording',patches:body.document.facts.filter(f=>reviewableFact(body.document,body.section,f)).map(f=>({factId:f.id,revision:f.revision,wording:f.field==='skills'?'Research and product strategy':String(f.value),supporting:[{id:f.id,revision:f.revision}]}))};if(window.__delay)await new Promise(resolve=>window.__releaseReview=resolve);return new Response(JSON.stringify(result),{status:200})}`
   for (const locale of ["en", "pt-BR"])
     for (const width of [1440, 390]) {
