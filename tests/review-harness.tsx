@@ -353,7 +353,7 @@ function mixedPlan(): ReviewPlan {
     {
       claimId: ids[9],
       kind: "unresolved",
-      reason: "Could not compare.",
+      reason: "no_validated_operation",
       relatedFacts: [],
       relatedClaimIds: [],
       operationIndexes: [],

@@ -1090,6 +1090,13 @@ func validatedOperations(out *proposal, owner, known map[string]claim, p profile
 	valid := make([]operation, 0, len(out.Operations))
 	for i := range out.Operations {
 		op := &out.Operations[i]
+		// The strict provider schema requires supportingClaimIds on every
+		// operation. An empty array means the operation is supported by its own
+		// claim, so treat it like an omitted list; an explicit non-empty list must
+		// still include its owner.
+		if len(op.SupportingClaimIDs) == 0 {
+			op.SupportingClaimIDs = nil
+		}
 		c, ok := owner[op.ClaimID]
 		reason := operationRejectionReason(op, c, ok, known, p, seen)
 		if reason == "" && op.EntryID != "" {

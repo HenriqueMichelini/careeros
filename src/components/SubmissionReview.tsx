@@ -62,6 +62,13 @@ const reasonKeys: Record<string, TranslationKey> = {
   duplicate: "review.reason.duplicate",
   fabricated: "review.reason.fabricated",
   no_source: "review.reason.no_source",
+  // Server-owned reconciliation reasons are not provider prose. They must not
+  // fall back to the “comparison reason unavailable” copy.
+  no_validated_disposition: "repo.ingestReason.no_validated_disposition",
+  no_validated_operation: "repo.ingestReason.no_validated_operation",
+  support_already_retained: "repo.ingestReason.support_already_retained",
+  identity_not_established: "repo.ingestReason.identity_not_established",
+  invalid_evidence_update: "repo.ingestReason.invalid_evidence_update",
 }
 const findingKeys: Record<string, TranslationKey> = {
   addition: "review.finding.addition",
