@@ -8,7 +8,7 @@
 export const submissionProtocolVersion = "profile-submission-v1"
 export const submissionStageVersion = 2
 
-export const submissionStages = ["plan", "extract", "assemble", "reconcile"] as const
+export const submissionStages = ["plan", "extract", "assemble", "reconcile", "clarify"] as const
 export type SubmissionStageKind = (typeof submissionStages)[number]
 
 export const submissionBudgets = {
@@ -19,6 +19,7 @@ export const submissionBudgets = {
   portionCap: 256,
   batchClaimCap: 30,
   batchOperationCap: 60,
+  clarificationAnswerBytes: 1000,
   providerPayloadBytes: 256 << 10,
   handlerTimeoutMs: 27_000,
   requestTimeoutMs: 29_000,
@@ -30,6 +31,7 @@ export const submissionBudgets = {
   extractBodyBytes: 160 << 10,
   assemblyBodyBytes: 320 << 10,
   reconcileBodyBytes: 320 << 10,
+  clarifyBodyBytes: 320 << 10,
 } as const
 
 // Submission-specific rejection codes. Retained v1 codes (input, capacity,

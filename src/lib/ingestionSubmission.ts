@@ -47,6 +47,7 @@ import {
   submissionStageError,
   submissionStageVersion,
   type SubmissionAggregate,
+  type SubmissionBatchResult,
   type SubmissionCoverage,
   type SubmissionFocus,
   type SubmissionFocusResult,
@@ -63,9 +64,11 @@ import type { ProfileDocument } from "./profileDocument"
 import type { ProfessionalRepository } from "./types"
 import {
   buildReviewPlan,
+  editReviewUnit,
   reviewSelectionError,
   selectReviewUnit,
   toSubmissionSelections,
+  transferReviewState,
   type ReviewPlan,
   type ReviewSubmission,
 } from "./ingestionReview"
@@ -188,6 +191,12 @@ export interface SubmissionReconcileBody extends SubmissionBaseBody {
   contextReceipt: string
   focus: SubmissionFocus
 }
+export interface SubmissionClarifyBody extends SubmissionBaseBody {
+  stage: { version: typeof submissionStageVersion; kind: "clarify" }
+  contextReceipt: string
+  claim: IngestionClaim
+  answer: string
+}
 
 // Typed per-stage calls. Each POSTs one v2 envelope with the pinned user keys
 // and the caller's AbortSignal, and returns the parsed JSON body. The controller
@@ -210,6 +219,11 @@ export interface SubmissionTransport {
   ): Promise<unknown>
   reconcile(
     body: SubmissionReconcileBody,
+    keys: SubmissionTransportKeys,
+    signal: AbortSignal,
+  ): Promise<unknown>
+  clarify(
+    body: SubmissionClarifyBody,
     keys: SubmissionTransportKeys,
     signal: AbortSignal,
   ): Promise<unknown>
@@ -260,6 +274,11 @@ export function createSubmissionTransport(
     } catch (error) {
       throw error instanceof IngestionError ? error : submissionSignalError(signal)
     }
+    if (record(raw) && "decision" in raw) {
+      const decision = parseFieldDecision(raw.decision, "professional_information")
+      if (!decision || !hasKeys(raw, ["decision"])) throw new IngestionError("invalid_output")
+      throw new IngestionError("field_decision", decision)
+    }
     if (!response.ok) throw new IngestionError(submissionResponseCode(raw, response))
     return raw
   }
@@ -268,6 +287,7 @@ export function createSubmissionTransport(
     extract: (body, keys, signal) => post(body, keys, signal),
     assemble: (body, keys, signal) => post(body, keys, signal),
     reconcile: (body, keys, signal) => post(body, keys, signal),
+    clarify: (body, keys, signal) => post(body, keys, signal),
   }
 }
 
@@ -403,6 +423,37 @@ export interface SubmissionState {
   pendingFocusBatches: number
   // Monotonic revision of the reviewed selection, used to reject delayed saves.
   selectionRevision: number
+  // Focused clarification is a separate foreground action. Its failure, expiry
+  // or cancellation never discards the retained review or unrelated selections.
+  clarification: SubmissionClarificationState
+}
+
+export type SubmissionClarificationStatus =
+  | "idle"
+  | "answering"
+  | "answered"
+  | "blocked"
+  | "failed"
+  | "expired"
+
+export interface SubmissionClarificationState {
+  claimId: string
+  status: SubmissionClarificationStatus
+  // Last error code, never the answer text.
+  error: string
+  // Decision kind for rephrasing/attack feedback.
+  decision: string
+  // The trimmed answer rejected by the rephrasing/attack gate. Another attempt
+  // must change it; a transport failure does not block the same answer.
+  blockedAnswer: string
+}
+
+export interface SubmissionClarificationResult {
+  claimId: string
+  claim: IngestionClaim
+  operations: IngestionOperation[]
+  outcomes: IngestionOutcome[]
+  plan: ReviewPlan
 }
 
 export const submissionRecoveryReasons = [
@@ -777,6 +828,68 @@ function readFocus(
   return { focus, operations: operations as unknown[], outcomes: outcomes as unknown[] }
 }
 
+interface SubmissionClarificationRead {
+  claim: IngestionClaim
+  operations: IngestionOperation[]
+  outcomes: IngestionOutcome[]
+}
+
+// readClarification validates one protected focused revision against the exact
+// claim that was sent. It rejects a replayed or cross-claim response, lost
+// original support, a missing answer origin and any operation/outcome outside
+// that one claim before the controller merges anything.
+function readClarification(
+  raw: unknown,
+  claimId: string,
+  previous: IngestionClaim,
+  answer: string,
+  context: SubmissionAggregate,
+): SubmissionClarificationRead {
+  const body = requireFields(raw, ["stage", "claim", "focus", "operations", "outcomes"])
+  rejectDecision(body)
+  const stageError = readStage(body.stage, "clarify")
+  if (stageError) throw new IngestionError(stageError)
+  if (!record(body.focus) || !hasKeys(body.focus, ["claimIds"]))
+    throw new IngestionError("invalid_output")
+  const focus = body.focus as unknown as SubmissionFocus
+  if (!strings(focus.claimIds) || focus.claimIds.length !== 1 || focus.claimIds[0] !== claimId)
+    throw new IngestionError(submissionErrors.focus)
+  const focusError = submissionFocusError(focus, context)
+  if (focusError) throw new IngestionError(focusError)
+  const claim = readClaim(body.claim)
+  if (
+    claim.id !== claimId ||
+    claim.source !== previous.source ||
+    canonicalForm(claim.sourceReference ?? null) !== canonicalForm(previous.sourceReference ?? null)
+  )
+    throw new IngestionError("invalid_output")
+  const prior = new Set(previous.supportingSources?.map((support) => canonicalForm(support)) ?? [])
+  let answerSeen = false
+  for (const support of claim.supportingSources ?? []) {
+    if (support.origin === "clarification_answer") {
+      if (support.source === answer) answerSeen = true
+      else if (!prior.has(canonicalForm(support)))
+        throw new IngestionError("invalid_output")
+      continue
+    }
+    if (!prior.has(canonicalForm(support))) throw new IngestionError("invalid_output")
+  }
+  if (!answerSeen || (claim.supportingSources?.length ?? 0) > 12)
+    throw new IngestionError("invalid_output")
+  if (!Array.isArray(body.operations) || !Array.isArray(body.outcomes))
+    throw new IngestionError("invalid_output")
+  if (body.operations.length > submissionBudgets.batchOperationCap)
+    throw new IngestionError(submissionErrors.capacity)
+  const known = new Set<string>()
+  for (const batch of context.batches) for (const id of batch.claimIds) known.add(id)
+  const focusSet = new Set([claimId])
+  const operations = body.operations.map((item) => readOperation(item, focusSet, known))
+  const outcomes = body.outcomes.map((item) => readOutcome(item, focusSet, known))
+  if (outcomes.length !== 1 || outcomes[0].claimId !== claimId)
+    throw new IngestionError("invalid_output")
+  return { claim, operations, outcomes }
+}
+
 // --- Controller -------------------------------------------------------------
 
 const emptyProgress = (): SubmissionProgress => ({
@@ -789,6 +902,14 @@ const emptyProgress = (): SubmissionProgress => ({
   plannedFocusBatches: 0,
   reconciledFocusBatches: 0,
   discoveryComplete: false,
+})
+
+const emptyClarification = (): SubmissionClarificationState => ({
+  claimId: "",
+  status: "idle",
+  error: "",
+  decision: "",
+  blockedAnswer: "",
 })
 
 const emptyState = (): SubmissionState => ({
@@ -816,6 +937,7 @@ const emptyState = (): SubmissionState => ({
   pendingBatches: 0,
   pendingFocusBatches: 0,
   selectionRevision: 0,
+  clarification: emptyClarification(),
 })
 
 export class SubmissionController {
@@ -827,6 +949,7 @@ export class SubmissionController {
   private result: SubmissionResult | null = null
   private reviewPlan: ReviewPlan | null = null
   private attempt: { token: object; controller: AbortController } | null = null
+  private clarificationAttempt: { token: object; controller: AbortController } | null = null
   private running = false
   private requestSeq = 0
 
@@ -894,12 +1017,14 @@ export class SubmissionController {
   // queue dispatch and invalidates the in-flight handoff while retaining the
   // draft, completed validated results and pending work. It stays resumable.
   stop(): void {
+    this.cancelClarification()
     this.settle("stopped", "stopped")
   }
 
   // pause is the passive "left the focused flow" state: the draft and work are
   // retained for an in-app return; it is distinct from an explicit stop.
   pause(): void {
+    this.cancelClarification()
     this.settle("paused", "paused")
   }
 
@@ -915,6 +1040,7 @@ export class SubmissionController {
 
   // discard is a separate action from stop: it drops the draft and all work.
   discard(): void {
+    this.cancelClarification()
     this.cancelActive()
     this.pin = null
     this.source = null
@@ -992,6 +1118,186 @@ export class SubmissionController {
     this.state.selectionRevision += 1
   }
 
+  // editUnit retains reviewed wording in memory across remount and focused
+  // clarification. It never approves or saves; the machine proposal stays
+  // available for provenance.
+  editUnit(unitId: string, field: string, value: string): void {
+    const plan = this.getReviewPlan()
+    if (!plan) throw new IngestionError(submissionErrors.state)
+    this.reviewPlan = editReviewUnit(plan, unitId, field, value)
+    this.state.selectionRevision += 1
+  }
+
+  // answerClarification is one explicit, foreground clarification of exactly one
+  // retained control claim. It never restarts the submission, never retries, and
+  // keeps the pending review (including unrelated selections and edited wording)
+  // on failure, expiry or cancellation. A rephrasing/attack decision blocks the
+  // same trimmed answer until the caller changes it.
+  async answerClarification(
+    claimId: string,
+    answer: string,
+    options: SubmissionRunOptions = {},
+  ): Promise<SubmissionClarificationResult> {
+    if (this.running || this.clarificationAttempt)
+      throw new IngestionError(submissionErrors.state)
+    const pin = this.pin
+    const plan = this.getReviewPlan()
+    const result = this.result
+    const context = this.state.context
+    if (
+      !pin?.document ||
+      !plan ||
+      !result ||
+      !context ||
+      this.state.status !== "reviewing" ||
+      !this.state.applicable
+    )
+      throw new IngestionError(submissionErrors.state)
+    const unit = plan.units.find(
+      (candidate) =>
+        candidate.claimIds.includes(claimId) &&
+        (candidate.kind === "clarification" ||
+          candidate.kind === "conflict" ||
+          candidate.kind === "unsupported" ||
+          candidate.kind === "unresolved"),
+    )
+    if (!unit) throw new IngestionError(submissionErrors.input)
+    if (
+      !answer.trim() ||
+      ingestionInputBytes(answer) > submissionBudgets.clarificationAnswerBytes
+    )
+      throw new IngestionError(submissionErrors.input)
+    const trimmed = answer.trim()
+    if (
+      this.state.clarification.claimId === claimId &&
+      this.state.clarification.blockedAnswer === trimmed
+    )
+      throw new IngestionError("answer_unchanged")
+    const previous = (result.batches as SubmissionBatchResult[])
+      .flatMap((batch) => batch.claims as IngestionClaim[])
+      .find((claim) => claim.id === claimId)
+    if (!previous) throw new IngestionError(submissionErrors.state)
+    const handoff = this.handoffFor("assemble")
+    if (!handoff || !handoff.valid || handoff.expiresAt <= this.runtime.now()) {
+      this.state.clarification = {
+        claimId,
+        status: "expired",
+        error: submissionErrors.receiptExpired,
+        decision: "",
+        blockedAnswer: "",
+      }
+      throw new IngestionError(submissionErrors.receiptExpired)
+    }
+    const token = {}
+    const controller = new AbortController()
+    this.clarificationAttempt = { token, controller }
+    this.state.clarification = {
+      claimId,
+      status: "answering",
+      error: "",
+      decision: "",
+      blockedAnswer: "",
+    }
+    this.state.error = ""
+    const absolute = combineSignals(
+      options.signal,
+      controller.signal,
+      this.runtime.timeout(submissionBudgets.foregroundCapMs),
+    )
+    const requestId = this.nextRequestId()
+    this.emitStage(options, "clarify")
+    try {
+      const raw = await this.sendClarification(
+        token,
+        absolute,
+        requestId,
+        (signal) =>
+          this.transport.clarify(
+            this.clarifyBody(pin, handoff.receipt, previous, answer),
+            pin.keys,
+            signal,
+          ),
+      )
+      const read = readClarification(
+        raw,
+        claimId,
+        previous,
+        answer,
+        context,
+      )
+      const updated = this.applyClarification(claimId, read)
+      this.result = updated
+      this.reviewPlan = transferReviewState(
+        plan,
+        buildReviewPlan({
+          submission: toReviewSubmission(updated),
+          snapshot: pin.document,
+        }),
+        [claimId],
+      )
+      this.state.selectionRevision += 1
+      this.state.clarification = {
+        claimId,
+        status: "answered",
+        error: "",
+        decision: "",
+        blockedAnswer: "",
+      }
+      this.state.error = ""
+      return {
+        claimId,
+        claim: read.claim,
+        operations: read.operations,
+        outcomes: read.outcomes,
+        plan: this.reviewPlan,
+      }
+    } catch (error) {
+      if (this.clarificationAttempt?.token !== token)
+        throw new IngestionError("cancelled")
+      const failure =
+        error instanceof IngestionError ? error : submissionSignalError(absolute)
+      const kind = failure.decision?.outcome.kind ?? ""
+      const blocked =
+        kind === "request_rephrasing" || kind === "reject_attack"
+      this.state.error = failure.code
+      this.state.clarification = {
+        claimId,
+        status:
+          failure.code === submissionErrors.receiptExpired ||
+          failure.code === submissionErrors.receiptInvalid
+            ? "expired"
+            : blocked
+              ? "blocked"
+              : "failed",
+        error: failure.code,
+        decision: kind,
+        blockedAnswer: blocked ? trimmed : "",
+      }
+      throw failure
+    } finally {
+      if (this.clarificationAttempt?.token === token)
+        this.clarificationAttempt = null
+    }
+  }
+
+  // cancelClarification aborts only the focused answer and returns to the same
+  // retained review. A late response cannot revise the claim.
+  cancelClarification(): void {
+    if (!this.clarificationAttempt) return
+    const claimId = this.state.clarification.claimId
+    const requestId = this.state.requestId
+    if (requestId && !this.state.cancelledRequestIds.includes(requestId))
+      this.state.cancelledRequestIds = [
+        ...this.state.cancelledRequestIds,
+        requestId,
+      ]
+    this.clarificationAttempt.controller.abort(
+      new DOMException("Cancelled", "AbortError"),
+    )
+    this.clarificationAttempt = null
+    this.state.clarification = { ...emptyClarification(), claimId }
+  }
+
   // sessionState is the protocol SubmissionSession projection; it is kept valid
   // for the whole lifecycle (submissionSessionError is never weakened).
   sessionState(): SubmissionSession {
@@ -1016,6 +1322,104 @@ export class SubmissionController {
   }
 
   // --- Internals -----------------------------------------------------------
+
+  private assertClarifying(token: object): void {
+    if (this.clarificationAttempt?.token !== token)
+      throw new IngestionError("cancelled")
+  }
+
+  private async sendClarification<T>(
+    token: object,
+    absolute: AbortSignal,
+    requestId: string,
+    call: (signal: AbortSignal) => Promise<T>,
+  ): Promise<T> {
+    this.assertClarifying(token)
+    this.state.requestId = requestId
+    const unit = combineSignals(
+      absolute,
+      this.runtime.timeout(submissionBudgets.unitBudgetMs),
+    )
+    const request = combineSignals(
+      unit,
+      this.runtime.timeout(submissionBudgets.requestTimeoutMs),
+    )
+    try {
+      const value = await call(request)
+      this.assertClarifying(token)
+      return value
+    } catch (error) {
+      if (this.clarificationAttempt?.token !== token)
+        throw new IngestionError("cancelled")
+      throw error instanceof IngestionError
+        ? error
+        : submissionSignalError(request)
+    }
+  }
+
+  private clarifyBody(
+    pin: SubmissionPin,
+    contextReceipt: string,
+    claim: IngestionClaim,
+    answer: string,
+  ): SubmissionClarifyBody {
+    return {
+      stage: { version: submissionStageVersion, kind: "clarify" },
+      input: pin.input,
+      profile: pin.profile,
+      ...(pin.document ? { document: pin.document } : {}),
+      contextReceipt,
+      claim,
+      answer,
+    }
+  }
+
+  // applyClarification replaces exactly the authenticated claim's extraction and
+  // its focus result. Every other batch/focus entry, index and selection is left
+  // untouched; the returned result is revalidated before it can be reviewed.
+  private applyClarification(
+    claimId: string,
+    read: SubmissionClarificationRead,
+  ): SubmissionResult {
+    const current = this.result
+    if (!current) throw new IngestionError(submissionErrors.state)
+    let claimReplaced = false
+    const batches = (current.batches as SubmissionBatchResult[]).map((batch) => ({
+      ...batch,
+      claims: batch.claims.map((claim) => {
+        if (claim.id !== claimId) return claim
+        claimReplaced = true
+        return read.claim
+      }),
+    }))
+    if (!claimReplaced) throw new IngestionError("invalid_output")
+    let focusReplaced = false
+    const focus = current.focus.map((entry) => {
+      if (!entry.focus.claimIds.includes(claimId)) return entry
+      focusReplaced = true
+      const operations = [
+        ...entry.operations.filter(
+          (op) => (op as IngestionOperation).claimId !== claimId,
+        ),
+        ...read.operations,
+      ]
+      const outcomes = [
+        ...entry.outcomes.filter(
+          (outcome) => (outcome as IngestionOutcome).claimId !== claimId,
+        ),
+        ...read.outcomes,
+      ]
+      if (operations.length > submissionBudgets.batchOperationCap)
+        throw new IngestionError(submissionErrors.capacity)
+      return { ...entry, operations, outcomes }
+    })
+    if (!focusReplaced) throw new IngestionError("invalid_output")
+    const updated: SubmissionResult = { ...current, batches, focus }
+    const code = submissionResultError(updated)
+    if (code) throw new IngestionError(code)
+    this.state.focus = focus
+    return updated
+  }
 
   private canStart(): boolean {
     return (
@@ -1151,6 +1555,7 @@ export class SubmissionController {
   }
 
   private invalidate(code: string): void {
+    this.cancelClarification()
     this.cancelActive()
     this.state.stale = true
     this.state.applicable = false

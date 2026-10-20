@@ -616,10 +616,30 @@ const messages = {
     "review.blocked.dependency_blocked":
       "another required change cannot be saved",
     "review.blocked.state": "its selection state is invalid",
+    "review.blocked.clarification":
+      "answer this clarification first, or leave it unresolved",
+    "review.blocked.conflict":
+      "resolve the competing values first, or leave them unresolved",
+    "review.blocked.unsupported":
+      "add supporting evidence first, or leave it unresolved",
+    "review.blocked.unresolved":
+      "compare it again first, or leave it unresolved",
     "review.attention.conflict": "Conflicting values",
     "review.attention.clarification": "Needs clarification",
     "review.attention.unsupported": "No supporting excerpt",
     "review.attention.unresolved": "Could not be compared",
+    "review.attentionReason": "Why approval is blocked",
+    "review.question": "Question",
+    "review.answer": "Answer",
+    "review.answerLabel": "Your answer",
+    "review.answerStatus": "Revising…",
+    "review.answerTooLong": "Answer must be 1,000 UTF-8 bytes or less.",
+    "review.answerUnchanged": "Change the answer before trying again.",
+    "review.answerExpired":
+      "This clarification expired. Your pending review and unrelated changes are preserved; start a new review to answer it.",
+    "review.leaveOut": "Leave out / keep unresolved",
+    "review.keptUnresolved":
+      "Kept unresolved. Nothing will be saved for this item; unrelated changes remain available.",
     "review.source": "Source",
     "review.sourceOriginal": "Original paste",
     "review.sourceClarification": "Clarification answer",
@@ -1635,10 +1655,31 @@ const messages = {
     "review.blocked.dependency_blocked":
       "outra alteração obrigatória não pode ser salva",
     "review.blocked.state": "seu estado de seleção é inválido",
+    "review.blocked.clarification":
+      "responda a este esclarecimento primeiro, ou deixe-o em aberto",
+    "review.blocked.conflict":
+      "resolva os valores conflitantes primeiro, ou deixe-os em aberto",
+    "review.blocked.unsupported":
+      "adicione um trecho de apoio primeiro, ou deixe em aberto",
+    "review.blocked.unresolved":
+      "compare novamente primeiro, ou deixe em aberto",
     "review.attention.conflict": "Valores conflitantes",
     "review.attention.clarification": "Precisa de esclarecimento",
     "review.attention.unsupported": "Sem trecho de apoio",
     "review.attention.unresolved": "Não foi possível comparar",
+    "review.attentionReason": "Por que a aprovação está bloqueada",
+    "review.question": "Pergunta",
+    "review.answer": "Responder",
+    "review.answerLabel": "Sua resposta",
+    "review.answerStatus": "Revisando…",
+    "review.answerTooLong":
+      "A resposta deve ter no máximo 1.000 bytes UTF-8.",
+    "review.answerUnchanged": "Altere a resposta antes de tentar novamente.",
+    "review.answerExpired":
+      "Este esclarecimento expirou. Sua revisão pendente e as demais alterações foram preservadas; inicie uma nova revisão para responder.",
+    "review.leaveOut": "Deixar de fora / manter em aberto",
+    "review.keptUnresolved":
+      "Mantido em aberto. Nada será salvo para este item; as demais alterações continuam disponíveis.",
     "review.source": "Fonte",
     "review.sourceOriginal": "Texto original",
     "review.sourceClarification": "Resposta de esclarecimento",
