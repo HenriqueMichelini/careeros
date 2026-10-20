@@ -51,13 +51,14 @@ Capacity is rejected, never silently truncated.
 | Planner portion cap | 256 | retained (#178) |
 | Extracted claims per bounded result | 30 | retained (#41) |
 | Operations per bounded result | 60 | retained (#41) |
+| Clarification answer (UTF-8 bytes) | 1,000 | retained (#181/#191) |
 | Staged handler deadline | 27 s | retained (#178) |
 | Browser request deadline (incl. body read) | 29 s | retained (#178) |
 | Bounded-unit budget | 65 s | retained (#178) |
 | Receipt lifetime | 10 min | retained (#178) |
 | Extraction / legacy request body | 160 KiB | retained (#41) |
 | Per-receipt and aggregate-context payload | 128 KiB | retained (#178) |
-| Assembly / reconciliation request body | 320 KiB | retained (#178) |
+| Assembly / reconciliation / clarification request body | 320 KiB | retained (#178/#191) |
 | Provider envelope | unchanged | retained (#41) |
 
 ### Amendment to #178's per-click attempt
@@ -229,13 +230,42 @@ complete original with Jev, and makes one bounded generation call.
 - Stable global temporary entity anchors and conservative identity rules apply
   across focus batches.
 
+## Focused-clarification envelope (`stage.kind = "clarify"`)
+
+The request supplies `contextReceipt`, exactly one authenticated `claim` and one
+`answer`. It changes exactly that claim and makes no plan/extraction/reconcile
+restart.
+
+- The selected claim must match the signed aggregate exactly (id, source,
+  question, targets and prior support). A changed, foreign or unauthorized claim
+  is `focus_invalid` before any provider call.
+- The complete original is classified by Jev again; an answer accepted by Jev
+  cannot launder a blocked original. The answer/question/prior support text is
+  then classified separately, so rephrasing or attack stops before extraction.
+- The answer is at most 1,000 UTF-8 bytes; the blank, support-count and target
+  limits are retained. The response retains original support plus exactly one
+  `clarification_answer` support carrying the answer; any model omission,
+  substitution or extra source is `invalid_output`.
+- Only the revised claim is focused; every other aggregate claim stays
+  provisional. The established reconciliation validator then recomputes its
+  conflicts, destinations and outcome with the revised claim.
+- The response replaces that claim's extraction and focus operations/outcomes.
+  The client transfers reviewed wording and selection only for unaffected,
+  still-savable units; the revised claim and genuinely dependent units restart
+  pending, without hiding competing values or unrelated pending work.
+- Failure, expiry, rejection, attack or cancellation never discards the pending
+  review or blocks unrelated saves. After rephrasing/attack the same trimmed
+  answer is blocked until it changes. There is no automatic retry, fallback,
+  save or canonical write.
+
 ## Submission result and session state
 
 The consolidated review is a single in-memory `SubmissionResult`. Request
 envelopes are `SubmissionExtractionRequest` (`planReceipt`, `batchIndex`),
-`SubmissionAssemblyRequest` (`planReceipt`, `batchReceipts[]`) and
-`SubmissionReconciliationRequest` (`contextReceipt`, `focus`); they share the
-existing `{input, profile, document?, stage}` transport body.
+`SubmissionAssemblyRequest` (`planReceipt`, `batchReceipts[]`),
+`SubmissionReconciliationRequest` (`contextReceipt`, `focus`) and
+`SubmissionClarificationRequest` (`contextReceipt`, `claim`, `answer`); they
+share the existing `{input, profile, document?, stage}` transport body.
 
 ```ts
 interface SubmissionResult {

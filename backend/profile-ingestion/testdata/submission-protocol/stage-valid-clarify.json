@@ -1,0 +1,11 @@
+{
+  "name": "stage-valid-clarify",
+  "check": "stage",
+  "stage": {
+    "version": 2,
+    "kind": "clarify"
+  },
+  "expect": {
+    "ok": true
+  }
+}

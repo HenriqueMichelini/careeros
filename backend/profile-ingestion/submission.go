@@ -72,9 +72,10 @@ type SubmissionPlanResponse struct {
 	Plan        SubmissionPlan  `json:"plan"`
 }
 
-// submission dispatches version-2 submission stages. Plan, extract, assembly and
-// reconciliation are implemented here; an unknown kind is rejected as `stage`
-// without touching v1 behavior. Assembly is provider-free.
+// submission dispatches version-2 submission stages. Plan, extract, assembly,
+// reconciliation and focused clarification are implemented here; an unknown
+// kind is rejected as `stage` without touching v1 behavior. Assembly is
+// provider-free.
 func (a app) submission(ctx context.Context, w http.ResponseWriter, r *http.Request, in request, raw []byte, key string, status *int, outcome *string) {
 	fail := func(s int, code string) {
 		*status = s
@@ -95,6 +96,8 @@ func (a app) submission(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		a.submissionAssemble(ctx, w, in, raw, stage, fail)
 	case SubmissionStageReconcile:
 		a.submissionReconcile(ctx, w, r, in, raw, key, stage, status, outcome, fail)
+	case SubmissionStageClarify:
+		a.submissionClarify(ctx, w, r, in, raw, key, stage, status, outcome, fail)
 	default:
 		fail(SubmissionErrorStatus(SubmissionErrStage), SubmissionErrStage)
 	}
@@ -105,7 +108,15 @@ func (a app) submission(ctx context.Context, w http.ResponseWriter, r *http.Requ
 // the existing decision envelope and reports false. It is the single
 // whole-original field gate for every protected submission stage.
 func (a app) submissionDecision(ctx context.Context, w http.ResponseWriter, r *http.Request, in request, status *int, outcome *string) bool {
-	decision := fieldvalidation.Classify(ctx, a.client, r.Header.Get("X-TypeSafe-Api-Key"), fieldvalidation.ProfessionalInformation, in.Input)
+	return a.submissionClassify(ctx, w, r, in.Input, status, outcome)
+}
+
+// submissionClassify applies the same retained professional-information gate to
+// one protected text. The complete original and a clarification answer are
+// classified independently; an accepted excerpt or answer can never launder a
+// blocked original, and vice versa.
+func (a app) submissionClassify(ctx context.Context, w http.ResponseWriter, r *http.Request, text string, status *int, outcome *string) bool {
+	decision := fieldvalidation.Classify(ctx, a.client, r.Header.Get("X-TypeSafe-Api-Key"), fieldvalidation.ProfessionalInformation, text)
 	if decision.Outcome.Kind == "accept" {
 		return true
 	}
@@ -399,6 +410,7 @@ func submissionRequestBinding(in request) string {
 	in.ApplyAnswer, in.Clarification, in.Portion = nil, nil, nil
 	in.PlanReceipt, in.BatchReceipts, in.ContextReceipt = "", nil, ""
 	in.BatchIndex, in.Focus = nil, nil
+	in.Claim, in.Answer = nil, nil
 	return canonicalBinding(in)
 }
 

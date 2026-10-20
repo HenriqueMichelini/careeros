@@ -14,12 +14,14 @@ import {
   selectReviewAdditions,
   selectReviewGroup,
   selectReviewUnit,
+  transferReviewState,
   type ReviewPlan,
 } from "../src/lib/ingestionReview"
-import type {
-  IngestionClaim,
-  IngestionOperation,
-  IngestionOutcome,
+import {
+  IngestionError,
+  type IngestionClaim,
+  type IngestionOperation,
+  type IngestionOutcome,
 } from "../src/lib/ingestion"
 import {
   emptyProfileView,
@@ -29,7 +31,7 @@ import {
 import { StoreProvider } from "../src/lib/store"
 import type { ProfessionalRepository } from "../src/lib/types"
 
-type Scenario = "mixed" | "empty" | "duplicates"
+type Scenario = "mixed" | "empty" | "duplicates" | "clarification"
 interface ReviewSubmissionData {
   protocolVersion: string
   submissionId: string
@@ -466,15 +468,89 @@ function emptyPlan(): ReviewPlan {
   )
 }
 
+function clarificationPlan(answered: boolean): ReviewPlan {
+  const snapshot = snapshotOf(populated)
+  const fact = skillFact(snapshot)
+  const ids = ["run/0/c1", "run/0/c2", "run/0/c3"]
+  const operations: IngestionOperation[] = [
+    ...(answered ? [operation(ids[0], { value: "Contract" })] : []),
+    operation(ids[1], { value: "Svelte" }),
+    operation(ids[2], { value: "Vue" }),
+  ]
+  const offset = answered ? 1 : 0
+  return planFor(
+    submission({
+      batches: [{ index: 0, claimIds: ids }],
+      claims: [
+        claim(ids[0], {
+          source: "I worked at Acme.",
+          text: "Acme role needs details",
+          targets: answered ? ["skills"] : ["experience"],
+          question: answered ? "" : "Was this full-time or contract?",
+        }),
+        claim(ids[1], {
+          source: "I use Svelte.",
+          text: "Svelte",
+          targets: ["skills"],
+        }),
+        claim(ids[2], {
+          source: "I use Vue.",
+          text: "Vue",
+          targets: ["skills"],
+        }),
+      ],
+      operations,
+      outcomes: [
+        {
+          claimId: ids[0],
+          kind: answered ? "change" : "clarification",
+          reason: answered ? "Resolved answer." : "Role type missing.",
+          relatedFacts: answered
+            ? []
+            : [
+                {
+                  profileId: snapshot.id,
+                  id: fact.id,
+                  revision: fact.revision,
+                },
+              ],
+          relatedClaimIds: answered ? [] : [ids[1]],
+          operationIndexes: answered ? [0] : [],
+        },
+        {
+          claimId: ids[1],
+          kind: "change",
+          reason: "Not in your Profile.",
+          relatedFacts: [],
+          relatedClaimIds: [],
+          operationIndexes: [offset],
+        },
+        {
+          claimId: ids[2],
+          kind: "change",
+          reason: "Not in your Profile.",
+          relatedFacts: [],
+          relatedClaimIds: [],
+          operationIndexes: [offset + 1],
+        },
+      ],
+    }),
+    snapshot,
+  )
+}
+
 const initial =
   scenario === "duplicates"
     ? duplicatePlan()
     : scenario === "empty"
       ? emptyPlan()
-      : mixedPlan()
+      : scenario === "clarification"
+        ? clarificationPlan(false)
+        : mixedPlan()
 
 function Harness() {
   const [plan, setPlan] = useState(initial)
+  const [leftOut, setLeftOut] = useState<string[]>([])
   useEffect(() => {
     const windowWithState = window as unknown as {
       __reviewState: unknown
@@ -483,6 +559,7 @@ function Harness() {
     windowWithState.__reviewState = {
       scenario,
       locale,
+      leftOut,
       summary: reviewSummary(plan),
       preview: {
         error: preview.error,
@@ -510,7 +587,7 @@ function Harness() {
         proposedValue: operation.proposedValue,
       })),
     }
-  }, [plan])
+  }, [plan, leftOut])
   return (
     <main className="p-4 max-w-5xl mx-auto" data-harness-scenario={scenario}>
       <SubmissionReview
@@ -541,6 +618,34 @@ function Harness() {
         }
         onEditUnit={(unitId, field, value) =>
           setPlan((current) => editReviewUnit(current, unitId, field, value))
+        }
+        onAnswerUnit={
+          scenario === "clarification"
+            ? async (unitId, answer) => {
+                const unit = plan.units.find((entry) => entry.id === unitId)
+                if (!unit) throw new IngestionError("state")
+                if (answer.trim() === "blocked answer")
+                  throw new IngestionError("field_decision", {
+                    version: 1,
+                    field: "professional_information",
+                    outcome: { kind: "request_rephrasing" },
+                  })
+                await new Promise((resolve) => setTimeout(resolve, 20))
+                setPlan((current) =>
+                  transferReviewState(current, clarificationPlan(true), [
+                    unit.claimIds[0],
+                  ]),
+                )
+              }
+            : undefined
+        }
+        onLeaveUnitOut={
+          scenario === "clarification"
+            ? (unitId) =>
+                setLeftOut((current) =>
+                  current.includes(unitId) ? current : [...current, unitId],
+                )
+            : undefined
         }
       />
     </main>

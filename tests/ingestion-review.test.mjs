@@ -1509,3 +1509,156 @@ test("focused edits reject evidence-only wording and unknown fields", () => {
     { code: "input" },
   )
 })
+
+// transferReviewState (#191): a focused clarification rebuilds the plan, but
+// reviewed wording and selected units survive when their operation identities
+// and dependencies are untouched. The revised claim and dependent units restart.
+const transferRun = "run/0"
+const transferIds = ["run/0/c1", "run/0/c2", "run/0/c3"]
+const transferSubmission = (values, outcomes) =>
+  submission({
+    batches: [{ index: 0, claimIds: transferIds }],
+    claims: [
+      claim(transferIds[0], { targets: ["skills", "competencies"] }),
+      claim(transferIds[1], { targets: ["skills"] }),
+      claim(transferIds[2], { targets: ["skills"] }),
+    ],
+    operations: [
+      operation(transferIds[0], { value: values[0] }),
+      operation(transferIds[0], {
+        target: "competencies",
+        field: "competencies",
+        value: values[1],
+      }),
+      operation(transferIds[1], {
+        value: values[2],
+        supportingClaimIds: [transferIds[0]],
+      }),
+      operation(transferIds[2], { value: values[3] }),
+    ],
+    outcomes,
+  })
+const transferOutcomes = (revisedIndexes) => [
+  {
+    claimId: transferIds[0],
+    kind: "change",
+    reason: "r",
+    relatedFacts: [],
+    relatedClaimIds: [],
+    operationIndexes: revisedIndexes,
+  },
+  {
+    claimId: transferIds[1],
+    kind: "change",
+    reason: "r",
+    relatedFacts: [],
+    relatedClaimIds: [],
+    operationIndexes: [2],
+  },
+  {
+    claimId: transferIds[2],
+    kind: "change",
+    reason: "r",
+    relatedFacts: [],
+    relatedClaimIds: [],
+    operationIndexes: [3],
+  },
+]
+
+test("transferReviewState retains unrelated edits and selections after a synthesis", () => {
+  const snapshot = snapshotOf({})
+  const previous = build(
+    transferSubmission(["Java", "Debugging", "Rust", "Kept"], transferOutcomes([0, 1])),
+    snapshot,
+  )
+  const unrelated = unitFor(
+    previous,
+    (unit) => unit.claimIds[0] === transferIds[2] && unit.kind === "addition",
+  )
+  const edited = review.editReviewUnit(
+    toggle(previous, unrelated.id),
+    unrelated.id,
+    "skills",
+    "Reviewed wording",
+  )
+  const dependent = unitFor(
+    edited,
+    (unit) => unit.claimIds[0] === transferIds[1] && unit.kind === "addition",
+  )
+  const selected = toggle(edited, dependent.id)
+
+  const next = build(
+    transferSubmission(
+      ["TypeScript", "Debugging", "Rust", "Kept"],
+      transferOutcomes([0, 1]),
+    ),
+    snapshot,
+  )
+  const transferred = review.transferReviewState(edited, next, [transferIds[0]])
+  assert.notEqual(transferred, next)
+
+  const revised = unitFor(
+    transferred,
+    (unit) => unit.claimIds[0] === transferIds[0] && unit.kind === "addition",
+  )
+  assert.equal(revised.status, "pending")
+  assert.equal(
+    revised.values.find((value) => value.field === "skills").proposed,
+    "TypeScript",
+  )
+
+  const retained = unitFor(
+    transferred,
+    (unit) => unit.claimIds[0] === transferIds[2] && unit.kind === "addition",
+  )
+  assert.equal(retained.status, "selected")
+  assert.equal(
+    retained.values.find((value) => value.field === "skills").proposed,
+    "Reviewed wording",
+  )
+  assert.equal(review.reviewUnitEdited(transferred, retained.id), true)
+
+  const resetDependent = unitFor(
+    transferred,
+    (unit) => unit.claimIds[0] === transferIds[1] && unit.kind === "addition",
+  )
+  assert.equal(resetDependent.status, "pending")
+  assert.equal(review.reviewPlanError(transferred), "")
+})
+
+test("transferReviewState resets a unit whose machine proposal changed", () => {
+  const snapshot = snapshotOf({})
+  const previous = build(
+    transferSubmission(["Java", "Debugging", "Rust", "Kept"], transferOutcomes([0, 1])),
+    snapshot,
+  )
+  const unrelated = unitFor(
+    previous,
+    (unit) => unit.claimIds[0] === transferIds[2] && unit.kind === "addition",
+  )
+  const edited = review.editReviewUnit(
+    toggle(previous, unrelated.id),
+    unrelated.id,
+    "skills",
+    "Reviewed wording",
+  )
+
+  const next = build(
+    transferSubmission(
+      ["Java", "Debugging", "Rust", "Changed"],
+      transferOutcomes([0, 1]),
+    ),
+    snapshot,
+  )
+  const transferred = review.transferReviewState(edited, next, [transferIds[0]])
+  const changed = unitFor(
+    transferred,
+    (unit) => unit.claimIds[0] === transferIds[2] && unit.kind === "addition",
+  )
+  assert.equal(changed.status, "pending")
+  assert.equal(
+    changed.values.find((value) => value.field === "skills").proposed,
+    "Changed",
+  )
+  assert.equal(review.reviewUnitEdited(transferred, changed.id), false)
+})

@@ -462,6 +462,176 @@ try {
   assert.equal(current.preview.selectedOperationCount, 4)
   assert.equal(current.preview.complete, true)
 
+  // Focused clarification: the collapsed row names the destination, question,
+  // competing statement and existing value; expansion adds the question, source
+  // excerpt and explicit answer/leave-out actions. A rejected answer must change
+  // before retry; a successful revision preserves unrelated selection and edit.
+  await navigate("clarification")
+  current = await state()
+  assert.equal(current.summary.attention, 1)
+  assert.equal(current.summary.clarifications, 1)
+  const attentionSelector = '[data-review-unit][data-review-kind="clarification"]'
+  const collapsed = await normalized(attentionSelector)
+  assert.match(collapsed, /Experience/)
+  assert.match(collapsed, /Was this full-time or contract\?/)
+  assert.match(collapsed, /Competing statement/)
+  assert.match(collapsed, /I use Svelte\./)
+  assert.match(collapsed, /In your Profile/)
+  assert.match(collapsed, /React/)
+  assert.match(collapsed, /Why approval is blocked/)
+  assert.equal(
+    await evaluate(
+      `document.querySelector('${attentionSelector} details[data-review-attention]').open`,
+    ),
+    false,
+  )
+
+  // Unrelated reviewed work: select Svelte and edit the Vue addition.
+  const additionRow = (text) =>
+    `Array.from(document.querySelectorAll('[data-review-unit][data-review-kind="addition"]')).find(el => el.textContent.includes(${JSON.stringify(text)}))`
+  await evaluate(`${additionRow("Svelte")}.querySelector('input[type=checkbox]').click()`)
+  await evaluate(`${additionRow("Vue")}.querySelector('button').click()`)
+  await until(
+    `${additionRow("Vue")}.querySelector('textarea') !== null`,
+  )
+  await evaluate(
+    `(() => {
+      const el = ${additionRow("Vue")}.querySelector('textarea');
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(el, 'Vue 3');
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    })()`,
+  )
+  await clickButton("Save wording")
+  await pause(40)
+  current = await state()
+  assert.equal(
+    current.operations.find((operation) => operation.claimId === "run/0/c3").value,
+    "Vue 3",
+  )
+
+  // Expand and inspect the focused question/excerpt, then open the answer form.
+  await evaluate(
+    `document.querySelector('${attentionSelector} details[data-review-attention]').open = true`,
+  )
+  await pause(40)
+  assert.match(
+    await normalized(`${attentionSelector} details[data-review-attention]`),
+    /Question/,
+  )
+  assert.match(
+    await normalized(`${attentionSelector} details[data-review-attention]`),
+    /I worked at Acme\./,
+  )
+  await click("[data-review-answer-open]")
+  await until("!!document.querySelector('[data-review-answer] textarea')")
+  assert.match(
+    await normalized("[data-review-answer]"),
+    /0 \/ 1,000/,
+  )
+  // Cancel returns focus to the Answer trigger without closing the row.
+  await evaluate(
+    `Array.from(document.querySelectorAll('[data-review-answer] button')).find(el => el.textContent.trim() === 'Cancel').click()`,
+  )
+  await pause(40)
+  assert.equal(
+    await evaluate(
+      "document.activeElement?.hasAttribute('data-review-answer-open')",
+    ),
+    true,
+  )
+
+  // Leave out keeps the item unresolved and does not hide it.
+  await click("[data-review-leave-out]")
+  await pause(40)
+  assert.match(
+    await normalized(attentionSelector),
+    /Kept unresolved/,
+  )
+  assert.equal((await state()).leftOut.length, 1)
+  assert.equal(
+    await evaluate(
+      "document.activeElement?.hasAttribute('data-review-answer-open')",
+    ),
+    true,
+  )
+
+  // Rejected wording blocks the same answer until it changes.
+  await click("[data-review-answer-open]")
+  await until("!!document.querySelector('[data-review-answer] textarea')")
+  await evaluate(
+    `(() => {
+      const el = document.querySelector('[data-review-answer] textarea');
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(el, 'blocked answer');
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    })()`,
+  )
+  await clickButton("Review revised proposal")
+  await until(
+    `!!document.querySelector('[data-review-attention] p[role="alert"]')`,
+  )
+  assert.match(
+    await normalized(attentionSelector),
+    /Rewrite the professional description/,
+  )
+  assert.equal(
+    await evaluate(
+      `Array.from(document.querySelectorAll('[data-review-answer] button')).find(el => el.textContent.trim() === 'Review revised proposal').disabled`,
+    ),
+    true,
+  )
+  await evaluate(
+    `(() => {
+      const el = document.querySelector('[data-review-answer] textarea');
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(el, 'It was full-time.');
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    })()`,
+  )
+  await clickButton("Review revised proposal")
+  await until(
+    `!document.querySelector('${attentionSelector}')`,
+  )
+  await pause(60)
+  current = await state()
+  assert.equal(current.summary.clarifications, 0)
+  assert.equal(current.summary.selected, 1)
+  assert.equal(
+    current.operations.find((operation) => operation.claimId === "run/0/c3").value,
+    "Vue 3",
+  )
+  assert.equal(
+    current.operations.find((operation) => operation.claimId === "run/0/c3").proposedValue,
+    "Vue",
+  )
+  assert.equal(
+    await evaluate("document.activeElement?.id"),
+    "review-heading",
+  )
+  assert.equal(
+    await evaluate("localStorage.getItem('careeros_profile_v2')"),
+    storageBefore,
+    "clarification never writes the canonical Profile",
+  )
+
+  // PT-BR clarification copy.
+  await navigate("clarification", "pt-BR")
+  assert.match(await normalized(attentionSelector), /Pergunta|Precisa de esclarecimento/)
+  await evaluate(
+    `document.querySelector('${attentionSelector} details[data-review-attention]').open = true`,
+  )
+  await pause(40)
+  assert.equal(
+    await evaluate(
+      `Array.from(document.querySelectorAll('button')).some(el => el.textContent.trim() === 'Responder')`,
+    ),
+    true,
+  )
+  assert.equal(
+    await evaluate(
+      `Array.from(document.querySelectorAll('button')).some(el => el.textContent.trim() === 'Deixar de fora / manter em aberto')`,
+    ),
+    true,
+  )
+
   // Concise PT-BR copy over the same controlled state.
   await navigate("mixed", "pt-BR")
   current = await state()
@@ -488,7 +658,7 @@ try {
   )
 
   console.log(
-    "PASS review renderer → no preselection → destination groups → deduplicated source disclosure/origins → group/individual/additions-only selection → duplicate/no-change and empty states → focused edit preview/provenance/revert → keyboard focus → EN/PT copy; zero provider calls or review-triggered canonical writes.",
+    "PASS review renderer → no preselection → destination groups → deduplicated source disclosure/origins → group/individual/additions-only selection → duplicate/no-change and empty states → focused edit preview/provenance/revert → keyboard focus → focused clarification (collapsed attention, answer/leave-out, rejection/retry, unrelated-work retention) → EN/PT copy; zero provider calls or review-triggered canonical writes.",
   )
 } finally {
   socket?.close()

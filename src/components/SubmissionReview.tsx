@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useI18n } from "../lib/store"
 import type { TranslationKey } from "../lib/i18n"
+import { IngestionError, ingestionInputBytes } from "../lib/ingestion"
 import { destinationLabelKey, profileFieldKey } from "../lib/profileLabels"
 import {
   reviewGroupState,
@@ -25,6 +26,10 @@ export interface SubmissionReviewProps {
   onSelectAdditions: () => void
   onClearSelection: () => void
   onEditUnit: (unitId: string, field: string, value: string) => void
+  // Optional protected clarification. When absent the attention rows stay
+  // explanatory only; the presenter never dispatches on its own.
+  onAnswerUnit?: (unitId: string, answer: string) => Promise<void>
+  onLeaveUnitOut?: (unitId: string) => void
 }
 
 const muted = { color: "var(--color-muted-fg)" } as const
@@ -322,6 +327,257 @@ function UnitEditor({
   )
 }
 
+function AttentionUnit({
+  unit,
+  disabled,
+  onAnswerUnit,
+  onLeaveUnitOut,
+}: {
+  unit: ReviewUnit
+  disabled: boolean
+  onAnswerUnit: SubmissionReviewProps["onAnswerUnit"]
+  onLeaveUnitOut: SubmissionReviewProps["onLeaveUnitOut"]
+}) {
+  const { t } = useI18n()
+  const [open, setOpen] = useState(false)
+  const [answerOpen, setAnswerOpen] = useState(false)
+  const [answer, setAnswer] = useState("")
+  const [blocked, setBlocked] = useState("")
+  const [feedback, setFeedback] = useState("")
+  const [leftOut, setLeftOut] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [expired, setExpired] = useState(false)
+  const answerButton = useRef<HTMLButtonElement | null>(null)
+  const leaveButton = useRef<HTMLButtonElement | null>(null)
+  const status = useRef<HTMLParagraphElement | null>(null)
+  const safeId = unit.id.replace(/[^a-zA-Z0-9_-]+/g, "-")
+  const answerId = `answer-${safeId}`
+  const question = unit.question
+  const trimmed = answer.trim()
+  const bytes = ingestionInputBytes(answer)
+  const tooLong = bytes > 1000
+  const unavailable = !onAnswerUnit
+  const submit = async () => {
+    if (
+      !onAnswerUnit ||
+      disabled ||
+      busy ||
+      expired ||
+      !trimmed ||
+      tooLong ||
+      blocked === trimmed
+    )
+      return
+    setBusy(true)
+    setFeedback("")
+    try {
+      await onAnswerUnit(unit.id, answer)
+      setAnswer("")
+      setAnswerOpen(false)
+      setFeedback(t("repo.clarificationRevised"))
+      setTimeout(() => document.getElementById("review-heading")?.focus(), 0)
+    } catch (error) {
+      if (error instanceof IngestionError && error.code === "cancelled") return
+      const code = error instanceof IngestionError ? error.code : ""
+      const kind =
+        error instanceof IngestionError
+          ? error.decision?.outcome.kind ?? ""
+          : ""
+      if (kind === "request_rephrasing" || kind === "reject_attack") {
+        setBlocked(trimmed)
+        setFeedback(t(`field.${kind}` as TranslationKey))
+      } else if (kind) {
+        setFeedback(t(`field.${kind}` as TranslationKey))
+      } else if (code === "receipt_expired" || code === "receipt_invalid") {
+        setExpired(true)
+        setFeedback(t("review.answerExpired"))
+      } else if (code === "answer_unchanged") {
+        setBlocked(trimmed)
+        setFeedback(t("review.answerUnchanged"))
+      } else {
+        setFeedback(t("repo.clarificationFailed"))
+      }
+      setTimeout(() => status.current?.focus(), 0)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <details
+      className="mt-1 min-w-0"
+      data-review-attention
+      open={open}
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+    >
+      <summary className="cursor-pointer min-w-0" data-review-attention-summary>
+        <span className="text-sm font-semibold block">
+          {t(`review.attention.${unit.kind}` as TranslationKey)}
+        </span>
+        {question && (
+          <span className="text-sm break-words whitespace-pre-wrap block mt-1">
+            {question}
+          </span>
+        )}
+        {unit.relatedFacts.map((fact) => (
+          <span
+            key={`${fact.id}-${fact.revision}`}
+            className="text-sm break-words whitespace-pre-wrap block mt-1"
+          >
+            {t("review.inProfile")}: {fact.value}
+          </span>
+        ))}
+        {unit.relatedClaims.map((claim) => (
+          <span
+            key={claim.id}
+            className="text-sm break-words whitespace-pre-wrap block mt-1"
+          >
+            {t("review.relatedStatement")}: “{claim.source}”
+          </span>
+        ))}
+        {unit.reason && (
+          <span className="text-xs break-words whitespace-pre-wrap block mt-1" style={muted}>
+            {t("review.attentionReason")}: {unit.reason}
+          </span>
+        )}
+        {unit.blockedReason && (
+          <span className="text-xs block mt-1" style={muted}>
+            {t("review.blocked")}:{" "}
+            {t(
+              `review.blocked.${unit.blockedReason}` as TranslationKey,
+            )}
+          </span>
+        )}
+      </summary>
+      <div className="mt-3 space-y-3 min-w-0">
+        {unit.question && (
+          <div className="min-w-0">
+            <p className="text-xs" style={muted}>
+              {t("review.question")}
+            </p>
+            <p className="text-sm font-semibold break-words whitespace-pre-wrap">
+              {unit.question}
+            </p>
+          </div>
+        )}
+        <SourceDisclosure unit={unit} context={false} />
+        {leftOut && (
+          <p className="text-sm" role="status">
+            {t("review.keptUnresolved")}
+          </p>
+        )}
+        {feedback && (
+          <p
+            ref={status}
+            tabIndex={-1}
+            className="text-sm break-words"
+            role={busy ? "status" : "alert"}
+          >
+            {feedback}
+          </p>
+        )}
+        {answerOpen ? (
+          <form
+            className="space-y-2 min-w-0"
+            data-review-answer
+            onSubmit={(event) => {
+              event.preventDefault()
+              void submit()
+            }}
+          >
+            <label className="block text-sm" htmlFor={answerId}>
+              {t("review.answerLabel")}
+            </label>
+            <textarea
+              id={answerId}
+              autoFocus
+              className="w-full min-w-0 border p-2 text-sm resize-y bg-transparent"
+              rows={3}
+              disabled={disabled || busy}
+              value={answer}
+              onChange={(event) => setAnswer(event.target.value)}
+            />
+            <p className="text-xs" style={muted}>
+              {bytes} / 1,000
+            </p>
+            {tooLong && (
+              <p className="text-sm" role="alert">
+                {t("review.answerTooLong")}
+              </p>
+            )}
+            <p className="text-xs break-words" style={muted}>
+              {t("repo.clarificationNote")}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="submit"
+                className="border px-3 py-2 text-sm disabled:opacity-50"
+                style={cardBorder}
+                disabled={
+                  disabled ||
+                  busy ||
+                  expired ||
+                  !trimmed ||
+                  tooLong ||
+                  blocked === trimmed
+                }
+              >
+                {busy
+                  ? t("review.answerStatus")
+                  : t("repo.clarificationReview")}
+              </button>
+              <button
+                type="button"
+                className="border px-3 py-2 text-sm"
+                style={cardBorder}
+                disabled={busy}
+                onClick={() => {
+                  setAnswerOpen(false)
+                  setTimeout(() => answerButton.current?.focus(), 0)
+                }}
+              >
+                {t("review.editCancel")}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            <button
+              ref={answerButton}
+              type="button"
+              data-review-answer-open
+              className="border px-3 py-2 text-sm disabled:opacity-50"
+              style={cardBorder}
+              disabled={disabled || unavailable || expired}
+              onClick={() => {
+                setAnswerOpen(true)
+                setFeedback("")
+              }}
+            >
+              {t("review.answer")}
+            </button>
+            <button
+              ref={leaveButton}
+              type="button"
+              data-review-leave-out
+              className="border px-3 py-2 text-sm disabled:opacity-50"
+              style={cardBorder}
+              disabled={disabled || leftOut}
+              onClick={() => {
+                setLeftOut(true)
+                setAnswerOpen(false)
+                onLeaveUnitOut?.(unit.id)
+                setTimeout(() => answerButton.current?.focus(), 0)
+              }}
+            >
+              {t("review.leaveOut")}
+            </button>
+          </div>
+        )}
+      </div>
+    </details>
+  )
+}
+
 function ReviewUnitRow({
   unit,
   plan,
@@ -329,6 +585,8 @@ function ReviewUnitRow({
   disabled,
   onSelectUnit,
   onEditUnit,
+  onAnswerUnit,
+  onLeaveUnitOut,
 }: {
   unit: ReviewUnit
   plan: ReviewPlan
@@ -336,6 +594,8 @@ function ReviewUnitRow({
   disabled: boolean
   onSelectUnit: SubmissionReviewProps["onSelectUnit"]
   onEditUnit: SubmissionReviewProps["onEditUnit"]
+  onAnswerUnit: SubmissionReviewProps["onAnswerUnit"]
+  onLeaveUnitOut: SubmissionReviewProps["onLeaveUnitOut"]
 }) {
   const { t } = useI18n()
   const [editing, setEditing] = useState(false)
@@ -416,33 +676,12 @@ function ReviewUnitRow({
             unit.kind === "clarification" ||
             unit.kind === "unsupported" ||
             unit.kind === "unresolved") && (
-            <>
-              <p className="text-sm font-semibold">
-                {t(`review.attention.${unit.kind}` as TranslationKey)}
-              </p>
-              <p className="text-sm break-words whitespace-pre-wrap">
-                {unit.question ||
-                  unit.reason ||
-                  unit.sources[0]?.excerpt ||
-                  "—"}
-              </p>
-              {unit.relatedFacts.map((fact) => (
-                <p
-                  key={`${fact.id}-${fact.revision}`}
-                  className="text-sm break-words whitespace-pre-wrap"
-                >
-                  {t("review.inProfile")}: {fact.value}
-                </p>
-              ))}
-              {unit.relatedClaims.map((claim) => (
-                <p
-                  key={claim.id}
-                  className="text-sm break-words whitespace-pre-wrap"
-                >
-                  {t("review.relatedStatement")}: “{claim.source}”
-                </p>
-              ))}
-            </>
+            <AttentionUnit
+              unit={unit}
+              disabled={disabled}
+              onAnswerUnit={onAnswerUnit}
+              onLeaveUnitOut={onLeaveUnitOut}
+            />
           )}
           {(unit.kind === "addition" ||
             unit.kind === "replacement" ||
@@ -518,7 +757,7 @@ function ReviewUnitRow({
               />
             </div>
           )}
-          <SourceDisclosure unit={unit} context={!control} />
+          {!control && <SourceDisclosure unit={unit} context />}
         </div>
       </div>
     </div>
@@ -572,6 +811,8 @@ export function SubmissionReview({
   onSelectAdditions,
   onClearSelection,
   onEditUnit,
+  onAnswerUnit,
+  onLeaveUnitOut,
 }: SubmissionReviewProps) {
   const { t } = useI18n()
   const summary = reviewSummary(plan)
@@ -588,7 +829,9 @@ export function SubmissionReview({
   if (summary.noChange)
     return (
       <section className="space-y-3 min-w-0" aria-label={t("review.heading")}>
-        <h2 className="text-xl font-bold">{t("review.heading")}</h2>
+        <h2 id="review-heading" tabIndex={-1} className="text-xl font-bold">
+        {t("review.heading")}
+      </h2>
         <div className="border p-4 min-w-0" style={cardBorder} role="status">
           <p className="text-sm font-semibold">{t("review.noChange")}</p>
           <p className="text-sm mt-1" style={muted}>
@@ -618,7 +861,9 @@ export function SubmissionReview({
 
   return (
     <section className="space-y-4 min-w-0" aria-label={t("review.heading")}>
-      <h2 className="text-xl font-bold">{t("review.heading")}</h2>
+      <h2 id="review-heading" tabIndex={-1} className="text-xl font-bold">
+        {t("review.heading")}
+      </h2>
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm" role="status">
         <span>{t("review.summaryChanges", { count: summary.selectable })}</span>
         {summary.attention > 0 && (
@@ -727,6 +972,8 @@ export function SubmissionReview({
                 disabled={disabled}
                 onSelectUnit={onSelectUnit}
                 onEditUnit={onEditUnit}
+                onAnswerUnit={onAnswerUnit}
+                onLeaveUnitOut={onLeaveUnitOut}
               />
             ))}
             {duplicates.length > 0 && (

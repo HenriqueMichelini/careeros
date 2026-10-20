@@ -811,6 +811,146 @@ export function buildReviewPlan(input: ReviewInput): ReviewPlan {
   }
 }
 
+function operationTransferKey(op: IngestionOperation): string {
+  return [
+    op.claimId,
+    op.target,
+    op.entryId,
+    op.field,
+    op.action,
+    op.proposedValue ?? op.value,
+    op.finding,
+  ].join("\u0000")
+}
+
+function unitTransferKey(
+  unit: ReviewUnit,
+  operations: IngestionOperation[],
+): string {
+  return [
+    unit.kind,
+    unit.destinationId,
+    unit.entryId,
+    unit.field,
+    unit.claimIds.join("\u0001"),
+    unit.operationIndexes.map((index) => operationTransferKey(operations[index])).join("\u0001"),
+  ].join("\u0000")
+}
+
+// transferReviewState merges a newly built review plan after a focused
+// clarification with the retained review. It copies reviewed wording for
+// unaffected operation identities and selection for unaffected, still-savable
+// units; the revised claim and every genuinely dependent unit restart pending.
+// The review is deterministic, so this preserves unrelated work without a
+// second provider pass or a whole-submission regenerate.
+export function transferReviewState(
+  previous: ReviewPlan,
+  next: ReviewPlan,
+  resetClaimIds: string[],
+): ReviewPlan {
+  const resetClaims = new Set(resetClaimIds)
+  const edited = new Map<string, IngestionOperation[]>()
+  for (const op of previous.operations) {
+    if (resetClaims.has(op.claimId) || op.value === (op.proposedValue ?? op.value)) continue
+    const key = operationTransferKey(op)
+    edited.set(key, [...(edited.get(key) ?? []), op])
+  }
+  const operations = next.operations.map((op) => {
+    if (resetClaims.has(op.claimId)) return op
+    const queue = edited.get(operationTransferKey(op))
+    const source = queue?.shift()
+    return source
+      ? { ...op, value: source.value, proposedValue: op.proposedValue ?? op.value }
+      : op
+  })
+  const view = profileView(next.snapshot)
+  const units = next.units.map((unit) => ({
+    ...unit,
+    values: unit.operationIndexes.map((index) => {
+      const op = operations[index]
+      return {
+        field: op.field,
+        action: op.action,
+        before: beforeValue(view, op),
+        proposed: op.value,
+      }
+    }),
+    identity: identityFor(
+      unit.target,
+      unit.entryId,
+      unit.entryKind,
+      unit.operationIndexes,
+      operations,
+      view,
+    ),
+  }))
+  const destinations = next.destinations.map((destination) => ({
+    ...destination,
+    identity: identityFor(
+      destination.target,
+      destination.entryId,
+      destination.entryKind,
+      units
+        .filter((unit) => unit.destinationId === destination.id)
+        .flatMap((unit) => unit.operationIndexes),
+      operations,
+      view,
+    ),
+  }))
+  const reset = new Set(
+    units
+      .filter((unit) => unit.claimIds.some((id) => resetClaims.has(id)))
+      .map((unit) => unit.id),
+  )
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const unit of units) {
+      if (reset.has(unit.id)) continue
+      if (unit.dependencies.some((id) => reset.has(id))) {
+        reset.add(unit.id)
+        changed = true
+      }
+    }
+  }
+  const previousByKey = new Map<string, ReviewUnit[]>()
+  for (const unit of previous.units) {
+    const key = unitTransferKey(unit, previous.operations)
+    previousByKey.set(key, [...(previousByKey.get(key) ?? []), unit])
+  }
+  let carried = units.map((unit) => {
+    if (reset.has(unit.id) || !unit.selectable) return unit
+    const source = previousByKey
+      .get(unitTransferKey(unit, operations))
+      ?.shift()
+    if (source && (source.status === "selected" || source.status === "saved"))
+      return { ...unit, status: source.status }
+    return unit
+  })
+  // A selected unit whose retained dependency no longer accompanies it restarts
+  // pending; the affected destination is reviewed again instead of leaking a
+  // partial selection into a save.
+  changed = true
+  while (changed) {
+    changed = false
+    const statusById = new Map(carried.map((unit) => [unit.id, unit.status]))
+    carried = carried.map((unit) => {
+      if (unit.status !== "selected") return unit
+      if (
+        unit.dependencies.some((id) => {
+          const status = statusById.get(id)
+          return status !== "selected" && status !== "saved"
+        })
+      ) {
+        changed = true
+        return { ...unit, status: "pending" as const }
+      }
+      return unit
+    })
+  }
+  return { ...next, operations, destinations, units: carried }
+}
+
 export function reviewUnit(
   plan: ReviewPlan,
   unitId: string,
