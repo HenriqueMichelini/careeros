@@ -1239,3 +1239,273 @@ test("rejects inputs that flatten batch identity or violate the versioned contra
   })
   assert.throws(() => build(unknownOperation, snapshot), { code: "input" })
 })
+
+// --- Compact review presentation and focused edit (#190) -------------------
+
+test("summary distinguishes pending changes, attention and already represented information", () => {
+  const snapshot = snapshotOf({ skills: "React" })
+  const fact = snapshot.facts.find((candidate) => candidate.field === "skills")
+  const duplicate = (id, text) => ({
+    claimId: id,
+    kind: "exact_duplicate",
+    reason: "same assertion",
+    relatedFacts: [
+      { profileId: snapshot.id, id: fact.id, revision: fact.revision },
+    ],
+    relatedClaimIds: [],
+    operationIndexes: [],
+  })
+  const withChange = build(
+    submission({
+      batches: [{ index: 0, claimIds: ["run/0/c1", "run/0/c2"] }],
+      claims: [
+        claim("run/0/c1", { targets: ["skills"] }),
+        claim("run/0/c2", { targets: ["skills"], text: "React" }),
+      ],
+      operations: [operation("run/0/c1", { value: "Go" })],
+      outcomes: [
+        duplicate("run/0/c2", "React"),
+        {
+          claimId: "run/0/c1",
+          kind: "change",
+          reason: "new skill",
+          relatedFacts: [],
+          relatedClaimIds: [],
+          operationIndexes: [0],
+        },
+      ],
+    }),
+    snapshot,
+  )
+  const summary = review.reviewSummary(withChange)
+  assert.equal(summary.selectable, 1)
+  assert.equal(summary.selected, 0)
+  assert.equal(summary.attention, 0)
+  assert.equal(summary.duplicates, 1)
+  assert.equal(summary.noChange, false)
+
+  const duplicateOnly = build(
+    submission({
+      batches: [{ index: 0, claimIds: ["run/0/c2"] }],
+      claims: [claim("run/0/c2", { targets: ["skills"], text: "React" })],
+      outcomes: [duplicate("run/0/c2", "React")],
+    }),
+    snapshot,
+  )
+  const unchanged = review.reviewSummary(duplicateOnly)
+  assert.equal(unchanged.selectable, 0)
+  assert.equal(unchanged.duplicates, 1)
+  assert.equal(unchanged.noChange, true)
+
+  const conflicted = build(
+    submission({
+      batches: [{ index: 0, claimIds: ["run/0/c3"] }],
+      claims: [claim("run/0/c3", { targets: ["skills"], text: "Python" })],
+      outcomes: [
+        {
+          claimId: "run/0/c3",
+          kind: "contradiction",
+          reason: "competing levels",
+          relatedFacts: [
+            { profileId: snapshot.id, id: fact.id, revision: fact.revision },
+          ],
+          relatedClaimIds: [],
+          operationIndexes: [],
+        },
+      ],
+    }),
+    snapshot,
+  )
+  const attention = review.reviewSummary(conflicted)
+  assert.equal(attention.attention, 1)
+  assert.equal(attention.conflicts, 1)
+  assert.equal(attention.clarifications, 0)
+  assert.equal(attention.noChange, false)
+
+  const clarified = build(
+    submission({
+      batches: [{ index: 0, claimIds: ["run/0/c4"] }],
+      claims: [
+        claim("run/0/c4", {
+          targets: ["experience"],
+          question: "Full-time or contract?",
+        }),
+      ],
+      outcomes: [
+        {
+          claimId: "run/0/c4",
+          kind: "clarification",
+          reason: "role type missing",
+          relatedFacts: [],
+          relatedClaimIds: [],
+          operationIndexes: [],
+        },
+      ],
+    }),
+    snapshot,
+  )
+  const question = review.reviewSummary(clarified)
+  assert.equal(question.attention, 1)
+  assert.equal(question.clarifications, 1)
+  assert.equal(question.questions, 1)
+  assert.equal(question.noChange, false)
+})
+
+test("units disclose deduplicated sources with origins and resolved comparison context", () => {
+  const snapshot = snapshotOf({ skills: "React" })
+  const fact = snapshot.facts.find((candidate) => candidate.field === "skills")
+  const sub = submission({
+    batches: [{ index: 0, claimIds: ["run/0/c1", "run/0/c2"] }],
+    claims: [
+      claim("run/0/c1", {
+        targets: ["skills"],
+        source: "I use TypeScript",
+        text: "TypeScript",
+        supportingSources: [
+          { source: "At Acme I used TypeScript." },
+          {
+            source: "I used it in production.",
+            origin: "clarification_answer",
+          },
+          { source: "I use TypeScript" },
+        ],
+      }),
+      claim("run/0/c2", {
+        targets: ["skills"],
+        text: "React",
+        source: "React",
+      }),
+    ],
+    operations: [operation("run/0/c1", { value: "TypeScript" })],
+    outcomes: [
+      {
+        claimId: "run/0/c1",
+        kind: "change",
+        reason: "not represented",
+        relatedFacts: [],
+        relatedClaimIds: ["run/0/c2"],
+        operationIndexes: [0],
+      },
+      {
+        claimId: "run/0/c2",
+        kind: "exact_duplicate",
+        reason: "same assertion",
+        relatedFacts: [
+          { profileId: snapshot.id, id: fact.id, revision: fact.revision },
+        ],
+        relatedClaimIds: [],
+        operationIndexes: [],
+      },
+    ],
+  })
+  const plan = build(sub, snapshot)
+  const addition = unitFor(plan, (unit) => unit.kind === "addition")
+  assert.deepEqual(
+    addition.sources.map((source) => [source.excerpt, source.origin]),
+    [
+      ["I use TypeScript", "professional_information"],
+      ["At Acme I used TypeScript.", "professional_information"],
+      ["I used it in production.", "clarification_answer"],
+    ],
+  )
+  assert.equal(addition.reason, "not represented")
+  assert.deepEqual(
+    addition.relatedClaims.map((related) => related.text),
+    ["React"],
+  )
+  const duplicate = unitFor(plan, (unit) => unit.kind === "duplicate")
+  assert.deepEqual(duplicate.relatedFacts, [
+    {
+      id: fact.id,
+      revision: fact.revision,
+      field: "skills",
+      ownerKind: "profile",
+      value: "React",
+      normalization: fact.normalization,
+    },
+  ])
+})
+
+test("focused edits record the machine proposal without changing selection or support", () => {
+  const snapshot = snapshotOf({ skills: "" })
+  const plan = build(
+    submission({
+      batches: [{ index: 0, claimIds: ["run/0/c1"] }],
+      claims: [claim("run/0/c1", { targets: ["skills"] })],
+      operations: [operation("run/0/c1", { value: "TypeScript" })],
+    }),
+    snapshot,
+  )
+  const unit = plan.units[0]
+  const selected = toggle(plan, unit.id)
+  assert.equal(selected.units[0].status, "selected")
+  const edited = review.editReviewUnit(selected, unit.id, "skills", "TS")
+  assert.equal(edited.operations[0].value, "TS")
+  assert.equal(edited.operations[0].proposedValue, "TypeScript")
+  assert.equal(edited.units[0].status, "selected")
+  assert.equal(edited.units[0].values[0].proposed, "TS")
+  assert.equal(review.reviewUnitEdited(edited, unit.id), true)
+  assert.equal(review.reviewUnitEdited(selected, unit.id), false)
+  assert.equal(review.reviewPreview(edited).fields[0].after, "TS")
+  const reedited = review.editReviewUnit(
+    edited,
+    unit.id,
+    "skills",
+    "TypeScript",
+  )
+  assert.equal(reedited.operations[0].proposedValue, "TypeScript")
+  assert.equal(review.reviewUnitEdited(reedited, unit.id), false)
+})
+
+test("focused edits reject evidence-only wording and unknown fields", () => {
+  const snapshot = snapshotOf({ skills: "React" })
+  const fact = snapshot.facts.find((candidate) => candidate.field === "skills")
+  const plan = build(
+    submission({
+      batches: [{ index: 0, claimIds: ["run/0/c1"] }],
+      claims: [claim("run/0/c1", { targets: ["skills"] })],
+      operations: [
+        operation("run/0/c1", {
+          action: "evidence",
+          value: "React",
+          finding: "in_place",
+          supportingClaimIds: ["run/0/c1"],
+        }),
+      ],
+      outcomes: [
+        {
+          claimId: "run/0/c1",
+          kind: "additional_support",
+          reason: "additional support",
+          relatedFacts: [
+            { profileId: snapshot.id, id: fact.id, revision: fact.revision },
+          ],
+          relatedClaimIds: [],
+          operationIndexes: [0],
+        },
+      ],
+    }),
+    snapshot,
+  )
+  const unit = plan.units[0]
+  assert.equal(unit.kind, "evidence")
+  assert.throws(
+    () => review.editReviewUnit(plan, unit.id, "skills", "React!"),
+    { code: "readonly" },
+  )
+  assert.throws(() => review.editReviewUnit(plan, unit.id, "unknown", "x"), {
+    code: "readonly",
+  })
+  const addition = build(
+    submission({
+      batches: [{ index: 0, claimIds: ["run/0/c1"] }],
+      claims: [claim("run/0/c1", { targets: ["skills"] })],
+      operations: [operation("run/0/c1", { value: "TypeScript" })],
+    }),
+    snapshot,
+  )
+  assert.throws(
+    () => review.editReviewUnit(addition, addition.units[0].id, "title", "x"),
+    { code: "input" },
+  )
+})

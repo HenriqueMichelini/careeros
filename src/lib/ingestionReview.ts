@@ -21,6 +21,7 @@ import {
   type IngestionClaim,
   type IngestionOperation,
   type IngestionOutcome,
+  type IngestionSourceReference,
   type IngestionTarget,
 } from "./ingestion"
 import {
@@ -30,7 +31,11 @@ import {
   type SubmissionSelection,
   type SubmissionSelectionStatus,
 } from "./ingestionProtocol"
-import { profileView, type ProfileDocument } from "./profileDocument"
+import {
+  profileView,
+  type ProfileDocument,
+  type ProfileFact,
+} from "./profileDocument"
 import type { ProfessionalRepository } from "./types"
 
 export class ReviewError extends Error {
@@ -90,6 +95,28 @@ export interface ReviewUnitValue {
   before: string
   proposed: string
 }
+// One disclosed excerpt of a unit's submitted support. The origin stays explicit
+// so an original-paste occurrence is never presented as a clarification answer.
+export interface ReviewSource {
+  claimId: string
+  text: string
+  excerpt: string
+  origin: "professional_information" | "clarification_answer"
+  reference?: IngestionSourceReference
+}
+export interface ReviewRelatedClaim {
+  id: string
+  text: string
+  source: string
+}
+export interface ReviewRelatedFact {
+  id: string
+  revision: number
+  field: string
+  ownerKind: string
+  value: string
+  normalization: ProfileFact["normalization"]
+}
 export interface ReviewUnit {
   id: string
   kind: ReviewUnitKind
@@ -120,6 +147,13 @@ export interface ReviewUnit {
   outcomeKind: IngestionOutcome["kind"] | ""
   question: string
   meaning?: IngestionClaim["meaning"]
+  // Presentation data for the compact review: deduplicated excerpts with their
+  // origin, the comparison reason and the competing statements/facts a
+  // disposition references. Never used for matching or selection validity.
+  sources: ReviewSource[]
+  reason: string
+  relatedClaims: ReviewRelatedClaim[]
+  relatedFacts: ReviewRelatedFact[]
 }
 export interface ReviewDestination {
   id: string
@@ -230,6 +264,102 @@ function noOpKind(
 }
 function distinct<T>(values: T[]): T[] {
   return [...new Set(values)]
+}
+// Deduplicated disclosure excerpts for one unit. Repeated quotations collapse;
+// an excerpt keeps the origin of the claim/support it actually came from.
+function unitSources(
+  claimIds: string[],
+  claimById: Map<string, IngestionClaim>,
+): ReviewSource[] {
+  const seen = new Set<string>()
+  const sources: ReviewSource[] = []
+  const add = (source: ReviewSource) => {
+    if (!source.excerpt) return
+    const key = `${source.origin}\u0000${source.excerpt}`
+    if (seen.has(key)) return
+    seen.add(key)
+    sources.push(source)
+  }
+  for (const id of claimIds) {
+    const claim = claimById.get(id)
+    if (!claim) continue
+    add({
+      claimId: id,
+      text: claim.text,
+      excerpt: claim.source,
+      origin: "professional_information",
+      ...(claim.sourceReference ? { reference: claim.sourceReference } : {}),
+    })
+    for (const support of claim.supportingSources ?? [])
+      add({
+        claimId: id,
+        text: claim.text,
+        excerpt: support.source,
+        origin: support.origin ?? "professional_information",
+        ...(support.sourceReference
+          ? { reference: support.sourceReference }
+          : {}),
+      })
+  }
+  return sources
+}
+// The comparison reason and the competing statements/facts a disposition
+// references, resolved against the pinned snapshot for presentation.
+function unitPresentation(
+  claimIds: string[],
+  claimById: Map<string, IngestionClaim>,
+  outcomeByClaim: Map<string, IngestionOutcome>,
+  snapshot: ProfileDocument,
+): {
+  reason: string
+  relatedClaims: ReviewRelatedClaim[]
+  relatedFacts: ReviewRelatedFact[]
+} {
+  const reasons: string[] = []
+  const claimSeen = new Set<string>()
+  const relatedClaims: ReviewRelatedClaim[] = []
+  const factSeen = new Set<string>()
+  const relatedFacts: ReviewRelatedFact[] = []
+  for (const id of claimIds) {
+    const outcome = outcomeByClaim.get(id)
+    if (!outcome) continue
+    if (outcome.reason) reasons.push(outcome.reason)
+    for (const relatedId of outcome.relatedClaimIds) {
+      const claim = claimById.get(relatedId)
+      if (!claim || claimSeen.has(relatedId)) continue
+      claimSeen.add(relatedId)
+      relatedClaims.push({
+        id: relatedId,
+        text: claim.text,
+        source: claim.source,
+      })
+    }
+    for (const ref of outcome.relatedFacts) {
+      const key = `${ref.id}\u0000${ref.revision}`
+      if (factSeen.has(key)) continue
+      factSeen.add(key)
+      const fact = snapshot.facts.find(
+        (candidate) =>
+          candidate.id === ref.id && candidate.revision === ref.revision,
+      )
+      if (!fact) continue
+      relatedFacts.push({
+        id: fact.id,
+        revision: fact.revision,
+        field: fact.field,
+        ownerKind:
+          snapshot.entities.find((entity) => entity.id === fact.owner.id)
+            ?.kind ?? "profile",
+        value: String(fact.value),
+        normalization: fact.normalization,
+      })
+    }
+  }
+  return {
+    reason: distinct(reasons).join(" · "),
+    relatedClaims,
+    relatedFacts,
+  }
 }
 function identityFor(
   target: IngestionTarget | "",
@@ -535,6 +665,8 @@ export function buildReviewPlan(input: ReviewInput): ReviewPlan {
       outcomeKind: outcomeKinds.length === 1 ? outcomeKinds[0] : "",
       question: claimById.get(first)?.question ?? "",
       meaning: claimById.get(first)?.meaning,
+      sources: unitSources(draft.claimIds, claimById),
+      ...unitPresentation(draft.claimIds, claimById, outcomeByClaim, snapshot),
     }
   })
 
@@ -817,6 +949,120 @@ export function clearReviewSelection(plan: ReviewPlan): ReviewPlan {
     units: plan.units.map((unit) =>
       unit.status === "pending" ? unit : { ...unit, status: "pending" },
     ),
+  }
+}
+
+// editReviewUnit is the focused field editor's only model write: it replaces the
+// proposed wording of the unit's field and records the machine proposal in
+// `proposedValue` so the canonical save never inherits machine support for
+// manually changed wording. Selection state is retained: an edit changes what
+// would be saved, not whether the unit was chosen. Evidence-only support is
+// read-only wording and removals carry no new wording.
+export function editReviewUnit(
+  plan: ReviewPlan,
+  unitId: string,
+  field: string,
+  value: string,
+): ReviewPlan {
+  const unit = reviewUnit(plan, unitId)
+  if (!unit) throw new ReviewError("input")
+  if (unit.kind === "removal" || unit.kind === "evidence")
+    throw new ReviewError("readonly")
+  const indexes = unit.operationIndexes.filter(
+    (index) =>
+      plan.operations[index].field === field &&
+      plan.operations[index].action !== "remove" &&
+      plan.operations[index].action !== "evidence",
+  )
+  if (!indexes.length) throw new ReviewError("input")
+  if (indexes.every((index) => plan.operations[index].value === value))
+    return plan
+  const edited = new Set(indexes)
+  const operations = plan.operations.map((op, index) =>
+    edited.has(index)
+      ? { ...op, value, proposedValue: op.proposedValue ?? op.value }
+      : op,
+  )
+  return {
+    ...plan,
+    operations,
+    units: plan.units.map((candidate) =>
+      candidate.id !== unitId
+        ? candidate
+        : {
+            ...candidate,
+            values: candidate.values.map((item) =>
+              item.field === field ? { ...item, proposed: value } : item,
+            ),
+          },
+    ),
+  }
+}
+
+// Whether the unit's saved wording is user-authored rather than the machine
+// proposal. Presentation and provenance only: it never upgrades support.
+export function reviewUnitEdited(plan: ReviewPlan, unitId: string): boolean {
+  const unit = reviewUnit(plan, unitId)
+  if (!unit) return false
+  return unit.operationIndexes.some(
+    (index) =>
+      plan.operations[index].proposedValue !== undefined &&
+      plan.operations[index].proposedValue !== plan.operations[index].value,
+  )
+}
+
+export interface ReviewSummary {
+  selectable: number
+  selected: number
+  // Units a person must look at before they can say the review is resolved:
+  // conflicts, focused questions, unsupported and uncompared claims, plus
+  // changes blocked by identity/support/staleness and not selectable.
+  attention: number
+  questions: number
+  clarifications: number
+  conflicts: number
+  unsupported: number
+  unresolved: number
+  blocked: number
+  duplicates: number
+  evidence: number
+  material: number
+  newEntries: number
+  // No selectable change and nothing needing attention: everything was already
+  // represented (or there was nothing to compare). No approval work remains.
+  noChange: boolean
+}
+
+export function reviewSummary(plan: ReviewPlan): ReviewSummary {
+  const units = plan.units
+  const count = (kind: ReviewUnitKind) =>
+    units.filter((unit) => unit.kind === kind).length
+  const control =
+    count("conflict") +
+    count("clarification") +
+    count("unsupported") +
+    count("unresolved")
+  const blocked = units.filter(
+    (unit) => !unit.selectable && !controlKinds.has(unit.kind),
+  ).length
+  const selectable = units.filter((unit) => unit.selectable).length
+  return {
+    selectable,
+    selected: units.filter((unit) => unit.status === "selected").length,
+    attention: control + blocked,
+    questions: units.filter((unit) => !!unit.question.trim()).length,
+    clarifications: count("clarification"),
+    conflicts: count("conflict"),
+    unsupported: count("unsupported"),
+    unresolved: count("unresolved"),
+    blocked,
+    duplicates: count("duplicate"),
+    evidence: count("evidence"),
+    material: units.filter((unit) => unit.material).length,
+    newEntries: units.filter(
+      (unit) => unit.entryKind === "new" && unit.required,
+    ).length,
+    noChange: selectable === 0 && control + blocked === 0,
   }
 }
 
