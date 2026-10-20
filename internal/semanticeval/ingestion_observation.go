@@ -223,6 +223,9 @@ func NormalizeLegacyIngestion(response IngestionResponseEvidence) IngestionPropo
 	o.validateRecords(response, wire.Claims, wire.Operations, wire.Outcomes, nil)
 	o.skippedMappings(response, wire.SkippedClaims, 0)
 	o.validateCoverage(response, wire.Coverage, len(wire.Claims), len(wire.SkippedClaims))
+	if !completeLegacyIngestionScope(wire.Continuation) {
+		o.unavailable("unsupported_continuation_scope", response.ID, "/continuation")
+	}
 	if wire.UnverifiedClaimCount != nil && (*wire.UnverifiedClaimCount < 0 || *wire.UnverifiedClaimCount != wire.Coverage.InvalidClaims) {
 		o.unavailable("coverage_mismatch", response.ID, "/unverifiedClaimCount", "coverage")
 	}
@@ -247,6 +250,49 @@ func NormalizeLegacyIngestion(response IngestionResponseEvidence) IngestionPropo
 		o.mapping(response.ID, "/outcomes/"+strconv.Itoa(i), "disposition", v.ClaimID, v.ClaimID)
 	}
 	return o
+}
+
+// A legacy response observes one portion only. A complete plan with multiple
+// portions does not establish that any other portion was processed. Keep this
+// check separate from decoding the proposal so unsupported metadata cannot erase
+// returned rows or their raw-to-normalized identities.
+func completeLegacyIngestionScope(raw json.RawMessage) bool {
+	raw = bytes.TrimSpace(raw)
+	if len(raw) == 0 || bytes.Equal(raw, []byte("null")) {
+		return true
+	}
+	type region struct {
+		Start *int `json:"Start"`
+		End   *int `json:"End"`
+	}
+	var continuation struct {
+		SourceID     *string    `json:"sourceId"`
+		Index        *int       `json:"index"`
+		Total        *int       `json:"total"`
+		Bytes        *int       `json:"bytes"`
+		Regions      [][]region `json:"regions"`
+		Remaining    []region   `json:"remaining"`
+		PlanComplete *bool      `json:"planComplete"`
+		Processed    *bool      `json:"processed"`
+	}
+	if !exactIngestionFields(raw, reflect.TypeOf(continuation)) || json.Unmarshal(raw, &continuation) != nil {
+		return false
+	}
+	if continuation.SourceID == nil || *continuation.SourceID == "" || continuation.Index == nil || *continuation.Index != 0 || continuation.Total == nil || *continuation.Total != 1 || continuation.Bytes == nil || *continuation.Bytes < 200 || *continuation.Bytes > 2000 || continuation.PlanComplete == nil || !*continuation.PlanComplete || continuation.Processed == nil || !*continuation.Processed || len(continuation.Regions) != 1 || len(continuation.Regions[0]) == 0 {
+		return false
+	}
+	// Source.Plan leaves Unprocessed nil on success, so accept the actual
+	// producer's explicit null as well as an empty range array.
+	// Missing metadata is unknown; Bytes is a portion budget, not source length.
+	if len(rawField(raw, "remaining")) == 0 || len(continuation.Remaining) != 0 {
+		return false
+	}
+	for _, r := range continuation.Regions[0] {
+		if r.Start == nil || r.End == nil || *r.Start < 0 || *r.End <= *r.Start {
+			return false
+		}
+	}
+	return true
 }
 
 func (o *IngestionProposalObservation) decode(r IngestionResponseEvidence, target any) bool {

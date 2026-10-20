@@ -287,6 +287,104 @@ func TestNormalizeLegacyIngestionDistinguishesKnownEmptyFromUnavailable(t *testi
 		})
 	}
 }
+
+func TestNormalizeLegacyIngestionKeepsPartialPortionUnavailableAndInspectable(t *testing.T) {
+	const continuation = `{"sourceId":"source","index":0,"total":2,"bytes":800,"regions":[[{"Start":0,"End":400}],[{"Start":400,"End":800}]],"remaining":[{"Start":800,"End":1000}],"planComplete":false,"processed":true}`
+	for _, proposal := range []string{
+		`{"claims":[],"operations":[],"outcomes":[],"unresolvedClaimIds":[],"skippedClaims":[],"unverifiedClaimCount":0,"unplacedOperationCount":0,"coverage":{"validClaims":0,"invalidClaims":0,"discoveryComplete":false,"capacity":"within_limit"}}`,
+		legacyProposal,
+	} {
+		raw := changeJSON(t, []byte(proposal), func(v map[string]any) { v["continuation"] = json.RawMessage(continuation) })
+		o := eval.NormalizeLegacyIngestion(eval.IngestionResponseEvidence{ID: "portion", Status: 200, Body: raw})
+		if o.Availability["endpoint"].Available || o.Availability["coverage"].Available || len(o.Issues) == 0 {
+			t.Fatalf("partial portion became whole-proposal evidence: %+v", o.Availability)
+		}
+		if len(o.Raw) != 1 || !bytes.Equal(o.Raw[0].Response.Body, raw) || o.Raw[0].Response.ID != "portion" || len(o.Raw[0].SHA256) != 64 {
+			t.Fatal("partial response lost its raw trace")
+		}
+		if proposal == legacyProposal {
+			if len(o.Claims) != 1 || o.Claims[0].ID != "c1" || o.Claims[0].Text != "May use Java" || len(o.Outcomes) != 1 || o.Outcomes[0].Reason != "owner unknown" || !reflect.DeepEqual(o.UnresolvedClaimIDs, []string{"c1"}) || len(o.Coverage) != 1 || o.Coverage[0].Value.ValidClaims != 1 {
+				t.Fatalf("partial rows were discarded or repaired: %+v", o)
+			}
+			if len(o.Mappings) != 2 || o.Mappings[0].ResponseID != "portion" || o.Mappings[0].Path != "/claims/0" || o.Mappings[0].NormalizedID != "c1" || o.Mappings[1].Path != "/outcomes/0" {
+				t.Fatalf("partial rows lost identity traces: %+v", o.Mappings)
+			}
+		}
+	}
+}
+
+func TestNormalizeLegacyIngestionRecognizesCompleteSinglePortion(t *testing.T) {
+	for _, continuation := range []string{
+		`null`,
+		`{"sourceId":"source","index":0,"total":1,"bytes":800,"regions":[[{"Start":0,"End":34}]],"remaining":null,"planComplete":true,"processed":true}`,
+		`{"sourceId":"source","index":0,"total":1,"bytes":800,"regions":[[{"Start":0,"End":12},{"Start":20,"End":34}]],"remaining":[],"planComplete":true,"processed":true}`,
+	} {
+		raw := changeJSON(t, []byte(legacyProposal), func(v map[string]any) { v["continuation"] = json.RawMessage(continuation) })
+		o := eval.NormalizeLegacyIngestion(eval.IngestionResponseEvidence{ID: "complete", Status: 200, Body: raw})
+		if !o.Availability["endpoint"].Available || len(o.Issues) != 0 || len(o.Claims) != 1 || o.Claims[0].Text != "May use Java" {
+			t.Fatalf("complete single-portion evidence unavailable: %+v", o.Issues)
+		}
+		if !bytes.Equal(o.Raw[0].Response.Body, raw) || len(o.Mappings) != 2 || o.Mappings[0].ResponseID != "complete" {
+			t.Fatal("complete continuation lost raw evidence or claim trace")
+		}
+	}
+}
+
+func TestNormalizeLegacyIngestionDoesNotPromoteUnknownOrIncompletePortionMetadata(t *testing.T) {
+	const complete = `{"sourceId":"source","index":0,"total":1,"bytes":800,"regions":[[{"Start":0,"End":34}]],"remaining":null,"planComplete":true,"processed":true}`
+	var cases = []struct {
+		name string
+		edit func(map[string]any)
+	}{
+		{"multi-portion complete plan", func(v map[string]any) {
+			v["total"] = 2
+			v["regions"] = []any{[]any{map[string]any{"Start": 0, "End": 17}}, []any{map[string]any{"Start": 17, "End": 34}}}
+		}},
+		{"wrong index", func(v map[string]any) { v["index"] = 1 }},
+		{"unprocessed", func(v map[string]any) { v["processed"] = false }},
+		{"incomplete plan", func(v map[string]any) { v["planComplete"] = false }},
+		{"remaining work", func(v map[string]any) { v["remaining"] = []any{map[string]any{"Start": 34, "End": 60}} }},
+		{"unknown field", func(v map[string]any) { v["completeOriginal"] = true }},
+		{"aliased flag", func(v map[string]any) { v["Processed"] = true }},
+		{"empty source", func(v map[string]any) { v["sourceId"] = "" }},
+		{"invalid budget", func(v map[string]any) { v["bytes"] = 0 }},
+		{"wrong scalar type", func(v map[string]any) { v["total"] = "1" }},
+		{"no regions", func(v map[string]any) { v["regions"] = []any{} }},
+		{"empty portion regions", func(v map[string]any) { v["regions"] = []any{[]any{}} }},
+		{"null region", func(v map[string]any) { v["regions"] = []any{[]any{nil}} }},
+		{"missing range start", func(v map[string]any) { delete(v["regions"].([]any)[0].([]any)[0].(map[string]any), "Start") }},
+		{"null range end", func(v map[string]any) { v["regions"].([]any)[0].([]any)[0].(map[string]any)["End"] = nil }},
+		{"aliased range", func(v map[string]any) { v["regions"].([]any)[0].([]any)[0].(map[string]any)["start"] = 0 }},
+		{"reversed range", func(v map[string]any) { v["regions"].([]any)[0].([]any)[0].(map[string]any)["Start"] = 40 }},
+		{"negative range", func(v map[string]any) { v["regions"].([]any)[0].([]any)[0].(map[string]any)["Start"] = -1 }},
+	}
+	for _, field := range []string{"sourceId", "index", "total", "bytes", "regions", "remaining", "planComplete", "processed"} {
+		cases = append(cases, struct {
+			name string
+			edit func(map[string]any)
+		}{"missing " + field, func(v map[string]any) { delete(v, field) }})
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			metadata := changeJSON(t, []byte(complete), tc.edit)
+			raw := changeJSON(t, legacyOperationProposal(t), func(v map[string]any) { v["continuation"] = json.RawMessage(metadata) })
+			o := eval.NormalizeLegacyIngestion(eval.IngestionResponseEvidence{ID: "portion", Status: 200, Body: raw})
+			if o.Availability["endpoint"].Available || o.Availability["claims"].Available || o.Availability["operations"].Available || o.Availability["dispositions"].Available || o.Availability["coverage"].Available {
+				t.Fatalf("unknown or incomplete scope became complete: %+v", o.Availability)
+			}
+			if len(o.Issues) != 1 || o.Issues[0].Code != "unsupported_continuation_scope" || o.Issues[0].ResponseID != "portion" || o.Issues[0].Path != "/continuation" {
+				t.Fatalf("scope issue lost its source: %+v", o.Issues)
+			}
+			if len(o.Claims) != 1 || o.Claims[0].ID != "c1" || len(o.Operations) != 1 || o.Operations[0].EntryID != "e2" || o.Operations[0].Value != "Reduced latency 20%" || len(o.Outcomes) != 1 || o.Outcomes[0].RelatedFacts[0].Revision != 3 || len(o.Coverage) != 1 || o.Coverage[0].Value.ValidClaims != 1 {
+				t.Fatalf("unsupported scope erased observed rows: %+v", o)
+			}
+			if !bytes.Equal(o.Raw[0].Response.Body, raw) || len(o.Mappings) != 3 || o.Mappings[1].ResponseID != "portion" || o.Mappings[1].Path != "/operations/0" || o.Mappings[1].NormalizedID != "operation:0" {
+				t.Fatal("unsupported scope lost raw evidence or operation identity")
+			}
+		})
+	}
+}
+
 func changeJSON(t *testing.T, raw []byte, edit func(map[string]any)) []byte {
 	t.Helper()
 	var v map[string]any
