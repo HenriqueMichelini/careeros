@@ -15,16 +15,18 @@ type FixtureCase struct {
 }
 
 type Suite struct {
-	FixtureHashes      map[string]string `json:"fixtureHashes,omitempty"`
-	ID                 string            `json:"id"`
-	Version            string            `json:"version"`
-	FixtureHash        string            `json:"fixtureHash"`
-	Modes              []string          `json:"modes"`
-	Configurations     []string          `json:"configurations"`
-	RequiredTools      []string          `json:"requiredTools"`
-	Sensitivity        string            `json:"sensitivity"`
-	AssertionSemantics string            `json:"assertionSemantics"`
-	Cases              []FixtureCase     `json:"cases"`
+	Variants               []VariantDescriptor    `json:"variants"`
+	ComparisonCapabilities ComparisonCapabilities `json:"comparisonCapabilities"`
+	FixtureHashes          map[string]string      `json:"fixtureHashes,omitempty"`
+	ID                     string                 `json:"id"`
+	Version                string                 `json:"version"`
+	FixtureHash            string                 `json:"fixtureHash"`
+	Modes                  []string               `json:"modes"`
+	Configurations         []string               `json:"configurations"`
+	RequiredTools          []string               `json:"requiredTools"`
+	Sensitivity            string                 `json:"sensitivity"`
+	AssertionSemantics     string                 `json:"assertionSemantics"`
+	Cases                  []FixtureCase          `json:"cases"`
 }
 
 type Selection struct {
@@ -51,6 +53,8 @@ func Catalog() []Suite {
 		for j := range s.Cases {
 			s.Cases[j].Categories = append([]string{}, s.Cases[j].Categories...)
 		}
+		s.Variants = suiteVariants(s)
+		s.ComparisonCapabilities = suiteComparisonCapabilities(s.ID)
 		result[i] = s
 	}
 	return result
