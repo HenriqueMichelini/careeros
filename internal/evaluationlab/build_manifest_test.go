@@ -33,7 +33,7 @@ func TestCaptureBuildManifestTracksTemplateDependenciesWithoutClaimingExactPromp
 	if err != nil {
 		t.Fatal(err)
 	}
-	if before.Hash == "" || len(before.Variants) != 7 {
+	if before.Hash == "" || len(before.Variants) != 8 {
 		t.Fatalf("incomplete registered build: %+v", before)
 	}
 	for _, variant := range before.Variants {
