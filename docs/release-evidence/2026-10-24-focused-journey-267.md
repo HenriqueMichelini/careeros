@@ -53,3 +53,31 @@ No known product/test failure from this scope is being waived.
 | Current provider quality, billed expense, real-user/assistive-technology usability, deployed candidate and release readiness | Not established by these controlled checks. #266/#52 retain their verification/release responsibilities. |
 
 [S06-D01–D05](https://github.com/HenriqueMichelini/careeros/issues/255#issuecomment-6380301147) remain the approved working functional definitions, not an implemented paid protocol. [#256 G05](https://github.com/HenriqueMichelini/careeros/issues/256#issuecomment-6376839141) remains open. No deployment, spending, provider-account setup, live inference, customer contact or launch is authorized or performed by this work.
+
+
+## SonarCloud duplication follow-up — 24 October 2026
+
+The first analysis of PR #268 at `cc0f9c88d1d84f67cd998dbc393b34b986d0bd1b` failed with 7.4% new-code duplication (43 duplicated lines / 579 new lines; limit ≤3%). SonarCloud's per-file measures attributed all 43 lines to `src/lib/i18n.ts`: the new bilingual journey dictionaries and five formatting-only changes within existing dictionaries.
+
+The follow-up moves the 13 journey messages per locale into `src/lib/journeyMessages.json`, using the existing `qualificationMessages.json` catalogue/import pattern. It restores those five unrelated formatting changes, so the TypeScript diff against the PR base contains only one import and two catalogue spreads. Translation keys, values, fallback/interpolation logic and the journey behavior are preserved. No Sonar exclusions or quality-gate configuration were changed.
+
+Fresh controlled verification of the follow-up:
+
+| Check | Result |
+| --- | --- |
+| One-off TypeScript-transpiled comparison against `cc0f9c8` | All 1,730 locale/key pairs, complete dictionaries and translated/interpolated outputs unchanged, including the 26 journey messages. An initial sandbox invocation could not spawn Git (`EPERM`); reading the pinned baseline into a temporary file separately removed that environment limitation and the comparison passed. |
+| `GOCACHE=/tmp/careeros-go-cache npm test` | 306/306 passed. |
+| `node_modules/.bin/tsc --noEmit` | Passed. |
+| `npm run build` | Passed; existing config-loader and large-chunk warnings retained. Generated dist/Vite files excluded. |
+| `npm run test:apply-checklist` | Full Apply/enrichment/focused-journey matrix passed: EN/PT × 1440/390px. |
+| `npm run test:cv-pdf` | Nine one-page A4 PDFs passed selectable-text/order/sample/guidance exclusion checks; 390px overflow blocking also passed. |
+
+Remote gate acceptance must be read against the follow-up commit in the PR discussion; these local results alone do not establish a SonarCloud pass.
+
+### D11: automatic deployment prevention before the follow-up push
+
+The owner explicitly requested resolving D11 before publication. Netlify project `beamish-bavarois-333d03` (ID `d6d15958-3a27-4b4e-b233-d7a947f03ff2`) is linked to `HenriqueMichelini/careeros`; previews were enabled for pull requests against `main`. Its prior auto-publishing lock did not prevent the first preview. Before this push, Build status was changed from Active to **Stopped**, saved, and independently read back after reloading [Developer settings / Build settings](https://app.netlify.com/projects/beamish-bavarois-333d03/configuration/developer-settings#build-settings). [Retained saved-setting screenshot](focused-journey-267/netlify-builds-stopped.jpg).
+
+Netlify's [Stop or activate builds documentation](https://docs.netlify.com/build/configure-builds/stop-or-activate-builds/) states that stopped builds prevent production, Deploy Preview and branch builds triggered by Git, plus build-hook/UI/build-API builds. The setting therefore covers the requested push to `codex/focused-journey-setup` for PR #268 against `main`. Builds are left stopped. Manual deployment of a local build remains possible and is not attempted; reactivation or repository relinking requires a fresh prevention check before later publication. No deployment retry, live inference or account setup was performed. Billing effects of the earlier canceled preview remain unavailable.
+
+The ownership/import contract stays a local draft with material decisions pending #259 and the owning investigations. This independent gate repair does not implement or approve paid ownership/import, recovery, allowance authority, merge, deployment or launch; #259, #210 and the existing investigation/release gates remain open.
