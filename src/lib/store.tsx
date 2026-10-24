@@ -162,6 +162,7 @@ const StoreContext = createContext<{
   state: AppState & { repository: ProfessionalRepository }
   dispatch: (action: Action) => Promise<boolean>
   profileDocument: ProfileDocument | null
+  profileSaving: boolean
   refreshCanonicalProfile: () => Promise<boolean>
   editCanonicalProfile: (edit: ProfileEdit) => Promise<boolean>
   applyIngestionProposal: (
@@ -185,6 +186,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const queue = useRef<Promise<boolean>>(Promise.resolve(true))
   const failed = useRef(false)
   const [ready, setReady] = useState(false)
+  const [pendingProfileWrites, setPendingProfileWrites] = useState(0)
   const [profileError, setProfileError] = useState<ProfileStorageCode | null>(
     null,
   )
@@ -267,20 +269,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
       optimisticDocument.current = candidate
       setProfileDocument(candidate)
-      const saving = queue.current.then(async () => {
-        if (failed.current || !documentRef.current) return false
-        try {
-          await saveProfile(localStorage, expected, candidate)
-          documentRef.current = candidate
-          return true
-        } catch (error) {
-          failed.current = true
-          setProfileError(
-            error instanceof ProfileStorageError ? error.code : "validation",
-          )
-          return false
-        }
-      })
+      setPendingProfileWrites((count) => count + 1)
+      const saving = queue.current
+        .then(async () => {
+          if (failed.current || !documentRef.current) return false
+          try {
+            await saveProfile(localStorage, expected, candidate)
+            documentRef.current = candidate
+            return true
+          } catch (error) {
+            failed.current = true
+            setProfileError(
+              error instanceof ProfileStorageError ? error.code : "validation",
+            )
+            return false
+          }
+        })
+        .finally(() => setPendingProfileWrites((count) => count - 1))
       queue.current = saving
       return saving
     },
@@ -314,27 +319,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   )
   const persistProposal = useCallback(
     (build: (expected: ProfileDocument) => ProfileDocument) => {
-      const saving = queue.current.then(async () => {
-        const expected = documentRef.current
-        if (failed.current || !expected) return false
-        try {
-          const candidate = build(expected)
-          await saveProfile(localStorage, expected, candidate)
-          documentRef.current = candidate
-          optimisticDocument.current = candidate
-          setProfileDocument(candidate)
-          return true
-        } catch (error) {
-          setProfileError(
-            error instanceof ProfileStorageError
-              ? error.code
-              : error instanceof Error && error.message === "stale"
-                ? "stale"
-                : "validation",
-          )
-          return false
-        }
-      })
+      setPendingProfileWrites((count) => count + 1)
+      const saving = queue.current
+        .then(async () => {
+          const expected = documentRef.current
+          if (failed.current || !expected) return false
+          try {
+            const candidate = build(expected)
+            await saveProfile(localStorage, expected, candidate)
+            documentRef.current = candidate
+            optimisticDocument.current = candidate
+            setProfileDocument(candidate)
+            return true
+          } catch (error) {
+            setProfileError(
+              error instanceof ProfileStorageError
+                ? error.code
+                : error instanceof Error && error.message === "stale"
+                  ? "stale"
+                  : "validation",
+            )
+            return false
+          }
+        })
+        .finally(() => setPendingProfileWrites((count) => count - 1))
       queue.current = saving
       return saving
     },
@@ -416,6 +424,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         state: { ...state, profileError, repository },
         dispatch,
         profileDocument,
+        profileSaving: pendingProfileWrites > 0,
         editCanonicalProfile,
         refreshCanonicalProfile,
         applyProfileProposal,

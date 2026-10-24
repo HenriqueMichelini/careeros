@@ -229,8 +229,8 @@ try {
       "document.readyState === 'complete' && !!document.querySelector('header button')",
     )
     await evaluate("document.querySelector('header button:last-child').click()")
-    await until("document.querySelectorAll('nav button').length === 4")
-    await evaluate("document.querySelectorAll('nav button')[2].click()")
+    await until("document.querySelectorAll('header nav button').length === 4")
+    await evaluate("document.querySelectorAll('header nav button')[2].click()")
     await until("!!document.querySelector('.cv-paper-content')")
     await evaluate("document.fonts.ready")
   }
@@ -377,7 +377,7 @@ try {
       }
       assert.doesNotMatch(
         text,
-        /Northstar Labs|Your name|Seu nome|Sample content|Conteúdo de exemplo|Strategic professional|Profissional estratégico/,
+        /Northstar Labs|Your name|Seu nome|Sample content|Conteúdo de exemplo|Strategic professional|Profissional estratégico|This browser|Neste navegador/,
       )
       if (!fixture.repo.fullName)
         assert.equal(
@@ -401,7 +401,7 @@ try {
     }
     // The selected maximum persists across navigation and reload.
     await evaluate(
-      "document.querySelectorAll('nav button')[1].click(); document.querySelectorAll('nav button')[2].click()",
+      "document.querySelectorAll('header nav button')[1].click(); document.querySelectorAll('header nav button')[2].click()",
     )
     await until(
       "document.querySelector('.cv-font-controls input')?.value === '16'",
@@ -411,8 +411,8 @@ try {
       "document.readyState === 'complete' && !!document.querySelector('header button')",
     )
     await evaluate("document.querySelector('header button:last-child').click()")
-    await until("document.querySelectorAll('nav button').length === 4")
-    await evaluate("document.querySelectorAll('nav button')[2].click()")
+    await until("document.querySelectorAll('header nav button').length === 4")
+    await evaluate("document.querySelectorAll('header nav button')[2].click()")
     await until(
       "document.querySelector('.cv-font-controls input')?.value === '16'",
     )
@@ -436,8 +436,8 @@ try {
     await evaluate(`localStorage.setItem('careeros_cv_preferences_v1', ${JSON.stringify(raw)}); location.reload()`)
     await until("document.readyState === 'complete' && !!document.querySelector('header button')")
     await evaluate("document.querySelector('header button:last-child').click()")
-    await until("document.querySelectorAll('nav button').length === 4")
-    await evaluate("document.querySelectorAll('nav button')[2].click()")
+    await until("document.querySelectorAll('header nav button').length === 4")
+    await evaluate("document.querySelectorAll('header nav button')[2].click()")
     await until("document.querySelector('.cv-font-controls input')?.value === '14'")
   }
 

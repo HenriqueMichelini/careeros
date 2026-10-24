@@ -32,6 +32,12 @@ html {
   scroll-behavior: smooth;
 }
 
+.app-header button:focus-visible,
+.journey-guidance button:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 3px;
+}
+
 .cv-paper {
   --cv-a4-ratio: 210 / 297;
   aspect-ratio: var(--cv-a4-ratio);
@@ -165,6 +171,7 @@ html {
     background: #fff !important;
   }
   body.cv-print-ready .app-header,
+  body.cv-print-ready .journey-guidance,
   body.cv-print-ready .cv-page-header,
   body.cv-print-ready .cv-controls,
   body.cv-print-ready .cv-font-controls,
