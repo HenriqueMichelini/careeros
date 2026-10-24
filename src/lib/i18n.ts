@@ -7,6 +7,25 @@ export type TranslationValue = string | number
 
 const messages = {
   en: {
+    "journey.context": "Workspace and next step",
+    "journey.navigation": "Workspace",
+    "journey.localMode": "This browser · your AI keys",
+    "journey.profile":
+      "Profile stays in this browser. AI suggestions need your review and Save.",
+    "journey.cv":
+      "A standalone CV is optional. Its accepted snapshot stays in this browser.",
+    "journey.apply":
+      "Create a job-specific Draft directly from your saved Profile. A standalone CV is optional.",
+    "journey.results":
+      "Draft results stay in this session. Review and Accept each artifact, then export to keep a copy.",
+    "journey.profileUnavailable":
+      "Profile storage needs attention. Use the recovery message above before generating.",
+    "journey.profileSaving": "Saving Profile in this browser…",
+    "journey.profileReady": "Professional information saved in this browser.",
+    "journey.profileNeeded":
+      "Add professional information to Profile first. Contact details alone are not enough.",
+    "journey.openProfile": "Open Profile",
+    "journey.continueApply": "Continue to Apply",
     "enrichment.savedAnswer": "Accepted application answer",
     "enrichment.hide": "Hide saved answer",
     "enrichment.proposed": "Proposed operation",
@@ -467,8 +486,7 @@ const messages = {
     "repo.submission.retained": "Your pasted information is retained:",
     "repo.submission.editText": "Edit text",
     "repo.submission.restart": "Start a new submission",
-    "repo.submission.assembling":
-      "Checking wording, duplicates and conflicts…",
+    "repo.submission.assembling": "Checking wording, duplicates and conflicts…",
     "repo.submission.tooLong":
       "This text is longer than 30,000 bytes. Shorten it or add it in smaller pieces.",
     "repo.submission.submitted": "Your pasted information ({{bytes}} bytes)",
@@ -708,8 +726,7 @@ const messages = {
     "review.sourceOutcome": "Outcome",
     "review.sourceRevision": "Revision",
     "review.normalization": "Normalization",
-    "review.reason.validated_operation":
-      "Supported by the extracted statement",
+    "review.reason.validated_operation": "Supported by the extracted statement",
     "review.reason.verified_exact_alias_or_wording":
       "Matches the wording already saved",
     "review.reason.source_ambiguity": "The source is ambiguous",
@@ -1122,6 +1139,25 @@ const messages = {
       "This cover letter exceeds one A4 page. Generate a shorter draft before saving it as PDF.",
   },
   "pt-BR": {
+    "journey.context": "Espaço de trabalho e próximo passo",
+    "journey.navigation": "Espaço de trabalho",
+    "journey.localMode": "Neste navegador · suas chaves de IA",
+    "journey.profile":
+      "O Perfil fica neste navegador. Sugestões de IA precisam da sua revisão e de Salvar.",
+    "journey.cv":
+      "O CV geral é opcional. A versão aceita fica neste navegador.",
+    "journey.apply":
+      "Crie um Rascunho para a vaga direto do Perfil salvo. O CV geral é opcional.",
+    "journey.results":
+      "Os Rascunhos ficam nesta sessão. Revise e aceite cada material, depois exporte para guardar uma cópia.",
+    "journey.profileUnavailable":
+      "O armazenamento do Perfil precisa de atenção. Use a mensagem de recuperação acima antes de gerar.",
+    "journey.profileSaving": "Salvando Perfil neste navegador…",
+    "journey.profileReady": "Informações profissionais salvas neste navegador.",
+    "journey.profileNeeded":
+      "Adicione informações profissionais ao Perfil primeiro. Só os dados de contato não bastam.",
+    "journey.openProfile": "Abrir Perfil",
+    "journey.continueApply": "Continuar para Candidatar",
     "enrichment.savedAnswer": "Resposta aceita da candidatura",
     "enrichment.hide": "Ocultar resposta salva",
     "enrichment.proposed": "Operação proposta",
@@ -1805,8 +1841,7 @@ const messages = {
     "review.answerFor": "Responder: {{value}}",
     "review.answerLabel": "Sua resposta",
     "review.answerStatus": "Revisando…",
-    "review.answerTooLong":
-      "A resposta deve ter no máximo 1.000 bytes UTF-8.",
+    "review.answerTooLong": "A resposta deve ter no máximo 1.000 bytes UTF-8.",
     "review.answerUnchanged": "Altere a resposta antes de tentar novamente.",
     "review.answerExpired":
       "Este esclarecimento expirou. Sua revisão pendente e as demais alterações foram preservadas; inicie uma nova revisão para responder.",
@@ -1829,8 +1864,7 @@ const messages = {
     "review.sourceOutcome": "Comparação",
     "review.sourceRevision": "Revisão",
     "review.normalization": "Normalização",
-    "review.reason.validated_operation":
-      "Comprovado pela declaração extraída",
+    "review.reason.validated_operation": "Comprovado pela declaração extraída",
     "review.reason.verified_exact_alias_or_wording":
       "Corresponde ao texto já salvo",
     "review.reason.source_ambiguity": "A fonte é ambígua",
@@ -1838,8 +1872,7 @@ const messages = {
     "review.reason.unknown_owner":
       "A fonte não identifica a quem o fato pertence",
     "review.reason.duplicate": "Já representado no Perfil salvo",
-    "review.reason.fabricated":
-      "O valor proposto não tem apoio na fonte",
+    "review.reason.fabricated": "O valor proposto não tem apoio na fonte",
     "review.reason.no_source": "Nenhum trecho de apoio estava disponível",
     "review.reason.other": "O motivo da comparação não está disponível",
     "review.finding.addition": "Adiciona um valor",

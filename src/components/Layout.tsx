@@ -1,7 +1,8 @@
-import { useState } from "react"
+import { useLayoutEffect, useRef, useState } from "react"
 import { Page } from "../lib/types"
 import { useI18n, useStore } from "../lib/store"
 import LanguageSelector from "./LanguageSelector"
+import JourneyGuidance from "./JourneyGuidance"
 
 interface Props {
   page: Page
@@ -14,8 +15,18 @@ export default function Layout({ page, setPage, children }: Props) {
   const { t } = useI18n()
   const [showKey, setShowKey] = useState(false)
   const [keyDraft, setKeyDraft] = useState(state.apiKey)
+  const mainRef = useRef<HTMLElement>(null)
+  useLayoutEffect(() => {
+    if (page !== "landing") {
+      mainRef.current?.focus({ preventScroll: true })
+      window.scrollTo({ top: 0, behavior: "instant" })
+    }
+  }, [page])
 
-  const navItems: { id: Page; label: string }[] = [
+  const navItems: {
+    id: Page
+    label: string
+  }[] = [
     { id: "home", label: t("nav.apply") },
     { id: "repository", label: t("nav.profile") },
     { id: "cv", label: t("nav.cv") },
@@ -66,11 +77,15 @@ export default function Layout({ page, setPage, children }: Props) {
           </div>
 
           {/* Nav */}
-          <nav className="order-3 md:order-none w-full md:w-auto flex items-center justify-between md:justify-start gap-1">
+          <nav
+            aria-label={t("journey.navigation")}
+            className="order-3 md:order-none w-full md:w-auto flex items-center justify-between md:justify-start gap-1"
+          >
             {navItems.map(({ id, label }) => (
               <button
                 key={id}
                 onClick={() => setPage(id)}
+                aria-current={page === id ? "page" : undefined}
                 className="px-2 md:px-4 py-1.5 text-[10px] md:text-xs uppercase tracking-[0.12em] md:tracking-[0.18em] transition-colors"
                 style={{
                   fontFamily: "var(--font-mono)",
@@ -118,7 +133,8 @@ export default function Layout({ page, setPage, children }: Props) {
             }}
           >
             <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap md:flex-nowrap items-center gap-3 md:gap-4">
-              <span
+              <label
+                htmlFor="openai-key"
                 className="text-xs uppercase tracking-widest flex-shrink-0"
                 style={{
                   fontFamily: "var(--font-mono)",
@@ -126,8 +142,9 @@ export default function Layout({ page, setPage, children }: Props) {
                 }}
               >
                 {t("api.openaiKey")}
-              </span>
+              </label>
               <input
+                id="openai-key"
                 type="password"
                 value={keyDraft}
                 onChange={(e) => setKeyDraft(e.target.value)}
@@ -156,7 +173,14 @@ export default function Layout({ page, setPage, children }: Props) {
         )}
       </header>
 
-      <main className="app-main flex-1">{children}</main>
+      <main
+        ref={mainRef}
+        tabIndex={-1}
+        className="app-main flex-1 outline-none"
+      >
+        <JourneyGuidance page={page} setPage={setPage} />
+        {children}
+      </main>
     </div>
   )
 }
