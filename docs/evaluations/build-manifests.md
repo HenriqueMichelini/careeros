@@ -1,7 +1,8 @@
 # Local co-build manifests
 
-`CaptureBuildManifest` records versioned, content-addressed inputs for the seven
-registered native adapters. `scripts/lab.mjs` runs the owned manifest generator,
+`CaptureBuildManifest` records versioned, content-addressed inputs for the eight
+registered adapters: seven suite-native adapters and
+`ingestion-legacy-proposal-v1`. `scripts/lab.mjs` runs the owned manifest generator,
 embeds its complete JSON in the API executable, builds with a fixed Go recipe,
 checks the source manifest again, and atomically writes
 `lab/.bin/lab-build-receipt.json`. The ignored receipt binds the manifest hash,
@@ -60,7 +61,9 @@ This is correspondence evidence from a trusted local builder operating on a stab
 working tree, not a signed attestation, reproducible-build proof or cross-revision
 worker protocol. It assumes the local toolchain and module cache are intact.
 Process-selector test/tool execution is outside the launcher build's attestation;
-its existing source/tool/isolation guards still apply. Explicit ingestion A/B
-manifests belong with their actual adapters; neither proposed variant becomes
-registered here. Historical artifacts, strict comparisons, imported trust and live
-execution authority are unchanged.
+its existing source/tool/isolation guards still apply. The legacy ingestion A
+adapter now has the same conservative source-envelope manifest as the native
+adapters. Its proposal-only execution scope is an adapter behavior, not a build
+correspondence or semantic-quality claim. The staged whole-submission B adapter
+remains unregistered until #211/#212 deliver it. Historical artifacts, strict
+comparisons, imported trust and live execution authority are unchanged.
