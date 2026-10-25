@@ -1,3 +1,4 @@
+import journeyMessages from "./journeyMessages.json"
 import qualificationMessages from "./qualificationMessages.json"
 
 export const SUPPORTED_LOCALES = ["en", "pt-BR"] as const
@@ -7,6 +8,7 @@ export type TranslationValue = string | number
 
 const messages = {
   en: {
+    ...journeyMessages.en,
     "enrichment.savedAnswer": "Accepted application answer",
     "enrichment.hide": "Hide saved answer",
     "enrichment.proposed": "Proposed operation",
@@ -1122,6 +1124,7 @@ const messages = {
       "This cover letter exceeds one A4 page. Generate a shorter draft before saving it as PDF.",
   },
   "pt-BR": {
+    ...journeyMessages["pt-BR"],
     "enrichment.savedAnswer": "Resposta aceita da candidatura",
     "enrichment.hide": "Ocultar resposta salva",
     "enrichment.proposed": "Operação proposta",

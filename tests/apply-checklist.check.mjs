@@ -5,6 +5,7 @@ import { reviewedDraftFixture } from "./reviewed-resume-fixture.mjs"
 import { jobContextFixture } from "./job-context-fixtures.mjs"
 import { savedProfileExpression } from "./profile-browser-storage.mjs"
 import { keyboardFlow } from "./keyboard-flow.mjs"
+import { focusedJourneyScenarios } from "./focused-journey-browser.scenarios.mjs"
 // Browser regression for the Apply checklist and workflow transitions.
 // Uses synthetic API responses; no provider request is made.
 import assert from "node:assert/strict"
@@ -172,10 +173,14 @@ try {
       if (await evaluate(expression)) return
       await pause(100)
     }
-    throw new Error(`Timed out: ${expression}; ${JSON.stringify(await evaluate("({feedback:document.querySelector('[data-apply-enrichment]')?.innerText,pending:(window.__pending??[]).map(p=>({url:p.url,stage:JSON.parse(p.options.body).stage}))})"))}`)
+    throw new Error(
+      `Timed out: ${expression}; ${JSON.stringify(await evaluate("({feedback:document.querySelector('[data-apply-enrichment]')?.innerText,pending:(window.__pending??[]).map(p=>({url:p.url,stage:JSON.parse(p.options.body).stage}))})"))}`,
+    )
   }
   await call("Page.enable")
-  await call("Page.addScriptToEvaluateOnNewDocument", { source: stagedBrowserFixtures })
+  await call("Page.addScriptToEvaluateOnNewDocument", {
+    source: stagedBrowserFixtures,
+  })
   await call("Page.navigate", { url: `http://127.0.0.1:${port}/` })
   await until(
     "document.readyState === 'complete' && !!document.querySelector('header button')",
@@ -188,8 +193,8 @@ try {
   )
   const clickApply = async () => {
     await evaluate("document.querySelector('header button:last-child').click()")
-    await until("document.querySelectorAll('nav button').length === 4")
-    await evaluate("document.querySelectorAll('nav button')[0].click()")
+    await until("document.querySelectorAll('header nav button').length === 4")
+    await evaluate("document.querySelectorAll('header nav button')[0].click()")
     await until(
       "document.querySelectorAll('[data-checklist-state]').length === 3",
     )
@@ -307,6 +312,22 @@ try {
         deviceScaleFactor: 1,
         mobile: false,
       })
+      await focusedJourneyScenarios({
+        evaluate,
+        until,
+        call,
+        repo,
+        locale,
+        fill,
+        generate,
+        respond,
+        work,
+        width,
+      })
+      if (process.argv.includes("--focused-journey")) {
+        console.log(`PASS focused journey ${locale} ${width}px`)
+        continue
+      }
       await evaluate(
         `localStorage.setItem('careeros_locale', ${JSON.stringify(locale)}); localStorage.removeItem('careeros_apikey'); localStorage.removeItem('careeros_profile_v2'); localStorage.removeItem('careeros_repo'); location.reload()`,
       )

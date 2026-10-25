@@ -1,6 +1,7 @@
 import { Page } from "../lib/types"
 import { TranslationKey } from "../lib/i18n"
-import { useI18n } from "../lib/store"
+import { useI18n, useStore } from "../lib/store"
+import { hasQualificationEvidence } from "../lib/qualificationEvidence"
 import LanguageSelector from "../components/LanguageSelector"
 
 interface Props {
@@ -69,6 +70,15 @@ function Arrow() {
 
 export default function LandingPage({ setPage }: Props) {
   const { t } = useI18n()
+  const { state, profileDocument, profileSaving } = useStore()
+  const openWorkspace = () =>
+    setPage(
+      !state.profileError &&
+        !profileSaving &&
+        hasQualificationEvidence(profileDocument)
+        ? "home"
+        : "repository",
+    )
 
   return (
     <div
@@ -113,7 +123,7 @@ export default function LandingPage({ setPage }: Props) {
           <div className="flex items-center gap-3">
             <LanguageSelector />
             <button
-              onClick={() => setPage("home")}
+              onClick={openWorkspace}
               className="flex w-36 items-center justify-center gap-2 border px-4 py-2.5 text-[11px] uppercase tracking-[0.16em] transition-colors hover:bg-black hover:text-white"
               style={{
                 fontFamily: "var(--font-mono)",
@@ -164,7 +174,7 @@ export default function LandingPage({ setPage }: Props) {
 
             <div className="mt-9 flex flex-wrap items-center gap-4">
               <button
-                onClick={() => setPage("home")}
+                onClick={openWorkspace}
                 className="flex items-center gap-3 px-6 py-3.5 text-sm font-semibold uppercase tracking-[0.16em] transition-opacity hover:opacity-80"
                 style={{
                   fontFamily: "var(--font-display)",
@@ -593,7 +603,7 @@ export default function LandingPage({ setPage }: Props) {
                 <span style={{ color: "#FF3659" }}>{t("landing.use")}</span>
               </h2>
               <button
-                onClick={() => setPage("home")}
+                onClick={openWorkspace}
                 className="mt-9 flex items-center gap-3 px-6 py-3.5 text-sm font-semibold uppercase tracking-[0.16em] transition-opacity hover:opacity-80"
                 style={{
                   fontFamily: "var(--font-display)",

@@ -110,7 +110,7 @@ function StatusRow({
 }
 
 export default function HomePage({ setPage, active, enrichmentActive }: Props) {
-  const { state, dispatch, profileDocument } = useStore()
+  const { state, dispatch, profileDocument, profileSaving } = useStore()
   const [enrichmentAnswers, setEnrichmentAnswers] = useState<ApplyAnswer[]>([])
   const [enrichmentBusy, setEnrichmentBusy] = useState(false)
   const [requirementMatches, setRequirementMatches] =
@@ -153,6 +153,8 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
     state.apiKey,
     state.typesafeKey,
     state.cvLanguage,
+    state.profileError,
+    profileSaving,
   ])
   function cancelRequest() {
     requestId.current += 1
@@ -252,9 +254,11 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
   const jobPosting = state.jobPosting
 
   const hasRepo = hasQualificationEvidence(profileDocument)
+  const profileAvailable = !state.profileError && !profileSaving
   const hasPosting = jobPosting.trim().length > 0
   const canGenerate =
     hasRepo &&
+    profileAvailable &&
     hasPosting &&
     !!state.apiKey &&
     !!state.typesafeKey.trim() &&
@@ -321,7 +325,13 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
   }
 
   async function generateFromGapPrompt(useConfirmedQualifications: boolean) {
-    if (state.isGenerating || enrichmentBusy || !jobContext) return
+    if (
+      state.isGenerating ||
+      enrichmentBusy ||
+      !jobContext ||
+      !profileAvailable
+    )
+      return
     setEnrichmentAnswers((prior) => {
       const fresh = profileGaps.flatMap((gap, index) =>
         gapNotes[index]?.trim()
@@ -578,14 +588,22 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
             <StatusRow
               label={t("home.profile")}
               status={
-                failure === "input" ? "failed" : hasRepo ? "ready" : "pending"
+                state.profileError || failure === "input"
+                  ? "failed"
+                  : hasRepo && !profileSaving
+                    ? "ready"
+                    : "pending"
               }
               detail={
-                failure === "input"
-                  ? failureMessage
-                  : hasRepo
-                    ? t("home.repositoryReady")
-                    : t("home.goToProfile")
+                state.profileError
+                  ? t("journey.profileUnavailable")
+                  : profileSaving
+                    ? t("journey.profileSaving")
+                    : failure === "input"
+                      ? failureMessage
+                      : hasRepo
+                        ? t("home.repositoryReady")
+                        : t("home.goToProfile")
               }
             />
             <StatusRow
@@ -935,6 +953,15 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
               </p>
             )}
 
+            {!profileAvailable && (
+              <p role="alert" className="mt-4 text-sm">
+                {t(
+                  state.profileError
+                    ? "journey.profileUnavailable"
+                    : "journey.profileSaving",
+                )}
+              </p>
+            )}
             <div
               className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 mt-7 pt-5 border-t"
               style={{ borderColor: "var(--color-border)" }}
@@ -942,7 +969,7 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
               <button
                 type="button"
                 onClick={() => void generateFromGapPrompt(false)}
-                disabled={state.isGenerating}
+                disabled={state.isGenerating || !profileAvailable}
                 className="text-xs uppercase tracking-[0.12em] px-4 py-3 border transition-opacity hover:opacity-70 disabled:opacity-40"
                 style={{
                   fontFamily: "var(--font-mono)",
@@ -960,7 +987,11 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
                 type="button"
                 onClick={() => void generateFromGapPrompt(true)}
                 hidden={!profileGaps.length}
-                disabled={state.isGenerating || confirmedGapIndices.size === 0}
+                disabled={
+                  state.isGenerating ||
+                  !profileAvailable ||
+                  confirmedGapIndices.size === 0
+                }
                 className="text-xs uppercase tracking-[0.12em] px-4 py-3 transition-opacity hover:opacity-75 disabled:opacity-40"
                 style={{
                   fontFamily: "var(--font-mono)",

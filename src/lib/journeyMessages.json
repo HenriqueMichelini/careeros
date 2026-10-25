@@ -1,0 +1,32 @@
+{
+  "en": {
+    "journey.context": "Workspace and next step",
+    "journey.navigation": "Workspace",
+    "journey.localMode": "This browser · your AI keys",
+    "journey.profile": "Profile stays in this browser. AI suggestions need your review and Save.",
+    "journey.cv": "A standalone CV is optional. Its accepted snapshot stays in this browser.",
+    "journey.apply": "Create a job-specific Draft directly from your saved Profile. A standalone CV is optional.",
+    "journey.results": "Draft results stay in this session. Review and Accept each artifact, then export to keep a copy.",
+    "journey.profileUnavailable": "Profile storage needs attention. Use the recovery message above before generating.",
+    "journey.profileSaving": "Saving Profile in this browser…",
+    "journey.profileReady": "Professional information saved in this browser.",
+    "journey.profileNeeded": "Add professional information to Profile first. Contact details alone are not enough.",
+    "journey.openProfile": "Open Profile",
+    "journey.continueApply": "Continue to Apply"
+  },
+  "pt-BR": {
+    "journey.context": "Espaço de trabalho e próximo passo",
+    "journey.navigation": "Espaço de trabalho",
+    "journey.localMode": "Neste navegador · suas chaves de IA",
+    "journey.profile": "O Perfil fica neste navegador. Sugestões de IA precisam da sua revisão e de Salvar.",
+    "journey.cv": "O CV geral é opcional. A versão aceita fica neste navegador.",
+    "journey.apply": "Crie um Rascunho para a vaga direto do Perfil salvo. O CV geral é opcional.",
+    "journey.results": "Os Rascunhos ficam nesta sessão. Revise e aceite cada material, depois exporte para guardar uma cópia.",
+    "journey.profileUnavailable": "O armazenamento do Perfil precisa de atenção. Use a mensagem de recuperação acima antes de gerar.",
+    "journey.profileSaving": "Salvando Perfil neste navegador…",
+    "journey.profileReady": "Informações profissionais salvas neste navegador.",
+    "journey.profileNeeded": "Adicione informações profissionais ao Perfil primeiro. Só os dados de contato não bastam.",
+    "journey.openProfile": "Abrir Perfil",
+    "journey.continueApply": "Continuar para Candidatar"
+  }
+}

@@ -740,8 +740,10 @@ export default function RepositoryPage() {
                       ? "var(--color-muted)"
                       : "transparent",
                 color:
-                  activeSection === id && id !== "profile"
-                    ? "var(--color-bg)"
+                  activeSection === id
+                    ? id === "profile"
+                      ? "var(--color-accent-fg)"
+                      : "var(--color-bg)"
                     : "var(--color-fg)",
                 borderColor:
                   id === "profile" ? "var(--color-accent)" : "transparent",
