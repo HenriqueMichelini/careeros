@@ -20,7 +20,13 @@ type Session struct {
 }
 
 type SessionStore interface {
-	Create(ctx context.Context, session Session) error
+	// Create inserts a fresh session. If previousID is nonempty, it must still
+	// identify a live initiating session at now. Checking that session,
+	// replacing it and inserting the new session must be atomic with Revoke,
+	// RevokeAllForAccount and other Create calls. Missing/revoked/expired
+	// initiating sessions return ErrInvalidTransaction without inserting.
+	// An empty previousID permits a genuinely fresh sign-in.
+	Create(ctx context.Context, session Session, previousID string, now time.Time) error
 	FindByTokenHash(ctx context.Context, tokenHash [32]byte, now time.Time) (Session, bool, error)
 	Revoke(ctx context.Context, id string) error
 	RevokeAllForAccount(ctx context.Context, accountID string) (int, error)
@@ -39,7 +45,7 @@ func NewMemorySessionStore() *MemorySessionStore {
 	}
 }
 
-func (s *MemorySessionStore) Create(_ context.Context, session Session) error {
+func (s *MemorySessionStore) Create(_ context.Context, session Session, previousID string, now time.Time) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if session.ID == "" || session.AccountID == "" {
@@ -50,6 +56,14 @@ func (s *MemorySessionStore) Create(_ context.Context, session Session) error {
 	}
 	if _, exists := s.byHash[session.TokenHash]; exists {
 		return fmt.Errorf("%w: duplicate session token", ErrUnavailable)
+	}
+	if previousID != "" {
+		previous, ok := s.sessions[previousID]
+		if !ok || !now.Before(previous.ExpiresAt) {
+			return ErrInvalidTransaction
+		}
+		delete(s.sessions, previousID)
+		delete(s.byHash, previous.TokenHash)
 	}
 	s.sessions[session.ID] = session
 	s.byHash[session.TokenHash] = session.ID

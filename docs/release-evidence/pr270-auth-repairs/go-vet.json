@@ -1,0 +1,12 @@
+{
+  "started_utc": "2026-10-26T19:23:55.481269+00:00",
+  "cwd": "/home/henriquemichelini/.codex/worktrees/pr270-auth-repairs/careeros",
+  "command": [
+    "go",
+    "vet",
+    "./internal/auth",
+    "./internal/netlifyproxy",
+    "./cmd/profile-review"
+  ],
+  "exit_code": 0
+}

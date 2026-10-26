@@ -87,7 +87,7 @@ type GoogleProvider struct {
 	verifier *TokenVerifier
 }
 
-func NewGoogleProvider(config ProviderConfig, client *http.Client, now func() time.Time) (*GoogleProvider, error) {
+func NewGoogleProvider(config ProviderConfig, client *http.Client, now func() time.Time, cacheTTL time.Duration) (*GoogleProvider, error) {
 	if config.ID == "" {
 		config.ID = "google"
 	}
@@ -118,6 +118,7 @@ func NewGoogleProvider(config ProviderConfig, client *http.Client, now func() ti
 		Audience: config.ClientID,
 		Client:   client,
 		Now:      now,
+		CacheTTL: cacheTTL,
 	})
 	if err != nil {
 		return nil, err

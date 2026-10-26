@@ -206,7 +206,7 @@ func (s *Service) CompleteLogin(ctx context.Context, providerID, state, code, bi
 	if err != nil {
 		return LoginResult{}, err
 	}
-	return s.issueSession(ctx, transaction, account, now)
+	return s.issueSession(ctx, transaction, account, s.now().UTC())
 }
 
 func (s *Service) consumeLogin(ctx context.Context, providerID, state, code, bindingToken string) (Provider, Transaction, time.Time, error) {
@@ -276,12 +276,6 @@ func (s *Service) resolveAccount(ctx context.Context, transaction Transaction, i
 }
 
 func (s *Service) issueSession(ctx context.Context, transaction Transaction, account Account, now time.Time) (LoginResult, error) {
-	if transaction.PreviousSessionID != "" {
-		if err := s.sessions.Revoke(ctx, transaction.PreviousSessionID); err != nil {
-			return LoginResult{}, fmt.Errorf("%w: previous session", ErrUnavailable)
-		}
-	}
-
 	sessionToken, err := randomToken(32)
 	if err != nil {
 		return LoginResult{}, err
@@ -304,7 +298,7 @@ func (s *Service) issueSession(ctx context.Context, transaction Transaction, acc
 		CreatedAt:  now,
 		ExpiresAt:  expiresAt,
 	}
-	if err := s.sessions.Create(ctx, session); err != nil {
+	if err := s.sessions.Create(ctx, session, transaction.PreviousSessionID, now); err != nil {
 		return LoginResult{}, err
 	}
 	return LoginResult{
@@ -360,9 +354,10 @@ func (s *Service) Authenticate(ctx context.Context, token string) (Principal, er
 	}, nil
 }
 
-// Revalidate re-reads the session and account. Protected handlers must call
-// this immediately before an authoritative write so a logout/revocation that
-// raced request processing wins.
+// Revalidate re-reads the session and account and rejects revocation already
+// visible to those reads. It does not make a subsequent resource write atomic
+// with revocation. Durable persistence must compose ownership, current session
+// and account checks, and the authoritative write in one atomic operation.
 func (s *Service) Revalidate(ctx context.Context, principal Principal) (Principal, error) {
 	if principal.SessionID == "" || principal.AccountID == "" {
 		return Principal{}, ErrAuthenticationRequired

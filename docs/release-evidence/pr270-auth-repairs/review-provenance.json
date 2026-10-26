@@ -1,0 +1,18 @@
+[
+  {
+    "path": "/home/henriquemichelini/.codex/state/plugins/codex-security/scans/careeros/2d5a3f3e27281833a2b92032d5d27de1a83db8ab_20261026T190211Z_sin06q6i/artifacts/05_findings/pr270-review.md",
+    "sha256": "22d089a65486aca1b62152e05d0507b9baf04cd865d73aef440f3fb15c664858"
+  },
+  {
+    "path": "/home/henriquemichelini/.codex/state/plugins/codex-security/scans/careeros/2d5a3f3e27281833a2b92032d5d27de1a83db8ab_20261026T190211Z_sin06q6i/artifacts/02_discovery/validation_artifacts/review_probe_test.go",
+    "sha256": "624a6109f950d426884a1aa5a1cf0fd62be1285b3f06f5a263c6d5b299afe194"
+  },
+  {
+    "path": "/home/henriquemichelini/.codex/state/plugins/codex-security/scans/careeros/2d5a3f3e27281833a2b92032d5d27de1a83db8ab_20261026T190211Z_sin06q6i/artifacts/02_discovery/validation_artifacts/review-probes.log",
+    "sha256": "938a575dbb42a55221e20729d70e3a99f371b2ff6bf82ecd516c46a9a260b218"
+  },
+  {
+    "path": "/home/henriquemichelini/.codex/state/plugins/codex-security/scans/careeros/2d5a3f3e27281833a2b92032d5d27de1a83db8ab_20261026T190211Z_sin06q6i/artifacts/02_discovery/validation_artifacts/validation-summary.json",
+    "sha256": "89652d7bbc47681f9d64e23f1365f5cf56c78097b007d867f2005a230a244172"
+  }
+]

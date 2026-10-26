@@ -57,7 +57,7 @@ func configuredAuthService() *auth.Service {
 		return nil
 	}
 	providerConfig := config.Providers[0]
-	provider, err := auth.NewGoogleProvider(providerConfig, config.HTTPClient, config.Now)
+	provider, err := auth.NewGoogleProvider(providerConfig, config.HTTPClient, config.Now, config.JWKSCacheTTL)
 	if err != nil {
 		log.Printf("auth unavailable: %v", err)
 		return nil

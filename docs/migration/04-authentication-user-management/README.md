@@ -68,3 +68,16 @@ The synthetic tests cover denied providers, callback state/binding tampering, re
 - **No suspension/deletion/operator endpoints.** The guard checks status and generation, but only tests can set suspension/deletion.
 - **Legacy guest/BYOK access remains explicit.** The five workflows are not account-owned resources. Deployments that make them account-owned must set `CAREEROS_REQUIRE_AUTH=1` and provide the shared session store first.
 - Deployment, spending, launch and publication of the underlying investigation remain separate gates.
+
+
+## Additive review correction — 2026-10-26, PR #270
+
+The earlier test-evidence paragraph is historical: at reviewed head `2d5a3f3e27281833a2b92032d5d27de1a83db8ab`, the provider-response race test exercised all-device logout, not ordinary logout. Independent HTTP probes reproduced a replacement session being issued after ordinary logout in both callback schedules. The repairs and failing-before/passing-after regressions are recorded in [the repair evidence](../../release-evidence/2026-10-26-pr270-auth-repairs.md).
+
+`SessionStore.Create` now atomically checks the initiating session, removes it and inserts its replacement, serialized with revocation. Revocation winning before that store commit rejects the earlier sign-in; insertion winning first is ordered before revocation. A missing, revoked or expired initiating session cannot authorize insertion. Ordinary logout remains confined to that session: another device stays valid, the account generation is unchanged and a genuinely fresh sign-in is allowed. Future stores must preserve this atomic contract; cookie clearing and account-generation checks alone do not provide it.
+
+`CAREEROS_JWKS_CACHE_TTL` now reaches the production Google provider constructor and token verifier. It supplies the fallback when there is no usable positive `Cache-Control: max-age`. A usable provider `max-age` takes precedence over configuration. Both paths retain the existing 5-minute minimum and 24-hour maximum; the default fallback is 1 hour. Offline constructor regressions check cached reuse before expiry and refetch at expiry, including configured/default fallbacks, header precedence and both bounds.
+
+`Revalidate` alone does **not** establish atomic revocation-versus-resource-commit safety. It separately reads the session and account and rejects revocation already visible to those reads. A later resource write can still race revocation. Future durable persistence must atomically compose trusted owner lookup, current session/account checks and the authoritative resource write. No durable resource commit is implemented or validated here.
+
+The prior PR/issue report of 13 top-level failures / 22 subtest failures and 24 unrelated stale files is retained as historical, superseded evidence. The independent review reproduced **13 top-level failures and 11 distinct named failing subtests**. Manifest stale totals are **25 at baseline** (24 hash mismatches plus one missing path) and **28 at the reviewed head** (27 mismatches plus the same missing path). Three newly stale entries are patch-owned: `internal/netlifyproxy/handler.go`, `internal/netlifyproxy/handler_test.go` and `vite.config.ts`. The repair retains the same 28 stale entries. The ProcessRunner manifest is unchanged and has not been re-approved.

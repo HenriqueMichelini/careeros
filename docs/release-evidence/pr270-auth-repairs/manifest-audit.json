@@ -1,0 +1,120 @@
+{
+  "snapshots": {
+    "base": {
+      "ref": "2382f088f4c5c1433072cf0cf4c5cbdff0311c85",
+      "manifest_sha256": "c3fb7be93b892adca689c9798370d89bac305454ae3268055488f25376e7c595",
+      "source_count": 209,
+      "mismatched": [
+        "backend/profile-ingestion/main.go",
+        "backend/profile-ingestion/main_test.go",
+        "backend/profile-ingestion/outcomes.go",
+        "package.json",
+        "src/components/ApplyProfileEnrichment.tsx",
+        "src/components/LanguageSelector.tsx",
+        "src/components/Layout.tsx",
+        "src/index.css",
+        "src/lib/i18n.ts",
+        "src/lib/ingestion.ts",
+        "src/lib/ingestionDocument.ts",
+        "src/lib/profileLabels.ts",
+        "src/lib/store.tsx",
+        "src/pages/HomePage.tsx",
+        "src/pages/LandingPage.tsx",
+        "src/pages/RepositoryPage.tsx",
+        "tests/apply-checklist.check.mjs",
+        "tests/apply-enrichment-browser.scenarios.mjs",
+        "tests/cv-pdf.check.mjs",
+        "tests/ingestion-fixtures.mjs",
+        "tests/ingestion.test.mjs",
+        "tests/profile-edit-browser.check.mjs",
+        "tests/section-review-browser.check.mjs",
+        "tsconfig.json"
+      ],
+      "missing": [
+        "tests/ingestion-browser.check.mjs"
+      ],
+      "stale_total": 25
+    },
+    "reviewed_head": {
+      "ref": "2d5a3f3e27281833a2b92032d5d27de1a83db8ab",
+      "manifest_sha256": "c3fb7be93b892adca689c9798370d89bac305454ae3268055488f25376e7c595",
+      "source_count": 209,
+      "mismatched": [
+        "backend/profile-ingestion/main.go",
+        "backend/profile-ingestion/main_test.go",
+        "backend/profile-ingestion/outcomes.go",
+        "internal/netlifyproxy/handler.go",
+        "internal/netlifyproxy/handler_test.go",
+        "package.json",
+        "src/components/ApplyProfileEnrichment.tsx",
+        "src/components/LanguageSelector.tsx",
+        "src/components/Layout.tsx",
+        "src/index.css",
+        "src/lib/i18n.ts",
+        "src/lib/ingestion.ts",
+        "src/lib/ingestionDocument.ts",
+        "src/lib/profileLabels.ts",
+        "src/lib/store.tsx",
+        "src/pages/HomePage.tsx",
+        "src/pages/LandingPage.tsx",
+        "src/pages/RepositoryPage.tsx",
+        "tests/apply-checklist.check.mjs",
+        "tests/apply-enrichment-browser.scenarios.mjs",
+        "tests/cv-pdf.check.mjs",
+        "tests/ingestion-fixtures.mjs",
+        "tests/ingestion.test.mjs",
+        "tests/profile-edit-browser.check.mjs",
+        "tests/section-review-browser.check.mjs",
+        "tsconfig.json",
+        "vite.config.ts"
+      ],
+      "missing": [
+        "tests/ingestion-browser.check.mjs"
+      ],
+      "stale_total": 28
+    },
+    "repair": {
+      "ref": "WORKTREE",
+      "manifest_sha256": "c3fb7be93b892adca689c9798370d89bac305454ae3268055488f25376e7c595",
+      "source_count": 209,
+      "mismatched": [
+        "backend/profile-ingestion/main.go",
+        "backend/profile-ingestion/main_test.go",
+        "backend/profile-ingestion/outcomes.go",
+        "internal/netlifyproxy/handler.go",
+        "internal/netlifyproxy/handler_test.go",
+        "package.json",
+        "src/components/ApplyProfileEnrichment.tsx",
+        "src/components/LanguageSelector.tsx",
+        "src/components/Layout.tsx",
+        "src/index.css",
+        "src/lib/i18n.ts",
+        "src/lib/ingestion.ts",
+        "src/lib/ingestionDocument.ts",
+        "src/lib/profileLabels.ts",
+        "src/lib/store.tsx",
+        "src/pages/HomePage.tsx",
+        "src/pages/LandingPage.tsx",
+        "src/pages/RepositoryPage.tsx",
+        "tests/apply-checklist.check.mjs",
+        "tests/apply-enrichment-browser.scenarios.mjs",
+        "tests/cv-pdf.check.mjs",
+        "tests/ingestion-fixtures.mjs",
+        "tests/ingestion.test.mjs",
+        "tests/profile-edit-browser.check.mjs",
+        "tests/section-review-browser.check.mjs",
+        "tsconfig.json",
+        "vite.config.ts"
+      ],
+      "missing": [
+        "tests/ingestion-browser.check.mjs"
+      ],
+      "stale_total": 28
+    }
+  },
+  "patch_owned_newly_stale": [
+    "internal/netlifyproxy/handler.go",
+    "internal/netlifyproxy/handler_test.go",
+    "vite.config.ts"
+  ]
+}
