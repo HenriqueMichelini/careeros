@@ -51,6 +51,10 @@ react(),
           target: 'http://127.0.0.1:8787',
           changeOrigin: false,
         },
+        '/api/auth': {
+          target: 'http://127.0.0.1:8787',
+          changeOrigin: false,
+        },
       },
       watch: {
         ignored: [
@@ -76,6 +80,10 @@ react(),
           changeOrigin: false,
         },
         '/api/application-draft': {
+          target: 'http://127.0.0.1:8787',
+          changeOrigin: false,
+        },
+        '/api/auth': {
           target: 'http://127.0.0.1:8787',
           changeOrigin: false,
         },

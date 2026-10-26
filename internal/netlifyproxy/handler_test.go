@@ -45,4 +45,74 @@ func TestHandlePreservesGatewayRequestAndHTTPResponse(t *testing.T) {
 	if response.StatusCode != http.StatusAccepted || response.Body != "accepted" || response.Headers["X-Result"] != "first" {
 		t.Fatalf("response = %+v", response)
 	}
+	if got := response.MultiValueHeaders["X-Result"]; len(got) != 2 || got[0] != "first" || got[1] != "second" {
+		t.Fatalf("multi-value response header = %v", got)
+	}
+}
+
+func TestHandlePreservesQueryParameters(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/auth/google/callback" {
+			t.Errorf("path = %q", r.URL.Path)
+		}
+		query := r.URL.Query()
+		if query.Get("state") != "state-1" || query.Get("code") != "code-1" {
+			t.Errorf("query = %v", query)
+		}
+		if got := query["scope"]; len(got) != 2 || got[0] != "openid" || got[1] != "email" {
+			t.Errorf("multi-value query = %v", got)
+		}
+		w.WriteHeader(http.StatusNoContent)
+	})
+	response, err := Handle(handler, "/api/auth/google/callback", context.Background(), events.APIGatewayProxyRequest{
+		HTTPMethod:                      http.MethodGet,
+		QueryStringParameters:           map[string]string{"state": "state-1", "code": "code-1", "scope": "openid"},
+		MultiValueQueryStringParameters: map[string][]string{"scope": {"openid", "email"}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if response.StatusCode != http.StatusNoContent {
+		t.Fatalf("status = %d", response.StatusCode)
+	}
+}
+
+func TestHandleUsesEventPathWhenRouteIsEmpty(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/auth/session" {
+			t.Errorf("path = %q", r.URL.Path)
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+	response, err := Handle(handler, "", context.Background(), events.APIGatewayProxyRequest{
+		HTTPMethod: http.MethodGet,
+		Path:       "/api/auth/session",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d", response.StatusCode)
+	}
+}
+
+func TestHandlePreservesMultipleSetCookieHeaders(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.SetCookie(w, &http.Cookie{Name: "__Host-careeros_session", Value: "session", Path: "/", Secure: true, HttpOnly: true, SameSite: http.SameSiteLaxMode})
+		http.SetCookie(w, &http.Cookie{Name: "__Host-careeros_csrf", Value: "csrf", Path: "/", Secure: true, SameSite: http.SameSiteLaxMode})
+		w.WriteHeader(http.StatusNoContent)
+	})
+	response, err := Handle(handler, "/api/auth/google/callback", context.Background(), events.APIGatewayProxyRequest{
+		HTTPMethod: http.MethodGet,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cookies := response.MultiValueHeaders["Set-Cookie"]
+	if len(cookies) != 2 {
+		t.Fatalf("Set-Cookie headers = %v, want 2", cookies)
+	}
+	if response.Headers["Set-Cookie"] != cookies[0] {
+		t.Fatalf("single-value Set-Cookie = %q, first multi-value = %q", response.Headers["Set-Cookie"], cookies[0])
+	}
 }
