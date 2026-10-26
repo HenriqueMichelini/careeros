@@ -43,6 +43,11 @@ The service reads:
 
 No credentials are committed or configured by this slice. Provider endpoints are fixed for Google; the redirect URI must match the configured origin exactly.
 
+## Static-analysis notes
+
+- Session and OIDC-binding cookies are `HttpOnly`. The CSRF cookie is deliberately script-readable because the double-submit pattern requires same-origin JavaScript to copy it into the request header. It is not an authentication secret and is also verified against the server-side session record. See the [OWASP CSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#javascript-automatically-including-csrf-tokens-as-an-ajax-request-header).
+- ID-token signatures use RSASSA-PKCS1-v1_5 because the `RS256` algorithm is defined that way in [RFC 7518 section 3.3](https://www.rfc-editor.org/rfc/rfc7518.html#section-3.3), and Google advertises `RS256` as its ID-token signing algorithm. This is signature verification, not RSA encryption.
+
 ## Test evidence
 
 ```sh

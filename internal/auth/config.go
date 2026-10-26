@@ -133,6 +133,13 @@ func (c Config) Validate() error {
 }
 
 func (p ProviderConfig) validate(publicOrigin string) error {
+	if err := p.validateIdentity(); err != nil {
+		return err
+	}
+	return p.validateEndpoints(publicOrigin)
+}
+
+func (p ProviderConfig) validateIdentity() error {
 	if !providerIDPattern.MatchString(p.ID) {
 		return fmt.Errorf("%w: invalid provider id", ErrUnavailable)
 	}
@@ -143,26 +150,40 @@ func (p ProviderConfig) validate(publicOrigin string) error {
 		return fmt.Errorf("%w: provider %q has no issuer", ErrUnavailable, p.ID)
 	}
 	for _, issuer := range p.Issuers {
-		if issuer == "" || len(issuer) > 255 || hasControl(issuer) {
-			return fmt.Errorf("%w: provider %q has an invalid issuer", ErrUnavailable, p.ID)
+		if err := p.validateIssuer(issuer); err != nil {
+			return err
 		}
-		parsed, err := url.Parse(issuer)
-		if err == nil && parsed.Scheme != "" && parsed.Host != "" {
-			if parsed.User != nil || parsed.Fragment != "" {
-				return fmt.Errorf("%w: provider %q has an invalid issuer", ErrUnavailable, p.ID)
-			}
-			if parsed.Scheme != "https" && !(parsed.Scheme == "http" && isLoopbackHost(parsed.Hostname())) {
-				return fmt.Errorf("%w: provider %q issuer must use HTTPS except on loopback", ErrUnavailable, p.ID)
-			}
-			continue
-		}
-		// Google documents both https://accounts.google.com and the bare
-		// accounts.google.com issuer form. No other bare issuer is accepted.
-		if p.ID == "google" && issuer == "accounts.google.com" {
-			continue
-		}
+	}
+	return nil
+}
+
+func (p ProviderConfig) validateIssuer(issuer string) error {
+	if issuer == "" || len(issuer) > 255 || hasControl(issuer) {
 		return fmt.Errorf("%w: provider %q has an invalid issuer", ErrUnavailable, p.ID)
 	}
+	parsed, err := url.Parse(issuer)
+	if err == nil && parsed.Scheme != "" && parsed.Host != "" {
+		return p.validateAbsoluteIssuer(parsed)
+	}
+	// Google documents both https://accounts.google.com and the bare
+	// accounts.google.com issuer form. No other bare issuer is accepted.
+	if p.ID == "google" && issuer == "accounts.google.com" {
+		return nil
+	}
+	return fmt.Errorf("%w: provider %q has an invalid issuer", ErrUnavailable, p.ID)
+}
+
+func (p ProviderConfig) validateAbsoluteIssuer(parsed *url.URL) error {
+	if parsed.User != nil || parsed.Fragment != "" {
+		return fmt.Errorf("%w: provider %q has an invalid issuer", ErrUnavailable, p.ID)
+	}
+	if parsed.Scheme != "https" && !(parsed.Scheme == "http" && isLoopbackHost(parsed.Hostname())) {
+		return fmt.Errorf("%w: provider %q issuer must use HTTPS except on loopback", ErrUnavailable, p.ID)
+	}
+	return nil
+}
+
+func (p ProviderConfig) validateEndpoints(publicOrigin string) error {
 	expectedRedirect := publicOrigin + "/api/auth/" + p.ID + "/callback"
 	if p.RedirectURI != expectedRedirect {
 		return fmt.Errorf("%w: provider %q redirect URI must be %q", ErrUnavailable, p.ID, expectedRedirect)
@@ -176,14 +197,19 @@ func (p ProviderConfig) validate(publicOrigin string) error {
 	if err := validateEndpoint(p.JWKSURL); err != nil {
 		return fmt.Errorf("%w: provider %q JWKS endpoint: %v", ErrUnavailable, p.ID, err)
 	}
-	hasOpenID := false
-	for _, scope := range p.Scopes {
-		hasOpenID = hasOpenID || scope == "openid"
-	}
-	if !hasOpenID {
+	if !hasScope(p.Scopes, "openid") {
 		return fmt.Errorf("%w: provider %q must request the openid scope", ErrUnavailable, p.ID)
 	}
 	return nil
+}
+
+func hasScope(scopes []string, wanted string) bool {
+	for _, scope := range scopes {
+		if scope == wanted {
+			return true
+		}
+	}
+	return false
 }
 
 func validateEndpoint(raw string) error {

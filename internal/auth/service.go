@@ -187,43 +187,12 @@ func (s *Service) CancelLogin(ctx context.Context, state string) {
 // maps the provider subject to an account and issues a fresh opaque session.
 // It never links by email and never reuses a provider token as a session.
 func (s *Service) CompleteLogin(ctx context.Context, providerID, state, code, bindingToken string) (LoginResult, error) {
-	provider, ok := s.providers.Get(providerID)
-	if !ok {
-		return LoginResult{}, ErrProviderNotAllowed
-	}
-	if len(state) == 0 || len(state) > 128 {
-		return LoginResult{}, ErrInvalidTransaction
-	}
-	if len(code) == 0 || len(code) > 4096 {
-		return LoginResult{}, ErrInvalidCallback
-	}
-	if len(bindingToken) == 0 || len(bindingToken) > 128 {
-		return LoginResult{}, ErrInvalidTransaction
-	}
-	now := s.now().UTC()
-	transaction, ok, err := s.transactions.Consume(ctx, hashSecret(state), now)
+	provider, transaction, now, err := s.consumeLogin(ctx, providerID, state, code, bindingToken)
 	if err != nil {
 		return LoginResult{}, err
 	}
-	if !ok {
-		return LoginResult{}, ErrInvalidTransaction
-	}
-	if transaction.ProviderID != providerID {
-		return LoginResult{}, ErrInvalidTransaction
-	}
-	bindingHash := hashSecret(bindingToken)
-	if subtle.ConstantTimeCompare(bindingHash[:], transaction.BindingHash[:]) != 1 {
-		return LoginResult{}, ErrInvalidTransaction
-	}
-
-	if transaction.AccountID != "" {
-		current, ok, err := s.accounts.Get(ctx, transaction.AccountID)
-		if err != nil {
-			return LoginResult{}, err
-		}
-		if !ok || current.Status != AccountActive || current.Generation != transaction.Generation {
-			return LoginResult{}, ErrInvalidTransaction
-		}
+	if err := s.requireTransactionAccount(ctx, transaction); err != nil {
+		return LoginResult{}, err
 	}
 
 	identity, err := provider.Exchange(ctx, code, transaction.CodeVerifier, transaction.RedirectURI, transaction.Nonce)
@@ -233,23 +202,80 @@ func (s *Service) CompleteLogin(ctx context.Context, providerID, state, code, bi
 	if identity.Provider != providerID || identity.Issuer == "" || identity.Subject == "" {
 		return LoginResult{}, ErrInvalidCallback
 	}
+	account, err := s.resolveAccount(ctx, transaction, identity, now)
+	if err != nil {
+		return LoginResult{}, err
+	}
+	return s.issueSession(ctx, transaction, account, now)
+}
+
+func (s *Service) consumeLogin(ctx context.Context, providerID, state, code, bindingToken string) (Provider, Transaction, time.Time, error) {
+	provider, ok := s.providers.Get(providerID)
+	if !ok {
+		return nil, Transaction{}, time.Time{}, ErrProviderNotAllowed
+	}
+	if len(state) == 0 || len(state) > 128 {
+		return nil, Transaction{}, time.Time{}, ErrInvalidTransaction
+	}
+	if len(code) == 0 || len(code) > 4096 {
+		return nil, Transaction{}, time.Time{}, ErrInvalidCallback
+	}
+	if len(bindingToken) == 0 || len(bindingToken) > 128 {
+		return nil, Transaction{}, time.Time{}, ErrInvalidTransaction
+	}
+	now := s.now().UTC()
+	transaction, ok, err := s.transactions.Consume(ctx, hashSecret(state), now)
+	if err != nil {
+		return nil, Transaction{}, time.Time{}, err
+	}
+	if !ok {
+		return nil, Transaction{}, time.Time{}, ErrInvalidTransaction
+	}
+	if transaction.ProviderID != providerID {
+		return nil, Transaction{}, time.Time{}, ErrInvalidTransaction
+	}
+	bindingHash := hashSecret(bindingToken)
+	if subtle.ConstantTimeCompare(bindingHash[:], transaction.BindingHash[:]) != 1 {
+		return nil, Transaction{}, time.Time{}, ErrInvalidTransaction
+	}
+	return provider, transaction, now, nil
+}
+
+func (s *Service) requireTransactionAccount(ctx context.Context, transaction Transaction) error {
+	if transaction.AccountID == "" {
+		return nil
+	}
+	current, ok, err := s.accounts.Get(ctx, transaction.AccountID)
+	if err != nil {
+		return err
+	}
+	if !ok || current.Status != AccountActive || current.Generation != transaction.Generation {
+		return ErrInvalidTransaction
+	}
+	return nil
+}
+
+func (s *Service) resolveAccount(ctx context.Context, transaction Transaction, identity Identity, now time.Time) (Account, error) {
 	account, _, err := s.accounts.FindOrCreateBySubject(ctx, IdentityRef{
 		Provider: identity.Provider,
 		Issuer:   identity.Issuer,
 		Subject:  identity.Subject,
 	}, identity.Email, identity.Name, now)
 	if err != nil {
-		return LoginResult{}, err
+		return Account{}, err
 	}
 	if account.Status != AccountActive {
-		return LoginResult{}, ErrForbidden
+		return Account{}, ErrForbidden
 	}
 	// A logout-all that raced the provider exchange must invalidate this
 	// attempt even though the new account row now carries a newer generation.
 	if transaction.AccountID != "" && account.ID == transaction.AccountID && account.Generation != transaction.Generation {
-		return LoginResult{}, ErrInvalidTransaction
+		return Account{}, ErrInvalidTransaction
 	}
+	return account, nil
+}
 
+func (s *Service) issueSession(ctx context.Context, transaction Transaction, account Account, now time.Time) (LoginResult, error) {
 	if transaction.PreviousSessionID != "" {
 		if err := s.sessions.Revoke(ctx, transaction.PreviousSessionID); err != nil {
 			return LoginResult{}, fmt.Errorf("%w: previous session", ErrUnavailable)

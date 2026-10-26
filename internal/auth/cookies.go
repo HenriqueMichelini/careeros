@@ -36,49 +36,100 @@ func oidcBindingFromRequest(r *http.Request) string {
 }
 
 func setSessionCookies(w http.ResponseWriter, result LoginResult) {
-	setCookie(w, sessionCookieName, result.SessionToken, true, result.ExpiresAt)
-	setCookie(w, csrfCookieName, result.CSRFToken, false, result.ExpiresAt)
+	setSessionCookie(w, result.SessionToken, result.ExpiresAt)
+	setCSRFCookie(w, result.CSRFToken, result.ExpiresAt)
 }
 
 func clearSessionCookies(w http.ResponseWriter) {
-	clearCookie(w, sessionCookieName, true)
-	clearCookie(w, csrfCookieName, false)
+	clearSessionCookie(w)
+	clearCSRFCookie(w)
 }
 
 func setOIDCBindingCookie(w http.ResponseWriter, binding string, expiresAt time.Time) {
-	setCookie(w, oidcCookieName, binding, true, expiresAt)
-}
-
-func clearOIDCBindingCookie(w http.ResponseWriter) {
-	clearCookie(w, oidcCookieName, true)
-}
-
-func setCookie(w http.ResponseWriter, name, value string, httpOnly bool, expiresAt time.Time) {
-	maxAge := int(time.Until(expiresAt) / time.Second)
-	if maxAge < 1 {
-		maxAge = 1
-	}
 	http.SetCookie(w, &http.Cookie{
-		Name:     name,
-		Value:    value,
+		Name:     oidcCookieName,
+		Value:    binding,
 		Path:     "/",
-		MaxAge:   maxAge,
+		MaxAge:   cookieMaxAge(expiresAt),
 		Expires:  expiresAt.UTC(),
 		Secure:   true,
-		HttpOnly: httpOnly,
+		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	})
 }
 
-func clearCookie(w http.ResponseWriter, name string, httpOnly bool) {
+func clearOIDCBindingCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
-		Name:     name,
+		Name:     oidcCookieName,
 		Value:    "",
 		Path:     "/",
 		MaxAge:   -1,
 		Expires:  time.Unix(0, 0).UTC(),
 		Secure:   true,
-		HttpOnly: httpOnly,
+		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	})
+}
+
+func setSessionCookie(w http.ResponseWriter, value string, expiresAt time.Time) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     sessionCookieName,
+		Value:    value,
+		Path:     "/",
+		MaxAge:   cookieMaxAge(expiresAt),
+		Expires:  expiresAt.UTC(),
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	})
+}
+
+func clearSessionCookie(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     sessionCookieName,
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		Expires:  time.Unix(0, 0).UTC(),
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	})
+}
+
+func setCSRFCookie(w http.ResponseWriter, value string, expiresAt time.Time) {
+	// The double-submit CSRF token must be readable by same-origin JavaScript.
+	// It is not an authentication secret and is bound to the session server-side.
+	http.SetCookie(w, &http.Cookie{
+		Name:     csrfCookieName,
+		Value:    value,
+		Path:     "/",
+		MaxAge:   cookieMaxAge(expiresAt),
+		Expires:  expiresAt.UTC(),
+		Secure:   true,
+		HttpOnly: false, // NOSONAR
+		SameSite: http.SameSiteLaxMode,
+	})
+}
+
+func clearCSRFCookie(w http.ResponseWriter) {
+	// Matches the intentionally script-readable double-submit CSRF cookie.
+	http.SetCookie(w, &http.Cookie{
+		Name:     csrfCookieName,
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		Expires:  time.Unix(0, 0).UTC(),
+		Secure:   true,
+		HttpOnly: false, // NOSONAR
+		SameSite: http.SameSiteLaxMode,
+	})
+}
+
+func cookieMaxAge(expiresAt time.Time) int {
+	maxAge := int(time.Until(expiresAt) / time.Second)
+	if maxAge < 1 {
+		return 1
+	}
+	return maxAge
 }

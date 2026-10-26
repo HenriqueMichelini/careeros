@@ -99,6 +99,26 @@ func NewTokenVerifier(config TokenVerifierConfig) (*TokenVerifier, error) {
 	}, nil
 }
 
+type tokenHeader struct {
+	Algorithm string `json:"alg"`
+	KeyID     string `json:"kid"`
+	Type      string `json:"typ"`
+}
+
+type tokenClaims struct {
+	Issuer        string          `json:"iss"`
+	Subject       string          `json:"sub"`
+	Audience      json.RawMessage `json:"aud"`
+	AuthorizedFor string          `json:"azp"`
+	ExpiresAt     json.Number     `json:"exp"`
+	IssuedAt      json.Number     `json:"iat"`
+	NotBefore     json.Number     `json:"nbf"`
+	Nonce         string          `json:"nonce"`
+	Email         string          `json:"email"`
+	EmailVerified bool            `json:"email_verified"`
+	Name          string          `json:"name"`
+}
+
 // Verify validates the compact JWT and returns a typed view of the claims.
 // expectedNonce must come from the one-use server-side transaction.
 func (v *TokenVerifier) Verify(ctx context.Context, raw, expectedNonce string) (Claims, error) {
@@ -109,112 +129,96 @@ func (v *TokenVerifier) Verify(ctx context.Context, raw, expectedNonce string) (
 	if len(parts) != 3 {
 		return Claims{}, fmt.Errorf("%w: malformed token", ErrInvalidCallback)
 	}
-	headerBytes, err := base64.RawURLEncoding.DecodeString(parts[0])
-	if err != nil {
-		return Claims{}, fmt.Errorf("%w: malformed header", ErrInvalidCallback)
-	}
-	var header struct {
-		Algorithm string `json:"alg"`
-		KeyID     string `json:"kid"`
-		Type      string `json:"typ"`
-	}
-	if err := json.Unmarshal(headerBytes, &header); err != nil {
-		return Claims{}, fmt.Errorf("%w: malformed header", ErrInvalidCallback)
-	}
-	if header.Algorithm != "RS256" {
-		return Claims{}, fmt.Errorf("%w: unsupported algorithm", ErrInvalidCallback)
-	}
-	if header.Type != "" && header.Type != "JWT" {
-		return Claims{}, fmt.Errorf("%w: unsupported token type", ErrInvalidCallback)
-	}
-	if header.KeyID == "" || len(header.KeyID) > 256 {
-		return Claims{}, fmt.Errorf("%w: missing key id", ErrInvalidCallback)
-	}
-	key, err := v.publicKey(ctx, header.KeyID, false)
-	if err != nil && errors.Is(err, ErrInvalidCallback) {
-		// A key rotation may have introduced a kid after the last cache fill.
-		// Refetch once; an unknown kid after refresh remains a rejection.
-		key, err = v.publicKey(ctx, header.KeyID, true)
-	}
+	header, err := parseTokenHeader(parts[0])
 	if err != nil {
 		return Claims{}, err
 	}
+	if err := v.verifySignature(ctx, parts, header.KeyID); err != nil {
+		return Claims{}, err
+	}
+	rawClaims, err := parseTokenClaims(parts[1])
+	if err != nil {
+		return Claims{}, err
+	}
+	return v.validateClaims(rawClaims, expectedNonce)
+}
+
+func parseTokenHeader(encoded string) (tokenHeader, error) {
+	var header tokenHeader
+	headerBytes, err := base64.RawURLEncoding.DecodeString(encoded)
+	if err != nil {
+		return tokenHeader{}, fmt.Errorf("%w: malformed header", ErrInvalidCallback)
+	}
+	if err := json.Unmarshal(headerBytes, &header); err != nil {
+		return tokenHeader{}, fmt.Errorf("%w: malformed header", ErrInvalidCallback)
+	}
+	if header.Algorithm != "RS256" {
+		return tokenHeader{}, fmt.Errorf("%w: unsupported algorithm", ErrInvalidCallback)
+	}
+	if header.Type != "" && header.Type != "JWT" {
+		return tokenHeader{}, fmt.Errorf("%w: unsupported token type", ErrInvalidCallback)
+	}
+	if header.KeyID == "" || len(header.KeyID) > 256 {
+		return tokenHeader{}, fmt.Errorf("%w: missing key id", ErrInvalidCallback)
+	}
+	return header, nil
+}
+
+func (v *TokenVerifier) verifySignature(ctx context.Context, parts []string, keyID string) error {
+	key, err := v.publicKey(ctx, keyID, false)
+	if err != nil && errors.Is(err, ErrInvalidCallback) {
+		// A key rotation may have introduced a kid after the last cache fill.
+		// Refetch once; an unknown kid after refresh remains a rejection.
+		key, err = v.publicKey(ctx, keyID, true)
+	}
+	if err != nil {
+		return err
+	}
 	signature, err := base64.RawURLEncoding.DecodeString(parts[2])
 	if err != nil {
-		return Claims{}, fmt.Errorf("%w: malformed signature", ErrInvalidCallback)
+		return fmt.Errorf("%w: malformed signature", ErrInvalidCallback)
 	}
-	digest := sha256.Sum256([]byte(parts[0] + "." + parts[1]))
-	if err := rsa.VerifyPKCS1v15(key, crypto.SHA256, digest[:], signature); err != nil {
-		return Claims{}, fmt.Errorf("%w: invalid signature", ErrInvalidCallback)
+	if err := verifyRS256(key, []byte(parts[0]+"."+parts[1]), signature); err != nil {
+		return fmt.Errorf("%w: invalid signature", ErrInvalidCallback)
 	}
+	return nil
+}
 
-	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+func verifyRS256(key *rsa.PublicKey, signingInput, signature []byte) error {
+	digest := sha256.Sum256(signingInput)
+	// RS256 is RSASSA-PKCS1-v1_5 signature verification, not RSA encryption.
+	// RFC 7518 section 3.3 mandates this padding for Google's ID tokens.
+	return rsa.VerifyPKCS1v15(key, crypto.SHA256, digest[:], signature) // NOSONAR
+}
+
+func parseTokenClaims(encoded string) (tokenClaims, error) {
+	payload, err := base64.RawURLEncoding.DecodeString(encoded)
 	if err != nil {
-		return Claims{}, fmt.Errorf("%w: malformed payload", ErrInvalidCallback)
+		return tokenClaims{}, fmt.Errorf("%w: malformed payload", ErrInvalidCallback)
 	}
-	var rawClaims struct {
-		Issuer        string          `json:"iss"`
-		Subject       string          `json:"sub"`
-		Audience      json.RawMessage `json:"aud"`
-		AuthorizedFor string          `json:"azp"`
-		ExpiresAt     json.Number     `json:"exp"`
-		IssuedAt      json.Number     `json:"iat"`
-		NotBefore     json.Number     `json:"nbf"`
-		Nonce         string          `json:"nonce"`
-		Email         string          `json:"email"`
-		EmailVerified bool            `json:"email_verified"`
-		Name          string          `json:"name"`
-	}
+	var claims tokenClaims
 	decoder := json.NewDecoder(strings.NewReader(string(payload)))
 	decoder.UseNumber()
-	if err := decoder.Decode(&rawClaims); err != nil {
-		return Claims{}, fmt.Errorf("%w: malformed claims", ErrInvalidCallback)
+	if err := decoder.Decode(&claims); err != nil {
+		return tokenClaims{}, fmt.Errorf("%w: malformed claims", ErrInvalidCallback)
 	}
-	if !v.issuers[rawClaims.Issuer] {
-		return Claims{}, fmt.Errorf("%w: issuer not allowed", ErrInvalidCallback)
-	}
-	audience, err := parseAudience(rawClaims.Audience)
-	if err != nil || !contains(audience, v.audience) {
-		return Claims{}, fmt.Errorf("%w: audience mismatch", ErrInvalidCallback)
-	}
-	if len(audience) > 1 && rawClaims.AuthorizedFor != v.audience {
-		return Claims{}, fmt.Errorf("%w: authorized party mismatch", ErrInvalidCallback)
-	}
-	if rawClaims.AuthorizedFor != "" && rawClaims.AuthorizedFor != v.audience {
-		return Claims{}, fmt.Errorf("%w: authorized party mismatch", ErrInvalidCallback)
-	}
-	expiresAt, err := requiredUnixTime(rawClaims.ExpiresAt)
+	return claims, nil
+}
+
+func (v *TokenVerifier) validateClaims(rawClaims tokenClaims, expectedNonce string) (Claims, error) {
+	audience, err := v.validateIssuerAudience(rawClaims)
 	if err != nil {
-		return Claims{}, fmt.Errorf("%w: invalid expiry", ErrInvalidCallback)
+		return Claims{}, err
 	}
-	now := v.now()
-	if !now.Before(expiresAt.Add(clockSkew)) {
-		return Claims{}, fmt.Errorf("%w: expired token", ErrInvalidCallback)
+	expiresAt, err := validateTimes(rawClaims, v.now())
+	if err != nil {
+		return Claims{}, err
 	}
-	if rawClaims.IssuedAt != "" {
-		issuedAt, err := unixTime(rawClaims.IssuedAt)
-		if err != nil || issuedAt.After(now.Add(2*clockSkew)) {
-			return Claims{}, fmt.Errorf("%w: invalid issued-at", ErrInvalidCallback)
-		}
+	if err := validateNonceAndSubject(rawClaims, expectedNonce); err != nil {
+		return Claims{}, err
 	}
-	if rawClaims.NotBefore != "" {
-		notBefore, err := unixTime(rawClaims.NotBefore)
-		if err != nil || notBefore.After(now.Add(clockSkew)) {
-			return Claims{}, fmt.Errorf("%w: token not active", ErrInvalidCallback)
-		}
-	}
-	if subtle.ConstantTimeCompare([]byte(rawClaims.Nonce), []byte(expectedNonce)) != 1 {
-		return Claims{}, fmt.Errorf("%w: nonce mismatch", ErrInvalidCallback)
-	}
-	if rawClaims.Subject == "" || len(rawClaims.Subject) > maxSubjectBytes || hasControl(rawClaims.Subject) {
-		return Claims{}, fmt.Errorf("%w: invalid subject", ErrInvalidCallback)
-	}
-	if len(rawClaims.Email) > maxEmailBytes || hasControl(rawClaims.Email) {
-		return Claims{}, fmt.Errorf("%w: invalid email claim", ErrInvalidCallback)
-	}
-	name := strings.TrimSpace(rawClaims.Name)
-	if len([]rune(name)) > maxNameRunes {
-		name = string([]rune(name)[:maxNameRunes])
+	if err := validateEmail(rawClaims.Email); err != nil {
+		return Claims{}, err
 	}
 	return Claims{
 		Issuer:        rawClaims.Issuer,
@@ -225,8 +229,73 @@ func (v *TokenVerifier) Verify(ctx context.Context, raw, expectedNonce string) (
 		Nonce:         rawClaims.Nonce,
 		Email:         strings.TrimSpace(rawClaims.Email),
 		EmailVerified: rawClaims.EmailVerified,
-		Name:          name,
+		Name:          boundedName(rawClaims.Name),
 	}, nil
+}
+
+func (v *TokenVerifier) validateIssuerAudience(rawClaims tokenClaims) ([]string, error) {
+	if !v.issuers[rawClaims.Issuer] {
+		return nil, fmt.Errorf("%w: issuer not allowed", ErrInvalidCallback)
+	}
+	audience, err := parseAudience(rawClaims.Audience)
+	if err != nil || !contains(audience, v.audience) {
+		return nil, fmt.Errorf("%w: audience mismatch", ErrInvalidCallback)
+	}
+	if len(audience) > 1 && rawClaims.AuthorizedFor != v.audience {
+		return nil, fmt.Errorf("%w: authorized party mismatch", ErrInvalidCallback)
+	}
+	if rawClaims.AuthorizedFor != "" && rawClaims.AuthorizedFor != v.audience {
+		return nil, fmt.Errorf("%w: authorized party mismatch", ErrInvalidCallback)
+	}
+	return audience, nil
+}
+
+func validateTimes(rawClaims tokenClaims, now time.Time) (time.Time, error) {
+	expiresAt, err := requiredUnixTime(rawClaims.ExpiresAt)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("%w: invalid expiry", ErrInvalidCallback)
+	}
+	if !now.Before(expiresAt.Add(clockSkew)) {
+		return time.Time{}, fmt.Errorf("%w: expired token", ErrInvalidCallback)
+	}
+	if rawClaims.IssuedAt != "" {
+		issuedAt, err := unixTime(rawClaims.IssuedAt)
+		if err != nil || issuedAt.After(now.Add(2*clockSkew)) {
+			return time.Time{}, fmt.Errorf("%w: invalid issued-at", ErrInvalidCallback)
+		}
+	}
+	if rawClaims.NotBefore != "" {
+		notBefore, err := unixTime(rawClaims.NotBefore)
+		if err != nil || notBefore.After(now.Add(clockSkew)) {
+			return time.Time{}, fmt.Errorf("%w: token not active", ErrInvalidCallback)
+		}
+	}
+	return expiresAt, nil
+}
+
+func validateNonceAndSubject(rawClaims tokenClaims, expectedNonce string) error {
+	if subtle.ConstantTimeCompare([]byte(rawClaims.Nonce), []byte(expectedNonce)) != 1 {
+		return fmt.Errorf("%w: nonce mismatch", ErrInvalidCallback)
+	}
+	if rawClaims.Subject == "" || len(rawClaims.Subject) > maxSubjectBytes || hasControl(rawClaims.Subject) {
+		return fmt.Errorf("%w: invalid subject", ErrInvalidCallback)
+	}
+	return nil
+}
+
+func validateEmail(email string) error {
+	if len(email) > maxEmailBytes || hasControl(email) {
+		return fmt.Errorf("%w: invalid email claim", ErrInvalidCallback)
+	}
+	return nil
+}
+
+func boundedName(raw string) string {
+	name := strings.TrimSpace(raw)
+	if len([]rune(name)) <= maxNameRunes {
+		return name
+	}
+	return string([]rune(name)[:maxNameRunes])
 }
 
 func (v *TokenVerifier) publicKey(ctx context.Context, keyID string, force bool) (*rsa.PublicKey, error) {
@@ -247,62 +316,92 @@ func (v *TokenVerifier) publicKey(ctx context.Context, keyID string, force bool)
 }
 
 func (v *TokenVerifier) refreshLocked(ctx context.Context) error {
+	body, cacheControl, err := v.fetchJWKS(ctx)
+	if err != nil {
+		return err
+	}
+	keys, err := parseJWKS(body)
+	if err != nil {
+		return err
+	}
+	v.keys = keys
+	v.cacheUntil = v.now().Add(jwksCacheTTL(cacheControl, v.cacheTTL))
+	return nil
+}
+
+func (v *TokenVerifier) fetchJWKS(ctx context.Context) ([]byte, string, error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, v.jwksURL, nil)
 	if err != nil {
-		return fmt.Errorf("%w: jwks request", ErrUnavailable)
+		return nil, "", fmt.Errorf("%w: jwks request", ErrUnavailable)
 	}
 	request.Header.Set("Accept", "application/json")
 	response, err := v.client.Do(request)
 	if err != nil {
-		return fmt.Errorf("%w: jwks request failed", ErrUnavailable)
+		return nil, "", fmt.Errorf("%w: jwks request failed", ErrUnavailable)
 	}
 	defer response.Body.Close()
 	body, err := io.ReadAll(io.LimitReader(response.Body, maxProviderResponseBytes))
 	if err != nil {
-		return fmt.Errorf("%w: jwks response", ErrUnavailable)
+		return nil, "", fmt.Errorf("%w: jwks response", ErrUnavailable)
 	}
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		return fmt.Errorf("%w: jwks endpoint returned %d", ErrUnavailable, response.StatusCode)
+		return nil, "", fmt.Errorf("%w: jwks endpoint returned %d", ErrUnavailable, response.StatusCode)
 	}
+	return body, response.Header.Get("Cache-Control"), nil
+}
+
+type jwk struct {
+	KeyType   string `json:"kty"`
+	KeyID     string `json:"kid"`
+	Use       string `json:"use"`
+	Algorithm string `json:"alg"`
+	Modulus   string `json:"n"`
+	Exponent  string `json:"e"`
+}
+
+func parseJWKS(body []byte) (map[string]*rsa.PublicKey, error) {
 	var set struct {
-		Keys []struct {
-			KeyType   string `json:"kty"`
-			KeyID     string `json:"kid"`
-			Use       string `json:"use"`
-			Algorithm string `json:"alg"`
-			Modulus   string `json:"n"`
-			Exponent  string `json:"e"`
-		} `json:"keys"`
+		Keys []jwk `json:"keys"`
 	}
 	if err := json.Unmarshal(body, &set); err != nil {
-		return fmt.Errorf("%w: malformed jwks", ErrUnavailable)
+		return nil, fmt.Errorf("%w: malformed jwks", ErrUnavailable)
 	}
 	keys := make(map[string]*rsa.PublicKey, len(set.Keys))
 	for _, jwk := range set.Keys {
-		if jwk.KeyType != "RSA" || jwk.KeyID == "" {
-			continue
-		}
-		if jwk.Use != "" && jwk.Use != "sig" {
-			continue
-		}
-		if jwk.Algorithm != "" && jwk.Algorithm != "RS256" {
+		if !usableJWK(jwk) {
 			continue
 		}
 		key, err := parseRSAKey(jwk.Modulus, jwk.Exponent)
 		if err != nil {
-			return fmt.Errorf("%w: invalid jwks key", ErrUnavailable)
+			return nil, fmt.Errorf("%w: invalid jwks key", ErrUnavailable)
 		}
 		keys[jwk.KeyID] = key
 	}
 	if len(keys) == 0 {
-		return fmt.Errorf("%w: jwks has no usable keys", ErrUnavailable)
+		return nil, fmt.Errorf("%w: jwks has no usable keys", ErrUnavailable)
 	}
-	v.keys = keys
-	ttl := v.cacheTTL
+	return keys, nil
+}
+
+func usableJWK(jwk jwk) bool {
+	if jwk.KeyType != "RSA" || jwk.KeyID == "" {
+		return false
+	}
+	if jwk.Use != "" && jwk.Use != "sig" {
+		return false
+	}
+	if jwk.Algorithm != "" && jwk.Algorithm != "RS256" {
+		return false
+	}
+	return true
+}
+
+func jwksCacheTTL(cacheControl string, configured time.Duration) time.Duration {
+	ttl := configured
 	if ttl == 0 {
 		ttl = defaultJWKSCacheTTL
 	}
-	if maxAge, ok := cacheMaxAge(response.Header.Get("Cache-Control")); ok {
+	if maxAge, ok := cacheMaxAge(cacheControl); ok {
 		ttl = maxAge
 	}
 	if ttl < jwksMinCacheTTL {
@@ -311,8 +410,7 @@ func (v *TokenVerifier) refreshLocked(ctx context.Context) error {
 	if ttl > jwksMaxCacheTTL {
 		ttl = jwksMaxCacheTTL
 	}
-	v.cacheUntil = v.now().Add(ttl)
-	return nil
+	return ttl
 }
 
 func parseRSAKey(modulus, exponent string) (*rsa.PublicKey, error) {
