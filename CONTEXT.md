@@ -35,3 +35,15 @@ _Avoid_: Rephrasing Request
 **Rephrasing Request**:
 A request to rewrite a Field Submission whose wording could be an instruction attack, when the available evidence is insufficient to establish an actual attempt.
 _Avoid_: Confirmed attack, terms violation
+
+**Account**:
+The CareerOS-owned record that groups a provider identity and session authority. An Account does not own browser-local Profile bytes unless the person explicitly imports them.
+_Avoid_: User, login, Profile
+
+**Session**:
+An opaque, server-verifiable grant issued by CareerOS after a provider sign-in. It can be revoked; a provider token is never a CareerOS Session.
+_Avoid_: Provider token, login
+
+**Sign-in**:
+Authentication through an allowlisted third-party identity provider. CareerOS does not manage customer passwords.
+_Avoid_: Login, password

@@ -1,0 +1,12 @@
+{
+  "started_utc": "2026-10-26T19:23:53.943551+00:00",
+  "cwd": "/home/henriquemichelini/.codex/worktrees/pr270-auth-repairs/careeros",
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "-count=1",
+    "./internal/auth"
+  ],
+  "exit_code": 0
+}

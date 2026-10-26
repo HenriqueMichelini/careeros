@@ -1,0 +1,11 @@
+{
+  "captured_at_utc": "2026-10-26T19:28:33.322Z",
+  "url": "https://app.netlify.com/projects/beamish-bavarois-333d03/deploys",
+  "project": "beamish-bavarois-333d03",
+  "status": [
+    "Builds are stopped.",
+    "Activate builds",
+    "Builds are stopped: Activate builds on this project to resume continuous deployment as well as re-enable the option to trigger deploys from this page."
+  ],
+  "settings_changed": false
+}

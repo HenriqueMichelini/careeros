@@ -1,0 +1,46 @@
+=== RUN   TestOrdinaryLogoutFencesEarlierCallback
+=== RUN   TestOrdinaryLogoutFencesEarlierCallback/callback_after_logout
+=== RUN   TestOrdinaryLogoutFencesEarlierCallback/provider_response_after_logout
+--- PASS: TestOrdinaryLogoutFencesEarlierCallback (0.00s)
+    --- PASS: TestOrdinaryLogoutFencesEarlierCallback/callback_after_logout (0.00s)
+    --- PASS: TestOrdinaryLogoutFencesEarlierCallback/provider_response_after_logout (0.00s)
+=== RUN   TestOrdinaryLogoutWinsBeforeSessionCommit
+=== RUN   TestOrdinaryLogoutWinsBeforeSessionCommit/same_account
+=== RUN   TestOrdinaryLogoutWinsBeforeSessionCommit/different_provider_subject
+--- PASS: TestOrdinaryLogoutWinsBeforeSessionCommit (0.00s)
+    --- PASS: TestOrdinaryLogoutWinsBeforeSessionCommit/same_account (0.00s)
+    --- PASS: TestOrdinaryLogoutWinsBeforeSessionCommit/different_provider_subject (0.00s)
+=== RUN   TestProductionGoogleProviderJWKSCacheLifetime
+=== RUN   TestProductionGoogleProviderJWKSCacheLifetime/configured_fallback
+=== RUN   TestProductionGoogleProviderJWKSCacheLifetime/default_fallback
+=== RUN   TestProductionGoogleProviderJWKSCacheLifetime/invalid_header_uses_config
+=== RUN   TestProductionGoogleProviderJWKSCacheLifetime/header_precedes_shorter_config
+=== RUN   TestProductionGoogleProviderJWKSCacheLifetime/header_precedes_longer_config
+=== RUN   TestProductionGoogleProviderJWKSCacheLifetime/fallback_lower_bound
+=== RUN   TestProductionGoogleProviderJWKSCacheLifetime/fallback_upper_bound
+=== RUN   TestProductionGoogleProviderJWKSCacheLifetime/header_lower_bound
+=== RUN   TestProductionGoogleProviderJWKSCacheLifetime/header_upper_bound
+--- PASS: TestProductionGoogleProviderJWKSCacheLifetime (0.05s)
+    --- PASS: TestProductionGoogleProviderJWKSCacheLifetime/configured_fallback (0.00s)
+    --- PASS: TestProductionGoogleProviderJWKSCacheLifetime/default_fallback (0.00s)
+    --- PASS: TestProductionGoogleProviderJWKSCacheLifetime/invalid_header_uses_config (0.00s)
+    --- PASS: TestProductionGoogleProviderJWKSCacheLifetime/header_precedes_shorter_config (0.00s)
+    --- PASS: TestProductionGoogleProviderJWKSCacheLifetime/header_precedes_longer_config (0.00s)
+    --- PASS: TestProductionGoogleProviderJWKSCacheLifetime/fallback_lower_bound (0.00s)
+    --- PASS: TestProductionGoogleProviderJWKSCacheLifetime/fallback_upper_bound (0.00s)
+    --- PASS: TestProductionGoogleProviderJWKSCacheLifetime/header_lower_bound (0.00s)
+    --- PASS: TestProductionGoogleProviderJWKSCacheLifetime/header_upper_bound (0.00s)
+=== RUN   TestSessionReplacementRejectsMissingRevokedAndExpiredInitiator
+=== RUN   TestSessionReplacementRejectsMissingRevokedAndExpiredInitiator/missing
+=== RUN   TestSessionReplacementRejectsMissingRevokedAndExpiredInitiator/revoked
+=== RUN   TestSessionReplacementRejectsMissingRevokedAndExpiredInitiator/expired
+--- PASS: TestSessionReplacementRejectsMissingRevokedAndExpiredInitiator (0.00s)
+    --- PASS: TestSessionReplacementRejectsMissingRevokedAndExpiredInitiator/missing (0.00s)
+    --- PASS: TestSessionReplacementRejectsMissingRevokedAndExpiredInitiator/revoked (0.00s)
+    --- PASS: TestSessionReplacementRejectsMissingRevokedAndExpiredInitiator/expired (0.00s)
+=== RUN   TestConcurrentSessionReplacementsConsumeInitiatorOnce
+--- PASS: TestConcurrentSessionReplacementsConsumeInitiatorOnce (0.00s)
+=== RUN   TestFailedSessionReplacementPreservesInitiator
+--- PASS: TestFailedSessionReplacementPreservesInitiator (0.00s)
+PASS
+ok  	professional-information-repo/internal/auth	0.058s

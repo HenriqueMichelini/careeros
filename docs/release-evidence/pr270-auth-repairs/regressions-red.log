@@ -1,0 +1,36 @@
+=== RUN   TestOrdinaryLogoutFencesEarlierCallback
+=== RUN   TestOrdinaryLogoutFencesEarlierCallback/callback_after_logout
+    logout_regression_test.go:69: earlier callback = 303, want 400 invalid_callback
+    logout_regression_test.go:72: earlier callback issued a session after ordinary logout
+    logout_regression_test.go:75: remaining sessions = 2, want only the other device
+=== RUN   TestOrdinaryLogoutFencesEarlierCallback/provider_response_after_logout
+    logout_regression_test.go:69: earlier callback = 303, want 400 invalid_callback
+    logout_regression_test.go:72: earlier callback issued a session after ordinary logout
+    logout_regression_test.go:75: remaining sessions = 2, want only the other device
+--- FAIL: TestOrdinaryLogoutFencesEarlierCallback (0.00s)
+    --- FAIL: TestOrdinaryLogoutFencesEarlierCallback/callback_after_logout (0.00s)
+    --- FAIL: TestOrdinaryLogoutFencesEarlierCallback/provider_response_after_logout (0.00s)
+=== RUN   TestProductionGoogleProviderJWKSCacheLifetime
+=== RUN   TestProductionGoogleProviderJWKSCacheLifetime/configured_fallback
+    provider_test.go:209: JWKS fetches at 5m0s expiry = 1, want 2
+=== RUN   TestProductionGoogleProviderJWKSCacheLifetime/default_fallback
+=== RUN   TestProductionGoogleProviderJWKSCacheLifetime/header_precedes_shorter_config
+=== RUN   TestProductionGoogleProviderJWKSCacheLifetime/header_precedes_longer_config
+=== RUN   TestProductionGoogleProviderJWKSCacheLifetime/fallback_lower_bound
+    provider_test.go:209: JWKS fetches at 5m0s expiry = 1, want 2
+=== RUN   TestProductionGoogleProviderJWKSCacheLifetime/fallback_upper_bound
+    provider_test.go:206: JWKS fetches before expiry = 2, want 1
+=== RUN   TestProductionGoogleProviderJWKSCacheLifetime/header_lower_bound
+=== RUN   TestProductionGoogleProviderJWKSCacheLifetime/header_upper_bound
+--- FAIL: TestProductionGoogleProviderJWKSCacheLifetime (0.19s)
+    --- FAIL: TestProductionGoogleProviderJWKSCacheLifetime/configured_fallback (0.00s)
+    --- PASS: TestProductionGoogleProviderJWKSCacheLifetime/default_fallback (0.00s)
+    --- PASS: TestProductionGoogleProviderJWKSCacheLifetime/header_precedes_shorter_config (0.00s)
+    --- PASS: TestProductionGoogleProviderJWKSCacheLifetime/header_precedes_longer_config (0.00s)
+    --- FAIL: TestProductionGoogleProviderJWKSCacheLifetime/fallback_lower_bound (0.00s)
+    --- FAIL: TestProductionGoogleProviderJWKSCacheLifetime/fallback_upper_bound (0.00s)
+    --- PASS: TestProductionGoogleProviderJWKSCacheLifetime/header_lower_bound (0.00s)
+    --- PASS: TestProductionGoogleProviderJWKSCacheLifetime/header_upper_bound (0.00s)
+FAIL
+FAIL	professional-information-repo/internal/auth	0.194s
+FAIL

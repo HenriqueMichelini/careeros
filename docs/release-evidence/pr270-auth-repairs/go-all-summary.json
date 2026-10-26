@@ -1,0 +1,51 @@
+{
+  "top_level_failures": [
+    "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes",
+    "TestProcessRunnerAssertionRegressionCompletesWithFail",
+    "TestProcessRunnerBoundsOutputAndStopsFollowingTests",
+    "TestProcessRunnerCDPPDFIsDistinctAndSurvivesExport",
+    "TestProcessRunnerCancellationStopsDetachedChildAndGrandchild",
+    "TestProcessRunnerCannotReadHostSentinelsOrReachHostLoopback",
+    "TestProcessRunnerCrashRetainsDistinctOutcome",
+    "TestProcessRunnerDeadlineRetainsPartialTreeAndUnreachedTest",
+    "TestProcessRunnerExecutesAllowlistedGoContractsWithoutInference",
+    "TestProcessRunnerExecutesExistingNodeCanonicalContracts",
+    "TestProcessRunnerExistingWorkflowSelectorsExecute",
+    "TestProcessRunnerReusesSectionBrowserHarnessWithScreenshotEvidence",
+    "TestProcessRunnerUsesOfflineFieldHelpers"
+  ],
+  "distinct_named_failing_subtests": [
+    "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-application-reuse",
+    "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-canonical-edit",
+    "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-enrichment",
+    "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-ingestion",
+    "TestProcessRunnerExistingWorkflowSelectorsExecute/go-canonical",
+    "TestProcessRunnerExistingWorkflowSelectorsExecute/go-cv",
+    "TestProcessRunnerExistingWorkflowSelectorsExecute/go-ingestion",
+    "TestProcessRunnerExistingWorkflowSelectorsExecute/go-job-application",
+    "TestProcessRunnerExistingWorkflowSelectorsExecute/node-artifact-review",
+    "TestProcessRunnerExistingWorkflowSelectorsExecute/node-ingestion",
+    "TestProcessRunnerExistingWorkflowSelectorsExecute/node-job-reuse"
+  ],
+  "passing_tested_packages": [
+    "professional-information-repo/backend/cv-generation",
+    "professional-information-repo/cmd/profile-review",
+    "professional-information-repo/backend/profile-review",
+    "professional-information-repo/backend/application-draft",
+    "professional-information-repo/internal/aidiagnostics",
+    "professional-information-repo/internal/netlifyproxy",
+    "professional-information-repo/internal/profilevalidation",
+    "professional-information-repo/netlify/functions/profile-review",
+    "professional-information-repo/internal/profiledocument",
+    "professional-information-repo/scripts/workflow-settings",
+    "professional-information-repo/scripts/field-validation/verify",
+    "professional-information-repo/internal/auth",
+    "professional-information-repo/backend/qualification-gaps",
+    "professional-information-repo/internal/semanticeval",
+    "professional-information-repo/backend/profile-ingestion",
+    "professional-information-repo/internal/preprocessing"
+  ],
+  "failing_packages": [
+    "professional-information-repo/internal/evaluationlab"
+  ]
+}

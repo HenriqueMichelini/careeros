@@ -1,0 +1,14 @@
+{
+  "started_utc": "2026-10-26T19:23:14.914376+00:00",
+  "cwd": "/home/henriquemichelini/.codex/worktrees/pr270-auth-repairs/careeros",
+  "command": [
+    "go",
+    "test",
+    "-count=1",
+    "-v",
+    "./internal/auth",
+    "-run",
+    "TestOrdinaryLogout|TestProductionGoogleProviderJWKSCacheLifetime|TestSessionReplacement|TestConcurrentSessionReplacements|TestFailedSessionReplacement"
+  ],
+  "exit_code": 0
+}
