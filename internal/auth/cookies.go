@@ -100,28 +100,28 @@ func clearSessionCookie(w http.ResponseWriter) {
 func setCSRFCookie(w http.ResponseWriter, value string, expiresAt time.Time) {
 	// The double-submit CSRF token must be readable by same-origin JavaScript.
 	// It is not an authentication secret and is bound to the session server-side.
-	http.SetCookie(w, &http.Cookie{
+	http.SetCookie(w, &http.Cookie{ // NOSONAR
 		Name:     csrfCookieName,
 		Value:    value,
 		Path:     "/",
 		MaxAge:   cookieMaxAge(expiresAt),
 		Expires:  expiresAt.UTC(),
 		Secure:   true,
-		HttpOnly: false, // NOSONAR
+		HttpOnly: false,
 		SameSite: http.SameSiteLaxMode,
 	})
 }
 
 func clearCSRFCookie(w http.ResponseWriter) {
 	// Matches the intentionally script-readable double-submit CSRF cookie.
-	http.SetCookie(w, &http.Cookie{
+	http.SetCookie(w, &http.Cookie{ // NOSONAR
 		Name:     csrfCookieName,
 		Value:    "",
 		Path:     "/",
 		MaxAge:   -1,
 		Expires:  time.Unix(0, 0).UTC(),
 		Secure:   true,
-		HttpOnly: false, // NOSONAR
+		HttpOnly: false,
 		SameSite: http.SameSiteLaxMode,
 	})
 }
