@@ -1,0 +1,6 @@
+{
+  "event": "All task /tmp directories absent after interruption; tracked source recovered from starting commit and exact recorded edits replayed.",
+  "sourceSession": "/home/henriquemichelini/.codex/sessions/2026/10/26/rollout-2026-10-26T21-57-54-01a17add-208c-7d20-a544-c129ec24c3ac.jsonl",
+  "originalRawEvidence": "The earlier 108-file /tmp evidence inventory cannot be fully reverified after deletion. Existing committed reports and session records remain historical evidence. New raw results are rerun and retained separately.",
+  "originalOverlay": "Reconstructed from exact recorded command against unchanged 16ba1b5 source. It is not rewritten for this repair."
+}

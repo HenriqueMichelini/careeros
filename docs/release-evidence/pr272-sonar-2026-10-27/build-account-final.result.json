@@ -1,0 +1,11 @@
+{
+  "command": [
+    "./node_modules/.bin/vite",
+    "build",
+    "--outDir",
+    "/tmp/careeros-pr272-sonar-repairs-20261026/build-account"
+  ],
+  "startedAt": "2026-10-27T07:02:31.019861+00:00",
+  "finishedAt": "2026-10-27T07:02:31.574012+00:00",
+  "exitCode": 0
+}

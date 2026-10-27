@@ -1,0 +1,1 @@
+{"status":"passed","checks":["clean new account; zero legacy Profile reads","explicit Save and committed-response-loss recovery","uncertain Save preserves edits and stable retry identity across focus","actual React account remount and late-response fencing","English and Portuguese account UI"],"evidence":"/tmp/careeros-account-browser-zOq9Ms"}

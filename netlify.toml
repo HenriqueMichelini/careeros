@@ -6,6 +6,21 @@
   directory = "netlify/functions"
 
 [[redirects]]
+  from = "/api/auth/*"
+  to = "/.netlify/functions/account/api/auth/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/api/profile/current"
+  to = "/.netlify/functions/account/api/profile/current"
+  status = 200
+
+[[redirects]]
+  from = "/api/profile/operations/*"
+  to = "/.netlify/functions/account/api/profile/operations/:splat"
+  status = 200
+
+[[redirects]]
   from = "/api/cv/generate"
   to = "/.netlify/functions/cv-generation"
   status = 200

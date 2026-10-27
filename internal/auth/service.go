@@ -12,9 +12,8 @@ import (
 	"time"
 )
 
-// Stores groups the three persistence seams. The production backend remains
-// unselected; the memory implementations are the reference used by tests and
-// local single-process runs.
+// Stores groups the three persistence seams. accountstore supplies shared
+// PostgreSQL authority; memory implementations remain isolated test references.
 type Stores struct {
 	Sessions     SessionStore
 	Accounts     AccountStore
@@ -41,6 +40,13 @@ type Principal struct {
 
 	tokenHash [32]byte
 	csrfHash  [32]byte
+}
+
+// MatchesSession binds a server principal to its exact stored session without
+// exposing token hashes to resource adapters or JSON responses.
+func (p Principal) MatchesSession(s Session) bool {
+	return p.AccountID == s.AccountID && p.SessionID == s.ID && p.Generation == s.Generation &&
+		subtle.ConstantTimeCompare(p.tokenHash[:], s.TokenHash[:]) == 1
 }
 
 type LoginStart struct {

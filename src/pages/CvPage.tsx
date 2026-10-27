@@ -127,11 +127,17 @@ function CvLink({ value }: { value: string }) {
 
 export default function CvPage() {
   const preferences = useCvPreferences()
-  const { state, profileDocument } = useStore()
+  const { state, profileDocument, accountId } = useStore()
+  const curatedKey = accountId
+    ? `careeros_account:${accountId}:${CURATED_CV_KEY}`
+    : CURATED_CV_KEY
+  const choicesKey = accountId
+    ? `careeros_account:${accountId}:${CV_STORAGE_KEY}`
+    : CV_STORAGE_KEY
   const { t } = useI18n()
   const [curated, setCurated] = useState<CuratedCv | null>(() => {
     try {
-      return parseCuratedCv(localStorage.getItem(CURATED_CV_KEY))
+      return parseCuratedCv(localStorage.getItem(curatedKey))
     } catch {
       return null
     }
@@ -150,7 +156,7 @@ export default function CvPage() {
       return parseCvChoices(
         curated?.choices
           ? JSON.stringify(curated.choices)
-          : localStorage.getItem(CV_STORAGE_KEY),
+          : localStorage.getItem(choicesKey),
       )
     } catch {
       return parseCvChoices(null)
@@ -260,7 +266,7 @@ export default function CvPage() {
       // Preserve the valid previous document if storage cannot accept its replacement.
       const nextChoices = { ...emptyCvChoices(), summary: saved.summary }
       localStorage.setItem(
-        CURATED_CV_KEY,
+        curatedKey,
         JSON.stringify({ ...saved, choices: nextChoices }),
       )
       setCurated(saved)
@@ -406,16 +412,16 @@ export default function CvPage() {
     try {
       if (curated) {
         localStorage.setItem(
-          CURATED_CV_KEY,
+          curatedKey,
           JSON.stringify({ ...curated, choices }),
         )
         // Compatibility mirror is secondary; the atomic document is authoritative.
         try {
-          localStorage.setItem(CV_STORAGE_KEY, JSON.stringify(choices))
+          localStorage.setItem(choicesKey, JSON.stringify(choices))
         } catch {
           /* primary document saved */
         }
-      } else localStorage.setItem(CV_STORAGE_KEY, JSON.stringify(choices))
+      } else localStorage.setItem(choicesKey, JSON.stringify(choices))
       setSaveError(false)
     } catch {
       setSaveError(true)

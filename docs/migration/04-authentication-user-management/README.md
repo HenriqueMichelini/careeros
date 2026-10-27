@@ -1,5 +1,7 @@
 # Authentication and user management
 
+**Current local persistence continuation — 26 October 2026:** the owner selected PostgreSQL plus `bytea` Profile documents for the first new-account persistence slice. The application runtime now uses the shared auth stores and protected account/Profile routes described in [the persistence contract](../../new-account-persistence.md). The reference in-memory stores remain for isolated tests. The historical implementation/limitation paragraphs below describe PR #270's original scope and remain as provenance; the new slice adds frontend account/session/CSRF wiring and a protected Netlify account adapter, while the five existing AI Functions remain outside hosted enforcement. No live Google/provider/production/deployment readiness is established.
+
 **Status: owner-selected policy, implementation slice in progress. Not approved for provider configuration, deployment or launch.**
 
 This note records the decisions behind the sign-in slice and the limits of what is implemented. The full local decision addendum and the #262 investigation artifacts stay outside the repository until the owner chooses to publish them.

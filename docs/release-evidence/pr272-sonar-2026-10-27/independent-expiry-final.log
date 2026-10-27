@@ -1,0 +1,5 @@
+=== RUN   TestReviewSessionReplacementRejectsExpiryWhileWaiting
+    persistence_test.go:826: initiating_session_expired_before_lock_release=true replacement_created=false Create_error=invalid or expired sign-in transaction
+--- PASS: TestReviewSessionReplacementRejectsExpiryWhileWaiting (1.34s)
+PASS
+ok  	professional-information-repo/internal/accountapi	2.369s

@@ -26,7 +26,7 @@ func (s *Service) Protect(next http.Handler) http.Handler {
 		}
 		principal, err := s.Authenticate(r.Context(), token)
 		if err != nil {
-			writeAuthError(w, ErrAuthenticationRequired)
+			writeAuthError(w, err)
 			return
 		}
 		if unsafeMethod(r.Method) && !validRequestCSRF(s, r, principal) {

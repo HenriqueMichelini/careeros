@@ -1,4 +1,5 @@
 import { applyIngestionDocument } from "./ingestionDocument"
+import { AccountProfile, applyAccountRetention } from "./accountProfile"
 import type { IngestionResult } from "./ingestion"
 import {
   createContext,
@@ -163,6 +164,11 @@ const StoreContext = createContext<{
   dispatch: (action: Action) => Promise<boolean>
   profileDocument: ProfileDocument | null
   profileSaving: boolean
+  accountId: string | null
+  saveCanonicalCandidate: (
+    expected: ProfileDocument,
+    candidate: ProfileDocument,
+  ) => Promise<boolean>
   refreshCanonicalProfile: () => Promise<boolean>
   editCanonicalProfile: (edit: ProfileEdit) => Promise<boolean>
   applyIngestionProposal: (
@@ -178,7 +184,13 @@ const StoreContext = createContext<{
   ) => Promise<boolean>
 } | null>(null)
 
-export function StoreProvider({ children }: { children: ReactNode }) {
+export function StoreProvider({
+  children,
+  account,
+}: Readonly<{
+  children: ReactNode
+  account?: AccountProfile
+}>) {
   const [profileDocument, setProfileDocument] =
     useState<ProfileDocument | null>(null)
   const optimisticDocument = useRef<ProfileDocument | null>(null)
@@ -192,12 +204,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   )
   const [state, rawDispatch] = useReducer(reducer, {
     uiLocale: getInitialLocale(),
-    cvLanguage: loadCvLanguage(),
+    cvLanguage: account ? getInitialLocale() : loadCvLanguage(),
     profileError: null,
     generatedMaterials: null,
     lastAcceptedMaterials: null,
-    typesafeKey: readSetting("careeros_typesafe_key"),
-    apiKey: readSetting("careeros_apikey"),
+    typesafeKey: account ? "" : readSetting("careeros_typesafe_key"),
+    apiKey: account ? "" : readSetting("careeros_apikey"),
     isReviewingRepo: false,
     isGenerating: false,
     lastReviewSummary: "",
@@ -208,29 +220,38 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true
     Promise.resolve()
-      .then(() => openProfile(localStorage))
+      .then(() => (account ? account.open() : openProfile(localStorage)))
       .then((doc) => {
         if (!active) return
-        optimisticDocument.current = doc
-        setProfileDocument(doc)
+        const pending = account?.recovery()
+        // The current server read succeeded before any recovery draft is shown.
+        // documentRef remains server authority; pending wording is unsaved.
+        optimisticDocument.current = pending?.document ?? doc
+        setProfileDocument(pending?.document ?? doc)
         documentRef.current = doc
+        if (account?.hasRecovery()) {
+          failed.current = true
+          setProfileError(pending ? "uncertain" : "validation")
+        }
         setReady(true)
       })
       .catch((error) => {
         if (!active) return
-        // A valid legacy Profile remains visible when migration cannot persist.
-        try {
-          const raw = localStorage.getItem(LEGACY_KEY)
-          if (localStorage.getItem(PROFILE_KEY) === null && raw !== null) {
-            const recovered = migrateProfile(
-              JSON.parse(raw),
-              crypto.randomUUID(),
-            )
-            optimisticDocument.current = recovered
-            setProfileDocument(recovered)
+        if (!account) {
+          // The existing browser-only mode retains its recovery behavior.
+          try {
+            const raw = localStorage.getItem(LEGACY_KEY)
+            if (localStorage.getItem(PROFILE_KEY) === null && raw !== null) {
+              const recovered = migrateProfile(
+                JSON.parse(raw),
+                crypto.randomUUID(),
+              )
+              optimisticDocument.current = recovered
+              setProfileDocument(recovered)
+            }
+          } catch {
+            /* Malformed originals are retained for download. */
           }
-        } catch {
-          /* Malformed originals are retained for download. */
         }
         failed.current = true
         setProfileError(
@@ -239,6 +260,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setReady(true)
       })
     const changed = (event: StorageEvent) => {
+      if (account) return
       if (event.key !== PROFILE_KEY && event.key !== null) return
       if (
         !documentRef.current ||
@@ -256,13 +278,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const commit = useCallback(
+    async (expected: ProfileDocument, candidate: ProfileDocument) => {
+      if (account)
+        return account.save(
+          expected,
+          applyAccountRetention(expected, candidate),
+        )
+      await saveProfile(localStorage, expected, candidate)
+      return candidate
+    },
+    [account],
+  )
+
   const updateCanonical = useCallback(
     (build: (doc: ProfileDocument) => ProfileDocument) => {
       const expected = optimisticDocument.current
       if (!expected) return Promise.resolve(false)
+      // Keep a second editor's draft outside the pending operation. Recovery of
+      // the first Save must never replace a newer optimistic unsaved candidate.
+      if (account && (failed.current || expected !== documentRef.current))
+        return Promise.resolve(false)
       let candidate: ProfileDocument
       try {
         candidate = build(expected)
+        if (account) candidate = applyAccountRetention(expected, candidate)
       } catch {
         setProfileError("validation")
         return Promise.resolve(false)
@@ -274,8 +314,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         .then(async () => {
           if (failed.current || !documentRef.current) return false
           try {
-            await saveProfile(localStorage, expected, candidate)
-            documentRef.current = candidate
+            const saved = await commit(expected, candidate)
+            documentRef.current = saved
+            if (account && optimisticDocument.current === candidate) {
+              optimisticDocument.current = saved
+              setProfileDocument(saved)
+            }
             return true
           } catch (error) {
             failed.current = true
@@ -289,14 +333,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       queue.current = saving
       return saving
     },
-    [],
+    [commit, account],
   )
   const refreshCanonicalProfile = useCallback(() => {
     const refreshing = queue.current.then(async () => {
       try {
-        const current = await browserProfileLock(() =>
-          readProfile(localStorage),
-        )
+        const current = account
+          ? await account.refresh()
+          : await browserProfileLock(() => readProfile(localStorage))
         documentRef.current = current
         optimisticDocument.current = current
         failed.current = false
@@ -312,7 +356,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })
     queue.current = refreshing
     return refreshing
-  }, [])
+  }, [account])
   const editCanonicalProfile = useCallback(
     (edit: ProfileEdit) => updateCanonical((doc) => editProfile(doc, edit)),
     [updateCanonical],
@@ -326,10 +370,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           if (failed.current || !expected) return false
           try {
             const candidate = build(expected)
-            await saveProfile(localStorage, expected, candidate)
-            documentRef.current = candidate
-            optimisticDocument.current = candidate
-            setProfileDocument(candidate)
+            const saved = await commit(expected, candidate)
+            documentRef.current = saved
+            optimisticDocument.current = saved
+            setProfileDocument(saved)
             return true
           } catch (error) {
             setProfileError(
@@ -346,7 +390,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       queue.current = saving
       return saving
     },
-    [],
+    [commit],
+  )
+  const saveCanonicalCandidate = useCallback(
+    (expected: ProfileDocument, candidate: ProfileDocument) =>
+      persistProposal((doc) => {
+        if (JSON.stringify(doc) !== JSON.stringify(expected))
+          throw new ProfileStorageError("stale")
+        return candidate
+      }),
+    [persistProposal],
   )
   const applyIngestionProposal = useCallback(
     (snapshot: ProfileDocument, input: string, result: IngestionResult) =>
@@ -378,8 +431,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         ? profileView(optimisticDocument.current)
         : null,
       unsavedCanonicalProfile: optimisticDocument.current,
+      ...(account ? { accountRecovery: account.recoveryExport() } : {}),
     }
-    for (const key of [LEGACY_KEY, PROFILE_KEY]) {
+    for (const key of account ? [] : [LEGACY_KEY, PROFILE_KEY]) {
       try {
         data[key] = localStorage.getItem(key)
       } catch {
@@ -397,11 +451,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    writeSetting("careeros_typesafe_key", state.typesafeKey)
+    if (!account) writeSetting("careeros_typesafe_key", state.typesafeKey)
   }, [state.typesafeKey])
 
   useEffect(() => {
-    writeSetting("careeros_apikey", state.apiKey)
+    if (!account) writeSetting("careeros_apikey", state.apiKey)
   }, [state.apiKey])
 
   useEffect(() => {
@@ -417,6 +471,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     () => (profileDocument ? profileView(profileDocument) : emptyProfileView()),
     [profileDocument],
   )
+  const accountSaveState = pendingProfileWrites > 0 ? "pending" : account?.state
+  const pendingAccountMessage =
+    state.uiLocale === "pt-BR"
+      ? "O Perfil ainda não foi confirmado. Suas alterações continuam disponíveis nesta sessão. Baixe a cópia antes de sair ou recarregar."
+      : "Your Profile is not confirmed saved. Your edits remain available in this session. Download a copy before leaving or reloading."
 
   return (
     <StoreContext.Provider
@@ -425,6 +484,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         dispatch,
         profileDocument,
         profileSaving: pendingProfileWrites > 0,
+        accountId: account?.accountId ?? null,
+        saveCanonicalCandidate,
         editCanonicalProfile,
         refreshCanonicalProfile,
         applyProfileProposal,
@@ -437,8 +498,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           className="border-b border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950"
         >
           <p>
-            {translate(state.uiLocale, `profile.persistence.${profileError}`)}
+            {account
+              ? pendingAccountMessage
+              : translate(
+                  state.uiLocale,
+                  `profile.persistence.${profileError}`,
+                )}
           </p>
+          {account?.hasRecovery() && !account.checkpointStored && (
+            <p>
+              {state.uiLocale === "pt-BR"
+                ? "O armazenamento de recuperação está indisponível. Mantenha esta aba aberta e baixe uma cópia antes de sair."
+                : "Recovery storage is unavailable. Keep this tab open and download a copy before leaving."}
+            </p>
+          )}
           <div className="mt-2 flex gap-4">
             <button
               type="button"
@@ -447,6 +520,67 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             >
               {translate(state.uiLocale, "profile.persistence.download")}
             </button>
+            {account?.recovery() && (
+              <button
+                type="button"
+                disabled={pendingProfileWrites > 0}
+                className="underline"
+                onClick={() => {
+                  setPendingProfileWrites((count) => count + 1)
+                  void account
+                    .retry()
+                    .then((saved) => {
+                      documentRef.current = saved
+                      optimisticDocument.current = saved
+                      setProfileDocument(saved)
+                      failed.current = false
+                      setProfileError(null)
+                    })
+                    .catch((error) =>
+                      setProfileError(
+                        error instanceof ProfileStorageError
+                          ? error.code
+                          : "uncertain",
+                      ),
+                    )
+                    .finally(() =>
+                      setPendingProfileWrites((count) => count - 1),
+                    )
+                }}
+              >
+                {state.uiLocale === "pt-BR"
+                  ? "Tentar o mesmo salvamento"
+                  : "Retry the same Save"}
+              </button>
+            )}
+            {account?.hasRecovery() && (
+              <button
+                type="button"
+                data-discard-recovery
+                disabled={pendingProfileWrites > 0}
+                className="underline"
+                onClick={() => {
+                  if (
+                    !window.confirm(
+                      state.uiLocale === "pt-BR"
+                        ? "Descartar a cópia de recuperação e recarregar o Perfil da conta? Isso não desfaz um salvamento no servidor."
+                        : "Discard the recovery copy and reload your account Profile? This does not undo a server Save.",
+                    )
+                  )
+                    return
+                  try {
+                    account.discardRecovery()
+                    void refreshCanonicalProfile()
+                  } catch {
+                    setProfileError("storage")
+                  }
+                }}
+              >
+                {state.uiLocale === "pt-BR"
+                  ? "Descartar cópia de recuperação"
+                  : "Discard recovery copy"}
+              </button>
+            )}
             <button
               type="button"
               className="underline"
@@ -457,6 +591,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             </button>
           </div>
         </div>
+      )}
+      {account && accountSaveState && (
+        <output
+          className="block border-b px-4 py-2 text-sm"
+          data-account-save-state={accountSaveState}
+        >
+          {state.uiLocale === "pt-BR"
+            ? {
+                idle: "Alterações exigem Salvar.",
+                pending: "Salvando…",
+                failed: "Não foi salvo. Alterações mantidas.",
+                uncertain:
+                  "Confirmação pendente. Verifique antes de tentar outra alteração.",
+                confirmed: `Salvamento confirmado na revisão ${account.historicalRevision}.`,
+              }[accountSaveState]
+            : {
+                idle: "Changes require Save.",
+                pending: "Saving…",
+                failed: "Save failed. Edits retained.",
+                uncertain:
+                  "Save outcome is uncertain. Check before making another change.",
+                confirmed: `Save confirmed at revision ${account.historicalRevision}.`,
+              }[accountSaveState]}
+        </output>
       )}
       {ready ? (
         children

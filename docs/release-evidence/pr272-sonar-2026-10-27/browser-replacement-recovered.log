@@ -1,0 +1,1 @@
+{"status":"passed","scenario":"replacement","evidence":"/tmp/careeros-account-browser-fAzOuK","checks":["pending wording survives session transition","signed-out/other-account content fenced","no automatic replay","identical recovery request"]}

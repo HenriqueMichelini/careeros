@@ -1,3 +1,4 @@
+import accountMessages from "./accountMessages.json"
 import journeyMessages from "./journeyMessages.json"
 import qualificationMessages from "./qualificationMessages.json"
 
@@ -9,6 +10,7 @@ export type TranslationValue = string | number
 const messages = {
   en: {
     ...journeyMessages.en,
+    ...accountMessages.en,
     "enrichment.savedAnswer": "Accepted application answer",
     "enrichment.hide": "Hide saved answer",
     "enrichment.proposed": "Proposed operation",
@@ -1125,6 +1127,7 @@ const messages = {
   },
   "pt-BR": {
     ...journeyMessages["pt-BR"],
+    ...accountMessages["pt-BR"],
     "enrichment.savedAnswer": "Resposta aceita da candidatura",
     "enrichment.hide": "Ocultar resposta salva",
     "enrichment.proposed": "Operação proposta",

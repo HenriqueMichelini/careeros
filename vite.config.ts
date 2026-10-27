@@ -5,12 +5,26 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 
+function apiProxy() {
+  return Object.fromEntries([
+    '/api/profile/current',
+    '/api/profile/operations',
+    '/api/cv/generate',
+    '/api/profile/ingest',
+    '/api/profile/review',
+    '/api/qualification-gaps',
+    '/api/application-draft',
+    '/api/auth',
+  ].map(route => [route, { target: 'http://127.0.0.1:8787', changeOrigin: false }]))
+}
+
 // Vite config — https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   // .figma/make/deploy-preview passes `--mode development` for cached-preview builds.
   const emitSourcemaps = mode === 'development'
 
   return {
+    cacheDir: process.env.CAREEROS_VITE_CACHE_DIR || 'node_modules/.vite',
     base: process.env.FIGMA_PUBLIC_URL ? `${process.env.FIGMA_PUBLIC_URL}/` : '/',
     build: {
       sourcemap: emitSourcemaps ? 'inline' : false,
@@ -33,29 +47,7 @@ react(),
       host: process.env.FIGMA_DEV_SERVER_HOST || '0.0.0.0',
       port: parseInt(process.env.PORT || '8443'),
       strictPort: true,
-      proxy: {
-        '/api/cv/generate': { target: 'http://127.0.0.1:8787', changeOrigin: false },
-        '/api/profile/ingest': {
-          target: 'http://127.0.0.1:8787',
-          changeOrigin: false,
-        },
-        '/api/profile/review': {
-          target: 'http://127.0.0.1:8787',
-          changeOrigin: false,
-        },
-        '/api/qualification-gaps': {
-          target: 'http://127.0.0.1:8787',
-          changeOrigin: false,
-        },
-        '/api/application-draft': {
-          target: 'http://127.0.0.1:8787',
-          changeOrigin: false,
-        },
-        '/api/auth': {
-          target: 'http://127.0.0.1:8787',
-          changeOrigin: false,
-        },
-      },
+      proxy: apiProxy(),
       watch: {
         ignored: [
           '**/.figma/**',
@@ -65,29 +57,7 @@ react(),
     preview: {
       host: process.env.FIGMA_DEV_SERVER_HOST || '0.0.0.0',
       port: parseInt(process.env.PORT || '8443'),
-      proxy: {
-        '/api/cv/generate': { target: 'http://127.0.0.1:8787', changeOrigin: false },
-        '/api/profile/ingest': {
-          target: 'http://127.0.0.1:8787',
-          changeOrigin: false,
-        },
-        '/api/profile/review': {
-          target: 'http://127.0.0.1:8787',
-          changeOrigin: false,
-        },
-        '/api/qualification-gaps': {
-          target: 'http://127.0.0.1:8787',
-          changeOrigin: false,
-        },
-        '/api/application-draft': {
-          target: 'http://127.0.0.1:8787',
-          changeOrigin: false,
-        },
-        '/api/auth': {
-          target: 'http://127.0.0.1:8787',
-          changeOrigin: false,
-        },
-      },
+      proxy: apiProxy(),
     },
   }
 })

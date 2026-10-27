@@ -1,0 +1,9 @@
+{
+  "command": [
+    "node",
+    "/tmp/careeros-pr272-sonar-repairs-20261026/verify-wiring.mjs"
+  ],
+  "startedAt": "2026-10-27T07:02:56.756988+00:00",
+  "finishedAt": "2026-10-27T07:02:57.187808+00:00",
+  "exitCode": 0
+}

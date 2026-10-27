@@ -1,0 +1,14 @@
+{
+  "en": {
+    "profile.persistence.uncertain": "Save outcome is uncertain. Keep your recovery copy and check the saved Profile.",
+    "profile.persistence.authentication": "Sign in again to access your Profile. Current edits remain unsaved.",
+    "profile.persistence.account_changed": "Your account changed. Current edits were not saved to another account.",
+    "profile.persistence.not_found": "This Save has not been confirmed. Keep your recovery copy."
+  },
+  "pt-BR": {
+    "profile.persistence.uncertain": "O resultado é incerto. Mantenha a cópia de recuperação e verifique o Perfil salvo.",
+    "profile.persistence.authentication": "Entre novamente para acessar seu Perfil. As alterações ainda não foram salvas.",
+    "profile.persistence.account_changed": "Sua conta mudou. As alterações não foram salvas em outra conta.",
+    "profile.persistence.not_found": "Este salvamento ainda não foi confirmado. Mantenha a cópia de recuperação."
+  }
+}

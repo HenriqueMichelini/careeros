@@ -51,7 +51,11 @@ export interface SubmissionSaveContext {
 // Storage and the origin lock are injected so tests can supply a fake storage
 // and a controlled lock, exactly like profileStorage.ts.
 export interface SubmissionSaveStore {
-  storage: ProfileStorage
+  storage?: ProfileStorage
+  save?: (
+    expected: ProfileDocument,
+    candidate: ProfileDocument,
+  ) => Promise<boolean>
   lock?: ProfileLock
 }
 
@@ -239,7 +243,8 @@ function failureCode(error: unknown, fallback: string): string {
 
 // saveSubmissionSelect performs exactly one canonical transaction: compile the
 // selected operations, apply them through `applyIngestionDocument`, then persist
-// once through the Web-Lock-protected `saveProfile`. It never mutates the pinned
+// once through the account Save seam or Web-Lock-protected `saveProfile`.
+// It never mutates the pinned
 // snapshot or storage on failure and performs zero provider calls, so Retry is a
 // pure re-run. `acknowledged` is true only after the write is durable, so the
 // caller clears the submitted draft only then.
@@ -280,7 +285,13 @@ export async function saveSubmissionSelect(
     }
   }
   try {
-    await saveProfile(store.storage, context.snapshot, candidate, store.lock)
+    if (store.save) {
+      if (!(await store.save(context.snapshot, candidate)))
+        throw new ProfileStorageError("storage")
+    } else {
+      if (!store.storage) throw new ProfileStorageError("storage")
+      await saveProfile(store.storage, context.snapshot, candidate, store.lock)
+    }
   } catch (failure) {
     return {
       status: "failed",

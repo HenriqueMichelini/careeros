@@ -1,0 +1,55 @@
+=== RUN   TestPostgresProfileOwnershipConcurrencyAndRecovery
+=== RUN   TestPostgresProfileOwnershipConcurrencyAndRecovery/direct_isolation_and_CSRF
+=== RUN   TestPostgresProfileOwnershipConcurrencyAndRecovery/concurrent_saves_and_duplicates
+=== RUN   TestPostgresProfileOwnershipConcurrencyAndRecovery/invalid_representation_and_retained_data
+=== RUN   TestPostgresProfileOwnershipConcurrencyAndRecovery/expiry_status_and_revocation
+=== RUN   TestPostgresProfileOwnershipConcurrencyAndRecovery/outage_preserves_session_and_fails_closed
+--- PASS: TestPostgresProfileOwnershipConcurrencyAndRecovery (0.72s)
+    --- PASS: TestPostgresProfileOwnershipConcurrencyAndRecovery/direct_isolation_and_CSRF (0.03s)
+    --- PASS: TestPostgresProfileOwnershipConcurrencyAndRecovery/concurrent_saves_and_duplicates (0.06s)
+    --- PASS: TestPostgresProfileOwnershipConcurrencyAndRecovery/invalid_representation_and_retained_data (0.43s)
+    --- PASS: TestPostgresProfileOwnershipConcurrencyAndRecovery/expiry_status_and_revocation (0.03s)
+    --- PASS: TestPostgresProfileOwnershipConcurrencyAndRecovery/outage_preserves_session_and_fails_closed (0.00s)
+=== RUN   TestPostgresRevocationVersusCommitAndLogin
+=== RUN   TestPostgresRevocationVersusCommitAndLogin/ordinary_wins
+=== RUN   TestPostgresRevocationVersusCommitAndLogin/generation_wins
+=== RUN   TestPostgresRevocationVersusCommitAndLogin/suspended_wins
+=== RUN   TestPostgresRevocationVersusCommitAndLogin/deleted_wins
+=== RUN   TestPostgresRevocationVersusCommitAndLogin/expiry_wins
+=== RUN   TestPostgresRevocationVersusCommitAndLogin/commit_wins_before_ordinary_logout
+=== RUN   TestPostgresRevocationVersusCommitAndLogin/ordinary_logout_fences_late_provider_response
+--- PASS: TestPostgresRevocationVersusCommitAndLogin (0.68s)
+    --- PASS: TestPostgresRevocationVersusCommitAndLogin/ordinary_wins (0.09s)
+    --- PASS: TestPostgresRevocationVersusCommitAndLogin/generation_wins (0.09s)
+    --- PASS: TestPostgresRevocationVersusCommitAndLogin/suspended_wins (0.09s)
+    --- PASS: TestPostgresRevocationVersusCommitAndLogin/deleted_wins (0.09s)
+    --- PASS: TestPostgresRevocationVersusCommitAndLogin/expiry_wins (0.09s)
+    --- PASS: TestPostgresRevocationVersusCommitAndLogin/commit_wins_before_ordinary_logout (0.13s)
+    --- PASS: TestPostgresRevocationVersusCommitAndLogin/ordinary_logout_fences_late_provider_response (0.10s)
+=== RUN   TestAccountProcessHelper
+--- PASS: TestAccountProcessHelper (0.00s)
+=== RUN   TestPostgresSurvivesAllApplicationProcessRestarts
+--- PASS: TestPostgresSurvivesAllApplicationProcessRestarts (4.23s)
+=== RUN   TestPostgresOneUseTransactionsAndAtomicSessionReplacement
+--- PASS: TestPostgresOneUseTransactionsAndAtomicSessionReplacement (0.11s)
+=== RUN   TestPostgresRollbackAndActualLostHTTPResponse
+--- PASS: TestPostgresRollbackAndActualLostHTTPResponse (0.13s)
+=== RUN   TestPostgresUnsignedGenerationAndSafeRevisionBounds
+--- PASS: TestPostgresUnsignedGenerationAndSafeRevisionBounds (0.11s)
+=== RUN   TestPostgresSessionReplacementRejectsExpiryWhileWaiting
+    session_replacement_test.go:70: initiating_session_expired_before_lock_release=true replacement_created=false Create_error=invalid or expired sign-in transaction
+--- PASS: TestPostgresSessionReplacementRejectsExpiryWhileWaiting (1.09s)
+=== RUN   TestPostgresSessionReplacementLogoutOrderings
+=== RUN   TestPostgresSessionReplacementLogoutOrderings/logout-first
+=== RUN   TestPostgresSessionReplacementLogoutOrderings/replacement-first
+--- PASS: TestPostgresSessionReplacementLogoutOrderings (0.23s)
+    --- PASS: TestPostgresSessionReplacementLogoutOrderings/logout-first (0.11s)
+    --- PASS: TestPostgresSessionReplacementLogoutOrderings/replacement-first (0.11s)
+=== RUN   TestPostgresValidReplacementUsesCurrentDatabaseTime
+--- PASS: TestPostgresValidReplacementUsesCurrentDatabaseTime (0.09s)
+PASS
+ok  	professional-information-repo/internal/accountapi	8.412s
+=== RUN   TestStrictJSONPreservesNULAndRejectsReplacementEncodings
+--- PASS: TestStrictJSONPreservesNULAndRejectsReplacementEncodings (0.00s)
+PASS
+ok  	professional-information-repo/internal/accountstore	1.014s
