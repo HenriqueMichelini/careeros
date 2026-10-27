@@ -223,9 +223,16 @@ export function StoreProvider({
       .then(() => (account ? account.open() : openProfile(localStorage)))
       .then((doc) => {
         if (!active) return
-        optimisticDocument.current = doc
-        setProfileDocument(doc)
+        const pending = account?.recovery()
+        // The current server read succeeded before any recovery draft is shown.
+        // documentRef remains server authority; pending wording is unsaved.
+        optimisticDocument.current = pending?.document ?? doc
+        setProfileDocument(pending?.document ?? doc)
         documentRef.current = doc
+        if (account?.hasRecovery()) {
+          failed.current = true
+          setProfileError(pending ? "uncertain" : "validation")
+        }
         setReady(true)
       })
       .catch((error) => {
@@ -424,9 +431,7 @@ export function StoreProvider({
         ? profileView(optimisticDocument.current)
         : null,
       unsavedCanonicalProfile: optimisticDocument.current,
-      ...(account
-        ? { accountId: account.accountId, pendingSave: account.recovery() }
-        : {}),
+      ...(account ? { accountRecovery: account.recoveryExport() } : {}),
     }
     for (const key of account ? [] : [LEGACY_KEY, PROFILE_KEY]) {
       try {
@@ -498,6 +503,13 @@ export function StoreProvider({
                   `profile.persistence.${profileError}`,
                 )}
           </p>
+          {account?.hasRecovery() && !account.checkpointStored && (
+            <p>
+              {state.uiLocale === "pt-BR"
+                ? "O armazenamento de recuperação está indisponível. Mantenha esta aba aberta e baixe uma cópia antes de sair."
+                : "Recovery storage is unavailable. Keep this tab open and download a copy before leaving."}
+            </p>
+          )}
           <div className="mt-2 flex gap-4">
             <button
               type="button"
@@ -537,6 +549,34 @@ export function StoreProvider({
                 {state.uiLocale === "pt-BR"
                   ? "Tentar o mesmo salvamento"
                   : "Retry the same Save"}
+              </button>
+            )}
+            {account?.hasRecovery() && (
+              <button
+                type="button"
+                data-discard-recovery
+                disabled={pendingProfileWrites > 0}
+                className="underline"
+                onClick={() => {
+                  if (
+                    !window.confirm(
+                      state.uiLocale === "pt-BR"
+                        ? "Descartar a cópia de recuperação e recarregar o Perfil da conta? Isso não desfaz um salvamento no servidor."
+                        : "Discard the recovery copy and reload your account Profile? This does not undo a server Save.",
+                    )
+                  )
+                    return
+                  try {
+                    account.discardRecovery()
+                    void refreshCanonicalProfile()
+                  } catch {
+                    setProfileError("storage")
+                  }
+                }}
+              >
+                {state.uiLocale === "pt-BR"
+                  ? "Descartar cópia de recuperação"
+                  : "Discard recovery copy"}
               </button>
             )}
             <button

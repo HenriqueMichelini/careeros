@@ -16,6 +16,8 @@ type Scenario = {
   release: (() => void) | null
   reads: string[]
   puts: string[]
+  logoutCalls: number
+  autoExpire: boolean
   documents: Record<string, ProfileDocument>
   operations: Record<string, unknown>
 }
@@ -28,8 +30,12 @@ const scenario: Scenario = {
   release: null,
   reads: [],
   puts: [],
+  logoutCalls: 0,
+  autoExpire: false,
   documents: {},
   operations: {},
+  ...(window as Window & { accountServerFixture?: Partial<Scenario> })
+    .accountServerFixture,
 }
 Object.assign(window, { accountScenario: scenario })
 const get = Storage.prototype.getItem
@@ -43,13 +49,18 @@ const response = (body: unknown, status = 200) =>
 window.fetch = async (input, init = {}) => {
   const path = String(input)
   const owner = scenario.account
-  if (path === "/api/auth/session")
+  if (path === "/api/auth/session") {
+    const authenticated =
+      !!owner &&
+      !(scenario.autoExpire && Date.now() >= Date.parse(scenario.expires))
     return response({
-      authenticated: !!owner,
-      account: owner ? { id: owner } : undefined,
+      authenticated,
+      account: authenticated ? { id: owner } : undefined,
       expiresAt: scenario.expires,
     })
+  }
   if (path === "/api/auth/logout") {
+    scenario.logoutCalls++
     scenario.account = ""
     return new Response(null, { status: 204 })
   }

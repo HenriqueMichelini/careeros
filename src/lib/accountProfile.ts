@@ -17,6 +17,19 @@ export interface ProfileReply {
   document: ProfileDocument | null
   outcome?: SaveOutcome
 }
+interface PendingSave {
+  operationId: string
+  expectedRevision: number
+  document: ProfileDocument
+}
+type RecoveryStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">
+function tabRecoveryStorage(): RecoveryStorage | null {
+  try {
+    return typeof sessionStorage === "undefined" ? null : sessionStorage
+  } catch {
+    return null
+  }
+}
 
 export function csrfHeaders(): Record<string, string> {
   const token = document.cookie
@@ -27,28 +40,81 @@ export function csrfHeaders(): Record<string, string> {
   return token ? { "X-CSRF-Token": decodeURIComponent(token) } : {}
 }
 
-// One client per mounted account workspace. Nothing here reads browser Profile
-// storage, persists career content, or treats a client account ID as authority.
+// Account-scoped pending-work recovery only. The tab checkpoint contains no
+// credentials and cannot supply account authority: open still requires a
+// successful current server read before StoreProvider exposes any draft.
 export class AccountProfile {
   active = true
   state: SaveState = "idle"
   historicalRevision: number | null = null
   private exists = false
-  private pending: {
-    operationId: string
-    expectedRevision: number
-    document: ProfileDocument
-  } | null = null
+  checkpointStored = false
+  private lease = 0
+  private pending: PendingSave | null = null
+  private invalidCheckpoint: string | null = null
+  private get recoveryKey() {
+    return `careeros_pending_profile_v1:${this.accountId}`
+  }
   constructor(
     readonly accountId: string,
     private notify: () => void = () => {},
     private request: typeof fetch = fetch,
-  ) {}
+    private storage: RecoveryStorage | null = tabRecoveryStorage(),
+  ) {
+    let raw: string | null = null
+    try {
+      raw = storage?.getItem(this.recoveryKey) ?? null
+    } catch {
+      /* Memory recovery remains available. */
+    }
+    if (raw !== null) {
+      try {
+        const saved = JSON.parse(raw)
+        const p = saved.pendingSave
+        if (
+          saved.version !== 1 ||
+          saved.accountId !== accountId ||
+          !p ||
+          typeof p.operationId !== "string" ||
+          !/^[a-zA-Z0-9_-]{1,128}$/.test(p.operationId) ||
+          !Number.isSafeInteger(p.expectedRevision) ||
+          p.expectedRevision < 0 ||
+          !validateProfileDocument(p.document) ||
+          (p.expectedRevision > 0 &&
+            p.document.revision !== p.expectedRevision + 1)
+        )
+          throw new Error()
+        this.pending = p
+        this.state = "uncertain"
+        this.checkpointStored = true
+      } catch {
+        this.invalidCheckpoint = raw
+        this.state = "failed"
+      }
+    }
+  }
   dispose() {
     this.active = false
+    this.lease++
+    if (this.pending) this.state = "uncertain"
   }
-  private assertActive() {
-    if (!this.active) throw new ProfileStorageError("account_changed")
+  resume() {
+    this.active = true
+  }
+  private assertActive(lease = this.lease) {
+    if (!this.active || lease !== this.lease)
+      throw new ProfileStorageError("account_changed")
+  }
+  private checkpoint() {
+    try {
+      this.storage?.setItem(
+        this.recoveryKey,
+        JSON.stringify(this.recoveryExport()),
+      )
+      this.checkpointStored = this.storage !== null
+    } catch {
+      this.checkpointStored = false
+    }
   }
   private status(state: SaveState) {
     this.assertActive()
@@ -59,7 +125,8 @@ export class AccountProfile {
     path: string,
     init: RequestInit = {},
   ): Promise<ProfileReply> {
-    this.assertActive()
+    const lease = this.lease
+    this.assertActive(lease)
     const response = await this.request(path, {
       ...init,
       credentials: "same-origin",
@@ -72,9 +139,9 @@ export class AccountProfile {
       },
       signal: AbortSignal.timeout(15_000),
     })
-    this.assertActive()
+    this.assertActive(lease)
     const body = await response.json()
-    this.assertActive()
+    this.assertActive(lease)
     if (!response.ok)
       throw new ProfileStorageError(
         response.status === 404
@@ -96,7 +163,9 @@ export class AccountProfile {
     return body
   }
   async open(): Promise<ProfileDocument> {
+    const lease = this.lease
     const reply = await this.call("/api/profile/current")
+    this.assertActive(lease)
     this.exists = reply.document !== null
     return (
       reply.document ?? migrateProfile(emptyProfileView(), crypto.randomUUID())
@@ -117,6 +186,11 @@ export class AccountProfile {
     this.historicalRevision = reply.outcome.committedRevision
     this.exists = true
     this.pending = null
+    try {
+      this.storage?.removeItem(this.recoveryKey)
+    } catch {
+      this.checkpointStored = false
+    }
     this.status("confirmed")
     // Return CURRENT authority, which may be newer than the historical outcome.
     return reply.document
@@ -125,33 +199,40 @@ export class AccountProfile {
     expected: ProfileDocument,
     candidate: ProfileDocument,
   ): Promise<ProfileDocument> {
+    this.assertActive()
     if (
       !validateProfileDocument(candidate) ||
       candidate.id !== expected.id ||
       candidate.revision !== expected.revision + 1
     )
       throw new ProfileStorageError("validation")
-    if (this.pending) throw new ProfileStorageError("uncertain")
+    if (this.hasRecovery()) throw new ProfileStorageError("uncertain")
     this.pending = {
       operationId: crypto.randomUUID(),
       expectedRevision: this.exists ? expected.revision : 0,
       document: structuredClone(candidate),
     }
+    this.checkpoint()
     return this.retry()
   }
   async retry(): Promise<ProfileDocument> {
-    this.assertActive()
+    const lease = this.lease
+    this.assertActive(lease)
     if (!this.pending) throw new ProfileStorageError("validation")
     this.status("pending")
+    const confirm = (reply: ProfileReply) => {
+      this.assertActive(lease)
+      return this.confirm(reply)
+    }
     try {
-      return this.confirm(
+      return confirm(
         await this.call("/api/profile/current", {
           method: "PUT",
           body: JSON.stringify(this.pending),
         }),
       )
     } catch (error) {
-      this.assertActive()
+      this.assertActive(lease)
       const definite =
         error instanceof ProfileStorageError &&
         ["validation", "stale", "account_changed", "authentication"].includes(
@@ -163,27 +244,55 @@ export class AccountProfile {
       }
       // The response may be lost after commit. A read never repeats the write.
       try {
-        return this.confirm(
+        return confirm(
           await this.call(
             `/api/profile/operations/${this.pending!.operationId}`,
           ),
         )
       } catch {
+        this.assertActive(lease)
         this.status("uncertain")
         throw new ProfileStorageError("uncertain")
       }
     }
   }
   async refresh(): Promise<ProfileDocument> {
-    if (this.state === "failed") {
-      this.pending = null
-      return this.open()
-    }
-    if (this.pending)
-      return this.confirm(
-        await this.call(`/api/profile/operations/${this.pending.operationId}`),
+    const lease = this.lease
+    if (this.pending) {
+      const reply = await this.call(
+        `/api/profile/operations/${this.pending.operationId}`,
       )
+      this.assertActive(lease)
+      return this.confirm(reply)
+    }
     return this.open()
+  }
+  hasRecovery() {
+    return this.pending !== null || this.invalidCheckpoint !== null
+  }
+  recoveryExport() {
+    return {
+      version: 1,
+      accountId: this.accountId,
+      pendingSave: this.recovery(),
+      ...(this.invalidCheckpoint === null
+        ? {}
+        : { invalidCheckpoint: this.invalidCheckpoint }),
+    }
+  }
+  discardRecovery() {
+    // This discards a local recovery copy, never cancels/undoes a server commit.
+    // Invalidate in-flight continuations before allowing another operation.
+    try {
+      this.storage?.removeItem(this.recoveryKey)
+    } catch {
+      throw new ProfileStorageError("storage")
+    }
+    this.lease++
+    this.pending = null
+    this.invalidCheckpoint = null
+    this.state = "idle"
+    this.notify()
   }
   recovery() {
     return this.pending ? structuredClone(this.pending) : null

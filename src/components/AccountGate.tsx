@@ -14,7 +14,8 @@ export default function AccountGate({ children }: { children: ReactNode }) {
   const [error, setError] = useState(false)
   const [client, setClient] = useState<AccountProfile | null>(null)
   const [checking, setChecking] = useState(true)
-  const sessionKey = useRef("")
+  const [logoutIntent, setLogoutIntent] = useState(false)
+  const clients = useRef(new Map<string, AccountProfile>())
   const current = useRef<AccountProfile | null>(null)
   const epoch = useRef(0)
   const pt = getInitialLocale() === "pt-BR"
@@ -42,20 +43,21 @@ export default function AccountGate({ children }: { children: ReactNode }) {
         throw new Error()
       setSession(value)
       setError(false)
-      const key = value.authenticated
-        ? `${value.account!.id}:${value.expiresAt}`
-        : ""
-      if (key !== sessionKey.current || !current.current) {
+      const accountId = value.authenticated ? value.account!.id : null
+      if (current.current?.accountId !== accountId) {
         current.current?.dispose()
         current.current = null
         setClient(null)
+        setLogoutIntent(false)
       }
-      if (value.authenticated && !current.current) {
-        const next = new AccountProfile(value.account!.id)
+      if (accountId && !current.current) {
+        const next =
+          clients.current.get(accountId) ?? new AccountProfile(accountId)
+        clients.current.set(accountId, next)
+        next.resume()
         current.current = next
         setClient(next)
       }
-      sessionKey.current = key
       setChecking(false)
     } catch {
       if (ticket === epoch.current) {
@@ -74,13 +76,13 @@ export default function AccountGate({ children }: { children: ReactNode }) {
     document.addEventListener("visibilitychange", visible)
     return () => {
       epoch.current++
-      current.current?.dispose()
+      for (const retained of clients.current.values()) retained.dispose()
       window.removeEventListener("focus", focus)
       document.removeEventListener("visibilitychange", visible)
     }
   }, [])
   useEffect(() => {
-    if (!session?.expiresAt) return
+    if (!session?.authenticated || !session.expiresAt) return
     const timer = setTimeout(
       () => void probe(),
       Math.min(
@@ -89,8 +91,17 @@ export default function AccountGate({ children }: { children: ReactNode }) {
       ),
     )
     return () => clearTimeout(timer)
-  }, [session?.expiresAt])
-  const logout = async () => {
+  }, [session?.authenticated, session?.expiresAt])
+  const logout = async (discard = false) => {
+    if (discard) {
+      try {
+        current.current?.discardRecovery()
+      } catch {
+        setError(true)
+        return
+      }
+    }
+    setLogoutIntent(false)
     ++epoch.current
     current.current?.dispose()
     current.current = null
@@ -107,6 +118,22 @@ export default function AccountGate({ children }: { children: ReactNode }) {
     } catch {
       setError(true)
     }
+  }
+  const pendingInTab = [...clients.current.values()].some((retained) =>
+    retained.hasRecovery(),
+  )
+  const downloadPending = () => {
+    if (!client) return
+    const url = URL.createObjectURL(
+      new Blob([JSON.stringify(client.recoveryExport(), null, 2)], {
+        type: "application/json",
+      }),
+    )
+    const anchor = document.createElement("a")
+    anchor.href = url
+    anchor.download = "careeros-pending-save-recovery.json"
+    anchor.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
   if (!client)
     return (
@@ -133,9 +160,18 @@ export default function AccountGate({ children }: { children: ReactNode }) {
             <a
               className="inline-block rounded bg-indigo-700 px-4 py-2 text-white"
               href="/api/auth/google/start"
+              target={pendingInTab ? "_blank" : undefined}
+              rel={pendingInTab ? "noopener" : undefined}
             >
               {pt ? "Entrar com Google" : "Sign in with Google"}
             </a>
+            {pendingInTab && (
+              <p>
+                {pt
+                  ? "O trabalho pendente continua nesta aba. Entre na outra aba e volte aqui para recuperar somente o trabalho da mesma conta."
+                  : "Pending work remains in this tab. Sign in in the other tab, then return here to recover work for that same account."}
+              </p>
+            )}
           </>
         ) : (
           <p role="status">
@@ -162,20 +198,70 @@ export default function AccountGate({ children }: { children: ReactNode }) {
         </div>
       )}
       <div hidden={checking}>
-        <StoreProvider
-          key={`${client.accountId}:${session?.expiresAt}`}
-          account={client}
-        >
+        <StoreProvider key={client.accountId} account={client}>
           <div className="flex items-center justify-between border-b px-4 py-2 text-sm">
             <span>
               {pt
                 ? "Perfil da conta · salvar explicitamente"
                 : "Account Profile · explicit Save"}
             </span>
-            <button onClick={() => void logout()}>
+            <button
+              data-sign-out
+              onClick={() =>
+                client.hasRecovery() ? setLogoutIntent(true) : void logout()
+              }
+            >
               {pt ? "Sair" : "Sign out"}
             </button>
           </div>
+          {logoutIntent && (
+            <div
+              role="dialog"
+              aria-label={
+                pt
+                  ? "Salvar recuperação antes de sair"
+                  : "Keep recovery before signing out"
+              }
+              data-pending-logout
+              className="border-b p-4"
+            >
+              {error && (
+                <p role="alert">
+                  {pt
+                    ? "Não foi possível descartar a recuperação. Baixe uma cópia e tente novamente."
+                    : "Recovery could not be discarded. Download a copy and try again."}
+                </p>
+              )}
+              <p>
+                {pt
+                  ? "Um salvamento ainda não foi confirmado. Manter ou descartar a cópia de recuperação? Descartar não desfaz um salvamento no servidor."
+                  : "A Save is not confirmed. Keep or discard its recovery copy? Discarding does not undo a server Save."}
+              </p>
+              <div className="flex flex-wrap gap-4 py-2">
+                <button data-logout-download onClick={downloadPending}>
+                  {pt
+                    ? "Baixar cópia de recuperação"
+                    : "Download recovery copy"}
+                </button>
+                <button data-logout-keep onClick={() => void logout()}>
+                  {pt
+                    ? "Sair e manter recuperação nesta aba"
+                    : "Sign out and keep recovery in this tab"}
+                </button>
+                <button data-logout-discard onClick={() => void logout(true)}>
+                  {pt
+                    ? "Descartar recuperação e sair"
+                    : "Discard recovery and sign out"}
+                </button>
+                <button
+                  data-logout-cancel
+                  onClick={() => setLogoutIntent(false)}
+                >
+                  {pt ? "Cancelar" : "Cancel"}
+                </button>
+              </div>
+            </div>
+          )}
           {children}
         </StoreProvider>
       </div>

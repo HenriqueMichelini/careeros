@@ -217,6 +217,180 @@ test("account-switch disposal rejects late A replies and cannot contaminate acco
   await assert.rejects(confused.open(), { code: "account_changed" })
 })
 
+function recoveryStorage() {
+  const data = new Map()
+  return {
+    data,
+    getItem: (key) => data.get(key) ?? null,
+    setItem: (key, value) => data.set(key, value),
+    removeItem: (key) => data.delete(key),
+  }
+}
+
+test("tab recovery survives reconstruction, stays account-scoped and reuses the exact operation", async () => {
+  const storage = recoveryStorage()
+  const doc = migrateProfile(emptyProfileView(), "pending-profile")
+  const puts = []
+  let available = false
+  const transport = async (path, init) => {
+    if (init.method === "PUT") {
+      puts.push(init.body)
+      if (!available) throw new Error("lost acknowledgment")
+      const p = JSON.parse(init.body)
+      return reply({
+        accountId: "a",
+        document: p.document,
+        outcome: {
+          operationId: p.operationId,
+          profileId: p.document.id,
+          committedRevision: p.document.revision,
+        },
+      })
+    }
+    if (path === "/api/profile/current")
+      return reply({ accountId: "a", document: doc })
+    return reply({ error: "not_found" }, 404)
+  }
+  const original = new AccountProfile("a", () => {}, transport, storage)
+  await original.open()
+  await assert.rejects(original.save(doc, candidate(doc)), {
+    code: "uncertain",
+  })
+  const frozen = puts[0],
+    key = "careeros_pending_profile_v1:a"
+  assert.equal(
+    JSON.stringify(JSON.parse(storage.data.get(key)).pendingSave),
+    frozen,
+  )
+  assert.ok(!storage.data.get(key).includes("synthetic-csrf"))
+  original.dispose()
+  const recovered = new AccountProfile("a", () => {}, transport, storage)
+  assert.equal(recovered.state, "uncertain")
+  assert.equal(
+    (await recovered.open()).revision,
+    1,
+    "read authority remains the current server document",
+  )
+  assert.equal(puts.length, 1, "construct/read must not upload recovery")
+  assert.equal(JSON.stringify(recovered.recovery()), frozen)
+  const b = new AccountProfile(
+    "b",
+    () => {},
+    async () => reply({ accountId: "b", document: null }),
+    storage,
+  )
+  assert.equal(b.recovery(), null)
+  assert.ok(!(await b.open()).facts.some((f) => f.value === "Go, ação\0😀"))
+  await assert.rejects(recovered.refresh(), { code: "not_found" })
+  assert.equal(
+    JSON.stringify(recovered.recovery()),
+    frozen,
+    "missing outcome must not discard pending work",
+  )
+  available = true
+  await recovered.retry()
+  assert.equal(puts[1], frozen)
+  assert.equal(storage.data.has(key), false)
+})
+
+test("late replies from a disposed lease cannot clear a newer recovery after same-account resume", async () => {
+  const storage = recoveryStorage(),
+    doc = migrateProfile(emptyProfileView(), "lease-profile")
+  const requests = []
+  const client = new AccountProfile(
+    "a",
+    () => {},
+    async (path, init) => {
+      if (init.method !== "PUT") return reply({ accountId: "a", document: doc })
+      return new Promise((resolve) =>
+        requests.push({ resolve, body: JSON.parse(init.body) }),
+      )
+    },
+    storage,
+  )
+  await client.open()
+  const former = client.save(doc, candidate(doc)).then(
+    () => null,
+    (error) => error,
+  )
+  client.dispose()
+  client.resume()
+  client.discardRecovery()
+  const nextDoc = editProfile(doc, {
+    type: "field",
+    ownerId: doc.id,
+    field: "skills",
+    value: "new pending wording",
+  })
+  const next = client.save(doc, nextDoc)
+  const currentID = client.recovery().operationId
+  const complete = (request) =>
+    request.resolve(
+      reply({
+        accountId: "a",
+        document: request.body.document,
+        outcome: {
+          operationId: request.body.operationId,
+          profileId: doc.id,
+          committedRevision: 2,
+        },
+      }),
+    )
+  complete(requests[0])
+  assert.equal((await former).code, "account_changed")
+  assert.equal(client.recovery().operationId, currentID)
+  assert.equal(
+    JSON.parse(storage.data.get("careeros_pending_profile_v1:a")).pendingSave
+      .operationId,
+    currentID,
+  )
+  complete(requests[1])
+  await next
+  assert.equal(client.recovery(), null)
+})
+
+test("checkpoint failure retains memory recovery, server outage never supplies browser authority, discard is deliberate", async () => {
+  const doc = migrateProfile(emptyProfileView(), "storage-profile")
+  let failRead = false,
+    failRemove = false
+  const storage = recoveryStorage()
+  const originalSet = storage.setItem,
+    originalRemove = storage.removeItem
+  storage.setItem = () => {
+    throw new Error("quota")
+  }
+  storage.removeItem = (key) => {
+    if (failRemove) throw new Error("blocked")
+    originalRemove(key)
+  }
+  const client = new AccountProfile(
+    "a",
+    () => {},
+    async (path, init) => {
+      if (init.method === "PUT" || path.includes("operations") || failRead)
+        return reply({ error: "storage_unavailable" }, 503)
+      return reply({ accountId: "a", document: doc })
+    },
+    storage,
+  )
+  await client.open()
+  await assert.rejects(client.save(doc, candidate(doc)), { code: "uncertain" })
+  const frozen = client.recovery()
+  assert.equal(client.checkpointStored, false)
+  client.dispose()
+  client.resume()
+  failRead = true
+  await assert.rejects(client.open(), { code: "storage" })
+  assert.deepEqual(client.recovery(), frozen)
+  failRemove = true
+  assert.throws(() => client.discardRecovery(), { code: "storage" })
+  assert.deepEqual(client.recovery(), frozen)
+  failRemove = false
+  storage.setItem = originalSet
+  client.discardRecovery()
+  assert.equal(client.recovery(), null)
+})
+
 test("account retention removes a deleted fact's shared excerpt and invalidates retained support", () => {
   const before = JSON.parse(
     readFileSync(

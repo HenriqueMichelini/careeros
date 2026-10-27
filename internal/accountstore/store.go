@@ -172,7 +172,7 @@ func (s sessions) FindByTokenHash(ctx context.Context, hash [32]byte, now time.T
 	}
 	return v, err == nil, unavailable(err)
 }
-func (s sessions) Create(ctx context.Context, v auth.Session, previousID string, now time.Time) error {
+func (s sessions) Create(ctx context.Context, v auth.Session, previousID string, _ time.Time) error {
 	if v.ID == "" || v.AccountID == "" {
 		return auth.ErrUnavailable
 	}
@@ -217,14 +217,16 @@ func (s sessions) Create(ctx context.Context, v auth.Session, previousID string,
 	}
 	if previousID != "" {
 		var valid bool
-		err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM careeros_sessions s JOIN careeros_accounts a ON a.id=s.account_id WHERE s.id=$1 AND s.expires_at>$2 AND a.status='active' AND a.generation=s.generation)`, previousID, now).Scan(&valid)
+		// Unlike transaction-start now(), clock_timestamp() advances while this
+		// transaction waits for account locks. The caller's clock is not authority.
+		err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM careeros_sessions s JOIN careeros_accounts a ON a.id=s.account_id WHERE s.id=$1 AND s.expires_at>clock_timestamp() AND a.status='active' AND a.generation=s.generation)`, previousID).Scan(&valid)
 		if err != nil {
 			return unavailable(err)
 		}
 		if !valid {
 			return auth.ErrInvalidTransaction
 		}
-		result, e := tx.ExecContext(ctx, "DELETE FROM careeros_sessions WHERE id=$1 AND expires_at>$2", previousID, now)
+		result, e := tx.ExecContext(ctx, "DELETE FROM careeros_sessions WHERE id=$1 AND expires_at>clock_timestamp()", previousID)
 		if e != nil {
 			return unavailable(e)
 		}

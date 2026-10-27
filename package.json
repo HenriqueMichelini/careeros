@@ -9,6 +9,7 @@
     "build": "vite build",
     "test": "node --test tests/*.test.mjs",
     "test:account-browser": "node tests/account-browser.check.mjs",
+    "test:account-sessions": "node tests/account-session-browser.check.mjs replacement && node tests/account-session-browser.check.mjs expiry && node tests/account-session-browser.check.mjs lifecycle",
     "test:ingestion-browser": "node tests/submission-journey.check.mjs",
     "test:review-renderer": "node tests/review-renderer.check.mjs",
     "test:application-reuse": "node tests/application-reuse-browser.check.mjs",
