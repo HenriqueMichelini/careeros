@@ -187,10 +187,10 @@ const StoreContext = createContext<{
 export function StoreProvider({
   children,
   account,
-}: {
+}: Readonly<{
   children: ReactNode
   account?: AccountProfile
-}) {
+}>) {
   const [profileDocument, setProfileDocument] =
     useState<ProfileDocument | null>(null)
   const optimisticDocument = useRef<ProfileDocument | null>(null)
@@ -472,6 +472,10 @@ export function StoreProvider({
     [profileDocument],
   )
   const accountSaveState = pendingProfileWrites > 0 ? "pending" : account?.state
+  const pendingAccountMessage =
+    state.uiLocale === "pt-BR"
+      ? "O Perfil ainda não foi confirmado. Suas alterações continuam disponíveis nesta sessão. Baixe a cópia antes de sair ou recarregar."
+      : "Your Profile is not confirmed saved. Your edits remain available in this session. Download a copy before leaving or reloading."
 
   return (
     <StoreContext.Provider
@@ -495,9 +499,7 @@ export function StoreProvider({
         >
           <p>
             {account
-              ? state.uiLocale === "pt-BR"
-                ? "O Perfil ainda não foi confirmado. Suas alterações continuam disponíveis nesta sessão. Baixe a cópia antes de sair ou recarregar."
-                : "Your Profile is not confirmed saved. Your edits remain available in this session. Download a copy before leaving or reloading."
+              ? pendingAccountMessage
               : translate(
                   state.uiLocale,
                   `profile.persistence.${profileError}`,
@@ -591,9 +593,8 @@ export function StoreProvider({
         </div>
       )}
       {account && accountSaveState && (
-        <p
-          role="status"
-          className="border-b px-4 py-2 text-sm"
+        <output
+          className="block border-b px-4 py-2 text-sm"
           data-account-save-state={accountSaveState}
         >
           {state.uiLocale === "pt-BR"
@@ -613,7 +614,7 @@ export function StoreProvider({
                   "Save outcome is uncertain. Check before making another change.",
                 confirmed: `Save confirmed at revision ${account.historicalRevision}.`,
               }[accountSaveState]}
-        </p>
+        </output>
       )}
       {ready ? (
         children

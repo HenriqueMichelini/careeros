@@ -40,6 +40,19 @@ export function csrfHeaders(): Record<string, string> {
   return token ? { "X-CSRF-Token": decodeURIComponent(token) } : {}
 }
 
+function replyError(
+  status: number,
+  body: { error?: string },
+): ProfileStorageError {
+  if (status === 404) return new ProfileStorageError("not_found")
+  if (status === 401) return new ProfileStorageError("authentication")
+  if (body?.error === "account_changed")
+    return new ProfileStorageError("account_changed")
+  if (status === 409) return new ProfileStorageError("stale")
+  if (status === 422) return new ProfileStorageError("validation")
+  return new ProfileStorageError("storage")
+}
+
 // Account-scoped pending-work recovery only. The tab checkpoint contains no
 // credentials and cannot supply account authority: open still requires a
 // successful current server read before StoreProvider exposes any draft.
@@ -57,9 +70,9 @@ export class AccountProfile {
   }
   constructor(
     readonly accountId: string,
-    private notify: () => void = () => {},
-    private request: typeof fetch = fetch,
-    private storage: RecoveryStorage | null = tabRecoveryStorage(),
+    private readonly notify: () => void = () => {},
+    private readonly request: typeof fetch = fetch,
+    private readonly storage: RecoveryStorage | null = tabRecoveryStorage(),
   ) {
     let raw: string | null = null
     try {
@@ -83,7 +96,7 @@ export class AccountProfile {
           (p.expectedRevision > 0 &&
             p.document.revision !== p.expectedRevision + 1)
         )
-          throw new Error()
+          throw new Error("Invalid pending Profile checkpoint")
         this.pending = p
         this.state = "uncertain"
         this.checkpointStored = true
@@ -142,20 +155,7 @@ export class AccountProfile {
     this.assertActive(lease)
     const body = await response.json()
     this.assertActive(lease)
-    if (!response.ok)
-      throw new ProfileStorageError(
-        response.status === 404
-          ? "not_found"
-          : response.status === 401
-            ? "authentication"
-            : body?.error === "account_changed"
-              ? "account_changed"
-              : response.status === 409
-                ? "stale"
-                : response.status === 422
-                  ? "validation"
-                  : "storage",
-      )
+    if (!response.ok) throw replyError(response.status, body)
     if (body.accountId !== this.accountId)
       throw new ProfileStorageError("account_changed")
     if (body.document !== null && !validateProfileDocument(body.document))

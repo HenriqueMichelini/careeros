@@ -121,37 +121,52 @@ func StrictJSON(raw []byte) bool {
 		if raw[i] != '"' {
 			continue
 		}
-		i++
-		for i < len(raw) && raw[i] != '"' {
-			if raw[i] != '\\' {
-				i++
-				continue
-			}
-			i++
-			if raw[i] != 'u' {
-				i++
-				continue
-			}
-			n, _ := strconv.ParseUint(string(raw[i+1:i+5]), 16, 16)
-			i += 5
-			if n >= 0xdc00 && n <= 0xdfff {
-				return false
-			}
-			if n >= 0xd800 && n <= 0xdbff {
-				if i+6 > len(raw) || raw[i] != '\\' || raw[i+1] != 'u' {
-					return false
-				}
-				low, e := strconv.ParseUint(string(raw[i+2:i+6]), 16, 16)
-				if e != nil || low < 0xdc00 || low > 0xdfff {
-					return false
-				}
-				i += 6
-			}
+		end, valid := jsonStringEnd(raw, i+1)
+		if !valid {
+			return false
 		}
+		i = end
 	}
 	decoder := json.NewDecoder(bytes.NewReader(raw))
 	decoder.UseNumber()
 	return uniqueJSONKeys(decoder, 0) == nil
+}
+
+// json.Valid has already established JSON syntax and escape bounds. These
+// helpers additionally reject lone surrogates instead of replacing their text.
+func jsonStringEnd(raw []byte, i int) (int, bool) {
+	for i < len(raw) && raw[i] != '"' {
+		if raw[i] != '\\' {
+			i++
+			continue
+		}
+		if raw[i+1] != 'u' {
+			i += 2
+			continue
+		}
+		var valid bool
+		i, valid = unicodeEscapeEnd(raw, i)
+		if !valid {
+			return i, false
+		}
+	}
+	return i, true
+}
+
+func unicodeEscapeEnd(raw []byte, i int) (int, bool) {
+	n, _ := strconv.ParseUint(string(raw[i+2:i+6]), 16, 16)
+	i += 6
+	if n >= 0xdc00 && n <= 0xdfff {
+		return i, false
+	}
+	if n < 0xd800 || n > 0xdbff {
+		return i, true
+	}
+	if i+6 > len(raw) || raw[i] != '\\' || raw[i+1] != 'u' {
+		return i, false
+	}
+	low, err := strconv.ParseUint(string(raw[i+2:i+6]), 16, 16)
+	return i + 6, err == nil && low >= 0xdc00 && low <= 0xdfff
 }
 
 // JSON objects are maps in the shared domain. Reject duplicate keys rather
@@ -209,42 +224,15 @@ func (s *Store) SaveProfile(ctx context.Context, p auth.Principal, operation str
 	if err = authorized(ctx, tx, p); err != nil {
 		return ProfileResult{}, err
 	}
-	var priorHash, priorID []byte
-	var revision int64
-	err = tx.QueryRowContext(ctx, "SELECT request_hash,profile_id,committed_revision FROM careeros_profile_operations WHERE account_id=$1 AND operation_id=$2", p.AccountID, operation).Scan(&priorHash, &priorID, &revision)
-	if err == nil {
-		if !bytes.Equal(priorHash, hash[:]) {
-			return ProfileResult{}, ErrConflict
-		}
-		result, e := currentProfile(ctx, tx, p.AccountID)
-		if e != nil {
-			return result, e
-		}
-		result.Outcome = &Outcome{operation, string(priorID), revision}
-		return result, unavailable(tx.Commit())
-	}
-	if !errors.Is(err, sql.ErrNoRows) {
-		return ProfileResult{}, unavailable(err)
+	if result, completed, err := replayProfile(ctx, tx, p.AccountID, operation, hash[:]); completed || err != nil {
+		return result, err
 	}
 	current, err := currentProfile(ctx, tx, p.AccountID)
 	if err != nil {
 		return current, err
 	}
-	if bytes.Equal(current.Document, []byte("null")) {
-		if expected != 0 {
-			return current, ErrConflict
-		}
-	} else {
-		before, e := profiledocument.Decode(current.Document)
-		if e != nil {
-			return current, auth.ErrUnavailable
-		}
-		if before.ID != doc.ID || before.Revision != expected {
-			return current, ErrConflict
-		}
-		if !retainedEvidenceAllowed(before, doc) {
-			return current, ErrValidation
-		}
+	if err := validateProfileBase(current.Document, doc, expected); err != nil {
+		return current, err
 	}
 	if !retainedEvidenceAllowed(profiledocument.Document{}, doc) {
 		return current, ErrValidation
@@ -261,6 +249,49 @@ func (s *Store) SaveProfile(ctx context.Context, p auth.Principal, operation str
 	return result, unavailable(tx.Commit())
 }
 
+// A completed operation is recognized before stale-base checks. It returns its
+// historical receipt alongside current authority and never publishes again.
+func replayProfile(ctx context.Context, tx *sql.Tx, owner, operation string, hash []byte) (ProfileResult, bool, error) {
+	var priorHash, priorID []byte
+	var revision int64
+	err := tx.QueryRowContext(ctx, "SELECT request_hash,profile_id,committed_revision FROM careeros_profile_operations WHERE account_id=$1 AND operation_id=$2", owner, operation).Scan(&priorHash, &priorID, &revision)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ProfileResult{}, false, nil
+	}
+	if err != nil {
+		return ProfileResult{}, false, unavailable(err)
+	}
+	if !bytes.Equal(priorHash, hash) {
+		return ProfileResult{}, true, ErrConflict
+	}
+	result, err := currentProfile(ctx, tx, owner)
+	if err != nil {
+		return result, true, err
+	}
+	result.Outcome = &Outcome{operation, string(priorID), revision}
+	return result, true, unavailable(tx.Commit())
+}
+
+func validateProfileBase(raw []byte, doc profiledocument.Document, expected int64) error {
+	if bytes.Equal(raw, []byte("null")) {
+		if expected != 0 {
+			return ErrConflict
+		}
+		return nil
+	}
+	before, err := profiledocument.Decode(raw)
+	if err != nil {
+		return auth.ErrUnavailable
+	}
+	if before.ID != doc.ID || before.Revision != expected {
+		return ErrConflict
+	}
+	if !retainedEvidenceAllowed(before, doc) {
+		return ErrValidation
+	}
+	return nil
+}
+
 // #258 D02-D04: approved excerpts must reference remaining facts; deleting a
 // fact removes its affected shared excerpt. Reject violations; never strip
 // content in the storage adapter. Historical invalidated links may remain.
@@ -269,18 +300,7 @@ func retainedEvidenceAllowed(before, after profiledocument.Document) bool {
 	for _, f := range after.Facts {
 		facts[f.ID] = true
 	}
-	removed := map[string]bool{}
-	for _, f := range before.Facts {
-		if !facts[f.ID] {
-			removed[f.ID] = true
-		}
-	}
-	forbidden := map[string]bool{}
-	for _, l := range before.Links {
-		if l.Kind == "supports" && removed[l.From.ID] {
-			forbidden[l.To.ID] = true
-		}
-	}
+	forbidden := removedFactEvidence(before, facts)
 	referenced := map[string]bool{}
 	for _, l := range after.Links {
 		if l.Kind == "supports" && facts[l.From.ID] {
@@ -293,4 +313,20 @@ func retainedEvidenceAllowed(before, after profiledocument.Document) bool {
 		}
 	}
 	return true
+}
+
+func removedFactEvidence(before profiledocument.Document, remaining map[string]bool) map[string]bool {
+	removed := map[string]bool{}
+	for _, f := range before.Facts {
+		if !remaining[f.ID] {
+			removed[f.ID] = true
+		}
+	}
+	forbidden := map[string]bool{}
+	for _, l := range before.Links {
+		if l.Kind == "supports" && removed[l.From.ID] {
+			forbidden[l.To.ID] = true
+		}
+	}
+	return forbidden
 }

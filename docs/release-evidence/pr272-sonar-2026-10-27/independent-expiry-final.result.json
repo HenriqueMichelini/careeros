@@ -1,0 +1,17 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "-count=1",
+    "-v",
+    "-timeout=60s",
+    "-overlay=/tmp/careeros-pr272-sonar-repairs-20261026/expiry-overlay.json",
+    "./internal/accountapi",
+    "-run",
+    "^TestReviewSessionReplacementRejectsExpiryWhileWaiting$"
+  ],
+  "startedAt": "2026-10-27T07:01:20.975120+00:00",
+  "finishedAt": "2026-10-27T07:01:24.229776+00:00",
+  "exitCode": 0
+}

@@ -23,7 +23,7 @@ type Scenario = {
 }
 const scenario: Scenario = {
   account: "a",
-  expires: new Date(Date.now() + 3600_000).toISOString(),
+  expires: new Date(Date.now() + 3_600_000).toISOString(),
   fail: false,
   loseAck: false,
   defer: "",
@@ -46,8 +46,30 @@ Storage.prototype.getItem = function (key) {
 }
 const response = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status })
+function saveProfileFixture(owner: string, body: BodyInit | null | undefined) {
+  if (typeof body !== "string")
+    throw new Error("Expected a JSON string Profile command")
+  scenario.puts.push(body)
+  if (scenario.fail) return response({ error: "storage_unavailable" }, 503)
+  const command = JSON.parse(body)
+  scenario.documents[owner] = command.document
+  scenario.operations[owner + ":" + command.operationId] = {
+    operationId: command.operationId,
+    profileId: command.document.id,
+    committedRevision: command.document.revision,
+  }
+  if (scenario.loseAck) {
+    scenario.loseAck = false
+    throw new Error("synthetic committed response loss")
+  }
+  return response({
+    accountId: owner,
+    document: scenario.documents[owner],
+    outcome: scenario.operations[owner + ":" + command.operationId],
+  })
+}
 window.fetch = async (input, init = {}) => {
-  const path = String(input)
+  const path = input instanceof Request ? input.url : input.toString()
   const owner = scenario.account
   if (path === "/api/auth/session") {
     const authenticated =
@@ -67,26 +89,8 @@ window.fetch = async (input, init = {}) => {
   const headers = new Headers(init.headers)
   if (headers.get("X-CareerOS-Account") !== owner)
     return response({ error: "account_changed" }, 409)
-  if (init.method === "PUT") {
-    scenario.puts.push(String(init.body))
-    if (scenario.fail) return response({ error: "storage_unavailable" }, 503)
-    const command = JSON.parse(String(init.body))
-    scenario.documents[owner] = command.document
-    scenario.operations[owner + ":" + command.operationId] = {
-      operationId: command.operationId,
-      profileId: command.document.id,
-      committedRevision: command.document.revision,
-    }
-    if (scenario.loseAck) {
-      scenario.loseAck = false
-      throw new Error("synthetic committed response loss")
-    }
-    return response({
-      accountId: owner,
-      document: scenario.documents[owner],
-      outcome: scenario.operations[owner + ":" + command.operationId],
-    })
-  }
+  if (init.method === "PUT") return saveProfileFixture(owner, init.body)
+
   if (scenario.fail) return response({ error: "storage_unavailable" }, 503)
   if (path.startsWith("/api/profile/operations/")) {
     const outcome = scenario.operations[owner + ":" + path.split("/").at(-1)]

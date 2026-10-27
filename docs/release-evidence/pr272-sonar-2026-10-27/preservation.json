@@ -1,0 +1,11 @@
+{
+  "startingHead": "bc77c4beec5f6d1d476a0b5c1f0e5f27d6f8547a",
+  "permanentNaturalExpiryTestByteIdentical": true,
+  "unchangedTrackedSources": {
+    "docs/new-account-persistence.md": "354779ecc113349af22d8dffff565eaef1f18731aa0612641b4e9163a90b16cb",
+    "docs/release-evidence/2026-10-26-new-account-persistence.md": "4a296808f3c3b2bccfa7754571ac9daa3ae0735d643eb1fdc08ba3ed24a88360",
+    "docs/release-evidence/2026-10-26-new-account-session-repairs.md": "3b5a93153f0ca5ea8f84120109c246719aa4373fc7621c5203ef90bc882ad9a3",
+    "docs/evaluations/test-adapters/cases.v3.json": "c3fb7be93b892adca689c9798370d89bac305454ae3268055488f25376e7c595"
+  },
+  "rawEvidenceCaveat": "Original /tmp evidence was absent on continuation; see recovery-provenance.json. No claim of a current full 108-file verification."
+}

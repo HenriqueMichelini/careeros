@@ -5,13 +5,13 @@ import (
 	"context"
 	"crypto/rand"
 	"database/sql"
-	_ "embed"
+	_ "embed" // Embed the schema used by the explicit migration command.
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
+	_ "github.com/jackc/pgx/v5/stdlib" // Register the PostgreSQL database/sql driver.
 	"professional-information-repo/internal/auth"
 )
 

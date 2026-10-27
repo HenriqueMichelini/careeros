@@ -153,6 +153,19 @@ func command(op string, base int64, doc []byte) []byte {
 	return v
 }
 
+type profileScenario struct {
+	db   *sql.DB
+	a    *accountstore.Store
+	sa   *auth.Service
+	ha   http.Handler
+	hb   http.Handler
+	one  *auth.LoginResult
+	two  *auth.LoginResult
+	doc1 []byte
+	doc2 []byte
+	doc3 []byte
+}
+
 func TestPostgresProfileOwnershipConcurrencyAndRecovery(t *testing.T) {
 	dsn, db := database(t)
 	a := open(t, dsn, "careeros_instance_a")
@@ -188,162 +201,173 @@ func TestPostgresProfileOwnershipConcurrencyAndRecovery(t *testing.T) {
 	if err := db.QueryRow("SELECT document FROM careeros_profiles WHERE account_id=$1", one.Account.ID).Scan(&raw); err != nil || !bytes.Equal(raw, doc1) {
 		t.Fatal("raw bytes did not round trip", err)
 	}
-	t.Run("direct isolation and CSRF", func(t *testing.T) {
-		if w := api(t, hb, two, "GET", "/api/profile/operations/op-one", nil); w.Code != 404 {
+	s := profileScenario{db: db, a: a, sa: sa, ha: ha, hb: hb, one: one, two: two, doc1: doc1, doc2: doc2, doc3: doc3}
+	t.Run("direct isolation and CSRF", s.directIsolation)
+	t.Run("concurrent saves and duplicates", s.concurrentSaves)
+	t.Run("invalid representation and retained data", s.invalidRepresentation)
+	t.Run("expiry status and revocation", s.revocation)
+	t.Run("outage preserves session and fails closed", s.outage)
+}
+
+func (s *profileScenario) directIsolation(t *testing.T) {
+	if w := api(t, s.hb, s.two, "GET", "/api/profile/operations/op-one", nil); w.Code != 404 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	if w := api(t, s.hb, s.two, "PUT", "/api/profile/current", command("substitute-id", 1, s.doc2)); w.Code != 409 {
+		t.Fatal(w.Code)
+	}
+	r := httptest.NewRequest("GET", "/api/profile/current", nil)
+	r.AddCookie(&http.Cookie{Name: "__Host-careeros_session", Value: s.one.SessionToken})
+	r.Header.Set("X-CareerOS-Account", s.two.Account.ID)
+	w := httptest.NewRecorder()
+	s.ha.ServeHTTP(w, r)
+	if w.Code != 409 {
+		t.Fatal(w.Code)
+	}
+	r = httptest.NewRequest("PUT", "/api/profile/current", bytes.NewReader(command("no-csrf", 1, s.doc2)))
+	r.AddCookie(&http.Cookie{Name: "__Host-careeros_session", Value: s.one.SessionToken})
+	r.Header.Set("Origin", origin)
+	w = httptest.NewRecorder()
+	s.ha.ServeHTTP(w, r)
+	if w.Code != 403 {
+		t.Fatal(w.Code)
+	}
+	if w := api(t, s.ha, nil, "GET", "/api/profile/current", nil); w.Code != 401 {
+		t.Fatal(w.Code)
+	}
+	// B can create its own document even with A's domain Profile ID: IDs are not authority.
+	if w := api(t, s.hb, s.two, "PUT", "/api/profile/current", command("own-b", 0, fixture(t, 1))); w.Code != 200 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+}
+
+func (s *profileScenario) concurrentSaves(t *testing.T) {
+	codes := make(chan int, 2)
+	var wg sync.WaitGroup
+	for i, h := range []http.Handler{s.ha, s.hb} {
+		wg.Add(1)
+		go func(i int, h http.Handler) {
+			defer wg.Done()
+			codes <- api(t, h, s.one, "PUT", "/api/profile/current", command(fmt.Sprintf("concurrent-%d", i), 1, s.doc2)).Code
+		}(i, h)
+	}
+	wg.Wait()
+	close(codes)
+	counts := map[int]int{}
+	for c := range codes {
+		counts[c]++
+	}
+	if counts[200] != 1 || counts[409] != 1 {
+		t.Fatal(counts)
+	}
+	// The identical operation sent concurrently through both instances has
+	// one publication and two recoveries, even after its base becomes stale.
+	var winning string
+	if err := s.db.QueryRow("SELECT operation_id FROM careeros_profile_operations WHERE account_id=$1 AND committed_revision=2", s.one.Account.ID).Scan(&winning); err != nil {
+		t.Fatal(err)
+	}
+	duplicates := make(chan int, 2)
+	for _, h := range []http.Handler{s.ha, s.hb} {
+		wg.Add(1)
+		go func(h http.Handler) {
+			defer wg.Done()
+			duplicates <- api(t, h, s.one, "PUT", "/api/profile/current", command(winning, 1, s.doc2)).Code
+		}(h)
+	}
+	wg.Wait()
+	close(duplicates)
+	for code := range duplicates {
+		if code != 200 {
+			t.Fatal(code)
+		}
+	}
+	if w := api(t, s.ha, s.one, "PUT", "/api/profile/current", command("third", 2, s.doc3)); w.Code != 200 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	// A lost acknowledgment is reconciled by its historical receipt, not by rewriting revision 1.
+	w := api(t, s.hb, s.one, "PUT", "/api/profile/current", command("op-one", 0, s.doc1))
+	if w.Code != 200 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	var reply accountstore.ProfileResult
+	json.Unmarshal(w.Body.Bytes(), &reply)
+	if reply.Outcome.CommittedRevision != 1 || !bytes.Contains(reply.Document, []byte(`"revision":3`)) {
+		t.Fatal(w.Body.String())
+	}
+	if w := api(t, s.ha, s.one, "PUT", "/api/profile/current", command("op-one", 0, fixture(t, 2))); w.Code != 409 {
+		t.Fatal(w.Code)
+	}
+	if w := api(t, s.ha, s.one, "PUT", "/api/profile/current", command("new-stale", 1, s.doc2)); w.Code != 409 {
+		t.Fatal(w.Code)
+	}
+}
+
+func (s *profileScenario) invalidRepresentation(t *testing.T) {
+	oversize := bytes.Replace(fixture(t, 4), []byte("ação"), []byte(strings.Repeat("x", accountstore.MaxDocumentBytes)), 1)
+	if w := api(t, s.ha, s.one, "PUT", "/api/profile/current", command("oversize", 3, oversize)); w.Code != 422 {
+		t.Fatal("size bound", w.Code)
+	}
+	injected := append([]byte(`{"accountId":"`+s.two.Account.ID+`",`), command("client-owner", 3, fixture(t, 4))[1:]...)
+	if w := api(t, s.ha, s.one, "PUT", "/api/profile/current", injected); w.Code != 422 {
+		t.Fatal("accepted client owner", w.Code)
+	}
+	for _, bad := range [][]byte{bytes.Replace(fixture(t, 4), []byte(`ação`), []byte(`\ud800`), 1), bytes.Replace(fixture(t, 4), []byte(`1e+308`), []byte(`1e400`), 1), bytes.Replace(fixture(t, 4), []byte(`ação`), []byte{0xff}, 1), bytes.Repeat([]byte(" "), accountstore.MaxDocumentBytes+1)} {
+		if w := api(t, s.ha, s.one, "PUT", "/api/profile/current", command("invalid", 3, bad)); w.Code != 422 {
 			t.Fatal(w.Code, w.Body.String())
 		}
-		if w := api(t, hb, two, "PUT", "/api/profile/current", command("substitute-id", 1, doc2)); w.Code != 409 {
-			t.Fatal(w.Code)
+	}
+	var d map[string]any
+	json.Unmarshal(fixture(t, 4), &d)
+	d["facts"] = []any{}
+	d["links"] = []any{}
+	bad, _ := json.Marshal(d)
+	if w := api(t, s.ha, s.one, "PUT", "/api/profile/current", command("orphan", 3, bad)); w.Code != 422 {
+		t.Fatal("retained unused excerpt", w.Code)
+	}
+	d["evidence"] = []any{}
+	clean, _ := json.Marshal(d)
+	if w := api(t, s.ha, s.one, "PUT", "/api/profile/current", command("delete-fact", 3, clean)); w.Code != 200 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+}
+
+func (s *profileScenario) revocation(t *testing.T) {
+	for _, status := range []string{"suspended", "deleted"} {
+		s.db.Exec("UPDATE careeros_accounts SET status=$1 WHERE id=$2", status, s.one.Account.ID)
+		if w := api(t, s.ha, s.one, "GET", "/api/profile/current", nil); w.Code != 401 {
+			t.Fatal(status, w.Code)
 		}
-		r := httptest.NewRequest("GET", "/api/profile/current", nil)
-		r.AddCookie(&http.Cookie{Name: "__Host-careeros_session", Value: one.SessionToken})
-		r.Header.Set("X-CareerOS-Account", two.Account.ID)
-		w := httptest.NewRecorder()
-		ha.ServeHTTP(w, r)
-		if w.Code != 409 {
-			t.Fatal(w.Code)
-		}
-		r = httptest.NewRequest("PUT", "/api/profile/current", bytes.NewReader(command("no-csrf", 1, doc2)))
-		r.AddCookie(&http.Cookie{Name: "__Host-careeros_session", Value: one.SessionToken})
-		r.Header.Set("Origin", origin)
-		w = httptest.NewRecorder()
-		ha.ServeHTTP(w, r)
-		if w.Code != 403 {
-			t.Fatal(w.Code)
-		}
-		if w := api(t, ha, nil, "GET", "/api/profile/current", nil); w.Code != 401 {
-			t.Fatal(w.Code)
-		}
-		// B can create its own document even with A's domain Profile ID: IDs are not authority.
-		if w := api(t, hb, two, "PUT", "/api/profile/current", command("own-b", 0, fixture(t, 1))); w.Code != 200 {
-			t.Fatal(w.Code, w.Body.String())
-		}
-	})
-	t.Run("concurrent saves and duplicates", func(t *testing.T) {
-		codes := make(chan int, 2)
-		var wg sync.WaitGroup
-		for i, h := range []http.Handler{ha, hb} {
-			wg.Add(1)
-			go func(i int, h http.Handler) {
-				defer wg.Done()
-				codes <- api(t, h, one, "PUT", "/api/profile/current", command(fmt.Sprintf("concurrent-%d", i), 1, doc2)).Code
-			}(i, h)
-		}
-		wg.Wait()
-		close(codes)
-		counts := map[int]int{}
-		for c := range codes {
-			counts[c]++
-		}
-		if counts[200] != 1 || counts[409] != 1 {
-			t.Fatal(counts)
-		}
-		// The identical operation sent concurrently through both instances has
-		// one publication and two recoveries, even after its base becomes stale.
-		var winning string
-		if err := db.QueryRow("SELECT operation_id FROM careeros_profile_operations WHERE account_id=$1 AND committed_revision=2", one.Account.ID).Scan(&winning); err != nil {
-			t.Fatal(err)
-		}
-		duplicates := make(chan int, 2)
-		for _, h := range []http.Handler{ha, hb} {
-			wg.Add(1)
-			go func(h http.Handler) {
-				defer wg.Done()
-				duplicates <- api(t, h, one, "PUT", "/api/profile/current", command(winning, 1, doc2)).Code
-			}(h)
-		}
-		wg.Wait()
-		close(duplicates)
-		for code := range duplicates {
-			if code != 200 {
-				t.Fatal(code)
-			}
-		}
-		if w := api(t, ha, one, "PUT", "/api/profile/current", command("third", 2, doc3)); w.Code != 200 {
-			t.Fatal(w.Code, w.Body.String())
-		}
-		// A lost acknowledgment is reconciled by its historical receipt, not by rewriting revision 1.
-		w := api(t, hb, one, "PUT", "/api/profile/current", command("op-one", 0, doc1))
-		if w.Code != 200 {
-			t.Fatal(w.Code, w.Body.String())
-		}
-		var reply accountstore.ProfileResult
-		json.Unmarshal(w.Body.Bytes(), &reply)
-		if reply.Outcome.CommittedRevision != 1 || !bytes.Contains(reply.Document, []byte(`"revision":3`)) {
-			t.Fatal(w.Body.String())
-		}
-		if w := api(t, ha, one, "PUT", "/api/profile/current", command("op-one", 0, fixture(t, 2))); w.Code != 409 {
-			t.Fatal(w.Code)
-		}
-		if w := api(t, ha, one, "PUT", "/api/profile/current", command("new-stale", 1, doc2)); w.Code != 409 {
-			t.Fatal(w.Code)
-		}
-	})
-	t.Run("invalid representation and retained data", func(t *testing.T) {
-		oversize := bytes.Replace(fixture(t, 4), []byte("ação"), []byte(strings.Repeat("x", accountstore.MaxDocumentBytes)), 1)
-		if w := api(t, ha, one, "PUT", "/api/profile/current", command("oversize", 3, oversize)); w.Code != 422 {
-			t.Fatal("size bound", w.Code)
-		}
-		injected := append([]byte(`{"accountId":"`+two.Account.ID+`",`), command("client-owner", 3, fixture(t, 4))[1:]...)
-		if w := api(t, ha, one, "PUT", "/api/profile/current", injected); w.Code != 422 {
-			t.Fatal("accepted client owner", w.Code)
-		}
-		for _, bad := range [][]byte{bytes.Replace(fixture(t, 4), []byte(`ação`), []byte(`\ud800`), 1), bytes.Replace(fixture(t, 4), []byte(`1e+308`), []byte(`1e400`), 1), bytes.Replace(fixture(t, 4), []byte(`ação`), []byte{0xff}, 1), bytes.Repeat([]byte(" "), accountstore.MaxDocumentBytes+1)} {
-			if w := api(t, ha, one, "PUT", "/api/profile/current", command("invalid", 3, bad)); w.Code != 422 {
-				t.Fatal(w.Code, w.Body.String())
-			}
-		}
-		var d map[string]any
-		json.Unmarshal(fixture(t, 4), &d)
-		d["facts"] = []any{}
-		d["links"] = []any{}
-		bad, _ := json.Marshal(d)
-		if w := api(t, ha, one, "PUT", "/api/profile/current", command("orphan", 3, bad)); w.Code != 422 {
-			t.Fatal("retained unused excerpt", w.Code)
-		}
-		d["evidence"] = []any{}
-		clean, _ := json.Marshal(d)
-		if w := api(t, ha, one, "PUT", "/api/profile/current", command("delete-fact", 3, clean)); w.Code != 200 {
-			t.Fatal(w.Code, w.Body.String())
-		}
-	})
-	t.Run("expiry status and revocation", func(t *testing.T) {
-		for _, status := range []string{"suspended", "deleted"} {
-			db.Exec("UPDATE careeros_accounts SET status=$1 WHERE id=$2", status, one.Account.ID)
-			if w := api(t, ha, one, "GET", "/api/profile/current", nil); w.Code != 401 {
-				t.Fatal(status, w.Code)
-			}
-			db.Exec("UPDATE careeros_accounts SET status='active' WHERE id=$1", one.Account.ID)
-		}
-		db.Exec("UPDATE careeros_sessions SET expires_at=clock_timestamp()-interval '1 second' WHERE id=$1", one.Principal.SessionID)
-		if w := api(t, hb, one, "GET", "/api/profile/current", nil); w.Code != 401 {
-			t.Fatal(w.Code)
-		}
-		fresh := login(t, sa, "account-a")
-		if _, err := sa.LogoutAll(context.Background(), fresh.Principal); err != nil {
-			t.Fatal(err)
-		}
-		if w := api(t, hb, fresh, "GET", "/api/profile/current", nil); w.Code != 401 {
-			t.Fatal(w.Code)
-		}
-		if w := api(t, hb, two, "GET", "/api/profile/current", nil); w.Code != 200 {
-			t.Fatal("other account denied", w.Code)
-		}
-	})
-	t.Run("outage preserves session and fails closed", func(t *testing.T) {
-		a.Close()
-		w := api(t, ha, two, "PUT", "/api/profile/current", command("outage", 1, doc2))
-		if w.Code != 503 {
-			t.Fatal(w.Code, w.Body.String())
-		}
-		w = api(t, ha, two, "GET", "/api/auth/session", nil)
-		if w.Code != 503 || len(w.Result().Cookies()) != 0 {
-			t.Fatal("outage was reported as logout", w.Code, w.Body.String())
-		}
-		if w := api(t, hb, two, "GET", "/api/profile/current", nil); w.Code != 200 {
-			t.Fatal(w.Code)
-		}
-	})
+		s.db.Exec("UPDATE careeros_accounts SET status='active' WHERE id=$1", s.one.Account.ID)
+	}
+	s.db.Exec("UPDATE careeros_sessions SET expires_at=clock_timestamp()-interval '1 second' WHERE id=$1", s.one.Principal.SessionID)
+	if w := api(t, s.hb, s.one, "GET", "/api/profile/current", nil); w.Code != 401 {
+		t.Fatal(w.Code)
+	}
+	fresh := login(t, s.sa, "account-a")
+	if _, err := s.sa.LogoutAll(context.Background(), fresh.Principal); err != nil {
+		t.Fatal(err)
+	}
+	if w := api(t, s.hb, fresh, "GET", "/api/profile/current", nil); w.Code != 401 {
+		t.Fatal(w.Code)
+	}
+	if w := api(t, s.hb, s.two, "GET", "/api/profile/current", nil); w.Code != 200 {
+		t.Fatal("other account denied", w.Code)
+	}
+}
+
+func (s *profileScenario) outage(t *testing.T) {
+	s.a.Close()
+	w := api(t, s.ha, s.two, "PUT", "/api/profile/current", command("outage", 1, s.doc2))
+	if w.Code != 503 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	w = api(t, s.ha, s.two, "GET", "/api/auth/session", nil)
+	if w.Code != 503 || len(w.Result().Cookies()) != 0 {
+		t.Fatal("outage was reported as logout", w.Code, w.Body.String())
+	}
+	if w := api(t, s.hb, s.two, "GET", "/api/profile/current", nil); w.Code != 200 {
+		t.Fatal(w.Code)
+	}
 }
 
 func waitBlocked(t *testing.T, db *sql.DB, name, event string) {
@@ -365,126 +389,11 @@ func waitBlocked(t *testing.T, db *sql.DB, name, event string) {
 func TestPostgresRevocationVersusCommitAndLogin(t *testing.T) {
 	for _, kind := range []string{"ordinary", "generation", "suspended", "deleted", "expiry"} {
 		t.Run(kind+" wins", func(t *testing.T) {
-			dsn, db := database(t)
-			s := open(t, dsn, "careeros_racing_save")
-			s.Migrate(context.Background())
-			svc := service(t, s, fakeOIDC{})
-			who := login(t, svc, "race")
-			tx, err := db.Begin()
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer tx.Rollback()
-			if _, err = tx.Exec("SELECT id FROM careeros_accounts WHERE id=$1 FOR UPDATE", who.Account.ID); err != nil {
-				t.Fatal(err)
-			}
-			done := make(chan error, 1)
-			go func() {
-				_, e := s.SaveProfile(context.Background(), who.Principal, "racing-save", 0, fixture(t, 1))
-				done <- e
-			}()
-			waitBlocked(t, db, "careeros_racing_save", "")
-			switch kind {
-			case "ordinary":
-				_, err = tx.Exec("DELETE FROM careeros_sessions WHERE id=$1", who.Principal.SessionID)
-			case "generation":
-				_, err = tx.Exec("UPDATE careeros_accounts SET generation=generation+1 WHERE id=$1", who.Account.ID)
-			case "expiry":
-				_, err = tx.Exec("UPDATE careeros_sessions SET expires_at=clock_timestamp()-interval '1 second' WHERE id=$1", who.Principal.SessionID)
-			default:
-				_, err = tx.Exec("UPDATE careeros_accounts SET status=$1 WHERE id=$2", kind, who.Account.ID)
-			}
-			if err != nil {
-				t.Fatal(err)
-			}
-			if err = tx.Commit(); err != nil {
-				t.Fatal(err)
-			}
-			if err = <-done; !errors.Is(err, auth.ErrAuthenticationRequired) {
-				t.Fatal(err)
-			}
-			var n int
-			db.QueryRow("SELECT count(*) FROM careeros_profiles").Scan(&n)
-			if n != 0 {
-				t.Fatal("revoked publication", n)
-			}
+			assertRevocationWins(t, kind)
 		})
 	}
-	t.Run("commit wins before ordinary logout", func(t *testing.T) {
-		dsn, db := database(t)
-		s := open(t, dsn, "careeros_commit_first")
-		s.Migrate(context.Background())
-		other := open(t, dsn, "careeros_logout_second")
-		svc := service(t, s, fakeOIDC{})
-		who := login(t, svc, "race")
-		device := login(t, svc, "race")
-		lock, err := db.Conn(context.Background())
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer lock.Close()
-		lock.ExecContext(context.Background(), "SELECT pg_advisory_lock(72481999)")
-		defer lock.ExecContext(context.Background(), "SELECT pg_advisory_unlock(72481999)")
-		_, err = db.Exec(`CREATE FUNCTION pause_profile() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN PERFORM pg_advisory_xact_lock(72481999); RETURN NEW; END $$; CREATE TRIGGER pause_profile BEFORE INSERT ON careeros_profiles FOR EACH ROW EXECUTE FUNCTION pause_profile()`)
-		if err != nil {
-			t.Fatal(err)
-		}
-		save := make(chan error, 1)
-		go func() {
-			_, e := s.SaveProfile(context.Background(), who.Principal, "committed-once", 0, fixture(t, 1))
-			save <- e
-		}()
-		waitBlocked(t, db, "careeros_commit_first", "advisory")
-		revoke := make(chan error, 1)
-		go func() { revoke <- other.AuthStores().Sessions.Revoke(context.Background(), who.Principal.SessionID) }()
-		waitBlocked(t, db, "careeros_logout_second", "")
-		lock.ExecContext(context.Background(), "SELECT pg_advisory_unlock(72481999)")
-		if err = <-save; err != nil {
-			t.Fatal(err)
-		}
-		if err = <-revoke; err != nil {
-			t.Fatal(err)
-		}
-		if _, err = s.ReadProfile(context.Background(), who.Principal, "committed-once"); !errors.Is(err, auth.ErrAuthenticationRequired) {
-			t.Fatal(err)
-		}
-		reply, err := other.ReadProfile(context.Background(), device.Principal, "committed-once")
-		if err != nil || reply.Outcome.CommittedRevision != 1 {
-			t.Fatal(reply, err)
-		}
-	})
-	t.Run("ordinary logout fences late provider response", func(t *testing.T) {
-		dsn, _ := database(t)
-		s := open(t, dsn, "careeros_login_race")
-		s.Migrate(context.Background())
-		base := service(t, s, fakeOIDC{})
-		who := login(t, base, "race")
-		otherDevice := login(t, base, "race")
-		entered, resume := make(chan struct{}), make(chan struct{})
-		svc := service(t, s, fakeOIDC{before: func() { close(entered); <-resume }})
-		start, err := svc.BeginLogin(context.Background(), "google", "/", &who.Principal)
-		if err != nil {
-			t.Fatal(err)
-		}
-		u, _ := url.Parse(start.URL)
-		done := make(chan error, 1)
-		go func() {
-			_, e := svc.CompleteLogin(context.Background(), "google", u.Query().Get("state"), "race", start.BindingToken)
-			done <- e
-		}()
-		<-entered
-		if err = base.Logout(context.Background(), who.SessionToken); err != nil {
-			t.Fatal(err)
-		}
-		close(resume)
-		if err = <-done; !errors.Is(err, auth.ErrInvalidTransaction) {
-			t.Fatal(err)
-		}
-		if _, err = base.Authenticate(context.Background(), otherDevice.SessionToken); err != nil {
-			t.Fatal(err)
-		}
-		login(t, base, "race")
-	})
+	t.Run("commit wins before ordinary logout", assertCommitBeforeLogout)
+	t.Run("ordinary logout fences late provider response", assertLogoutFencesProvider)
 }
 
 // Separate application processes, same engine. The only OIDC response source
@@ -781,21 +690,148 @@ func TestPostgresUnsignedGenerationAndSafeRevisionBounds(t *testing.T) {
 	if _, err := db.Exec("UPDATE careeros_accounts SET generation=18446744073709551615 WHERE id=$1", who.Account.ID); err != nil {
 		t.Fatal(err)
 	}
-	max := login(t, svc, "bounds")
-	if max.Principal.Generation != ^uint64(0) {
-		t.Fatal("generation was truncated", max.Principal.Generation)
+	boundedAccount := login(t, svc, "bounds")
+	if boundedAccount.Principal.Generation != ^uint64(0) {
+		t.Fatal("generation was truncated", boundedAccount.Principal.Generation)
 	}
-	if _, err := svc.Authenticate(context.Background(), max.SessionToken); err != nil {
+	if _, err := svc.Authenticate(context.Background(), boundedAccount.SessionToken); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := s.AuthStores().Accounts.BumpGeneration(context.Background(), who.Account.ID, time.Now()); !errors.Is(err, auth.ErrUnavailable) {
 		t.Fatal("generation overflow", err)
 	}
 	const limit = int64(9007199254740991)
-	if _, err := s.SaveProfile(context.Background(), max.Principal, "max-root", 0, fixture(t, limit)); err != nil {
+	if _, err := s.SaveProfile(context.Background(), boundedAccount.Principal, "max-root", 0, fixture(t, limit)); err != nil {
 		t.Fatal("max safe revision rejected", err)
 	}
-	if _, err := s.SaveProfile(context.Background(), max.Principal, "exhausted", limit, fixture(t, limit)); !errors.Is(err, accountstore.ErrValidation) {
+	if _, err := s.SaveProfile(context.Background(), boundedAccount.Principal, "exhausted", limit, fixture(t, limit)); !errors.Is(err, accountstore.ErrValidation) {
 		t.Fatal("revision exhaustion", err)
 	}
+}
+
+func assertRevocationWins(t *testing.T, kind string) {
+	t.Helper()
+
+	dsn, db := database(t)
+	s := open(t, dsn, "careeros_racing_save")
+	s.Migrate(context.Background())
+	svc := service(t, s, fakeOIDC{})
+	who := login(t, svc, "race")
+	tx, err := db.Begin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	if _, err = tx.Exec("SELECT id FROM careeros_accounts WHERE id=$1 FOR UPDATE", who.Account.ID); err != nil {
+		t.Fatal(err)
+	}
+	done := make(chan error, 1)
+	go func() {
+		_, e := s.SaveProfile(context.Background(), who.Principal, "racing-save", 0, fixture(t, 1))
+		done <- e
+	}()
+	waitBlocked(t, db, "careeros_racing_save", "")
+	switch kind {
+	case "ordinary":
+		_, err = tx.Exec("DELETE FROM careeros_sessions WHERE id=$1", who.Principal.SessionID)
+	case "generation":
+		_, err = tx.Exec("UPDATE careeros_accounts SET generation=generation+1 WHERE id=$1", who.Account.ID)
+	case "expiry":
+		_, err = tx.Exec("UPDATE careeros_sessions SET expires_at=clock_timestamp()-interval '1 second' WHERE id=$1", who.Principal.SessionID)
+	default:
+		_, err = tx.Exec("UPDATE careeros_accounts SET status=$1 WHERE id=$2", kind, who.Account.ID)
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = tx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	if err = <-done; !errors.Is(err, auth.ErrAuthenticationRequired) {
+		t.Fatal(err)
+	}
+	var n int
+	db.QueryRow("SELECT count(*) FROM careeros_profiles").Scan(&n)
+	if n != 0 {
+		t.Fatal("revoked publication", n)
+	}
+}
+
+func assertCommitBeforeLogout(t *testing.T) {
+	t.Helper()
+	dsn, db := database(t)
+	s := open(t, dsn, "careeros_commit_first")
+	s.Migrate(context.Background())
+	other := open(t, dsn, "careeros_logout_second")
+	svc := service(t, s, fakeOIDC{})
+	who := login(t, svc, "race")
+	device := login(t, svc, "race")
+	lock, err := db.Conn(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer lock.Close()
+	lock.ExecContext(context.Background(), "SELECT pg_advisory_lock(72481999)")
+	defer lock.ExecContext(context.Background(), "SELECT pg_advisory_unlock(72481999)")
+	_, err = db.Exec(`CREATE FUNCTION pause_profile() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN PERFORM pg_advisory_xact_lock(72481999); RETURN NEW; END $$; CREATE TRIGGER pause_profile BEFORE INSERT ON careeros_profiles FOR EACH ROW EXECUTE FUNCTION pause_profile()`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	save := make(chan error, 1)
+	go func() {
+		_, e := s.SaveProfile(context.Background(), who.Principal, "committed-once", 0, fixture(t, 1))
+		save <- e
+	}()
+	waitBlocked(t, db, "careeros_commit_first", "advisory")
+	revoke := make(chan error, 1)
+	go func() { revoke <- other.AuthStores().Sessions.Revoke(context.Background(), who.Principal.SessionID) }()
+	waitBlocked(t, db, "careeros_logout_second", "")
+	lock.ExecContext(context.Background(), "SELECT pg_advisory_unlock(72481999)")
+	if err = <-save; err != nil {
+		t.Fatal(err)
+	}
+	if err = <-revoke; err != nil {
+		t.Fatal(err)
+	}
+	if _, err = s.ReadProfile(context.Background(), who.Principal, "committed-once"); !errors.Is(err, auth.ErrAuthenticationRequired) {
+		t.Fatal(err)
+	}
+	reply, err := other.ReadProfile(context.Background(), device.Principal, "committed-once")
+	if err != nil || reply.Outcome.CommittedRevision != 1 {
+		t.Fatal(reply, err)
+	}
+}
+
+func assertLogoutFencesProvider(t *testing.T) {
+	t.Helper()
+	dsn, _ := database(t)
+	s := open(t, dsn, "careeros_login_race")
+	s.Migrate(context.Background())
+	base := service(t, s, fakeOIDC{})
+	who := login(t, base, "race")
+	otherDevice := login(t, base, "race")
+	entered, resume := make(chan struct{}), make(chan struct{})
+	svc := service(t, s, fakeOIDC{before: func() { close(entered); <-resume }})
+	start, err := svc.BeginLogin(context.Background(), "google", "/", &who.Principal)
+	if err != nil {
+		t.Fatal(err)
+	}
+	u, _ := url.Parse(start.URL)
+	done := make(chan error, 1)
+	go func() {
+		_, e := svc.CompleteLogin(context.Background(), "google", u.Query().Get("state"), "race", start.BindingToken)
+		done <- e
+	}()
+	<-entered
+	if err = base.Logout(context.Background(), who.SessionToken); err != nil {
+		t.Fatal(err)
+	}
+	close(resume)
+	if err = <-done; !errors.Is(err, auth.ErrInvalidTransaction) {
+		t.Fatal(err)
+	}
+	if _, err = base.Authenticate(context.Background(), otherDevice.SessionToken); err != nil {
+		t.Fatal(err)
+	}
+	login(t, base, "race")
 }

@@ -1,0 +1,9 @@
+{
+  "command": [
+    "node",
+    "tests/account-browser.check.mjs"
+  ],
+  "startedAt": "2026-10-27T07:01:23.892404+00:00",
+  "finishedAt": "2026-10-27T07:01:26.098839+00:00",
+  "exitCode": 0
+}

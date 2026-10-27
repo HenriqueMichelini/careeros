@@ -15,6 +15,16 @@ export default function JourneyGuidance({
     !state.profileError &&
     !profileSaving &&
     hasQualificationEvidence(profileDocument)
+  const profileMessage = accountId
+    ? "journey.accountProfile"
+    : "journey.profile"
+  const guidance = {
+    landing: "journey.apply",
+    home: "journey.apply",
+    repository: profileMessage,
+    cv: "journey.cv",
+    results: "journey.results",
+  } as const
   const needsProfile = page === "home" && !profileReady
 
   return (
@@ -31,13 +41,7 @@ export default function JourneyGuidance({
             {t(accountId ? "journey.accountMode" : "journey.localMode")}
           </p>
           <p className="mt-1" style={{ color: "var(--color-muted-fg)" }}>
-            {page === "repository"
-              ? t(accountId ? "journey.accountProfile" : "journey.profile")
-              : page === "cv"
-                ? t("journey.cv")
-                : page === "results"
-                  ? t("journey.results")
-                  : t("journey.apply")}
+            {t(guidance[page])}
           </p>
           {(page === "repository" || needsProfile) && (
             <p className="mt-2" role="status" aria-atomic="true">

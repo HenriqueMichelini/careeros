@@ -1,0 +1,552 @@
+[
+  {
+    "input_id": "AaF6339rOE1GLMOtxzMj",
+    "rule": "go:S3776",
+    "path": "internal/accountapi/session_replacement_test.go",
+    "line": 75,
+    "message": "Refactor this method to reduce its Cognitive Complexity from 26 to the 15 allowed.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Extracted focused transport/presentation/parsing/replay/retention or test-scenario helpers. Existing assertions and transaction ordering retained; local complexity checks support the targeted reductions. Remote Sonar reanalysis pending.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF63302OE1GLMOtxzMZ",
+    "rule": "typescript:S3776",
+    "path": "src/components/AccountGate.tsx",
+    "line": 12,
+    "message": "Refactor this function to reduce its Cognitive Complexity from 51 to the 15 allowed.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Extracted focused transport/presentation/parsing/replay/retention or test-scenario helpers. Existing assertions and transaction ordering retained; local complexity checks support the targeted reductions. Remote Sonar reanalysis pending.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF63302OE1GLMOtxzMe",
+    "rule": "typescript:S3358",
+    "path": "src/components/AccountGate.tsx",
+    "line": 153,
+    "message": "Extract this nested ternary operation into an independent statement.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Replaced the reported nested branch with a named message or explicit error mapping; labels and error precedence unchanged.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF63302OE1GLMOtxzMh",
+    "rule": "typescript:S6819",
+    "path": "src/components/AccountGate.tsx",
+    "line": 218,
+    "message": "Use <dialog> instead of the \"dialog\" role to ensure accessibility across all devices.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Used native output elements and an open nonmodal dialog; labels and deliberate logout choices retained. Actual React browser lifecycle passes.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633wvOE1GLMOtxzMR",
+    "rule": "typescript:S2933",
+    "path": "src/lib/accountProfile.ts",
+    "line": 46,
+    "message": "Mark these members as `readonly`.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Marked notify/request/storage constructor members readonly; no runtime behavior change.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633wvOE1GLMOtxzMS",
+    "rule": "typescript:S7722",
+    "path": "src/lib/accountProfile.ts",
+    "line": 86,
+    "message": "Pass a message to the `Error` constructor.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Added descriptive diagnostic messages to Error constructors.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633wvOE1GLMOtxzMY",
+    "rule": "tssecurity:S8475",
+    "path": "src/lib/accountProfile.ts",
+    "line": 110,
+    "message": "Browser Storage Poisoning via unsanitized user input",
+    "disposition": "false_positive",
+    "evidence": "Static evidence defeats the storage-poisoning claim: namespaced JSON recovery is untrusted data; validated restoration plus current protected server read gate display; React text rendering; no automatic replay; current server session/CSRF/account/revision authorization gates deliberate retry. No checkpoint behavior change. Proposed remote false-positive disposition requires owner approval.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633ijOE1GLMOtxzL2",
+    "rule": "typescript:S3776",
+    "path": "tests/account-harness.tsx",
+    "line": 49,
+    "message": "Refactor this function to reduce its Cognitive Complexity from 17 to the 15 allowed.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Extracted focused transport/presentation/parsing/replay/retention or test-scenario helpers. Existing assertions and transaction ordering retained; local complexity checks support the targeted reductions. Remote Sonar reanalysis pending.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633uBOE1GLMOtxzL6",
+    "rule": "javascript:S1128",
+    "path": "tests/account-session-browser.check.mjs",
+    "line": 4,
+    "message": "Remove this unused import of 'writeFileSync'.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Removed unused writeFileSync import while sharing browser infrastructure.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633uBOE1GLMOtxzL7",
+    "rule": "javascript:S4036",
+    "path": "tests/account-session-browser.check.mjs",
+    "line": 31,
+    "message": "Make sure the \"PATH\" variable only contains fixed, unwriteable directories.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted as test-runner hardening, not a confirmed product exploit. Shared fixture launches /usr/bin/google-chrome directly, removing PATH lookup.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633uBOE1GLMOtxzL8",
+    "rule": "javascript:S7723",
+    "path": "tests/account-session-browser.check.mjs",
+    "line": 51,
+    "message": "Use `new Error()` instead of `Error()`.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Shared fixture creates new Error instances on the existing failure paths; assertions and rejection conditions unchanged.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633uBOE1GLMOtxzL9",
+    "rule": "javascript:S9382",
+    "path": "tests/account-session-browser.check.mjs",
+    "line": 52,
+    "message": "Unexpected `await` inside a loop.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Shared bounded polling helper keeps sequential readiness checks and timeout failure; removes repeated await-in-loop code without parallelizing stateful scenarios.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633uBOE1GLMOtxzL-",
+    "rule": "javascript:S7723",
+    "path": "tests/account-session-browser.check.mjs",
+    "line": 65,
+    "message": "Use `new Error()` instead of `Error()`.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Shared fixture creates new Error instances on the existing failure paths; assertions and rejection conditions unchanged.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633uBOE1GLMOtxzL_",
+    "rule": "javascript:S9382",
+    "path": "tests/account-session-browser.check.mjs",
+    "line": 66,
+    "message": "Unexpected `await` inside a loop.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Shared bounded polling helper keeps sequential readiness checks and timeout failure; removes repeated await-in-loop code without parallelizing stateful scenarios.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633uBOE1GLMOtxzMA",
+    "rule": "javascript:S7723",
+    "path": "tests/account-session-browser.check.mjs",
+    "line": 87,
+    "message": "Use `new Error()` instead of `Error()`.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Shared fixture creates new Error instances on the existing failure paths; assertions and rejection conditions unchanged.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633uBOE1GLMOtxzMB",
+    "rule": "javascript:S7723",
+    "path": "tests/account-session-browser.check.mjs",
+    "line": 103,
+    "message": "Use `new Error()` instead of `Error()`.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Shared fixture creates new Error instances on the existing failure paths; assertions and rejection conditions unchanged.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633uBOE1GLMOtxzMC",
+    "rule": "javascript:S9382",
+    "path": "tests/account-session-browser.check.mjs",
+    "line": 112,
+    "message": "Unexpected `await` inside a loop.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Shared bounded polling helper keeps sequential readiness checks and timeout failure; removes repeated await-in-loop code without parallelizing stateful scenarios.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633uBOE1GLMOtxzMD",
+    "rule": "javascript:S7723",
+    "path": "tests/account-session-browser.check.mjs",
+    "line": 114,
+    "message": "Use `new Error()` instead of `Error()`.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Shared fixture creates new Error instances on the existing failure paths; assertions and rejection conditions unchanged.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF6339vOE1GLMOtxzMk",
+    "rule": "go:S3776",
+    "path": "internal/accountapi/persistence_test.go",
+    "line": 156,
+    "message": "Refactor this method to reduce its Cognitive Complexity from 77 to the 15 allowed.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Extracted focused transport/presentation/parsing/replay/retention or test-scenario helpers. Existing assertions and transaction ordering retained; local complexity checks support the targeted reductions. Remote Sonar reanalysis pending.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF6339vOE1GLMOtxzMl",
+    "rule": "go:S3776",
+    "path": "internal/accountapi/persistence_test.go",
+    "line": 365,
+    "message": "Refactor this method to reduce its Cognitive Complexity from 17 to the 15 allowed.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Extracted focused transport/presentation/parsing/replay/retention or test-scenario helpers. Existing assertions and transaction ordering retained; local complexity checks support the targeted reductions. Remote Sonar reanalysis pending.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF6339vOE1GLMOtxzMm",
+    "rule": "go:S978",
+    "path": "internal/accountapi/persistence_test.go",
+    "line": 784,
+    "message": "Rename this identifier, \"max\" shadows a predeclared identifier.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Renamed the max local to boundedAccount; bounds assertions unchanged.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF6339yOE1GLMOtxzMn",
+    "rule": "go:S3776",
+    "path": "internal/accountstore/profile.go",
+    "line": 116,
+    "message": "Refactor this method to reduce its Cognitive Complexity from 32 to the 15 allowed.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Extracted focused transport/presentation/parsing/replay/retention or test-scenario helpers. Existing assertions and transaction ordering retained; local complexity checks support the targeted reductions. Remote Sonar reanalysis pending.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF6339yOE1GLMOtxzMo",
+    "rule": "go:S3776",
+    "path": "internal/accountstore/profile.go",
+    "line": 195,
+    "message": "Refactor this method to reduce its Cognitive Complexity from 17 to the 15 allowed.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Extracted focused transport/presentation/parsing/replay/retention or test-scenario helpers. Existing assertions and transaction ordering retained; local complexity checks support the targeted reductions. Remote Sonar reanalysis pending.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF6339yOE1GLMOtxzMp",
+    "rule": "go:S3776",
+    "path": "internal/accountstore/profile.go",
+    "line": 267,
+    "message": "Refactor this method to reduce its Cognitive Complexity from 16 to the 15 allowed.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Extracted focused transport/presentation/parsing/replay/retention or test-scenario helpers. Existing assertions and transaction ordering retained; local complexity checks support the targeted reductions. Remote Sonar reanalysis pending.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF63390OE1GLMOtxzMq",
+    "rule": "godre:S8184",
+    "path": "internal/accountstore/store.go",
+    "line": 8,
+    "message": "Add a comment explaining why this blank import is needed.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Documented schema embedding and database/sql PostgreSQL driver registration.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF63390OE1GLMOtxzMr",
+    "rule": "godre:S8184",
+    "path": "internal/accountstore/store.go",
+    "line": 14,
+    "message": "Add a comment explaining why this blank import is needed.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Documented schema embedding and database/sql PostgreSQL driver registration.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF63302OE1GLMOtxzMa",
+    "rule": "typescript:S6759",
+    "path": "src/components/AccountGate.tsx",
+    "line": 12,
+    "message": "Mark the props of the component as read-only.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Marked component props readonly; runtime behavior unchanged.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF63302OE1GLMOtxzMb",
+    "rule": "typescript:S7722",
+    "path": "src/components/AccountGate.tsx",
+    "line": 33,
+    "message": "Pass a message to the `Error` constructor.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Added descriptive diagnostic messages to Error constructors.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF63302OE1GLMOtxzMc",
+    "rule": "typescript:S7722",
+    "path": "src/components/AccountGate.tsx",
+    "line": 43,
+    "message": "Pass a message to the `Error` constructor.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Added descriptive diagnostic messages to Error constructors.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF63302OE1GLMOtxzMd",
+    "rule": "typescript:S7722",
+    "path": "src/components/AccountGate.tsx",
+    "line": 116,
+    "message": "Pass a message to the `Error` constructor.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Added descriptive diagnostic messages to Error constructors.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF63302OE1GLMOtxzMf",
+    "rule": "typescript:S6819",
+    "path": "src/components/AccountGate.tsx",
+    "line": 177,
+    "message": "Use <output> instead of the \"status\" role to ensure accessibility across all devices.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Used native output elements and an open nonmodal dialog; labels and deliberate logout choices retained. Actual React browser lifecycle passes.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF63302OE1GLMOtxzMg",
+    "rule": "typescript:S3358",
+    "path": "src/components/AccountGate.tsx",
+    "line": 193,
+    "message": "Extract this nested ternary operation into an independent statement.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Replaced the reported nested branch with a named message or explicit error mapping; labels and error precedence unchanged.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF63326OE1GLMOtxzMi",
+    "rule": "typescript:S3358",
+    "path": "src/components/JourneyGuidance.tsx",
+    "line": 35,
+    "message": "Extract this nested ternary operation into an independent statement.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Replaced the reported nested branch with a named message or explicit error mapping; labels and error precedence unchanged.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633wvOE1GLMOtxzMT",
+    "rule": "typescript:S3776",
+    "path": "src/lib/accountProfile.ts",
+    "line": 124,
+    "message": "Refactor this function to reduce its Cognitive Complexity from 24 to the 15 allowed.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Extracted focused transport/presentation/parsing/replay/retention or test-scenario helpers. Existing assertions and transaction ordering retained; local complexity checks support the targeted reductions. Remote Sonar reanalysis pending.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633wvOE1GLMOtxzMU",
+    "rule": "typescript:S3358",
+    "path": "src/lib/accountProfile.ts",
+    "line": 149,
+    "message": "Extract this nested ternary operation into an independent statement.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Replaced the reported nested branch with a named message or explicit error mapping; labels and error precedence unchanged.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633wvOE1GLMOtxzMV",
+    "rule": "typescript:S3358",
+    "path": "src/lib/accountProfile.ts",
+    "line": 151,
+    "message": "Extract this nested ternary operation into an independent statement.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Replaced the reported nested branch with a named message or explicit error mapping; labels and error precedence unchanged.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633wvOE1GLMOtxzMW",
+    "rule": "typescript:S3358",
+    "path": "src/lib/accountProfile.ts",
+    "line": 153,
+    "message": "Extract this nested ternary operation into an independent statement.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Replaced the reported nested branch with a named message or explicit error mapping; labels and error precedence unchanged.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633wvOE1GLMOtxzMX",
+    "rule": "typescript:S3358",
+    "path": "src/lib/accountProfile.ts",
+    "line": 155,
+    "message": "Extract this nested ternary operation into an independent statement.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Replaced the reported nested branch with a named message or explicit error mapping; labels and error precedence unchanged.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633wkOE1GLMOtxzMO",
+    "rule": "typescript:S6759",
+    "path": "src/lib/store.tsx",
+    "line": 187,
+    "message": "Mark the props of the component as read-only.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Marked component props readonly; runtime behavior unchanged.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633wkOE1GLMOtxzMP",
+    "rule": "typescript:S3358",
+    "path": "src/lib/store.tsx",
+    "line": 498,
+    "message": "Extract this nested ternary operation into an independent statement.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Replaced the reported nested branch with a named message or explicit error mapping; labels and error precedence unchanged.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633wkOE1GLMOtxzMQ",
+    "rule": "typescript:S6819",
+    "path": "src/lib/store.tsx",
+    "line": 594,
+    "message": "Use <output> instead of the \"status\" role to ensure accessibility across all devices.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Used native output elements and an open nonmodal dialog; labels and deliberate logout choices retained. Actual React browser lifecycle passes.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633uCOE1GLMOtxzME",
+    "rule": "javascript:S4036",
+    "path": "tests/account-browser.check.mjs",
+    "line": 31,
+    "message": "Make sure the \"PATH\" variable only contains fixed, unwriteable directories.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted as test-runner hardening, not a confirmed product exploit. Shared fixture launches /usr/bin/google-chrome directly, removing PATH lookup.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633uCOE1GLMOtxzMF",
+    "rule": "javascript:S7723",
+    "path": "tests/account-browser.check.mjs",
+    "line": 51,
+    "message": "Use `new Error()` instead of `Error()`.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Shared fixture creates new Error instances on the existing failure paths; assertions and rejection conditions unchanged.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633uCOE1GLMOtxzMG",
+    "rule": "javascript:S9382",
+    "path": "tests/account-browser.check.mjs",
+    "line": 52,
+    "message": "Unexpected `await` inside a loop.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Shared bounded polling helper keeps sequential readiness checks and timeout failure; removes repeated await-in-loop code without parallelizing stateful scenarios.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633uCOE1GLMOtxzMH",
+    "rule": "javascript:S7723",
+    "path": "tests/account-browser.check.mjs",
+    "line": 65,
+    "message": "Use `new Error()` instead of `Error()`.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Shared fixture creates new Error instances on the existing failure paths; assertions and rejection conditions unchanged.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633uCOE1GLMOtxzMI",
+    "rule": "javascript:S9382",
+    "path": "tests/account-browser.check.mjs",
+    "line": 66,
+    "message": "Unexpected `await` inside a loop.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Shared bounded polling helper keeps sequential readiness checks and timeout failure; removes repeated await-in-loop code without parallelizing stateful scenarios.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633uCOE1GLMOtxzMJ",
+    "rule": "javascript:S7723",
+    "path": "tests/account-browser.check.mjs",
+    "line": 87,
+    "message": "Use `new Error()` instead of `Error()`.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Shared fixture creates new Error instances on the existing failure paths; assertions and rejection conditions unchanged.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633uCOE1GLMOtxzMK",
+    "rule": "javascript:S7723",
+    "path": "tests/account-browser.check.mjs",
+    "line": 103,
+    "message": "Use `new Error()` instead of `Error()`.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Shared fixture creates new Error instances on the existing failure paths; assertions and rejection conditions unchanged.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633uDOE1GLMOtxzML",
+    "rule": "javascript:S9382",
+    "path": "tests/account-browser.check.mjs",
+    "line": 112,
+    "message": "Unexpected `await` inside a loop.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Shared bounded polling helper keeps sequential readiness checks and timeout failure; removes repeated await-in-loop code without parallelizing stateful scenarios.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633uDOE1GLMOtxzMM",
+    "rule": "javascript:S7723",
+    "path": "tests/account-browser.check.mjs",
+    "line": 114,
+    "message": "Use `new Error()` instead of `Error()`.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Shared fixture creates new Error instances on the existing failure paths; assertions and rejection conditions unchanged.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633uDOE1GLMOtxzMN",
+    "rule": "Web:S5254",
+    "path": "tests/account-harness.html",
+    "line": 1,
+    "message": "Add \"lang\" and/or \"xml:lang\" attributes to the \"<html>\" or \"<body>\" element",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Added lang=en to the synthetic HTML harness; application locale behavior is unchanged.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633ijOE1GLMOtxzL1",
+    "rule": "typescript:S7749",
+    "path": "tests/account-harness.tsx",
+    "line": 26,
+    "message": "Invalid group length in numeric value.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Rewrote the same millisecond constant using regular digit groups.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633ijOE1GLMOtxzL3",
+    "rule": "typescript:S6551",
+    "path": "tests/account-harness.tsx",
+    "line": 50,
+    "message": "'input' may use Object's default stringification format ('[object Object]') when stringified.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Narrowed synthetic transport inputs/bodies instead of default object stringification; supported JSON command bytes remain unchanged.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633ijOE1GLMOtxzL4",
+    "rule": "typescript:S6551",
+    "path": "tests/account-harness.tsx",
+    "line": 71,
+    "message": "'init.body' may use Object's default stringification format ('[object Object]') when stringified.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Narrowed synthetic transport inputs/bodies instead of default object stringification; supported JSON command bytes remain unchanged.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  },
+  {
+    "input_id": "AaF633ijOE1GLMOtxzL5",
+    "rule": "typescript:S6551",
+    "path": "tests/account-harness.tsx",
+    "line": 73,
+    "message": "'init.body' may use Object's default stringification format ('[object Object]') when stringified.",
+    "disposition": "accepted_code_addressed",
+    "evidence": "Accepted. Narrowed synthetic transport inputs/bodies instead of default object stringification; supported JSON command bytes remain unchanged.",
+    "remoteStatus": "unchanged; publication and reanalysis pending approval"
+  }
+]

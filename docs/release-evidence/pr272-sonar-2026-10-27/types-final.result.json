@@ -1,0 +1,9 @@
+{
+  "command": [
+    "./node_modules/.bin/tsc",
+    "--noEmit"
+  ],
+  "startedAt": "2026-10-27T06:58:01.018244+00:00",
+  "finishedAt": "2026-10-27T06:58:05.460963+00:00",
+  "exitCode": 0
+}

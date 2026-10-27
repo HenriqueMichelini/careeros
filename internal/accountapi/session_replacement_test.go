@@ -3,6 +3,7 @@ package accountapi
 import (
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"errors"
 	"professional-information-repo/internal/auth"
 	"testing"
@@ -74,86 +75,96 @@ func TestPostgresSessionReplacementRejectsExpiryWhileWaiting(t *testing.T) {
 
 func TestPostgresSessionReplacementLogoutOrderings(t *testing.T) {
 	for _, order := range []string{"logout-first", "replacement-first"} {
-		t.Run(order, func(t *testing.T) {
-			dsn, db := database(t)
-			first := open(t, dsn, "careeros_replace_order")
-			if err := first.Migrate(context.Background()); err != nil {
-				t.Fatal(err)
-			}
-			second := open(t, dsn, "careeros_logout_order")
-			svc := service(t, first, fakeOIDC{})
-			who := login(t, svc, "ordered-subject")
-			device := login(t, svc, "ordered-subject")
-			now := time.Now()
-			replacement := auth.Session{ID: "ordered-replacement", AccountID: who.Account.ID, Generation: who.Principal.Generation,
-				TokenHash: sha256.Sum256([]byte("ordered-token")), CSRFHash: sha256.Sum256([]byte("ordered-csrf")), CreatedAt: now, ExpiresAt: now.Add(time.Hour)}
-			lock, err := db.Conn(context.Background())
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer lock.Close()
-			if _, err = lock.ExecContext(context.Background(), "SELECT pg_advisory_lock(72481991)"); err != nil {
-				t.Fatal(err)
-			}
-			defer lock.ExecContext(context.Background(), "SELECT pg_advisory_unlock(72481991)")
-			event := "DELETE"
-			if order == "replacement-first" {
-				event = "INSERT"
-			}
-			_, err = db.Exec(`CREATE FUNCTION pause_order() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN PERFORM pg_advisory_xact_lock(72481991); IF TG_OP='DELETE' THEN RETURN OLD; ELSE RETURN NEW; END IF; END $$; CREATE TRIGGER pause_order BEFORE ` + event + ` ON careeros_sessions FOR EACH ROW EXECUTE FUNCTION pause_order()`)
-			if err != nil {
-				t.Fatal(err)
-			}
-			replaceDone, logoutDone := make(chan error, 1), make(chan error, 1)
-			replace := func() {
-				replaceDone <- first.AuthStores().Sessions.Create(context.Background(), replacement, who.Principal.SessionID, now)
-			}
-			logout := func() {
-				logoutDone <- second.AuthStores().Sessions.Revoke(context.Background(), who.Principal.SessionID)
-			}
-			if order == "logout-first" {
-				go logout()
-				waitBlocked(t, db, "careeros_logout_order", "advisory")
-				go replace()
-				waitBlocked(t, db, "careeros_replace_order", "")
-			} else {
-				go replace()
-				waitBlocked(t, db, "careeros_replace_order", "advisory")
-				go logout()
-				waitBlocked(t, db, "careeros_logout_order", "")
-			}
-			if _, err = lock.ExecContext(context.Background(), "SELECT pg_advisory_unlock(72481991)"); err != nil {
-				t.Fatal(err)
-			}
-			if err = <-logoutDone; err != nil {
-				t.Fatal(err)
-			}
-			err = <-replaceDone
-			var created bool
-			if e := db.QueryRow("SELECT EXISTS(SELECT 1 FROM careeros_sessions WHERE id=$1)", replacement.ID).Scan(&created); e != nil {
-				t.Fatal(e)
-			}
-			if order == "logout-first" {
-				if !errors.Is(err, auth.ErrInvalidTransaction) || created {
-					t.Fatal("logout must fence replacement", err, created)
-				}
-			} else {
-				if err != nil || !created {
-					t.Fatal("replacement must commit before ordinary logout", err, created)
-				}
-				if _, err = svc.Authenticate(context.Background(), "ordered-token"); err != nil {
-					t.Fatal("replacement positive control", err)
-				}
-			}
-			if _, err = svc.Authenticate(context.Background(), device.SessionToken); err != nil {
-				t.Fatal("another device must survive", err)
-			}
-			account, ok, err := first.AuthStores().Accounts.Get(context.Background(), who.Account.ID)
-			if err != nil || !ok || account.Generation != who.Principal.Generation {
-				t.Fatal("ordinary logout changed generation", account, err)
-			}
-			login(t, svc, "ordered-subject") // Fresh sign-in remains permitted in both orders.
-		})
+		t.Run(order, func(t *testing.T) { testReplacementOrdering(t, order) })
+	}
+}
+
+func testReplacementOrdering(t *testing.T, order string) {
+	t.Helper()
+
+	dsn, db := database(t)
+	first := open(t, dsn, "careeros_replace_order")
+	if err := first.Migrate(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	second := open(t, dsn, "careeros_logout_order")
+	svc := service(t, first, fakeOIDC{})
+	who := login(t, svc, "ordered-subject")
+	device := login(t, svc, "ordered-subject")
+	now := time.Now()
+	replacement := auth.Session{ID: "ordered-replacement", AccountID: who.Account.ID, Generation: who.Principal.Generation,
+		TokenHash: sha256.Sum256([]byte("ordered-token")), CSRFHash: sha256.Sum256([]byte("ordered-csrf")), CreatedAt: now, ExpiresAt: now.Add(time.Hour)}
+	lock, err := db.Conn(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer lock.Close()
+	if _, err = lock.ExecContext(context.Background(), "SELECT pg_advisory_lock(72481991)"); err != nil {
+		t.Fatal(err)
+	}
+	defer lock.ExecContext(context.Background(), "SELECT pg_advisory_unlock(72481991)")
+	event := "DELETE"
+	if order == "replacement-first" {
+		event = "INSERT"
+	}
+	_, err = db.Exec(`CREATE FUNCTION pause_order() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN PERFORM pg_advisory_xact_lock(72481991); IF TG_OP='DELETE' THEN RETURN OLD; ELSE RETURN NEW; END IF; END $$; CREATE TRIGGER pause_order BEFORE ` + event + ` ON careeros_sessions FOR EACH ROW EXECUTE FUNCTION pause_order()`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	replaceDone, logoutDone := make(chan error, 1), make(chan error, 1)
+	replace := func() {
+		replaceDone <- first.AuthStores().Sessions.Create(context.Background(), replacement, who.Principal.SessionID, now)
+	}
+	logout := func() {
+		logoutDone <- second.AuthStores().Sessions.Revoke(context.Background(), who.Principal.SessionID)
+	}
+	if order == "logout-first" {
+		go logout()
+		waitBlocked(t, db, "careeros_logout_order", "advisory")
+		go replace()
+		waitBlocked(t, db, "careeros_replace_order", "")
+	} else {
+		go replace()
+		waitBlocked(t, db, "careeros_replace_order", "advisory")
+		go logout()
+		waitBlocked(t, db, "careeros_logout_order", "")
+	}
+	if _, err = lock.ExecContext(context.Background(), "SELECT pg_advisory_unlock(72481991)"); err != nil {
+		t.Fatal(err)
+	}
+	if err = <-logoutDone; err != nil {
+		t.Fatal(err)
+	}
+	err = <-replaceDone
+	assertReplacementOrdering(t, db, svc, replacement.ID, order, err)
+	if _, err = svc.Authenticate(context.Background(), device.SessionToken); err != nil {
+		t.Fatal("another device must survive", err)
+	}
+	account, ok, err := first.AuthStores().Accounts.Get(context.Background(), who.Account.ID)
+	if err != nil || !ok || account.Generation != who.Principal.Generation {
+		t.Fatal("ordinary logout changed generation", account, err)
+	}
+	login(t, svc, "ordered-subject") // Fresh sign-in remains permitted in both orders.
+}
+
+func assertReplacementOrdering(t *testing.T, db *sql.DB, svc *auth.Service, replacementID, order string, err error) {
+	t.Helper()
+
+	var created bool
+	if e := db.QueryRow("SELECT EXISTS(SELECT 1 FROM careeros_sessions WHERE id=$1)", replacementID).Scan(&created); e != nil {
+		t.Fatal(e)
+	}
+	if order == "logout-first" {
+		if !errors.Is(err, auth.ErrInvalidTransaction) || created {
+			t.Fatal("logout must fence replacement", err, created)
+		}
+	} else {
+		if err != nil || !created {
+			t.Fatal("replacement must commit before ordinary logout", err, created)
+		}
+		if _, err = svc.Authenticate(context.Background(), "ordered-token"); err != nil {
+			t.Fatal("replacement positive control", err)
+		}
 	}
 }
 

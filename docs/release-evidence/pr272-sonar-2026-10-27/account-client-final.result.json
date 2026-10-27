@@ -1,0 +1,12 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "tests/account-profile.test.mjs",
+    "tests/profile-document.test.mjs",
+    "tests/ingestion-submission-save.test.mjs"
+  ],
+  "startedAt": "2026-10-27T06:58:02.802056+00:00",
+  "finishedAt": "2026-10-27T06:58:03.637116+00:00",
+  "exitCode": 0
+}

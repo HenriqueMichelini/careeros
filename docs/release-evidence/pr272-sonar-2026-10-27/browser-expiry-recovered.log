@@ -1,0 +1,1 @@
+{"status":"passed","scenario":"expiry","evidence":"/tmp/careeros-account-browser-non2lf","checks":["pending wording survives session transition","signed-out/other-account content fenced","no automatic replay","identical recovery request"]}
