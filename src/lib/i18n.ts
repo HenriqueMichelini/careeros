@@ -961,6 +961,10 @@ const messages = {
     "profile.persistence.download": "Download recovery copy",
     "profile.persistence.reload": "Reload saved Profile",
     "profile.persistence.loading": "Loading Profile…",
+    "profile.persistence.uncertain": "Save outcome is uncertain. Keep your recovery copy and check the saved Profile.",
+    "profile.persistence.authentication": "Sign in again to access your Profile. Current edits remain unsaved.",
+    "profile.persistence.account_changed": "Your account changed. Current edits were not saved to another account.",
+    "profile.persistence.not_found": "This Save has not been confirmed. Keep your recovery copy.",
     "cv.saveError":
       "This browser could not save your CV choices. Your edits will be lost if you reload or leave this page.",
     "cv.exportPdf": "Export A4 PDF",
@@ -2086,6 +2090,10 @@ const messages = {
     "profile.persistence.download": "Baixar cópia de recuperação",
     "profile.persistence.reload": "Recarregar Perfil salvo",
     "profile.persistence.loading": "Carregando Perfil…",
+    "profile.persistence.uncertain": "O resultado é incerto. Mantenha a cópia de recuperação e verifique o Perfil salvo.",
+    "profile.persistence.authentication": "Entre novamente para acessar seu Perfil. As alterações ainda não foram salvas.",
+    "profile.persistence.account_changed": "Sua conta mudou. As alterações não foram salvas em outra conta.",
+    "profile.persistence.not_found": "Este salvamento ainda não foi confirmado. Mantenha a cópia de recuperação.",
     "cv.saveError":
       "O navegador não conseguiu salvar suas escolhas para o currículo. Suas alterações serão perdidas se você recarregar ou sair desta página.",
     "cv.exportPdf": "Exportar PDF A4",

@@ -12,7 +12,9 @@
     "journey.profileReady": "Professional information saved in this browser.",
     "journey.profileNeeded": "Add professional information to Profile first. Contact details alone are not enough.",
     "journey.openProfile": "Open Profile",
-    "journey.continueApply": "Continue to Apply"
+    "journey.continueApply": "Continue to Apply",
+    "journey.accountMode": "Account workspace · your AI keys",
+    "journey.accountProfile": "Profile is saved to your account only after Save is confirmed. Review AI suggestions before saving."
   },
   "pt-BR": {
     "journey.context": "Espaço de trabalho e próximo passo",
@@ -27,6 +29,8 @@
     "journey.profileReady": "Informações profissionais salvas neste navegador.",
     "journey.profileNeeded": "Adicione informações profissionais ao Perfil primeiro. Só os dados de contato não bastam.",
     "journey.openProfile": "Abrir Perfil",
-    "journey.continueApply": "Continuar para Candidatar"
+    "journey.continueApply": "Continuar para Candidatar",
+    "journey.accountMode": "Espaço da conta · suas chaves de IA",
+    "journey.accountProfile": "O Perfil é salvo na conta após a confirmação de Salvar. Revise sugestões de IA antes de salvar."
   }
 }

@@ -27,6 +27,6 @@ var (
 	// ErrForbidden means an authenticated account does not own the resource or
 	// is no longer allowed to act.
 	ErrForbidden = errors.New("forbidden")
-	// ErrCapacity means a bounded in-memory store refused more entries.
+	// ErrCapacity means a bounded store refused more entries.
 	ErrCapacity = errors.New("auth store capacity reached")
 )

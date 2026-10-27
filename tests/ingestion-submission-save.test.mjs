@@ -175,6 +175,39 @@ const context = (sub, snapshot, plan, input) => ({
 
 // --- One canonical transaction ---------------------------------------------
 
+test("reviewed submission uses account Save without browser storage and awaits acknowledgment", async () => {
+  const input = "I use Go."
+  const sub = submission({
+    batches: [{ index: 0, claimIds: ["run/0/c1"] }],
+    focus: [{ index: 0, claimIds: ["run/0/c1"] }],
+    claims: [claim("run/0/c1", { source: input, text: input, targets: ["skills"] })],
+    operations: [operation("run/0/c1", { value: "Go" })],
+  })
+  const snapshot = snapshotOf()
+  const plan = review.selectReviewAdditions(planOf(sub, snapshot))
+  let calls = 0
+  let release
+  const saving = save.saveSubmissionSelect(context(sub, snapshot, plan, input), {
+    save: async (expected, candidate) => {
+      calls++
+      assert.equal(expected, snapshot)
+      assert.ok(validateProfileDocument(candidate))
+      assert.equal(profileView(candidate).skills, "Go")
+      return new Promise(resolve => { release = resolve })
+    },
+  })
+  assert.equal(calls, 1)
+  let settled = false
+  void saving.then(() => { settled = true })
+  await Promise.resolve()
+  assert.equal(settled, false)
+  release(true)
+  assert.equal((await saving).acknowledged, true)
+  const denied = await save.saveSubmissionSelect(context(sub, snapshot, plan, input), { save: async () => false })
+  assert.equal(denied.acknowledged, false)
+  assert.equal(denied.status, "failed")
+})
+
 test("a selection above 30 claims and 60 operations saves in one transaction", async () => {
   const batches = []
   const claims = []

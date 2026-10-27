@@ -107,7 +107,7 @@ function SubmissionDisclosures() {
 }
 
 export default function SubmissionJourney() {
-  const { state, dispatch, profileDocument, refreshCanonicalProfile } =
+  const { state, dispatch, profileDocument, refreshCanonicalProfile, accountId, saveCanonicalCandidate } =
     useStore()
   const repository = state.repository
   const { t } = useI18n()
@@ -443,7 +443,7 @@ export default function SubmissionJourney() {
           plan: reviewPlan,
           input: pin.input,
         },
-        { storage: localStorage },
+        accountId ? { save: saveCanonicalCandidate } : { storage: localStorage },
       )
       if (!outcome.acknowledged) {
         setSaveError(outcome.status === "empty" ? "empty" : outcome.code || "storage")

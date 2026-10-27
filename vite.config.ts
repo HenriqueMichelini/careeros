@@ -11,6 +11,7 @@ export default defineConfig(({ mode }) => {
   const emitSourcemaps = mode === 'development'
 
   return {
+    cacheDir: process.env.CAREEROS_VITE_CACHE_DIR || 'node_modules/.vite',
     base: process.env.FIGMA_PUBLIC_URL ? `${process.env.FIGMA_PUBLIC_URL}/` : '/',
     build: {
       sourcemap: emitSourcemaps ? 'inline' : false,
@@ -34,6 +35,8 @@ react(),
       port: parseInt(process.env.PORT || '8443'),
       strictPort: true,
       proxy: {
+        '/api/profile/current': { target: 'http://127.0.0.1:8787', changeOrigin: false },
+        '/api/profile/operations': { target: 'http://127.0.0.1:8787', changeOrigin: false },
         '/api/cv/generate': { target: 'http://127.0.0.1:8787', changeOrigin: false },
         '/api/profile/ingest': {
           target: 'http://127.0.0.1:8787',
@@ -66,6 +69,8 @@ react(),
       host: process.env.FIGMA_DEV_SERVER_HOST || '0.0.0.0',
       port: parseInt(process.env.PORT || '8443'),
       proxy: {
+        '/api/profile/current': { target: 'http://127.0.0.1:8787', changeOrigin: false },
+        '/api/profile/operations': { target: 'http://127.0.0.1:8787', changeOrigin: false },
         '/api/cv/generate': { target: 'http://127.0.0.1:8787', changeOrigin: false },
         '/api/profile/ingest': {
           target: 'http://127.0.0.1:8787',

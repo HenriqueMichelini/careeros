@@ -8,6 +8,7 @@
     "dev:review-api": "go run ./cmd/profile-review",
     "build": "vite build",
     "test": "node --test tests/*.test.mjs",
+    "test:account-browser": "node tests/account-browser.check.mjs",
     "test:ingestion-browser": "node tests/submission-journey.check.mjs",
     "test:review-renderer": "node tests/review-renderer.check.mjs",
     "test:application-reuse": "node tests/application-reuse-browser.check.mjs",

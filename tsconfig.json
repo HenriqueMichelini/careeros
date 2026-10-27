@@ -30,6 +30,7 @@
   "include": [
     "src",
     "tests/review-harness.tsx",
+    "tests/account-harness.tsx",
     "vite.config.ts",
     "lab/ui",
     "vite.lab.config.ts"

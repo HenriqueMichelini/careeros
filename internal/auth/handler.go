@@ -84,6 +84,10 @@ func (h *Handler) session(w http.ResponseWriter, r *http.Request) {
 	}
 	principal, err := h.service.Authenticate(r.Context(), token)
 	if err != nil {
+		if !errors.Is(err, ErrAuthenticationRequired) {
+			writeAuthError(w, err)
+			return
+		}
 		clearSessionCookies(w)
 		writeJSON(w, http.StatusOK, SessionView{Authenticated: false})
 		return
@@ -102,7 +106,12 @@ func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if token, ok := sessionTokenFromRequest(r); ok {
-		if principal, err := h.service.Authenticate(r.Context(), token); err == nil {
+		principal, err := h.service.Authenticate(r.Context(), token)
+		if err != nil && !errors.Is(err, ErrAuthenticationRequired) {
+			writeAuthError(w, err)
+			return
+		}
+		if err == nil {
 			if !h.validCSRF(r, principal) {
 				writeAuthError(w, ErrForbidden)
 				return
@@ -133,6 +142,10 @@ func (h *Handler) logoutAll(w http.ResponseWriter, r *http.Request) {
 	}
 	principal, err := h.service.Authenticate(r.Context(), token)
 	if err != nil {
+		if !errors.Is(err, ErrAuthenticationRequired) {
+			writeAuthError(w, err)
+			return
+		}
 		clearSessionCookies(w)
 		writeAuthError(w, ErrAuthenticationRequired)
 		return

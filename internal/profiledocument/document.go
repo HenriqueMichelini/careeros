@@ -1,5 +1,5 @@
-// Package profiledocument defines the browser-local Profile v2 contract. It is
-// intentionally not wired to storage or providers in the stateless backend.
+// Package profiledocument defines the shared Profile v2 wire/domain contract.
+// Validation itself performs no persistence or provider calls.
 package profiledocument
 
 import (

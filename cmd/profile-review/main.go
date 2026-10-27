@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"log"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	profileingestion "professional-information-repo/backend/profile-ingestion"
 	profilereview "professional-information-repo/backend/profile-review"
 	qualificationgaps "professional-information-repo/backend/qualification-gaps"
+	"professional-information-repo/internal/accountapi"
 	"professional-information-repo/internal/auth"
 )
 
@@ -33,46 +35,26 @@ func main() {
 	}
 }
 
-// newHandler composes one process-local auth service with the existing
-// workflows. The in-memory store is a reference for local/single-process use;
-// a shared persistence backend remains unselected, so the Netlify functions
-// are not wired to this guard yet.
+// newHandler composes shared account/Profile authority and legacy AI workflows.
 func newHandler() http.Handler {
 	mux := http.NewServeMux()
-	service := configuredAuthService()
+	runtime, _ := accountapi.FromEnv(context.Background())
+	var service *auth.Service
+	var accountHandler http.Handler = accountapi.New(nil, nil)
+	if runtime != nil {
+		service = runtime.Service
+		accountHandler = runtime.Handler
+	}
 
 	mux.Handle("/api/cv/generate", protect(cvgeneration.NewHandler(), service))
 	mux.Handle("/api/profile/ingest", protect(profileingestion.NewHandler(), service))
 	mux.Handle("/api/application-draft", protect(applicationdraft.NewHandler(), service))
 	mux.Handle("/api/qualification-gaps", protect(qualificationgaps.NewHandler(), service))
 	mux.Handle("/api/profile/review", protect(profilereview.NewHandler(), service))
-	mux.Handle("/api/auth/", auth.NewHandler(service))
+	mux.Handle("/api/auth/", accountHandler)
+	mux.Handle("/api/profile/current", accountHandler)
+	mux.Handle("/api/profile/operations/", accountHandler)
 	return mux
-}
-
-func configuredAuthService() *auth.Service {
-	config, err := auth.ConfigFromEnv()
-	if err != nil {
-		log.Printf("auth unavailable: %v", err)
-		return nil
-	}
-	providerConfig := config.Providers[0]
-	provider, err := auth.NewGoogleProvider(providerConfig, config.HTTPClient, config.Now, config.JWKSCacheTTL)
-	if err != nil {
-		log.Printf("auth unavailable: %v", err)
-		return nil
-	}
-	registry, err := auth.NewRegistry(provider)
-	if err != nil {
-		log.Printf("auth unavailable: %v", err)
-		return nil
-	}
-	service, err := auth.NewService(config, registry, auth.NewMemoryStores())
-	if err != nil {
-		log.Printf("auth unavailable: %v", err)
-		return nil
-	}
-	return service
 }
 
 // protect keeps the legacy guest/BYOK behavior unless an account-owned

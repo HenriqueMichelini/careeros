@@ -9,7 +9,7 @@ export default function JourneyGuidance({
   page: Page
   setPage: (page: Page) => void
 }) {
-  const { state, profileDocument, profileSaving } = useStore()
+  const { state, profileDocument, profileSaving, accountId } = useStore()
   const { t } = useI18n()
   const profileReady =
     !state.profileError &&
@@ -27,10 +27,12 @@ export default function JourneyGuidance({
         style={{ borderColor: "var(--color-border)" }}
       >
         <div className="min-w-0 max-w-2xl">
-          <p className="font-semibold">{t("journey.localMode")}</p>
+          <p className="font-semibold">
+            {t(accountId ? "journey.accountMode" : "journey.localMode")}
+          </p>
           <p className="mt-1" style={{ color: "var(--color-muted-fg)" }}>
             {page === "repository"
-              ? t("journey.profile")
+              ? t(accountId ? "journey.accountProfile" : "journey.profile")
               : page === "cv"
                 ? t("journey.cv")
                 : page === "results"
