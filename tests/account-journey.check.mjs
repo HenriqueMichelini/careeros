@@ -17,15 +17,15 @@ if (!process.env.CAREEROS_TEST_DATABASE_URL)
   )
 const root = new URL("..", import.meta.url).pathname
 const output = mkdtempSync(join(tmpdir(), "careeros-first-draft-"))
-// Keep executable output in a private, atomically created checkout directory.
+// Keep executable output and compiler cache private and outside Vite source scanning.
 // The remaining evidence is synthetic and can stay in the OS temp directory.
-const build = mkdtempSync(join(root, ".careeros-journey-build-"))
+const build = mkdtempSync(join(root, "node_modules", ".careeros-journey-build-"))
 process.once("exit", () => rmSync(build, { recursive: true, force: true }))
 const binary = join(build, "journey-server.test")
 // This Linux browser harness also uses /usr/bin/google-chrome explicitly.
 execFileSync("/usr/local/go/bin/go", ["test", "-c", "-o", binary, "./internal/accountapi"], {
   cwd: root,
-  env: { ...process.env, GOCACHE: "/tmp/careeros-go-cache" },
+  env: { ...process.env, GOCACHE: join(build, "go-cache") },
 })
 const freePort = () =>
   new Promise((resolve) => {
