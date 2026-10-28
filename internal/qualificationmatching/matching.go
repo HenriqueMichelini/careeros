@@ -95,7 +95,7 @@ func ApprovedProjection(doc profiledocument.Document) profiledocument.Document {
 		_ = json.Unmarshal(f.Value, &value)
 		text, isText := value.(string)
 		_, isBool := value.(bool)
-		if slices.Contains(allowed[kind], f.Field) && (f.Approval == "approved" || f.Kind == "legacy_block" && f.Origin.Kind == "existing_profile") && (isText && strings.TrimSpace(text) != "" || isBool) {
+		if slices.Contains(allowed[kind], f.Field) && (f.Approval == "approved" || f.Kind == "legacy_block" && f.Origin.Kind == "existing_profile") && (isText && profiledocument.HasText(text) || isBool) {
 			out.Facts = append(out.Facts, f)
 			ids[f.ID] = true
 		}
@@ -120,7 +120,7 @@ func HasUsefulFacts(doc profiledocument.Document) bool {
 	for _, f := range doc.Facts {
 		var value any
 		_ = json.Unmarshal(f.Value, &value)
-		if text, ok := value.(string); ok && strings.TrimSpace(text) != "" {
+		if text, ok := value.(string); ok && profiledocument.HasText(text) {
 			return true
 		}
 		if value == true {

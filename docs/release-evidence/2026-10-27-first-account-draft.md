@@ -74,3 +74,18 @@ The first additional whole-ingestion browser run stalled on the last Portuguese 
 Retained artifacts are under [first-account-draft](first-account-draft/); text logs normalize trailing whitespace only. The [behavior/limits note](../account-first-draft.md) states remaining guest/build-mode and persistence limits. Local browser/real-engine results do not demonstrate hosted route deployment, complete durable Draft delivery, model quality or launch readiness.
 
 No push, PR creation, issue/comment mutation, merge, deployment, live Google/AI service, provider contact or spending occurred.
+
+## Cross-language projection follow-up
+
+Follow-up base: `efb1621a9e93f0c7a7b77c1105f38f0e43cb17b1`. The [shared corpus](../../internal/accountapi/testdata/profile-projections.json) supplies 44 domain-valid synthetic Profiles to the real Go and TypeScript implementations. The Go test runs independent expected-selection checks and can export its full results; the [Node test](../../tests/profile-projection-parity.test.mjs) invokes that Go test, then compares complete evidence, career/qualification views and readiness results. Object-key order is ignored; array order, values, stable IDs/revisions, qualifiers and evidence links must match exactly. Both inputs are checked for unintended mutation. The Node test is automatically included by the existing `tests/*.test.mjs` command; no provider or PostgreSQL fixture is needed.
+
+Coverage includes every entity kind and field, out-of-order entities, missing defaults, qualification-row filtering, approval/legacy exceptions, negation/aspiration/uncertainty, active/shared/orphan/invalidated evidence, opaque JSON fields, booleans, Unicode/NUL text and the maximum safe root revision. Explicit whitespace cases cover all ECMAScript trim characters plus U+0085, U+180E and U+200B.
+
+The tests reproduced two mismatches before repair: Go's whitespace checks disagreed with JavaScript for U+FEFF/U+0085, and Go's legacy view dropped opaque entity fields retained by TypeScript. Go now uses the same nonempty-text predicate and legacy-view mapping. Stored wording, evidence allowlisting, account authority and downstream strict input validation are unchanged; parity does not make opaque fields eligible for provider input.
+
+After repair: **44 parity cases and all 360 frontend contracts pass**; affected Go packages pass under `-race`, scoped Go vet passes, and TypeScript passes. Red/green logs are retained under `first-account-draft/projection-parity-*.log`. The prior broader browser, PostgreSQL and build evidence above remains attributed to the parent implementation. Those broader checks and the whole-Go suite were not repeated for this pure mapping/test follow-up. The inherited 13 Lab failures remain unresolved, and the measured manifest drift stays at 45 paths with no manifest edit/reapproval.
+
+```sh
+rtk proxy env GOCACHE=/tmp/careeros-go-cache node --test --test-isolation=none tests/profile-projection-parity.test.mjs
+rtk proxy env GOCACHE=/tmp/careeros-go-cache go test ./internal/accountapi -run '^TestProfileProjectionContract$' -count=1
+```

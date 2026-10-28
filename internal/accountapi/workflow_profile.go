@@ -2,9 +2,9 @@ package accountapi
 
 import (
 	"encoding/json"
-	"professional-information-repo/internal/profiledocument"
 	"sort"
-	"strings"
+
+	"professional-information-repo/internal/profiledocument"
 )
 
 // Mirrors the established Profile view and careerProfile/cvQualifications wire
@@ -43,22 +43,25 @@ func workflowProfile(doc profiledocument.Document) (map[string]any, map[string]a
 		items := []map[string]any{}
 		for _, e := range entities {
 			if e.Kind == group {
-				item := map[string]any{"id": e.LegacyID}
+				item := map[string]any{}
 				values := fields(e.ID)
 				for _, name := range names {
 					item[name] = ""
 					if name == "current" {
 						item[name] = false
 					}
-					if v, ok := values[name]; ok {
-						item[name] = v
-					}
 				}
-				text := func(key string) string { v, _ := item[key].(string); return strings.TrimSpace(v) }
-				if group == "education" && text("degree") == "" && text("institution") == "" {
+				// profileView keeps opaque/custom fields in the legacy
+				// view. Evidence allowlisting and workflow input bounds are separate.
+				for name, value := range values {
+					item[name] = value
+				}
+				item["id"] = e.LegacyID
+				text := func(key string) bool { v, _ := item[key].(string); return profiledocument.HasText(v) }
+				if group == "education" && !text("degree") && !text("institution") {
 					continue
 				}
-				if (group == "certifications" || group == "languages") && text("name") == "" {
+				if (group == "certifications" || group == "languages") && !text("name") {
 					continue
 				}
 				items = append(items, item)
