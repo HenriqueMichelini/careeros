@@ -3,7 +3,7 @@
 import assert from "node:assert/strict"
 import { spawn, execFileSync } from "node:child_process"
 import { createServer } from "node:net"
-import { mkdtempSync, writeFileSync, openSync, readFileSync } from "node:fs"
+import { mkdtempSync, writeFileSync, openSync, readFileSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { withAccountBrowser, pause } from "./account-browser.fixture.mjs"
@@ -17,8 +17,13 @@ if (!process.env.CAREEROS_TEST_DATABASE_URL)
   )
 const root = new URL("..", import.meta.url).pathname
 const output = mkdtempSync(join(tmpdir(), "careeros-first-draft-"))
-const binary = join(output, "journey-server.test")
-execFileSync("go", ["test", "-c", "-o", binary, "./internal/accountapi"], {
+// Keep executable output in a private, atomically created checkout directory.
+// The remaining evidence is synthetic and can stay in the OS temp directory.
+const build = mkdtempSync(join(root, ".careeros-journey-build-"))
+process.once("exit", () => rmSync(build, { recursive: true, force: true }))
+const binary = join(build, "journey-server.test")
+// This Linux browser harness also uses /usr/bin/google-chrome explicitly.
+execFileSync("/usr/local/go/bin/go", ["test", "-c", "-o", binary, "./internal/accountapi"], {
   cwd: root,
   env: { ...process.env, GOCACHE: "/tmp/careeros-go-cache" },
 })
@@ -38,9 +43,8 @@ function installWorkflows(ingestion, context, reviewed) {
   window.fetch = async (url, options = {}) => {
     const response = await window.__realFetch(url, options)
     if (
-      !String(url).match(
-        /^\/api\/(profile\/ingest|qualification-gaps|application-draft)$/,
-      ) ||
+      typeof url !== "string" ||
+      !/^\/api\/(profile\/ingest|qualification-gaps|application-draft)$/.test(url) ||
       !response.ok
     )
       return response

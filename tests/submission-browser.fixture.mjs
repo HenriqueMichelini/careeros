@@ -77,56 +77,20 @@ export function journeyFetch(url, options) {
           : "",
     }
     const richClaims = [
-      {
-        id: "c0",
-        source: body.input,
-        text: "I use Kubernetes.",
-        targets: ["skills"],
-        question: "",
-      },
-      {
-        id: "c1",
-        source: body.input,
-        text: "I also use Go.",
-        targets: ["careerGoals"],
-        question: "",
-      },
-      {
-        id: "c2",
-        source: body.input,
-        text: "I build with Terraform.",
-        targets: ["tools"],
-        question: "",
-      },
-      {
-        id: "c3",
-        source: body.input,
-        text: "I lead cross-functional delivery.",
-        targets: ["competencies"],
-        question: "",
-      },
-      {
-        id: "c4",
-        source: body.input,
-        text: "Build useful products.",
-        targets: ["careerGoals"],
-        question: "",
-      },
-      {
-        id: "c5",
-        source: body.input,
-        text: "Python",
-        targets: ["skills"],
-        question: "",
-      },
-      {
-        id: "c6",
-        source: body.input,
-        text: "French level is unclear.",
-        targets: [],
-        question: "What is your French level?",
-      },
-    ]
+      ["I use Kubernetes.", ["skills"], ""],
+      ["I also use Go.", ["careerGoals"], ""],
+      ["I build with Terraform.", ["tools"], ""],
+      ["I lead cross-functional delivery.", ["competencies"], ""],
+      ["Build useful products.", ["careerGoals"], ""],
+      ["Python", ["skills"], ""],
+      ["French level is unclear.", [], "What is your French level?"],
+    ].map(([text, targets, question], index) => ({
+      id: `c${index}`,
+      source: body.input,
+      text,
+      targets,
+      question,
+    }))
     const claims = scenario === "rich" ? richClaims : [claim]
     const skipped =
       scenario === "partial" && body.batchIndex === 0
@@ -306,28 +270,17 @@ export function journeyFetch(url, options) {
         ],
       })
     }
-    if (scenario === "duplicate")
+    if (scenario === "duplicate" || scenario === "clarification")
       return ok({
         stage: { version: 2, kind: "reconcile" },
         focus: { claimIds: focused },
         operations: [],
         outcomes: focused.map((claimId) => ({
           claimId,
-          kind: "exact_duplicate",
-          reason: "verified_exact_alias_or_wording",
-          relatedFacts: [],
-          relatedClaimIds: [],
-        })),
-      })
-    if (scenario === "clarification")
-      return ok({
-        stage: { version: 2, kind: "reconcile" },
-        focus: { claimIds: focused },
-        operations: [],
-        outcomes: focused.map((claimId) => ({
-          claimId,
-          kind: "clarification",
-          reason: "source_ambiguity",
+          kind: scenario === "duplicate" ? "exact_duplicate" : "clarification",
+          reason: scenario === "duplicate"
+            ? "verified_exact_alias_or_wording"
+            : "source_ambiguity",
           relatedFacts: [],
           relatedClaimIds: [],
         })),

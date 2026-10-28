@@ -433,7 +433,7 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
       )
       if (id !== requestId.current) return
       setDraft({ state: "complete" })
-      dispatch({ type: "SET_NEW_DRAFT", payload: materials })
+      await dispatch({ type: "SET_NEW_DRAFT", payload: materials })
       setShowGapPrompt(false)
       setPage("results")
     } catch (error) {

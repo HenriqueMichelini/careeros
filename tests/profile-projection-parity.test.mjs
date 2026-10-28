@@ -1,4 +1,4 @@
-import test from "node:test"
+import test, { before } from "node:test"
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs"
@@ -82,7 +82,7 @@ try {
   )
 }
 const goResults = JSON.parse(readFileSync(output, "utf8"))
-assert.equal(goResults.length, cases.length)
+before(() => assert.equal(goResults.length, cases.length))
 for (const [index, fixture] of cases.entries()) {
   test(`Go/TypeScript Profile projections agree: ${fixture.name}`, () => {
     const doc = structuredClone(fixture.document)
