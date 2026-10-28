@@ -76,6 +76,60 @@ func Projection(raw []byte) (profiledocument.Document, error) {
 	return doc, nil
 }
 
+// ApprovedProjection is the server equivalent of qualificationProjection.
+// It preserves identities and includes only active evidence for permitted facts.
+func ApprovedProjection(doc profiledocument.Document) profiledocument.Document {
+	out := doc
+	out.Facts = []profiledocument.Fact{}
+	out.Links = []profiledocument.Link{}
+	out.Evidence = []profiledocument.Evidence{}
+	ids, evidence := map[string]bool{}, map[string]bool{}
+	for _, f := range doc.Facts {
+		kind := "profile"
+		for _, e := range doc.Entities {
+			if e.ID == f.Owner.ID {
+				kind = e.Kind
+			}
+		}
+		var value any
+		_ = json.Unmarshal(f.Value, &value)
+		text, isText := value.(string)
+		_, isBool := value.(bool)
+		if slices.Contains(allowed[kind], f.Field) && (f.Approval == "approved" || f.Kind == "legacy_block" && f.Origin.Kind == "existing_profile") && (isText && strings.TrimSpace(text) != "" || isBool) {
+			out.Facts = append(out.Facts, f)
+			ids[f.ID] = true
+		}
+	}
+	for _, link := range doc.Links {
+		if link.State == "active" && ids[link.From.ID] {
+			out.Links = append(out.Links, link)
+			if link.Kind == "supports" {
+				evidence[link.To.ID] = true
+			}
+		}
+	}
+	for _, e := range doc.Evidence {
+		if evidence[e.ID] {
+			out.Evidence = append(out.Evidence, e)
+		}
+	}
+	return out
+}
+
+func HasUsefulFacts(doc profiledocument.Document) bool {
+	for _, f := range doc.Facts {
+		var value any
+		_ = json.Unmarshal(f.Value, &value)
+		if text, ok := value.(string); ok && strings.TrimSpace(text) != "" {
+			return true
+		}
+		if value == true {
+			return true
+		}
+	}
+	return false
+}
+
 // LexicalTerms returns mechanical tokens, not inferred skills or support.
 func LexicalTerms(s string) map[string]bool {
 	out := map[string]bool{}

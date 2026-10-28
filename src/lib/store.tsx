@@ -50,6 +50,7 @@ interface AppState {
   cvLanguage: Locale
   profileError: ProfileStorageCode | null
   generatedMaterials: GeneratedMaterials | null
+  previousMaterials: GeneratedMaterials | null
   lastAcceptedMaterials: GeneratedMaterials | null
   typesafeKey: string
   apiKey: string
@@ -61,6 +62,11 @@ interface AppState {
 }
 
 type Action = { type: "NEW_APPLICATION" } | {
+  type: "RESTORE_PREVIOUS_DRAFT"
+} | {
+  type: "SET_NEW_DRAFT"
+  payload: GeneratedMaterials
+} | {
   type: "SET_TYPESAFE_KEY"
   payload: string
 } | {
@@ -91,6 +97,20 @@ type Action = { type: "NEW_APPLICATION" } | {
 
 function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
+    case "SET_NEW_DRAFT":
+      return {
+        ...state,
+        previousMaterials: state.generatedMaterials,
+        generatedMaterials: action.payload,
+      }
+    case "RESTORE_PREVIOUS_DRAFT":
+      return state.previousMaterials
+        ? {
+            ...state,
+            generatedMaterials: state.previousMaterials,
+            previousMaterials: state.generatedMaterials,
+          }
+        : state
     case "NEW_APPLICATION":
       return {
         ...state,
@@ -165,6 +185,7 @@ const StoreContext = createContext<{
   profileDocument: ProfileDocument | null
   profileSaving: boolean
   accountId: string | null
+  profileSaved: boolean
   saveCanonicalCandidate: (
     expected: ProfileDocument,
     candidate: ProfileDocument,
@@ -207,6 +228,7 @@ export function StoreProvider({
     cvLanguage: account ? getInitialLocale() : loadCvLanguage(),
     profileError: null,
     generatedMaterials: null,
+    previousMaterials: null,
     lastAcceptedMaterials: null,
     typesafeKey: account ? "" : readSetting("careeros_typesafe_key"),
     apiKey: account ? "" : readSetting("careeros_apikey"),
@@ -485,6 +507,7 @@ export function StoreProvider({
         profileDocument,
         profileSaving: pendingProfileWrites > 0,
         accountId: account?.accountId ?? null,
+        profileSaved: !account || account.hasSavedProfile,
         saveCanonicalCandidate,
         editCanonicalProfile,
         refreshCanonicalProfile,

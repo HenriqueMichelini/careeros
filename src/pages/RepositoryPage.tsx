@@ -533,6 +533,7 @@ export default function RepositoryPage() {
     editCanonicalProfile,
     applyProfileProposal,
     profileDocument,
+    accountId,
   } = useStore()
   const { t } = useI18n()
   const [activeSection, setActiveSection] = useState<Section>("profile")
@@ -651,6 +652,7 @@ export default function RepositoryPage() {
         request,
         state.apiKey,
         controller.signal,
+        accountId,
       )
       if (!isCurrent()) return
       setSectionEdits({})

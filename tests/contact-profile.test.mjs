@@ -1,3 +1,4 @@
+import { workflowModuleURL } from "./workflow-module.mjs"
 import { reviewedDraftFixture } from "./reviewed-resume-fixture.mjs"
 import test from "node:test"
 import assert from "node:assert/strict"
@@ -11,7 +12,7 @@ for (const name of ["jsonEquality", "profile", "cover-letter", "fieldDecision", 
   const source = readFileSync(new URL(`../src/lib/${name}.ts`, import.meta.url), "utf8")
   const compiled = ts.transpileModule(source, {
     compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
-  }).outputText.replace(/from ['"]\.\/jobContext['"]/g, 'from "./jobContext.mjs"').replace(/from ['"]\.\/fieldDecision['"]/g, 'from "./fieldDecision.mjs"').replace(/from ['"]\.\/cover-letter['"]/g, 'from "./cover-letter.mjs"').replace(/from ['"]\.\/profile['"]/g, 'from "./profile.mjs"')
+  }).outputText.replaceAll('"./workflowRequest"', JSON.stringify(workflowModuleURL)).replace(/from ['"]\.\/jobContext['"]/g, 'from "./jobContext.mjs"').replace(/from ['"]\.\/fieldDecision['"]/g, 'from "./fieldDecision.mjs"').replace(/from ['"]\.\/cover-letter['"]/g, 'from "./cover-letter.mjs"').replace(/from ['"]\.\/profile['"]/g, 'from "./profile.mjs"')
   writeFileSync(join(temp, `${name}.mjs`), compiled.replaceAll('"./jsonEquality"', '"./jsonEquality.mjs"').replace(/import fields from [^\n]+\n/, 'const fields = '+readFileSync(new URL("../internal/qualificationmatching/fields.json", import.meta.url),"utf8")+';\n').replaceAll('"./qualificationEvidence"', '"./qualificationEvidence.mjs"').replaceAll('"./resumeReview"', '"./resumeReview.mjs"').replaceAll('"./artifactReview"', '"./artifactReview.mjs"'))
 }
 const { withContactFields, careerProfile, cvQualifications, validQualifications } = await import(join(temp, "profile.mjs"))

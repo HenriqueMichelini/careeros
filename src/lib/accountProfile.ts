@@ -5,6 +5,8 @@ import {
   type ProfileDocument,
 } from "./profileDocument"
 import { ProfileStorageError } from "./profileStorage"
+import { csrfHeaders } from "./workflowRequest"
+export { csrfHeaders } from "./workflowRequest"
 
 export type SaveState = "idle" | "pending" | "failed" | "uncertain" | "confirmed"
 interface SaveOutcome {
@@ -31,15 +33,6 @@ function tabRecoveryStorage(): RecoveryStorage | null {
   }
 }
 
-export function csrfHeaders(): Record<string, string> {
-  const token = document.cookie
-    .split(";")
-    .map((v) => v.trim())
-    .find((v) => v.startsWith("__Host-careeros_csrf="))
-    ?.split("=")[1]
-  return token ? { "X-CSRF-Token": decodeURIComponent(token) } : {}
-}
-
 function replyError(
   status: number,
   body: { error?: string },
@@ -61,6 +54,9 @@ export class AccountProfile {
   state: SaveState = "idle"
   historicalRevision: number | null = null
   private exists = false
+  get hasSavedProfile() {
+    return this.exists
+  }
   checkpointStored = false
   private lease = 0
   private pending: PendingSave | null = null

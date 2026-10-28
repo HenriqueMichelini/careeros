@@ -1,4 +1,5 @@
 import { parseArtifactReview } from "./artifactReview"
+import { workflowHeaders } from "./workflowRequest"
 import { parseResumeReview } from "./resumeReview"
 import {
   qualificationProjection,
@@ -69,6 +70,7 @@ export async function generateMaterials(
   profileDocument?: ProfileDocument,
   selectedFactIds: string[] = [],
   signal?: AbortSignal,
+  accountId?: string | null,
 ): Promise<GeneratedMaterials> {
   if (!validQualifications(repo)) throw new ApplicationDraftError("input")
   let response: Response
@@ -79,6 +81,7 @@ export async function generateMaterials(
         "Content-Type": "application/json",
         "X-OpenAI-Api-Key": apiKey,
         "X-TypeSafe-Api-Key": typesafeKey,
+        ...workflowHeaders(accountId),
       },
       body: JSON.stringify({
         repository: careerProfile(repo),
@@ -125,6 +128,12 @@ export async function generateMaterials(
     "invalid_output",
     "capacity",
     "job_context_stale",
+    "authentication_required",
+    "account_changed",
+    "profile_stale",
+    "profile_required",
+    "forbidden",
+    "auth_unavailable",
   ])
   if (!response.ok)
     throw new ApplicationDraftError(
@@ -226,6 +235,7 @@ export function findProfileGaps(
   profileDocument?: ProfileDocument,
   signal?: AbortSignal,
   jobContext?: JobContext,
+  accountId?: string | null,
 ): Promise<QualificationAnalysis>
 export async function findProfileGaps(
   repo: ProfessionalRepository,
@@ -236,6 +246,7 @@ export async function findProfileGaps(
   profileDocument?: ProfileDocument,
   signal?: AbortSignal,
   jobContext?: JobContext,
+  accountId?: string | null,
 ): Promise<ProfileGap[] | QualificationAnalysis> {
   if (!validQualifications(repo)) throw new QualificationGapsError("input")
   let response: Response
@@ -246,6 +257,7 @@ export async function findProfileGaps(
         "Content-Type": "application/json",
         "X-OpenAI-Api-Key": apiKey,
         "X-TypeSafe-Api-Key": typesafeKey,
+        ...workflowHeaders(accountId),
       },
       body: JSON.stringify({
         repository: careerProfile(repo),
@@ -290,6 +302,12 @@ export async function findProfileGaps(
       "invalid_output",
       "capacity",
       "job_context_stale",
+      "authentication_required",
+      "account_changed",
+      "profile_stale",
+      "profile_required",
+      "forbidden",
+      "auth_unavailable",
     ])
     throw new QualificationGapsError(
       typeof payload?.error === "string" && known.has(payload.error)

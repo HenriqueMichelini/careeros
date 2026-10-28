@@ -44,7 +44,8 @@ export default function ApplyProfileEnrichment({
   generationActive: boolean
   onBusyChange: (busy: boolean) => void
 }) {
-  const { state, profileDocument, applyIngestionProposal } = useStore()
+  const { state, profileDocument, applyIngestionProposal, accountId } =
+    useStore()
   const { t } = useI18n()
   const [inputs, setInputs] = useState<Record<string, string>>({})
   const [targets, setTargets] = useState<Record<string, string>>({})
@@ -236,6 +237,7 @@ export default function ApplyProfileEnrichment({
         metadata,
         {
           session: ingestionSession.current,
+          accountId,
           onStage: (stage) => {
             if (id === attempt.current) setIngestionStage(stage)
           },

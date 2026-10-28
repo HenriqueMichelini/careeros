@@ -471,7 +471,7 @@ func completeInputShape(raw map[string]json.RawMessage) bool {
 			return false
 		}
 	}
-	if len(raw) < 3 || len(raw) > 9 {
+	if len(raw) < 3 || len(raw) > 10 {
 		return false
 	}
 	for _, key := range []string{"repository", "jobPosting", "confirmedQualifications"} {

@@ -14,7 +14,16 @@
     "journey.openProfile": "Open Profile",
     "journey.continueApply": "Continue to Apply",
     "journey.accountMode": "Account workspace · your AI keys",
-    "journey.accountProfile": "Profile is saved to your account only after Save is confirmed. Review AI suggestions before saving."
+    "journey.accountProfile": "Paste your CV or professional information below, review the proposed changes and Save your selection. You can also edit sections manually. Then continue to Apply.",
+    "journey.accountSaving": "Saving Profile to your account…",
+    "journey.accountReady": "Professional information saved to your account. Continue to Apply and paste a job; a standalone CV is optional.",
+    "journey.sessionIssue": "Your session could not authorize this request. Sign in again or return to this tab after checking your account, then deliberately retry. Previous results remain in this session.",
+    "journey.profileStale": "Your saved Profile changed. Refresh it and review the job again before generating. Previous results are still available.",
+    "journey.refreshProfile": "Refresh saved Profile",
+    "journey.signInAgain": "Sign in again in another tab, then return here",
+    "journey.retry": "Try generation again",
+    "journey.previousDraft": "Switch to previous Draft in this session",
+    "journey.cancelled": "Stopped waiting for this attempt. Previous results remain available. Provider work may continue; no automatic retry was started."
   },
   "pt-BR": {
     "journey.context": "Espaço de trabalho e próximo passo",
@@ -31,6 +40,15 @@
     "journey.openProfile": "Abrir Perfil",
     "journey.continueApply": "Continuar para Candidatar",
     "journey.accountMode": "Espaço da conta · suas chaves de IA",
-    "journey.accountProfile": "O Perfil é salvo na conta após a confirmação de Salvar. Revise sugestões de IA antes de salvar."
+    "journey.accountProfile": "Cole seu CV ou informações profissionais abaixo, revise as mudanças propostas e salve sua seleção. Também é possível editar as seções manualmente. Depois continue para Candidatar.",
+    "journey.accountSaving": "Salvando Perfil na sua conta…",
+    "journey.accountReady": "Informações profissionais salvas na conta. Continue para Candidatar e cole uma vaga; o CV geral é opcional.",
+    "journey.sessionIssue": "Sua sessão não pôde autorizar esta solicitação. Entre novamente ou volte a esta aba após verificar sua conta e tente de novo explicitamente. Os resultados anteriores continuam nesta sessão.",
+    "journey.profileStale": "Seu Perfil salvo mudou. Atualize-o e revise a vaga novamente antes de gerar. Os resultados anteriores continuam disponíveis.",
+    "journey.refreshProfile": "Atualizar Perfil salvo",
+    "journey.signInAgain": "Entre novamente em outra aba e volte aqui",
+    "journey.retry": "Tentar gerar novamente",
+    "journey.previousDraft": "Alternar para o Rascunho anterior nesta sessão",
+    "journey.cancelled": "A espera por esta tentativa foi interrompida. Os resultados anteriores continuam disponíveis. O provedor pode continuar trabalhando; nenhuma nova tentativa automática foi iniciada."
   }
 }

@@ -104,6 +104,9 @@ export default function Layout({ page, setPage, children }: Props) {
           <div className="flex items-center gap-2 md:grid md:grid-cols-[7rem_12rem] md:gap-3 flex-shrink-0">
             <LanguageSelector />
             <button
+              data-api-key-settings
+              aria-expanded={showKey}
+              aria-controls="api-key-settings"
               onClick={() => {
                 setKeyDraft(state.apiKey)
                 setShowKey((v) => !v)
@@ -126,6 +129,7 @@ export default function Layout({ page, setPage, children }: Props) {
 
         {showKey && (
           <div
+            id="api-key-settings"
             className="border-t"
             style={{
               borderColor: "var(--color-border)",

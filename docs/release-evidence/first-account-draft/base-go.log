@@ -1,0 +1,269 @@
+ok  	professional-information-repo/backend/application-draft	0.897s
+ok  	professional-information-repo/backend/cv-generation	0.033s
+ok  	professional-information-repo/backend/profile-ingestion	5.707s
+ok  	professional-information-repo/backend/profile-review	0.130s
+ok  	professional-information-repo/backend/qualification-gaps	3.218s
+?   	professional-information-repo/cmd/account-migrate	[no test files]
+ok  	professional-information-repo/cmd/profile-review	0.018s
+ok  	professional-information-repo/internal/accountapi	0.035s
+ok  	professional-information-repo/internal/accountstore	0.017s
+ok  	professional-information-repo/internal/aidiagnostics	0.253s
+ok  	professional-information-repo/internal/auth	1.949s
+2026/10/27 19:05:15 profile_ingestion status=200 outcome=ok duration_ms=25
+2026/10/27 19:05:15 profile_ingestion status=200 outcome=ok duration_ms=6
+2026/10/27 19:05:15 profile_ingestion stage=extract outcome=outage
+2026/10/27 19:05:15 profile_ingestion status=502 outcome=outage duration_ms=2
+2026/10/27 19:05:15 profile_ingestion status=200 outcome=ok duration_ms=10
+2026/10/27 19:05:15 profile_ingestion status=200 outcome=ok duration_ms=47
+2026/10/27 19:05:15 profile_ingestion status=200 outcome=ok duration_ms=26
+2026/10/27 19:05:15 profile_ingestion status=200 outcome=ok duration_ms=9
+2026/10/27 19:05:16 profile_ingestion status=200 outcome=ok duration_ms=2
+2026/10/27 19:05:16 profile_ingestion status=200 outcome=ok duration_ms=3
+--- FAIL: TestProcessRunnerExecutesAllowlistedGoContractsWithoutInference (0.07s)
+    process_runner_test.go:33: structured process result unavailable: {Outcome:source_changed Origin:isolated-go-tests DurationMS:0 CleanupComplete:true}, failed/blocked; {"version":"lab-process-result-v1","selector":"go-preprocessing","origin":"isolated-go-tests","outcome":"source_changed","exitCode":null,"durationMs":0,"runtimeVersions":{"bubblewrap":"bubblewrap 0.12.0","chrome":"Google Chrome 155.0.8059.79","go":"go version go1.26.4 linux/amd64","node":"v24.15.0","supervisor":"go1.26.4"},"sourceHash":"c3fb7be93b892adca689c9798370d89bac305454ae3268055488f25376e7c595","spawnAttempted":false,"cleanupComplete":true,"outputText":"","capturedOutputHash":"","outputTruncated":false,"unavailableReasons":["approved source snapshot could not be prepared","source_changed"]}
+--- FAIL: TestProcessRunnerCannotReadHostSentinelsOrReachHostLoopback (0.07s)
+    process_runner_test.go:76: isolation sentinel failed: {"version":"lab-process-result-v1","selector":"probe-isolation","origin":"isolated-guard-probe","outcome":"source_changed","exitCode":null,"durationMs":0,"runtimeVersions":{"bubblewrap":"bubblewrap 0.12.0","chrome":"Google Chrome 155.0.8059.79","go":"go version go1.26.4 linux/amd64","node":"v24.15.0","supervisor":"go1.26.4"},"sourceHash":"c3fb7be93b892adca689c9798370d89bac305454ae3268055488f25376e7c595","spawnAttempted":false,"cleanupComplete":true,"outputText":"","capturedOutputHash":"","outputTruncated":false,"unavailableReasons":["approved source snapshot could not be prepared","source_changed"]}
+--- FAIL: TestProcessRunnerCancellationStopsDetachedChildAndGrandchild (2.09s)
+    process_runner_test.go:104: actual detached child/grandchild tree was not reached
+--- FAIL: TestProcessRunnerDeadlineRetainsPartialTreeAndUnreachedTest (0.06s)
+    process_runner_test.go:139: deadline tree cleanup incomplete: {"version":"lab-process-result-v1","selector":"probe-hang-tree","origin":"isolated-guard-probe","outcome":"source_changed","exitCode":null,"durationMs":0,"runtimeVersions":{"bubblewrap":"bubblewrap 0.12.0","chrome":"Google Chrome 155.0.8059.79","go":"go version go1.26.4 linux/amd64","node":"v24.15.0","supervisor":"go1.26.4"},"sourceHash":"c3fb7be93b892adca689c9798370d89bac305454ae3268055488f25376e7c595","spawnAttempted":false,"cleanupComplete":true,"outputText":"","capturedOutputHash":"","outputTruncated":false,"unavailableReasons":["approved source snapshot could not be prepared","source_changed"]}
+--- FAIL: TestProcessRunnerBoundsOutputAndStopsFollowingTests (0.06s)
+    process_runner_test.go:161: output bound contract failed: outcomesource_changed bytes0
+--- FAIL: TestProcessRunnerReusesSectionBrowserHarnessWithScreenshotEvidence (0.06s)
+    process_runner_test.go:202: isolated browser evidence unavailable: {"version":"lab-process-result-v1","selector":"browser-section-review","origin":"isolated-browser-harness","outcome":"source_changed","exitCode":null,"durationMs":0,"runtimeVersions":{"bubblewrap":"bubblewrap 0.12.0","chrome":"Google Chrome 155.0.8059.79","go":"go version go1.26.4 linux/amd64","node":"v24.15.0","supervisor":"go1.26.4"},"sourceHash":"c3fb7be93b892adca689c9798370d89bac305454ae3268055488f25376e7c595","spawnAttempted":false,"cleanupComplete":true,"outputText":"","capturedOutputHash":"","outputTruncated":false,"unavailableReasons":["approved source snapshot could not be prepared","source_changed"]}
+--- FAIL: TestProcessRunnerExecutesExistingNodeCanonicalContracts (0.06s)
+    process_runner_test.go:228: isolated Node contract unavailable: {"version":"lab-process-result-v1","selector":"node-profile-document","origin":"isolated-node-tests","outcome":"source_changed","exitCode":null,"durationMs":0,"runtimeVersions":{"bubblewrap":"bubblewrap 0.12.0","chrome":"Google Chrome 155.0.8059.79","go":"go version go1.26.4 linux/amd64","node":"v24.15.0","supervisor":"go1.26.4"},"sourceHash":"c3fb7be93b892adca689c9798370d89bac305454ae3268055488f25376e7c595","spawnAttempted":false,"cleanupComplete":true,"outputText":"","capturedOutputHash":"","outputTruncated":false,"unavailableReasons":["approved source snapshot could not be prepared","source_changed"]}
+--- FAIL: TestProcessRunnerCrashRetainsDistinctOutcome (0.07s)
+    process_runner_test.go:238: crash misclassified: {TreeReady:false NamespaceStopped:false Evidence:map[] Artifacts:[] Version:lab-process-result-v1 Selector:probe-crash Origin:isolated-guard-probe Outcome:source_changed ExitCode:<nil> DurationMS:0 RuntimeVersions:map[bubblewrap:bubblewrap 0.12.0 chrome:Google Chrome 155.0.8059.79 go:go version go1.26.4 linux/amd64 node:v24.15.0 supervisor:go1.26.4] SourceHash:c3fb7be93b892adca689c9798370d89bac305454ae3268055488f25376e7c595 SpawnAttempted:false CleanupComplete:true OutputText: OutputHash: OutputTruncated:false UnavailableReasons:[approved source snapshot could not be prepared source_changed]}
+--- FAIL: TestProcessRunnerUsesOfflineFieldHelpers (0.07s)
+    process_runner_test.go:279: offline helpers failed:
+--- FAIL: TestProcessRunnerCDPPDFIsDistinctAndSurvivesExport (0.06s)
+    process_runner_test.go:301: browser export harness failed:
+--- FAIL: TestProcessRunnerExistingWorkflowSelectorsExecute (0.48s)
+    --- FAIL: TestProcessRunnerExistingWorkflowSelectorsExecute/go-canonical (0.07s)
+        process_runner_test.go:361: fixed harness unavailable: source_changed / failed:
+    --- FAIL: TestProcessRunnerExistingWorkflowSelectorsExecute/go-ingestion (0.07s)
+        process_runner_test.go:361: fixed harness unavailable: source_changed / failed:
+    --- FAIL: TestProcessRunnerExistingWorkflowSelectorsExecute/go-job-application (0.07s)
+        process_runner_test.go:361: fixed harness unavailable: source_changed / failed:
+    --- FAIL: TestProcessRunnerExistingWorkflowSelectorsExecute/go-cv (0.07s)
+        process_runner_test.go:361: fixed harness unavailable: source_changed / failed:
+    --- FAIL: TestProcessRunnerExistingWorkflowSelectorsExecute/node-ingestion (0.07s)
+        process_runner_test.go:361: fixed harness unavailable: source_changed / failed:
+    --- FAIL: TestProcessRunnerExistingWorkflowSelectorsExecute/node-job-reuse (0.07s)
+        process_runner_test.go:361: fixed harness unavailable: source_changed / failed:
+    --- FAIL: TestProcessRunnerExistingWorkflowSelectorsExecute/node-artifact-review (0.07s)
+        process_runner_test.go:361: fixed harness unavailable: source_changed / failed:
+--- FAIL: TestProcessRunnerAssertionRegressionCompletesWithFail (0.07s)
+    process_runner_test.go:370: assertion regression misclassified: {TreeReady:false NamespaceStopped:false Evidence:map[] Artifacts:[] Version:lab-process-result-v1 Selector:probe-assertion Origin:isolated-guard-probe Outcome:source_changed ExitCode:<nil> DurationMS:0 RuntimeVersions:map[bubblewrap:bubblewrap 0.12.0 chrome:Google Chrome 155.0.8059.79 go:go version go1.26.4 linux/amd64 node:v24.15.0 supervisor:go1.26.4] SourceHash:c3fb7be93b892adca689c9798370d89bac305454ae3268055488f25376e7c595 SpawnAttempted:false CleanupComplete:true OutputText: OutputHash: OutputTruncated:false UnavailableReasons:[approved source snapshot could not be prepared source_changed]} failed/blocked
+--- FAIL: TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes (0.27s)
+    --- FAIL: TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-canonical-edit (0.07s)
+        process_runner_test.go:379: browser driver did not execute safely: source_changed
+    --- FAIL: TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-ingestion (0.07s)
+        process_runner_test.go:379: browser driver did not execute safely: source_changed
+    --- FAIL: TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-enrichment (0.06s)
+        process_runner_test.go:379: browser driver did not execute safely: source_changed
+    --- FAIL: TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-application-reuse (0.07s)
+        process_runner_test.go:379: browser driver did not execute safely: source_changed
+2026/10/27 19:05:33 qualification_gaps status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 qualification_gaps status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 qualification_gaps status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 qualification_gaps status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 qualification_gaps status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 qualification_gaps status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 qualification_gaps status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 qualification_gaps status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 qualification_gaps status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 qualification_gaps status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 qualification_gaps status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 qualification_gaps status=200 outcome=ok duration_ms=3
+2026/10/27 19:05:33 qualification_gaps status=200 outcome=ok duration_ms=4
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=3
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=2
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=3
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 profile_ingestion status=200 outcome=ok duration_ms=4
+2026/10/27 19:05:33 profile_ingestion status=200 outcome=ok duration_ms=4
+2026/10/27 19:05:33 profile_ingestion status=200 outcome=ok duration_ms=4
+2026/10/27 19:05:33 profile_ingestion status=200 outcome=ok duration_ms=4
+2026/10/27 19:05:33 profile_ingestion status=200 outcome=ok duration_ms=4
+2026/10/27 19:05:33 profile_ingestion status=200 outcome=ok duration_ms=4
+2026/10/27 19:05:33 profile_ingestion status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 profile_ingestion status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 profile_ingestion status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 profile_ingestion status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 profile_ingestion status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 profile_ingestion stage=compare reason=unresolved_conflict
+2026/10/27 19:05:33 profile_ingestion status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 profile_ingestion status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 profile_ingestion status=200 outcome=ok duration_ms=3
+2026/10/27 19:05:33 qualification_gaps status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 qualification_gaps status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 profile_ingestion status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 profile_ingestion status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 profile_ingestion status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 profile_ingestion status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 profile_ingestion status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 profile_ingestion stage=compare reason=unresolved_conflict
+2026/10/27 19:05:33 profile_ingestion status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 profile_ingestion status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:33 profile_ingestion status=200 outcome=ok duration_ms=4
+2026/10/27 19:05:33 qualification_gaps status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 qualification_gaps status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:33 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 profile_ingestion status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 profile_ingestion status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:34 profile_ingestion status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:34 profile_ingestion status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 profile_ingestion status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:34 profile_ingestion status=200 outcome=ok duration_ms=4
+2026/10/27 19:05:34 profile_ingestion status=200 outcome=ok duration_ms=3
+2026/10/27 19:05:34 qualification_gaps status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:34 application_draft status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:34 profile_ingestion status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 profile_ingestion status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 profile_ingestion status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:34 profile_ingestion status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 profile_ingestion status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:34 profile_ingestion status=200 outcome=ok duration_ms=3
+2026/10/27 19:05:34 profile_ingestion status=200 outcome=ok duration_ms=3
+2026/10/27 19:05:34 qualification_gaps status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:34 application_draft status=200 outcome=ok duration_ms=2
+2026/10/27 19:05:34 qualification_gaps status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:34 qualification_gaps status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 qualification_gaps status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:34 qualification_gaps status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 qualification_gaps status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 qualification_gaps status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 qualification_gaps status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:34 qualification_gaps status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 qualification_gaps status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:34 qualification_gaps status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 qualification_gaps status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 qualification_gaps status=200 outcome=ok duration_ms=3
+2026/10/27 19:05:34 qualification_gaps status=200 outcome=ok duration_ms=5
+2026/10/27 19:05:34 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 application_draft status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:34 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 application_draft status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:34 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 application_draft status=200 outcome=ok duration_ms=2
+2026/10/27 19:05:34 application_draft status=200 outcome=ok duration_ms=3
+2026/10/27 19:05:34 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 application_draft status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:34 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:34 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:35 profile_ingestion status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:35 RoundTripper returned a response & error; ignoring response
+2026/10/27 19:05:35 profile_ingestion status=502 outcome=service_failure duration_ms=0
+2026/10/27 19:05:35 RoundTripper returned a response & error; ignoring response
+2026/10/27 19:05:35 profile_ingestion status=504 outcome=service_failure duration_ms=98
+2026/10/27 19:05:35 profile_ingestion stage=extract outcome=outage
+2026/10/27 19:05:35 profile_ingestion status=502 outcome=outage duration_ms=0
+2026/10/27 19:05:35 profile_ingestion status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:35 profile_ingestion stage=extract outcome=outage
+2026/10/27 19:05:35 profile_ingestion status=502 outcome=outage duration_ms=0
+2026/10/27 19:05:35 profile_ingestion status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:35 profile_ingestion status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:36 profile_ingestion status=200 outcome=ok duration_ms=4
+2026/10/27 19:05:36 profile_ingestion status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:36 profile_ingestion stage=extract outcome=outage
+2026/10/27 19:05:36 profile_ingestion status=502 outcome=outage duration_ms=1
+2026/10/27 19:05:36 profile_ingestion status=200 outcome=ok duration_ms=4
+2026/10/27 19:05:36 profile_ingestion status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:36 profile_ingestion status=200 outcome=ok duration_ms=4
+2026/10/27 19:05:36 profile_ingestion status=200 outcome=ok duration_ms=5
+2026/10/27 19:05:36 profile_ingestion status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:36 profile_ingestion status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:38 profile_ingestion status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:38 profile_ingestion status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:38 profile_ingestion status=200 outcome=ok duration_ms=1
+2026/10/27 19:05:38 profile_ingestion status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:38 qualification_gaps status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:38 application_draft status=200 outcome=ok duration_ms=0
+2026/10/27 19:05:38 profile_ingestion status=200 outcome=ok duration_ms=1
+FAIL
+FAIL	professional-information-repo/internal/evaluationlab	23.925s
+?   	professional-information-repo/internal/fieldvalidation	[no test files]
+?   	professional-information-repo/internal/jobcontext	[no test files]
+ok  	professional-information-repo/internal/netlifyproxy	0.014s
+?   	professional-information-repo/internal/openaihttp	[no test files]
+ok  	professional-information-repo/internal/preprocessing	5.784s
+ok  	professional-information-repo/internal/profiledocument	0.054s
+ok  	professional-information-repo/internal/profilevalidation	0.018s
+?   	professional-information-repo/internal/qualificationmatching	[no test files]
+?   	professional-information-repo/internal/releasecapture	[no test files]
+ok  	professional-information-repo/internal/semanticeval	1.937s
+?   	professional-information-repo/internal/testsupport	[no test files]
+?   	professional-information-repo/lab/api	[no test files]
+?   	professional-information-repo/lab/buildmanifest	[no test files]
+ok  	professional-information-repo/netlify/functions/account	0.017s
+?   	professional-information-repo/netlify/functions/application-draft	[no test files]
+?   	professional-information-repo/netlify/functions/cv-generation	[no test files]
+?   	professional-information-repo/netlify/functions/profile-ingestion	[no test files]
+ok  	professional-information-repo/netlify/functions/profile-review	0.034s
+?   	professional-information-repo/netlify/functions/qualification-gaps	[no test files]
+?   	professional-information-repo/scripts/ai-diagnostics	[no test files]
+?   	professional-information-repo/scripts/application-context	[no test files]
+?   	professional-information-repo/scripts/field-validation/remediation	[no test files]
+ok  	professional-information-repo/scripts/field-validation/verify	0.138s
+?   	professional-information-repo/scripts/preview-preflight	[no test files]
+?   	professional-information-repo/scripts/qualification-evidence	[no test files]
+?   	professional-information-repo/scripts/semantic-quality	[no test files]
+ok  	professional-information-repo/scripts/workflow-settings	0.027s
+FAIL

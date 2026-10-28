@@ -16,7 +16,7 @@ async function until(read, message, attempts = 150, interval = 25) {
   return until(read, message, attempts - 1, interval)
 }
 
-export async function withAccountBrowser(run) {
+export async function withAccountBrowser(run, options = {}) {
   const root = new URL("..", import.meta.url).pathname
   const evidence = mkdtempSync(join(tmpdir(), "careeros-account-browser-"))
   const port = await new Promise((resolve) => {
@@ -33,6 +33,7 @@ export async function withAccountBrowser(run) {
       cwd: root,
       env: {
         ...process.env,
+        ...options.env,
         CAREEROS_VITE_CACHE_DIR: join(evidence, "vite-cache"),
       },
       stdio: "ignore",
@@ -139,11 +140,24 @@ export async function withAccountBrowser(run) {
     await call("Runtime.enable")
     await call("Log.enable")
     await call("Page.addScriptToEvaluateOnNewDocument", {
-      source: `localStorage.setItem('careeros_locale','en');localStorage.setItem('careeros_profile_v2','LEGACY_SENTINEL');localStorage.setItem('careeros_repo','LEGACY_SENTINEL');document.cookie='__Host-careeros_csrf=synthetic; Secure; Path=/'`,
+      source: `localStorage.setItem('careeros_locale','en');localStorage.setItem('careeros_profile_v2','LEGACY_SENTINEL');localStorage.setItem('careeros_repo','LEGACY_SENTINEL');${
+        options.path
+          ? ""
+          : "document.cookie='__Host-careeros_csrf=synthetic; Secure; Path=/'"
+      }`,
     })
+    if (options.initialize)
+      await call("Page.addScriptToEvaluateOnNewDocument", {
+        source: options.initialize,
+      })
+    await options.beforeNavigate?.({ port, evidence })
     await call("Page.navigate", {
-      url: `http://127.0.0.1:${port}/tests/account-harness.html`,
+      url: `http://127.0.0.1:${port}${options.path ?? "/tests/account-harness.html"}`,
     })
+    if (options.path) {
+      await run({ evidence, call, evaluate, wait, port })
+      return
+    }
     await wait(
       `document.querySelector('[data-workspace-account="a"]') && document.querySelector('[data-save]:not(:disabled)')`,
     )

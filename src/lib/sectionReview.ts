@@ -1,3 +1,4 @@
+import { workflowHeaders } from "./workflowRequest"
 import {
   editProfile,
   validateProfileDocument,
@@ -278,6 +279,7 @@ export async function requestSectionProposal(
   request: SectionReviewRequest,
   apiKey: string,
   signal?: AbortSignal,
+  accountId?: string | null,
 ): Promise<SectionProposal> {
   let response: Response
   try {
@@ -286,6 +288,7 @@ export async function requestSectionProposal(
       headers: {
         "Content-Type": "application/json",
         "X-OpenAI-Api-Key": apiKey,
+        ...workflowHeaders(accountId),
       },
       body: JSON.stringify(request),
       signal: signal

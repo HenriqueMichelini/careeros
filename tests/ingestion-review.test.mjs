@@ -1,3 +1,4 @@
+import { workflowModuleURL } from "./workflow-module.mjs"
 // Pure review/selection model evidence (#183). Transpiles the TypeScript module
 // the same way the other node contracts do and exercises destination groups,
 // dependency-safe selection, previews and batch/source identity.
@@ -44,7 +45,7 @@ for (const name of [
         module: ts.ModuleKind.ESNext,
         target: ts.ScriptTarget.ES2022,
       },
-    }).outputText,
+    }).outputText.replaceAll('"./workflowRequest"', JSON.stringify(workflowModuleURL)),
   )
 }
 const { migrateProfile, profileView } = await import(

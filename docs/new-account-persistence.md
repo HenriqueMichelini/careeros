@@ -28,7 +28,7 @@ All Profile endpoints require a verified opaque session and `X-CareerOS-Account`
 
 `cmd/profile-review` mounts these routes using shared PostgreSQL stores. The new `netlify/functions/account` adapter mounts **the same protected router**, for original and direct function URLs, with dedicated rewrites in `netlify.toml`. New endpoints do not depend on `CAREEROS_REQUIRE_AUTH` for protection.
 
-**Existing routes outside hosted enforcement in this slice:** `/.netlify/functions/cv-generation`, `profile-ingestion`, `profile-review`, `qualification-gaps`, and `application-draft` (and their five `/api/...` rewrites) retain the existing guest/BYOK implementations. They are not made account-owned APIs here. `CAREEROS_REQUIRE_AUTH=1` remains a local-command guard for these workflows and does not protect those separate Functions. No hosted enforcement is claimed without deployment/runtime evidence. Existing stateless AI requests may receive explicitly submitted career content; this slice does not grant a server Profile read path to them.
+**Subsequent product continuation:** the persistence slice originally left the five older AI Functions outside hosted enforcement. The [first-account Draft slice](account-first-draft.md) now protects all five Functions and their public aliases through the shared account guard, independent of `CAREEROS_REQUIRE_AUTH`. Analysis and Draft generation also bind to the owner's current saved PostgreSQL Profile. This is source/local verification; hosted enforcement still needs deployment/runtime evidence. The original persistence-slice evidence remains historical.
 
 ## Transaction and recovery contract
 

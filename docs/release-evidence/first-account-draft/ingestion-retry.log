@@ -1,0 +1,16 @@
+PASS empty Profile journey: stop/resume, explicit save, save retry, one write
+PASS populated Profile entry and discard confirmation
+PASS all-duplicate no-change journey
+PASS invalid selection keeps Save disabled
+PASS partial failure/resume, explicit unprocessed notice, one save
+PASS focused clarification without leaving the journey
+PASS stale/cross-tab review, reload, explicit discard
+PASS integrated EN/PT rich review en-1440
+PASS integrated EN/PT failure and keyboard controls en-1440
+PASS integrated EN/PT rich review en-390
+PASS integrated EN/PT failure and keyboard controls en-390
+PASS integrated EN/PT rich review pt-BR-1440
+PASS integrated EN/PT failure and keyboard controls pt-BR-1440
+PASS integrated EN/PT rich review pt-BR-390
+PASS integrated EN/PT failure and keyboard controls pt-BR-390
+Screenshots: /tmp/careeros-submission-journey-d95pbR

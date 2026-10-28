@@ -1,3 +1,4 @@
+import { workflowModuleURL } from "./workflow-module.mjs"
 // New synthetic cross-feature cases. No provider calls or semantic-quality claims.
 import test from "node:test"
 import { execFileSync } from "node:child_process"
@@ -32,7 +33,7 @@ for (const name of names) {
         target: ts.ScriptTarget.ES2022,
       },
     },
-  ).outputText
+  ).outputText.replaceAll('"./workflowRequest"', JSON.stringify(workflowModuleURL))
   for (const dependency of names)
     output = output.replaceAll(`"./${dependency}"`, `"./${dependency}.mjs"`)
   for (const [path, file] of [

@@ -1,3 +1,4 @@
+import { workflowModuleURL } from "./workflow-module.mjs"
 import test from "node:test"
 import assert from "node:assert/strict"
 import { spawnSync } from "node:child_process"
@@ -12,7 +13,7 @@ const temp = mkdtempSync(join(tmpdir(), "section-evaluation-client-"))
 writeFileSync(join(temp, "contract.mjs"), `export default ${readFileSync(join(root, "internal/profiledocument/contract.json"), "utf8")}`)
 for (const name of ["profileDocument", "sectionReview"]) {
   const source = readFileSync(join(root, `src/lib/${name}.ts`), "utf8")
-  const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText
+  const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText.replaceAll('"./workflowRequest"', JSON.stringify(workflowModuleURL))
     .replaceAll('"./profileDocument"', '"./profileDocument.mjs"')
     .replaceAll('"../../internal/profiledocument/contract.json"', '"./contract.mjs"')
   writeFileSync(join(temp, `${name}.mjs`), compiled)
