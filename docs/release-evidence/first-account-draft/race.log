@@ -1,0 +1,13 @@
+ok  	professional-information-repo/internal/accountapi	9.593s
+ok  	professional-information-repo/internal/accountstore	1.022s
+ok  	professional-information-repo/internal/auth	2.391s
+ok  	professional-information-repo/internal/netlifyproxy	1.017s
+ok  	professional-information-repo/cmd/profile-review	1.034s
+ok  	professional-information-repo/netlify/functions/account	1.029s
+ok  	professional-information-repo/netlify/functions/application-draft	1.030s
+ok  	professional-information-repo/netlify/functions/cv-generation	1.028s
+ok  	professional-information-repo/netlify/functions/profile-ingestion	1.028s
+ok  	professional-information-repo/netlify/functions/profile-review	1.028s
+ok  	professional-information-repo/netlify/functions/qualification-gaps	1.028s
+ok  	professional-information-repo/backend/application-draft	3.247s
+ok  	professional-information-repo/backend/qualification-gaps	13.405s

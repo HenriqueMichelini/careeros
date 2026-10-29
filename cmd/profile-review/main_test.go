@@ -17,17 +17,17 @@ func clearAuthEnv(t *testing.T) {
 	t.Setenv("CAREEROS_REQUIRE_AUTH", "")
 }
 
-func TestNewHandlerPreservesGuestBYOKWhenAuthIsNotRequired(t *testing.T) {
+func TestNewHandlerFailsClosedEvenWhenLegacyFlagIsUnset(t *testing.T) {
 	clearAuthEnv(t)
 	handler := newHandler()
 	request := httptest.NewRequest(http.MethodPost, "/api/cv/generate", strings.NewReader(`{}`))
 	recorder := httptest.NewRecorder()
 	handler.ServeHTTP(recorder, request)
-	if recorder.Code != http.StatusUnauthorized {
-		t.Fatalf("status = %d, want the existing 401 key response", recorder.Code)
+	if recorder.Code != http.StatusServiceUnavailable {
+		t.Fatalf("status = %d, want 503", recorder.Code)
 	}
 	var body map[string]string
-	if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil || body["error"] != "key" {
+	if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil || body["error"] != "auth_unavailable" {
 		t.Fatalf("body = %s", recorder.Body.String())
 	}
 }

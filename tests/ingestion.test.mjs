@@ -1,3 +1,4 @@
+import { workflowModuleURL } from "./workflow-module.mjs"
 import {withIngestionLedger, stagedFixtureFetch} from "./ingestion-fixtures.mjs"
 import test from "node:test"
 import assert from "node:assert/strict"
@@ -15,15 +16,15 @@ const compiled = ts.transpileModule(
       verbatimModuleSyntax: false,
     },
   },
-).outputText.replace(/from ['"]\.\/fieldDecision['"]/g, `from "./careeros-field-${process.pid}.mjs"`).replace(/from ['"]\.\/profile['"]/g, `from "./careeros-profile-${process.pid}.mjs"`)
+).outputText.replaceAll('"./workflowRequest"', JSON.stringify(workflowModuleURL)).replace(/from ['"]\.\/fieldDecision['"]/g, `from "./careeros-field-${process.pid}.mjs"`).replace(/from ['"]\.\/profile['"]/g, `from "./careeros-profile-${process.pid}.mjs"`)
 writeFileSync(join(tmpdir(), `careeros-field-${process.pid}.mjs`), ts.transpileModule(
  readFileSync(new URL("../src/lib/fieldDecision.ts", import.meta.url), "utf8"),
  {compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}},
-).outputText)
+).outputText.replaceAll('"./workflowRequest"', JSON.stringify(workflowModuleURL)))
 const profileCompiled = ts.transpileModule(
   readFileSync(new URL("../src/lib/profile.ts", import.meta.url), "utf8"),
   { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } },
-).outputText
+).outputText.replaceAll('"./workflowRequest"', JSON.stringify(workflowModuleURL))
 writeFileSync(join(tmpdir(), `careeros-profile-${process.pid}.mjs`), profileCompiled)
 const output = join(tmpdir(), "careeros-ingestion-" + process.pid + ".mjs")
 writeFileSync(output, compiled)

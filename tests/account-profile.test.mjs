@@ -1,3 +1,4 @@
+import { workflowModuleURL } from "./workflow-module.mjs"
 import test from "node:test"
 import assert from "node:assert/strict"
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs"
@@ -19,7 +20,7 @@ for (const name of ["profileDocument", "profileStorage", "accountProfile"]) {
         target: ts.ScriptTarget.ES2022,
       },
     },
-  ).outputText
+  ).outputText.replaceAll('"./workflowRequest"', JSON.stringify(workflowModuleURL))
   for (const dependency of ["profileDocument", "profileStorage"])
     source = source.replaceAll(`"./${dependency}"`, `"./${dependency}.mjs"`)
   source = source.replaceAll(

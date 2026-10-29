@@ -1,3 +1,4 @@
+import { workflowHeaders } from "./workflowRequest"
 // In-memory foreground submission controller and typed transport (#187/#188).
 //
 // One `start()` drives a single whole-submission through the bounded v2 stages:
@@ -246,6 +247,7 @@ function submissionResponseCode(raw: unknown, response: Response): string {
 export function createSubmissionTransport(
   fetchImpl: typeof fetch = globalThis.fetch,
   endpoint = submissionEndpoint,
+  accountId?: string | null,
 ): SubmissionTransport {
   const post = async (
     body: object,
@@ -262,6 +264,7 @@ export function createSubmissionTransport(
           "Content-Type": "application/json",
           "X-OpenAI-Api-Key": keys.apiKey,
           "X-TypeSafe-Api-Key": keys.typesafeKey,
+          ...workflowHeaders(accountId),
         },
         body: JSON.stringify(body),
         cache: "no-store",

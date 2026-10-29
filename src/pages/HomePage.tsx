@@ -42,9 +42,21 @@ const gapErrorTranslationKeys = {
   invalid_output: "home.gapErrorInvalidOutput",
   capacity: "home.jobErrorCapacity",
   job_context_stale: "jobContext.stale",
+  authentication_required: "journey.sessionIssue",
+  account_changed: "journey.sessionIssue",
+  forbidden: "journey.sessionIssue",
+  auth_unavailable: "journey.sessionIssue",
+  profile_stale: "journey.profileStale",
+  profile_required: "journey.profileNeeded",
 } as const
 
 const draftErrorTranslationKeys = {
+  authentication_required: "journey.sessionIssue",
+  account_changed: "journey.sessionIssue",
+  forbidden: "journey.sessionIssue",
+  auth_unavailable: "journey.sessionIssue",
+  profile_stale: "journey.profileStale",
+  profile_required: "journey.profileNeeded",
   input: "home.draftErrorInput",
   key: "home.draftErrorKey",
   rate_limit: "home.draftErrorRateLimit",
@@ -110,7 +122,16 @@ function StatusRow({
 }
 
 export default function HomePage({ setPage, active, enrichmentActive }: Props) {
-  const { state, dispatch, profileDocument, profileSaving } = useStore()
+  const {
+    state,
+    dispatch,
+    profileDocument,
+    profileSaving,
+    profileSaved,
+    accountId,
+    refreshCanonicalProfile,
+  } = useStore()
+  const [cancelled, setCancelled] = useState(false)
   const [enrichmentAnswers, setEnrichmentAnswers] = useState<ApplyAnswer[]>([])
   const [enrichmentBusy, setEnrichmentBusy] = useState(false)
   const [requirementMatches, setRequirementMatches] =
@@ -156,7 +177,11 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
     state.profileError,
     profileSaving,
   ])
-  function cancelRequest() {
+  function cancelRequest(deliberate = false) {
+    if (deliberate) {
+      setCancelled(true)
+      setShowGapPrompt(false)
+    }
     requestId.current += 1
     controller.current?.abort()
     controller.current = null
@@ -187,7 +212,7 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
   useLayoutEffect(() => {
     cancelRequest()
     setDraft({ state: "pending" })
-    return cancelRequest
+    return () => cancelRequest()
   }, [inputs, active, dispatch])
   const isCheckingRequirements = qualification.state === "processing"
   const failure = qualification.error || draft.error
@@ -254,7 +279,7 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
   const jobPosting = state.jobPosting
 
   const hasRepo = hasQualificationEvidence(profileDocument)
-  const profileAvailable = !state.profileError && !profileSaving
+  const profileAvailable = !state.profileError && !profileSaving && profileSaved
   const hasPosting = jobPosting.trim().length > 0
   const canGenerate =
     hasRepo &&
@@ -268,6 +293,7 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
 
   async function handleGenerate(discardAnalysis = false) {
     if (!canGenerate) return
+    setCancelled(false)
     if (discardAnalysis) {
       completedKey.current = null
       setJobContext(null)
@@ -306,6 +332,7 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
         profileDocument ?? undefined,
         controller.current.signal,
         discardAnalysis ? undefined : (jobContext ?? undefined),
+        accountId,
       )
       if (id !== requestId.current) return
       completedKey.current = analysisKey
@@ -402,10 +429,11 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
         profileDocument ?? undefined,
         requirementMatches.flatMap((match) => match.factIds),
         controller.current.signal,
+        accountId,
       )
       if (id !== requestId.current) return
       setDraft({ state: "complete" })
-      dispatch({ type: "SET_MATERIALS", payload: materials })
+      await dispatch({ type: "SET_NEW_DRAFT", payload: materials })
       setShowGapPrompt(false)
       setPage("results")
     } catch (error) {
@@ -462,6 +490,7 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
         {/* Textarea */}
         <div>
           <label
+            htmlFor="application-job-posting"
             className="text-xs uppercase tracking-[0.2em] block mb-2"
             style={{
               fontFamily: "var(--font-mono)",
@@ -471,6 +500,7 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
             {t("home.jobPosting")}
           </label>
           <textarea
+            id="application-job-posting"
             value={jobPosting}
             onChange={(e) =>
               dispatch({ type: "SET_JOB_POSTING", payload: e.target.value })
@@ -598,7 +628,11 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
                 state.profileError
                   ? t("journey.profileUnavailable")
                   : profileSaving
-                    ? t("journey.profileSaving")
+                    ? t(
+                        accountId
+                          ? "journey.accountSaving"
+                          : "journey.profileSaving",
+                      )
                     : failure === "input"
                       ? failureMessage
                       : hasRepo
@@ -650,6 +684,24 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
             </p>
           )}
 
+          {failure === "profile_stale" && (
+            <button
+              className="mb-4 underline"
+              onClick={() => void refreshCanonicalProfile()}
+            >
+              {t("journey.refreshProfile")}
+            </button>
+          )}
+          {failure && ["authentication_required", "account_changed", "forbidden"].includes(failure) && (
+            <a className="mb-4 block underline" href="/api/auth/google/start" target="_blank" rel="noopener">
+              {t("journey.signInAgain")}
+            </a>
+          )}
+          {cancelled && (
+            <p role="status" className="mb-4 text-sm">
+              {t("journey.cancelled")}
+            </p>
+          )}
           <button
             onClick={() => handleGenerate()}
             disabled={!canGenerate}
@@ -667,13 +719,15 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
               ? t("home.checkingRequirements")
               : state.isGenerating
                 ? t("home.generating")
-                : t("home.generateMaterials")}
+                : failure
+                  ? t("journey.retry")
+                  : t("home.generateMaterials")}
           </button>
 
           {state.isGenerating && (
             <button
               type="button"
-              onClick={cancelRequest}
+              onClick={() => cancelRequest(true)}
               className="mt-3 underline"
             >
               {t("home.cancel")}
@@ -691,6 +745,7 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
           )}
           {state.isGenerating && (
             <p
+              role="status"
               className="text-xs text-center mt-3 leading-relaxed"
               style={{
                 fontFamily: "var(--font-mono)",
@@ -804,7 +859,9 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
               <button
                 type="button"
                 onClick={
-                  state.isGenerating ? cancelRequest : dismissConfirmation
+                  state.isGenerating
+                    ? () => cancelRequest(true)
+                    : dismissConfirmation
                 }
                 className="text-xs uppercase tracking-[0.12em] pt-1 transition-opacity hover:opacity-60 disabled:opacity-40"
                 style={{
@@ -980,7 +1037,9 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
                 {t(
                   profileGaps.length
                     ? "home.generateWithoutThese"
-                    : "home.generateMaterials",
+                    : draft.state === "failed"
+                      ? "journey.retry"
+                      : "home.generateMaterials",
                 )}
               </button>
               <button

@@ -9,11 +9,13 @@ export default function JourneyGuidance({
   page: Page
   setPage: (page: Page) => void
 }) {
-  const { state, profileDocument, profileSaving, accountId } = useStore()
+  const { state, profileDocument, profileSaving, accountId, profileSaved } =
+    useStore()
   const { t } = useI18n()
   const profileReady =
     !state.profileError &&
     !profileSaving &&
+    profileSaved &&
     hasQualificationEvidence(profileDocument)
   const profileMessage = accountId
     ? "journey.accountProfile"
@@ -48,9 +50,17 @@ export default function JourneyGuidance({
               {state.profileError
                 ? t("journey.profileUnavailable")
                 : profileSaving
-                  ? t("journey.profileSaving")
+                  ? t(
+                      accountId
+                        ? "journey.accountSaving"
+                        : "journey.profileSaving",
+                    )
                   : profileReady
-                    ? t("journey.profileReady")
+                    ? t(
+                        accountId
+                          ? "journey.accountReady"
+                          : "journey.profileReady",
+                      )
                     : t("journey.profileNeeded")}
             </p>
           )}

@@ -1,3 +1,4 @@
+import { workflowModuleURL } from "./workflow-module.mjs"
 // In-memory draft/recovery lifecycle evidence (#188). Transpiles the
 // submission controller and drives it through a controlled transport to prove
 // stop/pause/resume/retry/discard, retained handoff identity and expiry,
@@ -52,7 +53,7 @@ for (const name of [
         target: ts.ScriptTarget.ES2022,
         verbatimModuleSyntax: false,
       },
-    }).outputText,
+    }).outputText.replaceAll('"./workflowRequest"', JSON.stringify(workflowModuleURL)),
   )
 }
 

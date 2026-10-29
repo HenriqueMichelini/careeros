@@ -15,7 +15,7 @@ function apiProxy() {
     '/api/qualification-gaps',
     '/api/application-draft',
     '/api/auth',
-  ].map(route => [route, { target: 'http://127.0.0.1:8787', changeOrigin: false }]))
+  ].map(route => [route, { target: process.env.CAREEROS_API_TARGET || 'http://127.0.0.1:8787', changeOrigin: false }]))
 }
 
 // Vite config — https://vitejs.dev/config/

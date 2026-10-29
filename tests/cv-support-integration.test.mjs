@@ -1,3 +1,4 @@
+import { workflowModuleURL } from "./workflow-module.mjs"
 import test from "node:test"
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
@@ -129,7 +130,7 @@ writeFileSync(
         target: ts.ScriptTarget.ES2022,
       },
     },
-  ).outputText,
+  ).outputText.replaceAll('"./workflowRequest"', JSON.stringify(workflowModuleURL)),
 )
 const {
   CV_SUPPORT_REQUEST,

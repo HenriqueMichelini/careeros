@@ -1,3 +1,4 @@
+import { workflowHeaders } from "./workflowRequest"
 import type {
   ProfileDocument,
   ProfileRef,
@@ -1332,6 +1333,7 @@ export async function generateCv(
   key: string,
   signal: AbortSignal,
   density: CvDensity = "balanced",
+  accountId?: string | null,
 ): Promise<CvResult> {
   let response: Response
   const requestSignal = AbortSignal.any([signal, AbortSignal.timeout(30_000)])
@@ -1379,7 +1381,11 @@ export async function generateCv(
   try {
     response = await fetch("/api/cv/generate", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-OpenAI-Api-Key": key },
+      headers: {
+        "Content-Type": "application/json",
+        "X-OpenAI-Api-Key": key,
+        ...workflowHeaders(accountId),
+      },
       body,
       signal: requestSignal,
     })

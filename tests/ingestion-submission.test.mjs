@@ -1,3 +1,4 @@
+import { workflowModuleURL } from "./workflow-module.mjs"
 // Whole-submission controller evidence (#187). Transpiles the TypeScript
 // controller and its seams, then drives one foreground submission through a
 // controlled transport: exact stage/call order, exact pinned contexts, bounded
@@ -49,7 +50,7 @@ for (const name of [
         target: ts.ScriptTarget.ES2022,
         verbatimModuleSyntax: false,
       },
-    }).outputText,
+    }).outputText.replaceAll('"./workflowRequest"', JSON.stringify(workflowModuleURL)),
   )
 }
 

@@ -1,5 +1,6 @@
 import { useState } from "react"
-import { StoreProvider } from "./lib/store"
+import { StoreProvider, useStore } from "./lib/store"
+import { hasQualificationEvidence } from "./lib/qualificationEvidence"
 import { Page } from "./lib/types"
 import Layout from "./components/Layout"
 import HomePage from "./pages/HomePage"
@@ -10,7 +11,14 @@ import LandingPage from "./pages/LandingPage"
 import AccountGate from "./components/AccountGate"
 
 function AppInner() {
-  const [page, setPage] = useState<Page>("landing")
+  const { accountId, profileDocument, state } = useStore()
+  const [page, setPage] = useState<Page>(() =>
+    accountId
+      ? hasQualificationEvidence(profileDocument) && !state.profileError
+        ? "home"
+        : "repository"
+      : "landing",
+  )
 
   return (
     <Layout page={page} setPage={setPage}>

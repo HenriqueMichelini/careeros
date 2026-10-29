@@ -1,0 +1,5 @@
+ok  	professional-information-repo/internal/accountapi	1.233s
+ok  	professional-information-repo/internal/profiledocument	1.080s
+?   	professional-information-repo/internal/qualificationmatching	[no test files]
+ok  	professional-information-repo/backend/application-draft	3.399s
+ok  	professional-information-repo/backend/qualification-gaps	13.233s

@@ -14,7 +14,6 @@ import (
 	profilereview "professional-information-repo/backend/profile-review"
 	qualificationgaps "professional-information-repo/backend/qualification-gaps"
 	"professional-information-repo/internal/accountapi"
-	"professional-information-repo/internal/auth"
 )
 
 func main() {
@@ -35,37 +34,28 @@ func main() {
 	}
 }
 
-// newHandler composes shared account/Profile authority and legacy AI workflows.
+// newHandler composes shared account/Profile authority and protected AI workflows.
 func newHandler() http.Handler {
 	mux := http.NewServeMux()
 	runtime, _ := accountapi.FromEnv(context.Background())
-	var service *auth.Service
 	var accountHandler http.Handler = accountapi.New(nil, nil)
 	if runtime != nil {
-		service = runtime.Service
 		accountHandler = runtime.Handler
 	}
 
-	mux.Handle("/api/cv/generate", protect(cvgeneration.NewHandler(), service))
-	mux.Handle("/api/profile/ingest", protect(profileingestion.NewHandler(), service))
-	mux.Handle("/api/application-draft", protect(applicationdraft.NewHandler(), service))
-	mux.Handle("/api/qualification-gaps", protect(qualificationgaps.NewHandler(), service))
-	mux.Handle("/api/profile/review", protect(profilereview.NewHandler(), service))
+	protect := func(path string, next http.Handler) http.Handler {
+		if runtime == nil {
+			return accountapi.ProtectWorkflow(nil, nil, path, next)
+		}
+		return accountapi.ProtectWorkflow(runtime.Service, runtime.Store, path, next)
+	}
+	mux.Handle("/api/cv/generate", protect("/api/cv/generate", cvgeneration.NewHandler()))
+	mux.Handle("/api/profile/ingest", protect("/api/profile/ingest", profileingestion.NewHandler()))
+	mux.Handle("/api/application-draft", protect("/api/application-draft", applicationdraft.NewHandler()))
+	mux.Handle("/api/qualification-gaps", protect("/api/qualification-gaps", qualificationgaps.NewHandler()))
+	mux.Handle("/api/profile/review", protect("/api/profile/review", profilereview.NewHandler()))
 	mux.Handle("/api/auth/", accountHandler)
 	mux.Handle("/api/profile/current", accountHandler)
 	mux.Handle("/api/profile/operations/", accountHandler)
 	return mux
-}
-
-// protect keeps the legacy guest/BYOK behavior unless an account-owned
-// deployment explicitly sets CAREEROS_REQUIRE_AUTH=1. When enabled, missing
-// configuration fails closed instead of silently serving guest traffic.
-func protect(next http.Handler, service *auth.Service) http.Handler {
-	if os.Getenv("CAREEROS_REQUIRE_AUTH") != "1" {
-		return next
-	}
-	if service == nil {
-		return auth.UnavailableHandler()
-	}
-	return service.Protect(next)
 }

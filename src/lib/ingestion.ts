@@ -1,3 +1,4 @@
+import { workflowHeaders } from "./workflowRequest"
 import type {
   ProfileDocument,
   ProfileRef,
@@ -1146,6 +1147,7 @@ async function sendIngestionStage(
   apiKey: string,
   typesafeKey: string,
   workflowSignal: AbortSignal,
+  accountId?: string | null,
 ): Promise<Record<string, unknown>> {
   const signal = AbortSignal.any([workflowSignal, AbortSignal.timeout(29_000)])
   let response: Response
@@ -1158,6 +1160,7 @@ async function sendIngestionStage(
         "Content-Type": "application/json",
         "X-OpenAI-Api-Key": apiKey,
         "X-TypeSafe-Api-Key": typesafeKey,
+        ...workflowHeaders(accountId),
       },
       body: JSON.stringify(body),
       cache: "no-store",
@@ -1227,6 +1230,7 @@ export async function ingestProfile(
   },
   applyAnswer?: ApplyAnswerReview,
   options: {
+    accountId?: string | null
     session?: IngestionSession
     onStage?: (stage: IngestionStage) => void
   } = {},
@@ -1276,6 +1280,7 @@ export async function ingestProfile(
         apiKey,
         typesafeKey,
         workflowSignal,
+        options.accountId,
       )
       if (
         !record(extracted.stage) ||
@@ -1309,6 +1314,7 @@ export async function ingestProfile(
       apiKey,
       typesafeKey,
       workflowSignal,
+      options.accountId,
     )
   } catch (error) {
     const code =

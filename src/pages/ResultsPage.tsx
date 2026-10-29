@@ -297,6 +297,15 @@ export default function ResultsPage({ setPage }: Props) {
         </p>
       )}
       {/* Header */}
+      {state.previousMaterials && (
+        <button
+          data-previous-draft
+          className="mb-4 border px-4 py-2 text-sm"
+          onClick={() => dispatch({ type: "RESTORE_PREVIOUS_DRAFT" })}
+        >
+          {t("journey.previousDraft")}
+        </button>
+      )}
       <div className="results-page-header mb-10 grid items-start gap-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-8">
         <div className="min-w-0">
           <p

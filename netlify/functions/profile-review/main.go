@@ -6,10 +6,11 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	profilereview "professional-information-repo/backend/profile-review"
+	"professional-information-repo/internal/accountapi"
 	"professional-information-repo/internal/netlifyproxy"
 )
 
-var reviewHandler = profilereview.NewHandler()
+var reviewHandler = accountapi.WorkflowFromEnv("/api/profile/review", profilereview.NewHandler())
 
 func main() {
 	lambda.Start(handler)

@@ -1,3 +1,4 @@
+import { workflowModuleURL } from "./workflow-module.mjs"
 import test from "node:test"
 import assert from "node:assert/strict"
 import { readFileSync, readdirSync, writeFileSync } from "node:fs"
@@ -9,7 +10,7 @@ import ts from "typescript"
 const compiled = ts.transpileModule(
   readFileSync(new URL("../src/lib/ingestionProtocol.ts", import.meta.url), "utf8"),
   { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, verbatimModuleSyntax: false } },
-).outputText
+).outputText.replaceAll('"./workflowRequest"', JSON.stringify(workflowModuleURL))
 const output = join(tmpdir(), `careeros-protocol-${process.pid}.mjs`)
 writeFileSync(output, compiled)
 

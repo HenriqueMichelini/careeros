@@ -1,3 +1,4 @@
+import { workflowModuleURL } from "./workflow-module.mjs"
 // Submission-level save evidence (#189). Transpiles the review model, the
 // canonical document/storage seams and the new save compiler, then drives one
 // selection spanning many bounded results through ONE canonical transaction:
@@ -58,7 +59,7 @@ for (const name of [
         target: ts.ScriptTarget.ES2022,
         verbatimModuleSyntax: false,
       },
-    }).outputText,
+    }).outputText.replaceAll('"./workflowRequest"', JSON.stringify(workflowModuleURL)),
   )
 }
 

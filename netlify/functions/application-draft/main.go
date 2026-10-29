@@ -5,10 +5,11 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	applicationdraft "professional-information-repo/backend/application-draft"
+	"professional-information-repo/internal/accountapi"
 	"professional-information-repo/internal/netlifyproxy"
 )
 
-var draftHandler = applicationdraft.NewHandler()
+var draftHandler = accountapi.WorkflowFromEnv("/api/application-draft", applicationdraft.NewHandler())
 
 func main() { lambda.Start(handler) }
 func handler(ctx context.Context, event events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {

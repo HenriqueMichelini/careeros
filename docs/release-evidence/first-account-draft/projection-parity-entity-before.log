@@ -1,0 +1,302 @@
+✔ Go/TypeScript Profile projections agree: empty Profile has empty arrays and default fields (2.708823ms)
+✔ Go/TypeScript Profile projections agree: contact and private root fields are absent from evidence and contact stays outside career view (1.224907ms)
+✔ Go/TypeScript Profile projections agree: all sections retain full field values and sort each entity group by order (6.379734ms)
+✔ Go/TypeScript Profile projections agree: approval legacy qualifiers and evidence links preserve exact identity and source order (1.144416ms)
+✔ Go/TypeScript Profile projections agree: maximum safe root revision preserves mixed node revisions and Unicode (1.301047ms)
+✔ Go/TypeScript Profile projections agree: boolean current false is retained without inventing useful text (0.408899ms)
+✔ Go/TypeScript Profile projections agree: boolean current true is retained without inventing useful text (0.354899ms)
+✔ Go/TypeScript Profile projections agree: unknown opaque JSON facts never enter evidence or career fields (0.713089ms)
+✔ Go/TypeScript Profile projections agree: empty entity defaults and qualification pruning are independent of entity storage order (0.839688ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+0009 (0.368479ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+000A (0.24513ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+000B (0.215399ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+000C (0.19381ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+000D (0.192129ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+0020 (0.18005ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+00A0 (0.17257ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+1680 (0.17845ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+2000 (0.197599ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+2001 (0.187609ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+2002 (0.19409ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+2003 (0.184719ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+2004 (1.246297ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+2005 (0.16827ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+2006 (0.19629ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+2007 (0.149109ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+2008 (0.16547ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+2009 (0.165909ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+200A (0.13872ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+2028 (0.143129ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+2029 (0.14767ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+202F (0.14551ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+205F (0.13314ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+3000 (0.13087ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+FEFF (0.13133ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+0085 (0.15819ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+180E (0.15898ms)
+✔ Go/TypeScript Profile projections agree: professional whitespace U+200B (0.23548ms)
+✔ Go/TypeScript Profile projections agree: qualification row whitespace U+0020 (0.269469ms)
+✔ Go/TypeScript Profile projections agree: qualification row whitespace U+00A0 (0.263079ms)
+✔ Go/TypeScript Profile projections agree: qualification row whitespace U+FEFF (0.340009ms)
+✔ Go/TypeScript Profile projections agree: qualification row whitespace U+0085 (0.443799ms)
+✔ Go/TypeScript Profile projections agree: qualification row whitespace U+180E (0.464459ms)
+✔ Go/TypeScript Profile projections agree: qualification row whitespace U+200B (0.273319ms)
+✖ Go/TypeScript Profile projections agree: opaque entity fields follow the legacy view but stay outside approved evidence (16.069149ms)
+ℹ tests 44
+ℹ suites 0
+ℹ pass 43
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 804.893252
+
+✖ failing tests:
+
+test at tests/profile-projection-parity.test.mjs:80:3
+✖ Go/TypeScript Profile projections agree: opaque entity fields follow the legacy view but stay outside approved evidence (16.069149ms)
+  AssertionError [ERR_ASSERTION]: compare full values, metadata and array order; JSON object-key order is immaterial
+  + actual - expected
+  ... Skipped lines
+
+    {
+      evidence: {
+        entities: [
+          {
+            id: 'experience-2',
+  ...
+            credentialId: 'ação\x00😀 credentialId 0',
+  +         customOpaque: {
+  +           source: 'ação\x00😀',
+  +           values: [
+  +             null,
+  +             false,
+  +             42
+  +           ]
+  +         },
+            date: 'ação\x00😀 date 0',
+            id: 'certifications-0-原\x00😀',
+            issuer: 'ação\x00😀 issuer 0',
+            name: 'ação\x00😀 name 0',
+            url: 'ação\x00😀 url 0'
+  ...
+            credentialId: 'ação\x00😀 credentialId 1',
+  +         customOpaque: {
+  +           source: 'ação\x00😀',
+  +           values: [
+  +             null,
+  +             false,
+  +             42
+  +           ]
+  +         },
+            date: 'ação\x00😀 date 1',
+            id: 'certifications-1-原\x00😀',
+            issuer: 'ação\x00😀 issuer 1',
+            name: 'ação\x00😀 name 1',
+            url: 'ação\x00😀 url 1'
+  ...
+            credentialId: 'ação\x00😀 credentialId 2',
+  +         customOpaque: {
+  +           source: 'ação\x00😀',
+  +           values: [
+  +             null,
+  +             false,
+  +             42
+  +           ]
+  +         },
+            date: 'ação\x00😀 date 2',
+            id: 'certifications-2-原\x00😀',
+            issuer: 'ação\x00😀 issuer 2',
+            name: 'ação\x00😀 name 2',
+            url: 'ação\x00😀 url 2'
+  ...
+          {
+  +         customOpaque: {
+  +           source: 'ação\x00😀',
+  +           values: [
+  +             null,
+  +             false,
+  +             42
+  +           ]
+  +         },
+            degree: 'ação\x00😀 degree 0',
+            details: 'ação\x00😀 details 0',
+            graduationDate: 'ação\x00😀 graduationDate 0',
+            id: 'education-0-原\x00😀',
+            institution: 'ação\x00😀 institution 0',
+  ...
+          {
+  +         customOpaque: {
+  +           source: 'ação\x00😀',
+  +           values: [
+  +             null,
+  +             false,
+  +             42
+  +           ]
+  +         },
+            degree: 'ação\x00😀 degree 1',
+            details: 'ação\x00😀 details 1',
+            graduationDate: 'ação\x00😀 graduationDate 1',
+            id: 'education-1-原\x00😀',
+            institution: 'ação\x00😀 institution 1',
+  ...
+          {
+  +         customOpaque: {
+  +           source: 'ação\x00😀',
+  +           values: [
+  +             null,
+  +             false,
+  +             42
+  +           ]
+  +         },
+            degree: 'ação\x00😀 degree 2',
+            details: 'ação\x00😀 details 2',
+            graduationDate: 'ação\x00😀 graduationDate 2',
+            id: 'education-2-原\x00😀',
+            institution: 'ação\x00😀 institution 2',
+  ...
+          {
+  +         customOpaque: {
+  +           source: 'ação\x00😀',
+  +           values: [
+  +             null,
+  +             false,
+  +             42
+  +           ]
+  +         },
+            id: 'languages-0-原\x00😀',
+            name: 'ação\x00😀 name 0',
+            proficiency: 'ação\x00😀 proficiency 0'
+          },
+          {
+  +         customOpaque: {
+  +           source: 'ação\x00😀',
+  +           values: [
+  +             null,
+  +             false,
+  +             42
+  +           ]
+  +         },
+            id: 'languages-1-原\x00😀',
+            name: 'ação\x00😀 name 1',
+            proficiency: 'ação\x00😀 proficiency 1'
+          },
+          {
+  +         customOpaque: {
+  +           source: 'ação\x00😀',
+  +           values: [
+  +             null,
+  +             false,
+  +             42
+  +           ]
+  +         },
+            id: 'languages-2-原\x00😀',
+            name: 'ação\x00😀 name 2',
+            proficiency: 'ação\x00😀 proficiency 2'
+          }
+        ]
+  ...
+            current: true,
+  +         customOpaque: {
+  +           source: 'ação\x00😀',
+  +           values: [
+  +             null,
+  +             false,
+  +             42
+  +           ]
+  +         },
+            description: 'ação\x00😀 description 0',
+            endDate: 'ação\x00😀 endDate 0',
+            id: 'experience-0-原\x00😀',
+            location: 'ação\x00😀 location 0',
+            responsibilities: 'ação\x00😀 responsibilities 0',
+  ...
+            current: false,
+  +         customOpaque: {
+  +           source: 'ação\x00😀',
+  +           values: [
+  +             null,
+  +             false,
+  +             42
+  +           ]
+  +         },
+            description: 'ação\x00😀 description 1',
+            endDate: 'ação\x00😀 endDate 1',
+            id: 'experience-1-原\x00😀',
+            location: 'ação\x00😀 location 1',
+            responsibilities: 'ação\x00😀 responsibilities 1',
+  ...
+            current: false,
+  +         customOpaque: {
+  +           source: 'ação\x00😀',
+  +           values: [
+  +             null,
+  +             false,
+  +             42
+  +           ]
+  +         },
+            description: 'ação\x00😀 description 2',
+            endDate: 'ação\x00😀 endDate 2',
+            id: 'experience-2-原\x00😀',
+            location: 'ação\x00😀 location 2',
+            responsibilities: 'ação\x00😀 responsibilities 2',
+  ...
+          {
+  +         customOpaque: {
+  +           source: 'ação\x00😀',
+  +           values: [
+  +             null,
+  +             false,
+  +             42
+  +           ]
+  +         },
+            description: 'ação\x00😀 description 0',
+            highlights: 'ação\x00😀 highlights 0',
+            id: 'projects-0-原\x00😀',
+            name: 'ação\x00😀 name 0',
+            technologies: 'ação\x00😀 technologies 0',
+  ...
+          {
+  +         customOpaque: {
+  +           source: 'ação\x00😀',
+  +           values: [
+  +             null,
+  +             false,
+  +             42
+  +           ]
+  +         },
+            description: 'ação\x00😀 description 1',
+            highlights: 'ação\x00😀 highlights 1',
+            id: 'projects-1-原\x00😀',
+            name: 'ação\x00😀 name 1',
+            technologies: 'ação\x00😀 technologies 1',
+  ...
+          {
+  +         customOpaque: {
+  +           source: 'ação\x00😀',
+  +           values: [
+  +             null,
+  +             false,
+  +             42
+  +           ]
+  +         },
+            description: 'ação\x00😀 description 2',
+            highlights: 'ação\x00😀 highlights 2',
+            id: 'projects-2-原\x00😀',
+            name: 'ação\x00😀 name 2',
+            technologies: 'ação\x00😀 technologies 2',
+
+      at TestContext.<anonymous> (file:///home/henriquemichelini/.codex/worktrees/first-account-draft/careeros/tests/profile-projection-parity.test.mjs:95:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [Object],
+    expected: [Object],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

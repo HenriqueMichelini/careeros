@@ -113,7 +113,7 @@ export default function SubmissionJourney() {
   const { t } = useI18n()
   const [controller] = useState(() =>
     submissionSessionOwner(sessionKey, {
-      transport: createSubmissionTransport(),
+      transport: createSubmissionTransport(globalThis.fetch, undefined, accountId),
     }),
   )
   const initial = controller.getState()
