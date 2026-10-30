@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"professional-information-repo/internal/aidiagnostics"
+	"professional-information-repo/internal/aidispatch"
 	"time"
 )
 
@@ -26,7 +27,7 @@ func Post(parent context.Context, client *http.Client, timeout time.Duration, ke
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+key)
-	resp, err := client.Do(req)
+	resp, err := aidispatch.Send(ctx, client, "openai", req)
 	if err != nil {
 		aidiagnostics.Observe(ctx, aidiagnostics.Observation{Status: 0, Completion: "transport_failure"})
 	} else if resp.StatusCode < 200 || resp.StatusCode >= 300 {

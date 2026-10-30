@@ -14,6 +14,7 @@ import (
 	"unicode/utf8"
 
 	"professional-information-repo/internal/aidiagnostics"
+	"professional-information-repo/internal/aidispatch"
 	"professional-information-repo/internal/fieldvalidation"
 	"professional-information-repo/internal/openaihttp"
 	"professional-information-repo/internal/preprocessing"
@@ -151,7 +152,8 @@ func (a app) ingest(w http.ResponseWriter, r *http.Request) {
 		fail(401, "key")
 		return
 	}
-	stopBodyRead := context.AfterFunc(ctx, func() { _ = r.Body.Close() })
+	body := r.Body
+	stopBodyRead := context.AfterFunc(ctx, func() { _ = body.Close() })
 	raw, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxStageBody))
 	stopBodyRead()
 	if err != nil {
@@ -178,6 +180,20 @@ func (a app) ingest(w http.ResponseWriter, r *http.Request) {
 		fail(400, "input")
 		return
 	}
+	coordinate := dispatchCoordinate(in)
+	if (in.Stage != nil && in.Stage.Kind == SubmissionStageClarify) || in.Clarification != nil {
+		if revision := aidispatch.ClarificationRevision(ctx); revision != "" {
+			coordinate += "/revision/" + revision
+		}
+	}
+	root := mustJSON(request{Input: in.Input, Profile: in.Profile, Document: in.Document})
+	parent = aidispatch.WithWorkflowRoot(parent, "profile_ingestion", root)
+	ctx = aidispatch.WithWorkflowRoot(ctx, "profile_ingestion", root)
+	parent = aidispatch.WithCoordinate(parent, coordinate)
+	parent = aidispatch.WithStageInput(parent, raw)
+	ctx = aidispatch.WithCoordinate(ctx, coordinate)
+	ctx = aidispatch.WithStageInput(ctx, raw)
+	r = r.WithContext(ctx)
 	// Version-2 submission stages are dispatched before the retained v1/legacy
 	// setup so their provider-free planning and pre-dispatch verification run on
 	// the same 27-second handler budget without altering earlier behavior.
@@ -251,7 +267,7 @@ func (a app) ingest(w http.ResponseWriter, r *http.Request) {
 		fail(504, "timeout")
 		return
 	}
-	decision := fieldvalidation.Classify(ctx, a.client, r.Header.Get("X-TypeSafe-Api-Key"), fieldvalidation.ProfessionalInformation, in.Input)
+	decision := fieldvalidation.Classify(gateCoordinate(ctx, "original"), a.client, r.Header.Get("X-TypeSafe-Api-Key"), fieldvalidation.ProfessionalInformation, in.Input)
 	if decision.Outcome.Kind != "accept" {
 		outcome = decision.Outcome.Kind
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -266,7 +282,7 @@ func (a app) ingest(w http.ResponseWriter, r *http.Request) {
 	var unverifiedCount int
 	var code string
 	if in.Clarification != nil {
-		answerDecision := fieldvalidation.Classify(ctx, a.client, r.Header.Get("X-TypeSafe-Api-Key"), fieldvalidation.ProfessionalInformation, clarificationValidationText(*in.Clarification))
+		answerDecision := fieldvalidation.Classify(gateCoordinate(ctx, "answer"), a.client, r.Header.Get("X-TypeSafe-Api-Key"), fieldvalidation.ProfessionalInformation, clarificationValidationText(*in.Clarification))
 		if answerDecision.Outcome.Kind != "accept" {
 			outcome = answerDecision.Outcome.Kind
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")

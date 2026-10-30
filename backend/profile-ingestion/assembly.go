@@ -57,8 +57,10 @@ type SubmissionAssemblyResponse struct {
 
 // submissionAssemble verifies the signed plan and the complete set of batch
 // receipts before doing anything else. It is entirely provider-free: it makes
-// zero Jev/OpenAI calls, stores no backend state and performs no semantic
+// zero Jev/OpenAI calls and performs no semantic
 // deduplication, identity guessing, conflict resolution, source deletion or save.
+// An installed managed authority binds restricted replay metadata; the assembly
+// content and signed handoff remain transient and client-held.
 func (a app) submissionAssemble(ctx context.Context, w http.ResponseWriter, in request, raw []byte, stage SubmissionStage, fail func(int, string)) {
 	if code := SubmissionFieldsError(raw, submissionAssemblyFields...); code != "" {
 		fail(SubmissionErrorStatus(code), code)
@@ -104,7 +106,14 @@ func (a app) submissionAssemble(ctx context.Context, w http.ResponseWriter, in r
 		fail(504, "timeout")
 		return
 	}
+	stageReceipt, ok := bindProviderFreeStage(ctx, fail)
+	if !ok {
+		return
+	}
 	expires := time.Now().Add(SubmissionReceiptTTL).UnixMilli()
+	if stageReceipt.ID != "" {
+		expires = stageReceipt.CreatedAt.Add(SubmissionReceiptTTL).UnixMilli()
+	}
 	payload := mustJSON(submissionContextReceiptPayload{
 		Version: submissionReceiptVersion, Binding: planReceipt.Binding, ExpiresAt: expires,
 		SourceID: plan.SourceID, ProfileID: plan.ProfileID, DocumentID: plan.DocumentID,

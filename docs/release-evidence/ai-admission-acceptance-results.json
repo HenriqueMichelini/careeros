@@ -1,0 +1,1031 @@
+{
+  "synthetic_only": true,
+  "cases": {
+    "A01": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA01_DuplicateAcrossProcesses",
+          "status": "pass"
+        }
+      ]
+    },
+    "A02": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA02_ChangedReplay",
+          "status": "pass"
+        }
+      ]
+    },
+    "A03": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA03_PrivatePrincipalAndSavedProfile",
+          "status": "pass"
+        }
+      ]
+    },
+    "A04": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA04_AtomicFinalBudgetAcrossProcesses",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA04_IndependentlyLimitedScopes",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA04_IndependentlyLimitedScopes/account/capacity",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA04_IndependentlyLimitedScopes/account/money",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA04_IndependentlyLimitedScopes/global/capacity",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA04_IndependentlyLimitedScopes/global/money",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA04_IndependentlyLimitedScopes/provider:openai/capacity",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA04_IndependentlyLimitedScopes/provider:openai/money",
+          "status": "pass"
+        }
+      ]
+    },
+    "A05": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA05_FiniteFailClosedConfiguration",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA05_MissingOrRevokedGrantCannotMintRights",
+          "status": "pass"
+        }
+      ]
+    },
+    "A06": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA06_ReservationRollback",
+          "status": "pass"
+        }
+      ]
+    },
+    "A07": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA07_AbandonClaimRace",
+          "status": "pass"
+        }
+      ]
+    },
+    "A08": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA08_CrashAfterIntentBeforeInvocation",
+          "status": "pass"
+        }
+      ]
+    },
+    "A09": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/backend/cv-generation",
+          "test": "TestA09_ActualHandlerFailureOutcomesKeepReachedObligations",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/backend/cv-generation",
+          "test": "TestA09_ActualHandlerFailureOutcomesKeepReachedObligations/malformed_content",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/backend/cv-generation",
+          "test": "TestA09_ActualHandlerFailureOutcomesKeepReachedObligations/malformed_envelope",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/backend/cv-generation",
+          "test": "TestA09_ActualHandlerFailureOutcomesKeepReachedObligations/provider_outage",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/backend/cv-generation",
+          "test": "TestA09_ActualHandlerFailureOutcomesKeepReachedObligations/provider_timeout",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/backend/cv-generation",
+          "test": "TestA09_ActualHandlerFailureOutcomesKeepReachedObligations/rate_limited",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/backend/cv-generation",
+          "test": "TestA09_ActualHandlerFailureOutcomesKeepReachedObligations/refused",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/backend/cv-generation",
+          "test": "TestA09_ActualHandlerFailureOutcomesKeepReachedObligations/truncated",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA09_UncertainOutcomesRetainExposure",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA09_UncertainOutcomesRetainExposure/0",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA09_UncertainOutcomesRetainExposure/200",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA09_UncertainOutcomesRetainExposure/429",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA09_UncertainOutcomesRetainExposure/500",
+          "status": "pass"
+        }
+      ]
+    },
+    "A10": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA10_NoRedirectOrTransportRetry",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aidispatch",
+          "test": "TestA10_ControlledSendIsOneInvocationWithoutRedirectRetryOrCredential",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aidispatch",
+          "test": "TestA10_ControlledSendIsOneInvocationWithoutRedirectRetryOrCredential/Permanent_Redirect",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aidispatch",
+          "test": "TestA10_ControlledSendIsOneInvocationWithoutRedirectRetryOrCredential/Service_Unavailable",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aidispatch",
+          "test": "TestA10_ControlledSendIsOneInvocationWithoutRedirectRetryOrCredential/Temporary_Redirect",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aidispatch",
+          "test": "TestA10_ControlledSendIsOneInvocationWithoutRedirectRetryOrCredential/Too_Many_Requests",
+          "status": "pass"
+        }
+      ]
+    },
+    "A11": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA11_RevocationOrdering",
+          "status": "pass"
+        }
+      ]
+    },
+    "A12": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA12_DurableRetryAndStaleAttempt",
+          "status": "pass"
+        }
+      ]
+    },
+    "A13": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA13_AppendOnlyProviderMetadataAndMissingRate",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA13_AppendOnlyProviderMetadataAndMissingRate/invalid",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA13_AppendOnlyProviderMetadataAndMissingRate/missing_rate",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA13_AppendOnlyProviderMetadataAndMissingRate/openai",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA13_AppendOnlyProviderMetadataAndMissingRate/typesafe",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA13_AppendOnlyProviderMetadataAndMissingRate/unsupported",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA13_ObservationPreservesProviderReadError",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA13_ProviderSpecificUsageMissingness",
+          "status": "pass"
+        }
+      ]
+    },
+    "A14": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA14_EstimateAndResidualFloor",
+          "status": "pass"
+        }
+      ]
+    },
+    "A15": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA15_ConfirmedEvidenceIdempotency",
+          "status": "pass"
+        }
+      ]
+    },
+    "A16": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA16_ReservationBreach",
+          "status": "pass"
+        }
+      ]
+    },
+    "A17": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA17_SevenDaysIsEligibilityOnly",
+          "status": "pass"
+        }
+      ]
+    },
+    "A18": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA18_PeriodAndStageDoNotRenewAnchor",
+          "status": "pass"
+        }
+      ]
+    },
+    "A19": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA19_ClockUncertaintyDeniesClosure",
+          "status": "pass"
+        }
+      ]
+    },
+    "A20": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA20_PhysicalReleaseNeedsIndependentTerminalProof",
+          "status": "pass"
+        }
+      ]
+    },
+    "A21": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA21_PreDeliveryCancelSeparatesExpense",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA21_TimeoutCancelAndLateEventsPreserveThreeRights",
+          "status": "pass"
+        }
+      ]
+    },
+    "A22": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA22_CancelAndDeliveryRaceWithLostAcknowledgment",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA22_CancelAndDeliveryRaceWithLostAcknowledgment/cancel_wins",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA22_CancelAndDeliveryRaceWithLostAcknowledgment/open_wins",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA22_DeliveryEffectOnceIndependentOfAccept",
+          "status": "pass"
+        }
+      ]
+    },
+    "A23": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestA23ActualDraftQualityDoesNotBecomeSupplierExpense",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestA23ActualDraftQualityDoesNotBecomeSupplierExpense/artifact_review_unavailable",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestA23ActualDraftQualityDoesNotBecomeSupplierExpense/cv_only",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestA23ActualDraftQualityDoesNotBecomeSupplierExpense/honest_gap",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestA23ActualDraftQualityDoesNotBecomeSupplierExpense/incomplete_answers",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestA23ActualDraftQualityDoesNotBecomeSupplierExpense/resume_review_unavailable",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestA23ActualDraftQualityDoesNotBecomeSupplierExpense/unsupported_answer",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA23_IncompleteBundleCannotConsume",
+          "status": "pass"
+        }
+      ]
+    },
+    "A24": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA24_ClosedUnconfirmedActionCannotAcquireLateCharge",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA24_CustomerDeadlineIndependentFromFinancialWindow",
+          "status": "pass"
+        }
+      ]
+    },
+    "A25": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA25_LostOutputLookupNeverInfers",
+          "status": "pass"
+        }
+      ]
+    },
+    "A26": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/backend/profile-ingestion",
+          "test": "TestA26_SubmissionStagesReplayBindBeforeEveryActualAdapter",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/backend/profile-ingestion",
+          "test": "TestA26_SubmissionStagesReplayBindBeforeEveryActualAdapter/clarification_original_and_answer_are_independent_bounded_dispatches",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/backend/profile-ingestion",
+          "test": "TestA26_SubmissionStagesReplayBindBeforeEveryActualAdapter/focus_replay_and_changed_authenticated_child",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/backend/profile-ingestion",
+          "test": "TestA26_SubmissionStagesReplayBindBeforeEveryActualAdapter/provider-free_plan_and_assemble,_extract_duplicate_and_changed_handoff",
+          "status": "pass"
+        }
+      ]
+    },
+    "A27": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/backend/profile-ingestion",
+          "test": "TestA27_LegacyV1V2AndWholeActionCaps",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/backend/profile-ingestion",
+          "test": "TestA27_LegacyV1V2AndWholeActionCaps/last_valid_planned_batch_cannot_bypass_exhausted_Action_cap",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/backend/profile-ingestion",
+          "test": "TestA27_LegacyV1V2AndWholeActionCaps/maximum_input_and_minimum_legacy_portion_share_the_Action_cap",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/backend/profile-ingestion",
+          "test": "TestA27_LegacyV1V2AndWholeActionCaps/maximum_thirty-claim_focus_is_bounded_before_a_subsequent_focus",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/backend/profile-ingestion",
+          "test": "TestA27_LegacyV1V2AndWholeActionCaps/protocol-v0",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/backend/profile-ingestion",
+          "test": "TestA27_LegacyV1V2AndWholeActionCaps/protocol-v1",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/backend/profile-ingestion",
+          "test": "TestA27_LegacyV1V2AndWholeActionCaps/protocol-v2",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/backend/profile-ingestion",
+          "test": "TestA27_LegacyV1V2AndWholeActionCaps/provider-free_planning_consumes_a_finite_stage_allocation",
+          "status": "pass"
+        }
+      ]
+    },
+    "A28": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestA28SkippedLegsHaveNoInventedDispatch",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestA28SkippedLegsHaveNoInventedDispatch/no_pending_resume_claims",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestA28SkippedLegsHaveNoInventedDispatch/reused_job",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestA28SkippedLegsHaveNoInventedDispatch/zero_requirements",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestA28StructuredAnalysisThenReviewedDraftSevenDispatches",
+          "status": "pass"
+        }
+      ]
+    },
+    "A29": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestA29AllAuthenticatedWorkflowConstructors",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestA29AllAuthenticatedWorkflowConstructors//api/application-draft",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestA29AllAuthenticatedWorkflowConstructors//api/cv/generate",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestA29AllAuthenticatedWorkflowConstructors//api/profile/ingest",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestA29AllAuthenticatedWorkflowConstructors//api/profile/review",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestA29AllAuthenticatedWorkflowConstructors//api/qualification-gaps",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/application-draft",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/application-draft",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/application-draft",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//.netlify/functions/application-draft",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/application-draft",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//api/application-draft",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/application-draft",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/application-draft",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//.netlify/functions/application-draft",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/application-draft",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//api/application-draft",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/application-draft",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/configured_session_missing_policy",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/cv-generation",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/cv-generation",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/cv-generation",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//.netlify/functions/cv-generation",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/cv-generation",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//api/cv/generate",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/cv-generation",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/cv-generation",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//.netlify/functions/cv-generation",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/cv-generation",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//api/cv/generate",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/cv-generation",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/configured_session_missing_policy",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/profile-ingestion",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/profile-ingestion",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/profile-ingestion",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//.netlify/functions/profile-ingestion",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/profile-ingestion",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//api/profile/ingest",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/profile-ingestion",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/profile-ingestion",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//.netlify/functions/profile-ingestion",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/profile-ingestion",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//api/profile/ingest",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/profile-ingestion",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/configured_session_missing_policy",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/profile-review",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/profile-review",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/profile-review",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//.netlify/functions/profile-review",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/profile-review",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//api/profile/review",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/profile-review",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/profile-review",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//.netlify/functions/profile-review",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/profile-review",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//api/profile/review",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/profile-review",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/configured_session_missing_policy",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/qualification-gaps",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/qualification-gaps",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/qualification-gaps",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//.netlify/functions/qualification-gaps",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/qualification-gaps",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//api/qualification-gaps",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/qualification-gaps",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/qualification-gaps",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//.netlify/functions/qualification-gaps",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/qualification-gaps",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//api/qualification-gaps",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/netlify/functions/qualification-gaps",
+          "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/configured_session_missing_policy",
+          "status": "pass"
+        }
+      ]
+    },
+    "A30": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA30_CompactionKeepsReplayAndExpense",
+          "status": "pass"
+        }
+      ]
+    },
+    "A31": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA31_ProfileAndAccountDeletionRecreationRetainNonContentObligations",
+          "status": "pass"
+        }
+      ]
+    },
+    "A32": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestA32ProtectedResultHandoffRejectsPreviouslyParsedResultAfterGateCloses",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA32_ActualStaleSQLRestoreNeedsIndependentObligationReconciliation",
+          "status": "pass"
+        }
+      ]
+    },
+    "A33": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA33_RetirementRequiresDrainedSendersAndAllExplicitHorizons",
+          "status": "pass"
+        }
+      ]
+    },
+    "A34": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA34RestrictedMetadataDoesNotEnterOrdinaryDiagnostics",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA34_RestrictedSQLRolesAndSafeRelease",
+          "status": "pass"
+        }
+      ]
+    },
+    "A35": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA35_DelayedIntentCannotOutliveSendAuthority",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA35_DelayedIntentCannotOutliveSendAuthority/grant",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA35_DelayedIntentCannotOutliveSendAuthority/policy",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA35_DelayedIntentCannotOutliveSendAuthority/session",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA35_ExpiryDuringRealSQLScopeContention",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA35_ExpiryDuringRealSQLScopeContention/grant/claim",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA35_ExpiryDuringRealSQLScopeContention/grant/reserve",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA35_ExpiryDuringRealSQLScopeContention/policy/claim",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA35_ExpiryDuringRealSQLScopeContention/policy/reserve",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA35_ExpiryDuringRealSQLScopeContention/session/claim",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA35_ExpiryDuringRealSQLScopeContention/session/reserve",
+          "status": "pass"
+        }
+      ]
+    },
+    "A36": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA36_CreationHandshakeLostAcknowledgment",
+          "status": "pass"
+        }
+      ]
+    },
+    "A37": {
+      "status": "pass",
+      "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA37_CommitDelayCannotShortenWindow",
+          "status": "pass"
+        }
+      ]
+    }
+  },
+  "failed_packages": [],
+  "go_exit_code": 0,
+  "supplemental_runs": {
+    "final_missing_authority_cases": [
+      {
+        "package": "professional-information-repo/internal/aicontrol",
+        "test": "TestA05_FiniteFailClosedConfiguration",
+        "status": "pass"
+      },
+      {
+        "package": "professional-information-repo/internal/aicontrol",
+        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/clock",
+        "status": "pass"
+      },
+      {
+        "package": "professional-information-repo/internal/aicontrol",
+        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/gate",
+        "status": "pass"
+      },
+      {
+        "package": "professional-information-repo/internal/aicontrol",
+        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/binding_key",
+        "status": "pass"
+      },
+      {
+        "package": "professional-information-repo/internal/aicontrol",
+        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/money_overflow",
+        "status": "pass"
+      },
+      {
+        "package": "professional-information-repo/internal/aicontrol",
+        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/capacity",
+        "status": "pass"
+      },
+      {
+        "package": "professional-information-repo/internal/aicontrol",
+        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/dispatches",
+        "status": "pass"
+      },
+      {
+        "package": "professional-information-repo/internal/aicontrol",
+        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/stages",
+        "status": "pass"
+      },
+      {
+        "package": "professional-information-repo/internal/aicontrol",
+        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/attempts",
+        "status": "pass"
+      },
+      {
+        "package": "professional-information-repo/internal/aicontrol",
+        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/input",
+        "status": "pass"
+      },
+      {
+        "package": "professional-information-repo/internal/aicontrol",
+        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/output",
+        "status": "pass"
+      },
+      {
+        "package": "professional-information-repo/internal/aicontrol",
+        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/policy",
+        "status": "pass"
+      },
+      {
+        "package": "professional-information-repo/internal/aicontrol",
+        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/store",
+        "status": "pass"
+      },
+      {
+        "package": "professional-information-repo/internal/aicontrol",
+        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed",
+        "status": "pass"
+      },
+      {
+        "package": "professional-information-repo/internal/aicontrol",
+        "test": "TestA05_MissingOrRevokedGrantCannotMintRights",
+        "status": "pass"
+      }
+    ]
+  }
+}

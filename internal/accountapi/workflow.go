@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"professional-information-repo/internal/accountstore"
+	"professional-information-repo/internal/aidispatch"
 	"professional-information-repo/internal/auth"
 	"professional-information-repo/internal/profiledocument"
 	"professional-information-repo/internal/qualificationmatching"
@@ -99,6 +100,10 @@ func ProtectWorkflow(service *auth.Service, store *accountstore.Store, path stri
 				workflowError(w, 409, "profile_stale")
 				return
 			}
+		}
+		if err := aidispatch.CheckResult(r.Context()); err != nil {
+			workflowError(w, http.StatusServiceUnavailable, "managed_result_unavailable")
+			return
 		}
 		for key, values := range result.Header() {
 			w.Header()[key] = values
