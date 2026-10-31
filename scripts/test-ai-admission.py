@@ -67,6 +67,17 @@ def summarize(path):
             "failed_packages": sorted(set(package_failures))}
 
 
+def evidence_directory(requested):
+    if requested is None:
+        return Path(tempfile.mkdtemp(prefix="careeros-ai-evidence-"))
+    # Claim the complete directory before opening any logs. Checking only one
+    # filename allowed existing logs (including symlinks) to be overwritten.
+    # Absolute paths also keep pg_ctl's log independent of its working directory.
+    evidence = requested.absolute()
+    evidence.mkdir(mode=0o700, parents=True)
+    return evidence
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--evidence", type=Path, help="New local directory for JSON receipts")
@@ -74,11 +85,8 @@ def main():
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[1]
     os.chdir(repo)
-    evidence = args.evidence or Path(tempfile.mkdtemp(prefix="careeros-ai-evidence-"))
-    evidence.mkdir(parents=True, exist_ok=True)
+    evidence = evidence_directory(args.evidence)
     output = evidence / "go-tests.jsonl"
-    if output.exists():
-        raise RuntimeError("Use a fresh evidence directory; refusing to overwrite a prior run")
     pg_ctl = binary("pg_ctl")
     with tempfile.TemporaryDirectory(prefix="careeros-ai-pg-") as temporary:
         root = Path(temporary)
@@ -89,7 +97,7 @@ def main():
         # other clusters without binding or exposing a network listener.
         port = "55439"
         started = False
-        with (evidence / "postgres-setup.log").open("w") as setup:
+        with (evidence / "postgres-setup.log").open("x") as setup:
             try:
                 init = command([binary("initdb"), "-D", str(data), "--no-locale",
                                 "--encoding=UTF8", "--auth-local=trust", "--auth-host=reject"], output=setup)
@@ -114,11 +122,12 @@ def main():
                 go_args = ["go", "test", "-p=4", "-json", "-count=1", "-timeout=180s"]
                 if not args.no_race:
                     go_args.append("-race")
-                with output.open("w") as log:
+                with output.open("x") as log:
                     result = command(go_args + PACKAGES, env=env, output=log)
                 receipt = summarize(output)
                 receipt["go_exit_code"] = result.returncode
-                (evidence / "acceptance-results.json").write_text(json.dumps(receipt, indent=2) + "\n")
+                with (evidence / "acceptance-results.json").open("x") as result_file:
+                    result_file.write(json.dumps(receipt, indent=2) + "\n")
                 passed = sum(v["status"] == "pass" for v in receipt["cases"].values())
                 print(f"Acceptance cases: {passed}/37 passed; evidence: {evidence}")
                 return 0 if passed == 37 and result.returncode == 0 else 1
