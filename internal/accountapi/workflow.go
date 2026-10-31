@@ -101,16 +101,35 @@ func ProtectWorkflow(service *auth.Service, store *accountstore.Store, path stri
 				return
 			}
 		}
-		if err := aidispatch.CheckResult(r.Context()); err != nil {
+		started := false
+		err := aidispatch.WriteResult(r.Context(), func(ctx context.Context) error {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			for key, values := range result.Header() {
+				w.Header()[key] = values
+			}
+			started = true
+			w.WriteHeader(result.Code)
+			_, err := io.Copy(resultWriter{ctx, w}, result.Body)
+			return err
+		})
+		if err != nil && !started {
 			workflowError(w, http.StatusServiceUnavailable, "managed_result_unavailable")
-			return
 		}
-		for key, values := range result.Header() {
-			w.Header()[key] = values
-		}
-		w.WriteHeader(result.Code)
-		_, _ = io.Copy(w, result.Body)
 	}))
+}
+
+type resultWriter struct {
+	ctx context.Context
+	w   io.Writer
+}
+
+func (w resultWriter) Write(p []byte) (int, error) {
+	if err := w.ctx.Err(); err != nil {
+		return 0, err
+	}
+	return w.w.Write(p)
 }
 
 func sameJSON(raw []byte, expected any) bool {

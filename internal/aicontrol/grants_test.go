@@ -69,11 +69,11 @@ func TestA05_MissingOrRevokedGrantCannotMintRights(t *testing.T) {
 	if e := f.h.SyntheticReviewer().SeedGrant(context.Background(), f.p, time.Now().Add(time.Hour), 3); e != nil {
 		t.Fatal(e)
 	}
-	s := f.open(t, "revocation")
+	s := f.openDraft(t, "revocation")
 	if e := f.h.SyntheticReviewer().SetGrantState(context.Background(), f.p, time.Now().Add(time.Hour), true); e != nil {
 		t.Fatal(e)
 	}
-	if r, e := send(s); e == nil {
+	if r, e := sendDraftGate(s); e == nil {
 		closeResp(r)
 		t.Fatal("revoked grant sent")
 	}
@@ -100,6 +100,11 @@ func TestA35_DelayedIntentCannotOutliveSendAuthority(t *testing.T) {
 	for _, authority := range []string{"session", "grant", "policy"} {
 		t.Run(authority, func(t *testing.T) {
 			f := setup(t, nil)
+			if authority == "policy" {
+				if _, e := f.db.Exec(`UPDATE ai_fixture_policy SET expires_at=clock_timestamp()+interval '250 milliseconds'`); e != nil {
+					t.Fatal(e)
+				}
+			}
 			s := f.open(t, "handoff_expiry")
 			var e error
 			switch authority {
@@ -108,7 +113,7 @@ func TestA35_DelayedIntentCannotOutliveSendAuthority(t *testing.T) {
 			case "grant":
 				_, e = f.db.Exec(`UPDATE ai_fixture_grant SET expires_at=clock_timestamp()+interval '250 milliseconds'`)
 			case "policy":
-				_, e = f.db.Exec(`UPDATE ai_fixture_policy SET expires_at=clock_timestamp()+interval '250 milliseconds'`)
+				// Original frozen policy simply expires while handoff is delayed.
 			}
 			if e != nil {
 				t.Fatal(e)

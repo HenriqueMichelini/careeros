@@ -160,7 +160,7 @@ func TestA34RestrictedMetadataDoesNotEnterOrdinaryDiagnostics(t *testing.T) {
 	var ordinary []byte
 	ctx := aidiagnostics.WithSink(context.Background(), func(attempt aidiagnostics.Attempt) { ordinary, _ = json.Marshal(attempt) })
 	handler := aidiagnostics.Workflow("cv_generation", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx, finish := aidiagnostics.Start(aidispatch.WithWorkflowRoot(r.Context(), "cv_generation", root), "generation", "synthetic-v1")
+		ctx, finish := aidiagnostics.Start(aidispatch.WithWorkflowRoot(r.Context(), "cv_generation", root), "generation", "cv-policy-v2/schema-v2")
 		defer finish("completed")
 		request := req()
 		request.Header.Set("Authorization", "Bearer "+credential)

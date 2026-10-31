@@ -57,12 +57,13 @@ type SyntheticConfig struct {
 	CustomerUnits                                   int64
 	MaxInputBytes, MaxOutputTokens                  int64
 	ExpiresAt                                       time.Time
+	ExecutionPolicyVersion, RatePolicyVersion       string
 	Gate                                            *SyntheticGate
 	Clock                                           ReviewClock
 }
 
 func DefaultSyntheticConfig(namespace string, gate *SyntheticGate) SyntheticConfig {
-	return SyntheticConfig{Namespace: namespace, BindingKey: sha256.Sum256([]byte("synthetic-only-key-not-a-credential")), Limit: 100, Capacity: 1, MaxDispatches: 32, MaxStages: 32, MaxAttempts: 3, CustomerUnits: 3, MaxInputBytes: 16 << 20, MaxOutputTokens: 1000000, ExpiresAt: time.Now().Add(time.Hour), Gate: gate, Clock: systemClock{}}
+	return SyntheticConfig{Namespace: namespace, BindingKey: sha256.Sum256([]byte("synthetic-only-key-not-a-credential")), Limit: 100, Capacity: 1, MaxDispatches: 32, MaxStages: 32, MaxAttempts: 3, CustomerUnits: 3, MaxInputBytes: 16 << 20, MaxOutputTokens: 1000000, ExpiresAt: time.Now().Add(time.Hour), Gate: gate, Clock: systemClock{}, ExecutionPolicyVersion: "synthetic-execution-v1", RatePolicyVersion: "synthetic-unit-v1"}
 }
 
 type Harness struct {
@@ -97,6 +98,9 @@ func NewSynthetic(ctx context.Context, dsn string, cfg SyntheticConfig) (*Harnes
 	}
 	schema := u.Query().Get("search_path")
 	if !strings.HasPrefix(schema, "careeros_ai_test_") || !tokenLabel.MatchString(schema) || !tokenLabel.MatchString(cfg.Namespace) || cfg.Gate == nil || cfg.Clock == nil || cfg.BindingKey == ([32]byte{}) || cfg.Limit <= 0 || cfg.Limit > math.MaxInt64/4 || cfg.Capacity <= 0 || cfg.Capacity > 10000 || cfg.MaxDispatches <= 0 || cfg.MaxDispatches > 4096 || cfg.MaxStages <= 0 || cfg.MaxStages > 4096 || cfg.MaxAttempts <= 0 || cfg.MaxAttempts > 100 || cfg.CustomerUnits <= 0 || cfg.MaxInputBytes <= 0 || cfg.MaxInputBytes > 1<<40 || cfg.MaxOutputTokens <= 0 || cfg.MaxOutputTokens > 1<<40 || !cfg.ExpiresAt.After(time.Now()) {
+		return nil, ErrDenied
+	}
+	if !tokenLabel.MatchString(cfg.ExecutionPolicyVersion) || cfg.RatePolicyVersion != "synthetic-unit-v1" {
 		return nil, ErrDenied
 	}
 	db, err := sql.Open("pgx", dsn)

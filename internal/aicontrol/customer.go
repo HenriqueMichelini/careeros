@@ -9,8 +9,9 @@ import (
 	"professional-information-repo/internal/auth"
 )
 
-// ReserveCustomer exercises SYN fixture rights only. No real entitlement or
-// payment API is read or mutated. One account lock orders all its reservations.
+// ReserveCustomer exercises SYN fixture Application Draft rights only. No real
+// entitlement or payment API is read or mutated. One account lock orders all its
+// reservations; the locked action workflow determines allowance eligibility.
 func (s *Session) ReserveCustomer(ctx context.Context) error {
 	tx, err := s.h.begin(ctx, s.p)
 	if err != nil {
@@ -20,13 +21,16 @@ func (s *Session) ReserveCustomer(ctx context.Context) error {
 	if err = s.checkCurrent(ctx, tx); err != nil {
 		return err
 	}
-	var state string
+	var state, workflow string
 	var reserved, effect bool
-	if tx.QueryRowContext(ctx, `SELECT state,customer_reserved,customer_effect FROM ai_fixture_action WHERE namespace=$1 AND id=$2 AND owner=$3 FOR UPDATE`, s.h.cfg.Namespace, s.id, s.p.AccountID).Scan(&state, &reserved, &effect) != nil {
+	if tx.QueryRowContext(ctx, `SELECT state,workflow,customer_reserved,customer_effect FROM ai_fixture_action WHERE namespace=$1 AND id=$2 AND owner=$3 FOR UPDATE`, s.h.cfg.Namespace, s.id, s.p.AccountID).Scan(&state, &workflow, &reserved, &effect) != nil {
 		return ErrDenied
 	}
-	if state != "recoverable" {
+	if workflow != "application_draft" || state != "recoverable" {
 		return ErrDenied
+	}
+	if err = s.checkExecution(ctx, tx); err != nil {
+		return err
 	}
 	if reserved || effect {
 		return nil
@@ -72,9 +76,12 @@ func (r *Reviewer) Customer(ctx context.Context, p auth.Principal, id string, e 
 		return err
 	}
 	defer tx.Rollback()
-	var state, ref string
+	var state, ref, workflow string
 	var reserved, effect bool
-	if tx.QueryRowContext(ctx, `SELECT state,result_ref,customer_reserved,customer_effect FROM ai_fixture_action WHERE namespace=$1 AND id=$2 AND owner=$3 FOR UPDATE`, r.h.cfg.Namespace, id, p.AccountID).Scan(&state, &ref, &reserved, &effect) != nil {
+	if tx.QueryRowContext(ctx, `SELECT state,result_ref,workflow,customer_reserved,customer_effect FROM ai_fixture_action WHERE namespace=$1 AND id=$2 AND owner=$3 FOR UPDATE`, r.h.cfg.Namespace, id, p.AccountID).Scan(&state, &ref, &workflow, &reserved, &effect) != nil {
+		return ErrDenied
+	}
+	if (e.Kind == "candidate" || e.Kind == "open") && workflow != "application_draft" {
 		return ErrDenied
 	}
 	if e.Kind == "accept" || e.Kind == "export" {

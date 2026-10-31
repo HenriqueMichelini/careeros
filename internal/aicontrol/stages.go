@@ -23,7 +23,7 @@ func (s *Session) stageAction(ctx context.Context, tx *sql.Tx) error {
 	if !hmac.Equal(binding, s.root) {
 		return ErrConflict
 	}
-	return nil
+	return s.checkExecution(ctx, tx)
 }
 
 func (s *Session) stageLimit(ctx context.Context, tx *sql.Tx) (int, error) {

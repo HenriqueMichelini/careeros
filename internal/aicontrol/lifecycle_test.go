@@ -152,7 +152,7 @@ func TestA32_ActualStaleSQLRestoreNeedsIndependentObligationReconciliation(t *te
 	saveLifecycleProfile(t, f)
 	intent := f.open(t, "restore_intent")
 	deleted := f.open(t, "restore_delete")
-	customer := f.open(t, "restore_customer")
+	customer := f.openDraft(t, "restore_customer")
 	if err := customer.ReserveCustomer(context.Background()); err != nil {
 		t.Fatal(err)
 	}

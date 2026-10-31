@@ -21,11 +21,13 @@ CREATE TABLE ai_fixture_scope (
 CREATE TABLE ai_fixture_action (
  namespace text NOT NULL, id text NOT NULL, owner text NOT NULL, creation_key text NOT NULL,
  workflow text NOT NULL, binding bytea NOT NULL CHECK(octet_length(binding)=32), profile_binding bytea CHECK(octet_length(profile_binding)=32),
+ execution_binding bytea NOT NULL CHECK(octet_length(execution_binding)=32), execution_version text NOT NULL,
  state text NOT NULL DEFAULT 'recoverable' CHECK(state IN ('recoverable','failed','candidate','delivered','canceled','closed','deleted')),
  customer_reserved boolean NOT NULL DEFAULT false, customer_effect boolean NOT NULL DEFAULT false, attempt integer NOT NULL DEFAULT 1 CHECK(attempt>0),
  result_ref text NOT NULL DEFAULT '', compacted boolean NOT NULL DEFAULT false,
  grant_version bigint NOT NULL CHECK(grant_version>0),
- PRIMARY KEY(namespace,id), UNIQUE(namespace,owner,creation_key)
+ PRIMARY KEY(namespace,id), UNIQUE(namespace,owner,creation_key),
+ CHECK((NOT customer_reserved AND NOT customer_effect) OR workflow='application_draft')
 );
 CREATE TABLE ai_fixture_stage (
  namespace text NOT NULL, action text NOT NULL, coordinate text NOT NULL, stage text NOT NULL,
@@ -75,3 +77,11 @@ CREATE TABLE ai_fixture_observation (
  PRIMARY KEY(namespace,dispatch,sequence),
  FOREIGN KEY(namespace,dispatch) REFERENCES ai_fixture_dispatch(namespace,id)
 );
+CREATE FUNCTION ai_fixture_keep_closure_audit() RETURNS trigger LANGUAGE plpgsql AS $audit$
+BEGIN
+ IF OLD.kind='conservative_closure' THEN RAISE EXCEPTION 'closure audit is immutable'; END IF;
+ IF TG_OP='DELETE' THEN RETURN OLD; END IF;
+ RETURN NEW;
+END $audit$;
+CREATE TRIGGER ai_fixture_keep_closure_audit BEFORE UPDATE OR DELETE ON ai_fixture_evidence
+ FOR EACH ROW EXECUTE FUNCTION ai_fixture_keep_closure_audit();

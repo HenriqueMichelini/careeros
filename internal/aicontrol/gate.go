@@ -9,7 +9,7 @@ import (
 
 // SyntheticGate is independent in-memory fixture authority, never a hosted
 // recovery implementation. Close fences new handoffs and cancels active local
-// callbacks; Drain separately proves those fixture callbacks/bodies exited. No
+// callbacks; Drain separately proves callbacks, bodies and result writes exited. No
 // operation here releases provider expense or possible-remote capacity.
 type SyntheticGate struct {
 	mu         sync.Mutex
@@ -134,7 +134,7 @@ func (l gateLease) allowed() error {
 	return nil
 }
 
-// Drain is a bounded observation of fixture callbacks and response bodies, not
+// Drain observes fixture callbacks, response bodies and protected result writes, not
 // remote termination proof. Calling it with a canceled context cannot open a gate.
 func (g *SyntheticGate) Drain(ctx context.Context, namespace string) error {
 	if g == nil {
@@ -157,15 +157,15 @@ func (g *SyntheticGate) Drain(ctx context.Context, namespace string) error {
 	}
 }
 
-func (l gateLease) invoke(ctx context.Context, fn func(context.Context) (*http.Response, error)) (*http.Response, error) {
-	if l.gate == nil || fn == nil {
-		return nil, ErrDenied
+func (l gateLease) begin(ctx context.Context) (context.Context, func(), error) {
+	if l.gate == nil {
+		return nil, nil, ErrDenied
 	}
 	g := l.gate
 	g.mu.Lock()
 	if !l.validLocked() || ctx.Err() != nil {
 		g.mu.Unlock()
-		return nil, ErrDenied
+		return nil, nil, ErrDenied
 	}
 	callCtx, cancel := context.WithCancel(ctx)
 	call := &gateCall{cancel: cancel}
@@ -181,6 +181,17 @@ func (l gateLease) invoke(ctx context.Context, fn func(context.Context) (*http.R
 			g.notifyLocked()
 			g.mu.Unlock()
 		})
+	}
+	return callCtx, finish, nil
+}
+
+func (l gateLease) invoke(ctx context.Context, fn func(context.Context) (*http.Response, error)) (*http.Response, error) {
+	if fn == nil {
+		return nil, ErrDenied
+	}
+	callCtx, finish, err := l.begin(ctx)
+	if err != nil {
+		return nil, err
 	}
 	resp, err := fn(callCtx)
 	if l.allowed() != nil || callCtx.Err() != nil {
@@ -234,4 +245,11 @@ func (s *Session) ResultAllowed(ctx context.Context) error {
 		return ErrDenied
 	}
 	return s.gate.allowed()
+}
+
+// BeginResult tracks the final protected HTTP write through its completion.
+// Close denies new writes and cancels existing ones; Drain remains incomplete
+// while an underlying writer ignores cancellation. No remote slot is released.
+func (s *Session) BeginResult(ctx context.Context) (context.Context, func(), error) {
+	return s.gate.begin(ctx)
 }

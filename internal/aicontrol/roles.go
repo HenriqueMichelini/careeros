@@ -57,7 +57,7 @@ GRANT SELECT ON careeros_sessions TO %[2]s, %[3]s;
 -- Only runtime's current Profile binding needs transient career content.
 -- Reconciliation receives no Profile/provenance or Profile-operation view.
 GRANT SELECT(account_id,document) ON careeros_profiles TO %[2]s;
-GRANT INSERT(namespace,id,owner,creation_key,workflow,binding,profile_binding,grant_version) ON ai_fixture_action TO %[2]s;
+GRANT INSERT(namespace,id,owner,creation_key,workflow,binding,profile_binding,grant_version,execution_binding,execution_version) ON ai_fixture_action TO %[2]s;
 GRANT INSERT(namespace,scope,limit_amount,capacity) ON ai_fixture_scope TO %[2]s;
 GRANT INSERT(namespace,id,action,coordinate,stage,leg,attempt,provider,binding,maximum,floor_amount,counted,input_bytes,output_tokens) ON ai_fixture_dispatch TO %[2]s;
 GRANT INSERT ON ai_fixture_stage,ai_fixture_child,ai_fixture_allocation,ai_fixture_observation TO %[2]s;

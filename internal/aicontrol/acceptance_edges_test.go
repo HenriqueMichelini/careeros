@@ -71,7 +71,7 @@ func availableCustomerUnits(t *testing.T, f *fixture) int64 {
 
 func TestA21_TimeoutCancelAndLateEventsPreserveThreeRights(t *testing.T) {
 	f := setup(t, nil)
-	s := f.open(t, "customer_timeout")
+	s := f.openDraft(t, "customer_timeout")
 	if got := availableCustomerUnits(t, f); got != 3 {
 		t.Fatal(got)
 	}
@@ -84,7 +84,7 @@ func TestA21_TimeoutCancelAndLateEventsPreserveThreeRights(t *testing.T) {
 	f.h.SetResponder(func(context.Context, string, *http.Request) (*http.Response, error) {
 		return nil, context.DeadlineExceeded
 	})
-	resp, err := send(s)
+	resp, err := sendDraftGate(s)
 	closeResp(resp)
 	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatal("timeout fixture did not reach the provider", err)
@@ -115,7 +115,7 @@ func TestA22_CancelAndDeliveryRaceWithLostAcknowledgment(t *testing.T) {
 	for _, first := range []string{"cancel", "open"} {
 		t.Run(first+"_wins", func(t *testing.T) {
 			f := setup(t, nil)
-			s := f.open(t, "ordered_delivery")
+			s := f.openDraft(t, "ordered_delivery")
 			if err := s.ReserveCustomer(context.Background()); err != nil {
 				t.Fatal(err)
 			}
@@ -187,7 +187,7 @@ func waitForBlockedCustomer(t *testing.T, f *fixture, count int) {
 
 func TestA24_ClosedUnconfirmedActionCannotAcquireLateCharge(t *testing.T) {
 	f := setup(t, nil)
-	s := f.open(t, "terminal_unconfirmed")
+	s := f.openDraft(t, "terminal_unconfirmed")
 	if err := s.ReserveCustomer(context.Background()); err != nil {
 		t.Fatal(err)
 	}

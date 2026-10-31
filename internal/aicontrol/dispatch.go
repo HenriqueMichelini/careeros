@@ -23,6 +23,7 @@ type Session struct {
 	p                    auth.Principal
 	id, workflow         string
 	root, profile        []byte
+	execution            []byte
 	rootInput            []byte // transient request only; never persisted or logged
 	attempt              int
 	grantVersion         int64
@@ -56,11 +57,12 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 		return nil, err
 	}
 	var id, state string
-	var old, profile []byte
+	var old, profile, execution []byte
 	var compacted bool
 	attempt := 1
 	var frozenGrant int64
-	err = tx.QueryRowContext(ctx, `SELECT id,binding,state,compacted,profile_binding,attempt,grant_version FROM ai_fixture_action WHERE namespace=$1 AND owner=$2 AND creation_key=$3 FOR UPDATE`, h.cfg.Namespace, p.AccountID, key).Scan(&id, &old, &state, &compacted, &profile, &attempt, &frozenGrant)
+	var executionVersion string
+	err = tx.QueryRowContext(ctx, `SELECT id,binding,state,compacted,profile_binding,attempt,grant_version,execution_binding,execution_version FROM ai_fixture_action WHERE namespace=$1 AND owner=$2 AND creation_key=$3 FOR UPDATE`, h.cfg.Namespace, p.AccountID, key).Scan(&id, &old, &state, &compacted, &profile, &attempt, &frozenGrant, &execution, &executionVersion)
 	if err == nil {
 		if !hmac.Equal(old, binding) {
 			return nil, ErrConflict
@@ -70,6 +72,13 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 		}
 		if frozenGrant != grantVersion {
 			return nil, ErrDenied
+		}
+		current, e := h.executionBinding(ctx, tx, p.AccountID, workflow)
+		if e != nil {
+			return nil, e
+		}
+		if executionVersion != h.cfg.ExecutionPolicyVersion || !hmac.Equal(execution, current) {
+			return nil, ErrConflict
 		}
 	} else if errors.Is(err, sql.ErrNoRows) {
 		id = opaque()
@@ -90,11 +99,15 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 				return nil, err
 			}
 		}
-		_, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_action(namespace,id,owner,creation_key,workflow,binding,profile_binding,grant_version) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`, h.cfg.Namespace, id, p.AccountID, key, workflow, binding, profile, grantVersion)
+		_, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_scope(namespace,scope,limit_amount,capacity) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING`, h.cfg.Namespace, "account:"+p.AccountID, h.cfg.Limit, h.cfg.Capacity)
 		if err != nil {
 			return nil, ErrUnavailable
 		}
-		_, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_scope(namespace,scope,limit_amount,capacity) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING`, h.cfg.Namespace, "account:"+p.AccountID, h.cfg.Limit, h.cfg.Capacity)
+		execution, err = h.executionBinding(ctx, tx, p.AccountID, workflow)
+		if err != nil {
+			return nil, err
+		}
+		_, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_action(namespace,id,owner,creation_key,workflow,binding,profile_binding,grant_version,execution_binding,execution_version) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, h.cfg.Namespace, id, p.AccountID, key, workflow, binding, profile, grantVersion, execution, h.cfg.ExecutionPolicyVersion)
 		if err != nil {
 			return nil, ErrUnavailable
 		}
@@ -126,7 +139,7 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 	if err = lease.allowed(); err != nil {
 		return nil, err
 	}
-	return &Session{h: h, p: p, id: id, workflow: workflow, root: binding, rootInput: append([]byte(nil), rootJSON...), profile: profile, attempt: attempt, grantVersion: grantVersion, gate: lease}, nil
+	return &Session{h: h, p: p, id: id, workflow: workflow, root: binding, rootInput: append([]byte(nil), rootJSON...), profile: profile, execution: execution, attempt: attempt, grantVersion: grantVersion, gate: lease}, nil
 }
 
 func (h *Harness) currentProfileBinding(ctx context.Context, tx *sql.Tx, owner string) ([]byte, error) {
@@ -178,6 +191,9 @@ func (s *Session) Send(ctx context.Context, provider string, req *http.Request) 
 		coordinate = "request"
 	}
 	stage := aidiagnostics.StageName(ctx)
+	if err = s.validateExecutionStage(ctx, provider, stage, raw); err != nil {
+		return nil, err
+	}
 	// A handler stage has one logical provider leg. Reusing the same Session
 	// pointer must not turn a duplicate HTTP command into another ordinal.
 	leg := Leg{Provider: provider, Coordinate: coordinate, Stage: stage, Number: 1, Body: raw, StageInput: aidispatch.StageInput(ctx)}
@@ -293,6 +309,17 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (Dispatch, error) {
 	if compacted || currentAttempt != s.attempt {
 		return zero, ErrDenied
 	}
+	if err = s.checkExecution(ctx, tx); err != nil {
+		return zero, err
+	}
+	identity, _ := executionIdentity(s.workflow, h.cfg.ExecutionPolicyVersion, h.cfg.RatePolicyVersion)
+	stageIdentity, ok := identity.Stages[leg.Stage]
+	if !ok || stageIdentity.Provider != leg.Provider {
+		return zero, ErrDenied
+	}
+	if err = validateRequestIdentity(stageIdentity, leg.Body); err != nil {
+		return zero, err
+	}
 	var id string
 	var existingBinding []byte
 	err = tx.QueryRowContext(ctx, `SELECT id,binding FROM ai_fixture_dispatch WHERE namespace=$1 AND action=$2 AND coordinate=$3 AND stage=$4 AND attempt=$5 AND leg=$6`, h.cfg.Namespace, s.id, leg.Coordinate, leg.Stage, s.attempt, leg.Number).Scan(&id, &existingBinding)
@@ -319,7 +346,7 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (Dispatch, error) {
 	if s.attempt > maxAttempts {
 		return zero, ErrCapacity
 	}
-	var dispatchCount, stageCount int
+	var dispatchCount int
 	if tx.QueryRowContext(ctx, `SELECT count(*) FROM ai_fixture_dispatch WHERE namespace=$1 AND action=$2`, h.cfg.Namespace, s.id).Scan(&dispatchCount) != nil {
 		return zero, ErrUnavailable
 	}
@@ -354,11 +381,8 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (Dispatch, error) {
 	var oldStage []byte
 	err = tx.QueryRowContext(ctx, `SELECT binding FROM ai_fixture_stage WHERE namespace=$1 AND action=$2 AND coordinate=$3 AND stage=$4 AND attempt=$5`, h.cfg.Namespace, s.id, leg.Coordinate, leg.Stage, s.attempt).Scan(&oldStage)
 	if errors.Is(err, sql.ErrNoRows) {
-		if tx.QueryRowContext(ctx, `SELECT count(*) FROM ai_fixture_stage WHERE namespace=$1 AND action=$2`, h.cfg.Namespace, s.id).Scan(&stageCount) != nil {
-			return zero, ErrUnavailable
-		}
-		if stageCount >= maxStages {
-			return zero, ErrCapacity
+		if _, err = s.stageLimit(ctx, tx); err != nil {
+			return zero, err
 		}
 		_, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_stage(namespace,action,coordinate,stage,attempt,binding) VALUES($1,$2,$3,$4,$5,$6)`, h.cfg.Namespace, s.id, leg.Coordinate, leg.Stage, s.attempt, binding)
 		if err != nil {
@@ -467,6 +491,9 @@ func (s *Session) invoke(ctx context.Context, d Dispatch, req *http.Request, raw
 	}
 	if compacted || state != "recoverable" || currentAttempt != s.attempt || !hmac.Equal(root, s.root) {
 		return nil, ErrDenied
+	}
+	if err = s.checkExecution(ctx, tx); err != nil {
+		return nil, err
 	}
 	var frozen []byte
 	var dispatchState string
@@ -652,6 +679,9 @@ func (s *Session) Retry(ctx context.Context) (*Session, error) {
 	if tx.QueryRowContext(ctx, `SELECT state,attempt FROM ai_fixture_action WHERE namespace=$1 AND id=$2 AND owner=$3 FOR UPDATE`, h.cfg.Namespace, s.id, s.p.AccountID).Scan(&state, &current) != nil {
 		return nil, ErrDenied
 	}
+	if err = s.checkExecution(ctx, tx); err != nil {
+		return nil, err
+	}
 	next := s.attempt + 1
 	if current == s.attempt && state == "failed" {
 		var maxAttempts int
@@ -688,7 +718,7 @@ func (s *Session) Retry(ctx context.Context) (*Session, error) {
 }
 
 func (s *Session) childSession(id, parent string) *Session {
-	return &Session{h: s.h, p: s.p, id: s.id, workflow: s.workflow, root: append([]byte(nil), s.root...), rootInput: append([]byte(nil), s.rootInput...), profile: append([]byte(nil), s.profile...), attempt: s.attempt, grantVersion: s.grantVersion, gate: s.gate, childID: id, childParent: parent}
+	return &Session{h: s.h, p: s.p, id: s.id, workflow: s.workflow, root: append([]byte(nil), s.root...), rootInput: append([]byte(nil), s.rootInput...), profile: append([]byte(nil), s.profile...), execution: append([]byte(nil), s.execution...), attempt: s.attempt, grantVersion: s.grantVersion, gate: s.gate, childID: id, childParent: parent}
 }
 
 func (s *Session) checkCurrent(ctx context.Context, tx *sql.Tx) error {

@@ -209,7 +209,23 @@ func (r *Reviewer) ReviewConservativeClosure(ctx context.Context, p auth.Princip
 		if !healthy || now.Before(*d.DurableBound) || now.Sub(*d.DurableBound) < 168*time.Hour {
 			return ErrDenied
 		}
-		_, err := tx.ExecContext(ctx, `UPDATE ai_fixture_dispatch SET category='reviewed_conservative_maximum' WHERE namespace=$1 AND id=$2 AND expense IS NULL`, r.h.cfg.Namespace, id)
+		audit := struct {
+			Reviewer, Disposition, PolicyVersion string
+			Amount                               int64
+			ReviewedAt, IntentAt, DurableBound   time.Time
+		}{p.AccountID, "unresolved_conservative_maximum", "synthetic-seven-day-review-v1", d.Maximum, now, *d.IntentAt, *d.DurableBound}
+		raw, err := json.Marshal(audit)
+		if err != nil {
+			return ErrUnavailable
+		}
+		binding, err := r.h.fingerprint(p.AccountID, "conservative-closure-audit", raw)
+		if err != nil {
+			return err
+		}
+		if _, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_evidence(namespace,id,dispatch,binding,kind,data,actor) VALUES($1,$2,$3,$4,'conservative_closure',$5,'fixture_reviewer')`, r.h.cfg.Namespace, "closure_"+d.ID, d.ID, binding, raw); err != nil {
+			return ErrUnavailable
+		}
+		_, err = tx.ExecContext(ctx, `UPDATE ai_fixture_dispatch SET category='reviewed_conservative_maximum' WHERE namespace=$1 AND id=$2 AND expense IS NULL`, r.h.cfg.Namespace, id)
 		return safe(err)
 	})
 }
@@ -227,7 +243,7 @@ func (r *Reviewer) Compact(ctx context.Context, p auth.Principal, id string) err
 		if d.Category != "reviewed_conservative_maximum" {
 			return ErrDenied
 		}
-		if _, err := tx.ExecContext(ctx, `DELETE FROM ai_fixture_evidence WHERE namespace=$1 AND dispatch=$2`, r.h.cfg.Namespace, id); err != nil {
+		if _, err := tx.ExecContext(ctx, `DELETE FROM ai_fixture_evidence WHERE namespace=$1 AND dispatch=$2 AND kind<>'conservative_closure'`, r.h.cfg.Namespace, id); err != nil {
 			return ErrUnavailable
 		}
 		_, err := tx.ExecContext(ctx, `UPDATE ai_fixture_dispatch SET compacted=true WHERE namespace=$1 AND id=$2`, r.h.cfg.Namespace, id)

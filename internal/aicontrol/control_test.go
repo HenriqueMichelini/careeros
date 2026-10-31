@@ -174,13 +174,50 @@ func (f *fixture) open(t *testing.T, key string) *Session {
 	}
 	return s
 }
+
+func (f *fixture) openDraft(t *testing.T, key string) *Session {
+	t.Helper()
+	var exists bool
+	if err := f.db.QueryRow(`SELECT EXISTS(SELECT 1 FROM careeros_profiles WHERE account_id=$1)`, f.p.AccountID).Scan(&exists); err != nil {
+		t.Fatal(err)
+	}
+	if !exists {
+		saveLifecycleProfile(t, f)
+	}
+	s, err := f.h.Open(context.Background(), f.p, key, "application_draft", []byte(`{"synthetic":"draft-root"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return s
+}
+
+func sendDraftGate(s *Session) (*http.Response, error) {
+	ctx, _ := aidiagnostics.Start(aidispatch.WithWorkflowRoot(context.Background(), s.workflow, s.rootInput), "field_validation", "jev-rubric-v1/policy-v1")
+	r, _ := http.NewRequest(http.MethodPost, "https://api.typesafe.ai/v1/systemone", strings.NewReader(`{"model":"jev-1.13.0","state":{"field":"job_posting","submission":"synthetic"}}`))
+	return s.Send(ctx, "typesafe", r)
+}
+
+func (f *fixture) sentDraftGate(t *testing.T, s *Session) Dispatch {
+	t.Helper()
+	response, err := sendDraftGate(s)
+	closeResp(response)
+	if err != nil {
+		t.Fatal(err)
+	}
+	status := f.status(t, s)
+	if len(status.Dispatches) != 1 {
+		t.Fatal(status)
+	}
+	return status.Dispatches[0]
+}
+
 func req() *http.Request {
 	r, _ := http.NewRequest(http.MethodPost, "https://api.openai.com/v1/chat/completions", bytes.NewReader(fixtureBody))
 	r.Header.Set("Authorization", "Bearer synthetic-must-not-reach-fixture")
 	return r
 }
 func send(s *Session) (*http.Response, error) {
-	ctx, _ := aidiagnostics.Start(aidispatch.WithWorkflowRoot(context.Background(), s.workflow, s.rootInput), "generation", "synthetic-v1")
+	ctx, _ := aidiagnostics.Start(aidispatch.WithWorkflowRoot(context.Background(), s.workflow, s.rootInput), "generation", "cv-policy-v2/schema-v2")
 	return s.Send(ctx, "openai", req())
 }
 func closeResp(resp *http.Response) {
@@ -352,7 +389,7 @@ func TestA03_PrivatePrincipalAndSavedProfile(t *testing.T) {
 		t.Fatal(e)
 	}
 	f.db.Exec(`UPDATE careeros_profiles SET document=$2 WHERE account_id=$1`, f.p.AccountID, []byte(`{"revision":2}`))
-	ctx, _ := aidiagnostics.Start(aidispatch.WithWorkflowRoot(context.Background(), s.workflow, s.rootInput), "field_validation", "fixture")
+	ctx, _ := aidiagnostics.Start(aidispatch.WithWorkflowRoot(context.Background(), s.workflow, s.rootInput), "field_validation", "jev-rubric-v1/policy-v1")
 	providerRequest, _ := http.NewRequest(http.MethodPost, "https://api.typesafe.ai/v1/systemone", strings.NewReader(`{"model":"jev-1.13.0","state":{"field":"job_posting","submission":"synthetic"}}`))
 	r, e := s.Send(ctx, "typesafe", providerRequest)
 	closeResp(r)
@@ -533,7 +570,7 @@ func TestA11_RevocationOrdering(t *testing.T) {
 	if e := f.store.AuthStores().Sessions.Revoke(context.Background(), f.p.SessionID); e != nil {
 		t.Fatal(e)
 	}
-	ctx, _ := aidiagnostics.Start(aidispatch.WithWorkflowRoot(context.Background(), s.workflow, s.rootInput), "statement_support_assessment", "fixture")
+	ctx, _ := aidiagnostics.Start(aidispatch.WithWorkflowRoot(context.Background(), s.workflow, s.rootInput), "statement_support_assessment", "cv-statement-support-v1")
 	r, e := s.Send(ctx, "openai", req())
 	closeResp(r)
 	if e == nil || f.calls.Load() != 1 {
@@ -569,7 +606,7 @@ func TestA12_DurableRetryAndStaleAttempt(t *testing.T) {
 	if e1 != nil || e2 != nil || a.attempt != 2 || b.attempt != 2 {
 		t.Fatalf("retry %v %v", e1, e2)
 	}
-	ctx, _ := aidiagnostics.Start(aidispatch.WithWorkflowRoot(context.Background(), s.workflow, s.rootInput), "statement_support_assessment", "fixture")
+	ctx, _ := aidiagnostics.Start(aidispatch.WithWorkflowRoot(context.Background(), s.workflow, s.rootInput), "statement_support_assessment", "cv-statement-support-v1")
 	if r, e := s.Send(ctx, "openai", req()); e == nil {
 		closeResp(r)
 		t.Fatal("stale attempt new stage")
@@ -745,7 +782,7 @@ func TestA18_PeriodAndStageDoNotRenewAnchor(t *testing.T) {
 	s := f.open(t, "anchor")
 	d := f.sent(t, s)
 	f.clock.set(d.DurableBound.Add(167*time.Hour), true)
-	ctx, _ := aidiagnostics.Start(aidispatch.WithWorkflowRoot(context.Background(), s.workflow, s.rootInput), "statement_support_assessment", "fixture")
+	ctx, _ := aidiagnostics.Start(aidispatch.WithWorkflowRoot(context.Background(), s.workflow, s.rootInput), "statement_support_assessment", "cv-statement-support-v1")
 	resp, e := s.Send(ctx, "openai", req())
 	closeResp(resp)
 	if e != nil {
@@ -809,11 +846,11 @@ func TestA20_PhysicalReleaseNeedsIndependentTerminalProof(t *testing.T) {
 
 func TestA21_PreDeliveryCancelSeparatesExpense(t *testing.T) {
 	f := setup(t, nil)
-	s := f.open(t, "cancel")
+	s := f.openDraft(t, "cancel")
 	if e := s.ReserveCustomer(context.Background()); e != nil {
 		t.Fatal(e)
 	}
-	d := f.sent(t, s)
+	d := f.sentDraftGate(t, s)
 	r := f.h.SyntheticReviewer()
 	if e := r.Customer(context.Background(), f.p, s.ID(), CustomerEvent{Kind: "cancel"}); e != nil {
 		t.Fatal(e)
@@ -829,7 +866,7 @@ func TestA21_PreDeliveryCancelSeparatesExpense(t *testing.T) {
 
 func TestA22_DeliveryEffectOnceIndependentOfAccept(t *testing.T) {
 	f := setup(t, nil)
-	s := f.open(t, "delivery")
+	s := f.openDraft(t, "delivery")
 	if e := s.ReserveCustomer(context.Background()); e != nil {
 		t.Fatal(e)
 	}
@@ -847,8 +884,10 @@ func TestA22_DeliveryEffectOnceIndependentOfAccept(t *testing.T) {
 
 func TestA23_IncompleteBundleCannotConsume(t *testing.T) {
 	f := setup(t, nil)
-	s := f.open(t, "incomplete")
-	s.ReserveCustomer(context.Background())
+	s := f.openDraft(t, "incomplete")
+	if err := s.ReserveCustomer(context.Background()); err != nil {
+		t.Fatal(err)
+	}
 	r := f.h.SyntheticReviewer()
 	for _, e := range []CustomerEvent{{Kind: "candidate", ResultRef: "cv_only", Complete: false, Recoverable: true}, {Kind: "candidate", ResultRef: "lost", Complete: true, Recoverable: false}, {Kind: "open", ResultRef: "http200", Complete: true, Recoverable: true}} {
 		if err := r.Customer(context.Background(), f.p, s.ID(), e); err == nil {
@@ -865,9 +904,11 @@ func TestA23_IncompleteBundleCannotConsume(t *testing.T) {
 
 func TestA24_CustomerDeadlineIndependentFromFinancialWindow(t *testing.T) {
 	f := setup(t, nil)
-	s := f.open(t, "deadline")
-	s.ReserveCustomer(context.Background())
-	d := f.sent(t, s)
+	s := f.openDraft(t, "deadline")
+	if err := s.ReserveCustomer(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	d := f.sentDraftGate(t, s)
 	f.clock.set(d.DurableBound.Add(169*time.Hour), true)
 	r := f.h.SyntheticReviewer()
 	if e := r.Customer(context.Background(), f.p, s.ID(), CustomerEvent{Kind: "close"}); e == nil {
@@ -935,6 +976,11 @@ func TestA35_ExpiryDuringRealSQLScopeContention(t *testing.T) {
 		for _, phase := range []string{"reserve", "claim"} {
 			t.Run(authority+"/"+phase, func(t *testing.T) {
 				f := setup(t, nil)
+				if authority == "policy" {
+					if _, e := f.db.Exec(`UPDATE ai_fixture_policy SET expires_at=clock_timestamp()+interval '400 milliseconds'`); e != nil {
+						t.Fatal(e)
+					}
+				}
 				s := f.open(t, "expires")
 				var d Dispatch
 				if phase == "claim" {
@@ -951,7 +997,8 @@ func TestA35_ExpiryDuringRealSQLScopeContention(t *testing.T) {
 				case "grant":
 					_, e = f.db.Exec(`UPDATE ai_fixture_grant SET expires_at=clock_timestamp()+interval '400 milliseconds'`)
 				case "policy":
-					_, e = f.db.Exec(`UPDATE ai_fixture_policy SET expires_at=clock_timestamp()+interval '400 milliseconds'`)
+					// Frozen before Open; this case exercises elapsed expiry,
+					// not policy mutation/version rejection.
 				}
 				if e != nil {
 					t.Fatal(e)
@@ -989,6 +1036,17 @@ func TestA35_ExpiryDuringRealSQLScopeContention(t *testing.T) {
 						t.Fatal("worker never reached shared SQL contention")
 					}
 					time.Sleep(5 * time.Millisecond)
+				}
+				var validBeforeWait bool
+				expiryQuery := map[string]string{"session": `SELECT expires_at>clock_timestamp() FROM careeros_sessions WHERE id=$1`, "grant": `SELECT expires_at>clock_timestamp() FROM ai_fixture_grant WHERE owner=$1`, "policy": `SELECT expires_at>clock_timestamp() FROM ai_fixture_policy WHERE namespace=$1`}[authority]
+				identity := f.p.AccountID
+				if authority == "session" {
+					identity = f.p.SessionID
+				} else if authority == "policy" {
+					identity = f.cfg.Namespace
+				}
+				if e = f.db.QueryRow(expiryQuery, identity).Scan(&validBeforeWait); e != nil || !validBeforeWait {
+					t.Fatal("worker was not blocked while authority remained valid", e)
 				}
 				time.Sleep(450 * time.Millisecond)
 				if e = lock.Commit(); e != nil {

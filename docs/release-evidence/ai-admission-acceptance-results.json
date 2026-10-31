@@ -26,6 +26,96 @@
       "tests": [
         {
           "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA03_ActualStagePromptSchemaModelAndTierMustMatchIdentity",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA03_ActualStagePromptSchemaModelAndTierMustMatchIdentity/model",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA03_ActualStagePromptSchemaModelAndTierMustMatchIdentity/prompt",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA03_ActualStagePromptSchemaModelAndTierMustMatchIdentity/schema",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA03_ActualStagePromptSchemaModelAndTierMustMatchIdentity/tier",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA03_DelayedHandoffCannotUseChangedExecutionPolicy",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA03_FrozenExecutionPolicyRejectsChangedReplay",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA03_FrozenExecutionPolicyRejectsChangedReplay/attempt_limit",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA03_FrozenExecutionPolicyRejectsChangedReplay/customer_units",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA03_FrozenExecutionPolicyRejectsChangedReplay/dispatch_limit",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA03_FrozenExecutionPolicyRejectsChangedReplay/execution_version",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA03_FrozenExecutionPolicyRejectsChangedReplay/expiry",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA03_FrozenExecutionPolicyRejectsChangedReplay/input_limit",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA03_FrozenExecutionPolicyRejectsChangedReplay/output_limit",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA03_FrozenExecutionPolicyRejectsChangedReplay/rate_version",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA03_FrozenExecutionPolicyRejectsChangedReplay/scope_budget",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA03_FrozenExecutionPolicyRejectsChangedReplay/scope_capacity",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA03_FrozenExecutionPolicyRejectsChangedReplay/stage_limit",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
           "test": "TestA03_PrivatePrincipalAndSavedProfile",
           "status": "pass"
         }
@@ -79,6 +169,71 @@
     "A05": {
       "status": "pass",
       "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/attempts",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/binding_key",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/capacity",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/clock",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/dispatches",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/gate",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/input",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/money_overflow",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/output",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/policy",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/stages",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/store",
+          "status": "pass"
+        },
         {
           "package": "professional-information-repo/internal/aicontrol",
           "test": "TestA05_FiniteFailClosedConfiguration",
@@ -326,6 +481,11 @@
       "tests": [
         {
           "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA17_ConservativeClosureAuditIsDurableAndImmutable",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
           "test": "TestA17_SevenDaysIsEligibilityOnly",
           "status": "pass"
         }
@@ -397,6 +557,36 @@
         {
           "package": "professional-information-repo/internal/aicontrol",
           "test": "TestA22_DeliveryEffectOnceIndependentOfAccept",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA22_DraftAllowanceBelongsOnlyToApplicationDraft",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA22_DraftAllowanceBelongsOnlyToApplicationDraft/application_draft",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA22_DraftAllowanceBelongsOnlyToApplicationDraft/cv_generation",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA22_DraftAllowanceBelongsOnlyToApplicationDraft/profile_ingestion",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA22_DraftAllowanceBelongsOnlyToApplicationDraft/profile_review",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA22_DraftAllowanceBelongsOnlyToApplicationDraft/qualification_gaps",
           "status": "pass"
         }
       ]
@@ -537,6 +727,11 @@
         {
           "package": "professional-information-repo/backend/profile-ingestion",
           "test": "TestA27_LegacyV1V2AndWholeActionCaps/provider-free_planning_consumes_a_finite_stage_allocation",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA27_ProviderStageAndClarificationShareOneFiniteLimit",
           "status": "pass"
         }
       ]
@@ -835,6 +1030,21 @@
           "status": "pass"
         },
         {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestA32ProtectedResultWriteMustFinishBeforeSuccessfulDrain",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestA32ProtectedResultWriteMustFinishBeforeSuccessfulDrain/body",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestA32ProtectedResultWriteMustFinishBeforeSuccessfulDrain/header",
+          "status": "pass"
+        },
+        {
           "package": "professional-information-repo/internal/aicontrol",
           "test": "TestA32_ActualStaleSQLRestoreNeedsIndependentObligationReconciliation",
           "status": "pass"
@@ -948,84 +1158,5 @@
     }
   },
   "failed_packages": [],
-  "go_exit_code": 0,
-  "supplemental_runs": {
-    "final_missing_authority_cases": [
-      {
-        "package": "professional-information-repo/internal/aicontrol",
-        "test": "TestA05_FiniteFailClosedConfiguration",
-        "status": "pass"
-      },
-      {
-        "package": "professional-information-repo/internal/aicontrol",
-        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/clock",
-        "status": "pass"
-      },
-      {
-        "package": "professional-information-repo/internal/aicontrol",
-        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/gate",
-        "status": "pass"
-      },
-      {
-        "package": "professional-information-repo/internal/aicontrol",
-        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/binding_key",
-        "status": "pass"
-      },
-      {
-        "package": "professional-information-repo/internal/aicontrol",
-        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/money_overflow",
-        "status": "pass"
-      },
-      {
-        "package": "professional-information-repo/internal/aicontrol",
-        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/capacity",
-        "status": "pass"
-      },
-      {
-        "package": "professional-information-repo/internal/aicontrol",
-        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/dispatches",
-        "status": "pass"
-      },
-      {
-        "package": "professional-information-repo/internal/aicontrol",
-        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/stages",
-        "status": "pass"
-      },
-      {
-        "package": "professional-information-repo/internal/aicontrol",
-        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/attempts",
-        "status": "pass"
-      },
-      {
-        "package": "professional-information-repo/internal/aicontrol",
-        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/input",
-        "status": "pass"
-      },
-      {
-        "package": "professional-information-repo/internal/aicontrol",
-        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/output",
-        "status": "pass"
-      },
-      {
-        "package": "professional-information-repo/internal/aicontrol",
-        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/policy",
-        "status": "pass"
-      },
-      {
-        "package": "professional-information-repo/internal/aicontrol",
-        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/store",
-        "status": "pass"
-      },
-      {
-        "package": "professional-information-repo/internal/aicontrol",
-        "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed",
-        "status": "pass"
-      },
-      {
-        "package": "professional-information-repo/internal/aicontrol",
-        "test": "TestA05_MissingOrRevokedGrantCannotMintRights",
-        "status": "pass"
-      }
-    ]
-  }
+  "go_exit_code": 0
 }

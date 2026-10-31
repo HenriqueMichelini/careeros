@@ -51,7 +51,7 @@ func (r *Reviewer) PruneNamespaceMarkers(ctx context.Context, p auth.Principal, 
 		return ErrDenied
 	}
 	for _, statement := range []string{
-		`DELETE FROM ai_fixture_evidence WHERE namespace=$1`,
+		`DELETE FROM ai_fixture_evidence WHERE namespace=$1 AND kind<>'conservative_closure'`,
 		`DELETE FROM ai_fixture_child WHERE namespace=$1`,
 		`DELETE FROM ai_fixture_stage WHERE namespace=$1`,
 		`UPDATE ai_fixture_dispatch SET binding=decode(repeat('00',32),'hex'),compacted=true WHERE namespace=$1`,
