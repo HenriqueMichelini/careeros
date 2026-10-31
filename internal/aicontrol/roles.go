@@ -36,20 +36,29 @@ func syntheticRolePools(ctx context.Context, admin *sql.DB, dsn string) (*sql.DB
 	if _, err = tx.ExecContext(ctx, "SELECT pg_advisory_xact_lock(72481309)"); err != nil {
 		return nil, nil, "", ErrUnavailable
 	}
-	for _, role := range []string{runtimeRole, reviewerRole, supportRole} {
-		var exists bool
-		if tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM pg_roles WHERE rolname=$1)", role).Scan(&exists) != nil {
-			return nil, nil, "", ErrUnavailable
-		}
-		if !exists {
-			if _, err = tx.ExecContext(ctx, "CREATE ROLE "+role+" LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT PASSWORD NULL"); err != nil {
+	var installed bool
+	if tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM ai_fixture_installation WHERE version=1)`).Scan(&installed) != nil {
+		return nil, nil, "", ErrUnavailable
+	}
+	// The schema-local marker and all privileges commit atomically. Reopening
+	// a fixture authenticates existing restricted roles without reacquiring DDL
+	// locks against admissions already using those tables. Missing/stale fixture
+	// installation fails closed; this is not a production migration mechanism.
+	if !installed {
+		for _, role := range []string{runtimeRole, reviewerRole, supportRole} {
+			var exists bool
+			if tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM pg_roles WHERE rolname=$1)", role).Scan(&exists) != nil {
 				return nil, nil, "", ErrUnavailable
 			}
+			if !exists {
+				if _, err = tx.ExecContext(ctx, "CREATE ROLE "+role+" LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT PASSWORD NULL"); err != nil {
+					return nil, nil, "", ErrUnavailable
+				}
+			}
 		}
-	}
-	// All interpolated identifiers above/below are validated/generated tokens.
-	// No request, account ID, source text or provider material enters DDL.
-	ddl := fmt.Sprintf(`
+		// All interpolated identifiers above/below are validated/generated tokens.
+		// No request, account ID, source text or provider material enters DDL.
+		ddl := fmt.Sprintf(`
 GRANT USAGE ON SCHEMA %[1]s TO %[2]s, %[3]s;
 GRANT SELECT ON ai_fixture_namespace,ai_fixture_policy,ai_fixture_grant,ai_fixture_scope,ai_fixture_action,ai_fixture_stage,ai_fixture_child,ai_fixture_dispatch,ai_fixture_allocation,ai_fixture_evidence,ai_fixture_observation TO %[2]s, %[3]s;
 GRANT SELECT(id,status,generation) ON careeros_accounts TO %[2]s, %[3]s;
@@ -143,8 +152,12 @@ END $abandon$;
 REVOKE ALL ON FUNCTION ai_fixture_abandon(text,text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION ai_fixture_abandon(text,text) TO %[2]s;
 `, schema, runtimeRole, reviewerRole)
-	if _, err = tx.ExecContext(ctx, ddl); err != nil {
-		return nil, nil, "", ErrUnavailable
+		if _, err = tx.ExecContext(ctx, ddl); err != nil {
+			return nil, nil, "", ErrUnavailable
+		}
+		if _, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_installation(version) VALUES(1)`); err != nil {
+			return nil, nil, "", ErrUnavailable
+		}
 	}
 	if tx.Commit() != nil {
 		return nil, nil, "", ErrUnavailable

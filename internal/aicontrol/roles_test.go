@@ -12,11 +12,50 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"professional-information-repo/internal/aidiagnostics"
 	"professional-information-repo/internal/aidispatch"
 )
+
+func TestA04_ReopeningFixtureDoesNotRunDDLOverActiveAdmission(t *testing.T) {
+	f := setup(t, nil)
+	s := f.open(t, "active_fixture")
+	tx, err := f.h.begin(context.Background(), f.p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tx.Rollback()
+	// Existing admissions hold account/session table locks. A reopened process
+	// must not reinstall triggers while holding ledger table locks in the reverse
+	// order. This deterministic boundary reproduced the intermittent process race.
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	reopened, err := NewSynthetic(ctx, f.dsn, f.cfg)
+	if err != nil {
+		t.Fatal("fixture reopen attempted conflicting DDL", err)
+	}
+	reopened.Close()
+	if _, err := f.h.checkGrant(ctx, tx, f.p, s.grantVersion); err != nil {
+		t.Fatal("reopen blocked an existing admission", err)
+	}
+	if err := tx.Rollback(); err != nil {
+		t.Fatal(err)
+	}
+	var installations int
+	if err := f.db.QueryRow(`SELECT count(*) FROM ai_fixture_installation`).Scan(&installations); err != nil || installations != 1 {
+		t.Fatal("fixture privilege installation was not exactly once", installations, err)
+	}
+	if response, err := send(s); err != nil {
+		t.Fatal(err)
+	} else {
+		closeResp(response)
+	}
+	if f.calls.Load() != 1 || f.scope(t).Counted != 60 {
+		t.Fatal("reopen changed ordinary admission")
+	}
+}
 
 func TestA34_RestrictedSQLRolesAndSafeRelease(t *testing.T) {
 	f := setup(t, func(c *SyntheticConfig) { c.Limit, c.Capacity = 1000, 10 })

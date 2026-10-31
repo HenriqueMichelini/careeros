@@ -1,4 +1,7 @@
 -- Synthetic-only schema. Never embedded by account-migrate or production startup.
+CREATE TABLE ai_fixture_installation (
+ version integer PRIMARY KEY CHECK(version=1)
+);
 CREATE TABLE ai_fixture_namespace (
  id text PRIMARY KEY, epoch bigint NOT NULL CHECK(epoch>0), retired boolean NOT NULL DEFAULT false
 );

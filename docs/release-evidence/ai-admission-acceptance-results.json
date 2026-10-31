@@ -163,6 +163,11 @@
           "package": "professional-information-repo/internal/aicontrol",
           "test": "TestA04_IndependentlyLimitedScopes/provider:openai/money",
           "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA04_ReopeningFixtureDoesNotRunDDLOverActiveAdmission",
+          "status": "pass"
         }
       ]
     },

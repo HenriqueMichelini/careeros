@@ -322,17 +322,22 @@ func (f *fixture) child(key, mode string) *exec.Cmd {
 }
 func runPair(t *testing.T, a, b *exec.Cmd) {
 	t.Helper()
+	var first, second bytes.Buffer
+	a.Stdout, a.Stderr = &first, &first
+	b.Stdout, b.Stderr = &second, &second
 	if e := a.Start(); e != nil {
 		t.Fatal(e)
 	}
 	if e := b.Start(); e != nil {
+		_ = a.Process.Kill()
+		_ = a.Wait()
 		t.Fatal(e)
 	}
-	if e := a.Wait(); e != nil {
-		t.Fatal(e)
-	}
-	if e := b.Wait(); e != nil {
-		t.Fatal(e)
+	// Always reap both children before fixture cleanup; a failed first child
+	// must not drop the schema beneath the other process or hide its diagnostics.
+	firstErr, secondErr := a.Wait(), b.Wait()
+	if firstErr != nil || secondErr != nil {
+		t.Fatalf("first child: %v\n%s\nsecond child: %v\n%s", firstErr, first.String(), secondErr, second.String())
 	}
 }
 
