@@ -190,3 +190,46 @@ func TestA03_DelayedHandoffCannotUseChangedExecutionPolicy(t *testing.T) {
 		t.Fatal("denial lost intent")
 	}
 }
+
+func TestA26_ChildIdentityCannotBeBorrowedAtReservationOrIntent(t *testing.T) {
+	f := setup(t, func(c *SyntheticConfig) { c.Limit = 1000; c.Capacity = 10 })
+	root := []byte(`{"input":"synthetic","profile":{}}`)
+	s, err := f.h.Open(context.Background(), f.p, "child_scope", "profile_ingestion", root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const parent = "ingest/v2/clarify/claim/c1"
+	if _, err := f.db.Exec(`INSERT INTO ai_fixture_child(namespace,action,id,parent_coordinate,parent_revision,attempt,binding) VALUES($1,$2,'issued_child',$3,'',1,$4)`, f.cfg.Namespace, s.ID(), parent, s.root); err != nil {
+		t.Fatal(err)
+	}
+	child := s.childSession("issued_child", parent)
+	body := []byte(`{"model":"jev-1.13.0","state":{"field":"professional_information","submission":"synthetic"},"questions":{}}`)
+	leg := Leg{Provider: "typesafe", Coordinate: parent + "/revision/issued_child/original", Stage: "field_validation", Number: 1, Body: body}
+	if _, err := s.Reserve(context.Background(), leg); !errors.Is(err, ErrDenied) {
+		t.Fatal("root borrowed a child revision", err)
+	}
+	wrong := leg
+	wrong.Coordinate = "ingest/v2/clarify/claim/c2/revision/issued_child/original"
+	if _, err := child.Reserve(context.Background(), wrong); !errors.Is(err, ErrDenied) {
+		t.Fatal("child escaped its parent", err)
+	}
+	ctx := aidispatch.WithWorkflowRoot(context.Background(), "profile_ingestion", root)
+	if _, err := child.BindStage(ctx, "ingest/v2/plan", []byte(`{"input":"synthetic","profile":{},"stage":{"version":2,"kind":"plan"}}`)); !errors.Is(err, ErrDenied) {
+		t.Fatal("clarification child acquired an unrelated provider-free stage", err)
+	}
+	d, err := child.Reserve(context.Background(), leg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	request, _ := http.NewRequest(http.MethodPost, "https://api.typesafe.ai/v1/systemone", bytes.NewReader(body))
+	for _, unauthorized := range []*Session{s, s.childSession("issued_child", "ingest/v2/clarify/claim/c2")} {
+		if response, err := unauthorized.invoke(ctx, d, request, body); !errors.Is(err, ErrDenied) {
+			closeResp(response)
+			t.Fatal("wrong child authority claimed durable intent", err)
+		}
+	}
+	status := f.status(t, s)
+	if f.calls.Load() != 0 || len(status.Dispatches) != 1 || status.Dispatches[0].State != "reserved" || status.Dispatches[0].IntentAt != nil || f.scope(t).Counted != 60 {
+		t.Fatal("denied child changed dispatch state or obligation", status)
+	}
+}

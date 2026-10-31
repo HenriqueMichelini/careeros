@@ -50,7 +50,7 @@ func (s *Session) stageCurrent(ctx context.Context, tx *sql.Tx) error {
 // reconstruct the same signed handoff without storing career content.
 func (s *Session) BindStage(ctx context.Context, coordinate string, input []byte) (aidispatch.StageReceipt, error) {
 	var out aidispatch.StageReceipt
-	if s.workflow != "profile_ingestion" || (coordinate != "ingest/v2/plan" && coordinate != "ingest/v2/assemble") {
+	if s.workflow != "profile_ingestion" || s.childID != "" || (coordinate != "ingest/v2/plan" && coordinate != "ingest/v2/assemble") {
 		return out, ErrDenied
 	}
 	workflow, root := aidispatch.WorkflowRoot(ctx)

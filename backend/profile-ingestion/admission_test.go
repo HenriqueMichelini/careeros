@@ -220,11 +220,12 @@ func TestA26_SubmissionStagesReplayBindBeforeEveryActualAdapter(t *testing.T) {
 		calls := &submissionCalls{}
 		in := request{Input: "Account owner unclear. Uses Java.", Profile: profile()}
 		local := fixtureClaim("c1", "Account owner unclear.", "skills")
+		other := fixtureClaim("c2", "Uses Java.", "skills")
 		selected := local
 		selected.ID = reconcileGID(0, "c1")
 		revised := claim{ID: "provider-id", Source: "I used Java at Acme.", Text: "I used Java at Acme", Targets: []string{"skills"}, Question: ""}
 		a := clarifyApp(calls, "none", string(mustJSON(extraction{Claims: []claim{revised}})), proposalJSON([]operation{reconcileOp(selected.ID, "skills", "", "skills", "add", "Java", "addition")}, []claimOutcome{reconcileOutcome(selected.ID, "change", "new_skill", nil)}))
-		receipt := sealContext(t, a, in, [][]claim{{local}})
+		receipt := sealContext(t, a, in, [][]claim{{local, other}})
 		controlled := admittedIngestion(t, a, nil)
 		clarify := clarifyRequest(in, receipt, selected, "I used Java at Acme.")
 		if w := controlled.send(t, clarify); w.Code != 200 || calls.jev != 2 || calls.extract != 2 || controlled.dispatchCount(t) != 4 {
@@ -248,6 +249,11 @@ func TestA26_SubmissionStagesReplayBindBeforeEveryActualAdapter(t *testing.T) {
 			t.Fatal("replayed child creation minted another revision", err)
 		}
 		controlled.child = child
+		other.ID = reconcileGID(0, "c2")
+		wrongParent := clarifyRequest(in, receipt, other, "I used Java at Acme.")
+		if w := controlled.send(t, wrongParent); w.Code < 400 || calls.jev+calls.extract != 4 || controlled.dispatchCount(t) != 4 {
+			t.Fatalf("clarification child escaped its registered parent: status=%d calls=%+v body=%s", w.Code, calls, w.Body.String())
+		}
 		// The answer is accepted only under the explicitly created server child.
 		// Its revision is Go authority, never a caller-selected request field.
 		if w := controlled.send(t, clarify); w.Code != 200 || calls.jev+calls.extract != 8 || controlled.dispatchCount(t) != 8 {

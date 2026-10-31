@@ -28,15 +28,15 @@ import (
 const Origin = "http://127.0.0.1:8787"
 
 type Fixture struct {
-	DSN            string
-	DB             *sql.DB
-	Store          *accountstore.Store
-	Service        *auth.Service
-	Login          auth.LoginResult
-	Principal      auth.Principal
-	Document       json.RawMessage
-	Repository     map[string]any
-	Qualifications map[string]any
+	DSN               string
+	DB                *sql.DB
+	Store             *accountstore.Store
+	Service           *auth.Service
+	Login             auth.LoginResult
+	Principal         auth.Principal
+	Document          json.RawMessage
+	ProfileProjection map[string]any
+	Qualifications    map[string]any
 }
 
 type fakeOIDC struct{}
@@ -116,7 +116,7 @@ func NewFixture(t *testing.T) *Fixture {
 	if _, err = f.Store.SaveProfile(context.Background(), f.Principal, "synthetic-initial", 0, f.Document); err != nil {
 		t.Fatal(err)
 	}
-	f.Repository = map[string]any{"careerGoals": "", "skills": "Java", "competencies": "", "tools": "", "employmentStatus": "", "currentSalary": "", "desiredSalary": "", "additionalInfo": "", "experience": []any{}, "projects": []any{}}
+	f.ProfileProjection = map[string]any{"careerGoals": "", "skills": "Java", "competencies": "", "tools": "", "employmentStatus": "", "currentSalary": "", "desiredSalary": "", "additionalInfo": "", "experience": []any{}, "projects": []any{}}
 	f.Qualifications = map[string]any{"education": []any{}, "certifications": []any{}, "languages": []any{}}
 	return f
 }
@@ -176,11 +176,11 @@ func (f *Fixture) Body(t *testing.T, path string) []byte {
 	case "/api/profile/review":
 		body = map[string]any{"document": doc, "section": "skills", "locale": "en"}
 	case "/api/profile/ingest":
-		body = map[string]any{"input": "I use Java.", "profile": f.Repository}
+		body = map[string]any{"input": "I use Java.", "profile": f.ProfileProjection}
 	case "/api/cv/generate":
 		body = map[string]any{"locale": "en", "facts": []any{map[string]any{"id": "f0", "section": "skills", "entryId": "", "field": "skills", "text": "Java"}}}
 	default:
-		input := map[string]any{"repository": f.Repository, "qualifications": f.Qualifications, "profileEvidence": qualificationmatching.ApprovedProjection(doc), "jobPosting": "Java required.", "confirmedQualifications": []any{}}
+		input := map[string]any{"repository": f.ProfileProjection, "qualifications": f.Qualifications, "profileEvidence": qualificationmatching.ApprovedProjection(doc), "jobPosting": "Java required.", "confirmedQualifications": []any{}}
 		if path == "/api/qualification-gaps" {
 			input["understandJob"] = true
 			delete(input, "confirmedQualifications")

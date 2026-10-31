@@ -683,6 +683,11 @@
           "package": "professional-information-repo/backend/profile-ingestion",
           "test": "TestA26_SubmissionStagesReplayBindBeforeEveryActualAdapter/provider-free_plan_and_assemble,_extract_duplicate_and_changed_handoff",
           "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA26_ChildIdentityCannotBeBorrowedAtReservationOrIntent",
+          "status": "pass"
         }
       ]
     },

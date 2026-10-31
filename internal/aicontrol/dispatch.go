@@ -309,6 +309,9 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (Dispatch, error) {
 	if compacted || currentAttempt != s.attempt {
 		return zero, ErrDenied
 	}
+	if err = s.validateChild(ctx, tx, leg); err != nil {
+		return zero, err
+	}
 	if err = s.checkExecution(ctx, tx); err != nil {
 		return zero, err
 	}
@@ -409,16 +412,7 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (Dispatch, error) {
 	if err = h.fault("after_scope_locks"); err != nil {
 		return zero, err
 	}
-	if err = accountstore.AuthorizeTransaction(ctx, tx, s.p); err != nil {
-		return zero, err
-	}
-	if err = h.ready(ctx, tx); err != nil {
-		return zero, err
-	}
-	if _, err = h.checkGrant(ctx, tx, s.p, s.grantVersion); err != nil {
-		return zero, err
-	}
-	if err = s.gate.allowed(); err != nil {
+	if err = s.checkCurrent(ctx, tx); err != nil {
 		return zero, err
 	}
 	var valid bool
@@ -492,6 +486,9 @@ func (s *Session) invoke(ctx context.Context, d Dispatch, req *http.Request, raw
 	if compacted || state != "recoverable" || currentAttempt != s.attempt || !hmac.Equal(root, s.root) {
 		return nil, ErrDenied
 	}
+	if err = s.validateChild(ctx, tx, Leg{Coordinate: d.Coordinate}); err != nil {
+		return nil, err
+	}
 	if err = s.checkExecution(ctx, tx); err != nil {
 		return nil, err
 	}
@@ -525,26 +522,8 @@ func (s *Session) invoke(ctx context.Context, d Dispatch, req *http.Request, raw
 	if err = h.fault("before_claim"); err != nil {
 		return nil, err
 	}
-	if err = accountstore.AuthorizeTransaction(ctx, tx, s.p); err != nil {
+	if err = s.checkCurrent(ctx, tx); err != nil {
 		return nil, err
-	}
-	if err = h.ready(ctx, tx); err != nil {
-		return nil, err
-	}
-	if _, err = h.checkGrant(ctx, tx, s.p, s.grantVersion); err != nil {
-		return nil, err
-	}
-	if err = s.gate.allowed(); err != nil {
-		return nil, err
-	}
-	if s.profile != nil {
-		current, e := h.currentProfileBinding(ctx, tx, s.p.AccountID)
-		if e != nil {
-			return nil, e
-		}
-		if !hmac.Equal(current, s.profile) {
-			return nil, ErrConflict
-		}
 	}
 	result, err := tx.ExecContext(ctx, `UPDATE ai_fixture_dispatch SET state='intent',category='unknown_maximum',remote_state='possibly_active',intent_at=clock_timestamp() WHERE namespace=$1 AND id=$2 AND state='reserved' AND EXISTS(SELECT 1 FROM ai_fixture_policy WHERE namespace=$1 AND expires_at>clock_timestamp()) AND EXISTS(SELECT 1 FROM careeros_sessions WHERE id=$3 AND expires_at>clock_timestamp()) AND EXISTS(SELECT 1 FROM ai_fixture_grant WHERE namespace=$1 AND owner=$4 AND version=$5 AND NOT revoked AND expires_at>clock_timestamp())`, h.cfg.Namespace, d.ID, s.p.SessionID, s.p.AccountID, s.grantVersion)
 	if err != nil {
