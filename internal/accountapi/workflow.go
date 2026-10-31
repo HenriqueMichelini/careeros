@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"professional-information-repo/internal/accountstore"
+	"professional-information-repo/internal/aidispatch"
 	"professional-information-repo/internal/auth"
 	"professional-information-repo/internal/profiledocument"
 	"professional-information-repo/internal/qualificationmatching"
@@ -100,12 +101,35 @@ func ProtectWorkflow(service *auth.Service, store *accountstore.Store, path stri
 				return
 			}
 		}
-		for key, values := range result.Header() {
-			w.Header()[key] = values
+		started := false
+		err := aidispatch.WriteResult(r.Context(), func(ctx context.Context) error {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			for key, values := range result.Header() {
+				w.Header()[key] = values
+			}
+			started = true
+			w.WriteHeader(result.Code)
+			_, err := io.Copy(resultWriter{ctx, w}, result.Body)
+			return err
+		})
+		if err != nil && !started {
+			workflowError(w, http.StatusServiceUnavailable, "managed_result_unavailable")
 		}
-		w.WriteHeader(result.Code)
-		_, _ = io.Copy(w, result.Body)
 	}))
+}
+
+type resultWriter struct {
+	ctx context.Context
+	w   io.Writer
+}
+
+func (w resultWriter) Write(p []byte) (int, error) {
+	if err := w.ctx.Err(); err != nil {
+		return 0, err
+	}
+	return w.w.Write(p)
 }
 
 func sameJSON(raw []byte, expected any) bool {

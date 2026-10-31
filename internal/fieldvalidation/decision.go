@@ -11,6 +11,7 @@ import (
 	"math"
 	"net/http"
 	"professional-information-repo/internal/aidiagnostics"
+	"professional-information-repo/internal/aidispatch"
 	"strings"
 	"time"
 )
@@ -131,10 +132,14 @@ func Classify(parent context.Context, client *http.Client, key string, field Fie
 	}
 	req.Header.Set("Authorization", "Bearer "+key)
 	req.Header.Set("Content-Type", "application/json")
-	boundedClient := *client
-	boundedClient.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	var boundedClient *http.Client
+	if client != nil {
+		copy := *client
+		copy.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+		boundedClient = &copy
+	}
 	aidiagnostics.BeginProvider(ctx, "typesafe", nil)
-	response, err := boundedClient.Do(req)
+	response, err := aidispatch.Send(ctx, boundedClient, "typesafe", req)
 	if err != nil {
 		aidiagnostics.Observe(ctx, aidiagnostics.Observation{Status: 0, Completion: "transport_failure"})
 	} else {

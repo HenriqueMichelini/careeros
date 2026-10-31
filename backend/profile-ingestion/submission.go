@@ -108,7 +108,7 @@ func (a app) submission(ctx context.Context, w http.ResponseWriter, r *http.Requ
 // the existing decision envelope and reports false. It is the single
 // whole-original field gate for every protected submission stage.
 func (a app) submissionDecision(ctx context.Context, w http.ResponseWriter, r *http.Request, in request, status *int, outcome *string) bool {
-	return a.submissionClassify(ctx, w, r, in.Input, status, outcome)
+	return a.submissionClassify(gateCoordinate(ctx, "original"), w, r, in.Input, status, outcome)
 }
 
 // submissionClassify applies the same retained professional-information gate to
@@ -197,7 +197,15 @@ func (a app) submissionPlan(ctx context.Context, w http.ResponseWriter, in reque
 		fail(504, "timeout")
 		return
 	}
+	stageReceipt, ok := bindProviderFreeStage(ctx, fail)
+	if !ok {
+		return
+	}
 	expires := time.Now().Add(SubmissionReceiptTTL).UnixMilli()
+	if stageReceipt.ID != "" {
+		plan.RunID = stageReceipt.ID
+		expires = stageReceipt.CreatedAt.Add(SubmissionReceiptTTL).UnixMilli()
+	}
 	payload := mustJSON(submissionPlanReceipt{submissionReceiptVersion, binding, expires, plan})
 	receipt, code := a.sealSubmission(submissionPlanDomain, payload)
 	if code != "" {

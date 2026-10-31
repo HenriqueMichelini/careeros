@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"professional-information-repo/internal/aidiagnostics"
+	"professional-information-repo/internal/aidispatch"
 	"professional-information-repo/internal/fieldvalidation"
 	"professional-information-repo/internal/jobcontext"
 	"professional-information-repo/internal/openaihttp"
@@ -133,6 +134,7 @@ func (a app) check(w http.ResponseWriter, r *http.Request) {
 		writeError(w, status, outcome)
 		return
 	}
+	root, _ := json.Marshal(raw)
 	understand := false
 	if value, ok := raw["understandJob"]; ok {
 		if string(value) != "true" {
@@ -185,6 +187,7 @@ func (a app) check(w http.ResponseWriter, r *http.Request) {
 		writeError(w, status, outcome)
 		return
 	}
+	r = r.WithContext(aidispatch.WithWorkflowRoot(r.Context(), "qualification_gaps", root))
 	decision := fieldvalidation.Classify(r.Context(), a.client, r.Header.Get("X-TypeSafe-Api-Key"), fieldvalidation.JobPosting, input.JobPosting)
 	if blockedStatus := fieldvalidation.WriteRejection(w, decision); blockedStatus != 0 {
 		status, outcome = blockedStatus, decision.Outcome.Kind
