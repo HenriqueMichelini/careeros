@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"professional-information-repo/internal/aidiagnostics"
+	"professional-information-repo/internal/aidispatch"
 	"professional-information-repo/internal/fieldvalidation"
 	"professional-information-repo/internal/jobcontext"
 	"professional-information-repo/internal/openaihttp"
@@ -106,6 +107,7 @@ func (a app) generate(w http.ResponseWriter, r *http.Request) {
 		writeError(w, status, outcome)
 		return
 	}
+	root, _ := json.Marshal(raw)
 	var evidence *profiledocument.Document
 	if value, ok := raw["profileEvidence"]; ok {
 		doc, err := qualificationmatching.Projection(value)
@@ -171,7 +173,7 @@ func (a app) generate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	workflowCtx, workflowCancel := context.WithTimeout(r.Context(), timeout)
+	workflowCtx, workflowCancel := context.WithTimeout(aidispatch.WithWorkflowRoot(r.Context(), "application_draft", root), timeout)
 	defer workflowCancel()
 	decision := fieldvalidation.Classify(workflowCtx, a.client, r.Header.Get("X-TypeSafe-Api-Key"), fieldvalidation.JobPosting, in.JobPosting)
 	if blockedStatus := fieldvalidation.WriteRejection(w, decision); blockedStatus != 0 {

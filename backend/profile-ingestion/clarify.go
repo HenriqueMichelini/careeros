@@ -136,7 +136,7 @@ func submissionClarificationClaims(receipt submissionContextReceiptPayload, revi
 // submissionClarify verifies the signed context and exact request binding, the
 // selected claim identity, both whole-original and answer Jev gates, revises only
 // that claim, then runs the established focused reconciliation. It makes no
-// automatic retry or model fallback, stores nothing and never saves.
+// automatic retry or model fallback, persists no career content and never saves.
 func (a app) submissionClarify(ctx context.Context, w http.ResponseWriter, r *http.Request, in request, raw []byte, key string, stage SubmissionStage, status *int, outcome *string, fail func(int, string)) {
 	if code := SubmissionFieldsError(raw, submissionClarifyFields...); code != "" {
 		fail(SubmissionErrorStatus(code), code)
@@ -196,7 +196,7 @@ func (a app) submissionClarify(ctx context.Context, w http.ResponseWriter, r *ht
 		return
 	}
 	clarification := clarificationRequest{Claim: selected, Answer: *in.Answer}
-	if !a.submissionClassify(ctx, w, r, clarificationValidationText(clarification), status, outcome) {
+	if !a.submissionClassify(gateCoordinate(ctx, "answer"), w, r, clarificationValidationText(clarification), status, outcome) {
 		return
 	}
 	ledger := &reconciliationContext{document: document, skipped: []skippedClaim{}}

@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"professional-information-repo/internal/aidiagnostics"
+	"professional-information-repo/internal/aidispatch"
 	"professional-information-repo/internal/openaihttp"
 	"regexp"
 	"sort"
@@ -416,7 +417,7 @@ func (a app) generate(w http.ResponseWriter, r *http.Request) {
 	}
 	// One shared workflow deadline covers generation, assessment, reads and
 	// validation; assessment never resets or extends it.
-	ctx, cancel := context.WithTimeout(r.Context(), deadline)
+	ctx, cancel := context.WithTimeout(aidispatch.WithWorkflowRoot(r.Context(), "cv_generation", raw), deadline)
 	defer cancel()
 	out, code := a.generation(ctx, key, in)
 	if code != "" {

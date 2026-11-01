@@ -162,6 +162,14 @@ func StageName(ctx context.Context) string {
 	}
 	return ""
 }
+
+// StageVersion returns the server-owned prompt/schema policy label.
+func StageVersion(ctx context.Context) string {
+	if s, ok := ctx.Value(stageKey).(*Stage); ok {
+		return s.Version
+	}
+	return ""
+}
 func BeginProvider(ctx context.Context, name string, ceiling *int64) {
 	if s, ok := ctx.Value(stageKey).(*Stage); ok {
 		s.Provider = &Provider{Name: name, OutputCeiling: ceiling, started: time.Now()}
