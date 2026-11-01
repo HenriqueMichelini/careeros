@@ -268,6 +268,26 @@
           "package": "professional-information-repo/internal/aicontrol",
           "test": "TestA07_AbandonClaimRace",
           "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA07_ReservationCrashAndProcessAbandonClaim",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA07_ReservationCrashAndProcessAbandonClaim/abandon_first",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA07_ReservationCrashAndProcessAbandonClaim/claim_first",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA07_ReservationCrashAndProcessAbandonClaim/race",
+          "status": "pass"
         }
       ]
     },
@@ -322,6 +342,11 @@
         {
           "package": "professional-information-repo/backend/cv-generation",
           "test": "TestA09_ActualHandlerFailureOutcomesKeepReachedObligations/truncated",
+          "status": "pass"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA09_ProcessCrashAfterInvocationBeforeObservation",
           "status": "pass"
         },
         {
@@ -1149,6 +1174,11 @@
     "A36": {
       "status": "pass",
       "tests": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestA36_ActualLostCreateHTTPResponse",
+          "status": "pass"
+        },
         {
           "package": "professional-information-repo/internal/aicontrol",
           "test": "TestA36_CreationHandshakeLostAcknowledgment",

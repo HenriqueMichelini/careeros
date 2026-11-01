@@ -287,6 +287,7 @@ func TestSyntheticChild(t *testing.T) {
 		t.Fatal(e)
 	}
 	defer h.Close()
+	mode := os.Getenv("AI_SYNTHETIC_MODE")
 	h.SetResponder(func(context.Context, string, *http.Request) (*http.Response, error) {
 		// This counter belongs to the fake provider, outside runtime/reviewer
 		// ledger privileges. It is independent persisted evidence of invocation.
@@ -296,9 +297,13 @@ func TestSyntheticChild(t *testing.T) {
 		}
 		defer observer.Close()
 		_, e = observer.Exec(`INSERT INTO ai_test_invocations DEFAULT VALUES`)
+		if e == nil && mode == "crash_observation" {
+			// The fake provider has durably recorded invocation. Terminate before
+			// returning to the dispatcher's completion/observation writes.
+			os.Exit(invocationCrashExit)
+		}
 		return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(`{}`))}, e
 	})
-	mode := os.Getenv("AI_SYNTHETIC_MODE")
 	if mode == "crash_intent" {
 		h.SetFault("after_intent_commit", func() error { os.Exit(13); return nil })
 	}
@@ -307,6 +312,9 @@ func TestSyntheticChild(t *testing.T) {
 		t.Fatal(e)
 	}
 	if mode == "create" {
+		return
+	}
+	if recoveryChild(t, s, mode) {
 		return
 	}
 	r, e := send(s)
@@ -796,18 +804,33 @@ func TestA18_PeriodAndStageDoNotRenewAnchor(t *testing.T) {
 	if e = f.h.SyntheticReviewer().AdvanceSyntheticPeriod(context.Background(), f.p, 1000); e != nil {
 		t.Fatal(e)
 	}
-	v := f.status(t, s)
+	// Reconstruct the authority in a fresh OS process after the later stage and
+	// period change. Lookup must preserve the original durable anchor and carry.
+	var v ActionStatus
+	if e = json.NewDecoder(bytes.NewReader(runChild(t, f.child("anchor", "status")))).Decode(&v); e != nil {
+		t.Fatal(e)
+	}
 	if len(v.Dispatches) != 2 || f.scope(t).Counted != 120 {
 		t.Fatal(v)
+	}
+	if v.ID != s.ID() {
+		t.Fatal("restart created another Action")
 	}
 	for _, item := range v.Dispatches {
 		if item.ID == d.ID && !item.DurableBound.Equal(*d.DurableBound) {
 			t.Fatal("anchor slid")
 		}
 	}
-	f.clock.set(d.DurableBound.Add(168*time.Hour), true)
-	if e = f.h.SyntheticReviewer().ReviewConservativeClosure(context.Background(), f.p, d.ID); e != nil {
-		t.Fatal(e)
+	review := f.child("anchor", "review")
+	review.Env = append(review.Env, "AI_SYNTHETIC_REVIEW_AT="+d.DurableBound.Add(168*time.Hour).Format(time.RFC3339Nano), "AI_SYNTHETIC_DISPATCH="+d.ID)
+	runChild(t, review)
+	for _, item := range f.status(t, s).Dispatches {
+		if item.ID == d.ID && (item.Category != "reviewed_conservative_maximum" || !item.DurableBound.Equal(*d.DurableBound)) {
+			t.Fatal("restart changed eligibility or anchor", item)
+		}
+	}
+	if f.scope(t).Counted != 120 || f.scope(t).Occupied != 2 || f.invocationCount(t) != 0 || f.calls.Load() != 2 {
+		t.Fatal("restart or period change released/duplicated an obligation")
 	}
 }
 
@@ -982,25 +1005,25 @@ func TestA35_ExpiryDuringRealSQLScopeContention(t *testing.T) {
 			t.Run(authority+"/"+phase, func(t *testing.T) {
 				f := setup(t, nil)
 				if authority == "policy" {
-					if _, e := f.db.Exec(`UPDATE ai_fixture_policy SET expires_at=clock_timestamp()+interval '400 milliseconds'`); e != nil {
+					if _, e := f.db.Exec(`UPDATE ai_fixture_policy SET expires_at=clock_timestamp()+interval '3 seconds'`); e != nil {
 						t.Fatal(e)
 					}
 				}
-				s := f.open(t, "expires")
-				var d Dispatch
-				if phase == "claim" {
-					var e error
-					d, e = s.Reserve(context.Background(), Leg{Provider: "openai", Coordinate: "request", Stage: "generation", Number: 1, Body: fixtureBody})
-					if e != nil {
-						t.Fatal(e)
-					}
+				f.open(t, "expires")
+				// Open (and, for claim, reserve) in another OS process before
+				// acquiring the final shared lock. The pipe barrier avoids mistaking
+				// a worker that started after expiry for a stale-precheck test.
+				child := startControlledChild(t, f.child("expires", "expiry_"+phase))
+				var runtimeRole string
+				if e := f.h.db.QueryRow(`SELECT current_user`).Scan(&runtimeRole); e != nil {
+					t.Fatal(e)
 				}
 				var e error
 				switch authority {
 				case "session":
-					_, e = f.db.Exec(`UPDATE careeros_sessions SET expires_at=clock_timestamp()+interval '400 milliseconds' WHERE id=$1`, f.p.SessionID)
+					_, e = f.db.Exec(`UPDATE careeros_sessions SET expires_at=clock_timestamp()+interval '500 milliseconds' WHERE id=$1`, f.p.SessionID)
 				case "grant":
-					_, e = f.db.Exec(`UPDATE ai_fixture_grant SET expires_at=clock_timestamp()+interval '400 milliseconds'`)
+					_, e = f.db.Exec(`UPDATE ai_fixture_grant SET expires_at=clock_timestamp()+interval '500 milliseconds'`)
 				case "policy":
 					// Frozen before Open; this case exercises elapsed expiry,
 					// not policy mutation/version rejection.
@@ -1016,22 +1039,11 @@ func TestA35_ExpiryDuringRealSQLScopeContention(t *testing.T) {
 				if _, e = lock.Exec(`SELECT scope FROM ai_fixture_scope WHERE scope='global' FOR UPDATE`); e != nil {
 					t.Fatal(e)
 				}
-				done := make(chan error, 1)
-				go func() {
-					var r *http.Response
-					var err error
-					if phase == "claim" {
-						r, err = s.invoke(context.Background(), d, req(), fixtureBody)
-					} else {
-						r, err = send(s)
-					}
-					closeResp(r)
-					done <- err
-				}()
+				child.release(t)
 				deadline := time.Now().Add(3 * time.Second)
 				for {
 					var blocked int
-					if e = f.db.QueryRow(`SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE '%ai_fixture_scope%'`).Scan(&blocked); e != nil {
+					if e = f.db.QueryRow(`SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND usename=$1 AND wait_event_type='Lock' AND query LIKE '%ai_fixture_scope%'`, runtimeRole).Scan(&blocked); e != nil {
 						t.Fatal(e)
 					}
 					if blocked > 0 {
@@ -1053,13 +1065,20 @@ func TestA35_ExpiryDuringRealSQLScopeContention(t *testing.T) {
 				if e = f.db.QueryRow(expiryQuery, identity).Scan(&validBeforeWait); e != nil || !validBeforeWait {
 					t.Fatal("worker was not blocked while authority remained valid", e)
 				}
-				time.Sleep(450 * time.Millisecond)
+				// Wait on the database clock used by the actual predicate rather
+				// than a presumed client sleep or a backdated Session value.
+				waitForExpiry := map[string]string{
+					"session": `SELECT pg_sleep(GREATEST(0,EXTRACT(EPOCH FROM expires_at-clock_timestamp()))::double precision+0.02) FROM careeros_sessions WHERE id=$1`,
+					"grant":   `SELECT pg_sleep(GREATEST(0,EXTRACT(EPOCH FROM expires_at-clock_timestamp()))::double precision+0.02) FROM ai_fixture_grant WHERE owner=$1`,
+					"policy":  `SELECT pg_sleep(GREATEST(0,EXTRACT(EPOCH FROM expires_at-clock_timestamp()))::double precision+0.02) FROM ai_fixture_policy WHERE namespace=$1`,
+				}[authority]
+				if _, e = f.db.Exec(waitForExpiry, identity); e != nil {
+					t.Fatal(e)
+				}
 				if e = lock.Commit(); e != nil {
 					t.Fatal(e)
 				}
-				if e = <-done; e == nil {
-					t.Fatal("pre-wait expiry authorized")
-				}
+				child.wait(t)
 				var intents, dispatches int
 				if e = f.db.QueryRow(`SELECT count(*),count(*) FILTER(WHERE state IN ('intent','observed')) FROM ai_fixture_dispatch`).Scan(&dispatches, &intents); e != nil {
 					t.Fatal(e)
@@ -1068,8 +1087,13 @@ func TestA35_ExpiryDuringRealSQLScopeContention(t *testing.T) {
 				if phase == "claim" {
 					want = 1
 				}
-				if dispatches != want || intents != 0 || f.calls.Load() != 0 {
-					t.Fatal("expired admission/intent committed", dispatches, intents, f.calls.Load())
+				if dispatches != want || intents != 0 || f.invocationCount(t) != 0 {
+					t.Fatal("expired admission/intent committed", dispatches, intents, f.invocationCount(t))
+				}
+				var counted int64
+				var occupied int
+				if e = f.db.QueryRow(`SELECT counted,occupied FROM ai_fixture_scope WHERE scope='global'`).Scan(&counted, &occupied); e != nil || counted != int64(want)*60 || occupied != want {
+					t.Fatal("expiry erased a prior hold or partially reserved", counted, occupied, e)
 				}
 			})
 		}
