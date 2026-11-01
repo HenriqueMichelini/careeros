@@ -18,7 +18,10 @@ import (
 //go:embed schema.sql
 var schema string
 
-type Store struct{ db *sql.DB }
+type Store struct {
+	db    *sql.DB
+	pilot bool
+}
 
 func Open(ctx context.Context, dsn string) (*Store, error) {
 	if dsn == "" {

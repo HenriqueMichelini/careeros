@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { AccountProfile, csrfHeaders } from "../lib/accountProfile"
 import { getInitialLocale } from "../lib/i18n"
+import PilotAccess from "./PilotAccess"
 import { StoreProvider } from "../lib/store"
 
 interface Session {
@@ -11,7 +12,11 @@ interface Session {
 
 export default function AccountGate({
   children,
-}: Readonly<{ children: ReactNode }>) {
+  pilot = false,
+}: Readonly<{
+ children: ReactNode
+ pilot?: boolean
+}>) {
   const [session, setSession] = useState<Session | null>(null)
   const [error, setError] = useState(false)
   const [client, setClient] = useState<AccountProfile | null>(null)
@@ -156,34 +161,36 @@ export default function AccountGate({
         retry={() => void probe()}
       />
       <div hidden={checking}>
-        <StoreProvider key={client.accountId} account={client}>
-          <div className="flex items-center justify-between border-b px-4 py-2 text-sm">
-            <span>
-              {pt
-                ? "Perfil da conta · salvar explicitamente"
-                : "Account Profile · explicit Save"}
-            </span>
-            <button
-              data-sign-out
-              onClick={() =>
-                client.hasRecovery() ? setLogoutIntent(true) : void logout()
-              }
-            >
-              {pt ? "Sair" : "Sign out"}
-            </button>
-          </div>
-          {logoutIntent && (
-            <PendingLogout
-              pt={pt}
-              error={error}
-              download={downloadPending}
-              keep={() => void logout()}
-              discard={() => void logout(true)}
-              cancel={() => setLogoutIntent(false)}
-            />
-          )}
-          {children}
-        </StoreProvider>
+        <div className="flex items-center justify-between border-b px-4 py-2 text-sm">
+          <span>
+            {pt
+              ? "Perfil da conta · salvar explicitamente"
+              : "Account Profile · explicit Save"}
+          </span>
+          <button
+            data-sign-out
+            onClick={() =>
+              client.hasRecovery() ? setLogoutIntent(true) : void logout()
+            }
+          >
+            {pt ? "Sair" : "Sign out"}
+          </button>
+        </div>
+        {logoutIntent && (
+          <PendingLogout
+            pt={pt}
+            error={error}
+            download={downloadPending}
+            keep={() => void logout()}
+            discard={() => void logout(true)}
+            cancel={() => setLogoutIntent(false)}
+          />
+        )}
+        <PilotFrame pilot={pilot} accountId={client.accountId} pt={pt}>
+          <StoreProvider key={client.accountId} account={client}>
+            {children}
+          </StoreProvider>
+        </PilotFrame>
       </div>
     </>
   )
@@ -346,5 +353,25 @@ function SignInContent({
         </p>
       )}
     </>
+  )
+}
+
+function PilotFrame({
+  pilot,
+  accountId,
+  pt,
+  children,
+}: Readonly<{
+  pilot: boolean
+  accountId: string
+  pt: boolean
+  children: ReactNode
+}>) {
+  return pilot ? (
+    <PilotAccess key={accountId} accountId={accountId} pt={pt}>
+      {children}
+    </PilotAccess>
+  ) : (
+    children
   )
 }
