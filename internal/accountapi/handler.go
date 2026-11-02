@@ -88,6 +88,8 @@ func respond(w http.ResponseWriter, result any, err error) {
 		code, status = "not_found", http.StatusNotFound
 	case errors.Is(err, auth.ErrAuthenticationRequired):
 		code, status = "authentication_required", http.StatusUnauthorized
+	case errors.Is(err, auth.ErrCapacity):
+		code, status = "pilot_capacity", http.StatusConflict
 	case errors.Is(err, auth.ErrForbidden):
 		code, status = "forbidden", http.StatusForbidden
 	}

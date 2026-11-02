@@ -36,9 +36,10 @@ function AppInner() {
 }
 
 export default function App() {
-  if (import.meta.env.VITE_CAREEROS_ACCOUNT_MODE === "1")
+  const pilot = import.meta.env.VITE_CAREEROS_PILOT_MODE === "1"
+  if (pilot || import.meta.env.VITE_CAREEROS_ACCOUNT_MODE === "1")
     return (
-      <AccountGate>
+      <AccountGate pilot={pilot}>
         <AppInner />
       </AccountGate>
     )

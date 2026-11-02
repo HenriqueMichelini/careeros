@@ -15,6 +15,7 @@ function apiProxy() {
     '/api/qualification-gaps',
     '/api/application-draft',
     '/api/auth',
+    '/api/pilot',
   ].map(route => [route, { target: process.env.CAREEROS_API_TARGET || 'http://127.0.0.1:8787', changeOrigin: false }]))
 }
 
@@ -39,6 +40,7 @@ react(),
       figmaMakeKitPlugin({ storiesGlob: '/src/**/*.stories.{ts,tsx,js,jsx}' }),
     ],
     resolve: {
+      dedupe: ['react', 'react-dom'],
       alias: {
         '@': path.resolve(__dirname, './src'),
       },

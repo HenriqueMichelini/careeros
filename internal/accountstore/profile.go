@@ -76,8 +76,18 @@ func (s *Store) ReadProfile(ctx context.Context, p auth.Principal, operation str
 		return ProfileResult{}, unavailable(err)
 	}
 	defer tx.Rollback()
+	if s.pilot {
+		if err = lockPilot(ctx, tx); err != nil {
+			return ProfileResult{}, err
+		}
+	}
 	if err = authorized(ctx, tx, p); err != nil {
 		return ProfileResult{}, err
+	}
+	if s.pilot {
+		if err = requirePilot(ctx, tx, p.AccountID, PilotRetrieve); err != nil {
+			return ProfileResult{}, err
+		}
 	}
 	result, err := currentProfile(ctx, tx, p.AccountID)
 	if err != nil {
@@ -221,8 +231,18 @@ func (s *Store) SaveProfile(ctx context.Context, p auth.Principal, operation str
 		return ProfileResult{}, unavailable(err)
 	}
 	defer tx.Rollback()
+	if s.pilot {
+		if err = lockPilot(ctx, tx); err != nil {
+			return ProfileResult{}, err
+		}
+	}
 	if err = authorized(ctx, tx, p); err != nil {
 		return ProfileResult{}, err
+	}
+	if s.pilot {
+		if err = requirePilot(ctx, tx, p.AccountID, PilotStandalone); err != nil {
+			return ProfileResult{}, err
+		}
 	}
 	if result, completed, err := replayProfile(ctx, tx, p.AccountID, operation, hash[:]); completed || err != nil {
 		return result, err

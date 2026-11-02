@@ -1,0 +1,35 @@
+# Finite invited-account access (local slice, #276)
+
+This slice implements the selected grant authority in PostgreSQL and an explicit local HTTP composition. It does not enable a pilot, issue real invitations, validate anyone's age, call providers, consume customer allowance, retain delivered Draft content, configure hosting or establish launch readiness.
+
+## Selected contract
+
+- [Grant terms](https://github.com/HenriqueMichelini/careeros/issues/256#issuecomment-6550695862): five invited adults, five eligible complete Draft deliveries per participant (25 total), 14 elapsed days from explicit activation, included standalone workflows without Draft deduction.
+- [Eligibility and invitations](https://github.com/HenriqueMichelini/careeros/issues/262#issuecomment-6550859599): verified provider/issuer/subject binding; single-use, nontransferable invitations; seven elapsed days to activate; individual operator eligibility clearance; redemption and explicit activation occur together. Reissue never extends an activated grant.
+- [Never-paid lifecycle](https://github.com/HenriqueMichelini/careeros/issues/258#issuecomment-6550859196): 30 elapsed days after access expiry for Profile view/export and prior complete Draft retrieval/export, with no new generation. Content removal, notices, actual age assurance and challenged eligibility remain separately owned work.
+
+## Source composition and authority
+
+`accountapi.NewPilot(service, store, workflows)` is the complete opt-in local router. Missing dependencies fail closed. It mounts authenticated account/session routes, current Profile/operation routes, `GET /api/pilot/status`, explicit `POST /api/pilot/activate`, all five current workflow paths and their Function aliases. Unknown aliases do not fall back to legacy handlers. Injected workflows in this slice are local fakes; missing workflows return unavailable. No production `FromEnv` path or hosted Function is switched to pilot mode.
+
+The Profile routes use `store.PilotProfiles()`. Their existing atomic ownership/revision/publication transactions now additionally check pilot authority when scoped this way. Active access permits Profile Save; the 30-day window permits reads and versioned Profile JSON export through the existing UI. It denies Save and generation. Pilot workflow guards check current session and grant before execution and before returning a transient fake result. This does not claim atomic managed dispatch or durable delivery; those protocols remain later work.
+
+Every pilot operation takes a short common advisory lock, locks relevant accounts in sorted order, validates the exact current opaque session, then reads `clock_timestamp()` after blocking locks. Grant state, command replay and five permanent participant slots share that order. The schema bounds slots to 1–5 and persists five Draft rights per activated grant. Revocation, suspension, expiry, reissue and replay never free a slot, create a replacement grant or extend access. Draft quantity is the immutable grant allowance, not a reported remaining balance; no customer-consumption or delivery settlement is added here.
+
+Invitations store the mapped provider identity; mutable email is absent. Eligibility storage contains only the 18+ result, check time and deciding operator account. It has no proof text, birthdate, identity document or checking-provider field. Clearance is a trusted supplied decision in the synthetic local slice, not an implemented age-assurance method. Operator commands require the explicit database role and a current opaque session. Grant suspension/revocation does not change account identity. Suspended/revoked pilot access fails closed; no resume/replacement-grant command exists.
+
+The frontend uses explicit `VITE_CAREEROS_PILOT_MODE=1` to render the account-bound EN/PT status and activation flow. Activation is a button action; status checks, focus, reauthentication and lost-response recovery never automatically resubmit it. Already-mounted work is retained when access/status errors hide it. The server remains authority; no browser flag grants rights. Existing retained Draft content/retrieval is not fabricated by this slice.
+
+## Synthetic-only operator command
+
+`go run ./cmd/pilot-local --synthetic-only --action ... --subject synthetic-example` is a normally buildable local tool. It requires `CAREEROS_PILOT_LOCAL_DATABASE_URL` pointing at a disposable loopback PostgreSQL database whose name ends in `_test`. It never contacts Google, AI providers or participants. `identity` creates only an explicitly synthetic fake-provider account. `bootstrap` assigns the local operator role to an already mapped synthetic identity and is a privileged database-owner operation, with no HTTP endpoint. It never auto-provisions a production role.
+
+`invite`, `clear`, `suspend` and `revoke` additionally require `CAREEROS_PILOT_LOCAL_SESSION_TOKEN` containing a live synthetic operator's opaque session and `--operation-id` with a stable command key. Supplying a subject does not establish operator authority. Tokens are not printed. Changed command replay is rejected; duplicate commands retain their original effect. Only synthetic disposable execution is authorized in this slice.
+
+## Verification and boundaries
+
+Focused tests exercise actual router/Function composition against real disposable PostgreSQL 18.4, concurrent six-person/twelve-request redemption, duplicate and changed commands, non-operator and two-account substitution, invitation expiry/reissue, revocation and session expiry while Save waits on a lock, grant expiry after lock wait, late fake output suppression, five permanent slots after revocation, and application-process restart. An explicit dedicated-container restart mode additionally verifies persisted authority/Profile/replay after PostgreSQL and application restart.
+
+Actual Chromium runs the React component in StrictMode in EN/PT with synthetic transport. It verifies explicit activation, lost-response status recovery, no automatic replay, read-only status and retained unsaved work across failure. A combined `AccountGate` + `PilotAccess` + `StoreProvider` check also exercises the real session-expiry timer, same-account reauthentication, unchanged grant expiry, pending Profile wording, account switching and explicit exact-request Save recovery. It counts every unsafe HTTP request: expiry, focus, reauthentication and switching accounts add no mutation. Both locales pass, and the existing non-pilot account browser scenario still passes. These browser checks are separate from PostgreSQL protocol checks.
+
+The complete frontend suite passes after granting the local subprocess permissions it requires. The full Go suite retains the same 13 Evaluation Lab top-level failures observed at the immutable base; their approved-source snapshot rejects stale manifest entries. No manifest was changed or reapproved. Full Go is not green. The pilot/account/auth race suites, TypeScript, scoped vet and pilot build pass. Build output is excluded from the source commit.

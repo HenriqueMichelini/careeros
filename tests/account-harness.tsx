@@ -1,6 +1,6 @@
 // Browser-only synthetic transport for the actual AccountGate + StoreProvider.
 // PostgreSQL behavior is independently exercised by Go integration tests.
-import { useState } from "react"
+import { StrictMode, useState } from "react"
 import { createRoot } from "react-dom/client"
 import AccountGate from "../src/components/AccountGate"
 import { useStore } from "../src/lib/store"
@@ -8,6 +8,13 @@ import type { ProfileDocument } from "../src/lib/profileDocument"
 import "../src/index.css"
 
 type Scenario = {
+  pilot: boolean
+  pilotExpiry: Record<string, string>
+  mutations: string[]
+  pilotStates: Record<string, string>
+  pilotPosts: string[]
+  pilotLoseAck: boolean
+  pilotReads: string[]
   account: string
   expires: string
   fail: boolean
@@ -22,6 +29,13 @@ type Scenario = {
   operations: Record<string, unknown>
 }
 const scenario: Scenario = {
+  pilot: false,
+  pilotExpiry: {},
+  mutations: [],
+  pilotStates: {},
+  pilotPosts: [],
+  pilotLoseAck: false,
+  pilotReads: [],
   account: "a",
   expires: new Date(Date.now() + 3_600_000).toISOString(),
   fail: false,
@@ -71,6 +85,10 @@ function saveProfileFixture(owner: string, body: BodyInit | null | undefined) {
 window.fetch = async (input, init = {}) => {
   const path = input instanceof Request ? input.url : input.toString()
   const owner = scenario.account
+  if (init.method && !["GET", "HEAD"].includes(init.method))
+    scenario.mutations.push(
+      JSON.stringify({ method: init.method, path, accountId: owner }),
+    )
   if (path === "/api/auth/session") {
     const authenticated =
       !!owner &&
@@ -86,9 +104,55 @@ window.fetch = async (input, init = {}) => {
     scenario.account = ""
     return new Response(null, { status: 204 })
   }
+  if (
+    scenario.pilot &&
+    (!owner ||
+      (scenario.autoExpire && Date.now() >= Date.parse(scenario.expires)))
+  )
+    return response({ error: "authentication_required" }, 401)
   const headers = new Headers(init.headers)
   if (headers.get("X-CareerOS-Account") !== owner)
     return response({ error: "account_changed" }, 409)
+  if (scenario.pilot && path.startsWith("/api/pilot/")) {
+    // Transport fixture only: actual authority/concurrency is tested in Go.
+    // Per-account state lets the real gates expose cross-account mistakes.
+    if (init.method === "POST") {
+      scenario.pilotPosts.push(
+        JSON.stringify({
+          accountId: owner,
+          command: JSON.parse(String(init.body)),
+        }),
+      )
+      scenario.pilotStates[owner] = "active"
+      scenario.pilotExpiry[owner] ??= new Date(
+        Date.now() + 14 * 86400000,
+      ).toISOString()
+      if (scenario.pilotLoseAck) {
+        scenario.pilotLoseAck = false
+        throw new Error("synthetic lost activation response")
+      }
+    } else scenario.pilotReads.push(owner)
+    const state = scenario.pilotStates[owner] ?? "invited"
+    const active = state === "active"
+    return response({
+      accountId: owner,
+      state,
+      invitationId: "invite-" + owner,
+      canActivate: state === "invited",
+      canDraft: active,
+      canStandalone: active,
+      canRetrieve: active,
+      draftAllowance: 5,
+      ...(active
+        ? {
+            expiresAt: scenario.pilotExpiry[owner],
+            retrieveUntil: new Date(
+              Date.parse(scenario.pilotExpiry[owner]) + 30 * 86400000,
+            ).toISOString(),
+          }
+        : {}),
+    })
+  }
   if (init.method === "PUT") return saveProfileFixture(owner, init.body)
 
   if (scenario.fail) return response({ error: "storage_unavailable" }, 503)
@@ -146,8 +210,11 @@ function Workspace() {
     </section>
   )
 }
-createRoot(document.getElementById("root")!).render(
-  <AccountGate>
+const workspace = (
+  <AccountGate pilot={scenario.pilot}>
     <Workspace />
-  </AccountGate>,
+  </AccountGate>
+)
+createRoot(document.getElementById("root")!).render(
+  scenario.pilot ? <StrictMode>{workspace}</StrictMode> : workspace,
 )
