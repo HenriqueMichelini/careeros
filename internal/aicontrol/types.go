@@ -47,8 +47,9 @@ type systemClock struct{}
 
 func (systemClock) Sample() (time.Time, bool) { return time.Now().UTC(), true }
 
-// SyntheticConfig accepts only finite laboratory values, in synthetic integer
-// SYN units. No price, currency, customer right or production policy is selected.
+// SyntheticConfig accepts finite laboratory values. Generic fixtures use SYN
+// units; explicit qualification mode uses selected microUSD reference rates.
+// Neither mode selects live provider/account terms or production enablement.
 type SyntheticConfig struct {
 	Namespace                                       string
 	BindingKey                                      [32]byte

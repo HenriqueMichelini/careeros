@@ -12,8 +12,9 @@ import (
 )
 
 // ExecutionIdentity is a server-owned version registry for this synthetic slice.
-// The labels describe the actual handler prompt/schema contracts. Prices and
-// production policy remain unselected; the sole rate identity is artificial SYN.
+// The labels describe the actual handler prompt/schema contracts. Generic
+// fixtures bind artificial SYN; qualification binds its selected reference rate
+// record. Both remain local synthetic execution, with actual egress disabled.
 type ExecutionIdentity struct {
 	Version, Workflow, WorkflowProtocol, RatePolicy string
 	Stages                                          map[string]StageIdentity
