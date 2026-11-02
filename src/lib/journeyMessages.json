@@ -23,7 +23,21 @@
     "journey.signInAgain": "Sign in again in another tab, then return here",
     "journey.retry": "Try generation again",
     "journey.previousDraft": "Switch to previous Draft in this session",
-    "journey.cancelled": "Stopped waiting for this attempt. Previous results remain available. Provider work may continue; no automatic retry was started."
+    "journey.cancelled": "Stopped waiting for this attempt. Previous results remain available. Provider work may continue; no automatic retry was started.",
+    "managed.analyze": "Analyze qualifications",
+    "managed.authority": "Included qualification access",
+    "managed.disclosure": "Local qualification preview uses server-owned fake provider references. No AI keys are required. Other AI workflows remain unavailable.",
+    "managed.paused": "Qualification is paused by an action, spending or capacity limit. Previous results and unused Draft allowance are preserved.",
+    "managed.changed": "This action no longer matches its input, saved Profile or policy. Refresh the saved Profile and deliberately start a new analysis.",
+    "managed.denied": "Qualification access is unavailable. Check your account and pilot access; no automatic retry was started.",
+    "managed.unknown": "This attempt may have reached a provider. Its expense and capacity remain held. Check status; do not resend it.",
+    "managed.knownFailure": "This attempt is known to have failed. One deliberate retry may be available with unchanged input, Profile and policy.",
+    "managed.resultUnavailable": "This action finished, but its result was transient and cannot be recovered from the ledger. No automatic analysis was started.",
+    "managed.checkStatus": "Check analysis status",
+    "managed.statusUnavailable": "Analysis status is unavailable. Your previous results remain in this tab.",
+    "managed.otherClosed": "Application Draft generation and other AI workflows remain unavailable in this local qualification preview.",
+    "managed.newAnalysis": "Start a new analysis",
+    "managed.workspace": "Account workspace · qualification preview"
   },
   "pt-BR": {
     "journey.context": "Espaço de trabalho e próximo passo",
@@ -49,6 +63,20 @@
     "journey.signInAgain": "Entre novamente em outra aba e volte aqui",
     "journey.retry": "Tentar gerar novamente",
     "journey.previousDraft": "Alternar para o Rascunho anterior nesta sessão",
-    "journey.cancelled": "A espera por esta tentativa foi interrompida. Os resultados anteriores continuam disponíveis. O provedor pode continuar trabalhando; nenhuma nova tentativa automática foi iniciada."
+    "journey.cancelled": "A espera por esta tentativa foi interrompida. Os resultados anteriores continuam disponíveis. O provedor pode continuar trabalhando; nenhuma nova tentativa automática foi iniciada.",
+    "managed.analyze": "Analisar qualificações",
+    "managed.authority": "Acesso incluído à análise de qualificações",
+    "managed.disclosure": "A prévia local de qualificações usa referências de provedores simulados controladas pelo servidor. Não é necessário fornecer chaves de IA. Outros fluxos de IA permanecem indisponíveis.",
+    "managed.paused": "A análise está pausada por um limite de ações, gastos ou capacidade. Os resultados anteriores e a quantidade de Rascunhos não usada são preservados.",
+    "managed.changed": "Esta ação não corresponde mais aos dados, ao Perfil salvo ou à política. Atualize o Perfil salvo e inicie uma nova análise deliberadamente.",
+    "managed.denied": "O acesso à análise está indisponível. Verifique sua conta e o acesso piloto; nenhuma nova tentativa automática foi iniciada.",
+    "managed.unknown": "Esta tentativa pode ter chegado a um provedor. Os gastos e a capacidade permanecem reservados. Consulte o estado; não a reenvie.",
+    "managed.knownFailure": "A falha desta tentativa é conhecida. Uma nova tentativa deliberada pode estar disponível com os mesmos dados, Perfil e política.",
+    "managed.resultUnavailable": "Esta ação terminou, mas seu resultado era temporário e não pode ser recuperado do registro. Nenhuma análise automática foi iniciada.",
+    "managed.checkStatus": "Consultar estado da análise",
+    "managed.statusUnavailable": "O estado da análise está indisponível. Os resultados anteriores permanecem nesta aba.",
+    "managed.otherClosed": "A geração de Rascunhos de Candidatura e outros fluxos de IA permanecem indisponíveis nesta prévia local de qualificações.",
+    "managed.newAnalysis": "Iniciar uma nova análise",
+    "managed.workspace": "Área da conta · prévia de qualificações"
   }
 }

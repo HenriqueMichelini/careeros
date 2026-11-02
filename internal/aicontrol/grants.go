@@ -32,6 +32,9 @@ func (r *Reviewer) SeedGrant(ctx context.Context, p auth.Principal, expires time
 }
 
 func (h *Harness) checkGrant(ctx context.Context, tx *sql.Tx, p auth.Principal, expected int64) (int64, error) {
+	if h.cfg.Qualification {
+		return h.qualificationGrant(ctx, tx, p, expected)
+	}
 	var version int64
 	var valid bool
 	e := tx.QueryRowContext(ctx, `SELECT version,NOT revoked AND expires_at>clock_timestamp() FROM ai_fixture_grant WHERE namespace=$1 AND owner=$2 FOR UPDATE`, h.cfg.Namespace, p.AccountID).Scan(&version, &valid)

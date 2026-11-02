@@ -63,6 +63,7 @@ GRANT USAGE ON SCHEMA %[1]s TO %[2]s, %[3]s;
 GRANT SELECT ON ai_fixture_namespace,ai_fixture_policy,ai_fixture_grant,ai_fixture_scope,ai_fixture_action,ai_fixture_stage,ai_fixture_child,ai_fixture_dispatch,ai_fixture_allocation,ai_fixture_evidence,ai_fixture_observation TO %[2]s, %[3]s;
 GRANT SELECT(id,status,generation) ON careeros_accounts TO %[2]s, %[3]s;
 GRANT SELECT ON careeros_sessions TO %[2]s, %[3]s;
+GRANT SELECT ON careeros_pilot_access,careeros_identities TO %[2]s;
 -- Only runtime's current Profile binding needs transient career content.
 -- Reconciliation receives no Profile/provenance or Profile-operation view.
 GRANT SELECT(account_id,document) ON careeros_profiles TO %[2]s;
@@ -70,7 +71,7 @@ GRANT INSERT(namespace,id,owner,creation_key,workflow,binding,profile_binding,gr
 GRANT INSERT(namespace,scope,limit_amount,capacity) ON ai_fixture_scope TO %[2]s;
 GRANT INSERT(namespace,id,action,coordinate,stage,leg,attempt,provider,binding,maximum,floor_amount,counted,input_bytes,output_tokens) ON ai_fixture_dispatch TO %[2]s;
 GRANT INSERT ON ai_fixture_stage,ai_fixture_child,ai_fixture_allocation,ai_fixture_observation TO %[2]s;
-GRANT UPDATE(state,customer_reserved,attempt) ON ai_fixture_action TO %[2]s;
+GRANT UPDATE(state,customer_reserved,attempt,execution_finished,retry_creation_key) ON ai_fixture_action TO %[2]s;
 GRANT UPDATE(state,category,remote_state,intent_at,durable_bound,local_finished) ON ai_fixture_dispatch TO %[2]s;
 GRANT UPDATE(counted,occupied) ON ai_fixture_scope TO %[2]s;
 GRANT UPDATE(expires_at) ON ai_fixture_policy TO %[2]s;
@@ -106,6 +107,10 @@ BEGIN
    END IF;
  END IF;
  IF TG_TABLE_NAME='ai_fixture_action' THEN
+   IF (NEW.execution_finished IS DISTINCT FROM OLD.execution_finished OR NEW.retry_creation_key IS DISTINCT FROM OLD.retry_creation_key) AND
+      NOT (OLD.state='failed' AND NEW.state='recoverable' AND NEW.attempt=OLD.attempt+1 AND NOT NEW.execution_finished AND (OLD.retry_creation_key='' OR OLD.retry_creation_key=NEW.retry_creation_key)) THEN
+     RAISE EXCEPTION 'runtime cannot complete or rebind action';
+   END IF;
    IF NEW.customer_effect IS DISTINCT FROM OLD.customer_effect OR
       (OLD.customer_reserved AND NOT NEW.customer_reserved) OR
       ((NEW.state IS DISTINCT FROM OLD.state OR NEW.attempt IS DISTINCT FROM OLD.attempt) AND

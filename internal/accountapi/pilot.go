@@ -2,12 +2,14 @@ package accountapi
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
 
 	"professional-information-repo/internal/accountstore"
+	"professional-information-repo/internal/aidispatch"
 	"professional-information-repo/internal/auth"
 )
 
@@ -104,10 +106,18 @@ func protectPilotWorkflow(service *auth.Service, store *accountstore.Store, righ
 			respond(w, nil, err)
 			return
 		}
-		for key, values := range result.Header() {
-			w.Header()[key] = values
+		started := false
+		err := aidispatch.WriteResult(r.Context(), func(ctx context.Context) error {
+			for key, values := range result.Header() {
+				w.Header()[key] = values
+			}
+			started = true
+			w.WriteHeader(result.Code)
+			_, err := io.Copy(resultWriter{ctx, w}, result.Body)
+			return err
+		})
+		if err != nil && !started {
+			workflowError(w, http.StatusServiceUnavailable, "managed_result_unavailable")
 		}
-		w.WriteHeader(result.Code)
-		_, _ = io.Copy(w, result.Body)
 	})))
 }

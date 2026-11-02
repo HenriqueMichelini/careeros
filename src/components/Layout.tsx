@@ -12,6 +12,7 @@ interface Props {
 
 export default function Layout({ page, setPage, children }: Props) {
   const { state, dispatch } = useStore()
+  const managed = import.meta.env.VITE_CAREEROS_PILOT_MODE === "1"
   const { t } = useI18n()
   const [showKey, setShowKey] = useState(false)
   const [keyDraft, setKeyDraft] = useState(state.apiKey)
@@ -103,31 +104,33 @@ export default function Layout({ page, setPage, children }: Props) {
           {/* Preferences and API key */}
           <div className="flex items-center gap-2 md:grid md:grid-cols-[7rem_12rem] md:gap-3 flex-shrink-0">
             <LanguageSelector />
-            <button
-              data-api-key-settings
-              aria-expanded={showKey}
-              aria-controls="api-key-settings"
-              onClick={() => {
-                setKeyDraft(state.apiKey)
-                setShowKey((v) => !v)
-              }}
-              className="text-[10px] md:text-xs px-2 md:px-3 py-1.5 border text-center transition-colors"
-              style={{
-                fontFamily: "var(--font-mono)",
-                borderColor: state.apiKey
-                  ? "var(--color-border)"
-                  : "var(--color-accent)",
-                color: state.apiKey
-                  ? "var(--color-muted-fg)"
-                  : "var(--color-accent)",
-              }}
-            >
-              {state.apiKey ? t("api.keyConfigured") : t("api.setKey")}
-            </button>
+            {!managed && (
+              <button
+                data-api-key-settings
+                aria-expanded={showKey}
+                aria-controls="api-key-settings"
+                onClick={() => {
+                  setKeyDraft(state.apiKey)
+                  setShowKey((v) => !v)
+                }}
+                className="text-[10px] md:text-xs px-2 md:px-3 py-1.5 border text-center transition-colors"
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  borderColor: state.apiKey
+                    ? "var(--color-border)"
+                    : "var(--color-accent)",
+                  color: state.apiKey
+                    ? "var(--color-muted-fg)"
+                    : "var(--color-accent)",
+                }}
+              >
+                {state.apiKey ? t("api.keyConfigured") : t("api.setKey")}
+              </button>
+            )}
           </div>
         </div>
 
-        {showKey && (
+        {!managed && showKey && (
           <div
             id="api-key-settings"
             className="border-t"

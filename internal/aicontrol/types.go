@@ -60,6 +60,10 @@ type SyntheticConfig struct {
 	ExecutionPolicyVersion, RatePolicyVersion       string
 	Gate                                            *SyntheticGate
 	Clock                                           ReviewClock
+	// Qualification selects only the approved local fake qualification slice.
+	// TokenBound is a synthetic full-envelope bound, never a live tokenizer.
+	Qualification bool
+	TokenBound    func(provider string, completeRequest []byte) (int64, bool)
 }
 
 func DefaultSyntheticConfig(namespace string, gate *SyntheticGate) SyntheticConfig {
@@ -100,7 +104,10 @@ func NewSynthetic(ctx context.Context, dsn string, cfg SyntheticConfig) (*Harnes
 	if !strings.HasPrefix(schema, "careeros_ai_test_") || !tokenLabel.MatchString(schema) || !tokenLabel.MatchString(cfg.Namespace) || cfg.Gate == nil || cfg.Clock == nil || cfg.BindingKey == ([32]byte{}) || cfg.Limit <= 0 || cfg.Limit > math.MaxInt64/4 || cfg.Capacity <= 0 || cfg.Capacity > 10000 || cfg.MaxDispatches <= 0 || cfg.MaxDispatches > 4096 || cfg.MaxStages <= 0 || cfg.MaxStages > 4096 || cfg.MaxAttempts <= 0 || cfg.MaxAttempts > 100 || cfg.CustomerUnits <= 0 || cfg.MaxInputBytes <= 0 || cfg.MaxInputBytes > 1<<40 || cfg.MaxOutputTokens <= 0 || cfg.MaxOutputTokens > 1<<40 || !cfg.ExpiresAt.After(time.Now()) {
 		return nil, ErrDenied
 	}
-	if !tokenLabel.MatchString(cfg.ExecutionPolicyVersion) || cfg.RatePolicyVersion != "synthetic-unit-v1" {
+	if !tokenLabel.MatchString(cfg.ExecutionPolicyVersion) || (cfg.RatePolicyVersion != "synthetic-unit-v1" && !(cfg.Qualification && cfg.RatePolicyVersion == QualificationRateID && cfg.TokenBound != nil)) {
+		return nil, ErrDenied
+	}
+	if cfg.Qualification && (cfg.RatePolicyVersion != QualificationRateID || cfg.ExecutionPolicyVersion != "qualification-local-20261102-v1" || cfg.TokenBound == nil || cfg.Limit != 2000000 || cfg.Capacity != 1 || cfg.MaxDispatches != 6 || cfg.MaxStages != 6 || cfg.MaxAttempts != 2) {
 		return nil, ErrDenied
 	}
 	db, err := sql.Open("pgx", dsn)
@@ -135,7 +142,11 @@ func NewSynthetic(ctx context.Context, dsn string, cfg SyntheticConfig) (*Harnes
 		return fail()
 	}
 	for _, scope := range []string{"global", "provider:openai", "provider:typesafe"} {
-		if _, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_scope(namespace,scope,limit_amount,capacity) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING`, cfg.Namespace, scope, cfg.Limit, cfg.Capacity); err != nil {
+		limit, capacity := cfg.Limit, cfg.Capacity
+		if cfg.Qualification {
+			limit, capacity = 10000000, 2
+		}
+		if _, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_scope(namespace,scope,limit_amount,capacity) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING`, cfg.Namespace, scope, limit, capacity); err != nil {
 			return fail()
 		}
 	}

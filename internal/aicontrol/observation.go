@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"professional-information-repo/internal/accountstore"
+	"professional-information-repo/internal/auth"
 )
 
 // NumericObservation preserves absence and invalidity. Unsupported categories
@@ -64,7 +65,7 @@ func numeric(raw json.RawMessage) NumericObservation {
 	}
 	return NumericObservation{State: "valid", Value: &n}
 }
-func observation(provider, requestID string, raw []byte, complete bool) ProviderObservation {
+func observation(provider, requestID string, raw []byte, complete bool, qualification bool) ProviderObservation {
 	o := ProviderObservation{Provider: provider, RequestIDState: "missing", ModelState: "missing", TierState: "missing", BodyState: "unread", RateState: "missing"}
 	o.Input = numeric(nil)
 	o.Output = numeric(nil)
@@ -99,6 +100,9 @@ func observation(provider, requestID string, raw []byte, complete bool) Provider
 		if o.Tier == "standard" && (provider == "openai" && o.Model == "gpt-6-luna" || provider == "typesafe" && o.Model == "jev-1.13.0") {
 			o.RateState = "supported"
 			o.RateID = "synthetic-unit-v1"
+			if qualification {
+				o.RateID = QualificationRateID
+			}
 		}
 	}
 	var usage map[string]json.RawMessage
@@ -130,7 +134,7 @@ func observation(provider, requestID string, raw []byte, complete bool) Provider
 			}
 		}
 		for key := range input {
-			if key != "cached_tokens" {
+			if key != "cached_tokens" && !(qualification && key == "cache_write_tokens") {
 				o.Unsupported = true
 			}
 		}
@@ -159,6 +163,12 @@ func observation(provider, requestID string, raw []byte, complete bool) Provider
 	if n, e := Estimate(provider, o.Model, o.Tier, u); e == nil {
 		o.Estimate = &n
 	}
+	if qualification {
+		o.Estimate = nil
+		if n, e := QualificationEstimate(provider, o.Model, o.Tier, o.RateID, u); e == nil {
+			o.Estimate = &n
+		}
+	}
 	return o
 }
 
@@ -174,12 +184,12 @@ func (h *Harness) appendObservation(ctx context.Context, d Dispatch, sequence in
 	_, e = h.db.ExecContext(writeCtx, `INSERT INTO ai_fixture_observation(namespace,dispatch,sequence,data) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING`, h.cfg.Namespace, d.ID, sequence, raw)
 	return safe(e)
 }
-func (h *Harness) observeResponse(ctx context.Context, d Dispatch, resp *http.Response, callErr error) (*http.Response, error) {
+func (h *Harness) observeResponse(ctx context.Context, p auth.Principal, d Dispatch, resp *http.Response, callErr error) (*http.Response, error) {
 	requestID := ""
 	if resp != nil {
 		requestID = resp.Header.Get("X-Request-ID")
 	}
-	initial := observation(d.Provider, requestID, nil, false)
+	initial := observation(d.Provider, requestID, nil, false, h.cfg.Qualification)
 	if callErr != nil {
 		initial.BodyState = "transport_error"
 	}
@@ -190,8 +200,22 @@ func (h *Harness) observeResponse(ctx context.Context, d Dispatch, resp *http.Re
 		return nil, e
 	}
 	if resp != nil && resp.Body != nil {
+		fakeTerminal := h.cfg.Qualification && callErr == nil && resp.Header.Get("X-CareerOS-Fake-Terminal") == "1"
+		resp.Header.Del("X-CareerOS-Fake-Terminal")
 		resp.Body = &observedBody{ReadCloser: resp.Body, finish: func(raw []byte, complete bool) {
-			_ = h.appendObservation(ctx, d, 1, observation(d.Provider, requestID, raw, complete))
+			o := observation(d.Provider, requestID, raw, complete, h.cfg.Qualification)
+			_ = h.appendObservation(ctx, d, 1, o)
+			if h.cfg.Qualification {
+				proofCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
+				defer cancel()
+				reviewer := h.SyntheticReviewer()
+				if complete && o.Estimate != nil {
+					_ = reviewer.ApplyEvidence(proofCtx, p, Evidence{ID: "usage_" + d.ID, Dispatch: d.ID, Provider: d.Provider, Kind: "estimate", Model: o.Model, Tier: o.Tier, Amount: o.Estimate})
+				}
+				if fakeTerminal {
+					_ = reviewer.ApplyEvidence(proofCtx, p, Evidence{ID: "terminal_" + d.ID, Dispatch: d.ID, Provider: d.Provider, Kind: "terminal"})
+				}
+			}
 		}}
 	}
 	return resp, callErr

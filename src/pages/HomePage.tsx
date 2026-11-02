@@ -1,3 +1,4 @@
+import { ManagedQualification } from "../lib/managedQualification"
 import ApplyProfileEnrichment, {
   type ApplyAnswer,
 } from "../components/ApplyProfileEnrichment"
@@ -34,6 +35,14 @@ interface Props {
 }
 
 const gapErrorTranslationKeys = {
+  qualification_paused: "managed.paused",
+  qualification_changed: "managed.changed",
+  qualification_denied: "managed.denied",
+  managed_unavailable: "managed.denied",
+  caller_credentials_forbidden: "managed.denied",
+  qualification_unknown: "managed.unknown",
+  qualification_known_failure: "managed.knownFailure",
+  qualification_result_unavailable: "managed.resultUnavailable",
   input: "home.gapErrorInput",
   key: "home.gapErrorKey",
   rate_limit: "home.gapErrorRateLimit",
@@ -51,6 +60,14 @@ const gapErrorTranslationKeys = {
 } as const
 
 const draftErrorTranslationKeys = {
+  qualification_paused: "managed.paused",
+  qualification_changed: "managed.changed",
+  qualification_denied: "managed.denied",
+  managed_unavailable: "managed.denied",
+  caller_credentials_forbidden: "managed.denied",
+  qualification_unknown: "managed.unknown",
+  qualification_known_failure: "managed.knownFailure",
+  qualification_result_unavailable: "managed.resultUnavailable",
   authentication_required: "journey.sessionIssue",
   account_changed: "journey.sessionIssue",
   forbidden: "journey.sessionIssue",
@@ -131,6 +148,31 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
     accountId,
     refreshCanonicalProfile,
   } = useStore()
+  const managed =
+    import.meta.env.VITE_CAREEROS_PILOT_MODE === "1" && !!accountId
+  const managedClient = useRef<ManagedQualification | null>(null)
+  if (managed && accountId && !managedClient.current)
+    managedClient.current = new ManagedQualification(
+      accountId,
+      window.sessionStorage,
+    )
+  const [managedRecovery, setManagedRecovery] = useState<TranslationKey | null>(
+    null,
+  )
+  async function checkManagedStatus() {
+    try {
+      const status = await managedClient.current?.status()
+      setManagedRecovery(
+        status?.state === "known_failure"
+          ? "managed.knownFailure"
+          : status?.state === "result_unavailable"
+            ? "managed.resultUnavailable"
+            : "managed.unknown",
+      )
+    } catch {
+      setManagedRecovery("managed.statusUnavailable")
+    }
+  }
   const [cancelled, setCancelled] = useState(false)
   const [enrichmentAnswers, setEnrichmentAnswers] = useState<ApplyAnswer[]>([])
   const [enrichmentBusy, setEnrichmentBusy] = useState(false)
@@ -167,6 +209,10 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
     state.jobPosting,
     state.applicationRevision,
   ])
+  const managedInput = useRef<{
+    key: string
+    context: JobContext | undefined
+  } | null>(null)
   const completedKey = useRef<string | null>(null)
   const jobKey = JSON.stringify([state.jobPosting, state.applicationRevision])
   const inputs = JSON.stringify([
@@ -237,6 +283,8 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
         : "")
 
   function recordFailure(error: unknown, step: "qualification" | "draft") {
+    if (managed && error instanceof QualificationGapsError)
+      managedClient.current?.knownFailure(error.retryAllowed)
     if (error instanceof QualificationGapsError && error.jobContext)
       setJobContext(error.jobContext)
     if (error instanceof JobPostingValidationError) {
@@ -285,8 +333,7 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
     hasRepo &&
     profileAvailable &&
     hasPosting &&
-    !!state.apiKey &&
-    !!state.typesafeKey.trim() &&
+    (managed || (!!state.apiKey && !!state.typesafeKey.trim())) &&
     jobPosting.trim() !== revisionRequiredFor?.text &&
     !state.isGenerating &&
     !enrichmentBusy
@@ -295,12 +342,16 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
     if (!canGenerate) return
     setCancelled(false)
     if (discardAnalysis) {
-      completedKey.current = null
-      setJobContext(null)
+      if (managed) managedClient.current?.reset()
+      if (!managed) {
+        completedKey.current = null
+        setJobContext(null)
+      }
       setShowGapPrompt(false)
     }
     if (
       !discardAnalysis &&
+      (!managed || !failure) &&
       completedKey.current === analysisKey &&
       jobContext
     ) {
@@ -323,6 +374,19 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
     setDraft({ state: "pending" })
     const step = "qualification" as const
     try {
+      if (
+        managed &&
+        (discardAnalysis || managedInput.current?.key !== analysisKey)
+      )
+        managedInput.current = {
+          key: analysisKey,
+          context: discardAnalysis ? undefined : (jobContext ?? undefined),
+        }
+      const requestContext = managed
+        ? managedInput.current?.context
+        : discardAnalysis
+          ? undefined
+          : (jobContext ?? undefined)
       const analysis = await findProfileGaps(
         state.repository,
         jobPosting,
@@ -331,8 +395,13 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
         true,
         profileDocument ?? undefined,
         controller.current.signal,
-        discardAnalysis ? undefined : (jobContext ?? undefined),
+        requestContext,
         accountId,
+        managed
+          ? managedClient.current?.command(
+              JSON.stringify([analysisKey, requestContext]),
+            )
+          : undefined,
       )
       if (id !== requestId.current) return
       completedKey.current = analysisKey
@@ -352,6 +421,10 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
   }
 
   async function generateFromGapPrompt(useConfirmedQualifications: boolean) {
+    if (managed) {
+      setManagedRecovery("managed.otherClosed")
+      return
+    }
     if (
       state.isGenerating ||
       enrichmentBusy ||
@@ -528,31 +601,36 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
           <p className="mt-2 text-xs text-[var(--color-muted-fg)]">
             {t("home.postingLimit")}
           </p>
-          <details className="mt-3 text-xs">
-            <summary className="cursor-pointer">{t("field.settings")}</summary>
-            <label htmlFor="job-typesafe-key" className="block mt-2">
-              {t("field.typesafeKey")}
-            </label>
-            <input
-              id="job-typesafe-key"
-              type="password"
-              autoComplete="off"
-              value={state.typesafeKey}
-              onChange={(event) =>
-                dispatch({
-                  type: "SET_TYPESAFE_KEY",
-                  payload: event.target.value,
-                })
-              }
-              className="w-full p-2 border border-[var(--color-border)] bg-[var(--color-card)]"
-            />
-            <p className="mt-2">{t("jobField.disclosure")}</p>
-          </details>
+          {!managed && (
+            <details className="mt-3 text-xs">
+              <summary className="cursor-pointer">
+                {t("field.settings")}
+              </summary>
+              <label htmlFor="job-typesafe-key" className="block mt-2">
+                {t("field.typesafeKey")}
+              </label>
+              <input
+                id="job-typesafe-key"
+                type="password"
+                autoComplete="off"
+                value={state.typesafeKey}
+                onChange={(event) =>
+                  dispatch({
+                    type: "SET_TYPESAFE_KEY",
+                    payload: event.target.value,
+                  })
+                }
+                className="w-full p-2 border border-[var(--color-border)] bg-[var(--color-card)]"
+              />
+              <p className="mt-2">{t("jobField.disclosure")}</p>
+            </details>
+          )}
+          {managed && <p className="mt-3 text-xs">{t("managed.disclosure")}</p>}
           <details id="job-input-use-rule" className="mt-3 text-xs">
             <summary className="cursor-pointer">{t("field.ruleTitle")}</summary>
             <p className="mt-2">{t("field.rule")}</p>
           </details>
-          {!state.typesafeKey.trim() && (
+          {!managed && !state.typesafeKey.trim() && (
             <p className="mt-2 text-xs">{t("jobField.typesafeMissing")}</p>
           )}
           <div
@@ -599,20 +677,22 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
           </p>
           <div className="mb-8" aria-live="polite" aria-atomic="true">
             <StatusRow
-              label={t("home.apiKey")}
+              label={t(managed ? "managed.authority" : "home.apiKey")}
               status={
                 failure === "key"
                   ? "failed"
-                  : state.apiKey
+                  : managed || state.apiKey
                     ? "ready"
                     : "pending"
               }
               detail={
                 failure === "key"
                   ? failureMessage
-                  : state.apiKey
-                    ? t("home.keyReady")
-                    : t("home.setApiKeyAbove")
+                  : managed
+                    ? t("managed.disclosure")
+                    : state.apiKey
+                      ? t("home.keyReady")
+                      : t("home.setApiKeyAbove")
               }
             />
             <StatusRow
@@ -692,11 +772,21 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
               {t("journey.refreshProfile")}
             </button>
           )}
-          {failure && ["authentication_required", "account_changed", "forbidden"].includes(failure) && (
-            <a className="mb-4 block underline" href="/api/auth/google/start" target="_blank" rel="noopener">
-              {t("journey.signInAgain")}
-            </a>
-          )}
+          {failure &&
+            [
+              "authentication_required",
+              "account_changed",
+              "forbidden",
+            ].includes(failure) && (
+              <a
+                className="mb-4 block underline"
+                href="/api/auth/google/start"
+                target="_blank"
+                rel="noopener"
+              >
+                {t("journey.signInAgain")}
+              </a>
+            )}
           {cancelled && (
             <p role="status" className="mb-4 text-sm">
               {t("journey.cancelled")}
@@ -721,9 +811,34 @@ export default function HomePage({ setPage, active, enrichmentActive }: Props) {
                 ? t("home.generating")
                 : failure
                   ? t("journey.retry")
-                  : t("home.generateMaterials")}
+                  : t(managed ? "managed.analyze" : "home.generateMaterials")}
           </button>
 
+          {managed && (
+            <div className="mt-3 text-sm">
+              <button
+                type="button"
+                data-qualification-status
+                onClick={() => void checkManagedStatus()}
+              >
+                {t("managed.checkStatus")}
+              </button>
+              {managedRecovery && <p role="status">{t(managedRecovery)}</p>}
+              {(managedRecovery === "managed.resultUnavailable" ||
+                failure === "qualification_result_unavailable" ||
+                failure === "qualification_changed") && (
+                <button
+                  type="button"
+                  data-qualification-new
+                  disabled={!canGenerate}
+                  onClick={() => void handleGenerate(true)}
+                >
+                  {t("managed.newAnalysis")}
+                </button>
+              )}
+              <p>{t("managed.otherClosed")}</p>
+            </div>
+          )}
           {state.isGenerating && (
             <button
               type="button"

@@ -22,7 +22,7 @@ type StageIdentity struct{ Provider, Model, Tier, PromptSchema string }
 
 func executionIdentity(workflow, version, rate string) (ExecutionIdentity, error) {
 	e := ExecutionIdentity{Version: version, Workflow: workflow, WorkflowProtocol: "workflow-v1", RatePolicy: rate, Stages: map[string]StageIdentity{}}
-	if !tokenLabel.MatchString(version) || rate != "synthetic-unit-v1" {
+	if !tokenLabel.MatchString(version) || (rate != "synthetic-unit-v1" && !(rate == QualificationRateID && workflow == "qualification_gaps" && version == "qualification-local-20261102-v1")) {
 		return e, ErrDenied
 	}
 	oa := func(stage, prompt string) {
@@ -97,10 +97,16 @@ func (h *Harness) executionBinding(ctx context.Context, tx *sql.Tx, owner, workf
 		return nil, ErrUnavailable
 	}
 	raw, err := json.Marshal(struct {
-		Identity ExecutionIdentity
-		Policy   any
-		Scopes   []scope
-	}{e, policy, scopes})
+		Identity      ExecutionIdentity
+		Policy        any
+		Scopes        []scope
+		Qualification any
+	}{e, policy, scopes, func() any {
+		if h.cfg.Qualification {
+			return selectedQualificationEnvelope()
+		}
+		return nil
+	}()})
 	if err != nil {
 		return nil, ErrUnavailable
 	}

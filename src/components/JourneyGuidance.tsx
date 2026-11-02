@@ -12,6 +12,8 @@ export default function JourneyGuidance({
   const { state, profileDocument, profileSaving, accountId, profileSaved } =
     useStore()
   const { t } = useI18n()
+  const managed =
+    import.meta.env.VITE_CAREEROS_PILOT_MODE === "1" && !!accountId
   const profileReady =
     !state.profileError &&
     !profileSaving &&
@@ -40,10 +42,16 @@ export default function JourneyGuidance({
       >
         <div className="min-w-0 max-w-2xl">
           <p className="font-semibold">
-            {t(accountId ? "journey.accountMode" : "journey.localMode")}
+            {t(
+              managed
+                ? "managed.workspace"
+                : accountId
+                  ? "journey.accountMode"
+                  : "journey.localMode",
+            )}
           </p>
           <p className="mt-1" style={{ color: "var(--color-muted-fg)" }}>
-            {t(guidance[page])}
+            {t(managed ? "managed.disclosure" : guidance[page])}
           </p>
           {(page === "repository" || needsProfile) && (
             <p className="mt-2" role="status" aria-atomic="true">

@@ -39,6 +39,9 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 	if !tokenLabel.MatchString(key) || !workflows[workflow] {
 		return nil, ErrDenied
 	}
+	if h.cfg.Qualification && workflow != "qualification_gaps" {
+		return nil, ErrDenied
+	}
 	binding, err := h.fingerprint(p.AccountID, "root/"+workflow, rootJSON)
 	if err != nil {
 		return nil, err
@@ -81,6 +84,11 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 			return nil, ErrConflict
 		}
 	} else if errors.Is(err, sql.ErrNoRows) {
+		if h.cfg.Qualification {
+			if err = h.qualificationOpen(ctx, tx, p.AccountID, true); err != nil {
+				return nil, err
+			}
+		}
 		id = opaque()
 		if id == "" {
 			return nil, ErrUnavailable
@@ -186,6 +194,25 @@ func (s *Session) Send(ctx context.Context, provider string, req *http.Request) 
 	if err != nil {
 		return nil, err
 	}
+	if s.h.cfg.Qualification && provider == "openai" {
+		var fields map[string]json.RawMessage
+		if json.Unmarshal(raw, &fields) != nil {
+			return nil, ErrDenied
+		}
+		// Standard is an explicit server decision, never a provider default.
+		if tier, ok := fields["service_tier"]; ok && string(tier) != `"standard"` {
+			return nil, ErrDenied
+		}
+		fields["service_tier"] = json.RawMessage(`"standard"`)
+		raw, err = json.Marshal(fields)
+		if err != nil {
+			return nil, ErrDenied
+		}
+		req = req.Clone(ctx)
+		req.Body = io.NopCloser(bytes.NewReader(raw))
+		req.ContentLength = int64(len(raw))
+		req.GetBody = func() (io.ReadCloser, error) { return io.NopCloser(bytes.NewReader(raw)), nil }
+	}
 	coordinate := aidispatch.Coordinate(ctx)
 	if coordinate == "" {
 		coordinate = "request"
@@ -281,6 +308,9 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (Dispatch, error) {
 		return zero, err
 	}
 	m, err := maximum(leg.Provider, leg.Body)
+	if h.cfg.Qualification {
+		m, err = h.qualificationMaximum(leg.Provider, leg.Body)
+	}
 	if err != nil {
 		return zero, err
 	}
@@ -409,6 +439,11 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (Dispatch, error) {
 			return zero, ErrCapacity
 		}
 	}
+	if h.cfg.Qualification {
+		if err = s.qualificationLimits(ctx, tx, leg, m); err != nil {
+			return zero, err
+		}
+	}
 	if err = h.fault("after_scope_locks"); err != nil {
 		return zero, err
 	}
@@ -525,7 +560,18 @@ func (s *Session) invoke(ctx context.Context, d Dispatch, req *http.Request, raw
 	if err = s.checkCurrent(ctx, tx); err != nil {
 		return nil, err
 	}
-	result, err := tx.ExecContext(ctx, `UPDATE ai_fixture_dispatch SET state='intent',category='unknown_maximum',remote_state='possibly_active',intent_at=clock_timestamp() WHERE namespace=$1 AND id=$2 AND state='reserved' AND EXISTS(SELECT 1 FROM ai_fixture_policy WHERE namespace=$1 AND expires_at>clock_timestamp()) AND EXISTS(SELECT 1 FROM careeros_sessions WHERE id=$3 AND expires_at>clock_timestamp()) AND EXISTS(SELECT 1 FROM ai_fixture_grant WHERE namespace=$1 AND owner=$4 AND version=$5 AND NOT revoked AND expires_at>clock_timestamp())`, h.cfg.Namespace, d.ID, s.p.SessionID, s.p.AccountID, s.grantVersion)
+	if h.cfg.Qualification {
+		if err = s.qualificationLimits(ctx, tx, Leg{}, 0); err != nil {
+			return nil, err
+		}
+	}
+	claim := `UPDATE ai_fixture_dispatch SET state='intent',category='unknown_maximum',remote_state='possibly_active',intent_at=clock_timestamp() WHERE namespace=$1 AND id=$2 AND state='reserved' AND EXISTS(SELECT 1 FROM ai_fixture_policy WHERE namespace=$1 AND expires_at>clock_timestamp()) AND EXISTS(SELECT 1 FROM careeros_sessions WHERE id=$3 AND expires_at>clock_timestamp())`
+	args := []any{h.cfg.Namespace, d.ID, s.p.SessionID}
+	if !h.cfg.Qualification {
+		claim += ` AND EXISTS(SELECT 1 FROM ai_fixture_grant WHERE namespace=$1 AND owner=$4 AND version=$5 AND NOT revoked AND expires_at>clock_timestamp())`
+		args = append(args, s.p.AccountID, s.grantVersion)
+	}
+	result, err := tx.ExecContext(ctx, claim, args...)
 	if err != nil {
 		return nil, ErrUnavailable
 	}
@@ -583,7 +629,7 @@ func (s *Session) invoke(ctx context.Context, d Dispatch, req *http.Request, raw
 		return respond(callCtx, d.Provider, cloned.WithContext(callCtx))
 	}) // one fake gateway handoff; no network client
 	_, _ = h.db.ExecContext(context.WithoutCancel(ctx), `UPDATE ai_fixture_dispatch SET state='observed',local_finished=true WHERE namespace=$1 AND id=$2 AND state='intent'`, h.cfg.Namespace, d.ID)
-	return h.observeResponse(ctx, d, resp, callErr)
+	return h.observeResponse(ctx, s.p, d, resp, callErr)
 }
 
 const dispatchColumns = `id,action,coordinate,stage,provider,state,category,remote_state,maximum,floor_amount,counted,expense,intent_at,durable_bound,local_finished,compacted,evidence_version,maximum_breached`
@@ -640,8 +686,20 @@ func (h *Harness) Status(ctx context.Context, p auth.Principal, id string) (Acti
 
 // Retry preserves the root binding and creates a fresh bounded attempt, only
 // after authoritative known failure. It does not release any supplier hold.
-func (s *Session) Retry(ctx context.Context) (*Session, error) {
+func (s *Session) Retry(ctx context.Context) (*Session, error) { return s.retry(ctx, "") }
+
+func (s *Session) RetryQualification(ctx context.Context, key string) (*Session, error) {
+	if !s.h.cfg.Qualification || !tokenLabel.MatchString(key) {
+		return nil, ErrDenied
+	}
+	return s.retry(ctx, key)
+}
+
+func (s *Session) retry(ctx context.Context, key string) (*Session, error) {
 	h := s.h
+	if h.cfg.Qualification && !tokenLabel.MatchString(key) {
+		return nil, ErrDenied
+	}
 	tx, err := h.begin(ctx, s.p)
 	if err != nil {
 		return nil, err
@@ -655,11 +713,26 @@ func (s *Session) Retry(ctx context.Context) (*Session, error) {
 	}
 	var state string
 	var current int
-	if tx.QueryRowContext(ctx, `SELECT state,attempt FROM ai_fixture_action WHERE namespace=$1 AND id=$2 AND owner=$3 FOR UPDATE`, h.cfg.Namespace, s.id, s.p.AccountID).Scan(&state, &current) != nil {
+	var retryKey string
+	if tx.QueryRowContext(ctx, `SELECT state,attempt,retry_creation_key FROM ai_fixture_action WHERE namespace=$1 AND id=$2 AND owner=$3 FOR UPDATE`, h.cfg.Namespace, s.id, s.p.AccountID).Scan(&state, &current, &retryKey) != nil {
 		return nil, ErrDenied
 	}
 	if err = s.checkExecution(ctx, tx); err != nil {
 		return nil, err
+	}
+	if h.cfg.Qualification && retryKey != "" {
+		if retryKey != key || current != 2 {
+			return nil, ErrConflict
+		}
+		if err = s.checkCurrent(ctx, tx); err != nil {
+			return nil, err
+		}
+		if tx.Commit() != nil {
+			return nil, ErrUnavailable
+		}
+		out := s.childSession(s.childID, s.childParent)
+		out.attempt = current
+		return out, nil
 	}
 	next := s.attempt + 1
 	if current == s.attempt && state == "failed" {
@@ -670,7 +743,12 @@ func (s *Session) Retry(ctx context.Context) (*Session, error) {
 		if next > maxAttempts {
 			return nil, ErrCapacity
 		}
-		if _, err = tx.ExecContext(ctx, `UPDATE ai_fixture_action SET state='recoverable',attempt=$3 WHERE namespace=$1 AND id=$2 AND attempt=$4 AND state='failed'`, h.cfg.Namespace, s.id, next, s.attempt); err != nil {
+		if h.cfg.Qualification {
+			if err = h.qualificationOpen(ctx, tx, s.p.AccountID, false); err != nil {
+				return nil, err
+			}
+		}
+		if _, err = tx.ExecContext(ctx, `UPDATE ai_fixture_action SET state='recoverable',attempt=$3,execution_finished=false,retry_creation_key=$5 WHERE namespace=$1 AND id=$2 AND attempt=$4 AND state='failed'`, h.cfg.Namespace, s.id, next, s.attempt, key); err != nil {
 			return nil, ErrUnavailable
 		}
 	} else if current != next || state != "recoverable" {

@@ -1,5 +1,6 @@
 import { parseArtifactReview } from "./artifactReview"
 import { workflowHeaders } from "./workflowRequest"
+import type { QualificationCommand } from "./managedQualification"
 import { parseResumeReview } from "./resumeReview"
 import {
   qualificationProjection,
@@ -42,6 +43,7 @@ export class QualificationGapsError extends Error {
   constructor(
     public readonly code: string,
     public readonly jobContext?: JobContext,
+    public readonly retryAllowed = false,
   ) {
     super(code)
     this.name = "QualificationGapsError"
@@ -236,6 +238,7 @@ export function findProfileGaps(
   signal?: AbortSignal,
   jobContext?: JobContext,
   accountId?: string | null,
+  managed?: QualificationCommand,
 ): Promise<QualificationAnalysis>
 export async function findProfileGaps(
   repo: ProfessionalRepository,
@@ -247,6 +250,7 @@ export async function findProfileGaps(
   signal?: AbortSignal,
   jobContext?: JobContext,
   accountId?: string | null,
+  managed?: QualificationCommand,
 ): Promise<ProfileGap[] | QualificationAnalysis> {
   if (!validQualifications(repo)) throw new QualificationGapsError("input")
   let response: Response
@@ -255,8 +259,14 @@ export async function findProfileGaps(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-OpenAI-Api-Key": apiKey,
-        "X-TypeSafe-Api-Key": typesafeKey,
+        ...(managed
+          ? {
+              "X-CareerOS-Action-Key": managed.actionKey,
+              ...(managed.retryKey
+                ? { "X-CareerOS-Retry-Key": managed.retryKey }
+                : {}),
+            }
+          : { "X-OpenAI-Api-Key": apiKey, "X-TypeSafe-Api-Key": typesafeKey }),
         ...workflowHeaders(accountId),
       },
       body: JSON.stringify({
@@ -289,8 +299,20 @@ export async function findProfileGaps(
     gaps?: unknown
     jobContext?: unknown
     matches?: unknown
+    state?: unknown
+    retryAllowed?: unknown
   } | null
   signal?.throwIfAborted()
+  if (managed && response.status === 202)
+    throw new QualificationGapsError(
+      payload?.state === "known_failure"
+        ? "qualification_known_failure"
+        : payload?.state === "result_unavailable"
+          ? "qualification_result_unavailable"
+          : "qualification_unknown",
+      undefined,
+      payload?.retryAllowed === true,
+    )
   checkJobDecision(payload)
   if (!response.ok) {
     const known = new Set([
@@ -308,12 +330,18 @@ export async function findProfileGaps(
       "profile_required",
       "forbidden",
       "auth_unavailable",
+      "qualification_paused",
+      "qualification_changed",
+      "qualification_denied",
+      "managed_unavailable",
+      "caller_credentials_forbidden",
     ])
     throw new QualificationGapsError(
       typeof payload?.error === "string" && known.has(payload.error)
         ? payload.error
         : "outage",
       parseJobContext(payload?.jobContext, jobPosting) ?? undefined,
+      managed && response.headers.get("X-CareerOS-Retry-Allowed") === "true",
     )
   }
   if (
