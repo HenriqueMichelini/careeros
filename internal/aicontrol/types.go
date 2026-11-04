@@ -66,8 +66,9 @@ type SyntheticConfig struct {
 	Qualification bool
 	// Ingestion extends the same managed namespace/scopes; it never creates a
 	// second account/global budget. Qualification's frozen contract is unchanged.
-	Ingestion  bool
-	TokenBound func(provider string, completeRequest []byte) (int64, bool)
+	Ingestion     bool
+	ProfileReview bool
+	TokenBound    func(provider string, completeRequest []byte) (int64, bool)
 }
 
 func DefaultSyntheticConfig(namespace string, gate *SyntheticGate) SyntheticConfig {
@@ -93,7 +94,7 @@ var stages = map[string]bool{"field_validation": true, "extraction": true, "reco
 // literal loopback address. It never reads environment variables or account files.
 // The caller must first install existing account tables in this disposable schema.
 func NewSynthetic(ctx context.Context, dsn string, cfg SyntheticConfig) (*Harness, error) {
-	if cfg.Ingestion && !cfg.Qualification {
+	if (cfg.Ingestion || cfg.ProfileReview) && !cfg.Qualification {
 		return nil, ErrDenied
 	}
 	u, err := url.Parse(dsn)
@@ -160,7 +161,7 @@ func NewSynthetic(ctx context.Context, dsn string, cfg SyntheticConfig) (*Harnes
 	if tx.Commit() != nil {
 		return fail()
 	}
-	runtimeDB, reviewerDB, supportRole, err := syntheticRolePools(ctx, db, dsn, cfg.Ingestion)
+	runtimeDB, reviewerDB, supportRole, err := syntheticRolePools(ctx, db, dsn, cfg.Ingestion || cfg.ProfileReview)
 	if err != nil {
 		return fail()
 	}

@@ -462,6 +462,11 @@ const messages = {
     "repo.submission.guide":
       "Paste a CV, notes or individual career facts. Nothing is organized, approved or saved until you review the proposed destinations and values.",
     "repo.submission.disclosures": "Privacy, keys and input use",
+    "repo.managedReviewNotice": "Pilot Profile review uses managed access. Review the proposal and explicitly Save any chosen change.",
+    "repo.managedReviewStatus": "Processing status does not recover temporary proposals. Lost or unknown work is not sent again. Your Profile and pending review stay here.",
+    "repo.managedReviewRetry": "A deliberate retry of this unchanged review may be available, subject to current access and shared budget. Nothing was retried automatically.",
+    "repo.managedReviewPaused": "Profile review is paused by a shared limit. Your Profile and pending work are preserved.",
+    "repo.managedReviewChanged": "Access or the saved Profile changed. The outdated proposal was withheld; your pending work is preserved.",
     "repo.submission.managedNotice": "Pilot ingestion uses managed access. No AI keys are needed. Review every proposal before explicitly saving it.",
     "repo.submission.managedCheck": "Check processing status",
     "repo.submission.managedStatus": "Check status before continuing. A lost or unknown response is not sent again; career results are temporary and cannot be recovered from the usage record. Your text and review remain here.",
@@ -1586,6 +1591,11 @@ const messages = {
     "repo.submission.guide":
       "Cole um currículo, anotações ou fatos profissionais individuais. Nada é organizado, aprovado ou salvo até você revisar os destinos e valores propostos.",
     "repo.submission.disclosures": "Privacidade, chaves e uso de entradas",
+    "repo.managedReviewNotice": "A revisão piloto do Perfil usa acesso gerenciado. Revise a proposta e salve explicitamente qualquer alteração escolhida.",
+    "repo.managedReviewStatus": "O status não recupera propostas temporárias. Trabalho perdido ou desconhecido não é reenviado. Seu Perfil e sua revisão pendente permanecem aqui.",
+    "repo.managedReviewRetry": "Uma nova tentativa deliberada desta revisão sem alterações pode estar disponível, sujeita ao acesso atual e orçamento compartilhado. Nada foi repetido automaticamente.",
+    "repo.managedReviewPaused": "A revisão do Perfil foi pausada por um limite compartilhado. Seu Perfil e trabalho pendente foram preservados.",
+    "repo.managedReviewChanged": "O acesso ou o Perfil salvo mudou. A proposta desatualizada foi retida; seu trabalho pendente foi preservado.",
     "repo.submission.managedNotice": "A importação piloto usa acesso gerenciado. Não são necessárias chaves de IA. Revise cada proposta antes de salvá-la explicitamente.",
     "repo.submission.managedCheck": "Verificar status do processamento",
     "repo.submission.managedStatus": "Verifique o status antes de continuar. Uma resposta perdida ou desconhecida não é reenviada; os resultados são temporários e não podem ser recuperados do registro de uso. Seu texto e sua revisão permanecem aqui.",

@@ -23,7 +23,7 @@ type StageIdentity struct{ Provider, Model, Tier, PromptSchema string }
 
 func executionIdentity(workflow, version, rate string) (ExecutionIdentity, error) {
 	e := ExecutionIdentity{Version: version, Workflow: workflow, WorkflowProtocol: "workflow-v1", RatePolicy: rate, Stages: map[string]StageIdentity{}}
-	if !tokenLabel.MatchString(version) || (rate != "synthetic-unit-v1" && !(rate == QualificationRateID && ((workflow == "qualification_gaps" && version == "qualification-local-20261102-v1") || (workflow == "profile_ingestion" && version == IngestionPolicyVersion)))) {
+	if !tokenLabel.MatchString(version) || (rate != "synthetic-unit-v1" && !(rate == QualificationRateID && ((workflow == "qualification_gaps" && version == "qualification-local-20261102-v1") || (workflow == "profile_ingestion" && version == IngestionPolicyVersion) || (workflow == "profile_review" && version == ProfileReviewPolicyVersion)))) {
 		return e, ErrDenied
 	}
 	oa := func(stage, prompt string) {
@@ -107,6 +107,9 @@ func (h *Harness) executionBinding(ctx context.Context, tx *sql.Tx, owner, workf
 			if workflow == "profile_ingestion" {
 				return selectedIngestionEnvelope()
 			}
+			if workflow == "profile_review" {
+				return selectedProfileReviewEnvelope()
+			}
 			return selectedQualificationEnvelope()
 		}
 		return nil
@@ -149,6 +152,9 @@ func (s *Session) validateExecutionStage(ctx context.Context, provider, stage st
 }
 
 func (h *Harness) executionVersion(workflow string) string {
+	if h.cfg.ProfileReview && workflow == "profile_review" {
+		return ProfileReviewPolicyVersion
+	}
 	if h.cfg.Ingestion && workflow == "profile_ingestion" {
 		return IngestionPolicyVersion
 	}

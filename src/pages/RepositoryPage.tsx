@@ -1,3 +1,4 @@
+import { managedProfileReviewOwner } from "../lib/managedProfileReview"
 import SubmissionJourney from "../components/SubmissionJourney"
 import { profileFieldKey } from "../lib/profileLabels"
 import FactDetails from "../components/FactDetails"
@@ -552,11 +553,13 @@ export default function RepositoryPage() {
     section: activeSection,
     repo,
     revision: profileDocument?.revision,
+    locale: state.uiLocale,
   })
   currentReviewContext.current = {
     section: activeSection,
     repo,
     revision: profileDocument?.revision,
+    locale: state.uiLocale,
   }
 
   useEffect(
@@ -617,6 +620,9 @@ export default function RepositoryPage() {
       values,
     })
   }
+  const managedReview = import.meta.env.VITE_CAREEROS_PILOT_MODE === "1" && accountId
+    ? managedProfileReviewOwner(accountId, activeSection, globalThis.sessionStorage) : null
+  const [managedReviewStatus, setManagedReviewStatus] = useState("")
   async function handleAiReview() {
     if (
       !profileReviewFields(activeSection).length ||
@@ -628,7 +634,7 @@ export default function RepositoryPage() {
       !!state.profileError
     )
       return
-    if (!state.apiKey) {
+    if (!managedReview && !state.apiKey) {
       setReviewError(t("repo.setApiKeyFirst"))
       return
     }
@@ -640,7 +646,8 @@ export default function RepositoryPage() {
       reviewRequest.current === requestId &&
       currentReviewContext.current.section === activeSection &&
       currentReviewContext.current.repo === repo &&
-      currentReviewContext.current.revision === profileDocument?.revision
+      currentReviewContext.current.revision === profileDocument?.revision &&
+      currentReviewContext.current.locale === state.uiLocale
     dispatch({ type: "SET_REVIEWING", payload: true })
     try {
       const request = sectionReviewRequest(
@@ -653,6 +660,7 @@ export default function RepositoryPage() {
         state.apiKey,
         controller.signal,
         accountId,
+        managedReview,
       )
       if (!isCurrent()) return
       setSectionEdits({})
@@ -664,6 +672,12 @@ export default function RepositoryPage() {
         e instanceof SectionReviewError
           ? ({
               input: "repo.reviewErrorInput",
+              managed_status: "repo.managedReviewStatus",
+              qualification_paused: "repo.managedReviewPaused",
+              qualification_changed: "repo.managedReviewChanged",
+              qualification_denied: "repo.managedReviewChanged",
+              managed_result_unavailable: "repo.managedReviewChanged",
+              managed_unavailable: "repo.reviewErrorOutage",
               key: "repo.reviewErrorKey",
               rate_limit: "repo.reviewErrorRateLimit",
               outage: "repo.reviewErrorOutage",
@@ -672,7 +686,7 @@ export default function RepositoryPage() {
               refused: "repo.sectionRefused",
               truncated: "repo.sectionTruncated",
             } as const)[
-              (e.code as "input" | "key" | "rate_limit" | "outage" | "timeout" | "invalid_output" | "refused" | "truncated")
+              (e.code as "input" | "key" | "rate_limit" | "outage" | "timeout" | "invalid_output" | "refused" | "truncated" | "managed_status" | "qualification_paused" | "qualification_changed" | "qualification_denied" | "managed_unavailable" | "managed_result_unavailable")
             ]
           : undefined
       setReviewError(errorKey ? t(errorKey) : t("repo.reviewFailed"))
@@ -777,6 +791,14 @@ export default function RepositoryPage() {
             >
               {t("repo.aiReviewDescription", { section: t(active.labelKey) })}
             </p>
+            {managedReview && <div className="text-sm mb-3">
+              <p>{t("repo.managedReviewNotice")}</p>
+              <button className="underline" disabled={state.isReviewingRepo || applyingSection} onClick={async () => {
+                try { const status = await managedReview.status(); setManagedReviewStatus(t(status.retryAllowed ? "repo.managedReviewRetry" : "repo.managedReviewStatus")) }
+                catch { setManagedReviewStatus(t("repo.managedReviewStatus")) }
+              }}>{t("repo.submission.managedCheck")}</button>
+              {managedReviewStatus && <p role="status">{managedReviewStatus}</p>}
+            </div>}
             <button
               onClick={handleAiReview}
               disabled={

@@ -1,3 +1,4 @@
+import type { ManagedProfileReview } from "./managedProfileReview"
 import { workflowHeaders } from "./workflowRequest"
 import {
   editProfile,
@@ -280,14 +281,16 @@ export async function requestSectionProposal(
   apiKey: string,
   signal?: AbortSignal,
   accountId?: string | null,
+  managed?: ManagedProfileReview | null,
 ): Promise<SectionProposal> {
   let response: Response
+  const command = managed?.command(JSON.stringify(request))
   try {
     response = await fetch("/api/profile/review", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-OpenAI-Api-Key": apiKey,
+        ...(managed ? { "X-CareerOS-Action-Key": command!.actionKey, ...(command!.retryKey ? { "X-CareerOS-Retry-Key": command!.retryKey } : {}) } : { "X-OpenAI-Api-Key": apiKey }),
         ...workflowHeaders(accountId),
       },
       body: JSON.stringify(request),
@@ -303,6 +306,8 @@ export async function requestSectionProposal(
     )
   }
   const value = await response.json().catch(() => null)
+  managed?.knownFailure(response.headers.get("X-CareerOS-Retry-Allowed") === "true")
+  if (response.status === 202) { managed?.knownFailure(value?.retryAllowed === true); throw new SectionReviewError("managed_status") }
   if (!response.ok)
     throw new SectionReviewError(
       [
@@ -314,11 +319,13 @@ export async function requestSectionProposal(
         "invalid_output",
         "refused",
         "truncated",
+        "qualification_paused", "qualification_changed", "qualification_denied", "managed_unavailable", "managed_result_unavailable",
       ].includes(value?.error)
         ? value.error
         : "outage",
     )
   if (!validateSectionProposal(request, value))
     throw new SectionReviewError("invalid_output")
+  managed?.completed()
   return value
 }

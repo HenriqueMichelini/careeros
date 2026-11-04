@@ -154,6 +154,22 @@ func scopedRequest(in reviewRequest) reviewRequest {
 	return in
 }
 
+// MatchesSavedRequest compares the full or canonical scoped request with the
+// authoritative saved snapshot. The managed caller invokes it under account
+// locks; this helper neither reads nor writes persistence.
+func MatchesSavedRequest(raw, saved []byte) bool {
+	var in reviewRequest
+	if decode(raw, &in) != nil || sectionFields[in.Section] == nil || (in.Locale != "en" && in.Locale != "pt-BR") {
+		return false
+	}
+	doc, err := pd.Decode(saved)
+	if err != nil {
+		return false
+	}
+	expected := scopedRequest(reviewRequest{Document: doc, Section: in.Section, Locale: in.Locale})
+	return reflect.DeepEqual(in.Document, doc) || reflect.DeepEqual(in.Document, expected.Document)
+}
+
 func decode(raw []byte, target any) error {
 	d := json.NewDecoder(strings.NewReader(string(raw)))
 	d.DisallowUnknownFields()

@@ -252,7 +252,7 @@ func (s *Session) ResultAllowed(ctx context.Context) error {
 // while an underlying writer ignores cancellation. No remote slot is released.
 func (s *Session) BeginResult(ctx context.Context) (context.Context, func(), error) {
 	resultCtx, finishGate, err := s.gate.begin(ctx)
-	if err != nil || !s.ingestion() {
+	if err != nil || !(s.ingestion() || s.profileReview()) {
 		return resultCtx, finishGate, err
 	}
 	if err = s.h.fault("before_ingestion_result_lock"); err != nil {
