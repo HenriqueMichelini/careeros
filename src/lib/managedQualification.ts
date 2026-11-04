@@ -23,8 +23,10 @@ export class ManagedQualification {
   constructor(
     private accountId: string,
     private storage?: Storage,
+    private workflow: "qualification" | "ingestion" = "qualification",
+    storageScope?: string,
   ) {
-    this.storageKey = `careeros.qualification.${accountId}`
+    this.storageKey = `careeros.${workflow}.${accountId}${storageScope ? `:${encodeURIComponent(storageScope)}` : ""}`
     try {
       this.key = storage?.getItem(this.storageKey) ?? null
     } catch {
@@ -52,6 +54,7 @@ export class ManagedQualification {
   knownFailure(allowed: boolean) {
     this.retryAllowed = allowed
   }
+  retryAvailable(): boolean { return this.retryAllowed }
   reset() {
     this.key = null
     this.binding = null
@@ -66,7 +69,7 @@ export class ManagedQualification {
   async status(signal?: AbortSignal): Promise<QualificationStatus> {
     if (!this.key) throw new Error("qualification_no_action")
     const response = await fetch(
-      `/api/ai/qualification/actions/${encodeURIComponent(this.key)}`,
+      `/api/ai/${this.workflow}/actions/${encodeURIComponent(this.key)}`,
       { headers: workflowHeaders(this.accountId), signal },
     )
     const value: unknown = await response.json()

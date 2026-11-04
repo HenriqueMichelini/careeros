@@ -149,6 +149,19 @@ type qualificationAuthority struct {
 	failure error
 }
 
+func (a *qualificationAuthority) BindStage(ctx context.Context, coordinate string, input []byte) (aidispatch.StageReceipt, error) {
+	if a.session == nil {
+		return aidispatch.StageReceipt{}, aicontrol.ErrDenied
+	}
+	return a.session.BindStage(ctx, coordinate, input)
+}
+func (a *qualificationAuthority) ClarificationRevision() string {
+	if a.session == nil {
+		return ""
+	}
+	return a.session.ClarificationRevision()
+}
+
 func (a *qualificationAuthority) Send(ctx context.Context, provider string, r *http.Request) (*http.Response, error) {
 	if a.session == nil {
 		return nil, aicontrol.ErrDenied

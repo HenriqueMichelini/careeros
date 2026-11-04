@@ -23,6 +23,7 @@ import { SubmissionReview } from "./SubmissionReview"
 import type { FieldDecision } from "../lib/fieldDecision"
 import type { ProfessionalRepository } from "../lib/types"
 import type { TranslationKey } from "../lib/i18n"
+import { managedIngestionOwner } from "../lib/managedIngestion"
 
 // One paste-to-review-to-save journey (#192). The component owns only
 // presentation and in-memory foreground actions: it starts the retained
@@ -74,6 +75,7 @@ function failureKey(code: string): TranslationKey {
     preparation: "repo.ingestErrorPreparation",
     capacity: "repo.ingestErrorCapacity",
     stale: "repo.ingestStale",
+    managed_status: "repo.submission.managedStatus",
   } as const
   return lookup[code as keyof typeof lookup] || "repo.reviewFailed"
 }
@@ -106,14 +108,17 @@ function SubmissionDisclosures() {
   )
 }
 
-export default function SubmissionJourney() {
+function SubmissionJourneyForAccount() {
   const { state, dispatch, profileDocument, refreshCanonicalProfile, accountId, saveCanonicalCandidate } =
     useStore()
   const repository = state.repository
   const { t } = useI18n()
+  const managed = import.meta.env.VITE_CAREEROS_PILOT_MODE === "1" && !!accountId
+  const [managedClient] = useState(() => managed && accountId ? managedIngestionOwner(sessionKey, accountId, globalThis.sessionStorage) : null)
+  const [managedStatus, setManagedStatus] = useState("")
   const [controller] = useState(() =>
-    submissionSessionOwner(sessionKey, {
-      transport: createSubmissionTransport(globalThis.fetch, undefined, accountId),
+    submissionSessionOwner(managed ? `${sessionKey}:${accountId}` : sessionKey, {
+      transport: createSubmissionTransport(globalThis.fetch, undefined, accountId, managedClient),
     }),
   )
   const initial = controller.getState()
@@ -180,7 +185,8 @@ export default function SubmissionJourney() {
       flow.status === "stale") &&
     hasRetained
   const resumable =
-    recoverable && !invalidated && !decision && flow.status !== "expired"
+    recoverable && !invalidated && !decision && flow.status !== "expired" &&
+    (!managedClient || flow.error !== "managed_status" || managedClient.retryAvailable())
   const plan: ReviewPlan | null = controller.getReviewPlan()
   const reviewing = flow.status === "reviewing" && flow.applicable && !!plan
   // Completion feedback belongs to this mount. A later remount with a retained
@@ -192,7 +198,7 @@ export default function SubmissionJourney() {
     flow.progress.skippedClaims > 0 ||
     (flow.coverage?.invalidClaims ?? 0) > 0 ||
     flow.coverage?.capacity === submissionCapacityExhausted
-  const missingKeys = !state.apiKey
+  const missingKeys = managed ? "" : !state.apiKey
     ? t("repo.setApiKeyFirst")
     : !state.typesafeKey.trim()
       ? t("field.typesafeMissing")
@@ -213,8 +219,8 @@ export default function SubmissionJourney() {
       profile: structuredClone(repository),
       document: profileDocument ? structuredClone(profileDocument) : undefined,
       keys: {
-        apiKey: state.apiKey,
-        typesafeKey: state.typesafeKey,
+        apiKey: managed ? "" : state.apiKey,
+        typesafeKey: managed ? "" : state.typesafeKey,
       },
     }),
     [
@@ -223,6 +229,7 @@ export default function SubmissionJourney() {
       state.apiKey,
       state.typesafeKey,
       profileDocument,
+      managed,
     ],
   )
 
@@ -326,11 +333,11 @@ export default function SubmissionJourney() {
       setRunFeedback(t("field.request_information"))
       return
     }
-    if (!state.apiKey) {
+    if (!managed && !state.apiKey) {
       setRunFeedback(t("repo.setApiKeyFirst"))
       return
     }
-    if (!state.typesafeKey.trim()) {
+    if (!managed && !state.typesafeKey.trim()) {
       setRunFeedback(t("field.typesafeMissing"))
       return
     }
@@ -347,6 +354,7 @@ export default function SubmissionJourney() {
     setSaveError("")
     setEditing(false)
     const submitted = text
+    managedClient?.reset()
     try {
       await controller.start(
         {
@@ -356,7 +364,7 @@ export default function SubmissionJourney() {
             ? structuredClone(profileDocument)
             : undefined,
         },
-        { apiKey: state.apiKey, typesafeKey: state.typesafeKey },
+        { apiKey: managed ? "" : state.apiKey, typesafeKey: managed ? "" : state.typesafeKey },
         { onStage: emit, onProgress: emit },
       )
     } catch (error) {
@@ -551,6 +559,14 @@ export default function SubmissionJourney() {
       <h2 id="submission-title" className="text-lg font-bold mb-1">
         {t("repo.ingestTitle")}
       </h2>
+      {managedClient && <div className="text-sm mb-3">
+        <p>{t("repo.submission.managedNotice")}</p>
+        <button type="button" className="border px-3 py-2 mt-2" onClick={async () => {
+          try { const status = await managedClient.status(); setManagedStatus(t(status.state === "known_failure" && status.retryAllowed ? "repo.submission.managedRetry" : "repo.submission.managedStatus")) }
+          catch { setManagedStatus(t("repo.submission.managedStatus")) }
+        }}>{t("repo.submission.managedCheck")}</button>
+        {managedStatus && <p role="status">{managedStatus}</p>}
+      </div>}
       {!open && (
         <>
           <p className="text-sm mb-3">{t("repo.submission.closed")}</p>
@@ -578,7 +594,7 @@ export default function SubmissionJourney() {
           {(editing || !hasRetained) && (
             <>
               <p className="text-sm mb-3">{t("repo.submission.guide")}</p>
-              <details className="text-sm mb-3">
+              {!managed && <details className="text-sm mb-3">
                 <summary className="cursor-pointer min-h-9 py-2">
                   {t("field.settings")}
                 </summary>
@@ -603,7 +619,7 @@ export default function SubmissionJourney() {
                   }}
                 />
                 <p className="mt-2">{t("field.disclosure")}</p>
-              </details>
+              </details>}
               <details id="input-use-rule" className="text-sm mb-3">
                 <summary className="cursor-pointer min-h-9 py-2">
                   {t("field.ruleTitle")}
@@ -1017,4 +1033,9 @@ export default function SubmissionJourney() {
       </dialog>
     </section>
   )
+}
+
+export default function SubmissionJourney() {
+  const { accountId } = useStore()
+  return <SubmissionJourneyForAccount key={accountId ?? "legacy"} />
 }

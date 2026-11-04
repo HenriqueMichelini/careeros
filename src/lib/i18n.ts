@@ -462,6 +462,10 @@ const messages = {
     "repo.submission.guide":
       "Paste a CV, notes or individual career facts. Nothing is organized, approved or saved until you review the proposed destinations and values.",
     "repo.submission.disclosures": "Privacy, keys and input use",
+    "repo.submission.managedNotice": "Pilot ingestion uses managed access. No AI keys are needed. Review every proposal before explicitly saving it.",
+    "repo.submission.managedCheck": "Check processing status",
+    "repo.submission.managedStatus": "Check status before continuing. A lost or unknown response is not sent again; career results are temporary and cannot be recovered from the usage record. Your text and review remain here.",
+    "repo.submission.managedRetry": "A deliberate retry may be available for this unchanged submission. It still needs current access and sufficient shared budget. Nothing has been retried automatically.",
     "repo.submission.decisionRetained":
       "The last submission was rejected or needs revised wording. Change the pasted text before preparing changes again.",
     "repo.submission.prepare": "Prepare changes",
@@ -1582,6 +1586,10 @@ const messages = {
     "repo.submission.guide":
       "Cole um currículo, anotações ou fatos profissionais individuais. Nada é organizado, aprovado ou salvo até você revisar os destinos e valores propostos.",
     "repo.submission.disclosures": "Privacidade, chaves e uso de entradas",
+    "repo.submission.managedNotice": "A importação piloto usa acesso gerenciado. Não são necessárias chaves de IA. Revise cada proposta antes de salvá-la explicitamente.",
+    "repo.submission.managedCheck": "Verificar status do processamento",
+    "repo.submission.managedStatus": "Verifique o status antes de continuar. Uma resposta perdida ou desconhecida não é reenviada; os resultados são temporários e não podem ser recuperados do registro de uso. Seu texto e sua revisão permanecem aqui.",
+    "repo.submission.managedRetry": "Uma nova tentativa deliberada pode estar disponível para esta entrada sem alterações. Ela ainda exige acesso atual e orçamento compartilhado suficiente. Nada foi repetido automaticamente.",
     "repo.submission.decisionRetained":
       "O último envio foi rejeitado ou precisa de redação revisada. Altere o texto colado antes de preparar alterações novamente.",
     "repo.submission.prepare": "Preparar alterações",

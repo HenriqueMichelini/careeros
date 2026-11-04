@@ -44,18 +44,21 @@ func (h *Harness) qualificationGrant(ctx context.Context, tx *sql.Tx, p auth.Pri
 	return version, nil
 }
 
-func (h *Harness) qualificationOpen(ctx context.Context, tx *sql.Tx, owner string, newAction bool) error {
+func (h *Harness) managedOpen(ctx context.Context, tx *sql.Tx, owner, workflow, exclude string, newAction bool) error {
 	// The namespace policy lock orders global last-slot and rolling action races.
 	var ignored int
 	if tx.QueryRowContext(ctx, `SELECT max_attempts FROM ai_fixture_policy WHERE namespace=$1 FOR UPDATE`, h.cfg.Namespace).Scan(&ignored) != nil {
 		return ErrUnavailable
 	}
 	var total, day, accountActive, globalActive int
-	err := tx.QueryRowContext(ctx, `SELECT count(*) FILTER(WHERE owner=$2),count(*) FILTER(WHERE owner=$2 AND created_at>clock_timestamp()-interval '24 hours'),count(*) FILTER(WHERE owner=$2 AND state='recoverable' AND NOT execution_finished),count(*) FILTER(WHERE state='recoverable' AND NOT execution_finished) FROM ai_fixture_action WHERE namespace=$1`, h.cfg.Namespace, owner).Scan(&total, &day, &accountActive, &globalActive)
+	err := tx.QueryRowContext(ctx, `SELECT count(*) FILTER(WHERE owner=$2 AND workflow=$3),count(*) FILTER(WHERE owner=$2 AND workflow=$3 AND created_at>clock_timestamp()-interval '24 hours'),count(*) FILTER(WHERE id<>$4 AND owner=$2 AND state='recoverable' AND NOT execution_finished),count(*) FILTER(WHERE id<>$4 AND state='recoverable' AND NOT execution_finished) FROM ai_fixture_action WHERE namespace=$1`, h.cfg.Namespace, owner, workflow, exclude).Scan(&total, &day, &accountActive, &globalActive)
 	if err != nil {
 		return ErrUnavailable
 	}
 	p := selectedQualificationEnvelope()
+	if workflow == "profile_ingestion" {
+		p.Actions, p.RollingActions = 10, 3
+	}
 	if (newAction && (total >= p.Actions || day >= p.RollingActions)) || accountActive >= p.AccountActive || globalActive >= p.GlobalActive {
 		return ErrCapacity
 	}
@@ -70,6 +73,10 @@ func (s *Session) qualificationLimits(ctx context.Context, tx *sql.Tx, leg Leg, 
 		return ErrUnavailable
 	}
 	p := selectedQualificationEnvelope()
+	if s.ingestion() {
+		p.TypeSafeCalls, p.OpenAICalls, p.AttemptOutput, p.AttemptMoney, p.ActionMoney = 48, 48, 240000, 300000, 600000
+		p.OpenAIOutput = 6000
+	}
 	if (leg.Provider == "typesafe" && typesafe >= p.TypeSafeCalls) || (leg.Provider == "openai" && (openai >= p.OpenAICalls || int64(output)+p.OpenAIOutput > p.AttemptOutput)) {
 		return ErrCapacity
 	}
@@ -152,6 +159,9 @@ func (h *Harness) SetQualificationResponder(fn func(context.Context, string, *ht
 // fake calls are authoritatively terminal. It stores no result content or debit.
 // Unknown/incomplete remote work continues to occupy the action slot.
 func (s *Session) FinishQualification(ctx context.Context, knownFailure bool) error {
+	return s.finishManaged(ctx, knownFailure, false)
+}
+func (s *Session) finishManaged(ctx context.Context, knownFailure, failedChild bool) error {
 	if !s.h.cfg.Qualification {
 		return ErrDenied
 	}
@@ -175,6 +185,12 @@ func (s *Session) FinishQualification(ctx context.Context, knownFailure bool) er
 	_, err = tx.ExecContext(ctx, `UPDATE ai_fixture_action SET execution_finished=true,state=$3 WHERE namespace=$1 AND id=$2 AND owner=$4`, h.cfg.Namespace, s.id, state, s.p.AccountID)
 	if err != nil {
 		return ErrUnavailable
+	}
+	if failedChild {
+		_, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_stage(namespace,action,coordinate,stage,attempt,binding) SELECT namespace,action,parent_coordinate||'/revision/'||id,'known_failed_clarification',attempt,binding FROM ai_fixture_child WHERE namespace=$1 AND action=$2 AND id=$3 AND attempt=$4 ON CONFLICT DO NOTHING`, h.cfg.Namespace, s.id, s.childID, s.attempt)
+		if err != nil {
+			return ErrUnavailable
+		}
 	}
 	return safe(tx.Commit())
 }

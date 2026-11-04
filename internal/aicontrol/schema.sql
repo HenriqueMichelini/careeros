@@ -53,7 +53,7 @@ CREATE TABLE ai_fixture_dispatch (
  stage text NOT NULL, leg integer NOT NULL CHECK(leg>0), attempt integer NOT NULL CHECK(attempt>0),
  provider text NOT NULL CHECK(provider IN ('openai','typesafe')), binding bytea NOT NULL CHECK(octet_length(binding)=32),
  maximum bigint NOT NULL CHECK(maximum>0), floor_amount bigint NOT NULL CHECK(floor_amount>=0),
- input_bytes bigint NOT NULL CHECK(input_bytes>=0), output_tokens bigint NOT NULL CHECK(output_tokens>0),
+ input_bytes bigint NOT NULL CHECK(input_bytes>=0), output_tokens bigint NOT NULL CHECK(output_tokens>0), input_tokens bigint NOT NULL DEFAULT 0 CHECK(input_tokens>=0),
  expense bigint CHECK(expense>=0), counted bigint NOT NULL CHECK(counted>=0), evidence_version bigint NOT NULL DEFAULT 0 CHECK(evidence_version>=0),
  maximum_breached boolean NOT NULL DEFAULT false,
  category text NOT NULL DEFAULT 'reserved_maximum' CHECK(category IN ('reserved_maximum','unknown_maximum','supported_estimate','confirmed_bill','reviewed_conservative_maximum','aborted_unsent')),

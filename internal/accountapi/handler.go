@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"os"
@@ -13,6 +12,7 @@ import (
 
 	"professional-information-repo/internal/accountstore"
 	"professional-information-repo/internal/auth"
+	"professional-information-repo/internal/workflowauth"
 )
 
 func New(service *auth.Service, store *accountstore.Store) http.Handler {
@@ -71,31 +71,7 @@ func New(service *auth.Service, store *accountstore.Store) http.Handler {
 	return mux
 }
 
-func respond(w http.ResponseWriter, result any, err error) {
-	w.Header().Set("Cache-Control", "no-store")
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	if err == nil {
-		json.NewEncoder(w).Encode(result)
-		return
-	}
-	code, status := "storage_unavailable", http.StatusServiceUnavailable
-	switch {
-	case errors.Is(err, accountstore.ErrConflict):
-		code, status = "stale", http.StatusConflict
-	case errors.Is(err, accountstore.ErrValidation):
-		code, status = "validation", http.StatusUnprocessableEntity
-	case errors.Is(err, accountstore.ErrNotFound):
-		code, status = "not_found", http.StatusNotFound
-	case errors.Is(err, auth.ErrAuthenticationRequired):
-		code, status = "authentication_required", http.StatusUnauthorized
-	case errors.Is(err, auth.ErrCapacity):
-		code, status = "pilot_capacity", http.StatusConflict
-	case errors.Is(err, auth.ErrForbidden):
-		code, status = "forbidden", http.StatusForbidden
-	}
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(map[string]string{"error": code})
-}
+func respond(w http.ResponseWriter, result any, err error) { workflowauth.Respond(w, result, err) }
 
 type Runtime struct {
 	Service *auth.Service

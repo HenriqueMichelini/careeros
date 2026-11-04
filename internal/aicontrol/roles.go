@@ -7,12 +7,16 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"strings"
 )
+
+const ingestionResumeRule = `(OLD.state='failed' AND NEW.state='recoverable' AND NEW.attempt=OLD.attempt+1 AND NOT NEW.execution_finished AND (OLD.retry_creation_key='' OR OLD.retry_creation_key=NEW.retry_creation_key)) OR
+           (OLD.workflow='profile_ingestion' AND OLD.state='recoverable' AND NEW.state=OLD.state AND NEW.attempt=OLD.attempt AND OLD.execution_finished AND NOT NEW.execution_finished AND NEW.retry_creation_key=OLD.retry_creation_key)`
 
 // syntheticRolePools installs privileges only in the explicitly disposable
 // fixture schema. The application migration/runtime never calls this function.
 // Runtime and reconciliation use independent role-bound connection pools.
-func syntheticRolePools(ctx context.Context, admin *sql.DB, dsn string) (*sql.DB, *sql.DB, string, error) {
+func syntheticRolePools(ctx context.Context, admin *sql.DB, dsn string, ingestion bool) (*sql.DB, *sql.DB, string, error) {
 	u, err := url.Parse(dsn)
 	if err != nil {
 		return nil, nil, "", ErrDenied
@@ -39,6 +43,17 @@ func syntheticRolePools(ctx context.Context, admin *sql.DB, dsn string) (*sql.DB
 	var installed bool
 	if tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM ai_fixture_installation WHERE version=1)`).Scan(&installed) != nil {
 		return nil, nil, "", ErrUnavailable
+	}
+	if ingestion {
+		var present bool
+		if tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM pg_attribute WHERE attrelid='ai_fixture_dispatch'::regclass AND attname='input_tokens' AND NOT attisdropped)`).Scan(&present) != nil {
+			return nil, nil, "", ErrUnavailable
+		}
+		if !present {
+			if _, err = tx.ExecContext(ctx, `ALTER TABLE ai_fixture_dispatch ADD COLUMN input_tokens bigint NOT NULL DEFAULT 0 CHECK(input_tokens>=0)`); err != nil {
+				return nil, nil, "", ErrUnavailable
+			}
+		}
 	}
 	// The schema-local marker and all privileges commit atomically. Reopening
 	// a fixture authenticates existing restricted roles without reacquiring DDL
@@ -69,7 +84,7 @@ GRANT SELECT ON careeros_pilot_access,careeros_identities TO %[2]s;
 GRANT SELECT(account_id,document) ON careeros_profiles TO %[2]s;
 GRANT INSERT(namespace,id,owner,creation_key,workflow,binding,profile_binding,grant_version,execution_binding,execution_version) ON ai_fixture_action TO %[2]s;
 GRANT INSERT(namespace,scope,limit_amount,capacity) ON ai_fixture_scope TO %[2]s;
-GRANT INSERT(namespace,id,action,coordinate,stage,leg,attempt,provider,binding,maximum,floor_amount,counted,input_bytes,output_tokens) ON ai_fixture_dispatch TO %[2]s;
+GRANT INSERT(namespace,id,action,coordinate,stage,leg,attempt,provider,binding,maximum,floor_amount,counted,input_bytes,output_tokens,input_tokens) ON ai_fixture_dispatch TO %[2]s;
 GRANT INSERT ON ai_fixture_stage,ai_fixture_child,ai_fixture_allocation,ai_fixture_observation TO %[2]s;
 GRANT UPDATE(state,customer_reserved,attempt,execution_finished,retry_creation_key) ON ai_fixture_action TO %[2]s;
 GRANT UPDATE(state,category,remote_state,intent_at,durable_bound,local_finished) ON ai_fixture_dispatch TO %[2]s;
@@ -108,7 +123,7 @@ BEGIN
  END IF;
  IF TG_TABLE_NAME='ai_fixture_action' THEN
    IF (NEW.execution_finished IS DISTINCT FROM OLD.execution_finished OR NEW.retry_creation_key IS DISTINCT FROM OLD.retry_creation_key) AND
-      NOT (OLD.state='failed' AND NEW.state='recoverable' AND NEW.attempt=OLD.attempt+1 AND NOT NEW.execution_finished AND (OLD.retry_creation_key='' OR OLD.retry_creation_key=NEW.retry_creation_key)) THEN
+      NOT (%[5]s) THEN
      RAISE EXCEPTION 'runtime cannot complete or rebind action';
    END IF;
    IF NEW.customer_effect IS DISTINCT FROM OLD.customer_effect OR
@@ -156,12 +171,42 @@ BEGIN
 END $abandon$;
 REVOKE ALL ON FUNCTION ai_fixture_abandon(text,text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION ai_fixture_abandon(text,text) TO %[2]s;
-`, schema, runtimeRole, reviewerRole)
+`, schema, runtimeRole, reviewerRole, supportRole, ingestionResumeRule)
 		if _, err = tx.ExecContext(ctx, ddl); err != nil {
 			return nil, nil, "", ErrUnavailable
 		}
 		if _, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_installation(version) VALUES(1)`); err != nil {
 			return nil, nil, "", ErrUnavailable
+		}
+	}
+	if ingestion {
+		// Upgrade only the known inherited fixture guard. This permits runtime
+		// to CLAIM (never release) an idle ingestion Action slot. Existing
+		// qualification identities, money and unknown occupancy are untouched.
+		if installed {
+			var definition string
+			if tx.QueryRowContext(ctx, `SELECT pg_get_functiondef('ai_fixture_runtime_guard()'::regprocedure)`).Scan(&definition) != nil {
+				return nil, nil, "", ErrUnavailable
+			}
+			if !strings.Contains(definition, ingestionResumeRule) {
+				old := "NOT (OLD.state='failed' AND NEW.state='recoverable' AND NEW.attempt=OLD.attempt+1 AND NOT NEW.execution_finished AND (OLD.retry_creation_key='' OR OLD.retry_creation_key=NEW.retry_creation_key))"
+				if !strings.Contains(definition, old) {
+					return nil, nil, "", ErrUnavailable
+				}
+				definition = strings.Replace(definition, old, "NOT ("+ingestionResumeRule+")", 1)
+				if _, err = tx.ExecContext(ctx, definition); err != nil {
+					return nil, nil, "", ErrUnavailable
+				}
+			}
+		}
+		var allowed bool
+		if tx.QueryRowContext(ctx, `SELECT has_column_privilege($1,'ai_fixture_dispatch','input_tokens','INSERT')`, runtimeRole).Scan(&allowed) != nil {
+			return nil, nil, "", ErrUnavailable
+		}
+		if !allowed {
+			if _, err = tx.ExecContext(ctx, "GRANT INSERT(input_tokens) ON ai_fixture_dispatch TO "+runtimeRole); err != nil {
+				return nil, nil, "", ErrUnavailable
+			}
 		}
 	}
 	if tx.Commit() != nil {

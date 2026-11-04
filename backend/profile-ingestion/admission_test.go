@@ -10,13 +10,13 @@ import (
 	"testing"
 	"time"
 
-	"professional-information-repo/internal/accountapi"
 	"professional-information-repo/internal/aicontrol"
 	"professional-information-repo/internal/aidispatch"
 	"professional-information-repo/internal/auth"
 	"professional-information-repo/internal/fieldvalidation"
 	"professional-information-repo/internal/preprocessing"
 	"professional-information-repo/internal/testsupport/aiadmission"
+	"professional-information-repo/internal/workflowauth"
 )
 
 type admissionIngestion struct {
@@ -91,7 +91,7 @@ func admittedIngestion(t *testing.T, a app, configure func(*aicontrol.SyntheticC
 		r = restored
 		a.handler().ServeHTTP(w, r)
 	})
-	result.handler = accountapi.ProtectWorkflow(f.Service, f.Store, "/api/profile/ingest", controlled)
+	result.handler = workflowauth.Protect(f.Service, f.Store, "/api/profile/ingest", controlled)
 	return result
 }
 

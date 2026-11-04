@@ -64,7 +64,10 @@ type SyntheticConfig struct {
 	// Qualification selects only the approved local fake qualification slice.
 	// TokenBound is a synthetic full-envelope bound, never a live tokenizer.
 	Qualification bool
-	TokenBound    func(provider string, completeRequest []byte) (int64, bool)
+	// Ingestion extends the same managed namespace/scopes; it never creates a
+	// second account/global budget. Qualification's frozen contract is unchanged.
+	Ingestion  bool
+	TokenBound func(provider string, completeRequest []byte) (int64, bool)
 }
 
 func DefaultSyntheticConfig(namespace string, gate *SyntheticGate) SyntheticConfig {
@@ -90,6 +93,9 @@ var stages = map[string]bool{"field_validation": true, "extraction": true, "reco
 // literal loopback address. It never reads environment variables or account files.
 // The caller must first install existing account tables in this disposable schema.
 func NewSynthetic(ctx context.Context, dsn string, cfg SyntheticConfig) (*Harness, error) {
+	if cfg.Ingestion && !cfg.Qualification {
+		return nil, ErrDenied
+	}
 	u, err := url.Parse(dsn)
 	if err != nil || (u.Scheme != "postgresql" && u.Scheme != "postgres") {
 		return nil, ErrDenied
@@ -154,7 +160,7 @@ func NewSynthetic(ctx context.Context, dsn string, cfg SyntheticConfig) (*Harnes
 	if tx.Commit() != nil {
 		return fail()
 	}
-	runtimeDB, reviewerDB, supportRole, err := syntheticRolePools(ctx, db, dsn)
+	runtimeDB, reviewerDB, supportRole, err := syntheticRolePools(ctx, db, dsn, cfg.Ingestion)
 	if err != nil {
 		return fail()
 	}

@@ -27,6 +27,7 @@ const maxBody = 160 << 10
 const timeout = 24 * time.Second
 
 type request struct {
+	managedProfile json.RawMessage
 	Stage          *stageRequest             `json:"stage,omitempty"`
 	Receipt        string                    `json:"receipt,omitempty"`
 	ApplyAnswer    *applyAnswerRequest       `json:"applyAnswer,omitempty"`
@@ -102,6 +103,7 @@ type result struct {
 type app struct {
 	client     *http.Client
 	signingKey []byte
+	managed    bool
 }
 
 var scalarFields = map[string]bool{"careerGoals": true, "skills": true, "competencies": true, "tools": true, "employmentStatus": true, "currentSalary": true, "desiredSalary": true, "additionalInfo": true, "fullName": true, "email": true, "phone": true, "location": true, "professionalLinks": true}
@@ -122,6 +124,42 @@ func NewHandler() http.Handler { return NewHandlerWithClient(&http.Client{Timeou
 // transport, allowing local evaluation without changing process-wide networking.
 func NewHandlerWithClient(client *http.Client) http.Handler {
 	return (app{client: client, signingKey: []byte(os.Getenv("PROFILE_INGESTION_SIGNING_KEY"))}).handler()
+}
+
+// NewManagedHandler is explicitly injected by the closed local composition.
+// The caller supplies its stable server signing key; no environment discovery
+// or caller credential controls admission. Managed dispatch still owns egress.
+func NewManagedHandler(signingKey []byte) http.Handler {
+	inner := (app{client: &http.Client{Timeout: timeout}, signingKey: append([]byte(nil), signingKey...), managed: true}).handler()
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		inner.ServeHTTP(w, r.WithContext(aidispatch.RequireManaged(r.Context())))
+	})
+}
+
+// ManagedEnvelope shares the exact root/coordinate normalization used by the
+// workflow rather than rebuilding a second, subtly different stage identity.
+func ManagedEnvelope(raw []byte) (root []byte, coordinate, kind string, ok bool) {
+	var in request
+	if json.Unmarshal(raw, &in) != nil || !validStage(in) || in.Stage == nil || in.Stage.Version != 2 {
+		return nil, "", "", false
+	}
+	var shape map[string]json.RawMessage
+	if json.Unmarshal(raw, &shape) != nil {
+		return nil, "", "", false
+	}
+	in.managedProfile = shape["profile"]
+	return managedRequestRoot(in), dispatchCoordinate(in), in.Stage.Kind, true
+}
+
+func managedRequestRoot(in request) []byte {
+	base := map[string]any{"input": in.Input, "profile": in.Profile, "protocol": submissionReceiptVersion}
+	if len(in.managedProfile) > 0 {
+		base["profile"] = in.managedProfile
+	}
+	if len(in.Document) > 0 {
+		base["document"] = in.Document
+	}
+	return mustJSON(base)
 }
 
 func (a app) handler() http.Handler {
@@ -187,6 +225,10 @@ func (a app) ingest(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	root := mustJSON(request{Input: in.Input, Profile: in.Profile, Document: in.Document})
+	if a.managed {
+		in.managedProfile = shape["profile"]
+		root = managedRequestRoot(in)
+	}
 	parent = aidispatch.WithWorkflowRoot(parent, "profile_ingestion", root)
 	ctx = aidispatch.WithWorkflowRoot(ctx, "profile_ingestion", root)
 	parent = aidispatch.WithCoordinate(parent, coordinate)

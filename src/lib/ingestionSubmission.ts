@@ -1,4 +1,5 @@
 import { workflowHeaders } from "./workflowRequest"
+import type { ManagedIngestion } from "./managedIngestion"
 // In-memory foreground submission controller and typed transport (#187/#188).
 //
 // One `start()` drives a single whole-submission through the bounded v2 stages:
@@ -236,6 +237,8 @@ export interface SubmissionTransport {
 function submissionResponseCode(raw: unknown, response: Response): string {
   if (record(raw) && typeof raw.error === "string") {
     const code = raw.error
+	if (code === "qualification_paused") return "capacity"
+	if (code === "qualification_changed" || code === "qualification_denied") return "stale"
     if (submissionTransportCodes.includes(code)) return code
   }
   return response.status === 504 ? "timeout" : "outage"
@@ -248,6 +251,7 @@ export function createSubmissionTransport(
   fetchImpl: typeof fetch = globalThis.fetch,
   endpoint = submissionEndpoint,
   accountId?: string | null,
+  managed?: ManagedIngestion | null,
 ): SubmissionTransport {
   const post = async (
     body: object,
@@ -258,12 +262,18 @@ export function createSubmissionTransport(
     let response: Response
     let raw: unknown
     try {
+      const command = managed?.stage(body)
       response = await fetchImpl(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-OpenAI-Api-Key": keys.apiKey,
-          "X-TypeSafe-Api-Key": keys.typesafeKey,
+          ...(command ? {
+            "X-CareerOS-Action-Key": command.actionKey,
+            ...(command.retryKey ? { "X-CareerOS-Retry-Key": command.retryKey } : {}),
+          } : {
+            "X-OpenAI-Api-Key": keys.apiKey,
+            "X-TypeSafe-Api-Key": keys.typesafeKey,
+          }),
           ...workflowHeaders(accountId),
         },
         body: JSON.stringify(body),
@@ -278,7 +288,12 @@ export function createSubmissionTransport(
       }
       if (signal.aborted) throw submissionSignalError(signal)
     } catch (error) {
+      if (managed) throw new IngestionError("managed_status")
       throw error instanceof IngestionError ? error : submissionSignalError(signal)
+    }
+    if (managed) {
+      managed.knownFailure(response.headers.get("X-CareerOS-Retry-Allowed") === "true")
+      if (response.status === 202) throw new IngestionError("managed_status")
     }
     if (record(raw) && "decision" in raw) {
       const decision = parseFieldDecision(raw.decision, "professional_information")

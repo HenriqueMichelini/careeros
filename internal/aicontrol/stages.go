@@ -31,6 +31,10 @@ func (s *Session) stageLimit(ctx context.Context, tx *sql.Tx) (int, error) {
 	if tx.QueryRowContext(ctx, `SELECT max_stages FROM ai_fixture_policy WHERE namespace=$1 FOR UPDATE`, s.h.cfg.Namespace).Scan(&maximum) != nil {
 		return 0, ErrUnavailable
 	}
+	if s.ingestion() {
+		p := selectedIngestionEnvelope()
+		maximum = p.Attempts * (4 + p.Extract + p.Reconcile + 3*p.Clarify + p.TypeSafeCalls + p.OpenAICalls)
+	}
 	var count int
 	if tx.QueryRowContext(ctx, `SELECT (SELECT count(*) FROM ai_fixture_stage WHERE namespace=$1 AND action=$2)+(SELECT count(*) FROM ai_fixture_child WHERE namespace=$1 AND action=$2)`, s.h.cfg.Namespace, s.id).Scan(&count) != nil {
 		return 0, ErrUnavailable
@@ -70,6 +74,13 @@ func (s *Session) BindStage(ctx context.Context, coordinate string, input []byte
 		return out, ErrDenied
 	}
 	inputRoot := map[string]json.RawMessage{"input": envelope["input"], "profile": envelope["profile"]}
+	if s.ingestion() {
+		var root map[string]json.RawMessage
+		if json.Unmarshal(s.rootInput, &root) != nil || len(root["protocol"]) == 0 {
+			return out, ErrDenied
+		}
+		inputRoot["protocol"] = root["protocol"]
+	}
 	if document := envelope["document"]; len(document) > 0 && string(document) != "null" {
 		inputRoot["document"] = document
 	}

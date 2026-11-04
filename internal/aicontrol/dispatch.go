@@ -19,16 +19,17 @@ import (
 )
 
 type Session struct {
-	h                    *Harness
-	p                    auth.Principal
-	id, workflow         string
-	root, profile        []byte
-	execution            []byte
-	rootInput            []byte // transient request only; never persisted or logged
-	attempt              int
-	grantVersion         int64
-	gate                 gateLease
-	childID, childParent string
+	h                     *Harness
+	p                     auth.Principal
+	id, workflow          string
+	root, profile         []byte
+	execution             []byte
+	rootInput             []byte // transient request only; never persisted or logged
+	attempt               int
+	grantVersion          int64
+	gate                  gateLease
+	childID, childParent  string
+	foregroundIndependent bool // explicit clarification/new-attempt command only
 }
 
 func (s *Session) ID() string { return s.id }
@@ -39,7 +40,7 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 	if !tokenLabel.MatchString(key) || !workflows[workflow] {
 		return nil, ErrDenied
 	}
-	if h.cfg.Qualification && workflow != "qualification_gaps" {
+	if h.cfg.Qualification && workflow != "qualification_gaps" && !(h.cfg.Ingestion && workflow == "profile_ingestion") {
 		return nil, ErrDenied
 	}
 	binding, err := h.fingerprint(p.AccountID, "root/"+workflow, rootJSON)
@@ -80,12 +81,12 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 		if e != nil {
 			return nil, e
 		}
-		if executionVersion != h.cfg.ExecutionPolicyVersion || !hmac.Equal(execution, current) {
+		if executionVersion != h.executionVersion(workflow) || !hmac.Equal(execution, current) {
 			return nil, ErrConflict
 		}
 	} else if errors.Is(err, sql.ErrNoRows) {
 		if h.cfg.Qualification {
-			if err = h.qualificationOpen(ctx, tx, p.AccountID, true); err != nil {
+			if err = h.managedOpen(ctx, tx, p.AccountID, workflow, "", true); err != nil {
 				return nil, err
 			}
 		}
@@ -101,7 +102,7 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 		if !valid {
 			return nil, ErrDenied
 		}
-		if workflow == "application_draft" || workflow == "qualification_gaps" {
+		if workflow == "application_draft" || workflow == "qualification_gaps" || (h.cfg.Ingestion && workflow == "profile_ingestion") {
 			profile, err = h.currentProfileBinding(ctx, tx, p.AccountID)
 			if err != nil {
 				return nil, err
@@ -115,12 +116,17 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 		if err != nil {
 			return nil, err
 		}
-		_, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_action(namespace,id,owner,creation_key,workflow,binding,profile_binding,grant_version,execution_binding,execution_version) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, h.cfg.Namespace, id, p.AccountID, key, workflow, binding, profile, grantVersion, execution, h.cfg.ExecutionPolicyVersion)
+		_, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_action(namespace,id,owner,creation_key,workflow,binding,profile_binding,grant_version,execution_binding,execution_version) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, h.cfg.Namespace, id, p.AccountID, key, workflow, binding, profile, grantVersion, execution, h.executionVersion(workflow))
 		if err != nil {
 			return nil, ErrUnavailable
 		}
 	} else {
 		return nil, ErrUnavailable
+	}
+	if h.cfg.Ingestion && workflow == "profile_ingestion" {
+		if err = h.ingestionSavedSnapshot(ctx, tx, p.AccountID, rootJSON); err != nil {
+			return nil, err
+		}
 	}
 	if err = accountstore.AuthorizeTransaction(ctx, tx, p); err != nil {
 		return nil, err
@@ -307,9 +313,14 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (Dispatch, error) {
 	if err != nil {
 		return zero, err
 	}
+	var inputTokens int64
 	m, err := maximum(leg.Provider, leg.Body)
 	if h.cfg.Qualification {
-		m, err = h.qualificationMaximum(leg.Provider, leg.Body)
+		if s.ingestion() {
+			m, inputTokens, err = h.ingestionMaximum(leg.Provider, leg.Body)
+		} else {
+			m, err = h.qualificationMaximum(leg.Provider, leg.Body)
+		}
 	}
 	if err != nil {
 		return zero, err
@@ -345,7 +356,7 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (Dispatch, error) {
 	if err = s.checkExecution(ctx, tx); err != nil {
 		return zero, err
 	}
-	identity, _ := executionIdentity(s.workflow, h.cfg.ExecutionPolicyVersion, h.cfg.RatePolicyVersion)
+	identity, _ := executionIdentity(s.workflow, h.executionVersion(s.workflow), h.cfg.RatePolicyVersion)
 	stageIdentity, ok := identity.Stages[leg.Stage]
 	if !ok || stageIdentity.Provider != leg.Provider {
 		return zero, ErrDenied
@@ -378,6 +389,13 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (Dispatch, error) {
 	}
 	if s.attempt > maxAttempts {
 		return zero, ErrCapacity
+	}
+	if s.ingestion() {
+		p := selectedIngestionEnvelope()
+		maxDispatches = p.Attempts * (p.TypeSafeCalls + p.OpenAICalls)
+		// Retain the existing aggregate byte bound. TypeSafe's bounded free
+		// output is distinct from the selected billable OpenAI output ceiling.
+		maxOutput = int64(p.Attempts) * (int64(p.TypeSafeCalls)*65536 + p.OutputTotal)
 	}
 	var dispatchCount int
 	if tx.QueryRowContext(ctx, `SELECT count(*) FROM ai_fixture_dispatch WHERE namespace=$1 AND action=$2`, h.cfg.Namespace, s.id).Scan(&dispatchCount) != nil {
@@ -444,6 +462,11 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (Dispatch, error) {
 			return zero, err
 		}
 	}
+	if s.ingestion() {
+		if err = s.ingestionLimits(ctx, tx, leg, inputTokens, output); err != nil {
+			return zero, err
+		}
+	}
 	if err = h.fault("after_scope_locks"); err != nil {
 		return zero, err
 	}
@@ -461,7 +484,11 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (Dispatch, error) {
 	if id == "" {
 		return zero, ErrUnavailable
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_dispatch(namespace,id,action,coordinate,stage,leg,attempt,provider,binding,maximum,floor_amount,counted,input_bytes,output_tokens) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$10,$10,$11,$12)`, h.cfg.Namespace, id, s.id, leg.Coordinate, leg.Stage, leg.Number, s.attempt, leg.Provider, binding, m, len(leg.Body), output)
+	if s.ingestion() {
+		_, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_dispatch(namespace,id,action,coordinate,stage,leg,attempt,provider,binding,maximum,floor_amount,counted,input_bytes,output_tokens,input_tokens) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$10,$10,$11,$12,$13)`, h.cfg.Namespace, id, s.id, leg.Coordinate, leg.Stage, leg.Number, s.attempt, leg.Provider, binding, m, len(leg.Body), output, inputTokens)
+	} else {
+		_, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_dispatch(namespace,id,action,coordinate,stage,leg,attempt,provider,binding,maximum,floor_amount,counted,input_bytes,output_tokens) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$10,$10,$11,$12)`, h.cfg.Namespace, id, s.id, leg.Coordinate, leg.Stage, leg.Number, s.attempt, leg.Provider, binding, m, len(leg.Body), output)
+	}
 	if err != nil {
 		return zero, ErrUnavailable
 	}
@@ -697,6 +724,8 @@ func (s *Session) RetryQualification(ctx context.Context, key string) (*Session,
 
 func (s *Session) retry(ctx context.Context, key string) (*Session, error) {
 	h := s.h
+	command := *s
+	command.foregroundIndependent = s.ingestion()
 	if h.cfg.Qualification && !tokenLabel.MatchString(key) {
 		return nil, ErrDenied
 	}
@@ -705,7 +734,7 @@ func (s *Session) retry(ctx context.Context, key string) (*Session, error) {
 		return nil, err
 	}
 	defer tx.Rollback()
-	if err = s.checkCurrent(ctx, tx); err != nil {
+	if err = command.checkCurrent(ctx, tx); err != nil {
 		return nil, err
 	}
 	if _, err = h.checkGrant(ctx, tx, s.p, s.grantVersion); err != nil {
@@ -724,7 +753,7 @@ func (s *Session) retry(ctx context.Context, key string) (*Session, error) {
 		if retryKey != key || current != 2 {
 			return nil, ErrConflict
 		}
-		if err = s.checkCurrent(ctx, tx); err != nil {
+		if err = command.checkCurrent(ctx, tx); err != nil {
 			return nil, err
 		}
 		if tx.Commit() != nil {
@@ -744,7 +773,7 @@ func (s *Session) retry(ctx context.Context, key string) (*Session, error) {
 			return nil, ErrCapacity
 		}
 		if h.cfg.Qualification {
-			if err = h.qualificationOpen(ctx, tx, s.p.AccountID, false); err != nil {
+			if err = h.managedOpen(ctx, tx, s.p.AccountID, s.workflow, s.id, false); err != nil {
 				return nil, err
 			}
 		}
@@ -763,7 +792,7 @@ func (s *Session) retry(ctx context.Context, key string) (*Session, error) {
 	if err = s.gate.allowed(); err != nil {
 		return nil, err
 	}
-	if err = s.checkCurrent(ctx, tx); err != nil {
+	if err = command.checkCurrent(ctx, tx); err != nil {
 		return nil, err
 	}
 	if tx.Commit() != nil {
@@ -775,7 +804,7 @@ func (s *Session) retry(ctx context.Context, key string) (*Session, error) {
 }
 
 func (s *Session) childSession(id, parent string) *Session {
-	return &Session{h: s.h, p: s.p, id: s.id, workflow: s.workflow, root: append([]byte(nil), s.root...), rootInput: append([]byte(nil), s.rootInput...), profile: append([]byte(nil), s.profile...), execution: append([]byte(nil), s.execution...), attempt: s.attempt, grantVersion: s.grantVersion, gate: s.gate, childID: id, childParent: parent}
+	return &Session{h: s.h, p: s.p, id: s.id, workflow: s.workflow, root: append([]byte(nil), s.root...), rootInput: append([]byte(nil), s.rootInput...), profile: append([]byte(nil), s.profile...), execution: append([]byte(nil), s.execution...), attempt: s.attempt, grantVersion: s.grantVersion, gate: s.gate, childID: id, childParent: parent, foregroundIndependent: s.ingestion() && id != ""}
 }
 
 func (s *Session) checkCurrent(ctx context.Context, tx *sql.Tx) error {
@@ -806,6 +835,9 @@ func (s *Session) checkCurrent(ctx context.Context, tx *sql.Tx) error {
 		if !hmac.Equal(b, s.profile) {
 			return ErrConflict
 		}
+	}
+	if s.ingestion() && !s.foregroundIndependent {
+		return s.ingestionDeadline(ctx, tx)
 	}
 	return nil
 }

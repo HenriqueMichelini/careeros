@@ -193,6 +193,10 @@ func (a app) submissionPlan(ctx context.Context, w http.ResponseWriter, in reque
 		fail(SubmissionErrorStatus(code), code)
 		return
 	}
+	if a.managed && len(plan.Batches) > 20 {
+		fail(422, SubmissionErrCapacity)
+		return
+	}
 	if ctx.Err() != nil {
 		fail(504, "timeout")
 		return
