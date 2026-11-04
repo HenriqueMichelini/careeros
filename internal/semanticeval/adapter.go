@@ -276,6 +276,17 @@ func run(c Case, mode, openAIKey, typeSafeKey string, config *Configuration, bud
 }
 
 func runContext(ctx context.Context, c Case, mode, openAIKey, typeSafeKey string, config *Configuration, budget *Budget) (RunResult, error) {
+	return runContextWithAssessment(ctx, c, mode, openAIKey, typeSafeKey, config, budget, true)
+}
+
+// runProposalContext executes the same production handler contract without
+// calling Assess. Proposal-only variants must never receive a Case's gold,
+// forbidden patterns or expected failures, so no scoring path is reachable.
+func runProposalContext(ctx context.Context, c Case, mode, openAIKey, typeSafeKey string, config *Configuration, budget *Budget) (RunResult, error) {
+	return runContextWithAssessment(ctx, c, mode, openAIKey, typeSafeKey, config, budget, false)
+}
+
+func runContextWithAssessment(ctx context.Context, c Case, mode, openAIKey, typeSafeKey string, config *Configuration, budget *Budget, assess bool) (RunResult, error) {
 	result := RunResult{ID: c.ID, Task: c.Task, Split: c.Split, Language: c.Language, Mode: mode, Role: c.Role}
 	if err := ctx.Err(); err != nil {
 		return result, err
@@ -348,6 +359,9 @@ func runContext(ctx context.Context, c Case, mode, openAIKey, typeSafeKey string
 	}
 	if err := ctx.Err(); err != nil {
 		return result, err
+	}
+	if !assess {
+		return result, nil
 	}
 	assessed, err := Assess(c, result)
 	result = assessed

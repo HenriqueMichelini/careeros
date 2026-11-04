@@ -31,6 +31,7 @@ type RunRecord struct {
 	Progress            RunProgress         `json:"progress"`
 	Version             string              `json:"version"`
 	ID                  string              `json:"id"`
+	VariantID           string              `json:"variantId,omitempty"`
 	EngineState         string              `json:"engineState"`
 	AssertionVerdict    string              `json:"assertionVerdict"`
 	OperationalOutcomes map[string]int      `json:"operationalOutcomes"`

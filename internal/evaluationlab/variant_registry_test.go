@@ -26,7 +26,7 @@ func TestResolvedVariantPlansAndExecutesOwnedControlledBehavior(t *testing.T) {
 		t.Fatal(err)
 	}
 	record := awaitRun(t, runner, id)
-	if record.EngineState != "completed" || len(record.Cases) != 1 || record.Cases[0].ID != "en-fact" || len(record.Dispatches) == 0 {
+	if record.EngineState != "completed" || record.VariantID != "semantic-quality-native-v1" || len(record.Cases) != 1 || record.Cases[0].ID != "en-fact" || len(record.Dispatches) == 0 {
 		t.Fatalf("owned adapter did not execute selected case: %+v", record)
 	}
 	for _, dispatch := range record.Dispatches {
@@ -69,7 +69,7 @@ func TestResolvedVariantRejectsUnknownAndCrossSuiteSelectors(t *testing.T) {
 		{"unknown", "semantic-quality-native-v1", "current"},
 		{"workflow-settings", "semantic-quality-native-v1", "current"},
 		{"semantic-quality", "semantic-quality-native-v1", "luna-low"},
-		{"semantic-quality", "ingestion-legacy-proposal-v1", "current"},
+		{"semantic-quality", "ingestion-submission-proposal-v1", "current"},
 		{"semantic-quality", "ingestion-staged-proposal-v1", "current"},
 		{"semantic-quality", "go test ./...", "current"},
 		{"semantic-quality", "/tmp/adapter", "current"},
@@ -168,17 +168,29 @@ func TestCatalogDescribesSevenSuiteBoundariesWithoutInventingProjectors(t *testi
 		if !found {
 			t.Fatalf("missing supported native endpoint for %s: %+v", suite.ID, capability.Endpoints)
 		}
-		if len(suite.Variants) != 1 {
-			t.Fatalf("proposed architecture became executable: %s %+v", suite.ID, suite.Variants)
+		wantVariants := 1
+		if suite.ID == "semantic-quality" {
+			wantVariants = 2
 		}
-		descriptor := suite.Variants[0]
-		if descriptor.ID != suite.ID+"-native-v1" || descriptor.SuiteID != suite.ID {
-			t.Fatalf("wrong adapter: %+v", descriptor)
+		if len(suite.Variants) != wantVariants {
+			t.Fatalf("unexpected executable variants: %s %+v", suite.ID, suite.Variants)
 		}
-		for _, configuration := range suite.Configurations {
-			resolved, err := lab.ResolveVariant(suite.ID, descriptor.ID, configuration)
-			if err != nil || resolved.Descriptor().ID != descriptor.ID {
-				t.Fatalf("catalog adapter cannot resolve: %s %s %v", suite.ID, configuration, err)
+		for _, descriptor := range suite.Variants {
+			if descriptor.SuiteID != suite.ID {
+				t.Fatalf("wrong adapter suite: %+v", descriptor)
+			}
+			wantAdapter := "lab-native-adapter-v1"
+			if descriptor.ID == lab.LegacyIngestionVariantID {
+				wantAdapter = lab.LegacyIngestionAdapterVersion
+			}
+			if descriptor.AdapterVersion != wantAdapter {
+				t.Fatalf("wrong adapter version: %+v", descriptor)
+			}
+			for _, configuration := range suite.Configurations {
+				resolved, err := lab.ResolveVariant(suite.ID, descriptor.ID, configuration)
+				if err != nil || resolved.Descriptor().ID != descriptor.ID {
+					t.Fatalf("catalog adapter cannot resolve: %s %s %v", suite.ID, configuration, err)
+				}
 			}
 		}
 		if capability.StrictProjector.Status == "unavailable" && len(capability.StrictProjector.Measurements) != 0 {

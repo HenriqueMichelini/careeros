@@ -16,15 +16,17 @@ type VariantDescriptor struct {
 }
 
 type variantRegistration struct {
-	id      string
-	suiteID string
-	plan    func(*Planner, Selection, ExecutionCaps) (Plan, error)
-	start   func(*Runner, context.Context, Plan) (string, error)
+	id             string
+	suiteID        string
+	adapterVersion string
+	plan           func(*Planner, Selection, ExecutionCaps) (Plan, error)
+	start          func(*Runner, context.Context, Plan) (string, error)
 }
 
 // Entries contain owned code, never names loaded from a request or artifact.
 var variantRegistry = []variantRegistration{
 	{id: "semantic-quality-native-v1", suiteID: "semantic-quality", plan: (*Planner).Plan, start: (*Runner).Start},
+	{id: LegacyIngestionVariantID, suiteID: "semantic-quality", adapterVersion: LegacyIngestionAdapterVersion, plan: planLegacyIngestion, start: (*Runner).startLegacyIngestion},
 	{id: "workflow-settings-native-v1", suiteID: "workflow-settings", plan: (*Planner).Plan, start: (*Runner).Start},
 	{id: "qualification-evidence-native-v1", suiteID: "qualification-evidence", plan: (*Planner).Plan, start: (*Runner).Start},
 	{id: "application-context-native-v1", suiteID: "application-context", plan: (*Planner).Plan, start: (*Runner).Start},
@@ -109,7 +111,11 @@ type VariantBuildReference struct {
 }
 
 func variantDescriptor(registration variantRegistration, suite Suite) VariantDescriptor {
-	descriptor := VariantDescriptor{BuildManifest: &VariantBuildReference{Version: BuildManifestVersion, VariantID: registration.id, Correspondence: "unavailable", UnavailableReason: "co-built compiled manifest unavailable"}, ID: registration.id, AdapterVersion: "lab-native-adapter-v1", SuiteID: suite.ID, Modes: append([]string{}, suite.Modes...), Configurations: append([]string{}, suite.Configurations...)}
+	adapterVersion := registration.adapterVersion
+	if adapterVersion == "" {
+		adapterVersion = "lab-native-adapter-v1"
+	}
+	descriptor := VariantDescriptor{BuildManifest: &VariantBuildReference{Version: BuildManifestVersion, VariantID: registration.id, Correspondence: "unavailable", UnavailableReason: "co-built compiled manifest unavailable"}, ID: registration.id, AdapterVersion: adapterVersion, SuiteID: suite.ID, Modes: append([]string{}, suite.Modes...), Configurations: append([]string{}, suite.Configurations...)}
 	compiled, err := CompiledBuildManifest()
 	if err == nil && compiled.Version == BuildManifestVersion && compiled.Hash == buildManifestHash(compiled) {
 		for _, variant := range compiled.Variants {

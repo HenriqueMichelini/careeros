@@ -36,8 +36,9 @@ assert.equal(built.status, 0, built.stderr)
 const info = JSON.parse(built.stdout)
 assert.equal(info.build.status, "verified")
 assert.equal(info.suites.length, 7)
-for (const suite of info.suites) {
-  const descriptor = suite.variants[0]
+const descriptors = info.suites.flatMap((suite) => suite.variants)
+assert.equal(descriptors.length, 8)
+for (const descriptor of descriptors) {
   assert.equal(descriptor.buildManifest.hash, info.build.manifest.hash)
   assert.equal(descriptor.buildManifest.variantId, descriptor.id)
   assert.equal(
@@ -45,6 +46,17 @@ for (const suite of info.suites) {
     "compiled-identity-only",
   )
 }
+const semanticQuality = info.suites.find(
+  (suite) => suite.id === "semantic-quality",
+)
+assert.deepEqual(
+  semanticQuality.variants.map((variant) => variant.id),
+  ["semantic-quality-native-v1", "ingestion-legacy-proposal-v1"],
+)
+assert.equal(
+  semanticQuality.variants[1].adapterVersion,
+  "lab-ingestion-legacy-proposal-v1",
+)
 const originalReceipt = readFileSync(receiptPath)
 const scratch = mkdtempSync(join(tmpdir(), "careeros-build-smoke-"))
 const copiedBinary = join(scratch, "bin/lab-api")

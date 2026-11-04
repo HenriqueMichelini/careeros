@@ -71,12 +71,19 @@ func NewRunner(planner *Planner, options RunnerOptions) *Runner {
 // Start admits a verified plan atomically and returns before execution finishes.
 // This runner has no live mode or credential/file discovery path.
 func (r *Runner) Start(parent context.Context, plan Plan) (string, error) {
+	return r.start(parent, plan, plan.Selection.Suite+"-native-v1")
+}
+
+func (r *Runner) start(parent context.Context, plan Plan, variantID string) (string, error) {
 	if r.planner == nil {
 		return "", fmt.Errorf("planner unavailable")
 	}
 	plan = clonePlan(plan)
 	if err := r.planner.ValidatePlan(plan); err != nil {
 		return "", err
+	}
+	if variantID == "" {
+		return "", fmt.Errorf("variant identity unavailable")
 	}
 	cases, err := r.plannedCases(plan)
 	if err != nil {
@@ -92,7 +99,11 @@ func (r *Runner) Start(parent context.Context, plan Plan) (string, error) {
 	}
 	id := newLabID()
 	ctx, cancel := context.WithTimeout(parent, time.Duration(plan.Caps.DeadlineMS)*time.Millisecond)
-	record := RunRecord{Version: ResultVersion, ID: id, EngineState: "planned", AssertionVerdict: "unavailable", Selection: plan.Selection, Provenance: cloneJSON(plan.Provenance), Cases: cases, Dispatches: []Dispatch{}, OperationalOutcomes: map[string]int{}, UnavailableReasons: []string{"pending local evidence; durable persistence is not provided by the memory runner"}, Context: ExecutionContext{Mode: plan.Selection.Mode, RuntimeVersion: plan.RuntimeVersion, Concurrency: 1, Order: append([]string{}, plan.CaseOrder...), MaxLogicalCases: plan.Caps.MaxCases, MaxHTTPAttempts: plan.Caps.MaxHTTPAttempts, MaxProviderCalls: plan.Caps.MaxProviderCalls, MaxArtifactBytes: plan.Caps.MaxArtifactBytes, DeadlineMS: plan.Caps.DeadlineMS, ConfigurationVersion: plan.SuiteVersion, SchemaVersion: ResultVersion, ScorerVersion: plan.Provenance.SourceHashes["internal/semanticeval/score.go"], UnavailableReasons: []string{"source/prompt/label completeness depends on supplied launch provenance"}}, Progress: RunProgress{PlannedCases: len(cases), PlannedHTTP: plan.RequiredHTTPAttempts}}
+	record := RunRecord{Version: ResultVersion, ID: id, VariantID: variantID, EngineState: "planned", AssertionVerdict: "unavailable", Selection: plan.Selection, Provenance: cloneJSON(plan.Provenance), Cases: cases, Dispatches: []Dispatch{}, OperationalOutcomes: map[string]int{}, UnavailableReasons: []string{"pending local evidence; durable persistence is not provided by the memory runner"}, Context: ExecutionContext{Mode: plan.Selection.Mode, RuntimeVersion: plan.RuntimeVersion, Concurrency: 1, Order: append([]string{}, plan.CaseOrder...), MaxLogicalCases: plan.Caps.MaxCases, MaxHTTPAttempts: plan.Caps.MaxHTTPAttempts, MaxProviderCalls: plan.Caps.MaxProviderCalls, MaxArtifactBytes: plan.Caps.MaxArtifactBytes, DeadlineMS: plan.Caps.DeadlineMS, ConfigurationVersion: plan.SuiteVersion, SchemaVersion: ResultVersion, ScorerVersion: plan.Provenance.SourceHashes["internal/semanticeval/score.go"], UnavailableReasons: []string{"source/prompt/label completeness depends on supplied launch provenance"}}, Progress: RunProgress{PlannedCases: len(cases), PlannedHTTP: plan.RequiredHTTPAttempts}}
+	if variantID == LegacyIngestionVariantID {
+		record.Context.ScorerVersion = ""
+		record.UnavailableReasons = append(record.UnavailableReasons, "proposal-only variant: no gold-based assertion, semantic score, Apply/Save, browser or real-model quality claim")
+	}
 	record.Context.LabelHash = versionedHash("lab-label-fixture-set-v1", plan.InputHashes)
 	if len(plan.Provenance.SourceHashes) > 0 {
 		// Conservative source-envelope versions: equal means the captured source
@@ -392,71 +403,75 @@ func (r *Runner) execute(parent context.Context, state *runState) {
 		r.eventLocked(state, RunEvent{Kind: "case_started", CaseIdentity: state.record.Cases[index].Identity})
 		r.mu.Unlock()
 		var actual json.RawMessage
-		switch state.plan.Selection.Suite {
-		case "cv-integrity-evidence":
-			var rows []ImportedCase
-			rows, err = DeriveCVEvidence(r.planner.assets["cv-integrity-evidence"])
-			if err == nil {
-				for _, row := range rows {
-					if row.ID == id {
-						actual = row.Actual
-						r.mu.Lock()
-						state.record.Cases[index].Review = row.Review
-						r.mu.Unlock()
-						break
+		if state.record.VariantID == LegacyIngestionVariantID {
+			actual, err = r.executeLegacyIngestionCase(ctx, id, budget)
+		} else {
+			switch state.plan.Selection.Suite {
+			case "cv-integrity-evidence":
+				var rows []ImportedCase
+				rows, err = DeriveCVEvidence(r.planner.assets["cv-integrity-evidence"])
+				if err == nil {
+					for _, row := range rows {
+						if row.ID == id {
+							actual = row.Actual
+							r.mu.Lock()
+							state.record.Cases[index].Review = row.Review
+							r.mu.Unlock()
+							break
+						}
 					}
 				}
-			}
-		case "semantic-quality", "workflow-settings", "section-review":
-			c, lookupErr := r.semanticCase(state.plan.Selection.Suite, id)
-			if lookupErr != nil {
-				err = lookupErr
-				break
-			}
-			err = semanticeval.ExecuteBatch(ctx, semanticeval.Batch{Cases: []semanticeval.Case{c}, Mode: "controlled", Configurations: []string{state.plan.Selection.Configuration}, Budget: budget}, func(_ semanticeval.Case, _ string, result semanticeval.RunResult, evaluationErr error) error {
-				actual, _ = json.Marshal(result)
-				return evaluationErr
-			})
-		case "qualification-evidence":
-			var report QualificationReport
-			report, err = RunQualificationEvidence(ctx, r.planner.assets["qualification-evidence"], []string{id})
-			actual, _ = json.Marshal(report)
-		case "application-context":
-			var report ApplicationContextReport
-			report, err = RunApplicationContext(ctx, r.planner.assets["application-context"], r.planner.assets["semantic-quality"], r.planner.assets["application-baseline"], []string{id})
-			actual, _ = json.Marshal(report)
-		case "test-adapters":
-			var report ProcessResult
-			if r.options.Processes == nil {
-				report = ProcessResult{Version: ProcessResultVersion, Selector: id, Outcome: "tool_missing", CleanupComplete: true, UnavailableReasons: []string{"isolated process adapter unavailable"}}
-				err = fmt.Errorf("process adapter unavailable")
-			} else {
-				report, err = r.options.Processes.run(ctx, id, state.plan.Caps.MaxArtifactBytes-state.artifactBytes, func(phase string) error {
-					if phase == "intent" {
-						if healthErr := r.health(ctx, state); healthErr != nil {
-							return healthErr
-						}
-						return r.retain(state)
-					}
-					r.mu.Lock()
-					if phase == "started" {
-						state.record.Progress.AttemptedProcesses++
-						state.record.Cases[index].AttemptedSteps++
-					}
-					r.eventLocked(state, RunEvent{Kind: "process_" + phase, CaseIdentity: state.record.Cases[index].Identity})
-					r.mu.Unlock()
-					return r.retain(state)
+			case "semantic-quality", "workflow-settings", "section-review":
+				c, lookupErr := r.semanticCase(state.plan.Selection.Suite, id)
+				if lookupErr != nil {
+					err = lookupErr
+					break
+				}
+				err = semanticeval.ExecuteBatch(ctx, semanticeval.Batch{Cases: []semanticeval.Case{c}, Mode: "controlled", Configurations: []string{state.plan.Selection.Configuration}, Budget: budget}, func(_ semanticeval.Case, _ string, result semanticeval.RunResult, evaluationErr error) error {
+					actual, _ = json.Marshal(result)
+					return evaluationErr
 				})
+			case "qualification-evidence":
+				var report QualificationReport
+				report, err = RunQualificationEvidence(ctx, r.planner.assets["qualification-evidence"], []string{id})
+				actual, _ = json.Marshal(report)
+			case "application-context":
+				var report ApplicationContextReport
+				report, err = RunApplicationContext(ctx, r.planner.assets["application-context"], r.planner.assets["semantic-quality"], r.planner.assets["application-baseline"], []string{id})
+				actual, _ = json.Marshal(report)
+			case "test-adapters":
+				var report ProcessResult
+				if r.options.Processes == nil {
+					report = ProcessResult{Version: ProcessResultVersion, Selector: id, Outcome: "tool_missing", CleanupComplete: true, UnavailableReasons: []string{"isolated process adapter unavailable"}}
+					err = fmt.Errorf("process adapter unavailable")
+				} else {
+					report, err = r.options.Processes.run(ctx, id, state.plan.Caps.MaxArtifactBytes-state.artifactBytes, func(phase string) error {
+						if phase == "intent" {
+							if healthErr := r.health(ctx, state); healthErr != nil {
+								return healthErr
+							}
+							return r.retain(state)
+						}
+						r.mu.Lock()
+						if phase == "started" {
+							state.record.Progress.AttemptedProcesses++
+							state.record.Cases[index].AttemptedSteps++
+						}
+						r.eventLocked(state, RunEvent{Kind: "process_" + phase, CaseIdentity: state.record.Cases[index].Identity})
+						r.mu.Unlock()
+						return r.retain(state)
+					})
+				}
+				actual, _ = json.Marshal(report)
+				r.mu.Lock()
+				if report.SpawnAttempted {
+					state.record.Progress.FinishedProcesses++
+				}
+				r.eventLocked(state, RunEvent{Kind: "process_finished", CaseIdentity: state.record.Cases[index].Identity, Outcome: report.Outcome})
+				r.mu.Unlock()
+			default:
+				err = fmt.Errorf("unsupported execution suite")
 			}
-			actual, _ = json.Marshal(report)
-			r.mu.Lock()
-			if report.SpawnAttempted {
-				state.record.Progress.FinishedProcesses++
-			}
-			r.eventLocked(state, RunEvent{Kind: "process_finished", CaseIdentity: state.record.Cases[index].Identity, Outcome: report.Outcome})
-			r.mu.Unlock()
-		default:
-			err = fmt.Errorf("unsupported execution suite")
 		}
 		r.mu.Lock()
 		root := &state.record.Cases[index]
@@ -479,6 +494,9 @@ func (r *Runner) execute(parent context.Context, state *runState) {
 			root.OperationalOutcome = report.Outcome
 			root.UnavailableReasons = append(root.UnavailableReasons, report.UnavailableReasons...)
 		}
+		if state.record.VariantID == LegacyIngestionVariantID {
+			root.UnavailableReasons = append(root.UnavailableReasons, "proposal-only execution: no gold-based assertion, semantic score, Apply/Save, browser or real-model quality claim")
+		}
 		if err != nil {
 			if state.plan.Selection.Suite == "test-adapters" {
 				root.AssertionVerdict = "blocked"
@@ -487,7 +505,7 @@ func (r *Runner) execute(parent context.Context, state *runState) {
 			if errors.Is(ctx.Err(), context.Canceled) {
 				root.EngineState = "canceled"
 			}
-		} else {
+		} else if state.record.VariantID != LegacyIngestionVariantID {
 			r.interpretCase(root, state.plan.Selection.Suite)
 		}
 		root.SkippedSteps = max(0, root.PlannedSteps-root.AttemptedSteps)
@@ -501,6 +519,9 @@ func (r *Runner) execute(parent context.Context, state *runState) {
 	r.mu.Lock()
 	state.record.EngineState = "completed"
 	state.record.AssertionVerdict = "pass"
+	if state.record.VariantID == LegacyIngestionVariantID {
+		state.record.AssertionVerdict = "unavailable"
+	}
 	if state.storageErr != nil {
 		state.record.EngineState = "failed"
 		state.record.UnavailableReasons = append(state.record.UnavailableReasons, "storage_failure")
