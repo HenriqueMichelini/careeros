@@ -1,0 +1,52 @@
+{
+  "synthetic_only": true,
+  "base": "65358faafe8a88e9539bdd91e59a863f25a7ff65",
+  "repair_parent": "3d7e50b77a994bc3e68c1cbdc6f4aa38931085d1",
+  "confirmed_spec_P2": "fresh-instance finished-success status did not rotate the next deliberate unchanged rewrite; repaired, pending final-head independent readback",
+  "runtime_delta": [
+    "src/lib/managedProfileReview.ts"
+  ],
+  "go_runtime_blob_count_unchanged": 8,
+  "go_rechecks": "Not rerun for frontend-only repair; original exact Go runtime blobs and checkpoint limitations preserved",
+  "inherited_relevant_go_pass_events": 1044,
+  "inherited_shared_admission_case_ids_passed": 37,
+  "inherited_full_go_pass_events": 2287,
+  "inherited_full_go_exit": 1,
+  "inherited_full_go_limitations": "25 Lab paths matching exact base, plus retained full A35 policy timing failure; isolated current/base passes do not make aggregate green",
+  "node_passed": 371,
+  "projection_parity_cases": 44,
+  "focused_client_tests_passed": 2,
+  "typescript": "pass",
+  "pilot_build": "pass",
+  "browser_locales": [
+    "en",
+    "pt-BR"
+  ],
+  "browser_cells_passed": 6,
+  "new_browser_cells": "actual page reload plus finished-success GET followed by a deliberate unchanged new Action; 2 locales",
+  "browser_evidence_directories": [
+    "/tmp/careeros-account-browser-gHnsiy",
+    "/tmp/careeros-account-browser-DxsBLp",
+    "/tmp/careeros-account-browser-IOoujv",
+    "/tmp/careeros-account-browser-ljI8N4",
+    "/tmp/careeros-account-browser-WK4nE1",
+    "/tmp/careeros-account-browser-UCs7eH"
+  ],
+  "tested_runtime_git_blobs": {
+    "backend/profile-review/main.go": "1d995fd6c7ea3175fac21c56648a463a68207683",
+    "internal/accountapi/profile_review.go": "3e65af99a569ae3fe0a3c527220b796c9e1cad59",
+    "internal/aicontrol/profile_review.go": "634cadfffa9e71f9ec33f2382c594068ce4f778f",
+    "internal/aicontrol/dispatch.go": "35ee7c7ac375f2570f2f0bbd8c45760c70127c21",
+    "internal/aicontrol/execution.go": "4bfcc4636eb723e3aaae6439bc541f65d7f509f7",
+    "internal/aicontrol/gate.go": "3b4269acb7f69aef2ec35578d116412c09d570c5",
+    "internal/aicontrol/qualification.go": "ac1de6185cbfd83c2d46ec7913c7ea2c24c67c2c",
+    "internal/aicontrol/types.go": "d4fd21f07bafa4cdf812d3468a74dd3a9b3e2edf",
+    "src/lib/managedProfileReview.ts": "e99c2565de54a95ea66456296e9304b60321e820",
+    "src/lib/managedQualification.ts": "2a61b6ab2cf9f7cebc1dfbb4030497b32d47e438",
+    "src/lib/sectionReview.ts": "66af443947d285076e220357abad1e35eff7ab28",
+    "src/pages/RepositoryPage.tsx": "1234799322ecb4de49a9946578776d90904805ee",
+    "src/lib/i18n.ts": "ade9ca55dc351639d75c196763adbe25a669a4e2"
+  },
+  "automatic_post_or_save_on_status": false,
+  "actual_provider_egress_enabled": false
+}

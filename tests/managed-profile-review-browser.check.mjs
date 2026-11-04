@@ -29,4 +29,27 @@ for(const pt of [false,true]){
   const posts=await evaluate(`managedReviewScenario.posts`);assert.equal(posts.length,2);assert.equal(posts[1].headers['x-careeros-action-key'],first.headers['x-careeros-action-key']);assert.ok(posts[1].headers['x-careeros-retry-key']);assert.deepEqual(posts[1].body,first.body);assert.equal(await evaluate(`managedReviewScenario.saves.length`),0)
   console.log(JSON.stringify({status:'passed',locale:pt?'pt-BR':'en',evidence,checks:['unknown preserves saved Profile','navigation retained scoped owner','status GET0sends0writes','knownfailure deliberate Retry unchangedroot','proposal not implicitly saved']}))
  },{path:'/tests/managed-profile-review-harness.html',env:{VITE_CAREEROS_PILOT_MODE:'1'},initialize:`localStorage.setItem('careeros_locale',${JSON.stringify(pt?'pt-BR':'en')});window.reviewMode='unknown'`})
+ await withAccountBrowser(async({evaluate,wait,call,evidence})=>{
+  await open({evaluate,wait});await evaluate(`${by(text.review)}.click()`);await wait(`document.querySelector('section[aria-label="${text.panel}"]')`)
+  const original=(await evaluate(`managedReviewScenario.posts`))[0]
+  assert.equal(await evaluate(`managedReviewScenario.saves.length`),0)
+  await evaluate(`${by(text.reject)}.click()`)
+  await call('Page.reload')
+  await wait(`typeof managedReviewScenario!=='undefined'&&managedReviewScenario.posts.length===0`)
+  await open({evaluate,wait})
+  assert.equal(await evaluate(`managedReviewScenario.posts.length`),0,'reload must not create a rewrite')
+  assert.equal(await evaluate(`sessionStorage.getItem('careeros.profile-review.synthetic-a:skills')`),original.headers['x-careeros-action-key'])
+  await evaluate(`${by(text.check)}.click()`);await wait(`managedReviewScenario.reads===1`)
+  assert.equal(await evaluate(`managedReviewScenario.posts.length`),0,'successful status must remain GET-only')
+  assert.equal(await evaluate(`sessionStorage.getItem('careeros.profile-review.synthetic-a:skills')`),original.headers['x-careeros-action-key'],'GET must not rotate the key')
+  await evaluate(`${by(text.review)}.click()`);await wait(`managedReviewScenario.posts.length===1`)
+  const rewritten=(await evaluate(`managedReviewScenario.posts`))[0]
+  assert.notEqual(rewritten.headers['x-careeros-action-key'],original.headers['x-careeros-action-key'],'finished successful rewrite after actual reload requires newAction')
+  assert.equal(rewritten.headers['x-careeros-retry-key'],undefined)
+  assert.deepEqual(rewritten.body,original.body)
+  await wait(`document.querySelector('section[aria-label="${text.panel}"]')`)
+  assert.equal(await evaluate(`managedReviewScenario.saves.length`),0)
+  console.log(JSON.stringify({status:'passed',locale:pt?'pt-BR':'en',evidence,checks:['actual page reload reconstructs managed owner','opaque recovery key retained','finished success GET creates0POST0Save and doesnotrotate','next deliberate unchanged rewrite freshAction','no old-content retrieval claim','proposal still needs explicit Save']}))
+ },{path:'/tests/managed-profile-review-harness.html',env:{VITE_CAREEROS_PILOT_MODE:'1'},initialize:`localStorage.setItem('careeros_locale',${JSON.stringify(pt?'pt-BR':'en')})`})
+
 }

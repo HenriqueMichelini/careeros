@@ -12,6 +12,14 @@ export class ManagedProfileReview extends ManagedQualification {
     if (this.hasResult) this.reset()
     return super.command(binding)
   }
+  override async status(signal?: AbortSignal) {
+    const value = await super.status(signal)
+    // Finished success is authoritative metadata, not recovered proposal
+    // content. Rotate only on the NEXT deliberate command; unknown work keeps
+    // its identity and known failure keeps the existing explicit Retry path.
+    this.hasResult = value.state === "result_unavailable" && !value.retryAllowed
+    return value
+  }
   completed() { this.hasResult = true; this.knownFailure(false) }
   override reset() { this.hasResult = false; super.reset() }
 }
