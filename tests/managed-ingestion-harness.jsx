@@ -4,7 +4,7 @@ import App from '../src/App'
 import fixtures from '../internal/profiledocument/fixtures.json'
 import {journeyFetch} from './submission-browser.fixture.mjs'
 import '../src/index.css'
-const scenario={mode:window.managedIngestionMode??'normal',posts:[],saves:[],reads:0,document:structuredClone(fixtures[0].document),loseSave:false,operations:{}}
+const scenario={mode:window.managedIngestionMode??'normal',posts:[],saves:[],reads:0,document:window.managedIngestionEmpty?null:structuredClone(fixtures[0].document),loseSave:false,operations:{}}
 Object.assign(window,{managedIngestionScenario:scenario,__realFetch:window.fetch})
 const response=(v,status=200,headers)=>new Response(JSON.stringify(v),{status,headers})
 window.fetch=async(input,init={})=>{

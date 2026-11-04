@@ -109,5 +109,7 @@
   "managed_browser_navigation_remount": "pass EN/PT; GET-only recovery and deliberate unchanged Retry",
   "legacy_browser_aggregate": "incomplete exit130; no green aggregate claim",
   "legacy_pt_desktop_cell": "pass isolated unchanged assertions",
-  "legacy_pt_mobile_cell": "pass isolated unchanged assertions"
+  "legacy_pt_mobile_cell": "pass isolated unchanged assertions",
+  "checkpoint": "a389c04faf7ac8ca659cdafb10d656db050eb4c0",
+  "evidence_status": "historical original implementation; two confirmed P2 repairs have separate verification"
 }

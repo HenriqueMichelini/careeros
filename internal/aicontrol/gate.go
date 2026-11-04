@@ -251,5 +251,28 @@ func (s *Session) ResultAllowed(ctx context.Context) error {
 // Close denies new writes and cancels existing ones; Drain remains incomplete
 // while an underlying writer ignores cancellation. No remote slot is released.
 func (s *Session) BeginResult(ctx context.Context) (context.Context, func(), error) {
-	return s.gate.begin(ctx)
+	resultCtx, finishGate, err := s.gate.begin(ctx)
+	if err != nil || !s.ingestion() {
+		return resultCtx, finishGate, err
+	}
+	if err = s.h.fault("before_ingestion_result_lock"); err != nil {
+		finishGate()
+		return nil, nil, err
+	}
+	// The protected wrappers call this again at their actual buffered writes,
+	// including the outer pilot flush. Keep account/session locks through the
+	// write so a concurrent explicit first Save/update cannot slip between
+	// this frozen-Profile check and transient result release. This has no
+	// financial/capacity mutation and is not qualification's input validator.
+	tx, err := s.h.begin(resultCtx, s.p)
+	if err != nil {
+		finishGate()
+		return nil, nil, err
+	}
+	if err = s.checkCurrent(resultCtx, tx); err != nil {
+		_ = tx.Rollback()
+		finishGate()
+		return nil, nil, err
+	}
+	return resultCtx, func() { _ = tx.Rollback(); finishGate() }, nil
 }

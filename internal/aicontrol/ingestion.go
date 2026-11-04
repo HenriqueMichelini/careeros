@@ -32,12 +32,18 @@ func (s *Session) ingestion() bool {
 // exact frozen saved-document binding.
 func (h *Harness) ingestionSavedSnapshot(ctx context.Context, tx *sql.Tx, owner string, root []byte) error {
 	var saved []byte
-	if tx.QueryRowContext(ctx, `SELECT document FROM careeros_profiles WHERE account_id=$1`, owner).Scan(&saved) != nil {
+	savedErr := tx.QueryRowContext(ctx, `SELECT document FROM careeros_profiles WHERE account_id=$1`, owner).Scan(&saved)
+	absent := savedErr == sql.ErrNoRows
+	if savedErr != nil && !absent {
 		return ErrUnavailable
 	}
-	doc, e := profiledocument.Decode(saved)
-	if e != nil {
-		return ErrDenied
+	var doc profiledocument.Document
+	if !absent {
+		var e error
+		doc, e = profiledocument.Decode(saved)
+		if e != nil {
+			return ErrDenied
+		}
 	}
 	var request struct {
 		Profile  map[string]any  `json:"profile"`
@@ -61,6 +67,16 @@ func (h *Harness) ingestionSavedSnapshot(ctx context.Context, tx *sql.Tx, owner 
 		return ErrConflict
 	}
 	if len(request.Document) > 0 && string(request.Document) != "null" {
+		if absent {
+			// AccountProfile.open creates an unsaved empty working document.
+			// Its caller-generated IDs are frozen by the Action, but never
+			// substituted for saved authority or persisted by admission.
+			working, e := profiledocument.Decode(request.Document)
+			if e != nil || len(working.Entities) != 0 || len(working.Evidence) != 0 || len(working.Links) != 0 || !reflect.DeepEqual(profiledocument.View(working), profiledocument.View(doc)) {
+				return ErrConflict
+			}
+			return nil
+		}
 		var a, b any
 		if json.Unmarshal(saved, &a) != nil || json.Unmarshal(request.Document, &b) != nil || !reflect.DeepEqual(a, b) {
 			return ErrConflict

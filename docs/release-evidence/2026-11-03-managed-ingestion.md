@@ -1,8 +1,10 @@
 # Managed ingestion verification — 3 November 2026
 
+**Historical implementation checkpoint:** `a389c04faf7ac8ca659cdafb10d656db050eb4c0` (tree `8624ae4b8cc269e3b48b5b98f1f1c529ea17a7bb`). Independent review subsequently confirmed two P2 findings. See [the review-repair record](2026-11-03-managed-ingestion-review-repairs.md) for the replacement checkpoint and fresh checks. Counts/blob maps below belong to the original checkpoint and are not relabeled as final repair evidence.
+
 Local synthetic evidence only: fake providers, synthetic accounts/content and private disposable PostgreSQL. No actual provider request, provider/secret access, spending, real invitation/grant/admission, remote GitHub mutation, configuration, deployment or recovery operation occurred. Independent Standards/Spec/security review remains required; this document is a review checkpoint, not a success or launch claim.
 
-Base: `9a759e5b0ae99e2328f535a2168fb9d3ae9d544c`, tree `f6e89bf413b967cd7208b3243edbaeb3676b95c6`, on the existing cumulative branch `codex/batch-277-qualification-20261102` at `.local-worktrees/qualification-277-20261102`. The commit containing this report freezes the tested runtime plus documentation for independent review. All prior completed commits remain ancestors; the dirty research checkout and other worktrees are untouched.
+Base: `9a759e5b0ae99e2328f535a2168fb9d3ae9d544c`, tree `f6e89bf413b967cd7208b3243edbaeb3676b95c6`, on the existing cumulative branch `codex/batch-277-qualification-20261102` at `.local-worktrees/qualification-277-20261102`. The original checkpoint above froze this tested runtime plus documentation for independent review. All prior completed commits remain ancestors; the dirty research checkout and other worktrees are untouched.
 
 Contract and route inventory: [managed-ingestion-local.md](../managed-ingestion-local.md). Owner policy links are exact frozen selections, not current-price lookups. Evidence paths under `/tmp` are ephemeral raw logs; the durable summary below retains outcomes and exact failure names even if those temporary files are later removed.
 

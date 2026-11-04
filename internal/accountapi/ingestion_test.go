@@ -147,6 +147,185 @@ func TestManagedIngestionSharesInheritedQualificationLastMoney(t *testing.T) {
 func ingestionFixture(t *testing.T) (*aiadmission.Fixture, *aicontrol.Harness, *aiadmission.Provider, http.Handler) {
 	return ingestionBoundFixture(t, func(_ string, raw []byte) (int64, bool) { return int64(len(raw)) + 64, true })
 }
+
+func emptyIngestionSnapshot(t *testing.T, f *aiadmission.Fixture) map[string]any {
+	t.Helper()
+	if _, e := f.DB.Exec(`DELETE FROM careeros_profiles WHERE account_id=$1`, f.Principal.AccountID); e != nil {
+		t.Fatal(e)
+	}
+	var doc map[string]any
+	_ = json.Unmarshal(f.Document, &doc)
+	doc["facts"] = []any{}
+	doc["entities"] = []any{}
+	doc["evidence"] = []any{}
+	doc["links"] = []any{}
+	raw, _ := json.Marshal(doc)
+	if _, e := profiledocument.Decode(raw); e != nil {
+		t.Fatal(e)
+	}
+	return map[string]any{"profile": profiledocument.View(profiledocument.Document{}), "document": json.RawMessage(raw)}
+}
+
+func ingestionContext(t *testing.T, f *aiadmission.Fixture, router http.Handler, key string, snapshot map[string]any) ingestion.SubmissionAssemblyResponse {
+	t.Helper()
+	post := func(kind string, extra map[string]any) *httptest.ResponseRecorder {
+		fields := map[string]any{}
+		for k, v := range snapshot {
+			fields[k] = v
+		}
+		for k, v := range extra {
+			fields[k] = v
+		}
+		return qualificationRequest(t, f, router, "/api/profile/ingest", key, "", ingestionBody(t, f, kind, fields))
+	}
+	var plan ingestion.SubmissionPlanResponse
+	w := post("plan", nil)
+	if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &plan) != nil {
+		t.Fatalf("plan %d %s", w.Code, w.Body.String())
+	}
+	var extracted ingestion.SubmissionExtractionResponse
+	w = post("extract", map[string]any{"planReceipt": plan.PlanReceipt, "batchIndex": 0})
+	if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &extracted) != nil {
+		t.Fatalf("extract %d %s", w.Code, w.Body.String())
+	}
+	var assembled ingestion.SubmissionAssemblyResponse
+	w = post("assemble", map[string]any{"planReceipt": plan.PlanReceipt, "batchReceipts": []string{extracted.BatchReceipt}})
+	if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &assembled) != nil {
+		t.Fatalf("assemble %d %s", w.Code, w.Body.String())
+	}
+	return assembled
+}
+
+func TestManagedIngestionAbsentProfileFirstReviewAndExplicitSave(t *testing.T) {
+	f, h, p, router := ingestionFixture(t)
+	snapshot := emptyIngestionSnapshot(t, f)
+	// Qualification retains its stricter saved/useful Profile precondition.
+	w := qualificationRequest(t, f, accountapi.NewSyntheticQualification(f.Service, f.Store, h), "/api/qualification-gaps", "no-profile-qualification", "", f.Body(t, "/api/qualification-gaps"))
+	if w.Code < 400 || len(p.Calls) != 0 {
+		t.Fatalf("qualification accepted absent Profile: %d", w.Code)
+	}
+	assembled := ingestionContext(t, f, router, "empty-first-submission", snapshot)
+	claimID := assembled.Context.Batches[0].ClaimIDs[0]
+	_ = h.SetQualificationResponder(func(ctx context.Context, provider string, request *http.Request) (*http.Response, bool, error) {
+		response, e := p.Respond(ctx, provider, request)
+		if provider == "openai" {
+			proposal := map[string]any{"operations": []any{map[string]any{"claimId": claimID, "target": "skills", "entryId": "", "field": "skills", "action": "add", "value": "Java", "finding": "addition", "supportingClaimIds": []string{claimID}}}, "outcomes": []any{map[string]any{"claimId": claimID, "kind": "change", "reason": "new_skill", "relatedFacts": []any{}, "relatedClaimIds": []any{}}}}
+			rewriteSyntheticCompletion(t, response, func(content map[string]any) {
+				for key, value := range proposal {
+					content[key] = value
+				}
+			})
+		}
+		return response, true, e
+	})
+	fields := map[string]any{"contextReceipt": assembled.ContextReceipt, "focus": map[string]any{"claimIds": assembled.Context.Batches[0].ClaimIDs}}
+	for k, v := range snapshot {
+		fields[k] = v
+	}
+	w = qualificationRequest(t, f, router, "/api/profile/ingest", "empty-first-submission", "", ingestionBody(t, f, "reconcile", fields))
+	if w.Code != 200 || len(p.Calls) != 4 {
+		t.Fatalf("first review %d %s calls=%d", w.Code, w.Body.String(), len(p.Calls))
+	}
+	var review struct {
+		Operations []struct{ Value string }
+		Outcomes   []struct{ Kind string }
+	}
+	if json.Unmarshal(w.Body.Bytes(), &review) != nil || len(review.Operations) != 1 || review.Operations[0].Value != "Java" {
+		t.Fatalf("first reviewed addition missing: %s", w.Body.String())
+	}
+	var rows int
+	if e := f.DB.QueryRow(`SELECT count(*) FROM careeros_profiles WHERE account_id=$1`, f.Principal.AccountID).Scan(&rows); e != nil || rows != 0 {
+		t.Fatalf("implicit Profile persistence: %d %v", rows, e)
+	}
+	// An explicit reviewed candidate uses the actual account/pilot Save path;
+	// neither planning nor inference fabricates a saved empty Profile first.
+	command, _ := json.Marshal(map[string]any{"operationId": "reviewed-first-save", "expectedRevision": 0, "document": json.RawMessage(f.Document)})
+	r := f.Request(t, context.Background(), "/api/profile/current", command)
+	r.Method = http.MethodPut
+	w = httptest.NewRecorder()
+	accountapi.NewPilot(f.Service, f.Store, nil).ServeHTTP(w, r)
+	if w.Code != 200 || !strings.Contains(w.Body.String(), `"operationId":"reviewed-first-save"`) || len(p.Calls) != 4 {
+		t.Fatalf("acknowledged explicit Save %d %s", w.Code, w.Body.String())
+	}
+	if e := f.DB.QueryRow(`SELECT count(*) FROM careeros_profiles WHERE account_id=$1`, f.Principal.AccountID).Scan(&rows); e != nil || rows != 1 {
+		t.Fatalf("first Profile row %d %v", rows, e)
+	}
+}
+
+func TestManagedIngestionFrozenProfileAtFinalBufferedRelease(t *testing.T) {
+	for _, kind := range []string{"existing_row_update", "first_row_creation", "existing_row_update_outer_flush", "first_row_creation_outer_flush"} {
+		t.Run(kind, func(t *testing.T) {
+			f, h, p, router := ingestionFixture(t)
+			snapshot := map[string]any{}
+			firstRow := strings.HasPrefix(kind, "first_row_creation")
+			outerFlush := strings.HasSuffix(kind, "outer_flush")
+			if firstRow {
+				snapshot = emptyIngestionSnapshot(t, f)
+			}
+			assembled := ingestionContext(t, f, router, "late-profile-change", snapshot)
+			changed := false
+			change := func(ctx context.Context) {
+				if firstRow {
+					// A newly saved row with the SAME empty view must also
+					// invalidate the frozen authoritative absence binding.
+					if _, err := f.Store.SaveProfile(ctx, f.Principal, "concurrent-first-save", 0, snapshot["document"].(json.RawMessage)); err != nil {
+						t.Fatal(err)
+					}
+				} else {
+					var doc map[string]any
+					_ = json.Unmarshal(f.Document, &doc)
+					fact := doc["facts"].([]any)[0].(map[string]any)
+					fact["value"] = "TypeScript"
+					normal, _ := json.Marshal(profiledocument.NormalizeTerm("TypeScript"))
+					var normalization any
+					_ = json.Unmarshal(normal, &normalization)
+					fact["normalization"] = normalization
+					raw, _ := json.Marshal(doc)
+					if _, err := profiledocument.Decode(raw); err != nil {
+						t.Fatal(err)
+					}
+					if _, err := f.DB.Exec(`UPDATE careeros_profiles SET document=$2 WHERE account_id=$1`, f.Principal.AccountID, raw); err != nil {
+						t.Fatal(err)
+					}
+				}
+				changed = true
+			}
+			_ = h.SetQualificationResponder(func(ctx context.Context, provider string, r *http.Request) (*http.Response, bool, error) {
+				response, e := p.Respond(ctx, provider, r)
+				if provider == "openai" && !outerFlush {
+					change(ctx)
+				}
+				return response, true, e
+			})
+			if outerFlush {
+				writes := 0
+				h.SetFault("before_ingestion_result_lock", func() error {
+					writes++
+					if writes == 2 {
+						change(context.Background())
+					}
+					return nil
+				})
+			}
+			fields := map[string]any{"contextReceipt": assembled.ContextReceipt, "focus": map[string]any{"claimIds": assembled.Context.Batches[0].ClaimIDs}}
+			for k, v := range snapshot {
+				fields[k] = v
+			}
+			w := qualificationRequest(t, f, router, "/api/profile/ingest", "late-profile-change", "", ingestionBody(t, f, "reconcile", fields))
+			if !changed || w.Code == 200 || strings.Contains(w.Body.String(), `"operations"`) {
+				t.Fatalf("stale transient result released: changed=%v status=%d %s", changed, w.Code, w.Body.String())
+			}
+			status, e := h.IngestionStatus(context.Background(), f.Principal, "late-profile-change")
+			if e != nil || status.ResultAvailable || status.RetryAllowed {
+				t.Fatalf("late result status %+v %v", status, e)
+			}
+			scope, e := h.ScopeStatus(context.Background(), f.Principal, "global")
+			if e != nil || scope.Counted <= 0 || scope.Occupied != 0 {
+				t.Fatalf("terminal fake retained expense/released occupancy %+v %v", scope, e)
+			}
+		})
+	}
+}
 func ingestionBoundFixture(t *testing.T, bound func(string, []byte) (int64, bool)) (*aiadmission.Fixture, *aicontrol.Harness, *aiadmission.Provider, http.Handler) {
 	f, old, _, _ := qualificationFixture(t)
 	_ = old.Close()

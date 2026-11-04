@@ -103,7 +103,7 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 			return nil, ErrDenied
 		}
 		if workflow == "application_draft" || workflow == "qualification_gaps" || (h.cfg.Ingestion && workflow == "profile_ingestion") {
-			profile, err = h.currentProfileBinding(ctx, tx, p.AccountID)
+			profile, err = h.savedProfileBinding(ctx, tx, p.AccountID, h.cfg.Ingestion && workflow == "profile_ingestion")
 			if err != nil {
 				return nil, err
 			}
@@ -156,9 +156,15 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 	return &Session{h: h, p: p, id: id, workflow: workflow, root: binding, rootInput: append([]byte(nil), rootJSON...), profile: profile, execution: execution, attempt: attempt, grantVersion: grantVersion, gate: lease}, nil
 }
 
-func (h *Harness) currentProfileBinding(ctx context.Context, tx *sql.Tx, owner string) ([]byte, error) {
+func (h *Harness) savedProfileBinding(ctx context.Context, tx *sql.Tx, owner string, allowAbsent bool) ([]byte, error) {
 	var raw []byte
-	if tx.QueryRowContext(ctx, `SELECT document FROM careeros_profiles WHERE account_id=$1`, owner).Scan(&raw) != nil || len(raw) == 0 {
+	err := tx.QueryRowContext(ctx, `SELECT document FROM careeros_profiles WHERE account_id=$1`, owner).Scan(&raw)
+	if err == sql.ErrNoRows && allowAbsent {
+		// Absence is authoritative state, not an implicitly saved empty Profile.
+		// A first explicit Save changes this domain-separated binding too.
+		return h.fingerprint(owner, "saved-profile-absent", []byte(`null`))
+	}
+	if err != nil || len(raw) == 0 {
 		return nil, ErrDenied
 	}
 	return h.fingerprint(owner, "saved-profile", raw)
@@ -828,7 +834,7 @@ func (s *Session) checkCurrent(ctx context.Context, tx *sql.Tx) error {
 		return ErrDenied
 	}
 	if s.profile != nil {
-		b, e := s.h.currentProfileBinding(ctx, tx, s.p.AccountID)
+		b, e := s.h.savedProfileBinding(ctx, tx, s.p.AccountID, s.ingestion())
 		if e != nil {
 			return e
 		}
