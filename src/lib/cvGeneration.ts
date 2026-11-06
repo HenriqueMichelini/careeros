@@ -1,3 +1,4 @@
+import type { ManagedStandaloneCV } from "./managedStandaloneCV"
 import { workflowHeaders } from "./workflowRequest"
 import type {
   ProfileDocument,
@@ -194,7 +195,7 @@ export function stableCvFacts(doc: ProfileDocument): CvFact[] {
       entity?.kind ?? (f.field === "competencies" ? "skills" : f.field)
     const text =
       f.value === true ? "true" : typeof f.value === "string" ? f.value : ""
-    if (!allowed[section]?.includes(f.field) || !text.trim()) return []
+    if (!Array.isArray(allowed[section]) || !allowed[section].includes(f.field) || !text.trim()) return []
     const evidenceIds = doc.links
       .filter(
         (l) =>
@@ -1327,18 +1328,9 @@ export class CvGenerationError extends Error {
     super(code)
   }
 }
-export async function generateCv(
-  facts: CvFact[],
-  cvLanguage: Locale,
-  key: string,
-  signal: AbortSignal,
-  density: CvDensity = "balanced",
-  accountId?: string | null,
-): Promise<CvResult> {
-  let response: Response
-  const requestSignal = AbortSignal.any([signal, AbortSignal.timeout(30_000)])
+export function outboundCvFacts(facts: CvFact[]) {
   const groups = new Map<string, string>()
-  const outbound = facts.map((f) => {
+  return facts.map((f) => {
     const group = JSON.stringify([f.section, f.entryId])
     if (f.entryId && !groups.has(group))
       groups.set(group, `entry${groups.size}`)
@@ -1362,6 +1354,19 @@ export async function generateCv(
         : {}),
     }
   })
+}
+export async function generateCv(
+  facts: CvFact[],
+  cvLanguage: Locale,
+  key: string,
+  signal: AbortSignal,
+  density: CvDensity = "balanced",
+  accountId?: string | null,
+  managed?: ManagedStandaloneCV | null,
+): Promise<CvResult> {
+  let response: Response
+  const requestSignal = AbortSignal.any([signal, AbortSignal.timeout(30_000)])
+  const outbound = outboundCvFacts(facts)
   const body = JSON.stringify({
     facts: outbound,
     cvLanguage,
@@ -1378,12 +1383,15 @@ export async function generateCv(
     )
   )
     throw new CvGenerationError("input")
+  let command
+  try { command = managed?.command(body) } catch (e) { throw new CvGenerationError(e instanceof Error ? e.message : "managed_status") }
   try {
+    managed?.pending()
     response = await fetch("/api/cv/generate", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-OpenAI-Api-Key": key,
+        ...(managed ? {"X-CareerOS-Action-Key": command!.actionKey, ...(command!.retryKey ? {"X-CareerOS-Retry-Key": command!.retryKey} : {})} : {"X-OpenAI-Api-Key": key}),
         ...workflowHeaders(accountId),
       },
       body,
@@ -1410,7 +1418,9 @@ export async function generateCv(
         : "invalid_output",
     )
   }
+  if (response.status === 202 && managed) { managed.observe(payload as any); throw new CvGenerationError("managed_status") }
   if (!response.ok) {
+    managed?.knownFailure(response.headers.get("X-CareerOS-Retry-Allowed") === "true")
     const code = (payload as { error?: string } | null)?.error
     throw new CvGenerationError(
       code &&
@@ -1438,6 +1448,7 @@ export async function generateCv(
       !validateCvSupport(value.support, core)
     )
       throw new CvGenerationError("invalid_output")
+    managed?.completed(value.support!.assessment !== "complete" || value.support!.statements.some(s => s.status !== "supported"))
     return { ...core, support: value.support }
   }
   if (CV_SUPPORT_REQUEST) throw new CvGenerationError("invalid_output")

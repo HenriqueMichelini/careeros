@@ -23,7 +23,7 @@ export class ManagedQualification {
   constructor(
     private accountId: string,
     private storage?: Storage,
-    private workflow: "qualification" | "ingestion" | "profile-review" = "qualification",
+    private workflow: "qualification" | "ingestion" | "profile-review" | "cv" = "qualification",
     storageScope?: string,
   ) {
     this.storageKey = `careeros.${workflow}.${accountId}${storageScope ? `:${encodeURIComponent(storageScope)}` : ""}`

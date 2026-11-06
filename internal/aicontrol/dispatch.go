@@ -30,6 +30,7 @@ type Session struct {
 	gate                  gateLease
 	childID, childParent  string
 	foregroundIndependent bool // explicit clarification/new-attempt command only
+	cvCandidateResult     bool // transient connected candidate; never dispatch authority
 }
 
 func (s *Session) ID() string { return s.id }
@@ -40,7 +41,7 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 	if !tokenLabel.MatchString(key) || !workflows[workflow] {
 		return nil, ErrDenied
 	}
-	if h.cfg.Qualification && workflow != "qualification_gaps" && !(h.cfg.Ingestion && workflow == "profile_ingestion") && !(h.cfg.ProfileReview && workflow == "profile_review") {
+	if h.cfg.Qualification && workflow != "qualification_gaps" && !(h.cfg.Ingestion && workflow == "profile_ingestion") && !(h.cfg.ProfileReview && workflow == "profile_review") && !(h.cfg.StandaloneCV && workflow == "cv_generation") {
 		return nil, ErrDenied
 	}
 	binding, err := h.fingerprint(p.AccountID, "root/"+workflow, rootJSON)
@@ -102,7 +103,7 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 		if !valid {
 			return nil, ErrDenied
 		}
-		if workflow == "application_draft" || workflow == "qualification_gaps" || (h.cfg.Ingestion && workflow == "profile_ingestion") || (h.cfg.ProfileReview && workflow == "profile_review") {
+		if workflow == "application_draft" || workflow == "qualification_gaps" || (h.cfg.Ingestion && workflow == "profile_ingestion") || (h.cfg.ProfileReview && workflow == "profile_review") || (h.cfg.StandaloneCV && workflow == "cv_generation") {
 			profile, err = h.savedProfileBinding(ctx, tx, p.AccountID, h.cfg.Ingestion && workflow == "profile_ingestion")
 			if err != nil {
 				return nil, err
@@ -115,6 +116,11 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 		execution, err = h.executionBinding(ctx, tx, p.AccountID, workflow)
 		if err != nil {
 			return nil, err
+		}
+		if h.cfg.StandaloneCV && workflow == "cv_generation" {
+			if err = h.cvReviewBlocked(ctx, tx, p.AccountID, binding, execution, profile); err != nil {
+				return nil, err
+			}
 		}
 		_, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_action(namespace,id,owner,creation_key,workflow,binding,profile_binding,grant_version,execution_binding,execution_version) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, h.cfg.Namespace, id, p.AccountID, key, workflow, binding, profile, grantVersion, execution, h.executionVersion(workflow))
 		if err != nil {
@@ -130,6 +136,11 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 	}
 	if h.cfg.ProfileReview && workflow == "profile_review" {
 		if err = h.reviewSavedSnapshot(ctx, tx, p.AccountID, rootJSON); err != nil {
+			return nil, err
+		}
+	}
+	if h.cfg.StandaloneCV && workflow == "cv_generation" {
+		if err = h.cvSavedSnapshot(ctx, tx, p.AccountID, rootJSON); err != nil {
 			return nil, err
 		}
 	}
@@ -331,6 +342,8 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (Dispatch, error) {
 			m, inputTokens, err = h.ingestionMaximum(leg.Provider, leg.Body)
 		} else if s.profileReview() {
 			m, inputTokens, err = h.reviewMaximum(leg.Provider, leg.Body)
+		} else if s.standaloneCV() {
+			m, inputTokens, err = h.cvMaximum(leg.Provider, leg.Body)
 		} else {
 			m, err = h.qualificationMaximum(leg.Provider, leg.Body)
 		}
@@ -485,6 +498,11 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (Dispatch, error) {
 			return zero, err
 		}
 	}
+	if s.standaloneCV() {
+		if err = s.cvLimits(ctx, tx, leg, inputTokens, output); err != nil {
+			return zero, err
+		}
+	}
 	if err = h.fault("after_scope_locks"); err != nil {
 		return zero, err
 	}
@@ -502,7 +520,7 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (Dispatch, error) {
 	if id == "" {
 		return zero, ErrUnavailable
 	}
-	if s.ingestion() || s.profileReview() {
+	if s.ingestion() || s.profileReview() || s.standaloneCV() {
 		_, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_dispatch(namespace,id,action,coordinate,stage,leg,attempt,provider,binding,maximum,floor_amount,counted,input_bytes,output_tokens,input_tokens) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$10,$10,$11,$12,$13)`, h.cfg.Namespace, id, s.id, leg.Coordinate, leg.Stage, leg.Number, s.attempt, leg.Provider, binding, m, len(leg.Body), output, inputTokens)
 	} else {
 		_, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_dispatch(namespace,id,action,coordinate,stage,leg,attempt,provider,binding,maximum,floor_amount,counted,input_bytes,output_tokens) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$10,$10,$11,$12)`, h.cfg.Namespace, id, s.id, leg.Coordinate, leg.Stage, leg.Number, s.attempt, leg.Provider, binding, m, len(leg.Body), output)
@@ -743,7 +761,7 @@ func (s *Session) RetryQualification(ctx context.Context, key string) (*Session,
 func (s *Session) retry(ctx context.Context, key string) (*Session, error) {
 	h := s.h
 	command := *s
-	command.foregroundIndependent = s.ingestion() || s.profileReview()
+	command.foregroundIndependent = s.ingestion() || s.profileReview() || s.standaloneCV()
 	if h.cfg.Qualification && !tokenLabel.MatchString(key) {
 		return nil, ErrDenied
 	}
@@ -854,11 +872,14 @@ func (s *Session) checkCurrent(ctx context.Context, tx *sql.Tx) error {
 			return ErrConflict
 		}
 	}
-	if s.profileReview() {
+	if s.profileReview() || s.standaloneCV() {
 		if e := s.checkExecution(ctx, tx); e != nil {
 			return e
 		}
 		if !s.foregroundIndependent {
+			if s.standaloneCV() {
+				return s.cvDeadline(ctx, tx)
+			}
 			return s.reviewDeadline(ctx, tx)
 		}
 	}

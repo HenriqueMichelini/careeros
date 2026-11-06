@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
+import { managedStandaloneCVOwner } from "../lib/managedStandaloneCV"
 import {
   CURATED_CV_KEY,
   stableCvFacts,
@@ -128,6 +129,9 @@ function CvLink({ value }: { value: string }) {
 export default function CvPage() {
   const preferences = useCvPreferences()
   const { state, profileDocument, accountId } = useStore()
+  const pilot = import.meta.env.VITE_CAREEROS_PILOT_MODE === "1"
+  const managedCV = pilot && accountId ? managedStandaloneCVOwner(accountId, globalThis.sessionStorage) : null
+  const [managedStatus, setManagedStatus] = useState("")
   const curatedKey = accountId
     ? `careeros_account:${accountId}:${CURATED_CV_KEY}`
     : CURATED_CV_KEY
@@ -213,6 +217,7 @@ export default function CvPage() {
     setPending(null)
   }
   const startGeneration = async () => {
+    if (pilot && !managedCV) { setGenerationError("managed_status"); return }
     cancelGeneration()
     const id = ++requestId.current
     const sourceRevision = revisionRef.current
@@ -224,10 +229,11 @@ export default function CvPage() {
       const result = await generateCv(
         liveFacts,
         state.cvLanguage,
-        state.apiKey,
+        managedCV ? "" : state.apiKey,
         abort.signal,
         preferences.density,
         accountId,
+        managedCV,
       )
       if (
         id === requestId.current &&
@@ -1130,7 +1136,7 @@ export default function CvPage() {
             )}
             <button
               type="button"
-              disabled={!sufficient || !state.apiKey || generation}
+              disabled={!sufficient || (!managedCV && !state.apiKey) || generation || (Boolean(managedCV) && Boolean(pending) && !cvReviewResolved(pending!, review))}
               onClick={startGeneration}
               className="mt-4 w-full bg-[var(--color-fg)] px-4 py-3 text-xs font-semibold uppercase tracking-widest text-[var(--color-card)] transition-opacity hover:opacity-85 disabled:opacity-50"
               style={{ fontFamily: "var(--font-mono)" }}
@@ -1146,8 +1152,15 @@ export default function CvPage() {
                 <path d="m10 1.8 1.5 4.1 4.2-1.4-1.4 4.2 4 1.3-4 1.5 1.4 4.1-4.2-1.4-1.5 4-1.3-4-4.2 1.4 1.4-4.1-4-1.5 4-1.3-1.4-4.2 4.2 1.4L10 1.8Z" />
                 <path d="M10 7v6M7 10h6" />
               </svg>
-              {t(generation ? "cv.generating" : "cv.generate")}
+              {t(generation ? "cv.generating" : managedCV?.retryAvailable() ? "cv.managedRetry" : "cv.generate")}
             </button>
+            {managedCV && <>
+              <button type="button" className="mt-3 text-xs underline" data-cv-managed-status onClick={async()=>{
+                try { const status = await managedCV.status(); setManagedStatus(t(status.retryAllowed ? "cv.managedRetryReady" : "cv.managedStatus")) }
+                catch { setManagedStatus(t("cv.managedStatus")) }
+              }}>{t("cv.managedCheck")}</button>
+              {managedStatus && <p role="status" className="mt-2 text-xs">{managedStatus}</p>}
+            </>}
           </div>
           <div className="mb-4 border border-[var(--color-border)] bg-[var(--color-card)] p-5">
             <p className="mb-4 text-xs uppercase tracking-[0.2em] text-[var(--color-muted-fg)] [font-family:var(--font-mono)]">
@@ -1207,7 +1220,7 @@ export default function CvPage() {
             saveError={preferences.saveError}
           >
             <div data-cv-generation>
-              {!state.apiKey && (
+              {!managedCV && !state.apiKey && (
                 <p className="mb-3 text-xs">{t("cv.generateKey")}</p>
               )}
               {curated && (
@@ -1316,6 +1329,8 @@ export default function CvPage() {
                       rate_limit: "cv.generateErrorRate",
                       timeout: "cv.generateErrorTimeout",
                       invalid_output: "cv.generateErrorOutput",
+                      managed_status: "cv.managedStatus",
+                      managed_review_required: "cv.managedReviewRequired",
                       save: "cv.saveError",
                       unresolved: "cv.reviewBlockedError",
                     } as const)[(generationError as "input")] ||

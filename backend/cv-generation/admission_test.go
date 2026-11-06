@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"professional-information-repo/internal/accountapi"
 	"professional-information-repo/internal/aidispatch"
 	"professional-information-repo/internal/testsupport/aiadmission"
+	"professional-information-repo/internal/workflowauth"
 )
 
 // These outcomes pass through the real shared send adapter and CV completion
@@ -51,7 +51,7 @@ func TestA09_ActualHandlerFailureOutcomesKeepReachedObligations(t *testing.T) {
 				}
 				return &http.Response{StatusCode: tc.status, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(tc.body))}, nil
 			})
-			handler := accountapi.ProtectWorkflow(f.Service, f.Store, path, NewHandler())
+			handler := workflowauth.Protect(f.Service, f.Store, path, NewHandler())
 			invoke := func() *httptest.ResponseRecorder {
 				w := httptest.NewRecorder()
 				handler.ServeHTTP(w, f.Request(t, aidispatch.WithController(context.Background(), s), path, body))

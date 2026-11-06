@@ -63,6 +63,10 @@ func (h *Harness) managedOpen(ctx context.Context, tx *sql.Tx, owner, workflow, 
 		r := selectedProfileReviewEnvelope()
 		p.Actions, p.RollingActions = r.Actions, r.RollingActions
 	}
+	if workflow == "cv_generation" && h.cfg.StandaloneCV {
+		r := selectedStandaloneCVEnvelope()
+		p.Actions, p.RollingActions = r.Actions, r.RollingActions
+	}
 	if (newAction && (total >= p.Actions || day >= p.RollingActions)) || accountActive >= p.AccountActive || globalActive >= p.GlobalActive {
 		return ErrCapacity
 	}
@@ -83,6 +87,10 @@ func (s *Session) qualificationLimits(ctx context.Context, tx *sql.Tx, leg Leg, 
 	}
 	if s.profileReview() {
 		r := selectedProfileReviewEnvelope()
+		p.TypeSafeCalls, p.OpenAICalls, p.OpenAIOutput, p.AttemptOutput, p.AttemptMoney, p.ActionMoney = 0, r.OpenAICalls, r.Output, r.OutputTotal, r.AttemptMoney, r.ActionMoney
+	}
+	if s.standaloneCV() {
+		r := selectedStandaloneCVEnvelope()
 		p.TypeSafeCalls, p.OpenAICalls, p.OpenAIOutput, p.AttemptOutput, p.AttemptMoney, p.ActionMoney = 0, r.OpenAICalls, r.Output, r.OutputTotal, r.AttemptMoney, r.ActionMoney
 	}
 	if (leg.Provider == "typesafe" && typesafe >= p.TypeSafeCalls) || (leg.Provider == "openai" && (openai >= p.OpenAICalls || int64(output)+p.OpenAIOutput > p.AttemptOutput)) {
@@ -210,7 +218,8 @@ type QualificationStatus struct {
 	State           string `json:"state"`
 	Attempt         int    `json:"attempt"`
 	RetryAllowed    bool   `json:"retryAllowed"`
-	ResultAvailable bool   `json:"resultAvailable"` // content is deliberately transient
+	ResultAvailable bool   `json:"resultAvailable"`          // content is deliberately transient
+	ReviewRequired  bool   `json:"reviewRequired,omitempty"` // noncontent CV outcome; never an acceptance claim
 }
 
 func (h *Harness) QualificationStatus(ctx context.Context, p auth.Principal, key string) (QualificationStatus, error) {

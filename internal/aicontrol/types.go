@@ -68,6 +68,7 @@ type SyntheticConfig struct {
 	// second account/global budget. Qualification's frozen contract is unchanged.
 	Ingestion     bool
 	ProfileReview bool
+	StandaloneCV  bool
 	TokenBound    func(provider string, completeRequest []byte) (int64, bool)
 }
 
@@ -94,7 +95,7 @@ var stages = map[string]bool{"field_validation": true, "extraction": true, "reco
 // literal loopback address. It never reads environment variables or account files.
 // The caller must first install existing account tables in this disposable schema.
 func NewSynthetic(ctx context.Context, dsn string, cfg SyntheticConfig) (*Harness, error) {
-	if (cfg.Ingestion || cfg.ProfileReview) && !cfg.Qualification {
+	if (cfg.Ingestion || cfg.ProfileReview || cfg.StandaloneCV) && !cfg.Qualification {
 		return nil, ErrDenied
 	}
 	u, err := url.Parse(dsn)
@@ -161,7 +162,7 @@ func NewSynthetic(ctx context.Context, dsn string, cfg SyntheticConfig) (*Harnes
 	if tx.Commit() != nil {
 		return fail()
 	}
-	runtimeDB, reviewerDB, supportRole, err := syntheticRolePools(ctx, db, dsn, cfg.Ingestion || cfg.ProfileReview)
+	runtimeDB, reviewerDB, supportRole, err := syntheticRolePools(ctx, db, dsn, cfg.Ingestion || cfg.ProfileReview || cfg.StandaloneCV)
 	if err != nil {
 		return fail()
 	}

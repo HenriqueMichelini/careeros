@@ -252,7 +252,7 @@ func (s *Session) ResultAllowed(ctx context.Context) error {
 // while an underlying writer ignores cancellation. No remote slot is released.
 func (s *Session) BeginResult(ctx context.Context) (context.Context, func(), error) {
 	resultCtx, finishGate, err := s.gate.begin(ctx)
-	if err != nil || !(s.ingestion() || s.profileReview()) {
+	if err != nil || !(s.ingestion() || s.profileReview() || s.standaloneCV()) {
 		return resultCtx, finishGate, err
 	}
 	if err = s.h.fault("before_ingestion_result_lock"); err != nil {
@@ -269,7 +269,16 @@ func (s *Session) BeginResult(ctx context.Context) (context.Context, func(), err
 		finishGate()
 		return nil, nil, err
 	}
-	if err = s.checkCurrent(resultCtx, tx); err != nil {
+	current := s
+	if s.standaloneCV() && s.cvCandidateResult {
+		// The bounded handler may finish assessment as unavailable at its 25s
+		// deadline. Preserve its already connected candidate; no further provider
+		// work is admitted. Account/Profile/policy/grant/time still fence writes.
+		copy := *s
+		copy.foregroundIndependent = true
+		current = &copy
+	}
+	if err = current.checkCurrent(resultCtx, tx); err != nil {
 		_ = tx.Rollback()
 		finishGate()
 		return nil, nil, err
