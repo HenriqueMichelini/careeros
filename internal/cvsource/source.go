@@ -12,19 +12,27 @@ import (
 	"strconv"
 )
 
+// ProfileSource is the caller's explicit approved full-document precondition.
+// Stable fact/owner revisions alone cannot identify a sparse Profile revision.
+type ProfileSource struct {
+	ID       string `json:"id"`
+	Revision int64  `json:"revision"`
+}
+
 // Normalize removes legacy spelling/default aliases before assigning an Action
 // root. They cannot mint a fresh binding for the same unresolved candidate.
 func Normalize(raw []byte) ([]byte, bool) {
 	var in struct {
-		Locale   string          `json:"locale,omitempty"`
-		Language string          `json:"cvLanguage"`
-		Density  string          `json:"density"`
-		Assessed bool            `json:"statementSupport"`
-		Facts    json.RawMessage `json:"facts"`
+		Locale        string          `json:"locale,omitempty"`
+		Language      string          `json:"cvLanguage"`
+		Density       string          `json:"density"`
+		Assessed      bool            `json:"statementSupport"`
+		Facts         json.RawMessage `json:"facts"`
+		ProfileSource *ProfileSource  `json:"profileSource"`
 	}
 	d := json.NewDecoder(bytes.NewReader(raw))
 	d.DisallowUnknownFields()
-	if d.Decode(&in) != nil || !in.Assessed {
+	if d.Decode(&in) != nil || !in.Assessed || in.ProfileSource == nil || in.ProfileSource.ID == "" || in.ProfileSource.Revision < 1 || in.ProfileSource.Revision > 9007199254740991 {
 		return nil, false
 	}
 	var extra any
@@ -119,9 +127,10 @@ func Matches(root, saved []byte) bool {
 		return false
 	}
 	var input struct {
-		Facts json.RawMessage `json:"facts"`
+		Facts         json.RawMessage `json:"facts"`
+		ProfileSource *ProfileSource  `json:"profileSource"`
 	}
-	if json.Unmarshal(root, &input) != nil {
+	if json.Unmarshal(root, &input) != nil || input.ProfileSource == nil || input.ProfileSource.ID != doc.ID || input.ProfileSource.Revision != doc.Revision {
 		return false
 	}
 	var actual, expected any

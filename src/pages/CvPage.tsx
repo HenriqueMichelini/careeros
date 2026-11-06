@@ -234,6 +234,7 @@ export default function CvPage() {
         preferences.density,
         accountId,
         managedCV,
+        profileDocument ?? undefined,
       )
       if (
         id === requestId.current &&

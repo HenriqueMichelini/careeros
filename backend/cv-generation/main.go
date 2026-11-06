@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"professional-information-repo/internal/aidiagnostics"
 	"professional-information-repo/internal/aidispatch"
+	"professional-information-repo/internal/cvsource"
 	"professional-information-repo/internal/openaihttp"
 	"regexp"
 	"sort"
@@ -57,8 +58,9 @@ type request struct {
 	Density    string `json:"density"`
 	// StatementSupport opts into the v3 response with server-assigned,
 	// assessed statement statuses. Older clients omit it and keep schema v2.
-	StatementSupport bool   `json:"statementSupport,omitempty"`
-	Facts            []fact `json:"facts"`
+	StatementSupport bool                    `json:"statementSupport,omitempty"`
+	Facts            []fact                  `json:"facts"`
+	ProfileSource    *cvsource.ProfileSource `json:"profileSource,omitempty"`
 }
 type excerpt struct {
 	SourceID  string   `json:"sourceId,omitempty"`
@@ -474,6 +476,9 @@ func (a app) generation(ctx context.Context, key string, in request) (res result
 	in.Locale = ""
 	// StatementSupport is a client control flag, never a generation input.
 	in.StatementSupport = false
+	// Managed full-document authority is a root precondition, not additional
+	// source text for the model. The complete fact references remain unchanged.
+	in.ProfileSource = nil
 	data, _ := json.Marshal(in)
 	body, _ := json.Marshal(map[string]any{"model": "gpt-6-luna", "reasoning_effort": "none", "max_completion_tokens": 4000, "response_format": outputFormat(), "messages": []any{map[string]string{"role": "system", "content": policy + densityPolicy[in.Density]}, map[string]string{"role": "user", "content": string(data)}}})
 	ctx, cancel, response, err := openaihttp.Post(ctx, a.client, deadline, key, body)

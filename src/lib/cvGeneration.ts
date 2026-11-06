@@ -1363,15 +1363,18 @@ export async function generateCv(
   density: CvDensity = "balanced",
   accountId?: string | null,
   managed?: ManagedStandaloneCV | null,
+  profileSource?: Pick<ProfileDocument, "id" | "revision">,
 ): Promise<CvResult> {
   let response: Response
   const requestSignal = AbortSignal.any([signal, AbortSignal.timeout(30_000)])
   const outbound = outboundCvFacts(facts)
+  if (managed && (!profileSource?.id || !Number.isSafeInteger(profileSource.revision) || profileSource.revision < 1)) throw new CvGenerationError("input")
   const body = JSON.stringify({
     facts: outbound,
     cvLanguage,
     density,
     ...(CV_SUPPORT_REQUEST ? { statementSupport: true } : {}),
+    ...(managed ? { profileSource: {id: profileSource!.id, revision: profileSource!.revision} } : {}),
   })
   if (
     !facts.length ||

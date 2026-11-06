@@ -1,0 +1,338 @@
+{
+  "base": "280f6954afb5d6a719d070cd8fe7bf62d059f99c",
+  "original_review_head": "ceaf508c6a2dd5c67c2bd50d07e3aef5988cf982",
+  "original_review_tree": "1815539756e91f1fdc335c4f2dc79d6ea67b6f3e",
+  "policy": "https://github.com/HenriqueMichelini/careeros/issues/280#issuecomment-6671863934",
+  "synthetic_only": true,
+  "runtime_blobs": {
+    "backend/cv-generation/main.go": "b45bd722dca51ecdb599b8a4154ed62e6adb6b69",
+    "internal/accountapi/cv.go": "014c699fb7f2b2ae4393df5166f541545c255bf3",
+    "internal/aicontrol/cv.go": "53028e8342fa9f2b4069413ea628c93eda4d866f",
+    "internal/aicontrol/dispatch.go": "405083b9626e1b1ff61fd6c7df5d399d39c20c50",
+    "internal/aicontrol/execution.go": "6189c090aff949d4846437b933497a04b52bf2db",
+    "internal/aicontrol/gate.go": "272f10dbbac5500b5999b8149c2db0f2632fe50f",
+    "internal/aicontrol/qualification.go": "a122791d108f4bdf385bfc1b2a5f35c46c1faa5c",
+    "internal/aicontrol/types.go": "45a80ae9f3ff8650555b61b1dc7c41903db39b4c",
+    "internal/cvsource/source.go": "f103196393d3a7b539691f40e026bd27d5bf8b77",
+    "src/lib/cvGeneration.ts": "c252330bac2f96a4e9f116141439d1c68cc5a721",
+    "src/lib/i18n.ts": "c7168356387dedaa439b48ad956d52a296856391",
+    "src/lib/managedQualification.ts": "2f17d7f5637ae539ba2ca05f4337fc827a4b854a",
+    "src/lib/managedStandaloneCV.ts": "4f36c7176b533dda132ab6c035b4a59285295ecc",
+    "src/pages/CvPage.tsx": "4afe8eef70b4063ca74857f973d60c5f6b22e8e0"
+  },
+  "original_findings": {
+    "spec_P2": "Missing explicit full Profile revision precondition for equal sparse facts",
+    "security_P2": "Actual handler/provider context could reset25s despite durable expiry"
+  },
+  "red_regressions": {
+    "exit": 1,
+    "passing_events": 0,
+    "skips": [],
+    "failures": [
+      {
+        "Package": "professional-information-repo/internal/accountapi",
+        "Test": "TestManagedCVRejectsStaleFullProfileWithIdenticalFacts",
+        "Elapsed": 0.23
+      },
+      {
+        "Package": "professional-information-repo/internal/accountapi",
+        "Test": "TestManagedCVPersistedDeadlineClampsActualInFlightContext/generation",
+        "Elapsed": 1.35
+      },
+      {
+        "Package": "professional-information-repo/internal/accountapi",
+        "Test": "TestManagedCVPersistedDeadlineClampsActualInFlightContext/statement_support_assessment",
+        "Elapsed": 1.35
+      },
+      {
+        "Package": "professional-information-repo/internal/accountapi",
+        "Test": "TestManagedCVPersistedDeadlineClampsActualInFlightContext",
+        "Elapsed": 2.69
+      },
+      {
+        "Package": "professional-information-repo/internal/accountapi",
+        "Elapsed": 2.952
+      }
+    ],
+    "evidence": "/tmp/careeros-280-check-j4omlmz3"
+  },
+  "focused_green": {
+    "exit": 0,
+    "passing_events": 5,
+    "skips": [],
+    "failures": [],
+    "evidence": "/tmp/careeros-280-check-vjlt7ulv"
+  },
+  "relevant_go": {
+    "exit": 0,
+    "passing_events": 1089,
+    "skips": [
+      "professional-information-repo/internal/openaihttp",
+      "professional-information-repo/internal/fieldvalidation",
+      "TestJourneyDemoServer",
+      "TestPilotRestartChild"
+    ],
+    "failures": [],
+    "evidence": "/tmp/careeros-280-check-vz2b4pw2"
+  },
+  "canonical_admission_passed": [
+    "A01",
+    "A02",
+    "A03",
+    "A04",
+    "A05",
+    "A06",
+    "A07",
+    "A08",
+    "A09",
+    "A10",
+    "A11",
+    "A12",
+    "A13",
+    "A14",
+    "A15",
+    "A16",
+    "A17",
+    "A18",
+    "A19",
+    "A20",
+    "A21",
+    "A22",
+    "A23",
+    "A24",
+    "A25",
+    "A26",
+    "A27",
+    "A28",
+    "A29",
+    "A30",
+    "A31",
+    "A32",
+    "A33",
+    "A34",
+    "A35",
+    "A36",
+    "A37"
+  ],
+  "node": {
+    "passed": 418,
+    "failed": 0,
+    "receipt": "/tmp/careeros-280-repairs-node.log",
+    "cv_full_value_parity_cases": 44,
+    "inherited_full_value_parity_cases": 44
+  },
+  "typescript": "pass",
+  "pilot_build": "pass",
+  "browser": {
+    "passed": 4,
+    "cells": 4,
+    "evidence": [
+      "/tmp/careeros-account-browser-Yty3Pa",
+      "/tmp/careeros-account-browser-arhofa",
+      "/tmp/careeros-account-browser-OJA2Oo",
+      "/tmp/careeros-account-browser-O3mTre"
+    ]
+  },
+  "vet": {
+    "receipt": "/tmp/careeros-280-repairs-vet.log",
+    "exact_base_15_diagnostics_match": true,
+    "scoped_flags": [
+      "-composites=false",
+      "-stdversion=false"
+    ],
+    "scoped_result": "pass"
+  },
+  "historical_pdf": {
+    "head": "ceaf508c6a2dd5c67c2bd50d07e3aef5988cf982",
+    "one_page_a4_outputs": 9,
+    "overflow_checks": 2,
+    "not_rerun": "Repair changes only the generation precondition call, not PDF/display/export logic; actual App review/accept rerun"
+  },
+  "full_go": {
+    "exit": 1,
+    "passing_events": 2336,
+    "skips": [
+      "professional-information-repo/cmd/account-migrate",
+      "professional-information-repo/cmd/pilot-local",
+      "TestJourneyDemoServer",
+      "TestPilotRestartChild",
+      "professional-information-repo/internal/fieldvalidation",
+      "professional-information-repo/internal/jobcontext",
+      "professional-information-repo/internal/openaihttp",
+      "professional-information-repo/internal/qualificationmatching",
+      "professional-information-repo/internal/releasecapture",
+      "professional-information-repo/internal/testsupport",
+      "professional-information-repo/internal/testsupport/aiadmission",
+      "professional-information-repo/internal/workflowauth",
+      "professional-information-repo/lab/api",
+      "professional-information-repo/lab/buildmanifest",
+      "professional-information-repo/scripts/ai-diagnostics",
+      "professional-information-repo/scripts/application-context",
+      "professional-information-repo/scripts/field-validation/remediation",
+      "professional-information-repo/scripts/preview-preflight",
+      "professional-information-repo/scripts/qualification-evidence",
+      "professional-information-repo/scripts/semantic-quality"
+    ],
+    "failures": [
+      {
+        "Package": "professional-information-repo/internal/evaluationlab",
+        "Test": "TestProcessRunnerExecutesAllowlistedGoContractsWithoutInference",
+        "Elapsed": 0.14
+      },
+      {
+        "Package": "professional-information-repo/internal/evaluationlab",
+        "Test": "TestProcessRunnerCannotReadHostSentinelsOrReachHostLoopback",
+        "Elapsed": 0.13
+      },
+      {
+        "Package": "professional-information-repo/internal/evaluationlab",
+        "Test": "TestProcessRunnerCancellationStopsDetachedChildAndGrandchild",
+        "Elapsed": 2.15
+      },
+      {
+        "Package": "professional-information-repo/internal/evaluationlab",
+        "Test": "TestProcessRunnerDeadlineRetainsPartialTreeAndUnreachedTest",
+        "Elapsed": 0.15
+      },
+      {
+        "Package": "professional-information-repo/internal/evaluationlab",
+        "Test": "TestProcessRunnerBoundsOutputAndStopsFollowingTests",
+        "Elapsed": 0.14
+      },
+      {
+        "Package": "professional-information-repo/internal/evaluationlab",
+        "Test": "TestProcessRunnerReusesSectionBrowserHarnessWithScreenshotEvidence",
+        "Elapsed": 0.14
+      },
+      {
+        "Package": "professional-information-repo/internal/evaluationlab",
+        "Test": "TestProcessRunnerExecutesExistingNodeCanonicalContracts",
+        "Elapsed": 0.14
+      },
+      {
+        "Package": "professional-information-repo/internal/evaluationlab",
+        "Test": "TestProcessRunnerCrashRetainsDistinctOutcome",
+        "Elapsed": 0.13
+      },
+      {
+        "Package": "professional-information-repo/internal/evaluationlab",
+        "Test": "TestProcessRunnerUsesOfflineFieldHelpers",
+        "Elapsed": 0.14
+      },
+      {
+        "Package": "professional-information-repo/internal/evaluationlab",
+        "Test": "TestProcessRunnerCDPPDFIsDistinctAndSurvivesExport",
+        "Elapsed": 0.14
+      },
+      {
+        "Package": "professional-information-repo/internal/evaluationlab",
+        "Test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-canonical",
+        "Elapsed": 0.14
+      },
+      {
+        "Package": "professional-information-repo/internal/evaluationlab",
+        "Test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-ingestion",
+        "Elapsed": 0.14
+      },
+      {
+        "Package": "professional-information-repo/internal/evaluationlab",
+        "Test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-job-application",
+        "Elapsed": 0.14
+      },
+      {
+        "Package": "professional-information-repo/internal/evaluationlab",
+        "Test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-cv",
+        "Elapsed": 0.14
+      },
+      {
+        "Package": "professional-information-repo/internal/evaluationlab",
+        "Test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-ingestion",
+        "Elapsed": 0.14
+      },
+      {
+        "Package": "professional-information-repo/internal/evaluationlab",
+        "Test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-job-reuse",
+        "Elapsed": 0.14
+      },
+      {
+        "Package": "professional-information-repo/internal/evaluationlab",
+        "Test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-artifact-review",
+        "Elapsed": 0.14
+      },
+      {
+        "Package": "professional-information-repo/internal/evaluationlab",
+        "Test": "TestProcessRunnerExistingWorkflowSelectorsExecute",
+        "Elapsed": 0.97
+      },
+      {
+        "Package": "professional-information-repo/internal/evaluationlab",
+        "Test": "TestProcessRunnerAssertionRegressionCompletesWithFail",
+        "Elapsed": 0.14
+      },
+      {
+        "Package": "professional-information-repo/internal/evaluationlab",
+        "Test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-canonical-edit",
+        "Elapsed": 0.14
+      },
+      {
+        "Package": "professional-information-repo/internal/evaluationlab",
+        "Test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-ingestion",
+        "Elapsed": 0.13
+      },
+      {
+        "Package": "professional-information-repo/internal/evaluationlab",
+        "Test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-enrichment",
+        "Elapsed": 0.13
+      },
+      {
+        "Package": "professional-information-repo/internal/evaluationlab",
+        "Test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-application-reuse",
+        "Elapsed": 0.13
+      },
+      {
+        "Package": "professional-information-repo/internal/evaluationlab",
+        "Test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes",
+        "Elapsed": 0.54
+      },
+      {
+        "Package": "professional-information-repo/internal/evaluationlab",
+        "Elapsed": 123.798
+      }
+    ],
+    "evidence": "/tmp/careeros-280-check-ymiuk1rh"
+  },
+  "baseline_comparison": {
+    "same_24_paths": true,
+    "base_provenance": "/tmp/careeros-280-check-9t6z3cwl",
+    "base_manifest": "original summary base_archive:280f695,2090entries,7symlinks,0mismatches",
+    "base_rerun": false,
+    "reason": "unchanged verified immutable base; same paths and source_changed/derivative causes"
+  },
+  "runtime_blob_verification": {
+    "backend/cv-generation/main.go": true,
+    "internal/accountapi/cv.go": true,
+    "internal/aicontrol/cv.go": true,
+    "internal/aicontrol/dispatch.go": true,
+    "internal/aicontrol/execution.go": true,
+    "internal/aicontrol/gate.go": true,
+    "internal/aicontrol/qualification.go": true,
+    "internal/aicontrol/types.go": true,
+    "internal/cvsource/source.go": true,
+    "src/lib/cvGeneration.ts": true,
+    "src/lib/i18n.ts": true,
+    "src/lib/managedQualification.ts": true,
+    "src/lib/managedStandaloneCV.ts": true,
+    "src/pages/CvPage.tsx": true
+  },
+  "final_focused_green": {
+    "exit": 0,
+    "passing_events": 5,
+    "skips": [],
+    "failures": [],
+    "evidence": "/tmp/careeros-280-check-yys9m8_z"
+  },
+  "final_focused_timing": [
+    "cv_review_repairs_test.go:107: leg=generation reached=1 deadline_delta=-230.409\u00b5s continued_past_expiry=false",
+    "cv_review_repairs_test.go:107: leg=statement_support_assessment reached=2 deadline_delta=-250.297\u00b5s continued_past_expiry=false"
+  ]
+}

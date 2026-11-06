@@ -98,6 +98,12 @@ func NewSyntheticStandaloneCV(service *auth.Service, store *accountstore.Store, 
 		}
 		authority.session = session
 		ctx = aidispatch.WithController(r.Context(), authority)
+		ctx, finishBudget, err := session.StandaloneCVContext(ctx)
+		if err != nil {
+			qualificationError(w, err)
+			return
+		}
+		defer finishBudget()
 		request := r.Clone(ctx)
 		urlCopy := *r.URL
 		urlCopy.Path = "/api/cv/generate"

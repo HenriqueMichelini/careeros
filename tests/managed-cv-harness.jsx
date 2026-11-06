@@ -16,6 +16,7 @@ window.fetch=async(input,init={})=>{
  if(path.startsWith('/api/ai/cv/actions/')){scenario.reads++;return response({actionId:'server',state:scenario.mode==='known_failure'?'known_failure':scenario.mode==='unknown'?'unknown':'result_unavailable',attempt:1,retryAllowed:scenario.mode==='known_failure',reviewRequired:scenario.mode==='uncertain',resultAvailable:false})}
  if(path==='/api/cv/generate'){
   const body=JSON.parse(String(init.body));const headers=Object.fromEntries(new Headers(init.headers).entries());scenario.posts.push({body,headers})
+  if(body.profileSource?.id!==doc.id||body.profileSource?.revision!==doc.revision)return response({error:'qualification_changed'},409)
   if(scenario.mode==='unknown')return response({actionId:'server',state:'unknown',attempt:1,retryAllowed:false,resultAvailable:false},202)
   if(scenario.mode==='known_failure'&&!headers['x-careeros-retry-key'])return response({error:'outage'},502,{'X-CareerOS-Retry-Allowed':'true'})
   const f=body.facts[0];return response({schemaVersion:3,summary:[{sourceIds:[f.id],text:f.text}],selected:[f.id],wording:{},support:{policyVersion:'cv-statement-support-v1',assessment:scenario.mode==='uncertain'?'unavailable':'complete',statements:[{id:'summary:0',text:f.text,sourceIds:[f.id],status:scenario.mode==='uncertain'?'uncertain':'supported',reason:'Synthetic judgment'}]}})

@@ -1,5 +1,7 @@
 # Managed standalone CV verification — 6 November 2026
 
+**Historical original checkpoint `ceaf508`.** Two independent review P2s were subsequently confirmed; [repair verification](2026-11-06-managed-standalone-cv-repairs.md) supersedes this checkpoint for the final repaired source. The original results and findings remain recorded.
+
 Base: `280f6954afb5d6a719d070cd8fe7bf62d059f99c`, cumulative reviewed #276–#279 and merged #275 ancestry. The exact selected [owner policy](https://github.com/HenriqueMichelini/careeros/issues/280#issuecomment-6671863934), [composition contract](../managed-standalone-cv-local.md), and [machine summary/runtime manifest](2026-11-06-managed-standalone-cv-summary.json) bind this synthetic local evidence. GitHub remains the tracker; these are verification records and the existing #194 source/evidence handoff, not a local ticket mirror or remote completion claim.
 
 ## Frozen source checks
@@ -41,3 +43,7 @@ The first public-router tracer was RED at missing config/composition constructor
 The first CV corpus subprocess returned sandbox EPERM; the authorized capable rerun actually executed and exposed an inherited stableCvFacts prototype-key crash for an opaque constructor-like field. A narrow Array.isArray allowlist guard fixed it RED→GREEN; all44 full-value vectors now agree. An intermediate TSC missing translation-key error was corrected before final checks. Earlier32/36/40-event focused passes and earlier browser output remain distinct from final1085/417/four-cell checkpoints. The interruption did not erase or require replaying provider work; the browser run had already completed, and a later rerun was justified by the relevant client change.
 
 These fake bounds/usages/summaries/judgments verify local contracts only. They do not prove real token fit, provider wire/account compatibility, bilingual model quality, output sufficiency, latency, actual prices/bills, hosted concurrency/retention/reconciliation/recovery or participant readiness. No provider files/accounts/calls, real grants, service purchases, remote GitHub mutations, deployment/configuration or operational recovery occurred. #281 and later issues were not inspected.
+
+## Original immutable review checkpoint
+
+These original checks bind `ceaf508c6a2dd5c67c2bd50d07e3aef5988cf982`, tree `1815539756e91f1fdc335c4f2dc79d6ea67b6f3e`. Independent review subsequently confirmed two P2s: fact/owner/context equality did not explicitly bind the full sparse Profile revision, and boundary-only deadline checks let a near-expiry replay's in-flight context borrow a fresh25 seconds. The original passing corpus/deadline checks did not prove those missing properties. Both findings and RED receipts are preserved in the [repair verification](2026-11-06-managed-standalone-cv-repairs.md); this original checkpoint is not relabeled as the repaired head.

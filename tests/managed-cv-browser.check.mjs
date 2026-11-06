@@ -8,7 +8,7 @@ for(const pt of [false,true]){
   await open({evaluate,wait})
   const generate=`[...document.querySelectorAll('button')].find(b=>b.textContent.includes(${JSON.stringify(pt?'Gerar':'Generate')})&&!b.disabled)`
   await evaluate(`${generate}.click()`);await wait(`document.querySelector('[data-cv-review]')`)
-  let posts=await evaluate(`managedCVScenario.posts`);assert.equal(posts.length,1);assert.equal(posts[0].headers['x-openai-api-key'],undefined);assert.ok(posts[0].headers['x-careeros-action-key']);assert.equal(posts[0].body.statementSupport,true)
+  let posts=await evaluate(`managedCVScenario.posts`);assert.equal(posts.length,1);assert.equal(posts[0].headers['x-openai-api-key'],undefined);assert.ok(posts[0].headers['x-careeros-action-key']);assert.equal(posts[0].body.statementSupport,true);assert.deepEqual(posts[0].body.profileSource,await evaluate(`({id:managedCVScenario.document.id,revision:managedCVScenario.document.revision})`))
   assert.equal(await evaluate(`managedCVScenario.profileWrites`),0)
   const accept=`[...document.querySelectorAll('button')].find(b=>b.textContent.includes(${JSON.stringify(pt?'Aceitar':'Accept')})&&b.closest('[data-cv-review]')===null)`
   await wait(`document.querySelector('[data-cv-review-blocked]')`)

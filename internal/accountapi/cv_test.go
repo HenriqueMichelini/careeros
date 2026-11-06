@@ -197,7 +197,7 @@ func TestManagedCVSparseEducationAndRootOptionChanges(t *testing.T) {
 		t.Fatal(e)
 	}
 	_, _ = f.DB.Exec(`UPDATE careeros_profiles SET document=$2 WHERE account_id=$1`, f.Principal.AccountID, raw)
-	body, _ := json.Marshal(map[string]any{"facts": cvsource.Facts(doc), "cvLanguage": "pt-BR", "density": "compact", "statementSupport": true})
+	body, _ := json.Marshal(map[string]any{"profileSource": cvsource.ProfileSource{ID: doc.ID, Revision: doc.Revision}, "facts": cvsource.Facts(doc), "cvLanguage": "pt-BR", "density": "compact", "statementSupport": true})
 	w := qualificationRequest(t, f, r, "/api/cv/generate", "sparse", "", body)
 	if w.Code != 200 || len(p.calls) != 2 {
 		t.Fatalf("sparse %d %s", w.Code, w.Body.String())
@@ -265,7 +265,7 @@ func managedCVFixture(t *testing.T, bound func(string, []byte) (int64, bool)) (*
 	return f, h, p, accountapi.NewSyntheticStandaloneCV(f.Service, f.Store, h, []byte("synthetic-ingestion-signing-key-32bytes"))
 }
 func managedCVBody() []byte {
-	return []byte(`{"cvLanguage":"en","density":"balanced","statementSupport":true,"facts":[{"id":"skill","section":"skills","entryId":"","field":"skills","text":"Java","reference":{"profileId":"p","id":"skill","revision":1},"owner":{"profileId":"p","id":"p","revision":1},"context":[],"kind":"statement","assertion":"affirmed","intent":"actual","certainty":"certain","support":"supported"}]}`)
+	return []byte(`{"profileSource":{"id":"p","revision":1},"cvLanguage":"en","density":"balanced","statementSupport":true,"facts":[{"id":"skill","section":"skills","entryId":"","field":"skills","text":"Java","reference":{"profileId":"p","id":"skill","revision":1},"owner":{"profileId":"p","id":"p","revision":1},"context":[],"kind":"statement","assertion":"affirmed","intent":"actual","certainty":"certain","support":"supported"}]}`)
 }
 func TestManagedCVUsesAssessedSavedFactsAndNoResend(t *testing.T) {
 	f, _, p, router := managedCVFixture(t, nil)

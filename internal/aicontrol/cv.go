@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"professional-information-repo/internal/auth"
 	"professional-information-repo/internal/cvsource"
+	"time"
 )
 
 const StandaloneCVPolicyVersion = "standalone-cv-local-20261105-v1"
@@ -104,6 +105,31 @@ func (s *Session) cvDeadline(ctx context.Context, tx *sql.Tx) error {
 		return ErrCapacity
 	}
 	return nil
+}
+
+// StandaloneCVContext bounds actual handler/provider work by the durable
+// attempt witness. A replay cannot borrow a fresh handler-relative 25 seconds.
+// Subtracting the complete local query round trip is conservative even when
+// the database and process wall clocks differ. Final candidate return uses the
+// original request context and its separate current-authority result fence.
+func (s *Session) StandaloneCVContext(ctx context.Context) (context.Context, context.CancelFunc, error) {
+	if !s.standaloneCV() {
+		return nil, nil, ErrDenied
+	}
+	started := time.Now()
+	var remainingMicros int64
+	if s.h.db.QueryRowContext(ctx, `SELECT (extract(epoch FROM (created_at+interval '25 seconds'-clock_timestamp()))*1000000)::bigint FROM ai_fixture_stage WHERE namespace=$1 AND action=$2 AND attempt=$3 AND stage='managed_request_cv'`, s.h.cfg.Namespace, s.id, s.attempt).Scan(&remainingMicros) != nil {
+		return nil, nil, ErrUnavailable
+	}
+	if remainingMicros > int64((25*time.Second)/time.Microsecond) {
+		return nil, nil, ErrDenied
+	}
+	remaining := time.Duration(remainingMicros)*time.Microsecond - time.Since(started)
+	if remaining <= 0 {
+		return nil, nil, ErrCapacity
+	}
+	bounded, cancel := context.WithTimeout(ctx, remaining)
+	return bounded, cancel, nil
 }
 
 // An unresolved assessment cannot be laundered into a favorable new generation
