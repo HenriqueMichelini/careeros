@@ -1,0 +1,690 @@
+{
+  "base": "44f2d556d25bb1225d45f526e1809dc5295616d2",
+  "synthetic_only": true,
+  "candidate_binding": "Commit containing this file; exact tested runtime blobs below; final reviews pending.",
+  "issue": "https://github.com/HenriqueMichelini/careeros/issues/281",
+  "owner_policy": "https://github.com/HenriqueMichelini/careeros/issues/281#issuecomment-6644621228",
+  "runtime_blobs": {
+    "backend/application-draft/main.go": "e120470d3e0a38e8920f373fc2c549ce2f93ac55",
+    "backend/application-draft/recovery_letter.go": "5e29017f28988a605df609900fadda92bc17b276",
+    "internal/accountapi/draft_recovery.go": "cddd8d9bd4a8386cc8076ecd88f0315bcbb12220",
+    "internal/aicontrol/action_reference.go": "9ab08f40a1c4d5f2ad57257f353888eead298f0e",
+    "internal/draftrecovery/admission.go": "85d1f7287718749d01b1f3d2e62a4b54f5a4924c",
+    "internal/draftrecovery/completion.go": "731df25d4338e666015c5be5d056fd52595ae2a8",
+    "internal/draftrecovery/model.go": "1e71fd5f0d409d8a4269a8de3c7d76e01a1ddc2e",
+    "internal/draftrecovery/schema.sql": "0ad089fbfdb2a43dbcca54ef6bb22d47aa983d06",
+    "internal/draftrecovery/store.go": "58cc4e0c727d88e983377c406dc84ee14725f363",
+    "internal/profiledocument/text.go": "fbd3fc4673a7ee86b437019e5c59b4de01ec22af",
+    "src/App.tsx": "46f91b2603b6786f2f32f1120fcb4d48ad7bc121",
+    "src/components/DraftRecoveryWorkspace.tsx": "aafd5ad5a1467c3e4e45eadbe1272450df199672",
+    "src/lib/draftRecovery.ts": "bb626b0a27191257331f3fc253b1cfde5666e5a9",
+    "vite.config.ts": "486afe5fb25e34ed4f9095fef725a58e105ae0b6"
+  },
+  "runtime_files": 14,
+  "go_runtime_files": 9,
+  "toolchain": "go1.26.4 linux/amd64; module go1.24; no Go1.24 execution claim",
+  "relevant_go": {
+    "exit": 0,
+    "passing_events": 1135,
+    "failures": [],
+    "skips": [
+      {
+        "package": "professional-information-repo/internal/openaihttp",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/fieldvalidation",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestJourneyDemoServer"
+      },
+      {
+        "package": "professional-information-repo/internal/draftrecovery",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestPilotRestartChild"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestControlledDraftBrowserServer"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestControlledDraftRestartChild"
+      }
+    ],
+    "evidence": "/tmp/careeros-281-check-fd31cc9a",
+    "jsonl_sha256": "090d8130454fa0ea4a7ca97988dd3a5e2bedaade15f20acfb9f5a379226bd7b3",
+    "flags": [
+      "-race",
+      "-vet=off",
+      "-count=1",
+      "-timeout=180s"
+    ]
+  },
+  "canonical_admission_passed": [
+    "A01",
+    "A02",
+    "A03",
+    "A04",
+    "A05",
+    "A06",
+    "A07",
+    "A08",
+    "A09",
+    "A10",
+    "A11",
+    "A12",
+    "A13",
+    "A14",
+    "A15",
+    "A16",
+    "A17",
+    "A18",
+    "A19",
+    "A20",
+    "A21",
+    "A22",
+    "A23",
+    "A24",
+    "A25",
+    "A26",
+    "A27",
+    "A28",
+    "A29",
+    "A30",
+    "A31",
+    "A32",
+    "A33",
+    "A34",
+    "A35",
+    "A36",
+    "A37"
+  ],
+  "node": {
+    "exit": 0,
+    "tests": 421,
+    "passed": 421,
+    "failed": 0,
+    "skipped": 0,
+    "log": "/tmp/careeros-281-node-final.log",
+    "log_sha256": "fa33deafe299b56de14ce6637cdc625318527650a1c679777f49b47269c488d5",
+    "inherited_projection_corpora": {
+      "qualification_profile_full_values": 44,
+      "standalone_cv_full_values": 44
+    },
+    "new_recovery_tests": 3,
+    "new_completed_letter_go_js_boundary_rows": 5
+  },
+  "typecheck": {
+    "exit": 0,
+    "command": "rtk proxy npx tsc --noEmit",
+    "tested_ts_blobs_unchanged": true
+  },
+  "build": {
+    "exit": 0,
+    "mode": [
+      "VITE_CAREEROS_ACCOUNT_MODE=1",
+      "VITE_CAREEROS_DRAFT_RECOVERY_MODE=1"
+    ],
+    "log": "/tmp/careeros-281-build-final.log",
+    "log_sha256": "249b3d77d7e42ec1cd96307b668e7bff593a937e6a9ca368dc2eb0ce0005d47e",
+    "owned_dist_outputs_restored_only": true
+  },
+  "actual_browser": {
+    "exit": 0,
+    "http_dto_mocked": false,
+    "evidence": "/tmp/careeros-281-check-mgfvw3tc",
+    "cells": [
+      {
+        "status": "passed",
+        "locale": "en",
+        "evidence": "/tmp/careeros-281-real-browser-8Qppc2",
+        "checks": [
+          "actual React→Vite proxy→Go authenticated controlled router→PostgreSQL",
+          "lost creation reply after real publication",
+          "byte-value exact full DTO reload",
+          "generation1/check1 remain unchanged",
+          "expiry/reauth preserves unsaved text",
+          "historical original signature/source",
+          "foreign account isolation",
+          "zero Profile/Accept/allowance writes",
+          "opaque-key-only browser storage"
+        ]
+      },
+      {
+        "status": "passed",
+        "locale": "pt-BR",
+        "evidence": "/tmp/careeros-281-real-browser-jgGgdS",
+        "checks": [
+          "actual React→Vite proxy→Go authenticated controlled router→PostgreSQL",
+          "lost creation reply after real publication",
+          "byte-value exact full DTO reload",
+          "generation1/check1 remain unchanged",
+          "expiry/reauth preserves unsaved text",
+          "historical original signature/source",
+          "foreign account isolation",
+          "zero Profile/Accept/allowance writes",
+          "opaque-key-only browser storage"
+        ]
+      }
+    ],
+    "server": "real local authenticated controlled Go router and disposable PostgreSQL",
+    "generation_per_cell": 1,
+    "independent_check_per_cell": 1,
+    "allowance_effects": 0
+  },
+  "restart": {
+    "fresh_in_final_relevant": true,
+    "test": "TestControlledDraftPostgresAndServerProcessRestartReadsExactBundle",
+    "physical_postgresql_restart": "private fsync/WAL-enabled cluster, pg_ctl immediate restart",
+    "fresh_server_process": true,
+    "synchronized_witness": [
+      "generation",
+      "completion-check"
+    ],
+    "result": "entire Result exact byte-value comparison via canonical/status/account-alias; callbacks never rerun",
+    "not_hosted_operational_recovery": true
+  },
+  "full_go": {
+    "exit": 1,
+    "passing_events": 2384,
+    "failures": [
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExecutesAllowlistedGoContractsWithoutInference"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCannotReadHostSentinelsOrReachHostLoopback"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCancellationStopsDetachedChildAndGrandchild"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerDeadlineRetainsPartialTreeAndUnreachedTest"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerBoundsOutputAndStopsFollowingTests"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerReusesSectionBrowserHarnessWithScreenshotEvidence"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExecutesExistingNodeCanonicalContracts"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCrashRetainsDistinctOutcome"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerUsesOfflineFieldHelpers"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCDPPDFIsDistinctAndSurvivesExport"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-canonical"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-ingestion"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-job-application"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-cv"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-ingestion"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-job-reuse"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-artifact-review"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAssertionRegressionCompletesWithFail"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-canonical-edit"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-ingestion"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-enrichment"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-application-reuse"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": null
+      }
+    ],
+    "skips": [
+      {
+        "package": "professional-information-repo/cmd/account-migrate",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/cmd/pilot-local",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestJourneyDemoServer"
+      },
+      {
+        "package": "professional-information-repo/internal/draftrecovery",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/fieldvalidation",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/jobcontext",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/openaihttp",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/qualificationmatching",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/releasecapture",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/testsupport",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/testsupport/aiadmission",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/workflowauth",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/lab/api",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/lab/buildmanifest",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/scripts/ai-diagnostics",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/scripts/application-context",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/scripts/field-validation/remediation",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/scripts/preview-preflight",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/scripts/qualification-evidence",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/scripts/semantic-quality",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestPilotRestartChild"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestControlledDraftBrowserServer"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestControlledDraftRestartChild"
+      }
+    ],
+    "evidence": "/tmp/careeros-281-check-a89qire_",
+    "jsonl_sha256": "4ea07e5b8bb8bf2067d1d55a50620c4b0529dda6678fda1ea9972604236b8677",
+    "aggregate_green": false,
+    "failure_test_paths": [
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-application-reuse"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-canonical-edit"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-enrichment"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-ingestion"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAssertionRegressionCompletesWithFail"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerBoundsOutputAndStopsFollowingTests"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCDPPDFIsDistinctAndSurvivesExport"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCancellationStopsDetachedChildAndGrandchild"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCannotReadHostSentinelsOrReachHostLoopback"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCrashRetainsDistinctOutcome"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerDeadlineRetainsPartialTreeAndUnreachedTest"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExecutesAllowlistedGoContractsWithoutInference"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExecutesExistingNodeCanonicalContracts"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-canonical"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-cv"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-ingestion"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-job-application"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-artifact-review"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-ingestion"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-job-reuse"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerReusesSectionBrowserHarnessWithScreenshotEvidence"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerUsesOfflineFieldHelpers"
+      }
+    ],
+    "exact_base_failure_match": true
+  },
+  "baseline": {
+    "commit": "44f2d556d25bb1225d45f526e1809dc5295616d2",
+    "method": "git archive immutable commit, independent Evaluation Lab package and default vet; all full-suite current failures confined to matching package",
+    "archive_sha256": "a2fca41acad9975cc8aee162217864411c3770b8289d3d94c00432e59349af71",
+    "lab_log": "/tmp/careeros-281-exact-base-lab.jsonl",
+    "lab_sha256": "662c8a89f71e42604e871a468fcb054657afc9d9f6b96a9cd4a42553d8550378",
+    "lab_passing_events": 573,
+    "failure_test_paths": [
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-application-reuse"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-canonical-edit"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-enrichment"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-ingestion"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAssertionRegressionCompletesWithFail"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerBoundsOutputAndStopsFollowingTests"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCDPPDFIsDistinctAndSurvivesExport"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCancellationStopsDetachedChildAndGrandchild"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCannotReadHostSentinelsOrReachHostLoopback"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCrashRetainsDistinctOutcome"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerDeadlineRetainsPartialTreeAndUnreachedTest"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExecutesAllowlistedGoContractsWithoutInference"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExecutesExistingNodeCanonicalContracts"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-canonical"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-cv"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-ingestion"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-job-application"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-artifact-review"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-ingestion"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-job-reuse"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerReusesSectionBrowserHarnessWithScreenshotEvidence"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerUsesOfflineFieldHelpers"
+      }
+    ],
+    "reviewed_lab_source_manifest_unchanged": true
+  },
+  "vet": {
+    "default_exit": 1,
+    "exact_base_match": true,
+    "diagnostic_count": 15,
+    "diagnostics": [
+      "internal/accountapi/ai_admission_test.go:117:101: professional-information-repo/internal/testsupport/aiadmission.Call struct literal uses unkeyed fields",
+      "internal/accountapi/ai_admission_test.go:117:137: professional-information-repo/internal/testsupport/aiadmission.Call struct literal uses unkeyed fields",
+      "internal/accountapi/ai_admission_test.go:117:171: professional-information-repo/internal/testsupport/aiadmission.Call struct literal uses unkeyed fields",
+      "internal/accountapi/ai_admission_test.go:117:197: professional-information-repo/internal/testsupport/aiadmission.Call struct literal uses unkeyed fields",
+      "internal/accountapi/ai_admission_test.go:117:227: professional-information-repo/internal/testsupport/aiadmission.Call struct literal uses unkeyed fields",
+      "internal/accountapi/ai_admission_test.go:117:29: professional-information-repo/internal/testsupport/aiadmission.Call struct literal uses unkeyed fields",
+      "internal/accountapi/ai_admission_test.go:117:63: professional-information-repo/internal/testsupport/aiadmission.Call struct literal uses unkeyed fields",
+      "internal/accountapi/ai_admission_test.go:172:31: professional-information-repo/internal/testsupport/aiadmission.Call struct literal uses unkeyed fields",
+      "internal/accountapi/ai_admission_test.go:172:65: professional-information-repo/internal/testsupport/aiadmission.Call struct literal uses unkeyed fields",
+      "internal/accountapi/ai_admission_test.go:174:31: professional-information-repo/internal/testsupport/aiadmission.Call struct literal uses unkeyed fields",
+      "internal/accountapi/ai_admission_test.go:174:65: professional-information-repo/internal/testsupport/aiadmission.Call struct literal uses unkeyed fields",
+      "internal/accountapi/ai_admission_test.go:177:31: professional-information-repo/internal/testsupport/aiadmission.Call struct literal uses unkeyed fields",
+      "internal/accountapi/ai_admission_test.go:177:65: professional-information-repo/internal/testsupport/aiadmission.Call struct literal uses unkeyed fields",
+      "internal/accountapi/ai_admission_test.go:177:91: professional-information-repo/internal/testsupport/aiadmission.Call struct literal uses unkeyed fields",
+      "internal/evaluationlab/store_manage.go:74:19: os.RemoveAll requires go1.25 or later (module is go1.24)"
+    ],
+    "scoped_exit": 0,
+    "scoped_exclusions": [
+      "composites=false",
+      "stdversion=false"
+    ],
+    "scoped_log": "/tmp/careeros-281-vet-scoped.log"
+  },
+  "permanent_red_to_green": [
+    {
+      "name": "shared admission/recovery witness gap",
+      "red_evidence": "/tmp/careeros-281-check-f_w3_qay",
+      "red": "GET404 for admitted Action; revoked/restored epoch replay201 generated",
+      "green_evidence": "/tmp/careeros-281-check-e0e53d4x",
+      "green_events": 4,
+      "final_retested": true
+    },
+    {
+      "name": "canonical completed-letter whitespace boundary",
+      "red_log": "/tmp/careeros-281-letter-red.log",
+      "red_log_sha256": "67b1e7a0f09d9413f7032dbdb37745de1300852b056d0a2e891869aca9748689",
+      "red": [
+        "FEFF400 accepted with GoFields7",
+        "0085 canonical7 rejected with GoFields406"
+      ],
+      "green_log": "/tmp/careeros-281-letter-green.log",
+      "final_retested": true
+    },
+    {
+      "name": "final decision blocked past expiry",
+      "red_evidence": "/tmp/careeros-281-check-enyh49lj",
+      "red": "third final adapter crosses grant expiry; pre-adapter clock returned200 with bundle",
+      "green_evidence": "/tmp/careeros-281-check-kpyg6cgn",
+      "green_events": 2,
+      "final_retested": true
+    }
+  ],
+  "intermediate_not_final": [
+    {
+      "evidence": "/tmp/careeros-281-check-elg8m5sv",
+      "passing_events": 41,
+      "scope": "pre-count/final-clock focused matrix"
+    },
+    {
+      "evidence": "/tmp/careeros-281-check-bqxhy5od",
+      "passing_events": 1128,
+      "scope": "pre-count/final-clock relevant"
+    },
+    {
+      "evidence": "/tmp/careeros-281-check-hwzpwbx_",
+      "passing_events": 1134,
+      "scope": "post-count/pre-final-clock relevant"
+    },
+    {
+      "evidence": "/tmp/careeros-281-check-ijispsgy",
+      "result": "CDP navigation context transition; harness now waits for new document and retries navigation transport errors only"
+    }
+  ],
+  "environment_limitations": [
+    "initial broad Node run spawnSync EPERM; separate capable rerun passes",
+    "original interrupted /tmp receipts historical; final relevant freshly reruns permanent completeness, roles, identity, selection, loss, restart and fence cases"
+  ],
+  "boundaries": [
+    "controlled in-memory generation and independent completion only",
+    "injected grant/deletion/delivery decisions only",
+    "no actual managed Draft provider execution, opening/allowance settlement, human Accept persistence, historical export or full deletion lifecycle",
+    "no provider-account/credential access, actual provider calls/spend, grants/participants, hosting/config/deployment/operational recovery, GitHub mutations, push/PR/merge/closure"
+  ]
+}

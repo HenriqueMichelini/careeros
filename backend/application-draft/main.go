@@ -396,21 +396,27 @@ var introducedIdentity = regexp.MustCompile(`(?:My name is|Meu nome é|Me chamo)
 
 // Structured parts keep the model outside the application-owned signature slot.
 func validCoverLetter(c coverLetter) bool {
-	if strings.TrimSpace(c.Greeting) == "" || strings.ContainsAny(strings.TrimSpace(c.Greeting), "\r\n") || strings.TrimSpace(c.Body) == "" || introducedIdentity.MatchString(c.Body) {
+	return validCoverLetterParts(c, strings.TrimSpace, func(value string) string { return value }) && len(strings.Fields(c.Greeting+" "+c.Body+" "+c.Closing)) < 400
+}
+
+// The raw handler retains its legacy trim/count behavior. A completed recovery
+// snapshot supplies canonical browser trim/regex whitespace without rewriting it.
+func validCoverLetterParts(c coverLetter, trim func(string) string, matchText func(string) string) bool {
+	if trim(c.Greeting) == "" || strings.ContainsAny(trim(c.Greeting), "\r\n") || trim(c.Body) == "" || introducedIdentity.MatchString(matchText(c.Body)) {
 		return false
 	}
-	switch strings.TrimSpace(c.Closing) {
+	switch trim(c.Closing) {
 	case "Sincerely,", "Kind regards,", "Best regards,", "Atenciosamente,", "Cordialmente,":
 	default:
 		return false
 	}
-	for _, line := range strings.Split(strings.TrimSpace(c.Body), "\n") {
-		line = strings.TrimSpace(line)
-		if line != "" && (!strings.ContainsAny(line[len(line)-1:], ".!?") || signatureLine.MatchString(line)) {
+	for _, line := range strings.Split(trim(c.Body), "\n") {
+		line = trim(line)
+		if line != "" && (!strings.ContainsAny(line[len(line)-1:], ".!?") || signatureLine.MatchString(matchText(line))) {
 			return false
 		}
 	}
-	return len(strings.Fields(c.Greeting+" "+c.Body+" "+c.Closing)) < 400
+	return true
 }
 
 func exactFields(raw json.RawMessage, expected ...string) bool {

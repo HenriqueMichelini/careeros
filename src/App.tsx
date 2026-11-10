@@ -9,6 +9,7 @@ import ResultsPage from "./pages/ResultsPage"
 import CvPage from "./pages/CvPage"
 import LandingPage from "./pages/LandingPage"
 import AccountGate from "./components/AccountGate"
+import DraftRecoveryWorkspace from "./components/DraftRecoveryWorkspace"
 
 function AppInner() {
   const { accountId, profileDocument, state } = useStore()
@@ -26,18 +27,18 @@ function AppInner() {
       {page === "repository" && <RepositoryPage />}
       {page === "cv" && <CvPage />}
       {page === "results" && <ResultsPage setPage={setPage} />}
-      <HomePage
+      {import.meta.env.VITE_CAREEROS_DRAFT_RECOVERY_MODE === "1" ? page === "home" && <DraftRecoveryWorkspace /> : <HomePage
         setPage={setPage}
         active={page === "home"}
         enrichmentActive={page === "results"}
-      />
+      />}
     </Layout>
   )
 }
 
 export default function App() {
   const pilot = import.meta.env.VITE_CAREEROS_PILOT_MODE === "1"
-  if (pilot || import.meta.env.VITE_CAREEROS_ACCOUNT_MODE === "1")
+  if (pilot || import.meta.env.VITE_CAREEROS_ACCOUNT_MODE === "1" || import.meta.env.VITE_CAREEROS_DRAFT_RECOVERY_MODE === "1")
     return (
       <AccountGate pilot={pilot}>
         <AppInner />

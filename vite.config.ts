@@ -17,6 +17,7 @@ function apiProxy() {
     '/api/auth',
     '/api/pilot',
     '/api/ai',
+    '/api/drafts',
   ].map(route => [route, { target: process.env.CAREEROS_API_TARGET || 'http://127.0.0.1:8787', changeOrigin: false }]))
 }
 

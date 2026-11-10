@@ -1,0 +1,37 @@
+[
+  {
+    "name": "space399",
+    "separator": " ",
+    "words": 393,
+    "count": 399,
+    "valid": true
+  },
+  {
+    "name": "space400",
+    "separator": " ",
+    "words": 394,
+    "count": 400,
+    "valid": false
+  },
+  {
+    "name": "FEFF399",
+    "separator": "\ufeff",
+    "words": 393,
+    "count": 399,
+    "valid": true
+  },
+  {
+    "name": "FEFF400",
+    "separator": "\ufeff",
+    "words": 394,
+    "count": 400,
+    "valid": false
+  },
+  {
+    "name": "0085nonspace",
+    "separator": "\u0085",
+    "words": 400,
+    "count": 7,
+    "valid": true
+  }
+]
