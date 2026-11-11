@@ -49,3 +49,68 @@ test('completed recovery letter limits preserve canonical JS whitespace at 399/4
  const cases=JSON.parse(readFileSync(new URL('../backend/application-draft/recovery_letter_fixtures.json',import.meta.url),'utf8'))
  for(const row of cases){const body=Array(row.words).fill('word').join(row.separator)+'.';const completed=`Dear hiring team,\n\n${body}\n\nSincerely,\nOriginal Person`;assert.equal(completed.split(/\s+/).length,row.count,row.name);assert.equal(completeCoverLetter({greeting:'Dear hiring team,',body,closing:'Sincerely,'},'Original Person')!==null,row.valid,row.name)}
 })
+
+test('authenticated absence allows one deliberate corrected submit on the preserved key', async () => {
+ const saved = storage()
+ const requests = []
+ let key
+ const send = async (url, options = {}) => {
+   requests.push([options.method ?? 'GET', url, options.headers['X-CareerOS-Action-Key']])
+   if (options.method === 'POST') {
+     key ??= options.headers['X-CareerOS-Action-Key']
+     if (requests.length === 1) return Response.json({error:'draft_stale'}, {status:409})
+     return Response.json(ready(key), {status:201})
+   }
+   return Response.json({error:'draft_not_found'}, {status:404})
+ }
+ const original = new DraftRecoveryClient('a', saved, send)
+ await assert.rejects(original.create(input))
+ const resumed = new DraftRecoveryClient('a', saved, send)
+ await assert.rejects(resumed.recover(), /draft_not_found/)
+ assert.equal(requests.length, 2)
+ assert.deepEqual([...saved.values.values()], [key])
+ const corrected = {...input, profileSource:{id:'p', revision:2}}
+ const result = await resumed.create(corrected)
+ assert.equal(result.creationKey, key)
+ assert.deepEqual(requests.map(([method,,header]) => [method, header]), [
+   ['POST', key], ['GET', undefined], ['POST', key]
+ ])
+})
+
+test('generic 404 and an established Action cannot unlock a creation key', async () => {
+ const saved = storage()
+ let key
+ const original = new DraftRecoveryClient('a', saved, async (_, options) => {
+   key = options.headers['X-CareerOS-Action-Key']
+   return Response.json(ready(key), {status:201})
+ })
+ await original.create(input)
+ const generic = new DraftRecoveryClient('a', saved, async () => new Response('Not found', {status:404}))
+ await assert.rejects(generic.recover(), /draft_outcome_unknown/)
+ await assert.rejects(generic.create(input), /draft_recover_first/)
+ let requestCount = 0
+ const existing = new DraftRecoveryClient('a', saved, async () => {
+   requestCount++
+   return requestCount === 1 ? Response.json(ready(key)) : Response.json({error:'draft_not_found'}, {status:404})
+ })
+ await existing.recover()
+ await assert.rejects(existing.recover(), /draft_outcome_unknown/)
+ await assert.rejects(existing.create(input), /draft_recover_first/)
+ assert.deepEqual([...saved.values.values()], [key])
+})
+
+test('corrected submit honors an existing binding conflict on the same key', async () => {
+ const saved = storage()
+ saved.setItem('careeros_draft_recovery:a','original-request')
+ const posts = []
+ const client = new DraftRecoveryClient('a', saved, async (_, options) => {
+   if (options.method !== 'POST') return Response.json({error:'draft_not_found'}, {status:404})
+   posts.push(options.headers['X-CareerOS-Action-Key'])
+   return Response.json({error:'draft_stale'}, {status:409})
+ })
+ await assert.rejects(client.recover(), /draft_not_found/)
+ await assert.rejects(client.create(input), /draft_outcome_unknown/)
+ await assert.rejects(client.create(input), /draft_recover_first/)
+ assert.deepEqual(posts, ['original-request'])
+ assert.deepEqual([...saved.values.values()], ['original-request'])
+})

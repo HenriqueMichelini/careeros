@@ -1,0 +1,562 @@
+{
+  "issue": "https://github.com/HenriqueMichelini/careeros/issues/281",
+  "owner_policy": "https://github.com/HenriqueMichelini/careeros/issues/281#issuecomment-6644621228",
+  "synthetic_only": true,
+  "base": "44f2d556d25bb1225d45f526e1809dc5295616d2",
+  "original_review_head": "9c6083c89f23c623cd0ef8c1214e7617e3463496",
+  "original_review_tree": "21f3de3be9706f8c2451949100cb27d6a35bfd35",
+  "candidate_binding": "Repair commit containing this file. Compare every runtime blob below.",
+  "initial_standards_review": {
+    "hard_violations": 0,
+    "nonblocking_judgments": 3
+  },
+  "original_evidence": "2026-11-10-application-draft-recovery-summary.json",
+  "runtime_blobs": {
+    "backend/application-draft/main.go": "e120470d3e0a38e8920f373fc2c549ce2f93ac55",
+    "backend/application-draft/recovery_letter.go": "5e29017f28988a605df609900fadda92bc17b276",
+    "internal/accountapi/draft_recovery.go": "cddd8d9bd4a8386cc8076ecd88f0315bcbb12220",
+    "internal/aicontrol/action_reference.go": "9ab08f40a1c4d5f2ad57257f353888eead298f0e",
+    "internal/draftrecovery/admission.go": "a79124660be167109109cca95fb242e51066e612",
+    "internal/draftrecovery/completion.go": "731df25d4338e666015c5be5d056fd52595ae2a8",
+    "internal/draftrecovery/model.go": "1e71fd5f0d409d8a4269a8de3c7d76e01a1ddc2e",
+    "internal/draftrecovery/schema.sql": "0ad089fbfdb2a43dbcca54ef6bb22d47aa983d06",
+    "internal/draftrecovery/store.go": "faabf84ba98877bb6582cd0b29786e6330c028f2",
+    "internal/profiledocument/text.go": "fbd3fc4673a7ee86b437019e5c59b4de01ec22af",
+    "src/App.tsx": "ce61d547c9875ad620e73978113c98ed573f04a4",
+    "src/components/DraftRecoveryWorkspace.tsx": "67ac8a171341d0c71c218b3075d17ffbfb21d38b",
+    "src/lib/draftRecovery.ts": "75f40116abe38ba45eb3de5320a4594c5170a1aa",
+    "vite.config.ts": "486afe5fb25e34ed4f9095fef725a58e105ae0b6"
+  },
+  "changed_runtime_files": [
+    "internal/draftrecovery/admission.go",
+    "internal/draftrecovery/store.go",
+    "src/App.tsx",
+    "src/components/DraftRecoveryWorkspace.tsx",
+    "src/lib/draftRecovery.ts"
+  ],
+  "reviewer_red_receipts": [
+    {
+      "path": "/tmp/careeros-281-check-aux9g4b9/go.jsonl",
+      "sha256": "17fd5dd2a803a15b65d904e081c251398cf1db06b3de71bad0d9e6034554910d"
+    },
+    {
+      "path": "/tmp/careeros-281-check-ayn1my7g/go.jsonl",
+      "sha256": "1c978f5f68dff70d7472000911e7b7b85b83a04628508b340721af4cade5cbdf"
+    },
+    {
+      "path": "/tmp/careeros-281-check-eo4uefs6/browser.jsonl",
+      "sha256": "aafa710df2aaf873ff36c7b510fb5aa8244300db4afccd9771735e90cad71977"
+    }
+  ],
+  "permanent_red_to_green": [
+    {
+      "finding": "Final read decision discarded by the account Function alias",
+      "severity": "P2",
+      "red": {
+        "path": "/tmp/careeros-281-check-hr_l_j_0/go.jsonl",
+        "sha256": "bf5e7b1ff0d5beed3a17fd6e9fa22641ef78ce495e9498a72e0e587f8a27a58b"
+      },
+      "observed": "Three current adapter calls. The final Read=false returned HTTP 200 with a bundle.",
+      "green": "HTTP 403 with no bundle. Later authorized GET returns exact original bytes and callback counts stay 1/1."
+    },
+    {
+      "finding": "Shared terminal cancellation overwritten by candidate publication",
+      "severity": "P2",
+      "red": {
+        "path": "/tmp/careeros-281-check-hr_l_j_0/go.jsonl",
+        "sha256": "bf5e7b1ff0d5beed3a17fd6e9fa22641ef78ce495e9498a72e0e587f8a27a58b"
+      },
+      "reached_timings": [
+        "before generation witness",
+        "during generation",
+        "during completion"
+      ],
+      "observed": "Each authorized kernel cancellation became candidate, HTTP 201 with bundle, generation 1 and completion 1.",
+      "green": "All three preserve canceled. Pre-witness generation and completion stay zero. Later terminal reads withhold the bundle. Same-Action unknown dispatch, three scope holds and denied Retry survive cleanup and replay."
+    },
+    {
+      "finding": "Scoped absence after pre-admission stale Profile stranded Generate",
+      "severity": "P2",
+      "red": [
+        {
+          "path": "/tmp/careeros-281-check-1kfqddnw/browser.jsonl",
+          "sha256": "348bcf5ff4d1a23523b0547b0b81a9ebbd5f1c84d148025bc657d369c5992f8e"
+        },
+        {
+          "path": "/tmp/careeros-281-repair-node-red.log",
+          "sha256": "e379c3dc09efb9fad6ac4bf326147cfa2fdec14b8c8ddfe23fb83390ee8cd311"
+        }
+      ],
+      "observed": "Actual HTTP 409 then scoped GET 404 with zero callbacks, followed by disabled Generate.",
+      "green": "Deliberate corrected POST uses the same key with the updated Profile. Generic 404 and existing binding conflict cannot rotate that key."
+    },
+    {
+      "finding": "Authentication denial left protected views mounted",
+      "severity": "P2",
+      "red": {
+        "path": "/tmp/careeros-281-check-q3bt5wtr/browser.jsonl",
+        "sha256": "96f4cd215243350e2ed0296252102302682fd93629018b98dfc644355bfade52"
+      },
+      "observed": "Actual exact-version GET 401 left current and previous complete views mounted.",
+      "green": "401/403 withhold protected content. Same-document same-account reauthentication preserves user-entered wording and recovers the exact Action/version without callbacks. A foreign account inherits neither wording nor a late ready response."
+    }
+  ],
+  "focused_go": {
+    "evidence": "/tmp/careeros-281-check-f_al54v9",
+    "synthetic_only": true,
+    "go_exit": 0,
+    "pass_events": 6,
+    "failures": [],
+    "skips": [
+      {
+        "package": "professional-information-repo/internal/draftrecovery",
+        "test": null
+      }
+    ],
+    "receipt": {
+      "path": "/tmp/careeros-281-check-f_al54v9/go.jsonl",
+      "sha256": "b1d47e3617a24a049a12590e5e5956bb0a5ea380f26d1f509df63dbc7d23d67f"
+    }
+  },
+  "relevant_go": {
+    "evidence": "/tmp/careeros-281-check-jcb84r19",
+    "synthetic_only": true,
+    "go_exit": 0,
+    "pass_events": 1140,
+    "failures": [],
+    "skips": [
+      {
+        "package": "professional-information-repo/internal/openaihttp",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/fieldvalidation",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestJourneyDemoServer"
+      },
+      {
+        "package": "professional-information-repo/internal/draftrecovery",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestPilotRestartChild"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestControlledDraftBrowserServer"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestControlledDraftRestartChild"
+      }
+    ],
+    "receipt": {
+      "path": "/tmp/careeros-281-check-jcb84r19/go.jsonl",
+      "sha256": "7978adb4312f4c059809dba8edd48d024aeded8f7fc5e10bdbe41be049428d90"
+    }
+  },
+  "canonical_admission_passed": [
+    "A01",
+    "A02",
+    "A03",
+    "A04",
+    "A05",
+    "A06",
+    "A07",
+    "A08",
+    "A09",
+    "A10",
+    "A11",
+    "A12",
+    "A13",
+    "A14",
+    "A15",
+    "A16",
+    "A17",
+    "A18",
+    "A19",
+    "A20",
+    "A21",
+    "A22",
+    "A23",
+    "A24",
+    "A25",
+    "A26",
+    "A27",
+    "A28",
+    "A29",
+    "A30",
+    "A31",
+    "A32",
+    "A33",
+    "A34",
+    "A35",
+    "A36",
+    "A37"
+  ],
+  "node": {
+    "exit": 0,
+    "tests": 424,
+    "passed": 424,
+    "failed": 0,
+    "skipped": 0,
+    "inherited_projection_corpora": {
+      "qualification_profile_full_values": 44,
+      "standalone_cv_full_values": 44
+    },
+    "receipt": {
+      "path": "/tmp/careeros-281-repair-node-full.log",
+      "sha256": "e7a1f4c9b34c23e6dde4f31211bcb7cbe700554ab8ba6afd159c569dc8f923c8"
+    }
+  },
+  "typecheck": {
+    "exit": 0,
+    "receipt": {
+      "path": "/tmp/careeros-281-repair-tsc.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "build": {
+    "exit": 0,
+    "mode": [
+      "VITE_CAREEROS_ACCOUNT_MODE=1",
+      "VITE_CAREEROS_DRAFT_RECOVERY_MODE=1"
+    ],
+    "warning": "Vite chunk size exceeds 500 kB after minification",
+    "receipt": {
+      "path": "/tmp/careeros-281-repair-build.log",
+      "sha256": "d91b8cca814cb98223fdc3df807604946cd4da55125772b8424e82bb6014f7ae"
+    }
+  },
+  "actual_browser": {
+    "evidence": "/tmp/careeros-281-check-ts_rph3m",
+    "synthetic_only": true,
+    "go_exit": 0,
+    "pass_events": 0,
+    "failures": [],
+    "skips": [],
+    "browser_cells": [
+      {
+        "status": "passed",
+        "scenario": "recovery",
+        "locale": "en",
+        "evidence": "/tmp/careeros-281-real-browser-KASNr3",
+        "checks": [
+          "actual React→Vite proxy→Go authenticated controlled router→PostgreSQL",
+          "lost creation reply after real publication",
+          "byte-value exact full DTO reload",
+          "generation1/check1 remain unchanged",
+          "expiry/reauth preserves unsaved text",
+          "historical original signature/source",
+          "foreign account isolation",
+          "zero Profile/Accept/allowance writes",
+          "opaque-key-only browser storage"
+        ]
+      },
+      {
+        "status": "passed",
+        "scenario": "recovery",
+        "locale": "pt-BR",
+        "evidence": "/tmp/careeros-281-real-browser-YUjcOC",
+        "checks": [
+          "actual React→Vite proxy→Go authenticated controlled router→PostgreSQL",
+          "lost creation reply after real publication",
+          "byte-value exact full DTO reload",
+          "generation1/check1 remain unchanged",
+          "expiry/reauth preserves unsaved text",
+          "historical original signature/source",
+          "foreign account isolation",
+          "zero Profile/Accept/allowance writes",
+          "opaque-key-only browser storage"
+        ]
+      },
+      {
+        "status": "passed",
+        "scenario": "corrected-creation",
+        "locale": "en",
+        "evidence": "/tmp/careeros-281-real-browser-XXRJG0",
+        "checks": [
+          "real stale Profile 409 then scoped GET 404",
+          "zero automatic POST or callback",
+          "deliberate corrected Profile revision submits same key once"
+        ]
+      },
+      {
+        "status": "passed",
+        "scenario": "corrected-creation",
+        "locale": "pt-BR",
+        "evidence": "/tmp/careeros-281-real-browser-mAMfi3",
+        "checks": [
+          "real stale Profile 409 then scoped GET 404",
+          "zero automatic POST or callback",
+          "deliberate corrected Profile revision submits same key once"
+        ]
+      },
+      {
+        "status": "passed",
+        "scenario": "access-denial",
+        "locale": "en",
+        "evidence": "/tmp/careeros-281-real-browser-ihustv",
+        "checks": [
+          "real 401 hides current and previous bundles with original context",
+          "same account editor and opaque key preserved",
+          "reauth exact result and unchanged callbacks",
+          "real 403 hides recovered view",
+          "authorized original never autofills editor",
+          "foreign switch discards wording and late ready reply"
+        ]
+      },
+      {
+        "status": "passed",
+        "scenario": "access-denial",
+        "locale": "pt-BR",
+        "evidence": "/tmp/careeros-281-real-browser-LTlxOL",
+        "checks": [
+          "real 401 hides current and previous bundles with original context",
+          "same account editor and opaque key preserved",
+          "reauth exact result and unchanged callbacks",
+          "real 403 hides recovered view",
+          "authorized original never autofills editor",
+          "foreign switch discards wording and late ready reply"
+        ]
+      }
+    ],
+    "http_dto_mocked": false,
+    "receipt": {
+      "path": "/tmp/careeros-281-check-ts_rph3m/browser.jsonl",
+      "sha256": "d4d52f4845aa5c9da591694cd792cff1a98464e4dee0ca5804d00f6fa9c63269"
+    }
+  },
+  "full_go": {
+    "evidence": "/tmp/careeros-281-check-yc3coh04",
+    "synthetic_only": true,
+    "go_exit": 1,
+    "pass_events": 2389,
+    "failures": [
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExecutesAllowlistedGoContractsWithoutInference"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCannotReadHostSentinelsOrReachHostLoopback"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCancellationStopsDetachedChildAndGrandchild"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerDeadlineRetainsPartialTreeAndUnreachedTest"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerBoundsOutputAndStopsFollowingTests"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerReusesSectionBrowserHarnessWithScreenshotEvidence"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExecutesExistingNodeCanonicalContracts"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCrashRetainsDistinctOutcome"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerUsesOfflineFieldHelpers"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCDPPDFIsDistinctAndSurvivesExport"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-canonical"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-ingestion"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-job-application"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-cv"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-ingestion"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-job-reuse"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-artifact-review"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAssertionRegressionCompletesWithFail"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-canonical-edit"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-ingestion"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-enrichment"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-application-reuse"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": null
+      }
+    ],
+    "skips": [
+      {
+        "package": "professional-information-repo/cmd/account-migrate",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/cmd/pilot-local",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestJourneyDemoServer"
+      },
+      {
+        "package": "professional-information-repo/internal/draftrecovery",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/fieldvalidation",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/jobcontext",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/openaihttp",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/qualificationmatching",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/releasecapture",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/testsupport",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/testsupport/aiadmission",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/workflowauth",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/lab/api",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/lab/buildmanifest",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/scripts/ai-diagnostics",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/scripts/application-context",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/scripts/field-validation/remediation",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/scripts/preview-preflight",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/scripts/qualification-evidence",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/scripts/semantic-quality",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestPilotRestartChild"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestControlledDraftBrowserServer"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestControlledDraftRestartChild"
+      }
+    ],
+    "receipt": {
+      "path": "/tmp/careeros-281-check-yc3coh04/go.jsonl",
+      "sha256": "b34c4abc8e48708073891ae6c6ebecd896526d6243f6f8fe9369ef39e18a9545"
+    },
+    "aggregate_green": false,
+    "matched_immutable_baseline_test_paths": 24,
+    "baseline": "44f2d556d25bb1225d45f526e1809dc5295616d2",
+    "baseline_evidence": "2026-11-10-application-draft-recovery-summary.json"
+  },
+  "vet": {
+    "default_exit": 1,
+    "exact_base_match": true,
+    "diagnostic_count": 15,
+    "default_receipt": {
+      "path": "/tmp/careeros-281-repair-vet-default.log",
+      "sha256": "449b2077e614d67a727d4aca5d9f84b70d47f83914a785cc398129577d3e0db4"
+    },
+    "scoped_exit": 0,
+    "scoped_exclusions": [
+      "composites=false",
+      "stdversion=false"
+    ],
+    "scoped_receipt": {
+      "path": "/tmp/careeros-281-repair-vet-scoped.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

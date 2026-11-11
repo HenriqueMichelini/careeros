@@ -4,8 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"professional-information-repo/internal/auth"
 	"time"
+
+	"professional-information-repo/internal/auth"
 )
 
 // The guard contains keyed bindings and authority metadata only. It precedes the
@@ -33,11 +34,7 @@ func (s *Store) admission(ctx context.Context, tx *sql.Tx, p auth.Principal, key
 func guardClosed(r record, d Decision, now time.Time) bool {
 	return r.State == "closed" || r.State == "deleted" || d.Epoch != r.epoch || !d.Generate || d.Deleted || d.Revoked || d.Cancelled || !now.Before(r.grantEnd) || !now.Before(d.GrantExpiresAt)
 }
-func (s *Store) closeAdmission(ctx context.Context, tx *sql.Tx, p auth.Principal, key string, d Decision) error {
-	state := "closed"
-	if d.Deleted {
-		state = "deleted"
-	}
+func (s *Store) closeAdmission(ctx context.Context, tx *sql.Tx, p auth.Principal, key, state string) error {
 	_, err := tx.ExecContext(ctx, `UPDATE careeros_draft_admissions SET state=CASE WHEN state='deleted' THEN state ELSE $3 END WHERE owner=$1 AND creation_key=$2`, p.AccountID, key, state)
 	return err
 }
@@ -46,19 +43,12 @@ func (s *Store) closeAdmission(ctx context.Context, tx *sql.Tx, p auth.Principal
 // generation witness has not committed. It NEVER claims generation or checking.
 func (s *Store) gapRecord(ctx context.Context, tx *sql.Tx, p auth.Principal, key string) (record, error) {
 	var r record
-	var sharedState string
-	err := tx.QueryRowContext(ctx, `SELECT a.namespace,a.id,g.input_digest,g.source_digest,g.profile_id,g.profile_revision,g.language,g.authority_epoch,a.created_at,g.grant_expires_at,g.state,a.state FROM careeros_draft_admissions g JOIN ai_fixture_action a ON a.namespace=g.namespace AND a.owner=g.owner AND a.creation_key=g.creation_key AND a.workflow='application_draft' WHERE g.owner=$1 AND g.creation_key=$2 FOR UPDATE OF g,a`, p.AccountID, key).Scan(&r.Action.Namespace, &r.Action.ID, &r.inputDigest, &r.binding.SourceDigest, &r.binding.Profile.ID, &r.binding.Profile.Revision, &r.binding.Language, &r.epoch, &r.AdmittedAt, &r.grantEnd, &r.State, &sharedState)
+	err := tx.QueryRowContext(ctx, `SELECT a.namespace,a.id,g.input_digest,g.source_digest,g.profile_id,g.profile_revision,g.language,g.authority_epoch,a.created_at,g.grant_expires_at,g.state FROM careeros_draft_admissions g JOIN ai_fixture_action a ON a.namespace=g.namespace AND a.owner=g.owner AND a.creation_key=g.creation_key AND a.workflow='application_draft' WHERE g.owner=$1 AND g.creation_key=$2 FOR UPDATE OF g`, p.AccountID, key).Scan(&r.Action.Namespace, &r.Action.ID, &r.inputDigest, &r.binding.SourceDigest, &r.binding.Profile.ID, &r.binding.Profile.Revision, &r.binding.Language, &r.epoch, &r.AdmittedAt, &r.grantEnd, &r.State)
 	if errors.Is(err, sql.ErrNoRows) {
 		return r, ErrNotFound
 	}
 	if err != nil {
 		return r, ErrDenied
-	}
-	if sharedState == "closed" || sharedState == "canceled" || sharedState == "deleted" {
-		r.State = "closed"
-		if sharedState == "deleted" {
-			r.State = "deleted"
-		}
 	}
 	r.Action.Owner = p.AccountID
 	r.Action.Workflow = "application_draft"
@@ -72,4 +62,24 @@ func (s *Store) gapRecord(ctx context.Context, tx *sql.Tx, p auth.Principal, key
 	r.binding.GenerationVersion = GenerationVersion
 	r.binding.ReviewVersion = ReviewVersion
 	return r, nil
+}
+
+// The shared ledger owns cancellation. Recovery maps its terminal states to
+// purpose-content closure while preserving the original ledger state.
+func sharedClosure(state string) string {
+	switch state {
+	case "canceled", "closed":
+		return "closed"
+	case "deleted":
+		return "deleted"
+	default:
+		return ""
+	}
+}
+
+func decisionClosure(d Decision) string {
+	if d.Deleted {
+		return "deleted"
+	}
+	return "closed"
 }

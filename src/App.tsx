@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { StoreProvider, useStore } from "./lib/store"
 import { hasQualificationEvidence } from "./lib/qualificationEvidence"
 import { Page } from "./lib/types"
@@ -9,9 +9,9 @@ import ResultsPage from "./pages/ResultsPage"
 import CvPage from "./pages/CvPage"
 import LandingPage from "./pages/LandingPage"
 import AccountGate from "./components/AccountGate"
-import DraftRecoveryWorkspace from "./components/DraftRecoveryWorkspace"
+import DraftRecoveryWorkspace, { type DraftEditor } from "./components/DraftRecoveryWorkspace"
 
-function AppInner() {
+function AppInner({ draftEditors }: { draftEditors: Map<string, DraftEditor> }) {
   const { accountId, profileDocument, state } = useStore()
   const [page, setPage] = useState<Page>(() =>
     accountId
@@ -27,7 +27,7 @@ function AppInner() {
       {page === "repository" && <RepositoryPage />}
       {page === "cv" && <CvPage />}
       {page === "results" && <ResultsPage setPage={setPage} />}
-      {import.meta.env.VITE_CAREEROS_DRAFT_RECOVERY_MODE === "1" ? page === "home" && <DraftRecoveryWorkspace /> : <HomePage
+      {import.meta.env.VITE_CAREEROS_DRAFT_RECOVERY_MODE === "1" ? page === "home" && <DraftRecoveryWorkspace editors={draftEditors} /> : <HomePage
         setPage={setPage}
         active={page === "home"}
         enrichmentActive={page === "results"}
@@ -37,16 +37,18 @@ function AppInner() {
 }
 
 export default function App() {
+  // Retain only user-entered editor wording in this document across same-account reauthentication.
+  const draftEditors = useRef(new Map<string, DraftEditor>()).current
   const pilot = import.meta.env.VITE_CAREEROS_PILOT_MODE === "1"
   if (pilot || import.meta.env.VITE_CAREEROS_ACCOUNT_MODE === "1" || import.meta.env.VITE_CAREEROS_DRAFT_RECOVERY_MODE === "1")
     return (
       <AccountGate pilot={pilot}>
-        <AppInner />
+        <AppInner draftEditors={draftEditors} />
       </AccountGate>
     )
   return (
     <StoreProvider>
-      <AppInner />
+      <AppInner draftEditors={draftEditors} />
     </StoreProvider>
   )
 }

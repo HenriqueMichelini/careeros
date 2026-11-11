@@ -15,7 +15,11 @@ window.fetch=async(input,init={})=>{
  const response=await nativeFetch(input,init)
  if(path==='/api/drafts'||/^\/api\/drafts\/[^/]+(?:\/versions\/1)?$/.test(path)){
   wire.responses.push({path,method,status:response.status,body:await response.clone().json()})
-  if(path==='/api/drafts'&&method==='POST'&&window.dropDraftResponse){window.dropDraftResponse=false;throw new TypeError('Synthetic lost response AFTER actual server publication')}
+  if(method==='GET' && response.status===200 && wire.holdNextReady){
+   wire.holdNextReady=false
+   await new Promise(resolve=>{wire.releaseReady=resolve})
+  }
+  if(path==='/api/drafts'&&method==='POST'&&response.status===201&&window.dropDraftResponse){window.dropDraftResponse=false;throw new TypeError('Synthetic lost response AFTER actual server publication')}
  }
  return response
 }

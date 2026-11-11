@@ -42,7 +42,7 @@ function parseResult(value: unknown, account: string, key: string): RecoveredDra
   if (!object(value) || !object(value.action)) return null
   const r = value as unknown as RecoveredDraft
   if (r.creationKey !== key || r.action.owner !== account || r.action.workflow !== "application_draft" || !token(r.action.namespace) || !token(r.action.id) || !["pending", "incomplete", "ready", "closed", "deleted"].includes(r.state) || ![0, 1].includes(r.artifactVersion) || !Number.isFinite(Date.parse(r.admittedAt)) || !Number.isFinite(Date.parse(r.deadline)) || typeof r.historical !== "boolean" || typeof r.cleanupQueued !== "boolean") return null
-  if (r.state !== "ready") return r.bundle === undefined && r.job === undefined ? r : null
+  if (r.state !== "ready") return r.bundle === undefined && r.job === undefined && r.context === undefined ? r : null
   const b = r.bundle
   if (r.artifactVersion !== 1 || !b || b.schema !== "application-draft-bundle-v1" || !object(b.binding) || !object(b.binding.action) || !actionEqual(r.action, b.binding.action) || !object(b.binding.profileSource) || !text(b.binding.profileSource.id) || !Number.isSafeInteger(b.binding.profileSource.revision) || b.binding.profileSource.revision < 1 || !["en", "pt-BR"].includes(b.binding.language) || !digest(b.binding.sourceDigest) || !digest(b.binding.inputDigest) || b.binding.generationVersion !== "controlled-complete-draft-v1" || b.binding.reviewVersion !== "application-draft-review-snapshot-v1" || !r.job || !text(r.job.posting)) return null
   if (![b.roleSummary, b.resume, b.coverLetter].every(text) || !object(b.identity) || !["fullName", "email", "phone", "location", "professionalLinks"].every(k => typeof b.identity[k as keyof typeof b.identity] === "string") || ![b.jobTitle, b.company].every(v => v === null || text(v))) return null
@@ -60,7 +60,7 @@ export class DraftRecoveryClient {
   private action: DraftAction | null = null
   private sequence = 0
   private readonly storageKey: string
-  state: RecoveredDraft["state"] | "idle" | "uncertain" = "idle"
+  state: RecoveredDraft["state"] | "idle" | "uncertain" | "absent" = "idle"
 
   constructor(readonly accountId: string, private readonly storage: StoragePort | null = typeof sessionStorage === "undefined" ? null : sessionStorage, private readonly transport: typeof fetch = fetch) {
     this.storageKey = `careeros_draft_recovery:${encodeURIComponent(accountId)}`
@@ -71,7 +71,9 @@ export class DraftRecoveryClient {
   async create(input: DraftInput, signal?: AbortSignal): Promise<RecoveredDraft> {
     if (this.state === "uncertain" || this.state === "pending") throw new Error("draft_recover_first")
     if (!input.profileSource || !text(input.profileSource.id) || !Number.isSafeInteger(input.profileSource.revision) || input.profileSource.revision < 1 || !text(input.job.posting)) throw new Error("draft_input")
-    const key = crypto.randomUUID()
+    // The authenticated absence can race another request. Reuse its key so
+    // the server still enforces the original binding and generation witness.
+    const key = this.state === "absent" && this.key ? this.key : crypto.randomUUID()
     try { if (!this.storage) throw new Error(); this.storage.setItem(this.storageKey, key) } catch { throw new Error("draft_recovery_storage") }
     this.key = key; this.action = null; this.state = "uncertain"
     return this.request(key, "POST", input, signal)
@@ -82,6 +84,7 @@ export class DraftRecoveryClient {
   }
   private async request(key: string, method: "GET" | "POST", input?: DraftInput, signal?: AbortSignal): Promise<RecoveredDraft> {
     const sequence = ++this.sequence
+    let confirmedAbsent = false
     try {
       const response = await this.transport(method === "POST" ? "/api/drafts" : `/api/drafts/${encodeURIComponent(key)}/versions/1`, {
         ...(method === "POST" ? { method, body: JSON.stringify(input) } : {}),
@@ -91,6 +94,14 @@ export class DraftRecoveryClient {
       const payload = await response.json().catch(() => null)
       if (sequence !== this.sequence || key !== this.key) throw new Error("draft_superseded")
       if (response.status === 401) throw new Error("draft_authentication_required")
+      if (response.status === 403) throw new Error("draft_access_denied")
+      if (response.status === 409 && object(payload) && payload.error === "account_changed") {
+        throw new Error("draft_account_changed")
+      }
+      if (method === "GET" && !this.action && response.status === 404 && object(payload) && payload.error === "draft_not_found") {
+        confirmedAbsent = true
+        throw new Error("draft_not_found")
+      }
       if (!response.ok && response.status !== 410) throw new Error("draft_outcome_unknown")
       const result = parseResult(payload, this.accountId, key)
       if (!result || (this.action && !actionEqual(this.action, result.action))) throw new Error("draft_invalid_result")
@@ -98,7 +109,7 @@ export class DraftRecoveryClient {
       return structuredClone(result)
     } catch (error) {
       if (sequence !== this.sequence || key !== this.key) throw new Error("draft_superseded")
-      this.state = "uncertain"
+      this.state = confirmedAbsent ? "absent" : "uncertain"
       if (error instanceof Error && error.message.startsWith("draft_")) throw error
       throw new Error("draft_outcome_unknown")
     }

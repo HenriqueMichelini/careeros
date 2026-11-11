@@ -202,7 +202,7 @@ func (s *Store) Create(ctx context.Context, p auth.Principal, key string, input 
 		return Result{}, empty, false, err
 	}
 	if guardClosed(guard, d, now) {
-		if err = s.closeAdmission(ctx, tx, p, key, d); err != nil {
+		if err = s.closeAdmission(ctx, tx, p, key, decisionClosure(d)); err != nil {
 			tx.Rollback()
 			return Result{}, empty, false, ErrDenied
 		}
@@ -241,7 +241,7 @@ func (s *Store) Create(ctx context.Context, p auth.Principal, key string, input 
 		return Result{}, empty, false, err
 	}
 	if guardClosed(guard, d, now) {
-		if err = s.closeAdmission(ctx, tx, p, key, d); err != nil {
+		if err = s.closeAdmission(ctx, tx, p, key, decisionClosure(d)); err != nil {
 			return Result{}, empty, false, ErrDenied
 		}
 		if err = tx.Commit(); err != nil {
@@ -251,8 +251,8 @@ func (s *Store) Create(ctx context.Context, p auth.Principal, key string, input 
 		return r, empty, false, e
 	}
 	var admitted time.Time
-	var owner, creation, workflow string
-	err = tx.QueryRowContext(ctx, `SELECT owner,creation_key,workflow,created_at FROM ai_fixture_action WHERE namespace=$1 AND id=$2 FOR UPDATE`, action.Namespace, action.ID).Scan(&owner, &creation, &workflow, &admitted)
+	var owner, creation, workflow, sharedState string
+	err = tx.QueryRowContext(ctx, `SELECT owner,creation_key,workflow,created_at,state FROM ai_fixture_action WHERE namespace=$1 AND id=$2 FOR UPDATE`, action.Namespace, action.ID).Scan(&owner, &creation, &workflow, &admitted, &sharedState)
 	if err != nil || owner != p.AccountID || creation != key || workflow != "application_draft" {
 		return Result{}, empty, false, ErrDenied
 	}
@@ -266,6 +266,14 @@ func (s *Store) Create(ctx context.Context, p auth.Principal, key string, input 
 		return r, empty, false, e
 	}
 	if !errors.Is(err, sql.ErrNoRows) {
+		return Result{}, empty, false, ErrDenied
+	}
+	if sharedClosure(sharedState) != "" {
+		tx.Rollback()
+		r, e := s.Read(ctx, p, key)
+		return r, empty, false, e
+	}
+	if sharedState != "recoverable" {
 		return Result{}, empty, false, ErrDenied
 	}
 	g, err := s.current(ctx, tx, p, in)
@@ -325,34 +333,39 @@ func (s *Store) load(ctx context.Context, tx *sql.Tx, p auth.Principal, key stri
 	if err != nil {
 		return r, d, now, err
 	}
-	closed := r.State == "closed" || r.State == "deleted"
-	if d.Deleted {
+	var sharedState string
+	if err = tx.QueryRowContext(ctx, `SELECT state FROM ai_fixture_action WHERE namespace=$1 AND id=$2 AND owner=$3 AND workflow='application_draft' FOR UPDATE`, r.Action.Namespace, r.Action.ID, p.AccountID).Scan(&sharedState); err != nil {
+		return r, d, now, ErrDenied
+	}
+	previous := r.State
+	shared := sharedClosure(sharedState)
+	switch {
+	case d.Deleted || shared == "deleted":
 		r.State = "deleted"
-		closed = true
-	} else if !d.Delivered && (d.Epoch != r.epoch || d.Revoked || d.Cancelled || !now.Before(r.Deadline) || !now.Before(d.GrantExpiresAt)) {
+	case r.State == "deleted":
+		// Retain the stronger terminal state.
+	case shared == "closed",
+		!d.Delivered && (d.Epoch != r.epoch || d.Revoked || d.Cancelled || !now.Before(r.Deadline) || !now.Before(d.GrantExpiresAt)),
+		d.Delivered && !now.Before(r.grantEnd.Add(30*24*time.Hour)):
 		r.State = "closed"
-		closed = true
 	}
-	if d.Delivered && !now.Before(r.grantEnd.Add(30*24*time.Hour)) {
-		r.State = "closed"
-		closed = true
-	}
+	closed := r.State == "closed" || r.State == "deleted"
 	if closed {
-		if err = s.closeAdmission(ctx, tx, p, key, d); err != nil {
+		if err = s.closeAdmission(ctx, tx, p, key, r.State); err != nil {
 			return r, d, now, ErrDenied
 		}
-	}
-	if closed && !r.CleanupQueued {
-		if _, err = tx.ExecContext(ctx, `UPDATE careeros_draft_actions SET state=$3,cleanup_queued=true WHERE namespace=$1 AND action_id=$2`, r.Action.Namespace, r.Action.ID, r.State); err != nil {
-			return r, d, now, ErrDenied
+		if !r.CleanupQueued || previous != r.State {
+			if _, err = tx.ExecContext(ctx, `UPDATE careeros_draft_actions SET state=$3,cleanup_queued=true WHERE namespace=$1 AND action_id=$2`, r.Action.Namespace, r.Action.ID, r.State); err != nil {
+				return r, d, now, ErrDenied
+			}
+			r.CleanupQueued = true
 		}
-		r.CleanupQueued = true
-	}
-	if closed && !d.Delivered {
-		// Propagate the same Action's terminal execution status, never an
-		// allowance effect, reservation release or provider-exposure mutation.
-		if _, err = tx.ExecContext(ctx, `UPDATE ai_fixture_action SET state=$3 WHERE namespace=$1 AND id=$2 AND NOT customer_effect`, r.Action.Namespace, r.Action.ID, r.State); err != nil {
-			return r, d, now, ErrDenied
+		// Propagate closure only from a nonterminal ledger state. Customer
+		// cancellation and any existing delivery/exposure evidence stay intact.
+		if shared == "" && !d.Delivered {
+			if _, err = tx.ExecContext(ctx, `UPDATE ai_fixture_action SET state=$3 WHERE namespace=$1 AND id=$2 AND NOT customer_effect`, r.Action.Namespace, r.Action.ID, r.State); err != nil {
+				return r, d, now, ErrDenied
+			}
 		}
 	}
 	return r, d, now, nil
@@ -434,7 +447,11 @@ func (s *Store) Publish(ctx context.Context, p auth.Principal, key string, publi
 	if _, err = tx.ExecContext(ctx, `UPDATE careeros_draft_actions SET state='ready',artifact_version=1,published_digest=$3 WHERE namespace=$1 AND action_id=$2`, r.Action.Namespace, r.Action.ID, digest); err != nil {
 		return ErrDenied
 	}
-	if _, err = tx.ExecContext(ctx, `UPDATE ai_fixture_action SET state='candidate',result_ref=$3,execution_finished=true WHERE namespace=$1 AND id=$2`, r.Action.Namespace, r.Action.ID, BundleVersion+"/1"); err != nil {
+	updated, err := tx.ExecContext(ctx, `UPDATE ai_fixture_action SET state='candidate',result_ref=$3,execution_finished=true WHERE namespace=$1 AND id=$2 AND state NOT IN ('canceled','closed','deleted','delivered') AND NOT customer_effect`, r.Action.Namespace, r.Action.ID, BundleVersion+"/1")
+	if err != nil {
+		return ErrDenied
+	}
+	if count, err := updated.RowsAffected(); err != nil || count != 1 {
 		return ErrDenied
 	}
 	if err = tx.Commit(); err != nil {
@@ -516,7 +533,7 @@ func (s *Store) WithResult(ctx context.Context, p auth.Principal, key string, wr
 		return denied(err)
 	}
 	// Re-evaluate closure after the last potentially blocking authority check.
-	r2, _, _, err := s.load(ctx, tx, p, key)
+	r2, finalDecision, _, err := s.load(ctx, tx, p, key)
 	if err != nil {
 		return err
 	}
@@ -525,6 +542,9 @@ func (s *Store) WithResult(ctx context.Context, p auth.Principal, key string, wr
 			return ErrDenied
 		}
 		return write(r2.Result)
+	}
+	if !finalDecision.Read {
+		return ErrDenied
 	}
 	if err = write(r.Result); err != nil {
 		return err

@@ -122,6 +122,32 @@ func TestControlledDraftBrowserServer(t *testing.T) {
 		}
 		w.WriteHeader(204)
 	}))
+	for _, allow := range []bool{false, true} {
+		route := "deny-read"
+		if allow {
+			route = "allow-read"
+		}
+		mux.HandleFunc("/api/drafts/test/"+route, guard(func(w http.ResponseWriter, request *http.Request) {
+			mu.Lock()
+			login := current
+			mu.Unlock()
+			tx, err := r.f.DB.BeginTx(request.Context(), nil)
+			if err == nil {
+				defer tx.Rollback()
+				if _, err = tx.ExecContext(request.Context(), `SELECT id FROM careeros_accounts WHERE id=$1 FOR UPDATE`, login.Account.ID); err == nil {
+					_, err = tx.ExecContext(request.Context(), `UPDATE controlled_draft_test_authority SET allow_read=$2 WHERE owner=$1`, login.Account.ID, allow)
+				}
+				if err == nil {
+					err = tx.Commit()
+				}
+			}
+			if err != nil {
+				http.Error(w, "fixture read decision", 500)
+				return
+			}
+			w.WriteHeader(204)
+		}))
+	}
 	for _, kind := range []string{"reauth", "switch"} {
 		kind := kind
 		mux.HandleFunc("/api/drafts/test/"+kind, guard(func(w http.ResponseWriter, request *http.Request) {

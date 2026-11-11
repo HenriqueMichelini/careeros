@@ -38,9 +38,15 @@ Already confirmed complete delivery is not erased by later cancellation/deadline
 
 Lock order is account/session, injected authority, Action/content. Publication rechecks session, trusted time, injected fences and full Profile source after later locks. Both publication-first and fence-first schedules are verified. Response bytes are written while the final read authority transaction is held, so a fence that wins first cannot leak a retained result through a check/write gap.
 
+The repository checks the locked shared Action before creating a generation witness and when preparing, publishing and reading a result. A shared cancellation closes the undelivered recovery and preserves the ledger's terminal state and exposure records. A temporary denial from the final read decision withholds content while preserving the exact stored bundle for a later authorized read.
+
 ## Browser and downstream handoff
 
 The explicit local source mode `VITE_CAREEROS_DRAFT_RECOVERY_MODE=1` uses the authenticated account UI and the injected controlled HTTP composition; no production Function mounts the new router. The actual React recovery view stores only an opaque account-scoped creation key. Reload/reopen uses GET and exact version values, never AI. It displays every required artifact, support snapshot, language, source revision and Action/version. Pending, failed, closed and unavailable content are distinct; it makes no durable-content claim for partial/unknown generation. Temporary content is not saved into Profile, and previous accepted browser work is not overwritten by recovery failures or new candidates.
+
+A scoped exact-version GET reporting `draft_not_found` for an opaque key without an established Action allows a deliberate corrected submission on that same key. The server continues to enforce binding conflicts and the one-use witness. A generic 404 keeps the outcome uncertain.
+
+The editor holds user-entered wording in account-scoped memory for the current document, including during same-account reauthentication. Original job and answer context appear inside the authorized read-only bundle. Authentication denial, access denial and a confirmed account mismatch withhold the current and previous protected results. A different account starts with its own editor and recovery key. Outstanding responses from a previous account cannot restore its protected view.
 
 Managed generation/grant integration, authoritative opening/allowance settlement, human per-artifact review/Accept persistence, historical export and full deletion orchestration consume these interfaces in their own slices. This local implementation does not activate those operations or authorize provider access, hosting, real grants, operational recovery, deployment, publication or launch.
 
