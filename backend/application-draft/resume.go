@@ -74,14 +74,28 @@ func decodeResumeClaims(raw []byte, out *[]resumeClaim) error {
 	return nil
 }
 func resumeMarkdown(claims []resumeClaim, language string) string {
+	lines := orderedResumeLines(claims, language)
+	texts := make([]string, len(lines))
+	for i, line := range lines {
+		texts[i] = line.text
+	}
+	return strings.Join(texts, "\n\n")
+}
+
+type resumeLine struct {
+	index int
+	text  string
+}
+
+func orderedResumeLines(claims []resumeClaim, language string) []resumeLine {
 	titles := resumeTitles[language]
 	if titles == nil {
 		titles = resumeTitles["en"]
 	}
-	sections := []string{}
+	lines := []resumeLine{}
 	for i, section := range resumeSections {
-		lines := []string{}
-		for _, c := range claims {
+		first := true
+		for index, c := range claims {
 			if c.Section == section {
 				prefix := ""
 				if c.Kind == "bullet" {
@@ -90,14 +104,15 @@ func resumeMarkdown(claims []resumeClaim, language string) string {
 				if c.Kind == "subheading" {
 					prefix = "### "
 				}
-				lines = append(lines, prefix+c.Text)
+				if first {
+					prefix = "## " + titles[i] + "\n" + prefix
+					first = false
+				}
+				lines = append(lines, resumeLine{index, prefix + c.Text})
 			}
 		}
-		if len(lines) > 0 {
-			sections = append(sections, "## "+titles[i]+"\n"+strings.Join(lines, "\n\n"))
-		}
 	}
-	return strings.Join(sections, "\n\n")
+	return lines
 }
 
 var resumeMarkup = regexp.MustCompile(`^(?:#{1,6}\s|[-•]\s|\d+[.)]\s)`)

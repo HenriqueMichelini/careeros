@@ -217,10 +217,11 @@ export async function generateMaterials(
   } as GeneratedMaterials
 }
 
-interface QualificationAnalysis {
+export interface QualificationAnalysis {
   matches?: RequirementMatch[]
   gaps: ProfileGap[]
   jobContext: JobContext
+  draftContextProof?: string
 }
 export function findProfileGaps(
   repo: ProfessionalRepository,
@@ -374,10 +375,12 @@ export async function findProfileGaps(
       : undefined
     if (profileDocument && !matches)
       throw new QualificationGapsError("invalid_output")
+    const draftContextProof = managed ? response.headers.get("X-CareerOS-Draft-Context-Proof") : null
     return {
       gaps: payload.gaps as ProfileGap[],
       jobContext: context,
       matches: matches ?? undefined,
+      ...(draftContextProof ? { draftContextProof } : {}),
     }
   }
   return payload.gaps as ProfileGap[]

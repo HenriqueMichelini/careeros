@@ -17,11 +17,15 @@ type Call struct{ Provider, Stage string }
 // Provider is an in-memory synthetic responder. It creates valid workflow
 // envelopes, not real semantic or financial evidence, and never uses a client.
 type Provider struct {
-	T              *testing.T
-	Workflow       string
-	Calls          []Call
-	NoRequirements bool
-	NoResumeClaims bool
+	T                  *testing.T
+	Workflow           string
+	Calls              []Call
+	NoRequirements     bool
+	NoResumeClaims     bool
+	DraftLanguage      string
+	DraftAnswerRequest string
+	OmitDraftAnswer    bool
+	OmitDraftCatalog   bool
 }
 
 func (p *Provider) Respond(ctx context.Context, provider string, r *http.Request) (*http.Response, error) {
@@ -77,6 +81,15 @@ func (p *Provider) Respond(ctx context.Context, provider string, r *http.Request
 				claims = []any{map[string]any{"section": "skills", "kind": "bullet", "text": "Java", "sources": []any{map[string]any{"profileId": "p", "id": "skill", "revision": 999}}}}
 			}
 			content = map[string]any{"jobTitle": nil, "company": nil, "jobSummary": "Java required.", "resume": claims, "applicationAnswers": "Java", "coverLetter": map[string]string{"greeting": "Dear team,", "body": "I use Java.", "closing": "Sincerely,"}}
+			if p.Workflow == "managed_application_draft" {
+				content.(map[string]any)["applicationAnswers"] = ""
+				if p.DraftAnswerRequest != "" && !p.OmitDraftAnswer {
+					content.(map[string]any)["applicationAnswers"] = "I use Java."
+				}
+				if p.DraftLanguage == "pt-BR" {
+					content.(map[string]any)["coverLetter"] = map[string]string{"greeting": "Prezada equipe,", "body": "Tenho experiência com Java.", "closing": "Atenciosamente,"}
+				}
+			}
 		}
 	case "resume_support":
 		content = map[string]any{"judgments": []any{map[string]any{"index": 0, "state": "supported", "reason": "Exact Java source."}}}
@@ -88,6 +101,7 @@ func (p *Provider) Respond(ctx context.Context, provider string, r *http.Request
 			}
 			CareerCitations []json.RawMessage
 			JobCitations    []json.RawMessage
+			JobPosting      string
 		}
 		if len(body.Messages) != 2 || json.Unmarshal([]byte(body.Messages[1].Content), &payload) != nil {
 			return nil, fmt.Errorf("invalid artifact payload")
@@ -107,10 +121,28 @@ func (p *Provider) Respond(ctx context.Context, provider string, r *http.Request
 				jobs = append(jobs, payload.JobCitations[0])
 			default:
 				sources = append(sources, payload.CareerCitations[0])
+				if p.Workflow == "managed_application_draft" && block.Field == "applicationAnswers" {
+					for _, candidate := range payload.CareerCitations {
+						if strings.Contains(string(candidate), `"application-answer-0"`) {
+							sources[0] = candidate
+						}
+					}
+				}
 			}
 			judgments = append(judgments, map[string]any{"index": block.Index, "state": "supported", "reason": "Synthetic exact source.", "nonfactual": nonfactual, "scope": scope, "sources": sources, "jobSources": jobs})
 		}
 		content = map[string]any{"judgments": judgments, "answerConcerns": []string{}}
+		if p.Workflow == "managed_application_draft" && !p.OmitDraftCatalog {
+			catalog := []any{}
+			if p.DraftAnswerRequest != "" {
+				start := strings.Index(payload.JobPosting, p.DraftAnswerRequest)
+				if start < 0 {
+					return nil, fmt.Errorf("synthetic required answer missing from original")
+				}
+				catalog = append(catalog, map[string]any{"start": start, "end": start + len(p.DraftAnswerRequest), "quote": p.DraftAnswerRequest})
+			}
+			content.(map[string]any)["answerRequests"] = catalog
+		}
 	case "section_review":
 		content = map[string]any{"profileId": "p", "revision": 1, "section": "skills", "summary": "Clarified wording", "patches": []any{map[string]any{"factId": "skill", "revision": 1, "wording": "I use Java", "supporting": []any{map[string]any{"id": "skill", "revision": 1}}}}}
 	case "section_support_check":

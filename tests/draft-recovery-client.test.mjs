@@ -114,3 +114,39 @@ test('corrected submit honors an existing binding conflict on the same key', asy
  assert.deepEqual(posts, ['original-request'])
  assert.deepEqual([...saved.values.values()], ['original-request'])
 })
+
+test('managed Retry needs authenticated known failure and reuses the original operation identities', async () => {
+ const saved = storage()
+ const posts = []
+ let key
+ const client = new DraftRecoveryClient('a', saved, async (_, options) => {
+   if (options.method !== 'POST') {
+     const {bundle, job, ...prior} = ready(key)
+     return Response.json({...prior, state:'incomplete', artifactVersion:0, attempt:1, retryAllowed:true}, {status:202})
+   }
+   const retry = options.headers['X-CareerOS-Retry-Key']
+   const creation = options.headers['X-CareerOS-Action-Key']
+   key ??= creation
+   posts.push({creation, retry, body:JSON.parse(options.body)})
+   if (posts.length === 1) return Response.json({error:'draft_unavailable'}, {status:503})
+   if (posts.length === 2) throw new TypeError('lost Retry request before acceptance')
+   const value = ready(key)
+   value.bundle.binding.generationVersion = 'application-draft-local-20261104-v1'
+   return Response.json({...value, attempt:2}, {status:201})
+ })
+ await assert.rejects(client.create(input), /draft_outcome_unknown/)
+ await assert.rejects(client.retry(input), /draft_recover_first/)
+ assert.equal(posts.length, 1)
+ assert.equal((await client.recover()).retryAllowed, true)
+ await assert.rejects(client.retry(input), /draft_outcome_unknown/)
+ await assert.rejects(client.retry(input), /draft_recover_first/)
+ assert.equal(posts.length, 2)
+ assert.equal((await client.recover()).retryAllowed, true)
+ assert.equal((await client.retry(input)).attempt, 2)
+ assert.equal(posts[0].retry, undefined)
+ assert.ok(posts[1].retry)
+ assert.equal(posts[1].retry, posts[2].retry)
+ assert.deepEqual(posts.map(p => p.creation), [key, key, key])
+ assert.deepEqual(posts.map(p => p.body), [input, input, input])
+ assert.deepEqual([...saved.values.values()], [key])
+})

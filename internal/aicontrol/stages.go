@@ -35,6 +35,10 @@ func (s *Session) stageLimit(ctx context.Context, tx *sql.Tx) (int, error) {
 		p := selectedIngestionEnvelope()
 		maximum = p.Attempts * (4 + p.Extract + p.Reconcile + 3*p.Clarify + p.TypeSafeCalls + p.OpenAICalls)
 	}
+	if s.managedDraft() {
+		// The local resume disposition replaces its dispatch witness.
+		maximum = managedDraftPolicy.Attempts*(managedDraftPolicy.TypeSafeCalls+managedDraftPolicy.OpenAICalls) + 1
+	}
 	var count int
 	if tx.QueryRowContext(ctx, `SELECT (SELECT count(*) FROM ai_fixture_stage WHERE namespace=$1 AND action=$2)+(SELECT count(*) FROM ai_fixture_child WHERE namespace=$1 AND action=$2)`, s.h.cfg.Namespace, s.id).Scan(&count) != nil {
 		return 0, ErrUnavailable

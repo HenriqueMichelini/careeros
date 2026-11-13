@@ -10,7 +10,9 @@ import (
 	"strings"
 	"time"
 
+	applicationdraft "professional-information-repo/backend/application-draft"
 	"professional-information-repo/internal/accountstore"
+	"professional-information-repo/internal/aicontrol"
 	"professional-information-repo/internal/auth"
 	"professional-information-repo/internal/draftrecovery"
 )
@@ -23,25 +25,6 @@ func NewControlledDraftRecovery(service *auth.Service, store *draftrecovery.Stor
 		return auth.UnavailableHandler()
 	}
 	mux := http.NewServeMux()
-	write := func(w http.ResponseWriter, r *http.Request, key string, created bool) {
-		p, _ := auth.PrincipalFromRequest(r)
-		err := store.WithResult(r.Context(), p, key, func(result draftrecovery.Result) error {
-			status := http.StatusOK
-			if result.State == "pending" || result.State == "incomplete" {
-				status = http.StatusAccepted
-			} else if result.State == "closed" || result.State == "deleted" {
-				status = http.StatusGone
-			} else if created {
-				status = http.StatusCreated
-			}
-			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-			w.WriteHeader(status)
-			return json.NewEncoder(w).Encode(result)
-		})
-		if err != nil {
-			draftRecoveryError(w, err)
-		}
-	}
 	mux.HandleFunc("POST /api/drafts", func(w http.ResponseWriter, r *http.Request) {
 		for name := range r.Header {
 			lower := strings.ToLower(name)
@@ -100,16 +83,9 @@ func NewControlledDraftRecovery(service *auth.Service, store *draftrecovery.Stor
 			}
 			done()
 		}
-		write(w, r, key, winning)
+		writeDraftResult(store, w, r, key, winning)
 	})
-	mux.HandleFunc("GET /api/drafts/{key}", func(w http.ResponseWriter, r *http.Request) { write(w, r, r.PathValue("key"), false) })
-	mux.HandleFunc("GET /api/drafts/{key}/versions/{version}", func(w http.ResponseWriter, r *http.Request) {
-		if r.PathValue("version") != "1" {
-			draftRecoveryError(w, draftrecovery.ErrNotFound)
-			return
-		}
-		write(w, r, r.PathValue("key"), false)
-	})
+	registerDraftReads(mux, store)
 	protected := service.Protect(pilotAccount(mux))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/.netlify/functions/account/") {
@@ -119,19 +95,69 @@ func NewControlledDraftRecovery(service *auth.Service, store *draftrecovery.Stor
 		protected.ServeHTTP(w, r)
 	})
 }
+
+func registerDraftReads(mux *http.ServeMux, store *draftrecovery.Store) {
+	mux.HandleFunc("GET /api/drafts/{key}", func(w http.ResponseWriter, r *http.Request) {
+		writeDraftResult(store, w, r, r.PathValue("key"), false)
+	})
+	mux.HandleFunc("GET /api/drafts/{key}/versions/{version}", func(w http.ResponseWriter, r *http.Request) {
+		if r.PathValue("version") != "1" {
+			draftRecoveryError(w, draftrecovery.ErrNotFound)
+			return
+		}
+		writeDraftResult(store, w, r, r.PathValue("key"), false)
+	})
+}
+
+func writeDraftResult(store *draftrecovery.Store, w http.ResponseWriter, r *http.Request, key string, created bool) {
+	p, _ := auth.PrincipalFromRequest(r)
+	err := store.WithResult(r.Context(), p, key, func(result draftrecovery.Result) error {
+		status := http.StatusOK
+		if result.State == "pending" || result.State == "incomplete" {
+			status = http.StatusAccepted
+		} else if result.State == "closed" || result.State == "deleted" {
+			status = http.StatusGone
+		} else if created {
+			status = http.StatusCreated
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(status)
+		return json.NewEncoder(w).Encode(result)
+	})
+	if err != nil {
+		draftRecoveryError(w, err)
+	}
+}
+
 func draftRecoveryError(w http.ResponseWriter, err error) {
 	code, status := "draft_unavailable", http.StatusServiceUnavailable
+	var failure *applicationdraft.ManagedFailure
 	switch {
 	case errors.Is(err, draftrecovery.ErrInvalid):
 		code, status = "draft_incomplete", 422
-	case errors.Is(err, draftrecovery.ErrConflict):
+	case errors.Is(err, draftrecovery.ErrConflict), errors.Is(err, aicontrol.ErrConflict):
 		code, status = "draft_stale", 409
+	case errors.Is(err, aicontrol.ErrCapacity):
+		code, status = "draft_capacity", 429
+	case errors.Is(err, context.DeadlineExceeded):
+		code, status = "draft_timeout", 504
 	case errors.Is(err, draftrecovery.ErrNotFound):
 		code, status = "draft_not_found", 404
 	case errors.Is(err, auth.ErrAuthenticationRequired):
 		code, status = "authentication_required", 401
-	case errors.Is(err, draftrecovery.ErrDenied), errors.Is(err, auth.ErrForbidden):
+	case errors.Is(err, draftrecovery.ErrDenied), errors.Is(err, auth.ErrForbidden), errors.Is(err, aicontrol.ErrDenied):
 		code, status = "draft_denied", 403
+	case errors.As(err, &failure):
+		switch failure.Code {
+		case "capacity":
+			code, status = "draft_capacity", 429
+		case "review_incomplete", "invalid_output":
+			code, status = "draft_incomplete", 422
+		case "job_rejected":
+			code, status = "draft_job_rejected", 422
+		case "timeout":
+			code, status = "draft_timeout", 504
+		}
 	}
 	workflowError(w, status, code)
 }

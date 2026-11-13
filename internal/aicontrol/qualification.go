@@ -51,7 +51,21 @@ func (h *Harness) managedOpen(ctx context.Context, tx *sql.Tx, owner, workflow, 
 		return ErrUnavailable
 	}
 	var total, day, accountActive, globalActive int
-	err := tx.QueryRowContext(ctx, `SELECT count(*) FILTER(WHERE owner=$2 AND workflow=$3),count(*) FILTER(WHERE owner=$2 AND workflow=$3 AND created_at>clock_timestamp()-interval '24 hours'),count(*) FILTER(WHERE id<>$4 AND owner=$2 AND state='recoverable' AND NOT execution_finished),count(*) FILTER(WHERE id<>$4 AND state='recoverable' AND NOT execution_finished) FROM ai_fixture_action WHERE namespace=$1`, h.cfg.Namespace, owner, workflow, exclude).Scan(&total, &day, &accountActive, &globalActive)
+	err := tx.QueryRowContext(ctx, `
+		WITH actions AS (
+			SELECT a.*, (
+				(a.state='recoverable' AND NOT a.execution_finished) OR
+				(a.workflow='application_draft' AND a.execution_version=$5 AND EXISTS(
+					SELECT 1 FROM ai_fixture_dispatch d WHERE d.namespace=a.namespace AND d.action=a.id
+					AND d.state IN ('intent','observed') AND d.remote_state<>'terminal_proven'
+				))
+			) AS active FROM ai_fixture_action a WHERE namespace=$1
+		)
+		SELECT count(*) FILTER(WHERE owner=$2 AND workflow=$3),
+			count(*) FILTER(WHERE owner=$2 AND workflow=$3 AND created_at>clock_timestamp()-interval '24 hours'),
+			count(*) FILTER(WHERE id<>$4 AND owner=$2 AND active),
+			count(*) FILTER(WHERE id<>$4 AND active)
+		FROM actions`, h.cfg.Namespace, owner, workflow, exclude, ManagedDraftPolicyVersion).Scan(&total, &day, &accountActive, &globalActive)
 	if err != nil {
 		return ErrUnavailable
 	}
@@ -66,6 +80,9 @@ func (h *Harness) managedOpen(ctx context.Context, tx *sql.Tx, owner, workflow, 
 	if workflow == "cv_generation" && h.cfg.StandaloneCV {
 		r := selectedStandaloneCVEnvelope()
 		p.Actions, p.RollingActions = r.Actions, r.RollingActions
+	}
+	if workflow == "application_draft" && h.cfg.ManagedDraft {
+		p.Actions, p.RollingActions = managedDraftPolicy.Actions, managedDraftPolicy.RollingActions
 	}
 	if (newAction && (total >= p.Actions || day >= p.RollingActions)) || accountActive >= p.AccountActive || globalActive >= p.GlobalActive {
 		return ErrCapacity
@@ -92,6 +109,11 @@ func (s *Session) qualificationLimits(ctx context.Context, tx *sql.Tx, leg Leg, 
 	if s.standaloneCV() {
 		r := selectedStandaloneCVEnvelope()
 		p.TypeSafeCalls, p.OpenAICalls, p.OpenAIOutput, p.AttemptOutput, p.AttemptMoney, p.ActionMoney = 0, r.OpenAICalls, r.Output, r.OutputTotal, r.AttemptMoney, r.ActionMoney
+	}
+	if s.managedDraft() {
+		p.TypeSafeCalls, p.OpenAICalls = managedDraftPolicy.TypeSafeCalls, managedDraftPolicy.OpenAICalls
+		p.OpenAIOutput, p.AttemptOutput = draftOutput(leg.Stage), managedDraftPolicy.OutputTotal
+		p.AttemptMoney, p.ActionMoney = managedDraftPolicy.AttemptMoney, managedDraftPolicy.ActionMoney
 	}
 	if (leg.Provider == "typesafe" && typesafe >= p.TypeSafeCalls) || (leg.Provider == "openai" && (openai >= p.OpenAICalls || int64(output)+p.OpenAIOutput > p.AttemptOutput)) {
 		return ErrCapacity

@@ -13,6 +13,7 @@ window.fetch=async(input,init={})=>{
  const headers=new Headers(init.headers)
  if(path.startsWith('/api/'))wire.requests.push({path,method,actionKey:headers.get('X-CareerOS-Action-Key'),callerKey:headers.has('X-OpenAI-Api-Key')||headers.has('X-TypeSafe-Api-Key'),body:typeof init.body==='string'?JSON.parse(init.body):null})
  const response=await nativeFetch(input,init)
+ if(path==='/api/qualification-gaps')wire.responses.push({path,method,status:response.status,action:response.headers.get('X-CareerOS-Action'),proof:response.headers.get('X-CareerOS-Draft-Context-Proof')!==null,body:await response.clone().json()})
  if(path==='/api/drafts'||/^\/api\/drafts\/[^/]+(?:\/versions\/1)?$/.test(path)){
   wire.responses.push({path,method,status:response.status,body:await response.clone().json()})
   if(method==='GET' && response.status===200 && wire.holdNextReady){

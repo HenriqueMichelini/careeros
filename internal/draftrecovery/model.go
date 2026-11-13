@@ -1,5 +1,5 @@
-// Package draftrecovery owns the restricted-purpose durable Application Draft
-// publication contract. It neither performs managed inference nor settles delivery.
+// Package draftrecovery owns restricted-purpose durable Application Draft
+// publication, including its local managed generation handoff. Delivery is separate.
 package draftrecovery
 
 import (
@@ -51,12 +51,18 @@ type Analysis struct {
 	AnswerRequests []JobRange `json:"answerRequests"`
 }
 type Job struct {
-	Posting  string    `json:"posting"`
-	Analysis *Analysis `json:"analysis,omitempty"`
+	Posting       string               `json:"posting"`
+	Analysis      *Analysis            `json:"analysis,omitempty"`
+	Qualification *QualificationSource `json:"qualification,omitempty"`
+}
+type QualificationSource struct {
+	ActionID      string `json:"actionId"`
+	ContextDigest string `json:"contextDigest"`
 }
 type Answer struct {
 	Requirement string `json:"requirement"`
 	UserContext string `json:"userContext"`
+	Kind        string `json:"kind,omitempty"`
 }
 type Input struct {
 	Profile         Source   `json:"profileSource"`
@@ -138,8 +144,9 @@ type ControlledReview func(context.Context, ReviewRequest) (Completion, error)
 // Publication can only be prepared by the repository after its independent
 // controlled review. Its fields are private; HTTP has no publication endpoint.
 type Publication struct {
-	raw  []byte
-	seal string
+	raw     []byte
+	seal    string
+	session *aicontrol.Session
 }
 type AnswerRequest struct {
 	ID     string   `json:"id"`
@@ -172,6 +179,8 @@ type Result struct {
 	Deadline      time.Time        `json:"deadline"`
 	Historical    bool             `json:"historical"`
 	CleanupQueued bool             `json:"cleanupQueued"`
+	Attempt       int              `json:"attempt,omitempty"`
+	RetryAllowed  bool             `json:"retryAllowed,omitempty"`
 	Bundle        *Bundle          `json:"bundle,omitempty"`
 	Job           *Job             `json:"job,omitempty"`
 	Context       *RetainedContext `json:"context,omitempty"`
@@ -213,10 +222,13 @@ type Config struct {
 // Generation's source facts/identity exist only in memory during one controlled
 // invocation. Only facts actually used by complete support snapshots are retained.
 type Generation struct {
-	Input    Input
-	Binding  Binding
-	Identity Identity
-	Facts    []Fact
+	Input      Input
+	Binding    Binding
+	Identity   Identity
+	Facts      []Fact
+	document   profiledocument.Document
+	session    *aicontrol.Session
+	jobContext json.RawMessage
 }
 type ControlledProvider func(context.Context, Generation) (Bundle, error)
 
@@ -234,7 +246,7 @@ func validToken(s string) bool {
 func validRange(r JobRange, source string) bool {
 	return r.Start >= 0 && r.End > r.Start && r.End <= len(source) && utf8.ValidString(source[:r.Start]) && utf8.ValidString(source[r.Start:r.End]) && source[r.Start:r.End] == r.Quote
 }
-func normalize(in Input) (Input, []byte, error) {
+func normalize(in Input, managed bool) (Input, []byte, error) {
 	if in.Profile.ID == "" || in.Profile.Revision < 1 || in.Profile.Revision > 9007199254740991 || (in.Language != "en" && in.Language != "pt-BR") || !profiledocument.HasText(in.Job.Posting) || len(in.Job.Posting) > 30<<10 || !utf8.ValidString(in.Job.Posting) || len(in.Answers) > 100 || len(in.Confirmations) > 100 || len(in.SelectedFactIDs) > 500 {
 		return in, nil, ErrInvalid
 	}
@@ -247,8 +259,14 @@ func normalize(in Input) (Input, []byte, error) {
 	if in.SelectedFactIDs == nil {
 		in.SelectedFactIDs = []string{}
 	}
-	for _, a := range append(append([]Answer{}, in.Answers...), in.Confirmations...) {
-		if !profiledocument.HasText(a.Requirement) || len(a.Requirement) > 4000 || !profiledocument.HasText(a.UserContext) || len(a.UserContext) > 2000 {
+	for _, a := range in.Answers {
+		if !validAnswer(a) || !profiledocument.HasText(a.UserContext) || a.Kind != "" {
+			return in, nil, ErrInvalid
+		}
+	}
+	for _, a := range in.Confirmations {
+		if !validAnswer(a) || (!managed && (!profiledocument.HasText(a.UserContext) || a.Kind != "")) ||
+			(managed && a.Kind != "" && a.Kind != "skill" && a.Kind != "experience") {
 			return in, nil, ErrInvalid
 		}
 	}
@@ -274,6 +292,10 @@ func normalize(in Input) (Input, []byte, error) {
 		return in, nil, ErrInvalid
 	}
 	return in, raw, nil
+}
+
+func validAnswer(a Answer) bool {
+	return profiledocument.HasText(a.Requirement) && len(a.Requirement) <= 4000 && len(a.UserContext) <= 2000
 }
 
 func equalJSON(a, b []byte) bool {

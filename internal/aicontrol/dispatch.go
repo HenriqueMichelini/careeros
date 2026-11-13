@@ -41,7 +41,7 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 	if !tokenLabel.MatchString(key) || !workflows[workflow] {
 		return nil, ErrDenied
 	}
-	if h.cfg.Qualification && workflow != "qualification_gaps" && !(h.cfg.Ingestion && workflow == "profile_ingestion") && !(h.cfg.ProfileReview && workflow == "profile_review") && !(h.cfg.StandaloneCV && workflow == "cv_generation") {
+	if h.cfg.Qualification && workflow != "qualification_gaps" && !(h.cfg.Ingestion && workflow == "profile_ingestion") && !(h.cfg.ProfileReview && workflow == "profile_review") && !(h.cfg.StandaloneCV && workflow == "cv_generation") && !(h.cfg.ManagedDraft && workflow == "application_draft") {
 		return nil, ErrDenied
 	}
 	binding, err := h.fingerprint(p.AccountID, "root/"+workflow, rootJSON)
@@ -344,6 +344,8 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (Dispatch, error) {
 			m, inputTokens, err = h.reviewMaximum(leg.Provider, leg.Body)
 		} else if s.standaloneCV() {
 			m, inputTokens, err = h.cvMaximum(leg.Provider, leg.Body)
+		} else if s.managedDraft() {
+			m, inputTokens, err = h.draftMaximum(leg)
 		} else {
 			m, err = h.qualificationMaximum(leg.Provider, leg.Body)
 		}
@@ -422,6 +424,9 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (Dispatch, error) {
 		// Retain the existing aggregate byte bound. TypeSafe's bounded free
 		// output is distinct from the selected billable OpenAI output ceiling.
 		maxOutput = int64(p.Attempts) * (int64(p.TypeSafeCalls)*65536 + p.OutputTotal)
+	}
+	if s.managedDraft() {
+		maxDispatches = managedDraftPolicy.Attempts * (managedDraftPolicy.TypeSafeCalls + managedDraftPolicy.OpenAICalls)
 	}
 	var dispatchCount int
 	if tx.QueryRowContext(ctx, `SELECT count(*) FROM ai_fixture_dispatch WHERE namespace=$1 AND action=$2`, h.cfg.Namespace, s.id).Scan(&dispatchCount) != nil {
@@ -503,6 +508,11 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (Dispatch, error) {
 			return zero, err
 		}
 	}
+	if s.managedDraft() {
+		if err = s.draftLimits(ctx, tx, leg, inputTokens, output); err != nil {
+			return zero, err
+		}
+	}
 	if err = h.fault("after_scope_locks"); err != nil {
 		return zero, err
 	}
@@ -520,7 +530,7 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (Dispatch, error) {
 	if id == "" {
 		return zero, ErrUnavailable
 	}
-	if s.ingestion() || s.profileReview() || s.standaloneCV() {
+	if s.ingestion() || s.profileReview() || s.standaloneCV() || s.managedDraft() {
 		_, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_dispatch(namespace,id,action,coordinate,stage,leg,attempt,provider,binding,maximum,floor_amount,counted,input_bytes,output_tokens,input_tokens) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$10,$10,$11,$12,$13)`, h.cfg.Namespace, id, s.id, leg.Coordinate, leg.Stage, leg.Number, s.attempt, leg.Provider, binding, m, len(leg.Body), output, inputTokens)
 	} else {
 		_, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_dispatch(namespace,id,action,coordinate,stage,leg,attempt,provider,binding,maximum,floor_amount,counted,input_bytes,output_tokens) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$10,$10,$11,$12)`, h.cfg.Namespace, id, s.id, leg.Coordinate, leg.Stage, leg.Number, s.attempt, leg.Provider, binding, m, len(leg.Body), output)
@@ -761,7 +771,7 @@ func (s *Session) RetryQualification(ctx context.Context, key string) (*Session,
 func (s *Session) retry(ctx context.Context, key string) (*Session, error) {
 	h := s.h
 	command := *s
-	command.foregroundIndependent = s.ingestion() || s.profileReview() || s.standaloneCV()
+	command.foregroundIndependent = s.ingestion() || s.profileReview() || s.standaloneCV() || s.managedDraft()
 	if h.cfg.Qualification && !tokenLabel.MatchString(key) {
 		return nil, ErrDenied
 	}
@@ -815,6 +825,11 @@ func (s *Session) retry(ctx context.Context, key string) (*Session, error) {
 		}
 		if _, err = tx.ExecContext(ctx, `UPDATE ai_fixture_action SET state='recoverable',attempt=$3,execution_finished=false,retry_creation_key=$5 WHERE namespace=$1 AND id=$2 AND attempt=$4 AND state='failed'`, h.cfg.Namespace, s.id, next, s.attempt, key); err != nil {
 			return nil, ErrUnavailable
+		}
+		if s.managedDraft() {
+			if _, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_stage(namespace,action,coordinate,stage,attempt,binding) VALUES($1,$2,'request','managed_request_draft',$3,$4)`, h.cfg.Namespace, s.id, next, s.root); err != nil {
+				return nil, ErrUnavailable
+			}
 		}
 	} else if current != next || state != "recoverable" {
 		return nil, ErrDenied
@@ -885,6 +900,13 @@ func (s *Session) checkCurrent(ctx context.Context, tx *sql.Tx) error {
 	}
 	if s.ingestion() && !s.foregroundIndependent {
 		return s.ingestionDeadline(ctx, tx)
+	}
+	if s.managedDraft() {
+		if e := s.checkExecution(ctx, tx); e != nil {
+			return e
+		}
+		_, e := s.draftRemaining(ctx, tx, s.foregroundIndependent)
+		return e
 	}
 	return nil
 }

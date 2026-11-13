@@ -46,6 +46,17 @@ func (s *Session) checkGraph(ctx context.Context, tx *sql.Tx, leg Leg) error {
 		if leg.Stage == "generation" && observed("field_validation", false) {
 			return nil
 		}
+		if s.managedDraft() && leg.Stage == "artifact_support" {
+			var skipped bool
+			err := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM ai_fixture_stage WHERE namespace=$1 AND action=$2 AND attempt=$3 AND stage='draft_resume_not_needed')`, s.h.cfg.Namespace, s.id, s.attempt).Scan(&skipped)
+			if err != nil {
+				return ErrUnavailable
+			}
+			if observed("generation", false) && (observed("resume_support", false) || skipped) {
+				return nil
+			}
+			return ErrDenied
+		}
 		if (leg.Stage == "resume_support" || leg.Stage == "artifact_support") && observed("generation", false) {
 			return nil
 		}

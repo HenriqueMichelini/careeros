@@ -20,10 +20,12 @@ CREATE TABLE IF NOT EXISTS careeros_draft_actions (
  admitted_at timestamptz NOT NULL, deadline timestamptz NOT NULL, grant_expires_at timestamptz NOT NULL,
  state text NOT NULL CHECK(state IN ('pending','incomplete','ready','closed','deleted')),
  artifact_version integer NOT NULL DEFAULT 0 CHECK(artifact_version IN (0,1)),
+ generation_attempt integer NOT NULL DEFAULT 1 CHECK(generation_attempt IN (1,2)),
  published_digest text NOT NULL DEFAULT '', cleanup_queued boolean NOT NULL DEFAULT false,
  PRIMARY KEY(namespace,action_id), UNIQUE(owner,creation_key),
  FOREIGN KEY(namespace,action_id) REFERENCES ai_fixture_action(namespace,id)
 );
+ALTER TABLE careeros_draft_actions ADD COLUMN IF NOT EXISTS generation_attempt integer NOT NULL DEFAULT 1 CHECK(generation_attempt IN (1,2));
 CREATE TABLE IF NOT EXISTS careeros_draft_content (
  namespace text NOT NULL, action_id text NOT NULL, input bytea NOT NULL,
  bundle bytea CHECK(bundle IS NULL OR octet_length(bundle)<=4194304),

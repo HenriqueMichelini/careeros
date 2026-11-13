@@ -11,10 +11,13 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"professional-information-repo/internal/accountapi"
+	"professional-information-repo/internal/aidiagnostics"
+	"professional-information-repo/internal/aidispatch"
 	"professional-information-repo/internal/auth"
 	"professional-information-repo/internal/draftrecovery"
 	"professional-information-repo/internal/profiledocument"
@@ -27,7 +30,10 @@ func TestControlledDraftBrowserServer(t *testing.T) {
 	if path == "" {
 		t.Skip("browser helper executed by the real-router browser fixture")
 	}
-	var cfg struct{ Origin, Address, Token string }
+	var cfg struct {
+		Origin, Address, Token, Language string
+		Managed                          bool
+	}
 	raw, err := os.ReadFile(path)
 	if err != nil || json.Unmarshal(raw, &cfg) != nil || len(cfg.Token) < 32 {
 		t.Fatal("invalid private browser fixture configuration")
@@ -36,7 +42,34 @@ func TestControlledDraftBrowserServer(t *testing.T) {
 	if err != nil || u.Scheme != "http" || u.Hostname() != "127.0.0.1" || !strings.HasPrefix(cfg.Address, "127.0.0.1:") {
 		t.Fatal("browser fixture requires literal loopback")
 	}
-	r := newRecoveryFixture(t, nil)
+	var r *recoveryFixture
+	var omitNextCatalog atomic.Bool
+	if cfg.Managed {
+		f, actions, provider, store, _, _ := managedDraftFixture(t)
+		r = &recoveryFixture{f: f, actions: actions, store: store}
+		provider.DraftLanguage = cfg.Language
+		if err = actions.SetQualificationResponder(func(ctx context.Context, name string, request *http.Request) (*http.Response, bool, error) {
+			workflow, _ := aidispatch.WorkflowRoot(ctx)
+			switch workflow {
+			case "application_draft":
+				r.sends.Add(1)
+				if aidiagnostics.StageName(ctx) == "artifact_support" && omitNextCatalog.Swap(false) {
+					provider.OmitDraftCatalog = true
+					defer func() { provider.OmitDraftCatalog = false }()
+				}
+			case "qualification_gaps":
+				r.checks.Add(1)
+			default:
+				t.Error("unexpected browser workflow")
+			}
+			response, err := provider.Respond(ctx, name, request)
+			return response, true, err
+		}); err != nil {
+			t.Fatal(err)
+		}
+	} else {
+		r = newRecoveryFixture(t, nil)
+	}
 	var doc profiledocument.Document
 	if json.Unmarshal(r.f.Document, &doc) != nil {
 		t.Fatal("invalid fixture Profile")
@@ -70,11 +103,15 @@ func TestControlledDraftBrowserServer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Reuse the actual controlled callbacks, with independent durable counters.
-	r.router = accountapi.NewControlledDraftRecovery(service, r.store, func(ctx context.Context, g draftrecovery.Generation) (draftrecovery.Bundle, error) {
-		r.sends.Add(1)
-		return completeRecoveryBundle(g), nil
-	})
+	if cfg.Managed {
+		r.router = accountapi.NewSyntheticDraft(service, r.f.Store, r.actions, r.store)
+	} else {
+		// Reuse the actual controlled callbacks, with independent counters.
+		r.router = accountapi.NewControlledDraftRecovery(service, r.store, func(ctx context.Context, g draftrecovery.Generation) (draftrecovery.Bundle, error) {
+			r.sends.Add(1)
+			return completeRecoveryBundle(g), nil
+		})
+	}
 	mux := http.NewServeMux()
 	var mu sync.Mutex
 	current := r.f.Login
@@ -103,13 +140,23 @@ func TestControlledDraftBrowserServer(t *testing.T) {
 		cookies(w, login)
 		writeJSON(w, map[string]string{"account": login.Account.ID})
 	}))
+	if cfg.Managed {
+		mux.HandleFunc("/api/drafts/test/incomplete-next", guard(func(w http.ResponseWriter, _ *http.Request) {
+			omitNextCatalog.Store(true)
+			w.WriteHeader(204)
+		}))
+	}
 	mux.HandleFunc("/api/drafts/test/stats", guard(func(w http.ResponseWriter, _ *http.Request) {
 		var effects int
 		if err := r.f.DB.QueryRow(`SELECT count(*) FROM ai_fixture_action WHERE customer_effect OR customer_reserved`).Scan(&effects); err != nil {
 			http.Error(w, "fixture query", 500)
 			return
 		}
-		writeJSON(w, map[string]any{"generation": r.sends.Load(), "completion": r.checks.Load(), "allowanceEffects": effects})
+		if cfg.Managed {
+			writeJSON(w, map[string]any{"draft": r.sends.Load(), "qualification": r.checks.Load(), "allowanceEffects": effects})
+		} else {
+			writeJSON(w, map[string]any{"generation": r.sends.Load(), "completion": r.checks.Load(), "allowanceEffects": effects})
+		}
 	}))
 	mux.HandleFunc("/api/drafts/test/expire", guard(func(w http.ResponseWriter, request *http.Request) {
 		mu.Lock()
@@ -201,7 +248,11 @@ func TestControlledDraftBrowserServer(t *testing.T) {
 	mux.HandleFunc("/api/drafts/test/stop", guard(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(204); once.Do(func() { close(stop) }) }))
 	mux.Handle("/api/drafts", r.router)
 	mux.Handle("/api/drafts/", r.router)
-	mux.Handle("/", accountapi.New(service, r.f.Store))
+	if cfg.Managed {
+		mux.Handle("/", r.router)
+	} else {
+		mux.Handle("/", accountapi.New(service, r.f.Store))
+	}
 	listener, err := net.Listen("tcp", cfg.Address)
 	if err != nil {
 		t.Fatal(err)

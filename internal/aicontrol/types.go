@@ -69,6 +69,7 @@ type SyntheticConfig struct {
 	Ingestion     bool
 	ProfileReview bool
 	StandaloneCV  bool
+	ManagedDraft  bool
 	TokenBound    func(provider string, completeRequest []byte) (int64, bool)
 }
 
@@ -95,7 +96,7 @@ var stages = map[string]bool{"field_validation": true, "extraction": true, "reco
 // literal loopback address. It never reads environment variables or account files.
 // The caller must first install existing account tables in this disposable schema.
 func NewSynthetic(ctx context.Context, dsn string, cfg SyntheticConfig) (*Harness, error) {
-	if (cfg.Ingestion || cfg.ProfileReview || cfg.StandaloneCV) && !cfg.Qualification {
+	if (cfg.Ingestion || cfg.ProfileReview || cfg.StandaloneCV || cfg.ManagedDraft) && !cfg.Qualification {
 		return nil, ErrDenied
 	}
 	u, err := url.Parse(dsn)

@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { DraftRecoveryClient, type DraftClaim, type RecoveredDraft } from "../lib/draftRecovery"
+import { DraftRecoveryClient, type DraftClaim, type DraftInput, type RecoveredDraft } from "../lib/draftRecovery"
+import { findProfileGaps, QualificationGapsError, type QualificationAnalysis } from "../lib/ai"
+import { ManagedQualification } from "../lib/managedQualification"
 import { useStore } from "../lib/store"
+import JobContextReview from "./JobContextReview"
+import RequirementEvidenceReview from "./RequirementEvidenceReview"
 
 const messages = {
   en: {
@@ -11,6 +15,35 @@ const messages = {
   },
 }
 type Labels = typeof messages.en
+
+const managedMessages = {
+  en: {
+    analyze: "Analyze Job Posting",
+    analyzing: "Analyzing the Job Posting…",
+    analysisFailed: "The analysis could not be confirmed. Check its status or use the original Job Posting.",
+    analysisStatus: "Check analysis status",
+    analysisUnknown: "The analysis outcome is unavailable. You can use the original Job Posting for a Draft.",
+    retryAnalysis: "Retry analysis",
+    retryDraft: "Retry this Draft",
+    capacity: "This Draft exceeded an available limit. Check the Action before starting new work.",
+    incomplete: "A required check could not establish a complete Draft. Check the Action for its status.",
+    jobRejected: "The Job Posting needs revision before it can be used.",
+    timeout: "The Draft timed out. Check this Action for its current status.",
+  },
+  "pt-BR": {
+    analyze: "Analisar anúncio da vaga",
+    analyzing: "Analisando o anúncio da vaga…",
+    analysisFailed: "Não foi possível confirmar a análise. Verifique o status ou use o anúncio original.",
+    analysisStatus: "Verificar status da análise",
+    analysisUnknown: "O resultado da análise está indisponível. Você pode usar o anúncio original para gerar um rascunho.",
+    retryAnalysis: "Tentar análise novamente",
+    retryDraft: "Tentar este rascunho novamente",
+    capacity: "Este rascunho excedeu um limite disponível. Verifique a Ação antes de iniciar outro trabalho.",
+    incomplete: "Uma verificação obrigatória não confirmou um rascunho completo. Consulte o status da Ação.",
+    jobRejected: "Revise o anúncio da vaga antes de usá-lo.",
+    timeout: "O tempo limite do rascunho foi atingido. Consulte o status desta Ação.",
+  },
+}
 
 function SourceReview({ result, labels }: { result: RecoveredDraft; labels: Labels }) {
   const b = result.bundle!
@@ -57,9 +90,12 @@ export default function DraftRecoveryWorkspace({ editors }: { editors: DraftEdit
 }
 
 function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: string; editors: DraftEditors }) {
-  const { profileDocument, profileSaved, state } = useStore()
+  const { profileDocument, profileSaved, profileSaving, state } = useStore()
   const labels = messages[state.uiLocale]
+  const managedLabels = managedMessages[state.uiLocale]
+  const managed = import.meta.env.VITE_CAREEROS_PILOT_MODE === "1"
   const client = useMemo(() => new DraftRecoveryClient(accountId), [accountId])
+  const qualification = useMemo(() => new ManagedQualification(accountId), [accountId])
   const emptyEditor = (): DraftEditor => ({ job: "", language: state.cvLanguage, question: "", answer: "" })
   const [editor, setEditor] = useState(() => editors.get(accountId) ?? emptyEditor())
   const { job, language, question, answer } = editor
@@ -68,40 +104,76 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
   const controller = useRef<AbortController | null>(null)
+  const [analysis, setAnalysis] = useState<{ binding: string; result: QualificationAnalysis } | null>(null)
+  const [analyzing, setAnalyzing] = useState(false)
+  const [analysisAttempted, setAnalysisAttempted] = useState(false)
+  const analysisBinding = JSON.stringify([profileDocument?.id, profileDocument?.revision, job])
+  const currentAnalysisBinding = useRef(analysisBinding)
+  currentAnalysisBinding.current = analysisBinding
+  const currentAnalysis = profileSaved && !profileSaving && !state.profileError && analysis?.binding === analysisBinding ? analysis.result : null
+  const inputBinding = JSON.stringify([analysisBinding, language, question, answer, currentAnalysis?.draftContextProof])
+  const submitted = useRef<{ binding: string; input: DraftInput } | null>(null)
+
+  function hideProtectedWork() {
+    setResult(null)
+    setPrevious(null)
+    setAnalysis(null)
+    submitted.current = null
+  }
 
   function updateEditor(change: Partial<DraftEditor>) {
+    if (change.job !== undefined && change.job !== job) {
+      setAnalysis(null)
+      setAnalysisAttempted(false)
+      qualification.reset()
+    }
     const next = { ...editor, ...change }
     editors.set(accountId, next)
     setEditor(next)
   }
 
-  async function run(create: boolean) {
+  async function run(command: "create" | "recover" | "retry") {
     controller.current?.abort()
     const request = new AbortController()
     controller.current = request
     setBusy(true)
     setError("")
-    if (create && result?.bundle) {
+    if (command === "create" && result?.bundle) {
       setPrevious(result)
       setResult(null)
     }
     try {
-      if (create && (!profileDocument || !profileSaved || state.profileError)) throw new Error("draft_input")
-      const next = create ? await client.create({
-        profileSource: { id: profileDocument!.id, revision: profileDocument!.revision },
-        job: { posting: job },
-        language,
-        answers: question.trim() && answer.trim() ? [{ requirement: question, userContext: answer }] : [],
-        confirmations: [],
-        selectedFactIds: [],
-      }, request.signal) : await client.recover(request.signal)
-      if (!request.signal.aborted) setResult(next)
+      let next: RecoveredDraft
+      if (command === "recover") {
+        next = await client.recover(request.signal)
+      } else if (command === "retry") {
+        if (!submitted.current || submitted.current.binding !== inputBinding) throw new Error("draft_input")
+        next = await client.retry(submitted.current.input, request.signal)
+      } else {
+        if (!profileDocument || !profileSaved || profileSaving || state.profileError) throw new Error("draft_input")
+        const input: DraftInput = {
+          profileSource: { id: profileDocument.id, revision: profileDocument.revision },
+          job: { posting: job },
+          language,
+          answers: question.trim() && answer.trim() ? [{ requirement: question, userContext: answer }] : [],
+          confirmations: [],
+          selectedFactIds: [],
+          ...(currentAnalysis?.draftContextProof
+            ? { jobContext: currentAnalysis.jobContext, qualificationProof: currentAnalysis.draftContextProof }
+            : {}),
+        }
+        submitted.current = { binding: inputBinding, input }
+        next = await client.create(input, request.signal)
+      }
+      if (!request.signal.aborted) {
+        if (next.state === "closed" || next.state === "deleted") hideProtectedWork()
+        setResult(next)
+      }
     } catch (e) {
       if (request.signal.aborted || (e instanceof Error && e.message === "draft_superseded")) return
       const code = e instanceof Error ? e.message : "draft_outcome_unknown"
       if (code === "draft_authentication_required" || code === "draft_access_denied" || code === "draft_account_changed") {
-        setResult(null)
-        setPrevious(null)
+        hideProtectedWork()
       }
       if (code === "draft_account_changed") setEditor(emptyEditor())
       const message: Record<string, string> = {
@@ -111,6 +183,10 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
         draft_not_found: labels.absent,
         draft_input: labels.input,
         draft_recovery_storage: labels.storage,
+        draft_capacity: managedLabels.capacity,
+        draft_incomplete: managedLabels.incomplete,
+        draft_job_rejected: managedLabels.jobRejected,
+        draft_timeout: managedLabels.timeout,
       }
       setError(message[code] ?? labels.failed)
     } finally {
@@ -118,25 +194,69 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
     }
   }
 
+  async function analyze(checkStatus = false) {
+    if (!profileDocument || !profileSaved || profileSaving || !job.trim() || state.profileError) return
+    controller.current?.abort()
+    const request = new AbortController()
+    controller.current = request
+    setBusy(true)
+    setAnalyzing(true)
+    setError("")
+    try {
+      if (checkStatus) {
+        const status = await qualification.status(request.signal)
+        if (!request.signal.aborted && !status.retryAllowed) setError(managedLabels.analysisUnknown)
+        return
+      }
+      setAnalysisAttempted(true)
+      const next = await findProfileGaps(state.repository, job, "", "", true, profileDocument, request.signal, undefined, accountId, qualification.command(analysisBinding))
+      if (!request.signal.aborted && currentAnalysisBinding.current === analysisBinding) {
+        setAnalysis({ binding: analysisBinding, result: next })
+      }
+    } catch (e) {
+      if (request.signal.aborted) return
+      if (e instanceof QualificationGapsError) {
+        qualification.knownFailure(e.retryAllowed)
+        if (["authentication_required", "account_changed", "forbidden", "qualification_denied"].includes(e.code)) hideProtectedWork()
+      }
+      setError(managedLabels.analysisFailed)
+    } finally {
+      if (controller.current === request && !request.signal.aborted) {
+        setBusy(false)
+        setAnalyzing(false)
+      }
+    }
+  }
+
   useEffect(() => {
-    if (client.hasKey()) void run(false)
+    if (client.hasKey()) void run("recover")
     return () => {
       controller.current?.abort()
       client.cancel()
     }
   }, [client])
 
-  const blocked = busy || !profileSaved || !!state.profileError || !profileDocument || !job.trim() || client.state === "uncertain" || client.state === "pending"
+  const sourceBlocked = busy || !profileSaved || profileSaving || !!state.profileError || !profileDocument || !job.trim()
+  const blocked = sourceBlocked || client.state === "uncertain" || client.state === "pending"
+  const retryDraft = managed && result?.retryAllowed && submitted.current?.binding === inputBinding
   return <main className="max-w-6xl mx-auto px-6 py-10 space-y-6" data-draft-workspace>
     <header><h1 className="text-3xl font-bold">{labels.title}</h1><p className="mt-2 text-sm">{labels.intro}</p></header>
     <section className="border rounded p-5 space-y-4">
       <label className="block text-sm">{labels.job}<textarea data-draft-job className="block border rounded w-full mt-2 p-3 min-h-32" value={job} disabled={busy} onChange={e => updateEditor({ job: e.target.value })} /></label>
       <label className="block text-sm">{labels.language}<select data-draft-language className="block border rounded p-2 mt-2" disabled={busy} value={language} onChange={e => updateEditor({ language: e.target.value as DraftEditor["language"] })}><option value="en">{labels.english}</option><option value="pt-BR">{labels.portuguese}</option></select></label>
       <details><summary>{labels.question}</summary><input aria-label={labels.question} className="block border rounded p-2 w-full mt-3" disabled={busy} value={question} onChange={e => updateEditor({ question: e.target.value })} /><label className="block mt-3 text-sm">{labels.answer}<textarea className="block border rounded p-2 w-full mt-2" disabled={busy} value={answer} onChange={e => updateEditor({ answer: e.target.value })} /></label><p className="text-sm mt-2">{labels.context}</p></details>
-      <div className="flex flex-wrap gap-3"><button data-draft-generate className="border rounded px-4 py-2 disabled:opacity-50" disabled={blocked} onClick={() => void run(true)}>{client.hasKey() && client.state !== "absent" ? labels.another : labels.generate}</button>{client.hasKey() && <button data-draft-recover className="border rounded px-4 py-2" disabled={busy} onClick={() => void run(false)}>{busy ? labels.waiting : labels.status}</button>}</div>
+      {managed && <div className="flex flex-wrap gap-3">
+        <button data-draft-analyze className="border rounded px-4 py-2 disabled:opacity-50" disabled={sourceBlocked || !!currentAnalysis} onClick={() => void analyze()}>{qualification.retryAvailable() ? managedLabels.retryAnalysis : managedLabels.analyze}</button>
+        {analysisAttempted && !currentAnalysis && <button className="border rounded px-4 py-2" disabled={busy} onClick={() => void analyze(true)}>{managedLabels.analysisStatus}</button>}
+      </div>}
+      {currentAnalysis && <div data-draft-analysis>
+        <JobContextReview context={currentAnalysis.jobContext} />
+        <RequirementEvidenceReview matches={currentAnalysis.matches ?? []} />
+      </div>}
+      <div className="flex flex-wrap gap-3"><button data-draft-generate className="border rounded px-4 py-2 disabled:opacity-50" disabled={blocked} onClick={() => void run("create")}>{client.hasKey() && client.state !== "absent" ? labels.another : labels.generate}</button>{retryDraft && <button data-draft-retry className="border rounded px-4 py-2" disabled={sourceBlocked} onClick={() => void run("retry")}>{managedLabels.retryDraft}</button>}{client.hasKey() && <button data-draft-recover className="border rounded px-4 py-2" disabled={busy} onClick={() => void run("recover")}>{busy ? labels.waiting : labels.status}</button>}</div>
       <p className="text-sm">{labels.noSave}</p>
     </section>
-    {busy && <p role="status">{labels.recover}</p>}
+    {busy && <p role="status">{analyzing ? managedLabels.analyzing : labels.recover}</p>}
     {error && <p role="alert" className="border rounded p-4">{error}</p>}
     {result?.state === "pending" && <p role="status">{labels.pending}</p>}
     {result?.state === "incomplete" && <p role="status">{labels.incomplete}</p>}

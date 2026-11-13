@@ -1,0 +1,569 @@
+{
+  "issue": "https://github.com/HenriqueMichelini/careeros/issues/282",
+  "owner_policy": "https://github.com/HenriqueMichelini/careeros/issues/282#issuecomment-6645199452",
+  "policy_version": "application-draft-local-20261104-v1",
+  "synthetic_only": true,
+  "base": "05163b3aae0ca58230eabb9aa4d6abe337cef28a",
+  "base_tree": "f0c2e33637a7a2f27619b10b95027fa67ad170e5",
+  "candidate_binding": "Commit containing this manifest. Compare every runtime and changed fixture blob below.",
+  "raw_receipt_availability": "Temporary raw files were absent at the 13 November commit checkpoint. Paths and hashes were recorded at execution on 12 November. Frozen runtime and fixture blobs and the committed exact-base failure set were rechecked before commit.",
+  "runtime_blobs": {
+    "backend/application-draft/managed.go": "a070b1021954dce9e75f7ad14fa6925995706d82",
+    "internal/accountapi/managed_draft.go": "7323e642a83975f0de48342b7f9e14311d8bf337",
+    "internal/aicontrol/draft.go": "ff9a6f13806f4cffaea69807c4bf235cbce064eb",
+    "internal/draftrecovery/managed.go": "0e65abf21f4ed44193caf2493710b69e6ff22975",
+    "internal/draftrecovery/qualification_reuse.go": "d9185aae71fd76801e0c1236eef24c0dae30d201",
+    "internal/draftrecovery/retry.go": "9da2bec61ab1720b22ecf42613f371443f0c3f36",
+    "backend/application-draft/artifacts.go": "8ef2d2661bccd51984c062ce59283de807ee1d77",
+    "backend/application-draft/main.go": "6b640b457b21ac708953210828bab1dfa1b19c7d",
+    "backend/application-draft/resume.go": "716e96918f6234cdf88e1801231828381d76931d",
+    "internal/accountapi/draft_recovery.go": "28b41364d8f3c27f165ae9b882d5c694ef098ab7",
+    "internal/accountapi/qualification.go": "4d571173fa1f2734adade35947fad8a8423133d6",
+    "internal/aicontrol/dispatch.go": "4db52d036d1df329369dea0b12dd9306856495a0",
+    "internal/aicontrol/execution.go": "099fffcd80f38cbe0e78ce107bc52e67eaa48c4e",
+    "internal/aicontrol/graph.go": "7ddfddda9aaa65dd9be5bba2ef07c02e52a839b7",
+    "internal/aicontrol/qualification.go": "f086dc832ed6a32696a76ca88c5ccc8a868ba8cc",
+    "internal/aicontrol/stages.go": "e1bb4eca085e44ced0494253ebbd1b1f5d7d821f",
+    "internal/aicontrol/types.go": "6b5dac305f353dd4873b412e3c9e834a494dc4dc",
+    "internal/draftrecovery/completion.go": "094c299beb915bbb0d0841151c64d04aefacb437",
+    "internal/draftrecovery/model.go": "12e615926a2f539b83ea192917a57cf7bce13761",
+    "internal/draftrecovery/schema.sql": "5bc3adebaeed7a4fcda36d5c785bd6a7e3d4c11d",
+    "internal/draftrecovery/store.go": "5739362e378415ceae8c14da2f1f98e8f0340d1b",
+    "src/components/DraftRecoveryWorkspace.tsx": "db8caf9bee462ec21bf8686800fc2d18916d61dd",
+    "src/lib/ai.ts": "963850b6ea0112033c9ac8cb9328116d7f636c80",
+    "src/lib/draftRecovery.ts": "f5a929cc01de6118147acfdd3215c8e9cad2d67f"
+  },
+  "changed_fixture_blobs": {
+    "internal/accountapi/managed_draft_edges_test.go": "eafe9c91d9e16ae44f83dfcd0adca21af26852b6",
+    "internal/accountapi/managed_draft_test.go": "d350692d667a2e545a928d4bff129c1f52ddbd83",
+    "internal/accountapi/draft_recovery_browser_test.go": "5a6d4d1d01309844926ec39a5625194b22bdc8ea",
+    "internal/accountapi/draft_recovery_restart_test.go": "fb9644a3356540fc5c5bdfec0b7262c009aab303",
+    "internal/testsupport/aiadmission/provider.go": "732c7f13db4789e74aa232b39311316671cb9f01",
+    "tests/draft-recovery-browser.check.mjs": "3bc0b48d96166cd7d45ef4da5487d683e3042e4c",
+    "tests/draft-recovery-client.test.mjs": "bd6dbb67eac74fad964cd05e7b63da13bafe4482",
+    "tests/draft-recovery-harness.jsx": "cd2728a4619ef34edf44cafdb98ddd43dcd25843"
+  },
+  "selected_full_bound_micro_usd": {
+    "typesafe_original": 1344,
+    "openai_generation": 12000,
+    "openai_resume_support": 10000,
+    "openai_artifact_support": 12000,
+    "attempt": 35344,
+    "both_attempts": 70688
+  },
+  "development_checkpoints": {
+    "first_public_tracer": {
+      "pass_events": 2,
+      "receipt": {
+        "path": "/tmp/careeros-281-check-epygrczc/go.jsonl",
+        "sha256": "aea6aff63debbc60c64eda2fa52c389eef9b9cb02b40667d6874983891d3b178"
+      }
+    },
+    "reuse_retry_red": {
+      "failures": [
+        "missing connected qualification proof",
+        "missing Retry eligibility and attempt"
+      ],
+      "receipt": {
+        "path": "/tmp/careeros-281-check-4nxjxj2o/go.jsonl",
+        "sha256": "8d237dfb75f155ba74971315c7fafe4a9a23cb0aac22db86dd42aaa745bf0b31"
+      }
+    },
+    "timeout_red": {
+      "reached_fake_calls": 1,
+      "provider_context_bound_verified": true,
+      "http": 403,
+      "repaired_http": 504,
+      "receipt": {
+        "path": "/tmp/careeros-281-check-280jltfk/go.jsonl",
+        "sha256": "7d512e89f8739a7a2214d3f62fedb202450031cdd118cc4a681c9984c652cf24"
+      }
+    },
+    "scoped_green": {
+      "synthetic_only": true,
+      "go_exit": 0,
+      "pass_events": 18,
+      "failures": [],
+      "skips": [
+        {
+          "package": "professional-information-repo/internal/draftrecovery",
+          "test": null
+        }
+      ],
+      "receipt": {
+        "path": "/tmp/careeros-281-check-35x5r9qt/go.jsonl",
+        "sha256": "ddaff518565203891d2b86bc6ae5e9858d004be4779639e6fc646da9bf3ef041"
+      },
+      "checkpoint_note": "Before final root revalidation and optional confirmation metadata preservation. Final relevant run covers both changes."
+    }
+  },
+  "relevant_go": {
+    "synthetic_only": true,
+    "go_exit": 0,
+    "pass_events": 1157,
+    "failures": [],
+    "skips": [
+      {
+        "package": "professional-information-repo/internal/openaihttp",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/fieldvalidation",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestJourneyDemoServer"
+      },
+      {
+        "package": "professional-information-repo/internal/draftrecovery",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestPilotRestartChild"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestControlledDraftBrowserServer"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestControlledDraftRestartChild"
+      }
+    ],
+    "receipt": {
+      "path": "/tmp/careeros-281-check-jponmi3b/go.jsonl",
+      "sha256": "f8dc772c8ac9711c03946ef9dd02758454d77b7845ff7becfa814561211c26b1"
+    }
+  },
+  "canonical_admission_passed": [
+    "A01",
+    "A02",
+    "A03",
+    "A04",
+    "A05",
+    "A06",
+    "A07",
+    "A08",
+    "A09",
+    "A10",
+    "A11",
+    "A12",
+    "A13",
+    "A14",
+    "A15",
+    "A16",
+    "A17",
+    "A18",
+    "A19",
+    "A20",
+    "A21",
+    "A22",
+    "A23",
+    "A24",
+    "A25",
+    "A26",
+    "A27",
+    "A28",
+    "A29",
+    "A30",
+    "A31",
+    "A32",
+    "A33",
+    "A34",
+    "A35",
+    "A36",
+    "A37"
+  ],
+  "canonical_admission_failed_packages": [],
+  "full_go": {
+    "synthetic_only": true,
+    "go_exit": 1,
+    "pass_events": 2406,
+    "failures": [
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExecutesAllowlistedGoContractsWithoutInference"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCannotReadHostSentinelsOrReachHostLoopback"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCancellationStopsDetachedChildAndGrandchild"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerDeadlineRetainsPartialTreeAndUnreachedTest"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerBoundsOutputAndStopsFollowingTests"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerReusesSectionBrowserHarnessWithScreenshotEvidence"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExecutesExistingNodeCanonicalContracts"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCrashRetainsDistinctOutcome"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerUsesOfflineFieldHelpers"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCDPPDFIsDistinctAndSurvivesExport"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-canonical"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-ingestion"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-job-application"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-cv"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-ingestion"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-job-reuse"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-artifact-review"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAssertionRegressionCompletesWithFail"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-canonical-edit"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-ingestion"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-enrichment"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-application-reuse"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": null
+      }
+    ],
+    "skips": [
+      {
+        "package": "professional-information-repo/cmd/account-migrate",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/cmd/pilot-local",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestJourneyDemoServer"
+      },
+      {
+        "package": "professional-information-repo/internal/draftrecovery",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/jobcontext",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/fieldvalidation",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/openaihttp",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/qualificationmatching",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/releasecapture",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/testsupport",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/testsupport/aiadmission",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/workflowauth",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/lab/api",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/lab/buildmanifest",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/scripts/ai-diagnostics",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/scripts/application-context",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/scripts/field-validation/remediation",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/scripts/preview-preflight",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/scripts/qualification-evidence",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/scripts/semantic-quality",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestPilotRestartChild"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestControlledDraftBrowserServer"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestControlledDraftRestartChild"
+      }
+    ],
+    "receipt": {
+      "path": "/tmp/careeros-281-check-2n8_9gao/go.jsonl",
+      "sha256": "dacb033c90bf0f2b5b5d529af5d6a4dd902ae34b103d2fbd9fea0d63db4ec787"
+    },
+    "exact_base_failure_set_match": true,
+    "exact_base_evidence_blob": "3a10e1d1d14aa6f2efafb8608565924d1da00cd5",
+    "exact_base_evidence_path": "docs/release-evidence/2026-11-11-application-draft-recovery-repairs-summary.json",
+    "exact_base_receipt": {
+      "path": "/tmp/careeros-281-check-yc3coh04/go.jsonl",
+      "sha256": "b34c4abc8e48708073891ae6c6ebecd896526d6243f6f8fe9369ef39e18a9545"
+    },
+    "exact_base_pass_events": 2389,
+    "test_failure_paths": 24
+  },
+  "frontend": {
+    "node": {
+      "exit": 0,
+      "tests": 425,
+      "failed": 0,
+      "profile_full_value_vectors": 44,
+      "cv_full_value_vectors": 44,
+      "receipt": {
+        "path": "/tmp/careeros-282-node-final.tap",
+        "sha256": "9df50c4f59140fa3d8a05bc8c125862a4f2d6702466928da669fd1bcc79f19f9"
+      },
+      "initial_sandbox_eperm": {
+        "exit": 1,
+        "reason": "EPERM launching or waiting for local Go subprocesses",
+        "receipt": {
+          "path": "/tmp/careeros-282-node.log",
+          "sha256": "5ce930df94cfb883571a305e552f45df1ef08d9a884282305e69daa51239a5c0"
+        }
+      }
+    },
+    "typescript": {
+      "exit": 0,
+      "receipt": {
+        "path": "/tmp/careeros-282-tsc.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "pilot_draft_build": {
+      "exit": 0,
+      "receipt": {
+        "path": "/tmp/careeros-282-build.log",
+        "sha256": "526527d3b37c95c2579f618549a718af9b6be9acb812b9f872927dafd8edb33d"
+      }
+    },
+    "browser": {
+      "exit": 0,
+      "cells": [
+        {
+          "status": "passed",
+          "scenario": "recovery",
+          "locale": "en",
+          "evidence": "/tmp/careeros-draft-real-browser-xTZ5eu",
+          "checks": [
+            "actual React→Vite proxy→Go authenticated controlled router→PostgreSQL",
+            "lost creation reply after real publication",
+            "byte-value exact full DTO reload",
+            "generation1/check1 remain unchanged",
+            "expiry/reauth preserves unsaved text",
+            "historical original signature/source",
+            "foreign account isolation",
+            "zero Profile/Accept/allowance writes",
+            "opaque-key-only browser storage"
+          ]
+        },
+        {
+          "status": "passed",
+          "scenario": "recovery",
+          "locale": "pt-BR",
+          "evidence": "/tmp/careeros-draft-real-browser-TVY4Bx",
+          "checks": [
+            "actual React→Vite proxy→Go authenticated controlled router→PostgreSQL",
+            "lost creation reply after real publication",
+            "byte-value exact full DTO reload",
+            "generation1/check1 remain unchanged",
+            "expiry/reauth preserves unsaved text",
+            "historical original signature/source",
+            "foreign account isolation",
+            "zero Profile/Accept/allowance writes",
+            "opaque-key-only browser storage"
+          ]
+        },
+        {
+          "status": "passed",
+          "scenario": "corrected-creation",
+          "locale": "en",
+          "evidence": "/tmp/careeros-draft-real-browser-F8IbRq",
+          "checks": [
+            "real stale Profile 409 then scoped GET 404",
+            "zero automatic POST or callback",
+            "deliberate corrected Profile revision submits same key once"
+          ]
+        },
+        {
+          "status": "passed",
+          "scenario": "corrected-creation",
+          "locale": "pt-BR",
+          "evidence": "/tmp/careeros-draft-real-browser-pQTMDr",
+          "checks": [
+            "real stale Profile 409 then scoped GET 404",
+            "zero automatic POST or callback",
+            "deliberate corrected Profile revision submits same key once"
+          ]
+        },
+        {
+          "status": "passed",
+          "scenario": "access-denial",
+          "locale": "en",
+          "evidence": "/tmp/careeros-draft-real-browser-tbtRSl",
+          "checks": [
+            "real 401 hides current and previous bundles with original context",
+            "same account editor and opaque key preserved",
+            "reauth exact result and unchanged callbacks",
+            "real 403 hides recovered view",
+            "authorized original never autofills editor",
+            "foreign switch discards wording and late ready reply"
+          ]
+        },
+        {
+          "status": "passed",
+          "scenario": "access-denial",
+          "locale": "pt-BR",
+          "evidence": "/tmp/careeros-draft-real-browser-zBBTyC",
+          "checks": [
+            "real 401 hides current and previous bundles with original context",
+            "same account editor and opaque key preserved",
+            "reauth exact result and unchanged callbacks",
+            "real 403 hides recovered view",
+            "authorized original never autofills editor",
+            "foreign switch discards wording and late ready reply"
+          ]
+        },
+        {
+          "status": "passed",
+          "scenario": "managed-journey",
+          "locale": "en",
+          "evidence": "/tmp/careeros-draft-real-browser-YLlAnO",
+          "checks": [
+            "actual saved Profile through authenticated qualification and distinct four-stage Draft",
+            "lost POST response after real publication",
+            "exact version reopened GET-only",
+            "opaque-key-only browser storage",
+            "incomplete replacement preserves previous exact work",
+            "stale closure hides current and cached protected content without extra sends or allowance effect"
+          ]
+        },
+        {
+          "status": "passed",
+          "scenario": "managed-journey",
+          "locale": "pt-BR",
+          "evidence": "/tmp/careeros-draft-real-browser-ryTcwg",
+          "checks": [
+            "actual saved Profile through authenticated qualification and distinct four-stage Draft",
+            "lost POST response after real publication",
+            "exact version reopened GET-only",
+            "opaque-key-only browser storage",
+            "incomplete replacement preserves previous exact work",
+            "stale closure hides current and cached protected content without extra sends or allowance effect"
+          ]
+        }
+      ],
+      "receipt": {
+        "path": "/tmp/careeros-281-check-njpek0_8/browser.jsonl",
+        "sha256": "2d38614e5dade168e3b6243f114667847211bf5e16799afbf3c4d69db3f8e305"
+      }
+    }
+  },
+  "vet": {
+    "toolchain": "go1.26.4 linux/amd64",
+    "default_exit": 1,
+    "diagnostics": 15,
+    "exact_base_byte_match": true,
+    "default_receipt": {
+      "path": "/tmp/careeros-282-vet-default.log",
+      "sha256": "449b2077e614d67a727d4aca5d9f84b70d47f83914a785cc398129577d3e0db4"
+    },
+    "scoped_exit": 0,
+    "scoped_exclusions": [
+      "composites=false",
+      "stdversion=false"
+    ],
+    "scoped_receipt": {
+      "path": "/tmp/careeros-282-vet-scoped.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

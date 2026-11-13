@@ -9,9 +9,10 @@ import {withAccountBrowser,pause} from './account-browser.fixture.mjs'
 
 const root=new URL('..',import.meta.url).pathname
 async function freePort(){return new Promise(resolve=>{const server=createServer();server.listen(0,'127.0.0.1',()=>{const port=server.address().port;server.close(()=>resolve(port))})})}
-for (const scenario of (process.env.CAREEROS_DRAFT_BROWSER_CASE ? [process.env.CAREEROS_DRAFT_BROWSER_CASE] : ['recovery','corrected-creation','access-denial']))
+for (const scenario of (process.env.CAREEROS_DRAFT_BROWSER_CASE ? [process.env.CAREEROS_DRAFT_BROWSER_CASE] : ['recovery','corrected-creation','access-denial','managed-journey']))
 for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CAREEROS_DRAFT_BROWSER_LOCALE] : ['en','pt-BR'])){
- const apiPort=await freePort(),token=randomUUID(),api=`http://127.0.0.1:${apiPort}`,evidence=mkdtempSync(join(tmpdir(),'careeros-281-real-browser-'))
+ const managed=scenario==='managed-journey'
+ const apiPort=await freePort(),token=randomUUID(),api=`http://127.0.0.1:${apiPort}`,evidence=mkdtempSync(join(tmpdir(),'careeros-draft-real-browser-'))
  let server,serverExit
  try{
   await withAccountBrowser(async({evaluate:rawEvaluate,call})=>{
@@ -21,7 +22,7 @@ for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CA
    const wait=async(expression)=>{for(let n=0;n<400;n++){if(await evaluate(`Boolean(${expression})`))return;await pause(25)}throw new Error('Timed out: '+expression)}
    const control=async(name,method='POST')=>evaluate(`fetch('/api/drafts/test/${name}?token='+encodeURIComponent(draftControlToken),{method:${JSON.stringify(method)}}).then(async r=>{if(!r.ok)throw new Error('fixture control failed');return r.status===204?null:r.json()})`)
    await wait(`document.querySelector('[data-draft-workspace]')`)
-   assert.deepEqual(await control('stats','GET'),{generation:0,completion:0,allowanceEffects:0})
+   assert.deepEqual(await control('stats','GET'),managed?{draft:0,qualification:0,allowanceEffects:0}:{generation:0,completion:0,allowanceEffects:0})
    const write = (selector, value) => evaluate(`(() => {
      const input = document.querySelector(${JSON.stringify(selector)});
      Object.getOwnPropertyDescriptor(Object.getPrototypeOf(input), 'value').set.call(input, ${JSON.stringify(value)});
@@ -39,6 +40,57 @@ for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CA
      await wait(`window.draftWire?.documentID && draftWire.documentID!==${JSON.stringify(oldDocument)} && document.querySelector('[data-draft-workspace]')`)
    }
    const stats = n => ({generation:n, completion:n, allowanceEffects:0})
+   if (managed) {
+     await job('Java required.')
+     await wait(`!document.querySelector('[data-draft-analyze]').disabled`)
+     await click('[data-draft-analyze]')
+     await wait(`document.querySelector('[data-draft-analysis]')`)
+     const analysis = await evaluate(`draftWire.responses.find(r=>r.path==='/api/qualification-gaps' && r.status===200)`)
+     assert.ok(analysis?.proof && analysis.body.jobContext)
+     assert.equal(await evaluate(`draftWire.requests.find(r=>r.path==='/api/qualification-gaps').callerKey`),false)
+     assert.deepEqual(await control('stats','GET'),{draft:0,qualification:3,allowanceEffects:0})
+     await generate()
+     await wait(`document.querySelector('[role="alert"]') && draftWire.responses.some(r=>r.path==='/api/drafts'&&r.status===201)`)
+     const original = await evaluate(`draftWire.responses.find(r=>r.path==='/api/drafts'&&r.status===201).body`)
+     const draft = await evaluate(`draftWire.requests.find(r=>r.path==='/api/drafts'&&r.method==='POST')`)
+     assert.equal(draft.callerKey,false)
+     assert.deepEqual(draft.body.jobContext,analysis.body.jobContext)
+     assert.ok(draft.body.qualificationProof)
+     assert.equal(original.job.qualification.actionId,analysis.action)
+     assert.notEqual(original.action.id,analysis.action)
+     assert.equal(original.bundle.binding.generationVersion,'application-draft-local-20261104-v1')
+     assert.equal(original.bundle.binding.language,locale)
+     assert.equal(original.bundle.binding.profileSource.revision,2)
+     assert.match(original.bundle.resume,locale==='en'?/Technical Skills/:/Competências Técnicas/)
+     assert.match(original.bundle.coverLetter,locale==='en'?/Sincerely,\nOriginal Person$/:/Atenciosamente,\nOriginal Person$/)
+     assert.deepEqual(await control('stats','GET'),{draft:4,qualification:3,allowanceEffects:0})
+     await reopen()
+     await wait(`document.querySelector('[data-draft-result]')`)
+     assert.deepEqual(await evaluate(`draftWire.responses.find(r=>r.method==='GET'&&r.status===200).body`),original)
+     assert.equal(await evaluate(`draftWire.requests.filter(r=>r.method==='POST'&&(r.path==='/api/qualification-gaps'||r.path==='/api/drafts'||r.path==='/api/profile/current')).length`),0)
+     assert.deepEqual(await control('stats','GET'),{draft:4,qualification:3,allowanceEffects:0})
+     const storage = await evaluate(`JSON.stringify(Object.entries(sessionStorage).filter(([k])=>k.startsWith('careeros_draft_recovery:')))`)
+     assert.ok(storage.includes(original.creationKey))
+     assert.ok(!storage.includes(draft.body.qualificationProof)&&!storage.includes('Java required.')&&!storage.includes('Original Person'))
+     await control('incomplete-next')
+     await job('Java required.')
+     await generate()
+     await wait(`draftWire.responses.some(r=>r.path==='/api/drafts'&&r.method==='POST'&&r.status===422) && document.querySelector('[role="alert"]')`)
+     assert.ok((await evaluate(`document.querySelector('[role="alert"]').textContent`)).includes(locale==='en'?'required check':'verificação obrigatória'))
+     assert.equal(await evaluate(`document.querySelector('[data-draft-result]').dataset.draftResult`),original.action.id)
+     const oldResponse = await evaluate(`fetch('/api/drafts/'+${JSON.stringify(original.creationKey)},{headers:{'X-CareerOS-Account':${JSON.stringify(original.action.owner)}}}).then(r=>r.json())`)
+     assert.deepEqual(oldResponse,original,'an incomplete replacement changed prior complete work')
+     await control('profile-change')
+     await click('[data-draft-recover]')
+     await wait(`draftWire.responses.some(r=>r.status===410 && r.body.state==='closed') && !document.querySelector('[data-draft-result]')`)
+     const oldClosed = await evaluate(`fetch('/api/drafts/'+${JSON.stringify(original.creationKey)},{headers:{'X-CareerOS-Account':${JSON.stringify(original.action.owner)}}}).then(async r=>({status:r.status,body:await r.json()}))`)
+     assert.equal(oldClosed.status,410)
+     assert.equal(oldClosed.body.bundle,undefined)
+     assert.equal(await evaluate(`draftWire.requests.filter(r=>r.path==='/api/profile/current'&&r.method==='PUT').length`),0)
+     assert.deepEqual(await control('stats','GET'),{draft:8,qualification:3,allowanceEffects:0})
+     console.log(JSON.stringify({status:'passed',scenario,locale,evidence,checks:['actual saved Profile through authenticated qualification and distinct four-stage Draft','lost POST response after real publication','exact version reopened GET-only','opaque-key-only browser storage','incomplete replacement preserves previous exact work','stale closure hides current and cached protected content without extra sends or allowance effect']}))
+     return
+   }
    if (scenario === 'corrected-creation') {
      await control('profile-change')
      await job('Java required.')
@@ -175,8 +227,8 @@ for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CA
    assert.equal(await evaluate(`draftWire.requests.filter(r=>r.path.startsWith('/api/drafts/')&&r.path.includes('/versions/')).length`),0)
    assert.deepEqual(await control('stats','GET'),{generation:1,completion:1,allowanceEffects:0})
    console.log(JSON.stringify({status:'passed',scenario,locale,evidence,checks:['actual React→Vite proxy→Go authenticated controlled router→PostgreSQL','lost creation reply after real publication','byte-value exact full DTO reload','generation1/check1 remain unchanged','expiry/reauth preserves unsaved text','historical original signature/source','foreign account isolation','zero Profile/Accept/allowance writes','opaque-key-only browser storage']}))
-  },{path:'/tests/draft-recovery-harness.html',env:{VITE_CAREEROS_DRAFT_RECOVERY_MODE:'1',CAREEROS_API_TARGET:api},initialize:`localStorage.setItem('careeros_locale',${JSON.stringify(locale)});window.draftControlToken=${JSON.stringify(token)};window.dropDraftResponse=${scenario === 'recovery'}`,beforeNavigate:async({port})=>{
-   const file=join(evidence,'config.json');writeFileSync(file,JSON.stringify({Origin:`http://127.0.0.1:${port}`,Address:`127.0.0.1:${apiPort}`,Token:token}),{mode:0o600})
+  },{path:'/tests/draft-recovery-harness.html',env:{VITE_CAREEROS_DRAFT_RECOVERY_MODE:'1',VITE_CAREEROS_PILOT_MODE:managed?'1':'0',CAREEROS_API_TARGET:api},initialize:`localStorage.setItem('careeros_locale',${JSON.stringify(locale)});window.draftControlToken=${JSON.stringify(token)};window.dropDraftResponse=${scenario === 'recovery'||managed}`,beforeNavigate:async({port})=>{
+   const file=join(evidence,'config.json');writeFileSync(file,JSON.stringify({Origin:`http://127.0.0.1:${port}`,Address:`127.0.0.1:${apiPort}`,Token:token,Managed:managed,Language:locale}),{mode:0o600})
    const log=createWriteStream(join(evidence,'server.jsonl'),{flags:'wx'})
    server=spawn('rtk',['proxy','go','test','-json','-vet=off','-count=1','-run','^TestControlledDraftBrowserServer$','-timeout=180s','./internal/accountapi'],{cwd:root,env:{...process.env,CAREEROS_DRAFT_BROWSER_CONFIG:file,GOCACHE:'/tmp/careeros-go-cache'},stdio:['ignore','pipe','pipe']});server.stdout.pipe(log);server.stderr.pipe(log);serverExit=new Promise(resolve=>server.on('exit',code=>{log.end();resolve(code)}))
    for(let i=0;i<150;i++){try{if((await fetch(`${api}/api/drafts/test/health?token=${token}`)).ok)return}catch{};if(server.exitCode!==null)throw new Error('Private Go browser server exited; see '+evidence);await pause(100)}

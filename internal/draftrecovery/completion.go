@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"reflect"
 
+	"professional-information-repo/internal/aicontrol"
 	"professional-information-repo/internal/auth"
 )
 
@@ -13,6 +14,13 @@ import (
 // transaction. The check sees the complete original job and exact candidate.
 // A generator's labels or an optional caller index cannot substitute for it.
 func (s *Store) Prepare(ctx context.Context, p auth.Principal, key string, b Bundle) (Publication, error) {
+	if s.managed {
+		return Publication{}, ErrDenied
+	}
+	return s.prepare(ctx, p, key, b, s.cfg.Review, nil)
+}
+
+func (s *Store) prepare(ctx context.Context, p auth.Principal, key string, b Bundle, review ControlledReview, session *aicontrol.Session) (Publication, error) {
 	var empty Publication
 	if b.Support.Completion != nil {
 		return empty, ErrInvalid
@@ -59,7 +67,7 @@ func (s *Store) Prepare(ctx context.Context, p auth.Principal, key string, b Bun
 	if json.Unmarshal(raw, &candidate) != nil {
 		return empty, ErrInvalid
 	}
-	completion, err := s.cfg.Review(ctx, ReviewRequest{g, candidate, digest})
+	completion, err := review(ctx, ReviewRequest{g, candidate, digest})
 	if err != nil {
 		return empty, err
 	}
@@ -77,7 +85,7 @@ func (s *Store) Prepare(ctx context.Context, p auth.Principal, key string, b Bun
 	if err != nil || len(raw) > MaxBundleBytes {
 		return empty, ErrInvalid
 	}
-	return Publication{raw, s.digest("publication", raw)}, nil
+	return Publication{raw: raw, seal: s.digest("publication", raw), session: session}, nil
 }
 
 func validateCompletion(g Generation, b Bundle, c Completion, digest string) error {

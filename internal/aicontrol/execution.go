@@ -23,7 +23,7 @@ type StageIdentity struct{ Provider, Model, Tier, PromptSchema string }
 
 func executionIdentity(workflow, version, rate string) (ExecutionIdentity, error) {
 	e := ExecutionIdentity{Version: version, Workflow: workflow, WorkflowProtocol: "workflow-v1", RatePolicy: rate, Stages: map[string]StageIdentity{}}
-	if !tokenLabel.MatchString(version) || (rate != "synthetic-unit-v1" && !(rate == QualificationRateID && ((workflow == "qualification_gaps" && version == "qualification-local-20261102-v1") || (workflow == "profile_ingestion" && version == IngestionPolicyVersion) || (workflow == "profile_review" && version == ProfileReviewPolicyVersion) || (workflow == "cv_generation" && version == StandaloneCVPolicyVersion)))) {
+	if !tokenLabel.MatchString(version) || (rate != "synthetic-unit-v1" && !(rate == QualificationRateID && ((workflow == "qualification_gaps" && version == "qualification-local-20261102-v1") || (workflow == "profile_ingestion" && version == IngestionPolicyVersion) || (workflow == "profile_review" && version == ProfileReviewPolicyVersion) || (workflow == "cv_generation" && version == StandaloneCVPolicyVersion) || (workflow == "application_draft" && version == ManagedDraftPolicyVersion)))) {
 		return e, ErrDenied
 	}
 	oa := func(stage, prompt string) {
@@ -44,6 +44,11 @@ func executionIdentity(workflow, version, rate string) (ExecutionIdentity, error
 		oa("generation", "application-draft-policy-v3/context-v1/schema-v1")
 		oa("resume_support", "resume-support-openai-v1/number-guard-v2/strength-guard-v2/review-language-v1")
 		oa("artifact_support", "artifact-support-openai-v8/prepared-citations-v1/number-guard-v2/answer-input-v1/career-citations-v1/neutral-blocks-v1/range-schema-v2/strength-guard-v2")
+		if version == ManagedDraftPolicyVersion {
+			e.WorkflowProtocol = "managed-complete-draft-v1"
+			oa("generation", ManagedDraftGenerationVersion)
+			oa("artifact_support", ManagedDraftArtifactVersion)
+		}
 	case "qualification_gaps":
 		gate()
 		oa("qualification_matching", "job-context-v2/prompt-v1/schema-v1/gpt-6-luna/none/jev-rubric-v1/policy-v1")
@@ -113,6 +118,9 @@ func (h *Harness) executionBinding(ctx context.Context, tx *sql.Tx, owner, workf
 			if workflow == "cv_generation" {
 				return selectedStandaloneCVEnvelope()
 			}
+			if workflow == "application_draft" {
+				return []any{managedDraftPolicy, selectedQualificationEnvelope()}
+			}
 			return selectedQualificationEnvelope()
 		}
 		return nil
@@ -155,6 +163,9 @@ func (s *Session) validateExecutionStage(ctx context.Context, provider, stage st
 }
 
 func (h *Harness) executionVersion(workflow string) string {
+	if h.cfg.ManagedDraft && workflow == "application_draft" {
+		return ManagedDraftPolicyVersion
+	}
 	if h.cfg.StandaloneCV && workflow == "cv_generation" {
 		return StandaloneCVPolicyVersion
 	}

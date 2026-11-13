@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"professional-information-repo/internal/accountstore"
+	"professional-information-repo/internal/aicontrol"
 	"professional-information-repo/internal/auth"
 	"professional-information-repo/internal/profiledocument"
 	"professional-information-repo/internal/qualificationmatching"
@@ -22,14 +23,19 @@ import (
 var schema string
 
 type Store struct {
-	db  *sql.DB
-	cfg Config
+	db      *sql.DB
+	cfg     Config
+	managed bool
 }
 
 func Open(ctx context.Context, dsn string, cfg Config) (*Store, error) {
-	if dsn == "" || len(cfg.BindingKey) < 32 || cfg.Decisions == nil || cfg.Actions == nil || cfg.Review == nil {
+	if dsn == "" || len(cfg.BindingKey) < 32 || cfg.Decisions == nil || cfg.Actions == nil || cfg.Actions.ManagedDraftEnabled() || cfg.Review == nil {
 		return nil, ErrDenied
 	}
+	return open(ctx, dsn, cfg)
+}
+
+func open(ctx context.Context, dsn string, cfg Config) (*Store, error) {
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return nil, ErrDenied
@@ -40,7 +46,7 @@ func Open(ctx context.Context, dsn string, cfg Config) (*Store, error) {
 		return nil, ErrDenied
 	}
 	cfg.BindingKey = append([]byte(nil), cfg.BindingKey...)
-	return &Store{db, cfg}, nil
+	return &Store{db: db, cfg: cfg}, nil
 }
 func (s *Store) Close() error { return s.db.Close() }
 func (s *Store) Migrate(ctx context.Context) error {
@@ -70,13 +76,14 @@ type record struct {
 	epoch                        uint64
 	grantEnd                     time.Time
 	inputDigest, publishedDigest string
+	generationAttempt            int
 }
 
-const columns = `namespace,action_id,owner,creation_key,input_digest,source_digest,profile_id,profile_revision,language,generation_version,review_version,authority_epoch,admitted_at,deadline,grant_expires_at,state,artifact_version,published_digest,cleanup_queued`
+const columns = `namespace,action_id,owner,creation_key,input_digest,source_digest,profile_id,profile_revision,language,generation_version,review_version,authority_epoch,admitted_at,deadline,grant_expires_at,state,artifact_version,published_digest,cleanup_queued,generation_attempt`
 
 func scanRecord(row interface{ Scan(...any) error }) (record, error) {
 	var r record
-	err := row.Scan(&r.Action.Namespace, &r.Action.ID, &r.Action.Owner, &r.CreationKey, &r.inputDigest, &r.binding.SourceDigest, &r.binding.Profile.ID, &r.binding.Profile.Revision, &r.binding.Language, &r.binding.GenerationVersion, &r.binding.ReviewVersion, &r.epoch, &r.AdmittedAt, &r.Deadline, &r.grantEnd, &r.State, &r.Version, &r.publishedDigest, &r.CleanupQueued)
+	err := row.Scan(&r.Action.Namespace, &r.Action.ID, &r.Action.Owner, &r.CreationKey, &r.inputDigest, &r.binding.SourceDigest, &r.binding.Profile.ID, &r.binding.Profile.Revision, &r.binding.Language, &r.binding.GenerationVersion, &r.binding.ReviewVersion, &r.epoch, &r.AdmittedAt, &r.Deadline, &r.grantEnd, &r.State, &r.Version, &r.publishedDigest, &r.CleanupQueued, &r.generationAttempt)
 	r.Action.Workflow = "application_draft"
 	r.binding.Action = r.Action
 	r.binding.InputDigest = r.inputDigest
@@ -127,6 +134,10 @@ func (s *Store) current(ctx context.Context, tx *sql.Tx, p auth.Principal, in In
 	}
 	g.Binding = Binding{Profile: in.Profile, SourceDigest: s.digest("profile", raw), Language: in.Language, GenerationVersion: GenerationVersion, ReviewVersion: ReviewVersion}
 	approved := qualificationmatching.ApprovedProjection(doc)
+	if s.managed {
+		g.Binding.GenerationVersion = aicontrol.ManagedDraftPolicyVersion
+		g.document = approved
+	}
 	selected := map[string]bool{}
 	missing := map[string]bool{}
 	for _, id := range in.SelectedFactIDs {
@@ -163,14 +174,25 @@ func (r record) sourceMatches(g Generation) bool {
 // Create returns winning=true only for the one durable generation witness.
 // A recovered shared Action uses its ORIGINAL admission clock, not this insert.
 func (s *Store) Create(ctx context.Context, p auth.Principal, key string, input Input) (Result, Generation, bool, error) {
+	if s.managed || input.Job.Qualification != nil {
+		return Result{}, Generation{}, false, ErrDenied
+	}
+	return s.create(ctx, p, key, input, draftReuse{})
+}
+
+func (s *Store) create(ctx context.Context, p auth.Principal, key string, input Input, reuse draftReuse) (Result, Generation, bool, error) {
 	var empty Generation
-	in, raw, err := normalize(input)
+	in, raw, err := normalize(input, s.managed)
 	if err != nil || !validToken(key) {
 		return Result{}, empty, false, ErrInvalid
 	}
 	digest := s.digest("input", raw)
 	tx, err := s.begin(ctx, p)
 	if err != nil {
+		return Result{}, empty, false, err
+	}
+	if err = s.authorizeDraftReuse(ctx, tx, p, in.Job.Posting, reuse); err != nil {
+		tx.Rollback()
 		return Result{}, empty, false, err
 	}
 	prior, err := scanRecord(tx.QueryRowContext(ctx, "SELECT "+columns+" FROM careeros_draft_actions WHERE owner=$1 AND creation_key=$2 FOR UPDATE", p.AccountID, key))
@@ -236,6 +258,9 @@ func (s *Store) Create(ctx context.Context, p auth.Principal, key string, input 
 	if err != nil {
 		return Result{}, empty, false, err
 	}
+	if err = s.authorizeDraftReuse(ctx, tx, p, in.Job.Posting, reuse); err != nil {
+		return Result{}, empty, false, err
+	}
 	guard, err = s.admission(ctx, tx, p, key, digest, in, initial, d)
 	if err != nil {
 		return Result{}, empty, false, err
@@ -292,7 +317,11 @@ func (s *Store) Create(ctx context.Context, p auth.Principal, key string, input 
 	}
 	g.Binding.Action = action
 	g.Binding.InputDigest = digest
-	_, err = tx.ExecContext(ctx, `INSERT INTO careeros_draft_actions(namespace,action_id,owner,creation_key,input_digest,source_digest,profile_id,profile_revision,language,generation_version,review_version,authority_epoch,admitted_at,deadline,grant_expires_at,state) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,'pending')`, action.Namespace, action.ID, p.AccountID, key, digest, g.Binding.SourceDigest, in.Profile.ID, in.Profile.Revision, in.Language, GenerationVersion, ReviewVersion, guard.epoch, admitted, deadline, guard.grantEnd)
+	if s.managed {
+		g.session = shared
+		g.jobContext = reuse.raw
+	}
+	_, err = tx.ExecContext(ctx, `INSERT INTO careeros_draft_actions(namespace,action_id,owner,creation_key,input_digest,source_digest,profile_id,profile_revision,language,generation_version,review_version,authority_epoch,admitted_at,deadline,grant_expires_at,state) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,'pending')`, action.Namespace, action.ID, p.AccountID, key, digest, g.Binding.SourceDigest, in.Profile.ID, in.Profile.Revision, in.Language, g.Binding.GenerationVersion, g.Binding.ReviewVersion, guard.epoch, admitted, deadline, guard.grantEnd)
 	if err != nil {
 		return Result{}, empty, false, ErrDenied
 	}
@@ -334,22 +363,38 @@ func (s *Store) load(ctx context.Context, tx *sql.Tx, p auth.Principal, key stri
 		return r, d, now, err
 	}
 	var sharedState string
-	if err = tx.QueryRowContext(ctx, `SELECT state FROM ai_fixture_action WHERE namespace=$1 AND id=$2 AND owner=$3 AND workflow='application_draft' FOR UPDATE`, r.Action.Namespace, r.Action.ID, p.AccountID).Scan(&sharedState); err != nil {
+	var attempt int
+	if err = tx.QueryRowContext(ctx, `SELECT state,attempt FROM ai_fixture_action WHERE namespace=$1 AND id=$2 AND owner=$3 AND workflow='application_draft' FOR UPDATE`, r.Action.Namespace, r.Action.ID, p.AccountID).Scan(&sharedState, &attempt); err != nil {
 		return r, d, now, ErrDenied
 	}
 	previous := r.State
 	shared := sharedClosure(sharedState)
+	staleUndelivered := false
+	if s.managed && !d.Delivered && r.generationAttempt != 0 &&
+		(r.State == "ready" || r.State == "pending" || r.State == "incomplete") {
+		var source []byte
+		e := tx.QueryRowContext(ctx, `SELECT document FROM careeros_profiles WHERE account_id=$1`, p.AccountID).Scan(&source)
+		if e != nil && !errors.Is(e, sql.ErrNoRows) {
+			return r, d, now, ErrDenied
+		}
+		staleUndelivered = e != nil || s.digest("profile", source) != r.binding.SourceDigest
+	}
 	switch {
 	case d.Deleted || shared == "deleted":
 		r.State = "deleted"
 	case r.State == "deleted":
 		// Retain the stronger terminal state.
 	case shared == "closed",
+		staleUndelivered,
 		!d.Delivered && (d.Epoch != r.epoch || d.Revoked || d.Cancelled || !now.Before(r.Deadline) || !now.Before(d.GrantExpiresAt)),
 		d.Delivered && !now.Before(r.grantEnd.Add(30*24*time.Hour)):
 		r.State = "closed"
 	}
 	closed := r.State == "closed" || r.State == "deleted"
+	if s.managed {
+		r.Attempt = attempt
+		r.RetryAllowed = !closed && r.State == "incomplete" && d.Generate && sharedState == "failed" && attempt == 1
+	}
 	if closed {
 		if err = s.closeAdmission(ctx, tx, p, key, r.State); err != nil {
 			return r, d, now, ErrDenied
@@ -440,6 +485,14 @@ func (s *Store) Publish(ctx context.Context, p auth.Principal, key string, publi
 	current, err = s.current(ctx, tx, p, in)
 	if err != nil || !r.sourceMatches(current) {
 		return ErrConflict
+	}
+	if s.managed {
+		if publication.session == nil || publication.session.ID() != r.Action.ID || publication.session.DraftAttempt() != r.generationAttempt {
+			return ErrDenied
+		}
+		if err = publication.session.AuthorizeDraftPublication(ctx, tx); err != nil {
+			return err
+		}
 	}
 	if _, err = tx.ExecContext(ctx, `UPDATE careeros_draft_content SET bundle=$3 WHERE namespace=$1 AND action_id=$2`, r.Action.Namespace, r.Action.ID, raw); err != nil {
 		return ErrDenied

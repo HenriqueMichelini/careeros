@@ -48,6 +48,8 @@ type request struct {
 	JobPosting      string                            `json:"jobPosting"`
 	Confirmed       []qualification                   `json:"confirmedQualifications"`
 	Qualifications  *profilevalidation.Qualifications `json:"qualifications,omitempty"`
+	managed         bool
+	resumeNotNeeded func(context.Context) error
 }
 type qualification struct {
 	Kind        string `json:"kind"`
@@ -199,7 +201,11 @@ func (a app) generate(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(out)
 }
 func (a app) call(parent context.Context, key string, in request) (res result, code string, callErr error) {
-	parent, finish := aidiagnostics.Start(parent, "generation", "application-draft-policy-v3/context-v1/schema-v1")
+	version := "application-draft-policy-v3/context-v1/schema-v1"
+	if in.managed {
+		version = "application-draft-managed-v1/generation-v1"
+	}
+	parent, finish := aidiagnostics.Start(parent, "generation", version)
 	defer func() { finish(code) }()
 	var empty result
 	// Retain the traceable Source for structured job understanding (#44). Only
@@ -219,6 +225,9 @@ func (a app) call(parent context.Context, key string, in request) (res result, c
 	}
 
 	selected, selection := draftProjection(in, source.Text())
+	if in.managed && !selection.Complete {
+		return empty, "capacity", errors.New("career context capacity")
+	}
 	if in.ReviewResume && in.ProfileEvidence == nil {
 		return empty, "input", errors.New("resume review requires Profile evidence")
 	}
@@ -254,6 +263,9 @@ func (a app) call(parent context.Context, key string, in request) (res result, c
 	if in.ReviewResume {
 		format = reviewedDraftFormat()
 		policy += resumeGenerationPolicy
+	}
+	if in.managed {
+		policy += " MANAGED EMPLOYER ANSWER OVERRIDE: omit optional suggestions and section headings. Write exactly one answer block per explicit employer request, in original posting order. Separate blocks with exactly two newlines and use no blank lines within an answer. Return the empty string when there are no employer requests. Never omit or combine separate requests."
 	}
 	body, _ := json.Marshal(map[string]any{"model": model, "reasoning_effort": "none", "max_completion_tokens": 8000, "response_format": format, "messages": []any{map[string]string{"role": "system", "content": policy}, map[string]string{"role": "user", "content": string(prompt)}}})
 	// Match ingestion's prepared-text bound; measure the complete serialized
@@ -295,6 +307,9 @@ func (a app) call(parent context.Context, key string, in request) (res result, c
 	if in.ReviewResume {
 		var fields map[string]json.RawMessage
 		_ = json.Unmarshal([]byte(content), &fields)
+		if in.managed && !jsonString(fields["applicationAnswers"]) {
+			return empty, "invalid_output", errors.New("explicit managed answer state required")
+		}
 		var claims []resumeClaim
 		if err := decodeResumeClaims(fields["resume"], &claims); err != nil {
 			return empty, "invalid_output", err
@@ -302,6 +317,11 @@ func (a app) call(parent context.Context, key string, in request) (res result, c
 		review, err = a.reviewResume(parent, key, resumeDoc, resumeSelected, claims, in.Answers, in.CvLanguage)
 		if err != nil || review.Check == "unavailable" {
 			return empty, "invalid_output", errors.New("resume support check unavailable")
+		}
+		if in.managed && review.Check == "not_needed" {
+			if err = in.resumeNotNeeded(parent); err != nil {
+				return empty, "capacity", err
+			}
 		}
 		fields["resume"], _ = json.Marshal(resumeMarkdown(claims, in.CvLanguage))
 		reencoded, _ := json.Marshal(fields)
@@ -312,8 +332,19 @@ func (a app) call(parent context.Context, key string, in request) (res result, c
 	if d.Decode(&empty) != nil {
 		return result{}, "invalid_output", errors.New("invalid output")
 	}
+	if in.managed {
+		empty.CoverLetter.Greeting = profiledocument.TrimText(empty.CoverLetter.Greeting)
+		empty.CoverLetter.Body = profiledocument.TrimText(empty.CoverLetter.Body)
+		empty.CoverLetter.Closing = profiledocument.TrimText(empty.CoverLetter.Closing)
+	}
 	var tail any
-	if d.Decode(&tail) != io.EOF || !valid(empty) {
+	validOutput := valid(empty)
+	if in.managed && empty.ApplicationAnswers == "" {
+		// The required answer field is always present. Its empty value is
+		// independently checked against the complete original posting.
+		validOutput = validDraftCore(empty)
+	}
+	if d.Decode(&tail) != io.EOF || !validOutput {
 		return result{}, "invalid_output", errors.New("invalid output")
 	}
 	if in.ReviewArtifacts {
@@ -387,7 +418,10 @@ func validJobMetadata(value *string) bool {
 	return value == nil || strings.TrimSpace(*value) != ""
 }
 func valid(r result) bool {
-	return validJobMetadata(r.JobTitle) && validJobMetadata(r.Company) && strings.TrimSpace(r.JobSummary) != "" && strings.TrimSpace(r.Resume) != "" && validCoverLetter(r.CoverLetter) && strings.TrimSpace(r.ApplicationAnswers) != ""
+	return validDraftCore(r) && strings.TrimSpace(r.ApplicationAnswers) != ""
+}
+func validDraftCore(r result) bool {
+	return validJobMetadata(r.JobTitle) && validJobMetadata(r.Company) && strings.TrimSpace(r.JobSummary) != "" && strings.TrimSpace(r.Resume) != "" && validCoverLetter(r.CoverLetter)
 }
 
 var signatureLine = regexp.MustCompile(`^(?:(?:Dr|Dra|Mr|Ms|Mrs|Sr|Sra)\.?\s+)?\p{Lu}[\p{L}'’.-]*(?:\s+(?:\p{Lu}[\p{L}'’.-]*|da|de|do|dos|das|van|von|der))+(?:,\s*\p{Lu}[\p{L}.'’-]*(?:\s+\p{Lu}[\p{L}.'’-]*)*)?$`)

@@ -19,6 +19,7 @@ import (
 	"professional-information-repo/internal/accountapi"
 	"professional-information-repo/internal/accountstore"
 	"professional-information-repo/internal/aicontrol"
+	"professional-information-repo/internal/aidiagnostics"
 	"professional-information-repo/internal/auth"
 	"professional-information-repo/internal/draftrecovery"
 	"professional-information-repo/internal/testsupport/aiadmission"
@@ -27,6 +28,8 @@ import (
 type restartHandoff struct {
 	DSN, Account, Session, CSRF, Witness string
 	Expected                             []byte
+	Managed                              bool
+	Unknown                              []byte
 }
 
 func restartCommand(t *testing.T, args ...string) {
@@ -107,7 +110,7 @@ func TestControlledDraftPostgresAndServerProcessRestartReadsExactBundle(t *testi
 	if created.Code != 201 {
 		t.Fatalf("creation: %d %s", created.Code, created.Body.String())
 	}
-	handoff := restartHandoff{r.f.DSN, r.f.Principal.AccountID, r.f.Login.SessionToken, r.f.Login.CSRFToken, path, created.Body.Bytes()}
+	handoff := restartHandoff{DSN: r.f.DSN, Account: r.f.Principal.AccountID, Session: r.f.Login.SessionToken, CSRF: r.f.Login.CSRFToken, Witness: path, Expected: created.Body.Bytes()}
 	raw, _ := json.Marshal(handoff)
 	handoffPath := filepath.Join(t.TempDir(), "handoff.json")
 	if err := os.WriteFile(handoffPath, raw, 0600); err != nil {
@@ -131,6 +134,54 @@ func TestControlledDraftPostgresAndServerProcessRestartReadsExactBundle(t *testi
 		t.Fatalf("restart reran controlled work: %q %v", observed, err)
 	}
 	t.Log("real private PostgreSQL immediate restart and fresh server process preserved exact complete Result bytes; durable generation/check witness unchanged")
+}
+
+func TestManagedDraftPhysicalRestartKeepsExactReadyAndUnknownIntent(t *testing.T) {
+	dsn, pgctl, data, log := privateRestartPostgres(t)
+	t.Setenv("CAREEROS_TEST_DATABASE_URL", dsn)
+	f, h, p, recovery, router, input := managedDraftFixture(t)
+	path := filepath.Join(t.TempDir(), "managed-draft-inference-witness")
+	if err := h.SetQualificationResponder(func(ctx context.Context, provider string, req *http.Request) (*http.Response, bool, error) {
+		witness(t, path, aidiagnostics.StageName(ctx))
+		response, err := p.Respond(ctx, provider, req)
+		return response, true, err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	body, _ := json.Marshal(input)
+	created := qualificationRequest(t, f, router, "/api/drafts", "physical-restart", "", body)
+	if created.Code != 201 {
+		t.Fatalf("managed creation before restart: %d %s", created.Code, created.Body.String())
+	}
+	h.SetFault("after_intent_commit", func() error { return errors.New("synthetic process loss before send") })
+	interrupted := qualificationRequest(t, f, router, "/api/drafts", "unknown-restart", "", body)
+	unknown := managedDraftStatus(t, f, router, "unknown-restart")
+	if interrupted.Code < 400 || unknown.Code != 202 || strings.Contains(unknown.Body.String(), `"retryAllowed":true`) {
+		t.Fatalf("unknown intent setup: %d %d %s", interrupted.Code, unknown.Code, unknown.Body.String())
+	}
+	handoff := restartHandoff{
+		DSN: f.DSN, Account: f.Principal.AccountID, Session: f.Login.SessionToken, CSRF: f.Login.CSRFToken,
+		Witness: path, Expected: created.Body.Bytes(), Managed: true, Unknown: unknown.Body.Bytes(),
+	}
+	raw, _ := json.Marshal(handoff)
+	handoffPath := filepath.Join(t.TempDir(), "handoff.json")
+	if err := os.WriteFile(handoffPath, raw, 0600); err != nil {
+		t.Fatal(err)
+	}
+	recovery.Close()
+	h.Close()
+	f.Store.Close()
+	f.DB.Close()
+	restartCommand(t, pgctl, "-D", data, "-l", log, "-m", "immediate", "-w", "restart")
+	cmd := exec.Command(os.Args[0], "-test.run=^TestControlledDraftRestartChild$", "-test.v", "-test.timeout=45s")
+	cmd.Env = append(os.Environ(), "CAREEROS_DRAFT_RESTART_HANDOFF="+handoffPath)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("fresh managed server process: %v\n%s", err, out)
+	}
+	observed, err := os.ReadFile(path)
+	if err != nil || string(observed) != "field_validation\ngeneration\nresume_support\nartifact_support\n" {
+		t.Fatalf("physical restart reran managed inference: %q %v", observed, err)
+	}
 }
 
 type restartOIDC struct{}
@@ -170,6 +221,26 @@ func TestControlledDraftRestartChild(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if in.Managed {
+		h, recovery := openManagedDraftFixture(t, in.DSN, "managed-draft", managedDraftFullBound)
+		if err := h.SetQualificationResponder(func(context.Context, string, *http.Request) (*http.Response, bool, error) {
+			witness(t, in.Witness, "unexpected-managed-send")
+			return nil, false, errors.New("unexpected handoff")
+		}); err != nil {
+			t.Fatal(err)
+		}
+		router := accountapi.NewSyntheticDraft(service, store, h, recovery)
+		checkRestartReads(t, router, in)
+		request := httptest.NewRequest(http.MethodGet, "/api/drafts/unknown-restart", nil)
+		request.Header.Set("X-CareerOS-Account", in.Account)
+		request.AddCookie(&http.Cookie{Name: "__Host-careeros_session", Value: in.Session})
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, request)
+		if w.Code != 202 || !bytes.Equal(w.Body.Bytes(), in.Unknown) {
+			t.Fatalf("fresh process changed unknown status: %d %s", w.Code, w.Body.String())
+		}
+		return
+	}
 	gate := aicontrol.NewSyntheticGate()
 	gate.Reconcile("controlled-draft", 1)
 	actions, err := aicontrol.NewSynthetic(context.Background(), in.DSN, aicontrol.DefaultSyntheticConfig("controlled-draft", gate))
@@ -196,6 +267,11 @@ func TestControlledDraftRestartChild(t *testing.T) {
 		witness(t, in.Witness, "unexpected-generation")
 		return completeRecoveryBundle(g), nil
 	})
+	checkRestartReads(t, router, in)
+}
+
+func checkRestartReads(t *testing.T, router http.Handler, in restartHandoff) {
+	t.Helper()
 	for _, route := range []string{"/api/drafts/physical-restart", "/api/drafts/physical-restart/versions/1", "/.netlify/functions/account/api/drafts/physical-restart/versions/1"} {
 		request := httptest.NewRequest(http.MethodGet, route, nil)
 		request.Header.Set("X-CareerOS-Account", in.Account)

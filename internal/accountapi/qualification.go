@@ -22,6 +22,12 @@ import (
 // selects this function. References below satisfy the existing adapter contract
 // and never represent actual credentials or reach a network client.
 func NewSyntheticQualification(service *auth.Service, store *accountstore.Store, h *aicontrol.Harness) http.Handler {
+	return newSyntheticQualification(service, store, h, nil)
+}
+
+type qualificationReceipt func(context.Context, auth.Principal, string, []byte, []byte) (string, error)
+
+func newSyntheticQualification(service *auth.Service, store *accountstore.Store, h *aicontrol.Harness, receipt qualificationReceipt) http.Handler {
 	if service == nil || store == nil || !h.QualificationEnabled() {
 		return auth.UnavailableHandler()
 	}
@@ -93,7 +99,7 @@ func NewSyntheticQualification(service *auth.Service, store *accountstore.Store,
 		request.ContentLength = int64(len(raw))
 		result := httptest.NewRecorder()
 		qualificationgaps.NewHandler().ServeHTTP(result, request)
-		_ = session.FinishQualification(r.Context(), result.Code >= 400)
+		finishErr := session.FinishQualification(r.Context(), result.Code >= 400)
 		if authority.failure != nil {
 			qualificationError(w, authority.failure)
 			return
@@ -103,6 +109,11 @@ func NewSyntheticQualification(service *auth.Service, store *accountstore.Store,
 		}
 		for k, v := range result.Header() {
 			w.Header()[k] = v
+		}
+		if receipt != nil && finishErr == nil && result.Code == http.StatusOK && fields["jobContext"] == nil {
+			if proof, err := receipt(r.Context(), p, session.ID(), raw, result.Body.Bytes()); err == nil {
+				w.Header().Set("X-CareerOS-Draft-Context-Proof", proof)
+			}
 		}
 		w.Header().Set("X-CareerOS-Action", session.ID())
 		w.WriteHeader(result.Code)
