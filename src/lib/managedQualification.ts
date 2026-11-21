@@ -12,6 +12,12 @@ export interface QualificationStatus {
   resultAvailable: false
 }
 
+export class QualificationStatusDenied extends Error {
+  constructor(readonly status: 401 | 403) {
+    super("qualification_status_unavailable")
+  }
+}
+
 // Only an opaque replay key survives this tab's reload. Career content and
 // results remain transient; a status read never starts inference.
 export class ManagedQualification {
@@ -72,6 +78,10 @@ export class ManagedQualification {
       `/api/ai/${this.workflow}/actions/${encodeURIComponent(this.key)}`,
       { headers: workflowHeaders(this.accountId), signal },
     )
+    if (response.status === 401 || response.status === 403) {
+      this.retryAllowed = false
+      throw new QualificationStatusDenied(response.status)
+    }
     const value: unknown = await response.json()
     if (!response.ok || !value || typeof value !== "object")
       throw new Error("qualification_status_unavailable")

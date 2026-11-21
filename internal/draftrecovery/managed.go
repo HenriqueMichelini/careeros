@@ -107,6 +107,7 @@ func (s *Store) GenerateManaged(ctx context.Context, p auth.Principal, key strin
 	ctx = aidispatch.WithController(ctx, dispatch)
 	in := applicationdraft.ManagedInput{
 		Profile: g.document, Posting: g.Input.Job.Posting, Language: g.Input.Language,
+		FullName:        g.Identity.FullName,
 		JobContext:      g.jobContext,
 		SelectedFactIDs: g.Input.SelectedFactIDs, ResumeNotNeeded: g.session.MarkDraftResumeNotNeeded,
 	}

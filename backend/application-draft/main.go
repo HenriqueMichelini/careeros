@@ -49,6 +49,7 @@ type request struct {
 	Confirmed       []qualification                   `json:"confirmedQualifications"`
 	Qualifications  *profilevalidation.Qualifications `json:"qualifications,omitempty"`
 	managed         bool
+	managedFullName string
 	resumeNotNeeded func(context.Context) error
 }
 type qualification struct {
@@ -339,10 +340,12 @@ func (a app) call(parent context.Context, key string, in request) (res result, c
 	}
 	var tail any
 	validOutput := valid(empty)
-	if in.managed && empty.ApplicationAnswers == "" {
+	if in.managed {
 		// The required answer field is always present. Its empty value is
 		// independently checked against the complete original posting.
-		validOutput = validDraftCore(empty)
+		validOutput = validJobMetadata(empty.JobTitle) && validJobMetadata(empty.Company) &&
+			profiledocument.HasText(empty.JobSummary) && profiledocument.HasText(empty.Resume) &&
+			ValidCompletedCoverLetter(completeManagedLetter(empty.CoverLetter, in.managedFullName), in.managedFullName)
 	}
 	if d.Decode(&tail) != io.EOF || !validOutput {
 		return result{}, "invalid_output", errors.New("invalid output")

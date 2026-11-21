@@ -172,7 +172,7 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 	return &Session{h: h, p: p, id: id, workflow: workflow, root: binding, rootInput: append([]byte(nil), rootJSON...), profile: profile, execution: execution, attempt: attempt, grantVersion: grantVersion, gate: lease}, nil
 }
 
-func (h *Harness) savedProfileBinding(ctx context.Context, tx *sql.Tx, owner string, allowAbsent bool) ([]byte, error) {
+func (h *Harness) savedProfileBinding(ctx context.Context, tx authorityReader, owner string, allowAbsent bool) ([]byte, error) {
 	var raw []byte
 	err := tx.QueryRowContext(ctx, `SELECT document FROM careeros_profiles WHERE account_id=$1`, owner).Scan(&raw)
 	if err == sql.ErrNoRows && allowAbsent {
@@ -858,14 +858,25 @@ func (s *Session) childSession(id, parent string) *Session {
 	return &Session{h: s.h, p: s.p, id: s.id, workflow: s.workflow, root: append([]byte(nil), s.root...), rootInput: append([]byte(nil), s.rootInput...), profile: append([]byte(nil), s.profile...), execution: append([]byte(nil), s.execution...), attempt: s.attempt, grantVersion: s.grantVersion, gate: s.gate, childID: id, childParent: parent, foregroundIndependent: s.ingestion() && id != ""}
 }
 
+type authorityReader interface {
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+}
+
 func (s *Session) checkCurrent(ctx context.Context, tx *sql.Tx) error {
+	return s.checkCurrentWithSource(ctx, tx, tx)
+}
+
+// source uses the runtime role for transient grant/Profile reads when the
+// caller holds the account/session locks in the reconciliation transaction.
+// Reconciliation receives no additional content privileges.
+func (s *Session) checkCurrentWithSource(ctx context.Context, tx *sql.Tx, source authorityReader) error {
 	if e := accountstore.AuthorizeTransaction(ctx, tx, s.p); e != nil {
 		return e
 	}
 	if e := s.h.ready(ctx, tx); e != nil {
 		return e
 	}
-	if _, e := s.h.checkGrant(ctx, tx, s.p, s.grantVersion); e != nil {
+	if _, e := s.h.checkGrant(ctx, source, s.p, s.grantVersion); e != nil {
 		return e
 	}
 	if e := s.gate.allowed(); e != nil {
@@ -879,7 +890,7 @@ func (s *Session) checkCurrent(ctx context.Context, tx *sql.Tx) error {
 		return ErrDenied
 	}
 	if s.profile != nil {
-		b, e := s.h.savedProfileBinding(ctx, tx, s.p.AccountID, s.ingestion())
+		b, e := s.h.savedProfileBinding(ctx, source, s.p.AccountID, s.ingestion())
 		if e != nil {
 			return e
 		}

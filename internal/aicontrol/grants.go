@@ -31,7 +31,7 @@ func (r *Reviewer) SeedGrant(ctx context.Context, p auth.Principal, expires time
 	return safe(tx.Commit())
 }
 
-func (h *Harness) checkGrant(ctx context.Context, tx *sql.Tx, p auth.Principal, expected int64) (int64, error) {
+func (h *Harness) checkGrant(ctx context.Context, tx authorityReader, p auth.Principal, expected int64) (int64, error) {
 	if h.cfg.Qualification {
 		return h.qualificationGrant(ctx, tx, p, expected)
 	}

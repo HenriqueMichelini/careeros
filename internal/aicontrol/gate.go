@@ -252,10 +252,14 @@ func (s *Session) ResultAllowed(ctx context.Context) error {
 // while an underlying writer ignores cancellation. No remote slot is released.
 func (s *Session) BeginResult(ctx context.Context) (context.Context, func(), error) {
 	resultCtx, finishGate, err := s.gate.begin(ctx)
-	if err != nil || !(s.ingestion() || s.profileReview() || s.standaloneCV()) {
+	qualification := s.h.cfg.Qualification && s.workflow == "qualification_gaps"
+	if err != nil || !(qualification || s.ingestion() || s.profileReview() || s.standaloneCV()) {
 		return resultCtx, finishGate, err
 	}
-	if err = s.h.fault("before_ingestion_result_lock"); err != nil {
+	if !qualification {
+		err = s.h.fault("before_ingestion_result_lock")
+	}
+	if err != nil {
 		finishGate()
 		return nil, nil, err
 	}
@@ -263,7 +267,7 @@ func (s *Session) BeginResult(ctx context.Context) (context.Context, func(), err
 	// including the outer pilot flush. Keep account/session locks through the
 	// write so a concurrent explicit first Save/update cannot slip between
 	// this frozen-Profile check and transient result release. This has no
-	// financial/capacity mutation and is not qualification's input validator.
+	// financial/capacity mutation.
 	tx, err := s.h.begin(resultCtx, s.p)
 	if err != nil {
 		finishGate()
@@ -277,6 +281,20 @@ func (s *Session) BeginResult(ctx context.Context) (context.Context, func(), err
 		copy := *s
 		copy.foregroundIndependent = true
 		current = &copy
+	}
+	if qualification {
+		var allowed bool
+		err = tx.QueryRowContext(resultCtx, `SELECT attempt=$4 AND state IN ('recoverable','failed') AND NOT compacted FROM ai_fixture_action WHERE namespace=$1 AND id=$2 AND owner=$3 FOR UPDATE`, s.h.cfg.Namespace, s.id, s.p.AccountID, s.attempt).Scan(&allowed)
+		if err != nil || !allowed {
+			_ = tx.Rollback()
+			finishGate()
+			return nil, nil, ErrDenied
+		}
+		if err = s.checkExecution(resultCtx, tx); err != nil {
+			_ = tx.Rollback()
+			finishGate()
+			return nil, nil, err
+		}
 	}
 	if err = current.checkCurrent(resultCtx, tx); err != nil {
 		_ = tx.Rollback()

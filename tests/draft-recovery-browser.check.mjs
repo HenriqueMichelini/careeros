@@ -9,9 +9,9 @@ import {withAccountBrowser,pause} from './account-browser.fixture.mjs'
 
 const root=new URL('..',import.meta.url).pathname
 async function freePort(){return new Promise(resolve=>{const server=createServer();server.listen(0,'127.0.0.1',()=>{const port=server.address().port;server.close(()=>resolve(port))})})}
-for (const scenario of (process.env.CAREEROS_DRAFT_BROWSER_CASE ? [process.env.CAREEROS_DRAFT_BROWSER_CASE] : ['recovery','corrected-creation','access-denial','managed-journey']))
+for (const scenario of (process.env.CAREEROS_DRAFT_BROWSER_CASE ? [process.env.CAREEROS_DRAFT_BROWSER_CASE] : ['recovery','corrected-creation','access-denial','managed-journey','managed-status-denial']))
 for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CAREEROS_DRAFT_BROWSER_LOCALE] : ['en','pt-BR'])){
- const managed=scenario==='managed-journey'
+ const managed=scenario==='managed-journey'||scenario==='managed-status-denial'
  const apiPort=await freePort(),token=randomUUID(),api=`http://127.0.0.1:${apiPort}`,evidence=mkdtempSync(join(tmpdir(),'careeros-draft-real-browser-'))
  let server,serverExit
  try{
@@ -40,7 +40,51 @@ for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CA
      await wait(`window.draftWire?.documentID && draftWire.documentID!==${JSON.stringify(oldDocument)} && document.querySelector('[data-draft-workspace]')`)
    }
    const stats = n => ({generation:n, completion:n, allowanceEffects:0})
-   if (managed) {
+   if (scenario==='managed-status-denial') {
+     await job('Java required.')
+     await generate()
+     await wait(`document.querySelector('[data-draft-result]')`)
+     await generate()
+     await wait(`document.querySelectorAll('[data-draft-result]').length===2 && !document.querySelector('[data-draft-recover]').disabled`)
+     const original=await evaluate(`draftWire.responses.filter(r=>r.path==='/api/drafts'&&r.status===201).at(-1).body`)
+     await job('Independent unsaved Job Posting')
+     const question='[data-draft-workspace] input'
+     const answer='[data-draft-workspace] textarea:not([data-draft-job])'
+     await write(question,'Independent question')
+     await write(answer,'Independent answer')
+     await control('fail-next-analysis')
+     await click('[data-draft-analyze]')
+     await wait(`document.querySelector('[data-draft-analysis-status]') && document.querySelector('[role="alert"]') && !document.querySelector('[data-draft-analysis-status]').disabled`)
+     const counters=await control('stats','GET')
+     assert.deepEqual(counters,{draft:8,qualification:1,allowanceEffects:0})
+     const retained=await evaluate(`Object.entries(sessionStorage).filter(([k])=>k.startsWith('careeros_draft_recovery:'))`)
+     await control('expire')
+     await click('[data-draft-analysis-status]')
+     await wait(`draftWire.responses.some(r=>r.path.startsWith('/api/ai/qualification/actions/')&&r.status===401) && !document.querySelector('[data-draft-analysis-status]').disabled`)
+     assert.equal(await evaluate(`document.querySelectorAll('[data-draft-result], [data-draft-analysis], [data-draft-support]').length`),0,'status 401 left protected copies mounted')
+     assert.equal(await evaluate(`document.querySelector('[data-draft-job]').value`),'Independent unsaved Job Posting')
+     assert.equal(await evaluate(`document.querySelector(${JSON.stringify(answer)}).value`),'Independent answer')
+     assert.deepEqual(await evaluate(`Object.entries(sessionStorage).filter(([k])=>k.startsWith('careeros_draft_recovery:'))`),retained)
+     await control('reauth')
+     await click('[data-draft-recover]')
+     await wait(`document.querySelector('[data-draft-result]')&&!document.querySelector('[data-draft-recover]').disabled`)
+     assert.deepEqual(await evaluate(`draftWire.responses.filter(r=>r.method==='GET'&&r.status===200&&r.path.startsWith('/api/drafts/')).at(-1).body`),original)
+     assert.deepEqual(await control('stats','GET'),counters)
+     await control('suspend-test-grant')
+     await click('[data-draft-analysis-status]')
+     await wait(`draftWire.responses.some(r=>r.path.startsWith('/api/ai/qualification/actions/')&&r.status===403) && !document.querySelector('[data-draft-analysis-status]').disabled`)
+     assert.equal(await evaluate(`document.querySelectorAll('[data-draft-result], [data-draft-analysis], [data-draft-support]').length`),0,'status 403 left protected copies mounted')
+     assert.equal(await evaluate(`document.querySelector('[data-draft-job]').value`),'Independent unsaved Job Posting')
+     assert.equal(await evaluate(`document.querySelector(${JSON.stringify(question)}).value`),'Independent question')
+     await control('restore-test-grant')
+     await click('[data-draft-recover]')
+     await wait(`document.querySelector('[data-draft-result]')&&!document.querySelector('[data-draft-recover]').disabled`)
+     assert.deepEqual(await evaluate(`draftWire.responses.filter(r=>r.method==='GET'&&r.status===200&&r.path.startsWith('/api/drafts/')).at(-1).body`),original)
+     assert.deepEqual(await control('stats','GET'),counters)
+     console.log(JSON.stringify({status:'passed',scenario,locale,evidence,checks:['actual qualification-status GET 401 and grant 403 hide current and previous protected copies','independent same-account editor and opaque Draft key retained','authorized exact-version GET recovers original with zero new inference']}))
+     return
+   }
+   if (scenario==='managed-journey') {
      await job('Java required.')
      await wait(`!document.querySelector('[data-draft-analyze]').disabled`)
      await click('[data-draft-analyze]')
@@ -227,7 +271,7 @@ for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CA
    assert.equal(await evaluate(`draftWire.requests.filter(r=>r.path.startsWith('/api/drafts/')&&r.path.includes('/versions/')).length`),0)
    assert.deepEqual(await control('stats','GET'),{generation:1,completion:1,allowanceEffects:0})
    console.log(JSON.stringify({status:'passed',scenario,locale,evidence,checks:['actual React→Vite proxy→Go authenticated controlled router→PostgreSQL','lost creation reply after real publication','byte-value exact full DTO reload','generation1/check1 remain unchanged','expiry/reauth preserves unsaved text','historical original signature/source','foreign account isolation','zero Profile/Accept/allowance writes','opaque-key-only browser storage']}))
-  },{path:'/tests/draft-recovery-harness.html',env:{VITE_CAREEROS_DRAFT_RECOVERY_MODE:'1',VITE_CAREEROS_PILOT_MODE:managed?'1':'0',CAREEROS_API_TARGET:api},initialize:`localStorage.setItem('careeros_locale',${JSON.stringify(locale)});window.draftControlToken=${JSON.stringify(token)};window.dropDraftResponse=${scenario === 'recovery'||managed}`,beforeNavigate:async({port})=>{
+  },{path:'/tests/draft-recovery-harness.html',env:{VITE_CAREEROS_DRAFT_RECOVERY_MODE:'1',VITE_CAREEROS_PILOT_MODE:managed?'1':'0',CAREEROS_API_TARGET:api},initialize:`localStorage.setItem('careeros_locale',${JSON.stringify(locale)});window.draftControlToken=${JSON.stringify(token)};window.dropDraftResponse=${scenario === 'recovery'||scenario==='managed-journey'}`,beforeNavigate:async({port})=>{
    const file=join(evidence,'config.json');writeFileSync(file,JSON.stringify({Origin:`http://127.0.0.1:${port}`,Address:`127.0.0.1:${apiPort}`,Token:token,Managed:managed,Language:locale}),{mode:0o600})
    const log=createWriteStream(join(evidence,'server.jsonl'),{flags:'wx'})
    server=spawn('rtk',['proxy','go','test','-json','-vet=off','-count=1','-run','^TestControlledDraftBrowserServer$','-timeout=180s','./internal/accountapi'],{cwd:root,env:{...process.env,CAREEROS_DRAFT_BROWSER_CONFIG:file,GOCACHE:'/tmp/careeros-go-cache'},stdio:['ignore','pipe','pipe']});server.stdout.pipe(log);server.stderr.pipe(log);serverExit=new Promise(resolve=>server.on('exit',code=>{log.end();resolve(code)}))

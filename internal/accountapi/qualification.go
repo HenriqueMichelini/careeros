@@ -104,13 +104,17 @@ func newSyntheticQualification(service *auth.Service, store *accountstore.Store,
 			qualificationError(w, authority.failure)
 			return
 		}
+		if finishErr != nil && !(errors.Is(finishErr, aicontrol.ErrOutputUnavailable) && result.Code >= 400) {
+			qualificationError(w, finishErr)
+			return
+		}
 		if state, e := h.QualificationStatus(r.Context(), p, key); e == nil && state.RetryAllowed {
 			w.Header().Set("X-CareerOS-Retry-Allowed", "true")
 		}
 		for k, v := range result.Header() {
 			w.Header()[k] = v
 		}
-		if receipt != nil && finishErr == nil && result.Code == http.StatusOK && fields["jobContext"] == nil {
+		if receipt != nil && result.Code == http.StatusOK && fields["jobContext"] == nil {
 			if proof, err := receipt(r.Context(), p, session.ID(), raw, result.Body.Bytes()); err == nil {
 				w.Header().Set("X-CareerOS-Draft-Context-Proof", proof)
 			}

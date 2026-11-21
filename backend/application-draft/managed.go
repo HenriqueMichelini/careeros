@@ -22,6 +22,7 @@ type ManagedInput struct {
 	Profile         profiledocument.Document
 	Posting         string
 	Language        string
+	FullName        string
 	JobContext      json.RawMessage
 	SelectedFactIDs []string
 	Answers         []ManagedAnswer
@@ -76,6 +77,7 @@ func GenerateManaged(ctx context.Context, input ManagedInput) (ManagedResult, er
 	}
 	in := request{
 		ReviewArtifacts: true, ReviewResume: true, managed: true, resumeNotNeeded: input.ResumeNotNeeded,
+		managedFullName: input.FullName,
 		SelectedFactIDs: input.SelectedFactIDs, ProfileEvidence: &doc, JobPosting: input.Posting,
 		JobContext: input.JobContext, CvLanguage: input.Language, Confirmed: []qualification{},
 	}
@@ -142,12 +144,20 @@ func (r ManagedResult) CompleteSnapshot(language, fullName string) (ManagedSnaps
 	if name := profiledocument.TrimText(fullName); name != "" {
 		closing += "\n" + name
 	}
-	snapshot.CoverLetter = strings.Join([]string{r.CoverLetter.Greeting, r.CoverLetter.Body, closing}, "\n\n")
+	snapshot.CoverLetter = completeManagedLetter(r.CoverLetter, fullName)
 	snapshot.ArtifactClaims = append(snapshot.ArtifactClaims, ManagedClaim{Field: "coverLetter", Text: closing, State: "supported", Nonfactual: true})
 	if !ValidCompletedCoverLetter(snapshot.CoverLetter, fullName) {
 		return ManagedSnapshot{}, &ManagedFailure{Code: "review_incomplete"}
 	}
 	return snapshot, nil
+}
+
+func completeManagedLetter(letter coverLetter, fullName string) string {
+	closing := letter.Closing
+	if name := profiledocument.TrimText(fullName); name != "" {
+		closing += "\n" + name
+	}
+	return strings.Join([]string{letter.Greeting, letter.Body, closing}, "\n\n")
 }
 
 func managedCitations(sources []jobSupport) []ManagedCitation {

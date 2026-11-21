@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { DraftRecoveryClient, type DraftClaim, type DraftInput, type RecoveredDraft } from "../lib/draftRecovery"
 import { findProfileGaps, QualificationGapsError, type QualificationAnalysis } from "../lib/ai"
-import { ManagedQualification } from "../lib/managedQualification"
+import { ManagedQualification, QualificationStatusDenied } from "../lib/managedQualification"
 import { useStore } from "../lib/store"
 import JobContextReview from "./JobContextReview"
 import RequirementEvidenceReview from "./RequirementEvidenceReview"
@@ -215,6 +215,11 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
       }
     } catch (e) {
       if (request.signal.aborted) return
+      if (e instanceof QualificationStatusDenied) {
+        hideProtectedWork()
+        setError(e.status === 401 ? labels.auth : labels.denied)
+        return
+      }
       if (e instanceof QualificationGapsError) {
         qualification.knownFailure(e.retryAllowed)
         if (["authentication_required", "account_changed", "forbidden", "qualification_denied"].includes(e.code)) hideProtectedWork()
@@ -247,7 +252,7 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
       <details><summary>{labels.question}</summary><input aria-label={labels.question} className="block border rounded p-2 w-full mt-3" disabled={busy} value={question} onChange={e => updateEditor({ question: e.target.value })} /><label className="block mt-3 text-sm">{labels.answer}<textarea className="block border rounded p-2 w-full mt-2" disabled={busy} value={answer} onChange={e => updateEditor({ answer: e.target.value })} /></label><p className="text-sm mt-2">{labels.context}</p></details>
       {managed && <div className="flex flex-wrap gap-3">
         <button data-draft-analyze className="border rounded px-4 py-2 disabled:opacity-50" disabled={sourceBlocked || !!currentAnalysis} onClick={() => void analyze()}>{qualification.retryAvailable() ? managedLabels.retryAnalysis : managedLabels.analyze}</button>
-        {analysisAttempted && !currentAnalysis && <button className="border rounded px-4 py-2" disabled={busy} onClick={() => void analyze(true)}>{managedLabels.analysisStatus}</button>}
+        {analysisAttempted && !currentAnalysis && <button data-draft-analysis-status className="border rounded px-4 py-2" disabled={busy} onClick={() => void analyze(true)}>{managedLabels.analysisStatus}</button>}
       </div>}
       {currentAnalysis && <div data-draft-analysis>
         <JobContextReview context={currentAnalysis.jobContext} />

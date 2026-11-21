@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"professional-information-repo/internal/accountstore"
 	"professional-information-repo/internal/auth"
 )
 
@@ -26,7 +27,7 @@ func QualificationSyntheticConfig(namespace string, gate *SyntheticGate, bound f
 	return c
 }
 
-func (h *Harness) qualificationGrant(ctx context.Context, tx *sql.Tx, p auth.Principal, expected int64) (int64, error) {
+func (h *Harness) qualificationGrant(ctx context.Context, tx authorityReader, p auth.Principal, expected int64) (int64, error) {
 	var version int64
 	var valid bool
 	// Account/session locks are already held by begin. #276 operator commands
@@ -209,6 +210,9 @@ func (s *Session) finishManaged(ctx context.Context, knownFailure, failedChild b
 		return err
 	}
 	defer tx.Rollback()
+	if err = s.stageAction(ctx, tx); err != nil {
+		return err
+	}
 	var invalid int
 	if tx.QueryRowContext(ctx, `SELECT count(*) FROM ai_fixture_dispatch WHERE namespace=$1 AND action=$2 AND (state<>'observed' OR remote_state<>'terminal_proven')`, h.cfg.Namespace, s.id).Scan(&invalid) != nil {
 		return ErrUnavailable
@@ -220,9 +224,22 @@ func (s *Session) finishManaged(ctx context.Context, knownFailure, failedChild b
 	if knownFailure {
 		state = "failed"
 	}
-	_, err = tx.ExecContext(ctx, `UPDATE ai_fixture_action SET execution_finished=true,state=$3 WHERE namespace=$1 AND id=$2 AND owner=$4`, h.cfg.Namespace, s.id, state, s.p.AccountID)
+	current := *s
+	// Finalization records already reached work, including an allowed
+	// connected CV candidate after its inference deadline. It cannot send.
+	current.foregroundIndependent = true
+	if err = current.checkCurrentWithSource(ctx, tx, s.h.db); err != nil {
+		return err
+	}
+	if err = accountstore.AuthorizeTransaction(ctx, tx, s.p); err != nil {
+		return err
+	}
+	updated, err := tx.ExecContext(ctx, `UPDATE ai_fixture_action SET execution_finished=true,state=$3 WHERE namespace=$1 AND id=$2 AND owner=$4 AND state='recoverable' AND attempt=$5 AND NOT compacted`, h.cfg.Namespace, s.id, state, s.p.AccountID, s.attempt)
 	if err != nil {
 		return ErrUnavailable
+	}
+	if n, err := updated.RowsAffected(); err != nil || n != 1 {
+		return ErrDenied
 	}
 	if failedChild {
 		_, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_stage(namespace,action,coordinate,stage,attempt,binding) SELECT namespace,action,parent_coordinate||'/revision/'||id,'known_failed_clarification',attempt,binding FROM ai_fixture_child WHERE namespace=$1 AND action=$2 AND id=$3 AND attempt=$4 ON CONFLICT DO NOTHING`, h.cfg.Namespace, s.id, s.childID, s.attempt)

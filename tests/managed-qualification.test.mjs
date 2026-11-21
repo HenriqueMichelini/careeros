@@ -9,7 +9,7 @@ for(const name of ["managedQualification","workflowRequest"]){
  const source=readFileSync(new URL(`../src/lib/${name}.ts`,import.meta.url),"utf8")
  writeFileSync(join(dir,`${name}.mjs`),ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText.replace('"./workflowRequest"','"./workflowRequest.mjs"'))
 }
-const {ManagedQualification}=await import(join(dir,"managedQualification.mjs"))
+const {ManagedQualification,QualificationStatusDenied}=await import(join(dir,"managedQualification.mjs"))
 
 test("managed qualification repeats stable identity and allocates one deliberate retry",()=>{
  const retained=new Map();const storage={getItem:key=>retained.get(key)??null,setItem:(key,value)=>retained.set(key,value),removeItem:key=>retained.delete(key)}
@@ -40,5 +40,20 @@ test("recovered opaque key performs status GET only and never promises content",
   assert.equal(calls[0].init.headers["X-CareerOS-Account"],"account-a")
   assert.equal(calls[0].init.headers["X-OpenAI-Api-Key"],undefined)
   assert.equal(calls[0].init.headers["X-TypeSafe-Api-Key"],undefined)
+ }finally{globalThis.fetch=previous;delete globalThis.document}
+})
+
+test("qualification status preserves typed authority denials without granting Retry",async()=>{
+ const previous=globalThis.fetch
+ globalThis.document={cookie:"__Host-careeros_csrf=synthetic-csrf"}
+ try{
+  for(const status of [401,403]){
+   globalThis.fetch=async()=>new Response('denied',{status})
+   const client=new ManagedQualification("account-a",{getItem:()=>"same-opaque-action"})
+   client.knownFailure(true)
+   await assert.rejects(client.status(),error=>error instanceof QualificationStatusDenied&&error.status===status&&error.message==="qualification_status_unavailable")
+   assert.equal(client.retryAvailable(),false)
+   assert.equal(client.command("same binding").actionKey,"same-opaque-action")
+  }
  }finally{globalThis.fetch=previous;delete globalThis.document}
 })

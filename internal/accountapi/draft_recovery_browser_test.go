@@ -5,6 +5,7 @@ import (
 	"crypto/subtle"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -16,6 +17,7 @@ import (
 	"time"
 
 	"professional-information-repo/internal/accountapi"
+	"professional-information-repo/internal/accountstore"
 	"professional-information-repo/internal/aidiagnostics"
 	"professional-information-repo/internal/aidispatch"
 	"professional-information-repo/internal/auth"
@@ -44,6 +46,7 @@ func TestControlledDraftBrowserServer(t *testing.T) {
 	}
 	var r *recoveryFixture
 	var omitNextCatalog atomic.Bool
+	var failNextAnalysis atomic.Bool
 	if cfg.Managed {
 		f, actions, provider, store, _, _ := managedDraftFixture(t)
 		r = &recoveryFixture{f: f, actions: actions, store: store}
@@ -59,6 +62,9 @@ func TestControlledDraftBrowserServer(t *testing.T) {
 				}
 			case "qualification_gaps":
 				r.checks.Add(1)
+				if failNextAnalysis.Swap(false) {
+					return &http.Response{StatusCode: 429, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(`{"error":"controlled rate limit"}`))}, true, nil
+				}
 			default:
 				t.Error("unexpected browser workflow")
 			}
@@ -145,6 +151,48 @@ func TestControlledDraftBrowserServer(t *testing.T) {
 			omitNextCatalog.Store(true)
 			w.WriteHeader(204)
 		}))
+		mux.HandleFunc("/api/drafts/test/fail-next-analysis", guard(func(w http.ResponseWriter, _ *http.Request) {
+			failNextAnalysis.Store(true)
+			w.WriteHeader(204)
+		}))
+		for _, suspended := range []bool{true, false} {
+			route := "restore-test-grant"
+			if suspended {
+				route = "suspend-test-grant"
+			}
+			mux.HandleFunc("/api/drafts/test/"+route, guard(func(w http.ResponseWriter, request *http.Request) {
+				mu.Lock()
+				principal := current.Principal
+				mu.Unlock()
+				if suspended {
+					_, err := r.f.Store.PilotCommand(request.Context(), principal, "browser-suspend", accountstore.PilotCommand{
+						Kind: "suspend", Identity: auth.IdentityRef{Provider: "google", Issuer: "https://accounts.google.com", Subject: "fixture-account"},
+					})
+					if err != nil {
+						http.Error(w, "fixture suspension", 500)
+						return
+					}
+				} else {
+					// Restoring this synthetic fixture exists only in the test binary.
+					tx, err := r.f.DB.BeginTx(request.Context(), nil)
+					if err == nil {
+						defer tx.Rollback()
+						err = accountstore.AuthorizeTransaction(request.Context(), tx, principal)
+					}
+					if err == nil {
+						_, err = tx.ExecContext(request.Context(), `UPDATE careeros_pilot_access SET state='active' WHERE account_id=$1 AND state='suspended'`, principal.AccountID)
+					}
+					if err == nil {
+						err = tx.Commit()
+					}
+					if err != nil {
+						http.Error(w, "fixture restoration", 500)
+						return
+					}
+				}
+				w.WriteHeader(204)
+			}))
+		}
 	}
 	mux.HandleFunc("/api/drafts/test/stats", guard(func(w http.ResponseWriter, _ *http.Request) {
 		var effects int
