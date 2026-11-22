@@ -18,6 +18,7 @@ CREATE TABLE ai_recon_state (
  namespace text NOT NULL, dispatch text NOT NULL, version bigint NOT NULL DEFAULT 0,
  source text NOT NULL DEFAULT '', source_revision bigint NOT NULL DEFAULT 0,
  command_id text NOT NULL DEFAULT '', disputed_floor bigint NOT NULL DEFAULT 0,
+ attribution_floor bigint NOT NULL DEFAULT 0 CHECK(attribution_floor>=0),
  unpriced boolean NOT NULL DEFAULT false, unpriced_command text NOT NULL DEFAULT '', unpriced_source text NOT NULL DEFAULT '', unpriced_revision bigint NOT NULL DEFAULT 0,
  next_review timestamptz, retained_purpose text NOT NULL DEFAULT '', retention_reference text NOT NULL DEFAULT '',
  PRIMARY KEY(namespace,dispatch), FOREIGN KEY(namespace,dispatch) REFERENCES ai_fixture_dispatch(namespace,id)

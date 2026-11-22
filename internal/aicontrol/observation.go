@@ -217,10 +217,12 @@ func (h *Harness) observeResponse(ctx context.Context, p auth.Principal, d Dispa
 					source.mu.Lock()
 					validatedCoverage := source.usageCoverage != nil
 					source.mu.Unlock()
+					// First preserve the independent conservative observation.
+					// Missing/rejected/erroring D validation may prevent a
+					// downward settlement, never its exposure or containment.
+					_ = h.recordRuntimeObservation(proofCtx, p, d, o)
 					if validatedCoverage {
 						_ = h.settleSavedObservation(proofCtx, p, d.ID, true)
-					} else {
-						_ = h.recordRuntimeObservation(proofCtx, p, d, o)
 					}
 				}
 				if fakeTerminal {

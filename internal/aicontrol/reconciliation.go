@@ -76,6 +76,7 @@ type ReconciliationStatus struct {
 	Unpriced         bool                  `json:"unpriced"`
 	Expense          *int64                `json:"expense,omitempty"`
 	Floor            int64                 `json:"floor"`
+	AttributionFloor int64                 `json:"attributionFloor"`
 	Dispatch         string                `json:"dispatch"`
 	Counted          int64                 `json:"counted"`
 	Maximum          int64                 `json:"maximum"`
@@ -123,6 +124,9 @@ func InstallLocalReconciliation(ctx context.Context, migrator *sql.DB, namespace
 	}
 	if _, err = tx.ExecContext(ctx, `SELECT id FROM ai_fixture_namespace WHERE id=$1 FOR UPDATE`, namespace); err != nil {
 		return ErrUnavailable
+	}
+	if err = ensureAttributionFloor(ctx, tx); err != nil {
+		return err
 	}
 	var count int
 	if tx.QueryRowContext(ctx, `SELECT count(*) FROM ai_recon_operator WHERE namespace=$1 AND actor<>$2`, namespace, actor).Scan(&count) != nil || count != 0 {
@@ -338,10 +342,10 @@ func (r *Reconciliation) effect(ctx context.Context, tx *sql.Tx, d Dispatch, c R
 			return out, ErrDenied
 		}
 	}
-	var floor, revision, unpricedRevision int64
-	var source, command, unpricedCommand, unpricedSource string
+	var floor, revision, unpricedRevision, attributionFloor int64
+	var source, command, unpricedCommand, unpricedSource, retentionReference string
 	var unpriced bool
-	if tx.QueryRowContext(ctx, `SELECT disputed_floor,source,source_revision,command_id,unpriced,unpriced_command,unpriced_source,unpriced_revision FROM ai_recon_state WHERE namespace=$1 AND dispatch=$2`, r.h.cfg.Namespace, d.ID).Scan(&floor, &source, &revision, &command, &unpriced, &unpricedCommand, &unpricedSource, &unpricedRevision) != nil {
+	if tx.QueryRowContext(ctx, `SELECT disputed_floor,source,source_revision,command_id,unpriced,unpriced_command,unpriced_source,unpriced_revision,attribution_floor,retention_reference FROM ai_recon_state WHERE namespace=$1 AND dispatch=$2`, r.h.cfg.Namespace, d.ID).Scan(&floor, &source, &revision, &command, &unpriced, &unpricedCommand, &unpricedSource, &unpricedRevision, &attributionFloor, &retentionReference) != nil {
 		return out, ErrUnavailable
 	}
 	covered := e.Complete && e.Difference != nil && *e.Difference >= 0
@@ -357,7 +361,10 @@ func (r *Reconciliation) effect(ctx context.Context, tx *sql.Tx, d Dispatch, c R
 		if err != nil {
 			return out, err
 		}
-		contribution = countMax(floor, sum)
+		if sum < attributionFloor && sum < d.Counted {
+			return out, ErrDenied
+		}
+		contribution = countMax(countMax(floor, attributionFloor), sum)
 	}
 	compatibleValuation := unpriced && c.Kind == "corrected_bill" && covered && e.Supersedes == unpricedCommand && e.Source == unpricedSource && e.Revision > unpricedRevision && tokenLabel.MatchString(e.ValuationReference)
 	if unpriced && contribution < d.Counted && !compatibleValuation {
@@ -372,7 +379,7 @@ func (r *Reconciliation) effect(ctx context.Context, tx *sql.Tx, d Dispatch, c R
 			initialFloorSettlement := command == "" && d.Category == "supported_estimate" && c.Kind == "usage"
 			finalBill := c.Kind == "bill" && d.Category == "supported_estimate" && e.Supersedes == command
 			correctedBill := c.Kind == "corrected_bill" && e.Supersedes == command && e.Source == source && e.Revision > revision
-			if (!initialFloorSettlement && !finalBill && !correctedBill && !compatibleValuation) || !covered || d.Compacted {
+			if (!initialFloorSettlement && !finalBill && !correctedBill && !compatibleValuation) || !covered {
 				return out, ErrDenied
 			}
 		} else if e.Source == source && e.Revision < revision {
@@ -382,8 +389,14 @@ func (r *Reconciliation) effect(ctx context.Context, tx *sql.Tx, d Dispatch, c R
 			return out, ErrDenied
 		}
 	}
-	if d.Compacted && contribution < d.Counted {
-		return out, ErrDenied
+	if contribution < d.Counted && (d.Compacted || retentionReference != "") {
+		retained, err := r.retainedAttribution(ctx, tx, d, command, source, revision, e)
+		if err != nil {
+			return out, err
+		}
+		if !retained {
+			return out, ErrDenied
+		}
 	}
 	if category != "reviewed_conservative_maximum" {
 		out.Amount = &amount
@@ -538,7 +551,7 @@ func (r *Reconciliation) Apply(ctx context.Context, p auth.Principal, c Reconcil
 			return result, ErrUnavailable
 		}
 	}
-	if result.After > d.Maximum || c.Kind == "unpriced" {
+	if (result.After > d.Maximum && (!d.MaximumBreached || result.After > d.Counted)) || c.Kind == "unpriced" {
 		contract := e.Provider + "/" + e.Model + "/" + e.Tier + "/" + e.Rate + "/" + e.Currency
 		if _, err = tx.ExecContext(ctx, `INSERT INTO ai_recon_event(namespace,id,dispatch,contract,obligation,reserved) VALUES($1,$2,$3,$4,$5,$6)`, r.h.cfg.Namespace, c.ID, d.ID, contract, result.After, d.Maximum); err != nil {
 			return result, ErrUnavailable
@@ -568,7 +581,7 @@ func (r *Reconciliation) Status(ctx context.Context, p auth.Principal, id string
 	}
 	defer tx.Rollback()
 	out := ReconciliationStatus{Dispatch: d.ID, Counted: d.Counted, Maximum: d.Maximum, Remote: d.Remote, Category: d.Category, Compacted: d.Compacted, Version: v, Expense: d.Expense, Floor: d.Floor}
-	if tx.QueryRowContext(ctx, `SELECT next_review,unpriced FROM ai_recon_state WHERE namespace=$1 AND dispatch=$2`, r.h.cfg.Namespace, id).Scan(&out.NextReview, &out.Unpriced) != nil {
+	if tx.QueryRowContext(ctx, `SELECT next_review,unpriced,attribution_floor FROM ai_recon_state WHERE namespace=$1 AND dispatch=$2`, r.h.cfg.Namespace, id).Scan(&out.NextReview, &out.Unpriced, &out.AttributionFloor) != nil {
 		return out, ErrUnavailable
 	}
 	if tx.QueryRowContext(ctx, `SELECT COALESCE((SELECT stopped FROM ai_recon_stop WHERE namespace=$1),false)`, r.h.cfg.Namespace).Scan(&out.AdmissionStopped) != nil {

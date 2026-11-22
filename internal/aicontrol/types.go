@@ -177,6 +177,9 @@ func NewSynthetic(ctx context.Context, dsn string, cfg SyntheticConfig) (*Harnes
 			return fail()
 		}
 	}
+	if err = ensureAttributionFloor(ctx, tx); err != nil {
+		return fail()
+	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_namespace(id,epoch) VALUES($1,1) ON CONFLICT DO NOTHING`, cfg.Namespace)
 	if err != nil {
 		return fail()
