@@ -13,6 +13,7 @@ import ResultsPage from "./pages/ResultsPage"
 import CvPage from "./pages/CvPage"
 import LandingPage from "./pages/LandingPage"
 import AccountGate from "./components/AccountGate"
+import PilotSupport from "./components/PilotSupport"
 import DraftRecoveryWorkspace, { type DraftEditor } from "./components/DraftRecoveryWorkspace"
 
 function AppInner({ draftEditors }: { draftEditors: Map<string, DraftEditor> }) {
@@ -58,9 +59,12 @@ export default function App() {
   const pilot = import.meta.env.VITE_CAREEROS_PILOT_MODE === "1"
   if (pilot || import.meta.env.VITE_CAREEROS_ACCOUNT_MODE === "1" || import.meta.env.VITE_CAREEROS_DRAFT_RECOVERY_MODE === "1")
     return (
-      <AccountGate pilot={pilot}>
-        <AppInner draftEditors={draftEditors} />
-      </AccountGate>
+      <>
+        <AccountGate pilot={pilot}>
+          <AppInner draftEditors={draftEditors} />
+        </AccountGate>
+        {pilot && <PilotSupport />}
+      </>
     )
   return (
     <StoreProvider>

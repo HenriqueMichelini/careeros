@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
+	"time"
 
 	"professional-information-repo/internal/accountstore"
 	"professional-information-repo/internal/aidispatch"
@@ -80,8 +82,49 @@ func NewPilot(service *auth.Service, store *accountstore.Store, workflows map[st
 	}
 	// Account Function aliases pass through this same router, never a legacy handler.
 	mux.Handle("/.netlify/functions/account/", http.StripPrefix("/.netlify/functions/account", mux))
-	return mux
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ops := store.LocalOperationsObserver()
+		path := strings.TrimPrefix(r.URL.Path, "/.netlify/functions/account")
+		var fault accountstore.OperationsFault
+		switch {
+		case strings.HasPrefix(path, "/api/auth/"):
+			fault = accountstore.OperationsAuthFault
+		case path == "/api/pilot/status" || path == "/api/pilot/activate":
+			fault = accountstore.OperationsAuthorityFault
+		}
+		if ops == nil || fault == "" {
+			mux.ServeHTTP(w, r)
+			return
+		}
+		observation := &operationsResponse{ResponseWriter: w}
+		mux.ServeHTTP(observation, r)
+		if observation.failure {
+			ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), 5*time.Second)
+			defer cancel()
+			_ = ops.ObserveFault(ctx, fault)
+		}
+	})
 }
+
+type operationsResponse struct {
+	http.ResponseWriter
+	wroteHeader bool
+	failure     bool
+}
+
+func (w *operationsResponse) WriteHeader(status int) {
+	if !w.wroteHeader {
+		w.wroteHeader, w.failure = true, status >= 500
+	}
+	w.ResponseWriter.WriteHeader(status)
+}
+
+func (w *operationsResponse) Write(data []byte) (int, error) {
+	w.wroteHeader = true
+	return w.ResponseWriter.Write(data)
+}
+
+func (w *operationsResponse) Unwrap() http.ResponseWriter { return w.ResponseWriter }
 func pilotAccount(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		p, _ := auth.PrincipalFromRequest(r)

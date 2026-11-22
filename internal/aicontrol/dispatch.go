@@ -773,6 +773,11 @@ func (s *Session) invoke(ctx context.Context, d Dispatch, req *http.Request, raw
 	if err = s.stageAction(ctx, final); err != nil {
 		return nil, err
 	}
+	releaseOperations, err := h.holdOperations(ctx, final)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { releaseOperations() }()
 	if err = final.Commit(); err != nil {
 		return nil, ErrUnavailable
 	}
@@ -783,6 +788,8 @@ func (s *Session) invoke(ctx context.Context, d Dispatch, req *http.Request, raw
 	resp, callErr := s.gate.invoke(ctx, func(callCtx context.Context) (*http.Response, error) {
 		return respond(callCtx, d.Provider, cloned.WithContext(callCtx))
 	}) // one fake gateway handoff; no network client
+	releaseOperations()
+	releaseOperations = func() {}
 	dispatchLease.Close()
 	if err = h.fault("after_controlled_callback"); err != nil {
 		if resp != nil && resp.Body != nil {

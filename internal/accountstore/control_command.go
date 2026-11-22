@@ -103,6 +103,21 @@ func (c *OperatorControls) Apply(ctx context.Context, p auth.Principal, operatio
 		if current.Version != command.ExpectedVersion {
 			return ControlStatus{}, ErrConflict
 		}
+		if command.Control != "compromise" {
+			release, err := c.store.holdOperations(ctx, current.operationsRequired, command.Control)
+			if err != nil {
+				return ControlStatus{}, err
+			}
+			defer release()
+			var unresolved bool
+			if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM careeros_operations_containment
+		  WHERE NOT resolved AND ($1='inference' OR $1='invitations' AND invitation_stopped))`, command.Control).Scan(&unresolved); err != nil {
+				return ControlStatus{}, unavailable(err)
+			}
+			if unresolved {
+				return ControlStatus{}, auth.ErrForbidden
+			}
+		}
 		if err = validRecoveryEvidence(p, command, current, evidence); err != nil {
 			return ControlStatus{}, err
 		}

@@ -1,0 +1,135 @@
+{
+  "base": "089a7ac792b506e20ddd9da506cf9edd22add729",
+  "local_synthetic_only": true,
+  "runtime": [
+    {
+      "path": "cmd/pilot-operations-local/main.go",
+      "git_blob": "1485e5a0970125df14ecb3c29d11019a41ffe5ce",
+      "sha256": "07cb7d9b1fb05633da70cf99019ca936ee7d332f0479a44de0c3de35e4e5764d"
+    },
+    {
+      "path": "internal/accountapi/pilot.go",
+      "git_blob": "cd555e9006b8b951cb1e1da0152daa2b68d0ffba",
+      "sha256": "5b12672c773406082f95f9749f06cd03744a784a839086bac4cb3b44b0ef59df"
+    },
+    {
+      "path": "internal/accountapi/pilot_public_status.go",
+      "git_blob": "ff78b11e95fae2cb695817d7d31747cde449c8b4",
+      "sha256": "785a540864e15a6e815af7827b91184ac440dc3680fc13b76424fca857b54724"
+    },
+    {
+      "path": "internal/accountstore/control_command.go",
+      "git_blob": "9944cf8976417fd632f722eba3e12076797c8e3e",
+      "sha256": "b68fcc0dd0dd303548ca90b24573132fa564664c03db9c75bcb89bcf2dcef5f6"
+    },
+    {
+      "path": "internal/accountstore/controls.go",
+      "git_blob": "f4b943f5f333a7c8c45a9d0e332ac9531352280b",
+      "sha256": "92c6e1a5eeaef2b78cef3dc187dccf427c6ba13b8991ed8ad6e5f8bedd1dbd56"
+    },
+    {
+      "path": "internal/accountstore/operations.go",
+      "git_blob": "846388faeb642dc689140ac6f291a95d036f65e9",
+      "sha256": "3b6733329bfcddc5d35bac7c39f45f5b5fea0254b91f5c0df3abf206cf5335c7"
+    },
+    {
+      "path": "internal/accountstore/operations_containment.go",
+      "git_blob": "dc886661a470655d0e2ef1eea79fc0fb6f0ce7f5",
+      "sha256": "92acc5bb542686df1bde2381347350f2144fd611cd53ccfc8f936f37ab0d1078"
+    },
+    {
+      "path": "internal/accountstore/operations_diagnostics.go",
+      "git_blob": "9f5738fbbe049ab18d6f306e4b92b2ce5cde00c9",
+      "sha256": "1b2de77a67498bd49bbb079c2a0143a2be52fdba138f211a11e3c9a4d8e2a7b3"
+    },
+    {
+      "path": "internal/accountstore/operations_journal.go",
+      "git_blob": "e58cc2c7b682c504c4732e22864d04e3f9b54e2e",
+      "sha256": "402e16debbc2e5908b347434e8c5a14b0ad7c9ddc81732f4843b9c7a67c29a75"
+    },
+    {
+      "path": "internal/accountstore/operations_status.go",
+      "git_blob": "d7a5e64b55ceeebfdf50805d49bbfee6e5f9c4a7",
+      "sha256": "e0f0b9f654494765d730adb28dbf916df017a3203fccbca1b9c670dfe13db6ff"
+    },
+    {
+      "path": "internal/accountstore/operations_support.go",
+      "git_blob": "9a6756ecb7d3333256ac59052b267bae14c5cec0",
+      "sha256": "787898cfd25224d407475dea6899feb279817fa20d07b628292a1ecf41e8ff72"
+    },
+    {
+      "path": "internal/accountstore/pilot.go",
+      "git_blob": "93ab3324f9374507accfff22fa2ce10cab8750d2",
+      "sha256": "f3844259a840da19965a8048d63d9d6e1eddb2a415d6d3ab5b9b8cb6e91cb715"
+    },
+    {
+      "path": "internal/accountstore/schema.sql",
+      "git_blob": "921929c8ff6eaafc68ca91727b93700923a2b229",
+      "sha256": "25bb827449d22e7db33cacd637c27394799744e4eb8da2ff3bc7a7ef959a0776"
+    },
+    {
+      "path": "internal/accountstore/store.go",
+      "git_blob": "7cf5ab75555fa6f0aaeccb0d948675b5b1cb4b0b",
+      "sha256": "4163e892f621b74dd4f2b9969e4cf99e5abe2c90b547049fcbaf7352b9026a37"
+    },
+    {
+      "path": "internal/aicontrol/dispatch.go",
+      "git_blob": "323a4ce757908d3668e3fd08c5862f124d3e6c8e",
+      "sha256": "6ce227e67fd55213e5cae4c85dfef1bdcf16d80b370ae38a847d7ce87c718b0e"
+    },
+    {
+      "path": "internal/aicontrol/observation.go",
+      "git_blob": "1158e2ff8f0fe66868f117fdb11a1bcdb5865b85",
+      "sha256": "c812b9361cd499d3171a3991f70a10fa3c82d1f5ddc1bbcc2dc45c6f71f5658c"
+    },
+    {
+      "path": "internal/aicontrol/operations.go",
+      "git_blob": "748b3cd95957cbec2f48c42a02b681a383072e8c",
+      "sha256": "2213e50bb9eb4d6502aef90799f1a35c8f92d753bf5cdc51eca05726ba26474d"
+    },
+    {
+      "path": "internal/aicontrol/roles.go",
+      "git_blob": "4f5bebad6a482e41bc9ef8ae702dc997d462c04e",
+      "sha256": "0777e1850f3db686b8979a4fe52c34d8f314028c8a01a78f91783d08fa25a557"
+    },
+    {
+      "path": "internal/aicontrol/types.go",
+      "git_blob": "325a0b2324960692bfe2d982e9f95d649a4afbbd",
+      "sha256": "50c588326e1baa94b12ecaa63c80626ccf7967eeccfc0a80269df18eaa816f37"
+    },
+    {
+      "path": "src/App.tsx",
+      "git_blob": "551208cc5b17f49a9fa0f58f5c1f42b9fd3c73cf",
+      "sha256": "96217a3af972e1041262099d142f7f446279ab7e55a096ef3d377b4cf50699fd"
+    },
+    {
+      "path": "src/components/PilotSupport.tsx",
+      "git_blob": "a83cb0c9aa6c3bd0056c181580407f986108af78",
+      "sha256": "7233273b51ec0ba7ff97e00fb2c74400d1702503ee62e95667a51ca66f06c842"
+    }
+  ],
+  "fixtures": [
+    {
+      "path": "internal/accountapi/pilot_operations_test.go",
+      "git_blob": "b65d531c77d62cf1f5062951a3272c443e60c8ed",
+      "sha256": "bb04c18b396b482333033785e4fcfaa3580ec08a53d24ea1f69c44ff9be22ddc"
+    },
+    {
+      "path": "tests/pilot-support-browser.check.mjs",
+      "git_blob": "201bcd9f66f3f57d8cf1722bb593a5d3c951f146",
+      "sha256": "bf004cf9450fa1614f72bca634538bc3931b9b25a4c163954589f077cb8784b4"
+    }
+  ],
+  "contracts": [
+    {
+      "path": "docs/managed-pilot-operations-local.md",
+      "git_blob": "49777574531184298796250dc5966d8086644ce1",
+      "sha256": "09134e1552d121cf7a75cfdbb56468a2e24a4fde3c58735845abee87fa89079a"
+    },
+    {
+      "path": "docs/pilot-operations-contract.md",
+      "git_blob": "18f2a63fd3c8353f291c115e168018b37c36e082",
+      "sha256": "01e30e65023a49578006afe2c2b6f73a6dd56d73a937e7cb3adc84612dae8cc7"
+    }
+  ]
+}

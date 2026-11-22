@@ -274,6 +274,11 @@ func (s *Store) PilotCommand(ctx context.Context, p auth.Principal, operation st
 		if controls.InvitationStopped {
 			return PilotStatus{}, auth.ErrForbidden
 		}
+		release, e := s.holdOperations(ctx, controls.operationsRequired, "invitations")
+		if e != nil {
+			return PilotStatus{}, e
+		}
+		defer release()
 		var compromised bool
 		if e = tx.QueryRowContext(ctx, `SELECT careeros_control_account_denied($1)`, target).Scan(&compromised); e != nil {
 			return PilotStatus{}, unavailable(e)
@@ -383,6 +388,11 @@ func (s *Store) ActivatePilot(ctx context.Context, p auth.Principal, operation, 
 	if controls.InvitationStopped {
 		return PilotStatus{}, auth.ErrForbidden
 	}
+	release, err := s.holdOperations(ctx, controls.operationsRequired, "invitations")
+	if err != nil {
+		return PilotStatus{}, err
+	}
+	defer release()
 	hash := sha256.Sum256([]byte("activate-v1:" + invitation))
 	_, replay, err := pilotReplay(ctx, tx, p.AccountID, operation, hash[:])
 	if err != nil {
@@ -445,7 +455,9 @@ func (s *Store) ActivatePilot(ctx context.Context, p auth.Principal, operation, 
 
 // PilotProfiles scopes existing Profile transactions to pilot authority without
 // changing the legacy account composition. Both share the same database pool.
-func (s *Store) PilotProfiles() *Store { return &Store{db: s.db, pilot: true} }
+func (s *Store) PilotProfiles() *Store {
+	return &Store{db: s.db, pilot: true, operations: s.operations}
+}
 
 type PilotRight string
 

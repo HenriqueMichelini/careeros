@@ -237,6 +237,7 @@ CREATE TABLE IF NOT EXISTS careeros_control_state (
 );
 ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS inference_epoch bigint NOT NULL DEFAULT 1 CHECK(inference_epoch>0);
 ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS system_generation bigint NOT NULL DEFAULT 1 CHECK(system_generation>0);
+ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS operations_binding text NOT NULL DEFAULT '';
 INSERT INTO careeros_control_state(singleton) VALUES(true) ON CONFLICT DO NOTHING;
 CREATE TABLE IF NOT EXISTS careeros_control_operators (
  account_id text PRIMARY KEY REFERENCES careeros_accounts(id),
@@ -280,6 +281,10 @@ BEGIN
  LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $epoch$
  SELECT COALESCE((SELECT inference_epoch FROM %1$I.careeros_control_state WHERE singleton AND initialized),0)
  $epoch$;
+ CREATE OR REPLACE FUNCTION %1$I.careeros_operations_required() RETURNS boolean
+ LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $required$
+ SELECT COALESCE((SELECT operations_binding<>'' FROM %1$I.careeros_control_state WHERE singleton),true)
+ $required$;
  CREATE OR REPLACE FUNCTION %1$I.careeros_control_account_denied(owner_id text) RETURNS boolean
  LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $denied$
  SELECT NOT EXISTS(SELECT 1 FROM %1$I.careeros_control_state WHERE singleton)
@@ -288,6 +293,7 @@ BEGIN
  $denied$;
  REVOKE ALL ON FUNCTION %1$I.careeros_inference_allowed() FROM PUBLIC;
  REVOKE ALL ON FUNCTION %1$I.careeros_current_inference_epoch() FROM PUBLIC;
+ REVOKE ALL ON FUNCTION %1$I.careeros_operations_required() FROM PUBLIC;
  REVOKE ALL ON FUNCTION %1$I.careeros_control_account_denied(text) FROM PUBLIC;
  $definition$,owning_schema);
  FOR denied IN
@@ -300,3 +306,33 @@ BEGIN
  EXECUTE format('REVOKE ALL ON careeros_control_state,careeros_control_operators,careeros_control_commands,careeros_control_accounts,careeros_control_recovery FROM %I',denied.rolname);
  END LOOP;
 END $control_functions$;
+
+-- Ordinary support and operational observation are distinct capabilities from
+-- the manual financial and authoritative stop/reopen operators.
+CREATE TABLE IF NOT EXISTS careeros_operations_roles (
+ account_id text NOT NULL REFERENCES careeros_accounts(id),
+ role text NOT NULL CHECK(role IN ('owner','support')),
+ installed_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+ PRIMARY KEY(account_id,role)
+);
+REVOKE ALL ON careeros_operations_roles FROM PUBLIC;
+CREATE TABLE IF NOT EXISTS careeros_operations_containment (
+ incident_id text NOT NULL, incident_revision bigint NOT NULL CHECK(incident_revision>0),
+ invitation_stopped boolean NOT NULL, resolved boolean NOT NULL DEFAULT false,
+ PRIMARY KEY(incident_id,incident_revision)
+);
+REVOKE ALL ON careeros_operations_containment FROM PUBLIC;
+CREATE TABLE IF NOT EXISTS careeros_operations_cases (
+ id text PRIMARY KEY, purpose text NOT NULL, locale text NOT NULL,
+ message text NOT NULL, example text NOT NULL, example_kind text NOT NULL,
+ response text NOT NULL DEFAULT '', received_at timestamptz NOT NULL,
+ review_at timestamptz NOT NULL, responded_at timestamptz, closed_at timestamptz
+);
+CREATE TABLE IF NOT EXISTS careeros_operations_case_holds (
+ case_id text PRIMARY KEY REFERENCES careeros_operations_cases(id) ON DELETE CASCADE,
+ purpose text NOT NULL, review_at timestamptz NOT NULL, retired_at timestamptz
+);
+CREATE TABLE IF NOT EXISTS careeros_operations_diagnostics (
+ id text PRIMARY KEY, kind text NOT NULL, build text NOT NULL, event_at timestamptz NOT NULL
+);
+REVOKE ALL ON careeros_operations_cases,careeros_operations_case_holds,careeros_operations_diagnostics FROM PUBLIC;

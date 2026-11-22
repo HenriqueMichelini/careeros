@@ -16,13 +16,14 @@ const controlFence int64 = 72481312
 
 // ControlStatus contains authority metadata, never recovery proof or content.
 type ControlStatus struct {
-	Version           int64  `json:"version"`
-	InvitationStopped bool   `json:"invitationStopped"`
-	InferenceStopped  bool   `json:"inferenceStopped"`
-	AccountID         string `json:"accountId,omitempty"`
-	Compromised       bool   `json:"compromised,omitempty"`
-	InferenceEpoch    int64  `json:"inferenceEpoch"`
-	SystemGeneration  int64  `json:"systemGeneration"`
+	Version            int64  `json:"version"`
+	InvitationStopped  bool   `json:"invitationStopped"`
+	InferenceStopped   bool   `json:"inferenceStopped"`
+	AccountID          string `json:"accountId,omitempty"`
+	Compromised        bool   `json:"compromised,omitempty"`
+	InferenceEpoch     int64  `json:"inferenceEpoch"`
+	SystemGeneration   int64  `json:"systemGeneration"`
+	operationsRequired bool
 }
 
 type ControlCommand struct {
@@ -72,7 +73,7 @@ func LockControlTransaction(ctx context.Context, tx *sql.Tx) error {
 func controlStatus(ctx context.Context, tx *sql.Tx) (ControlStatus, error) {
 	var s ControlStatus
 	var initialized bool
-	err := tx.QueryRowContext(ctx, `SELECT version,initialized,invitation_stopped,inference_stopped,inference_epoch,system_generation FROM careeros_control_state WHERE singleton`).Scan(&s.Version, &initialized, &s.InvitationStopped, &s.InferenceStopped, &s.InferenceEpoch, &s.SystemGeneration)
+	err := tx.QueryRowContext(ctx, `SELECT version,initialized,invitation_stopped,inference_stopped,inference_epoch,system_generation,operations_binding<>'' FROM careeros_control_state WHERE singleton`).Scan(&s.Version, &initialized, &s.InvitationStopped, &s.InferenceStopped, &s.InferenceEpoch, &s.SystemGeneration, &s.operationsRequired)
 	if err != nil {
 		return s, unavailable(err)
 	}

@@ -89,6 +89,7 @@ type Harness struct {
 	hooks         map[string]func() error
 	origin        *Harness
 	usageCoverage UsageCoverageValidator
+	operations    *accountstore.Operations
 }
 
 var tokenLabel = regexp.MustCompile(`^[A-Za-z0-9_-]{1,128}$`)
@@ -272,6 +273,11 @@ func (h *Harness) admissionReady(ctx context.Context, tx *sql.Tx) error {
 	if stopped {
 		return ErrDenied
 	}
+	release, err := h.holdOperations(ctx, tx)
+	if err != nil {
+		return err
+	}
+	release()
 	return nil
 }
 func (h *Harness) begin(ctx context.Context, p auth.Principal) (*sql.Tx, error) {

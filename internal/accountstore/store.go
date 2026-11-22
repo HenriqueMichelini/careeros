@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib" // Register the PostgreSQL database/sql driver.
@@ -19,8 +20,9 @@ import (
 var schema string
 
 type Store struct {
-	db    *sql.DB
-	pilot bool
+	db         *sql.DB
+	pilot      bool
+	operations *atomic.Pointer[Operations]
 }
 
 func Open(ctx context.Context, dsn string) (*Store, error) {
@@ -38,7 +40,7 @@ func Open(ctx context.Context, dsn string) (*Store, error) {
 		db.Close()
 		return nil, auth.ErrUnavailable
 	}
-	return &Store{db: db}, nil
+	return &Store{db: db, operations: &atomic.Pointer[Operations]{}}, nil
 }
 func (s *Store) Close() error { return s.db.Close() }
 

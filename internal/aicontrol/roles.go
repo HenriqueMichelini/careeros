@@ -296,7 +296,7 @@ GRANT INSERT,UPDATE ON ai_recon_command,ai_recon_state,ai_recon_stop,ai_recon_ev
 	}
 	// Additive migration for inherited fixture identities too. These predicates
 	// return only protective booleans; never grant deletion-table/status secrets.
-	if _, err = tx.ExecContext(ctx, fmt.Sprintf(`GRANT EXECUTE ON FUNCTION careeros_account_closed(text),careeros_deleted_profile_restored(text),careeros_action_predates_deletion(text,timestamptz),careeros_invitation_denied(text),careeros_inference_allowed(),careeros_current_inference_epoch(),careeros_control_account_denied(text) TO %s,%s`, runtimeRole, reviewerRole)); err != nil {
+	if _, err = tx.ExecContext(ctx, fmt.Sprintf(`GRANT EXECUTE ON FUNCTION careeros_account_closed(text),careeros_deleted_profile_restored(text),careeros_action_predates_deletion(text,timestamptz),careeros_invitation_denied(text),careeros_inference_allowed(),careeros_current_inference_epoch(),careeros_control_account_denied(text),careeros_operations_required() TO %s,%s`, runtimeRole, reviewerRole)); err != nil {
 		return nil, nil, "", ErrUnavailable
 	}
 	if tx.Commit() != nil {

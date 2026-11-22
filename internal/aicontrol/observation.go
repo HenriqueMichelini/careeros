@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"regexp"
@@ -185,6 +186,11 @@ func (h *Harness) appendObservation(ctx context.Context, d Dispatch, sequence in
 	return safe(e)
 }
 func (h *Harness) observeResponse(ctx context.Context, p auth.Principal, d Dispatch, resp *http.Response, callErr error) (*http.Response, error) {
+	if ops := h.localOperations(); ops != nil && (callErr != nil && !errors.Is(callErr, context.Canceled) || resp != nil && resp.StatusCode >= 500) {
+		signalCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+		_ = ops.ObserveFault(signalCtx, accountstore.OperationsProviderFault)
+		cancel()
+	}
 	requestID := ""
 	if resp != nil {
 		requestID = resp.Header.Get("X-Request-ID")
