@@ -293,6 +293,8 @@ func TestPilotInvitationExpiryReissueAndRevocation(t *testing.T) {
 	if _, err = store.ActivatePilot(context.Background(), who.Principal, "old-invitation", inv.InvitationID, true); err != auth.ErrForbidden {
 		t.Fatalf("old invitation: %v", err)
 	}
+	if reissued.CanActivate { t.Fatal("reissue retained old eligibility clearance") }
+	if _,err=store.PilotCommand(context.Background(),operator.Principal,"clear-reissue",accountstore.PilotCommand{Kind:"clear",Identity:identity});err!=nil{t.Fatal(err)}
 	first, err := store.ActivatePilot(context.Background(), who.Principal, "activate", reissued.InvitationID, true)
 	if err != nil {
 		t.Fatal(err)

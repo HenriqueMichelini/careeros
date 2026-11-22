@@ -792,6 +792,20 @@ export function editProfile(
       if (fact) invalidate(fact.id)
     }
   }
+  // D03/D04: removing a fact also removes its affected shared excerpt. The
+  // remaining facts keep their wording, with unsupported provenance explicit.
+  const remaining = new Set(next.facts.map(f => f.id))
+  const removed = new Set(doc.facts.filter(f => !remaining.has(f.id)).map(f => f.id))
+  const forbidden = new Set(doc.links.filter(l => l.kind === "supports" && removed.has(l.from.id)).map(l => l.to.id))
+  const referenced = new Set(next.links.filter(l => l.kind === "supports" && l.state === "active" && remaining.has(l.from.id) && next.facts.some(f => f.id === l.from.id && f.revision === l.from.revision)).map(l => l.to.id))
+  const discarded = new Set(next.evidence.filter(e => forbidden.has(e.id) || !referenced.has(e.id)).map(e => e.id))
+  next.evidence = next.evidence.filter(e => !discarded.has(e.id))
+  for(const link of next.links){
+    if(link.kind !== "supports" || !discarded.has(link.to.id))continue
+    link.state="invalidated"
+    const fact=next.facts.find(f=>f.id===link.from.id)
+    if(fact?.support==="supported")fact.support="invalidated"
+  }
   if (!validateProfileDocument(next))
     throw new ProfileValidationError("Invalid manual edit")
   return next

@@ -979,6 +979,7 @@ const messages = {
     "cv.header": "header",
     "profile.persistence.storage":
       "Your Profile could not be saved. Free browser storage or allow site storage, download your recovery copy, then reload to retry. Your original Profile is retained; current edits are unsaved.",
+    "profile.persistence.forbidden": "Your current account cannot read or save this Profile. Pending work stays withheld until access is verified.",
     "profile.persistence.validation":
       "This Profile could not be safely loaded or saved. Download the recovery copy before reloading and ask for help recovering the data. The original has been retained.",
     "profile.persistence.stale":
@@ -2130,6 +2131,7 @@ const messages = {
     "cv.header": "cabeçalho",
     "profile.persistence.storage":
       "Não foi possível salvar seu Perfil. Libere espaço ou permita o armazenamento do site, baixe a cópia de recuperação e recarregue para tentar novamente. O Perfil original foi mantido; as alterações atuais não foram salvas.",
+    "profile.persistence.forbidden": "Sua conta atual não pode ler ou salvar este Perfil. O trabalho pendente fica oculto até que o acesso seja verificado.",
     "profile.persistence.validation":
       "Não foi possível carregar ou salvar este Perfil com segurança. Baixe a cópia de recuperação antes de recarregar e peça ajuda para recuperar os dados. O original foi mantido.",
     "profile.persistence.stale":

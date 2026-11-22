@@ -108,6 +108,7 @@ export default function PilotAccess({
       if (ticket === epoch.current) {
         setStatus(value)
         setError(false)
+        window.dispatchEvent(new Event("focus"))
       }
     } catch {
       if (ticket === epoch.current) setError(true)

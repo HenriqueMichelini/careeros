@@ -7,7 +7,7 @@ import {
 
 export const PROFILE_KEY = "careeros_profile_v2"
 export const LEGACY_KEY = "careeros_repo"
-export type ProfileStorageCode = "storage" | "validation" | "stale" | "lock" | "uncertain" | "authentication" | "account_changed" | "not_found"
+export type ProfileStorageCode = "storage" | "validation" | "stale" | "lock" | "uncertain" | "authentication" | "forbidden" | "account_changed" | "not_found"
 export class ProfileStorageError extends Error {
   constructor(public code: ProfileStorageCode) {
     super(code)

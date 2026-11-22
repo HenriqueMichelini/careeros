@@ -50,6 +50,25 @@ func TestDeletionBrowserServer(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
+	lifecycleKind := os.Getenv("CAREEROS_LIFECYCLE_BROWSER_KIND")
+	if lifecycleKind != "" {
+		days := 23
+		if lifecycleKind == "cleanup" {
+			days = 31
+		} else if lifecycleKind == "late-export" || lifecycleKind == "career-denied" {
+			days = 1
+		} else if lifecycleKind != "notice" {
+			t.Fatal("invalid lifecycle browser fixture")
+		}
+		if _, err = db.Exec(`UPDATE careeros_pilot_access SET activated_at=clock_timestamp()-($2+14)*interval '1 day',expires_at=clock_timestamp()-$2*interval '1 day' WHERE account_id=$1`, who.Account.ID, days); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var lifecycleEmails atomic.Int32
+	lifecycleWorker, _ := accountstore.NewLifecycleWorker(store, func(context.Context, accountstore.LifecycleEmailNotice) (accountstore.LifecycleEmailResult, error) {
+		lifecycleEmails.Add(1)
+		return accountstore.LifecycleEmailResult{State: "failed"}, nil
+	})
 	stop := make(chan struct{})
 	var once sync.Once
 	var posts atomic.Int32
@@ -87,6 +106,34 @@ func TestDeletionBrowserServer(t *testing.T) {
 			if err = db.QueryRow(`SELECT operation_id FROM careeros_deletion_operations WHERE account_id=$1 ORDER BY fenced_at DESC LIMIT 1`, who.Account.ID).Scan(&key); err == nil {
 				_, err = store.PurgeDeletion(r.Context(), who.Account.ID, key)
 			}
+		case "lifecycle-run":
+			if _, e := lifecycleWorker.Run(r.Context(), 10); e != nil {
+				t.Error(e)
+				http.Error(w, "private lifecycle fixture failed", 500)
+				return
+			}
+		case "lifecycle-expire":
+			if _, e := db.Exec(`UPDATE careeros_pilot_access SET activated_at=clock_timestamp()-interval '45 days',expires_at=clock_timestamp()-interval '31 days' WHERE account_id=$1`, who.Account.ID); e != nil {
+				t.Fatal(e)
+			}
+			if _, e := lifecycleWorker.Run(r.Context(), 10); e != nil {
+				t.Error(e)
+				http.Error(w, "private lifecycle fixture failed", 500)
+				return
+			}
+		case "pruning-read-deny":
+			_, e := db.Exec(`INSERT INTO careeros_profile_pruning(account_id,profile_id,evidence_id,previous_revision,new_revision,removed_at,recovery_copy_deadline) SELECT p.account_id,p.profile_id,'synthetic-browser-fence',p.revision,p.revision+1,t.stamp,t.stamp+interval '720 hours' FROM careeros_profiles p CROSS JOIN (SELECT clock_timestamp() stamp)t WHERE p.account_id=$1`, who.Account.ID)
+			if e != nil {
+				t.Error(e)
+				http.Error(w, "private fence fixture failed", 500)
+				return
+			}
+		case "pruning-read-clear":
+			if _, e := db.Exec(`DELETE FROM careeros_profile_pruning WHERE account_id=$1 AND evidence_id='synthetic-browser-fence'`, who.Account.ID); e != nil {
+				t.Error(e)
+				http.Error(w, "private reconciliation fixture failed", 500)
+				return
+			}
 		case "snapshot":
 			var primary, ops int
 			var accountState string
@@ -97,7 +144,7 @@ func TestDeletionBrowserServer(t *testing.T) {
 			if err == nil {
 				err = db.QueryRow(`SELECT status FROM careeros_accounts WHERE id=$1`, who.Account.ID).Scan(&accountState)
 			}
-			json.NewEncoder(w).Encode(map[string]any{"primary": primary, "operations": ops, "posts": posts.Load(), "accountState": accountState})
+			json.NewEncoder(w).Encode(map[string]any{"primary": primary, "operations": ops, "posts": posts.Load(), "accountState": accountState, "lifecycleEmails": lifecycleEmails.Load()})
 		case "stop":
 			w.WriteHeader(204)
 			once.Do(func() { close(stop) })

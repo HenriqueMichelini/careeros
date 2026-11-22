@@ -319,6 +319,17 @@ func (s *Store) SaveProfile(ctx context.Context, p auth.Principal, operation str
 	if result, completed, err := replayProfile(ctx, tx, p.AccountID, operation, hash[:]); completed || err != nil {
 		return result, err
 	}
+	var pruned bool
+	ids := make([]string, 0, len(doc.Evidence))
+	for _, e := range doc.Evidence {
+		ids = append(ids, e.ID)
+	}
+	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM careeros_profile_pruning WHERE account_id=$1 AND profile_id=$2 AND (evidence_id=ANY($3) OR new_revision>=$4 OR NOT EXISTS(SELECT 1 FROM careeros_profiles WHERE account_id=$1)))`, p.AccountID, []byte(doc.ID), ids, doc.Revision).Scan(&pruned); err != nil {
+		return ProfileResult{}, unavailable(err)
+	}
+	if pruned {
+		return ProfileResult{}, ErrConflict
+	}
 	current, err := currentProfile(ctx, tx, p.AccountID)
 	if err != nil {
 		return current, err
@@ -328,6 +339,9 @@ func (s *Store) SaveProfile(ctx context.Context, p auth.Principal, operation str
 	}
 	if !retainedEvidenceAllowed(profiledocument.Document{}, doc) {
 		return current, ErrValidation
+	}
+	if err = recordProfilePruning(ctx, tx, p.AccountID, current.Document, raw); err != nil {
+		return current, err
 	}
 	_, err = tx.ExecContext(ctx, "INSERT INTO careeros_profiles(account_id,profile_id,revision,document) VALUES($1,$2,$3,$4) ON CONFLICT(account_id) DO UPDATE SET profile_id=EXCLUDED.profile_id,revision=EXCLUDED.revision,document=EXCLUDED.document", p.AccountID, []byte(doc.ID), doc.Revision, raw)
 	if err != nil {
@@ -395,7 +409,7 @@ func retainedEvidenceAllowed(before, after profiledocument.Document) bool {
 	forbidden := removedFactEvidence(before, facts)
 	referenced := map[string]bool{}
 	for _, l := range after.Links {
-		if l.Kind == "supports" && facts[l.From.ID] {
+		if l.Kind == "supports" && l.State == "active" && facts[l.From.ID] {
 			referenced[l.To.ID] = true
 		}
 	}

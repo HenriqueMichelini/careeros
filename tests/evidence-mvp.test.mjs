@@ -715,10 +715,16 @@ for (const [
     assert.throws(() => applyIngestionDocument(revised, doc, input, proposal), {
       code: "stale",
     })
+    const retiredEvidence = new Set(
+      doc.links
+        .filter((l) => l.kind === "supports" && l.from.id === skill.id)
+        .map((l) => l.to.id),
+    )
+    assert.ok(retiredEvidence.size > 0)
     assert.deepEqual(
       revised.evidence,
-      doc.evidence,
-      "accepted excerpt survives correction for traceability",
+      doc.evidence.filter((e) => !retiredEvidence.has(e.id)),
+      "correction removes historical-only excerpts while preserving unrelated evidence",
     )
     assert.ok(
       revised.links

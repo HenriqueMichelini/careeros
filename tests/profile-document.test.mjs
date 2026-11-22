@@ -5,6 +5,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import ts from "typescript"
+
 const temp = mkdtempSync(join(tmpdir(), "profile-v2-"))
 writeFileSync(
   join(temp, "contract.mjs"),
@@ -69,6 +70,22 @@ const legacy = {
   ],
   projects: [],
 }
+
+test("deleting a detail removes its shared excerpt, preserves other facts and unrelated evidence", () => {
+  const doc = migrateProfile({skills:"Engineer",currentSalary:"PRIVATE SALARY",tools:"Go"},"cleanup-profile")
+  const skills=doc.facts.find(f=>f.field==="skills"), salary=doc.facts.find(f=>f.field==="currentSalary"), tools=doc.facts.find(f=>f.field==="tools")
+  for(const f of [skills,salary,tools]){f.approval="approved";f.support="supported"}
+  doc.evidence.push({id:"shared",revision:1,excerpt:"Engineer; PRIVATE SALARY",origin:"submitted",approval:"approved"},{id:"unrelated",revision:1,excerpt:"Go",origin:"submitted",approval:"approved"})
+  for(const [f,id] of [[skills,"shared"],[salary,"shared"],[tools,"unrelated"]])doc.links.push({id:"support-"+f.id,kind:"supports",from:{profileId:doc.id,id:f.id,revision:f.revision},to:{profileId:doc.id,id,revision:1},state:"active"})
+  const next=editProfile(doc,{type:"remove_fact",id:salary.id})
+  assert.equal(next.facts.some(f=>f.id===salary.id),false)
+  assert.deepEqual(next.evidence.map(e=>e.id),["unrelated"])
+  assert.equal(next.facts.find(f=>f.id===skills.id).value,"Engineer")
+  assert.equal(next.facts.find(f=>f.id===skills.id).support,"invalidated")
+  assert.equal(next.facts.find(f=>f.id===tools.id).support,"supported")
+  assert.equal(JSON.stringify(next).includes("PRIVATE SALARY"),false)
+  assert.equal(validateProfileDocument(next),true)
+})
 test("migration preserves wording, entry IDs, unknown fields and order without interpreting narrative", () => {
   const doc = migrateProfile(
     { ...legacy, custom: { retained: true } },
@@ -207,7 +224,7 @@ test("whole-field corrections retain fact identity, increment revision and inval
     original: "user",
   })
   assert.equal(changed.links[0].state, "invalidated")
-  assert.equal(changed.evidence[0].excerpt, legacy.skills)
+  assert.deepEqual(changed.evidence, [])
 })
 test("references, aliases and semantic qualifiers are validated conservatively", () => {
   const doc = migrateProfile(legacy, "p")
@@ -326,7 +343,7 @@ test("concurrent migrations agree on one authority and competing revisions canno
     "stale",
   )
 })
-test("removal keeps approved excerpts and invalidates historical links to removed facts", () => {
+test("removal deletes unused excerpts and invalidates historical links to removed facts", () => {
   const doc = migrateProfile(legacy, "p")
   const f = doc.facts.find((f) => f.field === "title")
   f.approval = "approved"
@@ -348,7 +365,7 @@ test("removal keeps approved excerpts and invalidates historical links to remove
   const next = editProfile(doc, {type: "remove_entity", id: doc.entities[0].id})
   assert.equal(validateProfileDocument(next), true)
   assert.equal(next.links[0].state, "invalidated")
-  assert.equal(next.evidence[0].excerpt, "Dev at A")
+  assert.deepEqual(next.evidence, [])
   assert.equal(
     next.facts.some((fact) => fact.id === f.id),
     false,
@@ -521,7 +538,7 @@ test("explicit relationship corrections invalidate evidence, preserve other link
   assert.equal(next.facts.find((x) => x.id === f.id).support, "invalidated")
   assert.equal(next.links.find((x) => x.id === "support").state, "invalidated")
   assert.equal(next.links.find((x) => x.id === "role").state, "active")
-  assert.equal(next.evidence[0].excerpt, "Go at A")
+  assert.deepEqual(next.evidence, [])
   assert.throws(() =>
     editProfile(doc, {
       type: "context",
@@ -707,7 +724,7 @@ test("removing period wording invalidates dependent support without reassigning 
   const next = editProfile(doc, { type: "remove_fact", id: period.id })
   assert.equal(next.facts.find((f) => f.id === skill.id).support, "invalidated")
   assert.equal(next.links.find((l) => l.id === "s").state, "invalidated")
-  assert.deepEqual(next.evidence, doc.evidence)
+  assert.deepEqual(next.evidence, [])
 })
 
 test("typed relationship changes preserve unrelated inline context", () => {
@@ -901,7 +918,7 @@ test("acceptance preserves excerpt support, but edited meaning becomes user-auth
     edited.facts.find((f) => f.id === fact.id).support,
     "invalidated",
   )
-  assert.equal(edited.evidence[0].excerpt, "Go")
+  assert.deepEqual(edited.evidence, [])
   const removed = applySectionProposal(doc, request, proposal, {}, [fact.id])
   assert.equal(profileView(removed).skills, "")
   assert.equal(profileView(removed).tools, "Docker")
@@ -974,7 +991,7 @@ test("correcting a source fact invalidates a composite rewrite that shares its a
     corrected.facts.find((f) => f.id === skill.id).support,
     "invalidated",
   )
-  assert.equal(corrected.evidence.length, 2)
+  assert.deepEqual(corrected.evidence.map(e => e.excerpt), ["Go"])
 })
 test("editing a composite source in the same acceptance never reactivates invalid support, regardless of patch order", () => {
   const doc = migrateProfile({ skills: "Go", tools: "Docker" }, "p")
@@ -1464,7 +1481,7 @@ test("complete replacements use their own accepted evidence and invalidate obsol
  const fact = next.facts.find(f => f.field === "skills")
  const active = next.links.filter(l => l.from.id === fact.id && l.kind === "supports" && l.state === "active").map(l => l.to.id)
  assert.deepEqual(next.evidence.filter(e => active.includes(e.id)).map(e => e.excerpt),["I use Python."])
- assert.ok(next.evidence.some(e => e.excerpt === "I use Java."))
+ assert.equal(next.evidence.some(e => e.excerpt === "I use Java."),false)
  assert.equal(fact.support,"supported")
 })
 test("identity support can accompany an approximate dated narrative without inheriting its qualifiers", () => {

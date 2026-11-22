@@ -96,6 +96,20 @@ func pilotNow(ctx context.Context, tx *sql.Tx) (time.Time, error) {
 func readPilot(ctx context.Context, tx *sql.Tx, owner string) (pilotAccess, error) {
 	var a pilotAccess
 	err := tx.QueryRowContext(ctx, `SELECT invitation_id,invited_at,invitation_expires_at,invitation_revoked,age_eligible,activated_at,expires_at,state,draft_allowance,access_ended_at,retrieval_held FROM careeros_pilot_access WHERE account_id=$1`, owner).Scan(&a.invitation, &a.invited, &a.invitationExpiry, &a.revoked, &a.eligible, &a.activated, &a.expires, &a.state, &a.allowance, &a.accessEnded, &a.retrievalHeld)
+	if err == nil && a.invitation.Valid {
+		var denied bool
+		if e := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM careeros_invitation_cleanup WHERE account_id=$1 AND invitation_id=$2)`, owner, a.invitation.String).Scan(&denied); e != nil {
+			return a, e
+		}
+		if denied {
+			a.revoked = true
+			if a.activated.Valid {
+				a.state = "revoked"
+				a.retrievalHeld = true
+				a.accessEnded = sql.NullTime{}
+			}
+		}
+	}
 	return a, err
 }
 func pilotStatus(owner string, a pilotAccess, now time.Time) PilotStatus {
@@ -267,11 +281,19 @@ func (s *Store) PilotCommand(ctx context.Context, p auth.Principal, operation st
 		if a.activated.Valid {
 			return PilotStatus{}, ErrConflict
 		}
+		if a.invitation.Valid && a.invitationExpiry.Valid {
+			if err = recordInvitationCleanup(ctx, tx, target, a.invitation.String, a.invitationExpiry.Time, now, &now); err != nil {
+				return PilotStatus{}, err
+			}
+		}
 		invitation, err = newID()
 		if err == nil {
-			_, err = tx.ExecContext(ctx, `UPDATE careeros_pilot_access SET invitation_id=$2,invited_at=$3,invitation_expires_at=$4,invitation_revoked=false WHERE account_id=$1`, target, invitation, now, now.Add(7*24*time.Hour))
+			_, err = tx.ExecContext(ctx, `UPDATE careeros_pilot_access SET invitation_id=$2,invited_at=$3,invitation_expires_at=$4,invitation_revoked=false,provider=$5,issuer=$6,subject=$7,age_eligible=NULL,eligibility_checked_at=NULL,eligibility_checked_by=NULL,invitation_cleaned_at=NULL WHERE account_id=$1`, target, invitation, now, now.Add(7*24*time.Hour), []byte(command.Identity.Provider), []byte(command.Identity.Issuer), []byte(command.Identity.Subject))
 		}
 	case "clear":
+		if !a.activated.Valid && (!a.invitation.Valid || a.revoked || !a.invitationExpiry.Valid || !now.Before(a.invitationExpiry.Time)) {
+			return PilotStatus{}, auth.ErrForbidden
+		}
 		_, err = tx.ExecContext(ctx, `UPDATE careeros_pilot_access SET age_eligible=true,eligibility_checked_at=$2,eligibility_checked_by=$3 WHERE account_id=$1`, target, now, p.AccountID)
 	case "suspend":
 		if !a.activated.Valid || a.state == "revoked" {
@@ -282,6 +304,11 @@ func (s *Store) PilotCommand(ctx context.Context, p auth.Principal, operation st
 		if a.activated.Valid {
 			_, err = tx.ExecContext(ctx, `UPDATE careeros_pilot_access SET state='revoked',access_ended_at=CASE WHEN state='revoked' AND access_ended_at IS NULL THEN NULL WHEN access_ended_at IS NULL THEN $2 ELSE LEAST(access_ended_at,$2) END,retrieval_held=retrieval_held OR state='suspended' WHERE account_id=$1`, target, now)
 		} else {
+			if a.invitation.Valid && a.invitationExpiry.Valid {
+				if err = recordInvitationCleanup(ctx, tx, target, a.invitation.String, a.invitationExpiry.Time, now, nil); err != nil {
+					return PilotStatus{}, err
+				}
+			}
 			_, err = tx.ExecContext(ctx, `UPDATE careeros_pilot_access SET invitation_revoked=true WHERE account_id=$1`, target)
 		}
 	}

@@ -22,6 +22,23 @@ func New(service *auth.Service, store *accountstore.Store) http.Handler {
 	if service != nil && store != nil {
 		routes := http.NewServeMux()
 		deletionRoutes(routes, store)
+		routes.HandleFunc("GET /api/lifecycle/status", func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.RawQuery != "" {
+				respond(w, nil, accountstore.ErrValidation)
+				return
+			}
+			p, _ := auth.PrincipalFromRequest(r)
+			started := false
+			err := store.WithLifecycleStatus(r.Context(), p, func(v accountstore.LifecycleStatus) error {
+				w.Header().Set("Content-Type", "application/json")
+				w.Header().Set("Cache-Control", "no-store")
+				started = true
+				return json.NewEncoder(w).Encode(v)
+			})
+			if err != nil && !started {
+				respond(w, nil, err)
+			}
+		})
 		routes.HandleFunc("GET /api/profile/export", func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.RawQuery != "" {
 				respond(w, nil, accountstore.ErrValidation)
@@ -91,6 +108,7 @@ func New(service *auth.Service, store *accountstore.Store) http.Handler {
 	mux.Handle("/api/profile/current", profile)
 	mux.Handle("/api/profile/operations/", profile)
 	mux.Handle("/api/deletion/", profile)
+	mux.Handle("/api/lifecycle/status", profile)
 	if service != nil && store != nil {
 		status := http.NewServeMux()
 		deletionRoutes(status, store)

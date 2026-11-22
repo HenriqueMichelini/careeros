@@ -29,7 +29,8 @@ export default function ProfileExport({ accountId }: { accountId: string }) {
       generation.current++;request.current?.abort();setBusy(false);setMessage("")
     }
     window.addEventListener("careeros-deletion-fence",deleted)
-    return()=>window.removeEventListener("careeros-deletion-fence",deleted)
+    window.addEventListener("careeros-career-read-denied",deleted)
+    return()=>{window.removeEventListener("careeros-deletion-fence",deleted);window.removeEventListener("careeros-career-read-denied",deleted)}
   },[accountId])
   async function download() {
     const lease = ++generation.current

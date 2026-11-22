@@ -86,13 +86,13 @@ func TestDeletionTablesRejectInheritedLedgerReaderPrivileges(t *testing.T) {
 	if err := store.Migrate(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	for _, table := range []string{"careeros_deletion_operations", "careeros_deleted_profiles", "careeros_deletion_status_sessions"} {
+	for _, table := range []string{"careeros_deletion_operations", "careeros_deleted_profiles", "careeros_deletion_status_sessions", "careeros_profile_pruning", "careeros_invitation_cleanup", "careeros_lifecycle_notices", "careeros_lifecycle_cleanup", "careeros_lifecycle_scan", "careeros_lifecycle_purpose_cleanup", "careeros_lifecycle_residuals", "careeros_lifecycle_residual_evidence"} {
 		var canRead bool
 		if err := db.QueryRow(`SELECT has_table_privilege($1,$2,'SELECT')`, child, table).Scan(&canRead); err != nil || canRead {
 			t.Fatal("inherited content/status capability", table, canRead, err)
 		}
 	}
-	for _, name := range []string{"careeros_account_closed", "careeros_deleted_profile_restored", "careeros_action_predates_deletion"} {
+	for _, name := range []string{"careeros_account_closed", "careeros_deleted_profile_restored", "careeros_action_predates_deletion", "careeros_invitation_denied"} {
 		var def, config string
 		var privileged, mutable bool
 		if err := db.QueryRow(`SELECT pg_get_functiondef(oid),array_to_string(proconfig,';'),prosecdef,provolatile<>'s' FROM pg_proc WHERE pronamespace=current_schema()::regnamespace AND proname=$1`, name).Scan(&def, &config, &privileged, &mutable); err != nil {

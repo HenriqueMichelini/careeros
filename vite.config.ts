@@ -11,6 +11,7 @@ function apiProxy() {
     '/api/profile/current',
     '/api/profile/operations',
     '/api/deletion',
+    '/api/lifecycle',
     '/api/cv/generate',
     '/api/profile/ingest',
     '/api/profile/review',

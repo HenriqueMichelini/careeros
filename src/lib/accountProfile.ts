@@ -40,6 +40,7 @@ function replyError(
 ): ProfileStorageError {
   if (status === 404) return new ProfileStorageError("not_found")
   if (status === 401) return new ProfileStorageError("authentication")
+  if (status === 403) return new ProfileStorageError("forbidden")
   if (body?.error === "account_changed")
     return new ProfileStorageError("account_changed")
   if (status === 409) return new ProfileStorageError("stale")
@@ -340,7 +341,7 @@ export function applyAccountRetention(
   )
   const referenced = new Set(
     next.links
-      .filter((l) => l.kind === "supports" && remaining.has(l.from.id))
+      .filter((l) => l.kind === "supports" && l.state === "active" && remaining.has(l.from.id) && next.facts.some(f => f.id === l.from.id && f.revision === l.from.revision))
       .map((l) => l.to.id),
   )
   next.evidence = next.evidence.filter(

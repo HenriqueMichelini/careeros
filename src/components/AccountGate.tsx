@@ -2,7 +2,10 @@ import { useEffect, useRef, useState, type ReactNode } from "react"
 import { AccountProfile, csrfHeaders } from "../lib/accountProfile"
 import { getInitialLocale } from "../lib/i18n"
 import PilotAccess from "./PilotAccess"
+import {readLifecycle} from "../lib/accountLifecycle"
+import {ProfileStorageError} from "../lib/profileStorage"
 import AccountDeletion, { deletionEvent, deletionSignalKey } from "./AccountDeletion"
+import AccountLifecycle from "./AccountLifecycle"
 import { StoreProvider } from "../lib/store"
 
 interface Session {
@@ -25,12 +28,15 @@ export default function AccountGate({
   const [checking, setChecking] = useState(true)
   const [logoutIntent, setLogoutIntent] = useState(false)
   const [deletionPending,setDeletionPending] = useState(false)
+  const [careerDenied,setCareerDenied] = useState(false)
+  const careerReadAllowed = useRef(!pilot)
   const clients = useRef(new Map<string, AccountProfile>())
   const current = useRef<AccountProfile | null>(null)
   const epoch = useRef(0)
   const pt = getInitialLocale() === "pt-BR"
   const probe = async () => {
     const ticket = ++epoch.current
+    careerReadAllowed.current=false
     // Hide while checking, retaining same-account unsaved work. Dispose before
     // displaying another account; never attach A's client or queue to B.
     setChecking(true)
@@ -59,9 +65,15 @@ export default function AccountGate({
         old?.forgetDeletedWork();clients.current.delete(value.account.id)
         window.dispatchEvent(new CustomEvent(deletionEvent,{detail:{accountId:value.account.id}}))
       }
+      let canRead=true
+      if(accountId&&pilot){canRead=(await readLifecycle(accountId)).careerReadAllowed}
+      if(ticket!==epoch.current)return
+      setCareerDenied(!canRead)
+      if(!canRead&&accountId)window.dispatchEvent(new CustomEvent("careeros-career-read-denied",{detail:{accountId}}))
       if(accountId&&current.current?.accountId===accountId){
+        if(ticket!==epoch.current)return
         const before=JSON.stringify(current.current.deletedProfileIds)
-        await current.current.open()
+        if(canRead){try{await current.current.open()}catch(e){if(e instanceof ProfileStorageError&&e.code==="forbidden"){canRead=false;setCareerDenied(true);window.dispatchEvent(new CustomEvent("careeros-career-read-denied",{detail:{accountId}}))}else throw e}}
         if(ticket!==epoch.current)return
         if(before!==JSON.stringify(current.current.deletedProfileIds)){
           window.dispatchEvent(new CustomEvent(deletionEvent,{detail:{accountId}}))
@@ -84,6 +96,7 @@ export default function AccountGate({
         current.current = next
         setClient(next)
       }
+      careerReadAllowed.current=canRead&&accountId!==null
       setChecking(false)
     } catch {
       if (ticket === epoch.current) {
@@ -162,7 +175,7 @@ export default function AccountGate({
     retained.hasRecovery(),
   )
   const downloadPending = () => {
-    if (!client) return
+    if (!client || !careerReadAllowed.current || careerDenied || checking) return
     const url = URL.createObjectURL(
       new Blob([JSON.stringify(client.recoveryExport(), null, 2)], {
         type: "application/json",
@@ -195,6 +208,7 @@ export default function AccountGate({
         retry={() => void probe()}
       />
       {!checking&&<AccountDeletion key={client.accountId} accountId={client.accountId} account={client} pt={pt} withhold={()=>setDeletionPending(true)}/>}
+      {!checking&&pilot&&<AccountLifecycle key={client.accountId} accountId={client.accountId} pt={pt} denied={()=>void probe()} expired={()=>window.dispatchEvent(new CustomEvent(deletionEvent,{detail:{accountId:client.accountId}}))}/>}
       <div hidden={checking||deletionPending}>
         <div className="flex items-center justify-between border-b px-4 py-2 text-sm">
           <span>
@@ -216,6 +230,7 @@ export default function AccountGate({
             pt={pt}
             error={error}
             download={downloadPending}
+            canDownload={!careerDenied&&!checking}
             keep={() => void logout()}
             discard={() => void logout(true)}
             cancel={() => setLogoutIntent(false)}
@@ -223,7 +238,7 @@ export default function AccountGate({
         )}
         <PilotFrame pilot={pilot} accountId={client.accountId} pt={pt}>
           <StoreProvider key={client.accountId} account={client}>
-            {children}
+            <div hidden={careerDenied}>{children}</div>
           </StoreProvider>
         </PilotFrame>
       </div>
@@ -302,6 +317,7 @@ function PendingLogout({
   pt,
   error,
   download,
+  canDownload,
   keep,
   discard,
   cancel,
@@ -309,6 +325,7 @@ function PendingLogout({
   pt: boolean
   error: boolean
   download: () => void
+  canDownload: boolean
   keep: () => void
   discard: () => void
   cancel: () => void
@@ -337,9 +354,10 @@ function PendingLogout({
           : "A Save is not confirmed. Keep or discard its recovery copy? Discarding does not undo a server Save."}
       </p>
       <div className="flex flex-wrap gap-4 py-2">
-        <button data-logout-download onClick={download}>
+        {canDownload&&<button data-logout-download onClick={download}>
           {pt ? "Baixar cópia de recuperação" : "Download recovery copy"}
-        </button>
+        </button>}
+        {!canDownload&&<p>{pt?"O download de recuperação fica oculto até que o acesso ao Perfil seja verificado.":"Recovery download is withheld until Profile access is verified."}</p>}
         <button data-logout-keep onClick={keep}>
           {pt
             ? "Sair e manter recuperação nesta aba"
