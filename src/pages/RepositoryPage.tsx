@@ -1,3 +1,4 @@
+import ProfileExport from "../components/ProfileExport"
 import { managedProfileReviewOwner } from "../lib/managedProfileReview"
 import SubmissionJourney from "../components/SubmissionJourney"
 import { profileFieldKey } from "../lib/profileLabels"
@@ -727,6 +728,7 @@ export default function RepositoryPage() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] gap-8 md:gap-12">
       {/* Sidebar nav */}
       <aside>
+        {accountId && <ProfileExport key={accountId} accountId={accountId} />}
         <p
           className="text-xs uppercase tracking-[0.25em] mb-5"
           style={{

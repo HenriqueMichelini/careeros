@@ -21,6 +21,26 @@ func New(service *auth.Service, store *accountstore.Store) http.Handler {
 	var profile http.Handler = auth.UnavailableHandler()
 	if service != nil && store != nil {
 		routes := http.NewServeMux()
+		routes.HandleFunc("GET /api/profile/export", func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.RawQuery != "" {
+				respond(w, nil, accountstore.ErrValidation)
+				return
+			}
+			p, _ := auth.PrincipalFromRequest(r)
+			started := false
+			err := store.WithProfileExport(r.Context(), p, func(raw []byte) error {
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				w.Header().Set("Content-Disposition", `attachment; filename="careeros-profile-v1.json"`)
+				w.Header().Set("Cache-Control", "no-store")
+				w.Header().Set("X-Content-Type-Options", "nosniff")
+				started = true
+				_, err := w.Write(raw)
+				return err
+			})
+			if err != nil && !started {
+				respond(w, nil, err)
+			}
+		})
 		routes.HandleFunc("GET /api/profile/current", func(w http.ResponseWriter, r *http.Request) {
 			p, _ := auth.PrincipalFromRequest(r)
 			result, err := store.ReadProfile(r.Context(), p, "")
@@ -66,6 +86,7 @@ func New(service *auth.Service, store *accountstore.Store) http.Handler {
 			routes.ServeHTTP(w, r)
 		}))
 	}
+	mux.Handle("/api/profile/export", profile)
 	mux.Handle("/api/profile/current", profile)
 	mux.Handle("/api/profile/operations/", profile)
 	return mux

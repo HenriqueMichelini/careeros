@@ -9,6 +9,17 @@ export type TranslationValue = string | number
 
 const messages = {
   en: {
+    "profile.export.download": "Download Profile JSON",
+    "profile.export.pending": "Preparing Profile download…",
+    "profile.export.description": "Includes your saved Profile and provenance. Unsaved edits are not included. Export is optional.",
+    "profile.export.started": "Download started. Check your browser’s downloads.",
+    "profile.export.authentication": "Sign in again before downloading your Profile.",
+    "profile.export.access": "Profile export is unavailable under your current access.",
+    "profile.export.missing": "There is no saved Profile to export.",
+    "profile.export.account_changed": "Your account changed. Refresh before downloading.",
+    "profile.export.unavailable": "Profile download could not start. Try again deliberately.",
+    "profile.export.format": "The Profile export version could not be read. No file was downloaded.",
+
     ...journeyMessages.en,
     ...accountMessages.en,
     "enrichment.savedAnswer": "Accepted application answer",
@@ -1140,6 +1151,17 @@ const messages = {
       "This cover letter exceeds one A4 page. Generate a shorter draft before saving it as PDF.",
   },
   "pt-BR": {
+    "profile.export.download": "Baixar Perfil em JSON",
+    "profile.export.pending": "Preparando o download do Perfil…",
+    "profile.export.description": "Inclui seu Perfil salvo e a proveniência. Edições não salvas não são incluídas. A exportação é opcional.",
+    "profile.export.started": "Download iniciado. Confira os downloads do navegador.",
+    "profile.export.authentication": "Entre novamente antes de baixar seu Perfil.",
+    "profile.export.access": "A exportação do Perfil está indisponível no seu acesso atual.",
+    "profile.export.missing": "Não há Perfil salvo para exportar.",
+    "profile.export.account_changed": "Sua conta mudou. Atualize antes de baixar.",
+    "profile.export.unavailable": "Não foi possível iniciar o download do Perfil. Tente novamente por sua escolha.",
+    "profile.export.format": "Não foi possível ler a versão da exportação do Perfil. Nenhum arquivo foi baixado.",
+
     ...journeyMessages["pt-BR"],
     ...accountMessages["pt-BR"],
     "enrichment.savedAnswer": "Resposta aceita da candidatura",

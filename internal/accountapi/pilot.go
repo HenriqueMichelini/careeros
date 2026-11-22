@@ -24,6 +24,7 @@ func NewPilot(service *auth.Service, store *accountstore.Store, workflows map[st
 	mux := http.NewServeMux()
 	profiles := New(service, store.PilotProfiles())
 	mux.Handle("/api/auth/", profiles)
+	mux.Handle("/api/profile/export", profiles)
 	mux.Handle("/api/profile/current", profiles)
 	mux.Handle("/api/profile/operations/", profiles)
 	pilot := http.NewServeMux()

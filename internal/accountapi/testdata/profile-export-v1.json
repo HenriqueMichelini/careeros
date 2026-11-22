@@ -1,0 +1,173 @@
+{
+  "version": 2,
+  "id": "perfil-ação😀",
+  "revision": 17,
+  "normalizationPolicy": "exact-alias-v1",
+  "entities": [
+    {
+      "id": "role-é",
+      "revision": 3,
+      "kind": "experience",
+      "legacyId": "original-职",
+      "order": 0
+    }
+  ],
+  "facts": [
+    {
+      "id": "name",
+      "revision": 4,
+      "owner": {
+        "profileId": "perfil-ação😀",
+        "id": "perfil-ação😀",
+        "revision": 17
+      },
+      "context": [],
+      "field": "fullName",
+      "order": 0,
+      "kind": "statement",
+      "value": "Érica é 😀",
+      "assertion": "affirmed",
+      "intent": "actual",
+      "certainty": "unknown",
+      "temporal": {
+        "wording": "talvez em 2020",
+        "precision": "unknown"
+      },
+      "normalization": {
+        "observed": "Javascript",
+        "canonical": null,
+        "policy": "exact-alias-v1"
+      },
+      "origin": {
+        "kind": "accepted_proposal",
+        "original": "unknown"
+      },
+      "approval": "approved",
+      "support": "unsupported"
+    },
+    {
+      "id": "career",
+      "revision": 4,
+      "owner": {
+        "profileId": "perfil-ação😀",
+        "id": "role-é",
+        "revision": 3
+      },
+      "context": [
+        {
+          "profileId": "perfil-ação😀",
+          "id": "role-é",
+          "revision": 3
+        }
+      ],
+      "field": "description",
+      "order": 1,
+      "kind": "statement",
+      "value": "Eu usei Java.",
+      "assertion": "affirmed",
+      "intent": "actual",
+      "certainty": "unknown",
+      "temporal": {
+        "wording": "talvez em 2020",
+        "precision": "unknown"
+      },
+      "normalization": {
+        "observed": "Javascript",
+        "canonical": null,
+        "policy": "exact-alias-v1"
+      },
+      "origin": {
+        "kind": "accepted_proposal",
+        "original": "unknown"
+      },
+      "approval": "approved",
+      "support": "supported"
+    },
+    {
+      "id": "opaque",
+      "revision": 4,
+      "owner": {
+        "profileId": "perfil-ação😀",
+        "id": "perfil-ação😀",
+        "revision": 17
+      },
+      "context": [],
+      "field": "futureOpaque",
+      "order": 2,
+      "kind": "statement",
+      "value": {
+        "precise": 9007199254740991,
+        "opaqueBeyondSafe": 9007199254740993,
+        "huge": 1e+308,
+        "tiny": 5e-324,
+        "unknown": null,
+        "terms": [
+          " unchanged ",
+          false
+        ],
+        "nested": {
+          "authorization": "career text, not a credential"
+        }
+      },
+      "assertion": "affirmed",
+      "intent": "actual",
+      "certainty": "unknown",
+      "temporal": {
+        "wording": "talvez em 2020",
+        "precision": "unknown"
+      },
+      "normalization": {
+        "observed": "Javascript",
+        "canonical": null,
+        "policy": "exact-alias-v1"
+      },
+      "origin": {
+        "kind": "accepted_proposal",
+        "original": "unknown"
+      },
+      "approval": "unreviewed",
+      "support": "unsupported"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "excerpt-1",
+      "revision": 2,
+      "excerpt": "  Eu usei Java.\n原文 é\u0000  ",
+      "origin": "field_submission",
+      "approval": "approved"
+    }
+  ],
+  "links": [
+    {
+      "id": "support-1",
+      "kind": "supports",
+      "from": {
+        "profileId": "perfil-ação😀",
+        "id": "career",
+        "revision": 4
+      },
+      "to": {
+        "profileId": "perfil-ação😀",
+        "id": "excerpt-1",
+        "revision": 2
+      },
+      "state": "active"
+    },
+    {
+      "id": "role-context",
+      "kind": "role_context",
+      "from": {
+        "profileId": "perfil-ação😀",
+        "id": "career",
+        "revision": 4
+      },
+      "to": {
+        "profileId": "perfil-ação😀",
+        "id": "role-é",
+        "revision": 3
+      },
+      "state": "active"
+    }
+  ]
+}

@@ -7,6 +7,7 @@ import path from 'node:path'
 
 function apiProxy() {
   return Object.fromEntries([
+    '/api/profile/export',
     '/api/profile/current',
     '/api/profile/operations',
     '/api/cv/generate',
