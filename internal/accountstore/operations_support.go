@@ -23,11 +23,12 @@ var ErrOperationsSpecialPurpose = errors.New("use the separately authorized purp
 // Intake accepts the necessary request and a deliberately minimized example.
 // The ingress adapter must omit attachments before calling this command.
 type OperationsCaseInput struct {
-	Purpose     string `json:"purpose"`
-	Locale      string `json:"locale"`
-	Message     string `json:"message"`
-	Example     string `json:"example,omitempty"`
-	ExampleKind string `json:"exampleKind,omitempty"`
+	Purpose     string    `json:"purpose"`
+	Locale      string    `json:"locale"`
+	Message     string    `json:"message"`
+	Example     string    `json:"example,omitempty"`
+	ExampleKind string    `json:"exampleKind,omitempty"`
+	ReceivedAt  time.Time `json:"receivedAt"`
 }
 
 type OperationsCase struct {
@@ -36,7 +37,7 @@ type OperationsCase struct {
 	Owner             string     `json:"owner"`
 	Status            string     `json:"status"`
 	Response          string     `json:"response,omitempty"`
-	ReceivedAt        time.Time  `json:"receivedAt"`
+	IntakeAt          time.Time  `json:"intakeAt"`
 	FirstResponseDue  time.Time  `json:"internalFirstResponseDue"`
 	NecessityReviewAt time.Time  `json:"necessityReviewAt"`
 	RespondedAt       *time.Time `json:"respondedAt,omitempty"`
@@ -112,16 +113,21 @@ func (o *Operations) CreateCase(ctx context.Context, p auth.Principal, input Ope
 		return c, unavailable(err)
 	}
 	now := o.journal.cfg.Clock().UTC()
+	received := input.ReceivedAt.UTC()
+	if received.IsZero() || received.After(now) {
+		return c, ErrValidation
+	}
+	input.ReceivedAt = received
 	if _, err = tx.ExecContext(ctx, `INSERT INTO careeros_operations_cases
-	  (id,purpose,locale,message,example,example_kind,received_at,review_at)
-	  VALUES($1,$2,$3,$4,$5,$6,$7,$8)`, id, input.Purpose, input.Locale, input.Message, input.Example, input.ExampleKind, now, now.Add(necessityDue)); err != nil {
+	  (id,purpose,locale,message,example,example_kind,received_at,intake_at,review_at)
+	  VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`, id, input.Purpose, input.Locale, input.Message, input.Example, input.ExampleKind, received, now, now.Add(necessityDue)); err != nil {
 		return c, unavailable(err)
 	}
 	if err = supportActor(ctx, tx, p, false); err != nil {
 		return c, err
 	}
 	c = OperationsCase{OperationsCaseInput: input, ID: id, Owner: o.cfg.Owner, Status: "received",
-		ReceivedAt: now, FirstResponseDue: now.Add(responseDue), NecessityReviewAt: now.Add(necessityDue)}
+		IntakeAt: now, FirstResponseDue: received.Add(responseDue), NecessityReviewAt: now.Add(necessityDue)}
 	return c, unavailable(tx.Commit())
 }
 
@@ -131,13 +137,13 @@ func (o *Operations) readCase(ctx context.Context, tx *sql.Tx, id string, held b
 		return c, ErrValidation
 	}
 	err := tx.QueryRowContext(ctx, `SELECT c.id,c.purpose,c.locale,c.message,c.example,c.example_kind,c.response,
-	  c.received_at,c.review_at,c.responded_at,c.closed_at FROM careeros_operations_cases c
+	  c.received_at,COALESCE(c.intake_at,c.received_at),c.review_at,c.responded_at,c.closed_at FROM careeros_operations_cases c
 	  WHERE c.id=$1 AND (CASE WHEN $3 THEN EXISTS(
 	    SELECT 1 FROM careeros_operations_case_holds h WHERE h.case_id=c.id AND h.retired_at IS NULL)
 	    ELSE c.closed_at IS NULL OR c.closed_at>$2 END) FOR UPDATE`,
 		id, o.journal.cfg.Clock().UTC().Add(-casesTTL), held).Scan(
 		&c.ID, &c.Purpose, &c.Locale, &c.Message, &c.Example, &c.ExampleKind, &c.Response,
-		&c.ReceivedAt, &c.NecessityReviewAt, &c.RespondedAt, &c.ClosedAt)
+		&c.ReceivedAt, &c.IntakeAt, &c.NecessityReviewAt, &c.RespondedAt, &c.ClosedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return c, ErrNotFound
 	}
@@ -147,7 +153,7 @@ func (o *Operations) readCase(ctx context.Context, tx *sql.Tx, id string, held b
 	if !held && c.ClosedAt != nil && !o.journal.cfg.Clock().UTC().Before(c.ClosedAt.Add(casesTTL)) {
 		return OperationsCase{}, ErrNotFound
 	}
-	c.ReceivedAt, c.NecessityReviewAt = c.ReceivedAt.UTC(), c.NecessityReviewAt.UTC()
+	c.ReceivedAt, c.IntakeAt, c.NecessityReviewAt = c.ReceivedAt.UTC(), c.IntakeAt.UTC(), c.NecessityReviewAt.UTC()
 	c.Owner, c.Status, c.FirstResponseDue = o.cfg.Owner, "received", c.ReceivedAt.Add(responseDue)
 	if c.RespondedAt != nil {
 		at := c.RespondedAt.UTC()

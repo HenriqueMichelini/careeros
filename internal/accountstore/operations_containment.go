@@ -23,26 +23,39 @@ const (
 // ObserveFault is for the explicitly composed local runtime observer. Expected
 // sign-in denial and normal grant expiry/exhaustion are not accepted faults.
 func (o *Operations) ObserveFault(ctx context.Context, fault OperationsFault) error {
-	if err := o.journal.recordFault(ctx, fault); err != nil {
-		return err
-	}
 	// Both actions are attempted even when the primary authority is unavailable.
 	replay, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
 	defer cancel()
-	deliveryErr := o.Deliver(replay)
-	return errors.Join(deliveryErr, o.synchronizeContainment(replay))
+	created, err := o.journal.recordFault(replay, fault)
+	if err != nil {
+		if errors.Is(err, ErrValidation) {
+			return err
+		}
+		return errors.Join(err, o.synchronizeEmergencyStop(replay))
+	}
+	deliveryCtx, deliveryCancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
+	defer deliveryCancel()
+	deliveryErr := o.Deliver(deliveryCtx)
+	persistenceCtx, persistenceCancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
+	defer persistenceCancel()
+	if created {
+		// Diagnostics have their own ordinary TTL. The restricted incident
+		// remains durable when the diagnostic database cannot be reached.
+		_ = o.RecordDiagnostic(persistenceCtx, fault)
+	}
+	return errors.Join(deliveryErr, o.synchronizeContainment(persistenceCtx))
 }
 
 // SignalOfflineFault is an independently owned local observer command. A
 // registered protected path checks this journal until the SQL stop is replayed.
 func (j *OperationsJournal) SignalOfflineFault(ctx context.Context, fault OperationsFault) error {
-	if err := j.recordFault(ctx, fault); err != nil {
+	if _, err := j.recordFault(ctx, fault); err != nil {
 		return err
 	}
 	return j.deliver(ctx)
 }
 
-func (j *OperationsJournal) recordFault(ctx context.Context, fault OperationsFault) error {
+func (j *OperationsJournal) recordFault(ctx context.Context, fault OperationsFault) (bool, error) {
 	var response string
 	switch fault {
 	case OperationsDatabaseFault, OperationsAuthorityFault, OperationsControlFault:
@@ -54,11 +67,22 @@ func (j *OperationsJournal) recordFault(ctx context.Context, fault OperationsFau
 	case OperationsBackupFault:
 		response = "pause_inference_and_review_declared_backup_failure"
 	default:
-		return ErrValidation
+		return false, ErrValidation
 	}
 	incident := OperationsIncident{Kind: string(fault), EventAt: j.cfg.Clock().UTC(),
 		Severity: "critical", Owner: "Henrique", Response: response, State: "unacknowledged"}
-	return j.record(ctx, "fault/"+string(fault), incident)
+	var created bool
+	err := j.containmentTransaction(ctx, func(state *operationsJournalState) error {
+		created = j.upsert(state, "fault/"+string(fault), incident, true)
+		switch fault {
+		case OperationsDatabaseFault, OperationsAuthorityFault:
+			state.Persistence = "unavailable_at_observation"
+		case OperationsBackupFault:
+			state.Backup = "declared_failure"
+		}
+		return nil
+	})
+	return created, err
 }
 
 type containment struct {
@@ -72,7 +96,7 @@ func operationsStop(record operationsJournalRecord, now time.Time) (stop, invita
 		return false, false
 	}
 	switch record.Incident.Kind {
-	case "provider_fault", "backup_fault", "maximum_breach", "spend_breach":
+	case "provider_fault", "backup_fault", "maximum_breach", "invariant_breach", "spend_breach":
 		return true, false
 	case "database_fault", "authority_fault", "control_fault", "auth_fault", "operator_absence":
 		return true, true
@@ -85,6 +109,14 @@ func operationsStop(record operationsJournalRecord, now time.Time) (stop, invita
 // ReviewIncident records the named operations owner's acknowledgment or
 // resolution. The separate #290 control still requires verified reopening.
 func (o *Operations) ReviewIncident(ctx context.Context, p auth.Principal, id string, revision int, resolve bool) error {
+	return o.reviewIncident(ctx, p, id, revision, resolve, "")
+}
+
+func (o *Operations) ResolveIncident(ctx context.Context, p auth.Principal, id string, revision int, recovery string) error {
+	return o.reviewIncident(ctx, p, id, revision, true, recovery)
+}
+
+func (o *Operations) reviewIncident(ctx context.Context, p auth.Principal, id string, revision int, resolve bool, recovery string) error {
 	if len(id) != 64 || !validOperation(id) || revision <= 0 {
 		return ErrValidation
 	}
@@ -109,6 +141,29 @@ func (o *Operations) ReviewIncident(ctx context.Context, p auth.Principal, id st
 		}
 		if record.Incident.State == "resolved" {
 			return nil
+		}
+		if resolve {
+			switch record.Incident.Kind {
+			case "backup_fault":
+				if o.cfg.VerifyBackupRecovery == nil || !validOperation(recovery) {
+					return auth.ErrForbidden
+				}
+				proof, err := o.cfg.VerifyBackupRecovery(ctx, recovery, record.Incident)
+				if err != nil || proof.Before(record.Incident.EventAt) || proof.After(o.journal.cfg.Clock().UTC()) {
+					return auth.ErrForbidden
+				}
+				proof = proof.UTC()
+				record.RecoveryAt = &proof
+				record.RecoveryBinding = o.journal.binding([]byte("recovery\x00" + id + "\x00" + recovery))
+				state.Backup = "verified_recovery"
+			case "operator_absence":
+				if record.AbsenceUntil.IsZero() || o.journal.cfg.Clock().UTC().Before(record.AbsenceUntil) {
+					return auth.ErrForbidden
+				}
+			}
+			if err := operationsActor(ctx, tx, p, "owner"); err != nil {
+				return err
+			}
 		}
 		stop, invitations := operationsStop(record, o.journal.cfg.Clock().UTC())
 		if stop {
@@ -145,6 +200,10 @@ func (o *Operations) HoldProtected(ctx context.Context, control string) (func(),
 	if err != nil {
 		return nil, auth.ErrUnavailable
 	}
+	if err = o.journal.checkFence(); err != nil {
+		unlock()
+		return nil, err
+	}
 	state, err := o.journal.read()
 	if err == nil {
 		now := o.journal.cfg.Clock().UTC()
@@ -179,6 +238,9 @@ func (s *Store) holdOperations(ctx context.Context, required bool, control strin
 func (o *Operations) synchronizeContainment(ctx context.Context) error {
 	var pending []containment
 	err := o.journal.transaction(ctx, true, func(state *operationsJournalState) error {
+		if err := o.journal.checkFence(); err != nil {
+			return err
+		}
 		for id, record := range state.Records {
 			if stop, invitation := operationsStop(record, o.journal.cfg.Clock().UTC()); stop {
 				record.Contained = true
@@ -188,7 +250,10 @@ func (o *Operations) synchronizeContainment(ctx context.Context) error {
 		}
 		return nil
 	})
-	if err != nil || len(pending) == 0 {
+	if err != nil {
+		return errors.Join(err, o.synchronizeEmergencyStop(ctx))
+	}
+	if len(pending) == 0 {
 		return err
 	}
 	tx, err := o.store.db.BeginTx(ctx, nil)
@@ -203,6 +268,24 @@ func (o *Operations) synchronizeContainment(ctx context.Context) error {
 		if err := applyOperationsContainment(ctx, tx, event); err != nil {
 			return err
 		}
+	}
+	return unavailable(tx.Commit())
+}
+
+func (o *Operations) synchronizeEmergencyStop(ctx context.Context) error {
+	replay, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
+	defer cancel()
+	tx, err := o.store.db.BeginTx(replay, nil)
+	if err != nil {
+		return unavailable(err)
+	}
+	defer tx.Rollback()
+	if _, err = tx.ExecContext(replay, "SELECT pg_advisory_xact_lock($1)", controlFence); err != nil {
+		return unavailable(err)
+	}
+	event := containment{o.journal.binding([]byte("operations_persistence_unavailable")), 1, true}
+	if err = applyOperationsContainment(replay, tx, event); err != nil {
+		return err
 	}
 	return unavailable(tx.Commit())
 }

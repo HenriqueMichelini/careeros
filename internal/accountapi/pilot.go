@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -136,13 +137,14 @@ func pilotAccount(next http.Handler) http.Handler {
 	})
 }
 func protectPilotWorkflow(service *auth.Service, store *accountstore.Store, right accountstore.PilotRight, next http.Handler) http.Handler {
-	return service.Protect(pilotAccount(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	guarded := pilotAccount(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
 		p, _ := auth.PrincipalFromRequest(r)
 		if err := store.AuthorizePilot(r.Context(), p, right); err != nil {
+			observePilotAuthority(store, r, err)
 			respond(w, nil, err)
 			return
 		}
@@ -150,6 +152,7 @@ func protectPilotWorkflow(service *auth.Service, store *accountstore.Store, righ
 		result := httptest.NewRecorder()
 		next.ServeHTTP(result, r)
 		if err := store.AuthorizePilot(r.Context(), p, right); err != nil {
+			observePilotAuthority(store, r, err)
 			respond(w, nil, err)
 			return
 		}
@@ -164,7 +167,34 @@ func protectPilotWorkflow(service *auth.Service, store *accountstore.Store, righ
 			return err
 		})
 		if err != nil && !started {
+			observePilotAuthority(store, r, err)
 			workflowError(w, http.StatusServiceUnavailable, "managed_result_unavailable")
 		}
-	})))
+	}))
+	unobserved := service.Protect(guarded)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ops := store.LocalOperationsObserver()
+		if ops == nil {
+			unobserved.ServeHTTP(w, r)
+			return
+		}
+		entered := false
+		response := &operationsResponse{ResponseWriter: w}
+		service.Protect(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			entered = true
+			guarded.ServeHTTP(w, r)
+		})).ServeHTTP(response, r)
+		if !entered && response.failure && r.Context().Err() == nil {
+			_ = ops.ObserveFault(r.Context(), accountstore.OperationsAuthFault)
+		}
+	})
+}
+
+func observePilotAuthority(store *accountstore.Store, r *http.Request, err error) {
+	if !errors.Is(err, auth.ErrUnavailable) || r.Context().Err() != nil {
+		return
+	}
+	if ops := store.LocalOperationsObserver(); ops != nil {
+		_ = ops.ObserveFault(r.Context(), accountstore.OperationsAuthorityFault)
+	}
 }

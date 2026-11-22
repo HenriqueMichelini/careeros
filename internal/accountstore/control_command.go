@@ -104,6 +104,9 @@ func (c *OperatorControls) Apply(ctx context.Context, p auth.Principal, operatio
 			return ControlStatus{}, ErrConflict
 		}
 		if command.Control != "compromise" {
+			if current.operationsFault {
+				return ControlStatus{}, auth.ErrForbidden
+			}
 			release, err := c.store.holdOperations(ctx, current.operationsRequired, command.Control)
 			if err != nil {
 				return ControlStatus{}, err

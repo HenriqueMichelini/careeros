@@ -1,0 +1,100 @@
+{
+  "base": "83ad26ccb471851460efc253831905461586b1f4",
+  "local_synthetic_only": true,
+  "runtime": [
+    {
+      "path": "cmd/pilot-operations-local/main.go",
+      "git_blob": "3c858b32519282340079e095ece302a496358617",
+      "sha256": "042d43a87e93527dfb208f27a91d97ebebe735b37189dbf85bbd2504cfa89317"
+    },
+    {
+      "path": "internal/accountapi/pilot.go",
+      "git_blob": "a1d8c6cabb3fbb0017f7f4849b57651cb2b20f5c",
+      "sha256": "5168735b940cfeac65b6da61f7978d0ac519482044dc941d5ac33178c4c36a96"
+    },
+    {
+      "path": "internal/accountstore/control_command.go",
+      "git_blob": "f22be42ebe94591bc99702838990eb467c530069",
+      "sha256": "186b07e5b1893f0c031c773dcf8e2adfb890ddddabd928ba6a6077f22125f42d"
+    },
+    {
+      "path": "internal/accountstore/controls.go",
+      "git_blob": "40f6456ee1150addb0f4ccf3efe159cedf7f69fa",
+      "sha256": "1ea63838699c43e6cdef8ccb8446881849c4ded3be08a894255f913208fe55be"
+    },
+    {
+      "path": "internal/accountstore/operations.go",
+      "git_blob": "5edaef835ffdfc23fb2bc7cb195aa950662c0011",
+      "sha256": "2202c72c70fbeffa889ac6e324a3e0724541dda230be0199bb4d2bc6a48d3915"
+    },
+    {
+      "path": "internal/accountstore/operations_containment.go",
+      "git_blob": "1e00491b744311b410674c6edf79e7afaf5922a6",
+      "sha256": "fe02aeff2abab4f4f74f2f02fc9bfa596f609e423e25bd7819a7122f7c7e5250"
+    },
+    {
+      "path": "internal/accountstore/operations_journal.go",
+      "git_blob": "936cd35026f0d2986806c55458b5457a3248ef00",
+      "sha256": "504fd89f2a2d649ac7cf0892a5d2b580149d7d32213d7325624cce06267eead7"
+    },
+    {
+      "path": "internal/accountstore/operations_status.go",
+      "git_blob": "6c856cfa7ee361f6f7dd26458248892988b7dabb",
+      "sha256": "fb5811947ad980ab98bf897ac60489fcdc8ab1e0d61f682579e060c8923b2c47"
+    },
+    {
+      "path": "internal/accountstore/operations_support.go",
+      "git_blob": "1a12bf6053d1f4175b2ba8b7362396fb787f55e4",
+      "sha256": "cc5e7ba83eab4d0d33d42355517cf1eccc29aab9db67eceebb067657440103a4"
+    },
+    {
+      "path": "internal/accountstore/schema.sql",
+      "git_blob": "b97cf5795d1dd6c8355bf17f60dae238bf537409",
+      "sha256": "2559ae4d2d8bc1e654fdbf604c133aec3ce1911e6a2ab14510a9afb70541caf9"
+    },
+    {
+      "path": "internal/aicontrol/dispatch.go",
+      "git_blob": "6e731ba57fa73f3ef5560c3475a72f6913ed1a1c",
+      "sha256": "5d39b9408d057dfd65145685934481b21ceb4ea29b348a47632c42e84a9eed8e"
+    },
+    {
+      "path": "internal/aicontrol/operations.go",
+      "git_blob": "8890a307a6102a5b5d7c8f9e0c696934d83d8155",
+      "sha256": "2896117dccad124b1e47370cbe2fdcc7545987fe7e185cfe21547a09bcee6cc1"
+    },
+    {
+      "path": "internal/aicontrol/reconciliation.go",
+      "git_blob": "cfa325630e9c9d3d339b9019996165644ea79aaa",
+      "sha256": "63f4fac098f9d4fc7af193497ace8f8e72b64d87053672ccf4b7b7ffafc41916"
+    },
+    {
+      "path": "internal/aicontrol/reconciliation_rates.go",
+      "git_blob": "229a5b8f5c7c892224116bd2996612181a6846b2",
+      "sha256": "1cf1b16a03e6c87e54d625ba03b92eef31865eae89b436aa70a6c55fff263182"
+    },
+    {
+      "path": "internal/aicontrol/roles.go",
+      "git_blob": "0f6f240f9930aea52d4c2eb57cb85b6946a724a0",
+      "sha256": "553f3a56872a657c5eeb97eb46fbaa416d01a76be638f0a8704e08c26f0df4f5"
+    },
+    {
+      "path": "internal/aicontrol/types.go",
+      "git_blob": "eb221c48f7260574efc17aa380ff67fe0cfffdcb",
+      "sha256": "df23a49bd09157bc34cd4899433fb75fce38d3f9217f63ee7be1614ca0268462"
+    }
+  ],
+  "fixtures": [
+    {
+      "path": "internal/accountapi/pilot_operations_test.go",
+      "git_blob": "5615eb084c5bddeb02bfdfe1f2c46f6eb6d086a3",
+      "sha256": "198f1e15a2e32cae8234c54f24dd1b01dee5db1a0ab29170107702f9cf278c01"
+    }
+  ],
+  "contracts": [
+    {
+      "path": "docs/managed-pilot-operations-local.md",
+      "git_blob": "92425c29b11d9ddd72ef467eb7288bd70d8514fe",
+      "sha256": "e28b2796884f3980e15404d36529f6d19b59a5e4637c2cb53143bc63de38b974"
+    }
+  ]
+}

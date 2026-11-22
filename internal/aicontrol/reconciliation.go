@@ -150,7 +150,7 @@ func (r *Reconciliation) digest(actor, purpose string, value any) string {
 	m.Write(raw)
 	return hex.EncodeToString(m.Sum(nil))
 }
-func (r *Reconciliation) begin(ctx context.Context, p auth.Principal, id string) (*sql.Tx, Dispatch, int64, error) {
+func (r *Reconciliation) begin(ctx context.Context, p auth.Principal, id string, apply bool) (*sql.Tx, Dispatch, int64, error) {
 	if r == nil || r.h == nil || r.h.reviewerDB == nil || !tokenLabel.MatchString(id) {
 		return nil, Dispatch{}, 0, ErrDenied
 	}
@@ -159,6 +159,17 @@ func (r *Reconciliation) begin(ctx context.Context, p auth.Principal, id string)
 		return nil, Dispatch{}, 0, ErrUnavailable
 	}
 	fail := func(e error) (*sql.Tx, Dispatch, int64, error) { tx.Rollback(); return nil, Dispatch{}, 0, e }
+	if apply {
+		var enrolled bool
+		if tx.QueryRowContext(ctx, `SELECT careeros_operations_required()`).Scan(&enrolled) != nil {
+			return fail(ErrUnavailable)
+		}
+		if enrolled {
+			if err = accountstore.LockControlStopTransaction(ctx, tx); err != nil {
+				return fail(err)
+			}
+		}
+	}
 	if !r.observer {
 		if err = accountstore.AuthorizeTransaction(ctx, tx, p); err != nil {
 			return fail(err)
@@ -411,7 +422,7 @@ func (r *Reconciliation) Preview(ctx context.Context, p auth.Principal, c Reconc
 	if err != nil {
 		return ReconciliationPreview{}, err
 	}
-	tx, d, v, err := r.begin(ctx, p, c.Dispatch)
+	tx, d, v, err := r.begin(ctx, p, c.Dispatch, false)
 	if err != nil {
 		return ReconciliationPreview{}, err
 	}
@@ -445,7 +456,7 @@ func (r *Reconciliation) Apply(ctx context.Context, p auth.Principal, c Reconcil
 	if err != nil {
 		return ReconciliationPreview{}, err
 	}
-	tx, d, v, err := r.begin(ctx, p, c.Dispatch)
+	tx, d, v, err := r.begin(ctx, p, c.Dispatch, true)
 	if err != nil {
 		return ReconciliationPreview{}, err
 	}
@@ -551,7 +562,8 @@ func (r *Reconciliation) Apply(ctx context.Context, p auth.Principal, c Reconcil
 			return result, ErrUnavailable
 		}
 	}
-	if (result.After > d.Maximum && (!d.MaximumBreached || result.After > d.Counted)) || c.Kind == "unpriced" {
+	breach := (result.After > d.Maximum && (!d.MaximumBreached || result.After > d.Counted)) || c.Kind == "unpriced"
+	if breach {
 		contract := e.Provider + "/" + e.Model + "/" + e.Tier + "/" + e.Rate + "/" + e.Currency
 		if _, err = tx.ExecContext(ctx, `INSERT INTO ai_recon_event(namespace,id,dispatch,contract,obligation,reserved) VALUES($1,$2,$3,$4,$5,$6)`, r.h.cfg.Namespace, c.ID, d.ID, contract, result.After, d.Maximum); err != nil {
 			return result, ErrUnavailable
@@ -566,8 +578,37 @@ func (r *Reconciliation) Apply(ctx context.Context, p auth.Principal, c Reconcil
 	if err = r.authorize(ctx, tx, p); err != nil {
 		return result, err
 	}
+	var extra *accountstore.OperationsRiskEvent
+	if c.Kind == "unpriced" || breach && d.MaximumBreached {
+		kind := "maximum_breach"
+		if c.Kind == "unpriced" {
+			kind = "invariant_breach"
+		}
+		extra = &accountstore.OperationsRiskEvent{Key: r.digest("operations", "reconciliation", c.ID), Kind: kind,
+			Policy: e.Rate, Exposure: result.After, Maximum: d.Maximum}
+	}
+	// Observation failure must never roll back a recorded financial obligation.
+	if _, err = tx.ExecContext(ctx, "SAVEPOINT operations_observation"); err != nil {
+		return result, ErrUnavailable
+	}
+	staged, observeErr := r.h.stageOperations(ctx, tx, extra)
+	if observeErr != nil {
+		if _, err = tx.ExecContext(ctx, "ROLLBACK TO SAVEPOINT operations_observation"); err != nil {
+			return result, ErrUnavailable
+		}
+		if staged {
+			if _, err = tx.ExecContext(ctx, "SELECT careeros_operations_fault_stop()"); err != nil {
+				return result, ErrUnavailable
+			}
+		}
+	}
 	if err = tx.Commit(); err != nil {
 		return result, ErrUnavailable
+	}
+	if observeErr != nil {
+		_ = r.h.observeAuthorityFault(ctx, accountstore.OperationsAuthorityFault, observeErr)
+	} else if staged {
+		_ = r.h.deliverOperations(ctx)
 	}
 	if err = r.h.fault("after_reconciliation_commit"); err != nil {
 		return result, err
@@ -575,7 +616,7 @@ func (r *Reconciliation) Apply(ctx context.Context, p auth.Principal, c Reconcil
 	return result, nil
 }
 func (r *Reconciliation) Status(ctx context.Context, p auth.Principal, id string) (ReconciliationStatus, error) {
-	tx, d, v, err := r.begin(ctx, p, id)
+	tx, d, v, err := r.begin(ctx, p, id, false)
 	if err != nil {
 		return ReconciliationStatus{}, err
 	}

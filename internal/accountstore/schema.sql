@@ -238,6 +238,7 @@ CREATE TABLE IF NOT EXISTS careeros_control_state (
 ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS inference_epoch bigint NOT NULL DEFAULT 1 CHECK(inference_epoch>0);
 ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS system_generation bigint NOT NULL DEFAULT 1 CHECK(system_generation>0);
 ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS operations_binding text NOT NULL DEFAULT '';
+ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS operations_fault boolean NOT NULL DEFAULT false;
 INSERT INTO careeros_control_state(singleton) VALUES(true) ON CONFLICT DO NOTHING;
 CREATE TABLE IF NOT EXISTS careeros_control_operators (
  account_id text PRIMARY KEY REFERENCES careeros_accounts(id),
@@ -275,7 +276,7 @@ BEGIN
  EXECUTE format($definition$
  CREATE OR REPLACE FUNCTION %1$I.careeros_inference_allowed() RETURNS boolean
  LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $allowed$
- SELECT COALESCE((SELECT initialized AND NOT inference_stopped FROM %1$I.careeros_control_state WHERE singleton),false)
+ SELECT COALESCE((SELECT initialized AND NOT inference_stopped AND NOT operations_fault FROM %1$I.careeros_control_state WHERE singleton),false)
  $allowed$;
  CREATE OR REPLACE FUNCTION %1$I.careeros_current_inference_epoch() RETURNS bigint
  LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $epoch$
@@ -285,6 +286,13 @@ BEGIN
  LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $required$
  SELECT COALESCE((SELECT operations_binding<>'' FROM %1$I.careeros_control_state WHERE singleton),true)
  $required$;
+ CREATE OR REPLACE FUNCTION %1$I.careeros_operations_fault_stop() RETURNS void
+ LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $fault_stop$
+ UPDATE %1$I.careeros_control_state SET operations_fault=true,invitation_stopped=true,inference_stopped=true,
+ version=version+1,inference_epoch=inference_epoch+1,changed_at=clock_timestamp()
+ WHERE singleton AND operations_binding<>'' AND NOT operations_fault
+ AND version<9223372036854775807 AND inference_epoch<9223372036854775807
+ $fault_stop$;
  CREATE OR REPLACE FUNCTION %1$I.careeros_control_account_denied(owner_id text) RETURNS boolean
  LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $denied$
  SELECT NOT EXISTS(SELECT 1 FROM %1$I.careeros_control_state WHERE singleton)
@@ -294,6 +302,7 @@ BEGIN
  REVOKE ALL ON FUNCTION %1$I.careeros_inference_allowed() FROM PUBLIC;
  REVOKE ALL ON FUNCTION %1$I.careeros_current_inference_epoch() FROM PUBLIC;
  REVOKE ALL ON FUNCTION %1$I.careeros_operations_required() FROM PUBLIC;
+ REVOKE ALL ON FUNCTION %1$I.careeros_operations_fault_stop() FROM PUBLIC;
  REVOKE ALL ON FUNCTION %1$I.careeros_control_account_denied(text) FROM PUBLIC;
  $definition$,owning_schema);
  FOR denied IN
@@ -322,6 +331,11 @@ CREATE TABLE IF NOT EXISTS careeros_operations_containment (
  PRIMARY KEY(incident_id,incident_revision)
 );
 REVOKE ALL ON careeros_operations_containment FROM PUBLIC;
+ALTER TABLE careeros_operations_containment ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT clock_timestamp();
+CREATE TABLE IF NOT EXISTS careeros_operations_pending (
+ id bigserial PRIMARY KEY, namespace text NOT NULL, sample bytea NOT NULL
+);
+REVOKE ALL ON careeros_operations_pending FROM PUBLIC;
 CREATE TABLE IF NOT EXISTS careeros_operations_cases (
  id text PRIMARY KEY, purpose text NOT NULL, locale text NOT NULL,
  message text NOT NULL, example text NOT NULL, example_kind text NOT NULL,
@@ -332,6 +346,7 @@ CREATE TABLE IF NOT EXISTS careeros_operations_case_holds (
  case_id text PRIMARY KEY REFERENCES careeros_operations_cases(id) ON DELETE CASCADE,
  purpose text NOT NULL, review_at timestamptz NOT NULL, retired_at timestamptz
 );
+ALTER TABLE careeros_operations_cases ADD COLUMN IF NOT EXISTS intake_at timestamptz;
 CREATE TABLE IF NOT EXISTS careeros_operations_diagnostics (
  id text PRIMARY KEY, kind text NOT NULL, build text NOT NULL, event_at timestamptz NOT NULL
 );

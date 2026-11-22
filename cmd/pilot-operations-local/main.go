@@ -25,6 +25,7 @@ type options struct {
 	action, kind, impact, state, at, listen, subject, role, id string
 	revision                                                   int
 	synthetic                                                  bool
+	reference                                                  string
 }
 
 func main() {
@@ -40,6 +41,7 @@ func main() {
 	flag.StringVar(&o.role, "role", "", "owner or support for bootstrap")
 	flag.StringVar(&o.id, "id", "", "incident, case or verified recovery reference")
 	flag.IntVar(&o.revision, "revision", 0, "incident revision")
+	flag.StringVar(&o.reference, "reference", "", "independently verified recovery reference")
 	flag.Parse()
 	if err := run(o); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -99,7 +101,24 @@ func run(o options) error {
 	if o.action == "fault" {
 		return journal.SignalOfflineFault(ctx, accountstore.OperationsFault(o.kind))
 	}
+	if o.action == "offline-status" {
+		key, err := offlineOwnerKey()
+		if err != nil {
+			return err
+		}
+		return journal.WithOfflineOwnerStatus(ctx, key, func(s accountstore.OperationsStatus) error { return json.NewEncoder(os.Stdout).Encode(s) })
+	}
 	return runDatabase(ctx, o, journal)
+}
+
+func offlineOwnerKey() ([32]byte, error) {
+	var key [32]byte
+	raw, err := hex.DecodeString(os.Getenv("CAREEROS_OPERATIONS_OFFLINE_OWNER_KEY"))
+	if err != nil || len(raw) != len(key) {
+		return key, auth.ErrForbidden
+	}
+	copy(key[:], raw)
+	return key, nil
 }
 
 func runDatabase(ctx context.Context, o options, journal *accountstore.OperationsJournal) error {
@@ -151,6 +170,12 @@ func runDatabase(ctx context.Context, o options, journal *accountstore.Operation
 	}
 	out := json.NewEncoder(os.Stdout)
 	switch o.action {
+	case "offline-setup":
+		key, err := offlineOwnerKey()
+		if err != nil {
+			return err
+		}
+		return ops.ProvisionOfflineOwner(ctx, p, key)
 	case "status", "inspect":
 		if o.action == "inspect" {
 			if _, err = ops.OwnerStatus(ctx, p); err != nil {
@@ -162,7 +187,12 @@ func runDatabase(ctx context.Context, o options, journal *accountstore.Operation
 		}
 		return ops.WithOwnerStatus(ctx, p, func(s accountstore.OperationsStatus) error { return out.Encode(s) })
 	case "ack", "resolve":
-		if err = ops.ReviewIncident(ctx, p, o.id, o.revision, o.action == "resolve"); err != nil {
+		if o.action == "resolve" {
+			err = ops.ResolveIncident(ctx, p, o.id, o.revision, o.reference)
+		} else {
+			err = ops.ReviewIncident(ctx, p, o.id, o.revision, false)
+		}
+		if err != nil {
 			return err
 		}
 		return ops.Deliver(ctx)

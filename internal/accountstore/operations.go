@@ -2,6 +2,7 @@ package accountstore
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"errors"
 	"strings"
@@ -53,7 +54,13 @@ type OperationsFigures struct {
 	LocalActiveActions   int64     `json:"localActiveActions"`
 	ExhaustedDraftGrants int64     `json:"exhaustedDraftGrants"`
 }
-type OperationsConfig struct{ Build, Owner string }
+type OperationsConfig struct {
+	Build, Owner string
+	// The registered drill verifier checks the referenced backup recovery
+	// observation for this exact incident. A label alone grants no authority.
+	VerifyBackupRecovery func(context.Context, string, OperationsIncident) (time.Time, error)
+	VerifyPreparedCover  func(context.Context, OperationsAbsence) error
+}
 
 type OperationsIncident struct {
 	ID        string    `json:"id"`
@@ -73,10 +80,11 @@ type OperationsIncident struct {
 	Delivery  string    `json:"delivery"`
 }
 type OperationsStatus struct {
-	Incidents   []OperationsIncident `json:"incidents"`
-	Figures     *OperationsFigures   `json:"figures,omitempty"`
-	Persistence string               `json:"persistence"`
-	Backup      string               `json:"backup"`
+	Incidents              []OperationsIncident `json:"incidents"`
+	Figures                *OperationsFigures   `json:"figures,omitempty"`
+	Persistence            string               `json:"persistence"`
+	Backup                 string               `json:"backup"`
+	ContainmentUnavailable bool                 `json:"containmentUnavailable"`
 }
 
 type Operations struct {
@@ -143,10 +151,53 @@ func (o *Operations) Inspect(ctx context.Context) error {
 	if err = o.observeDraftGrants(ctx, &sample.Figures); err != nil {
 		return errors.Join(err, o.ObserveFault(context.WithoutCancel(ctx), OperationsAuthorityFault))
 	}
-	if err = o.recordSample(ctx, sample); err != nil {
+	if err = o.DrainCommittedRisk(ctx); err != nil {
 		return err
 	}
+	return o.ObserveCommittedRisk(ctx, sample)
+}
+
+func (o *Operations) DrainCommittedRisk(ctx context.Context) error {
+	source, ok := o.source.(interface {
+		DrainOperations(context.Context, func(OperationsRiskSample) error) error
+	})
+	if !ok {
+		return nil
+	}
+	err := source.DrainOperations(ctx, func(sample OperationsRiskSample) error { return o.ObserveCommittedRisk(ctx, sample) })
+	if err != nil {
+		return errors.Join(err, o.ObserveFault(ctx, OperationsAuthorityFault))
+	}
+	return nil
+}
+
+func (o *Operations) ObserveCommittedRisk(ctx context.Context, sample OperationsRiskSample) error {
+	if !sample.Complete || sample.At.IsZero() || !validOperation(sample.Namespace) {
+		return errors.Join(auth.ErrUnavailable, o.ObserveFault(ctx, OperationsAuthorityFault))
+	}
+	if err := o.recordSample(ctx, sample); err != nil {
+		return errors.Join(err, o.synchronizeEmergencyStop(ctx))
+	}
 	return errors.Join(o.synchronizeContainment(ctx), o.Deliver(ctx))
+}
+
+func (o *Operations) ProvisionOfflineOwner(ctx context.Context, p auth.Principal, key [32]byte) error {
+	if key == ([32]byte{}) || key == o.journal.cfg.BindingKey {
+		return ErrValidation
+	}
+	tx, err := o.supportTx(ctx, p, true)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	return o.journal.transaction(ctx, true, func(state *operationsJournalState) error {
+		if err := supportActor(ctx, tx, p, true); err != nil {
+			return err
+		}
+		digest := sha256.Sum256(key[:])
+		state.OfflineOwner = digest[:]
+		return nil
+	})
 }
 
 func (o *Operations) observeDraftGrants(ctx context.Context, figures *OperationsFigures) error {
@@ -172,7 +223,7 @@ func (o *Operations) recordSample(ctx context.Context, sample OperationsRiskSamp
 			return errors.Join(auth.ErrUnavailable, o.ObserveFault(ctx, OperationsAuthorityFault))
 		}
 	}
-	return o.journal.transaction(ctx, true, func(state *operationsJournalState) error {
+	return o.journal.containmentTransaction(ctx, func(state *operationsJournalState) error {
 		if state.Figures == nil || !sample.At.Before(state.Figures.At) {
 			o.recordCaps(state, sample)
 			state.Figures = &sample.Figures
@@ -184,7 +235,7 @@ func (o *Operations) recordSample(ctx context.Context, sample OperationsRiskSamp
 			switch event.Kind {
 			case "unknown_dispatch":
 				incident.Response, incident.Severity = "retain_exposure_and_capacity_and_review", "warning"
-			case "maximum_breach":
+			case "maximum_breach", "invariant_breach":
 				incident.Response, incident.Severity = "contain_and_reconcile_original_dispatch_bound", "critical"
 			default:
 				return auth.ErrUnavailable

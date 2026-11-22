@@ -3,6 +3,7 @@ package aicontrol
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"math"
 	"sort"
@@ -88,6 +89,19 @@ func (s *operationsSource) OperationsSample(ctx context.Context) (accountstore.O
 		return out, ErrUnavailable
 	}
 	defer tx.Rollback()
+	out, err = h.sampleOperations(ctx, tx)
+	if err != nil {
+		return out, err
+	}
+	if err = tx.Commit(); err != nil {
+		return out, ErrUnavailable
+	}
+	return out, nil
+}
+
+func (h *Harness) sampleOperations(ctx context.Context, tx *sql.Tx) (accountstore.OperationsRiskSample, error) {
+	var out accountstore.OperationsRiskSample
+	var err error
 	if err = tx.QueryRowContext(ctx, `SELECT clock_timestamp()`).Scan(&out.At); err != nil {
 		return out, ErrUnavailable
 	}
@@ -105,6 +119,7 @@ func (s *operationsSource) OperationsSample(ctx context.Context) (accountstore.O
 	if err != nil {
 		return out, ErrUnavailable
 	}
+	foundGlobal := false
 	for rows.Next() {
 		var scope string
 		var limit, counted int64
@@ -115,6 +130,7 @@ func (s *operationsSource) OperationsSample(ctx context.Context) (accountstore.O
 		switch {
 		case scope == "global":
 			label = "pilot_total"
+			foundGlobal = limit == selectedQualificationEnvelope().GlobalTotal
 		case strings.HasPrefix(scope, "provider:"):
 			label = "provider_total"
 		case strings.HasPrefix(scope, "account:"):
@@ -134,6 +150,9 @@ func (s *operationsSource) OperationsSample(ctx context.Context) (accountstore.O
 	rows.Close()
 	if err != nil {
 		return out, ErrUnavailable
+	}
+	if !foundGlobal {
+		return out, nil
 	}
 	rows, err = tx.QueryContext(ctx, `SELECT a.id,a.owner,a.execution_version,d.id,d.attempt,d.counted,
  COALESCE(d.intent_at,a.created_at),d.remote_state,d.expense,d.maximum,d.category,
@@ -174,10 +193,12 @@ func (s *operationsSource) OperationsSample(ctx context.Context) (accountstore.O
 		if remote == "possibly_active" {
 			out.Figures.PossibleRemote++
 			event.Kind = "unknown_dispatch"
+			event.Exposure = maximum
 			out.Events = append(out.Events, event)
 		}
 		if amount > maximum {
 			event.Kind = "maximum_breach"
+			event.Exposure = amount
 			out.Events = append(out.Events, event)
 		}
 		for _, cap := range []struct {
@@ -239,10 +260,99 @@ func (s *operationsSource) OperationsSample(ctx context.Context) (accountstore.O
 		Scope: "global_rolling24h", Policy: QualificationRateID, Currency: "USD", Counted: globalDay, Limit: p.GlobalDay})
 	sort.Slice(out.Caps, func(a, b int) bool { return out.Caps[a].Key < out.Caps[b].Key })
 	out.Complete = true
-	if err = tx.Commit(); err != nil {
-		return out, ErrUnavailable
-	}
 	return out, nil
+}
+
+// A staged sample is committed with the ledger change. Another enrolled
+// process can replay it if the originating process ends before delivery.
+func (h *Harness) stageOperations(ctx context.Context, tx *sql.Tx, extra *accountstore.OperationsRiskEvent) (bool, error) {
+	var required bool
+	if tx.QueryRowContext(ctx, `SELECT careeros_operations_required()`).Scan(&required) != nil {
+		return false, ErrUnavailable
+	}
+	if !required {
+		return false, nil
+	}
+	sample, err := h.sampleOperations(ctx, tx)
+	if err != nil || !sample.Complete {
+		return true, ErrUnavailable
+	}
+	if extra != nil {
+		extra.At = sample.At
+		sample.Events = append(sample.Events, *extra)
+	}
+	raw, err := json.Marshal(sample)
+	if err != nil {
+		return true, ErrUnavailable
+	}
+	_, err = tx.ExecContext(ctx, `INSERT INTO careeros_operations_pending(namespace,sample) VALUES($1,$2)`, h.cfg.Namespace, raw)
+	return true, safe(err)
+}
+
+func (s *operationsSource) DrainOperations(ctx context.Context, publish func(accountstore.OperationsRiskSample) error) error {
+	db := s.h.reviewerDB
+	for {
+		var id int64
+		var raw []byte
+		err := db.QueryRowContext(ctx, `SELECT id,sample FROM careeros_operations_pending
+		  WHERE namespace=$1 ORDER BY id LIMIT 1`, s.h.cfg.Namespace).Scan(&id, &raw)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+		if err != nil {
+			return ErrUnavailable
+		}
+		var sample accountstore.OperationsRiskSample
+		if json.Unmarshal(raw, &sample) != nil {
+			return ErrUnavailable
+		}
+		if err = publish(sample); err != nil {
+			return err
+		}
+		if _, err = db.ExecContext(ctx, `DELETE FROM careeros_operations_pending WHERE id=$1 AND namespace=$2`, id, s.h.cfg.Namespace); err != nil {
+			return ErrUnavailable
+		}
+	}
+}
+
+func (h *Harness) deliverOperations(ctx context.Context) error {
+	if ops := h.localOperations(); ops != nil {
+		ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+		defer cancel()
+		return ops.DrainCommittedRisk(ctx)
+	}
+	return nil
+}
+
+func (h *Harness) observeAuthorityFault(ctx context.Context, kind accountstore.OperationsFault, err error) error {
+	if !errors.Is(err, ErrUnavailable) && !errors.Is(err, auth.ErrUnavailable) {
+		return err
+	}
+	if ctx.Err() != nil {
+		return err
+	}
+	if ops := h.localOperations(); ops != nil {
+		_ = ops.ObserveFault(ctx, kind)
+	}
+	return err
+}
+
+type managedControlFault struct{ error }
+
+func (e managedControlFault) Unwrap() error { return e.error }
+
+func (h *Harness) unavailableControl(err error) error {
+	if h.localOperations() == nil {
+		return err
+	}
+	return managedControlFault{err}
+}
+
+func (h *Harness) observeManagedControlFault(ctx context.Context, err error) {
+	var fault managedControlFault
+	if errors.As(err, &fault) {
+		_ = h.observeAuthorityFault(ctx, accountstore.OperationsControlFault, fault.error)
+	}
 }
 
 func addOperationsFigures(figures *accountstore.OperationsFigures, amount int64, expense sql.NullInt64, observed int64, category string) bool {

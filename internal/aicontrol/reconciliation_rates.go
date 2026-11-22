@@ -62,7 +62,7 @@ func (r *Reconciliation) recordRateRevision(ctx context.Context, tx *sql.Tx, c R
 	return safe(err)
 }
 func (r *Reconciliation) RateRevisions(ctx context.Context, p auth.Principal, id string) ([]RecordedRateRevision, error) {
-	tx, _, _, err := r.begin(ctx, p, id)
+	tx, _, _, err := r.begin(ctx, p, id, false)
 	if err != nil {
 		return nil, err
 	}

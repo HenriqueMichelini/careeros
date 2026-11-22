@@ -37,13 +37,17 @@ func (s *Session) ID() string { return s.id }
 
 // Open implements the provider-free root create/recover handshake. Keys are
 // account scoped; only the verified principal supplies ownership.
-func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow string, rootJSON []byte) (*Session, error) {
+func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow string, rootJSON []byte) (_ *Session, resultErr error) {
+	defer func() { h.observeManagedControlFault(ctx, resultErr) }()
 	if !tokenLabel.MatchString(key) || !workflows[workflow] {
 		return nil, ErrDenied
 	}
 	if h.cfg.Qualification && workflow != "qualification_gaps" && !(h.cfg.Ingestion && workflow == "profile_ingestion") && !(h.cfg.ProfileReview && workflow == "profile_review") && !(h.cfg.StandaloneCV && workflow == "cv_generation") && !(h.cfg.ManagedDraft && workflow == "application_draft") {
 		return nil, ErrDenied
 	}
+	// Recovering an existing Action is independent of an observation delivery
+	// failure. A new Action still requires a healthy observation boundary.
+	drainErr := h.deliverOperations(ctx)
 	lease, err := h.cfg.Gate.capture(h.cfg.Namespace)
 	if err != nil {
 		return nil, err
@@ -90,9 +94,20 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 			return nil, ErrConflict
 		}
 	} else if errors.Is(err, sql.ErrNoRows) {
+		if drainErr != nil {
+			return nil, drainErr
+		}
 		if err = h.admissionReady(ctx, tx); err != nil {
 			return nil, err
 		}
+		release, err := h.holdOperations(ctx, tx)
+		if err != nil {
+			return nil, err
+		}
+		defer func() {
+			_ = tx.Rollback()
+			release()
+		}()
 		if h.cfg.Qualification {
 			if err = h.managedOpen(ctx, tx, p.AccountID, workflow, "", true); err != nil {
 				return nil, err
@@ -171,6 +186,9 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 		return nil, ErrDenied
 	}
 	if err = lease.allowed(); err != nil {
+		return nil, err
+	}
+	if err = h.fault("before_operations_action_commit"); err != nil {
 		return nil, err
 	}
 	if err = tx.Commit(); err != nil {
@@ -338,8 +356,9 @@ func (s *Session) legBinding(provider string, body, input []byte) ([]byte, error
 	return s.h.fingerprint(s.p.AccountID, "dispatch/"+provider, raw)
 }
 
-func (s *Session) Reserve(ctx context.Context, leg Leg) (Dispatch, error) {
+func (s *Session) Reserve(ctx context.Context, leg Leg) (_ Dispatch, resultErr error) {
 	h := s.h
+	defer func() { h.observeManagedControlFault(ctx, resultErr) }()
 	var zero Dispatch
 	if !coordinateLabel.MatchString(leg.Coordinate) || !stages[leg.Stage] || leg.Number < 1 || leg.Number > 2 {
 		return zero, ErrDenied
@@ -374,6 +393,11 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (Dispatch, error) {
 	if err = h.admissionReady(ctx, tx); err != nil {
 		return zero, err
 	}
+	release, err := h.holdOperations(ctx, tx)
+	if err != nil {
+		return zero, err
+	}
+	defer func() { _ = tx.Rollback(); release() }()
 	if err = s.checkInferenceEpoch(ctx, tx); err != nil {
 		return zero, err
 	}
@@ -578,14 +602,26 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (Dispatch, error) {
 	if err = s.checkCurrent(ctx, tx); err != nil {
 		return zero, err
 	}
+	staged, err := h.stageOperations(ctx, tx, nil)
+	if err != nil {
+		return zero, err
+	}
 	if tx.Commit() != nil {
 		return zero, ErrUnavailable
+	}
+	release()
+	release = func() {}
+	if staged {
+		if err = h.deliverOperations(ctx); err != nil {
+			return zero, err
+		}
 	}
 	return Dispatch{ID: id, Action: s.id, Stage: leg.Stage, Coordinate: leg.Coordinate, Provider: leg.Provider, State: "reserved", Category: "reserved_maximum", Remote: "not_started", Maximum: m, Floor: m, Counted: m}, nil
 }
 
-func (s *Session) invoke(ctx context.Context, d Dispatch, req *http.Request, raw []byte) (*http.Response, error) {
+func (s *Session) invoke(ctx context.Context, d Dispatch, req *http.Request, raw []byte) (_ *http.Response, resultErr error) {
 	h := s.h
+	defer func() { h.observeManagedControlFault(ctx, resultErr) }()
 	if req == nil || req.URL == nil || req.URL.Scheme != "https" || req.URL.User != nil || req.URL.Port() != "" || req.URL.RawQuery != "" || req.URL.Fragment != "" || req.Method != http.MethodPost {
 		return nil, ErrDenied
 	}
@@ -614,6 +650,11 @@ func (s *Session) invoke(ctx context.Context, d Dispatch, req *http.Request, raw
 	if err = h.admissionReady(ctx, tx); err != nil {
 		return nil, err
 	}
+	releaseClaim, err := h.holdOperations(ctx, tx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = tx.Rollback(); releaseClaim() }()
 	if err = s.checkInferenceEpoch(ctx, tx); err != nil {
 		return nil, err
 	}
@@ -691,12 +732,23 @@ func (s *Session) invoke(ctx context.Context, d Dispatch, req *http.Request, raw
 	if err = h.fault("before_intent_commit"); err != nil {
 		return nil, err
 	}
+	staged, err := h.stageOperations(ctx, tx, nil)
+	if err != nil {
+		return nil, err
+	}
 	if tx.Commit() != nil {
 		return nil, ErrUnavailable
 	}
+	releaseClaim()
+	releaseClaim = func() {}
 	if err = h.fault("after_intent_commit"); err != nil {
 		return nil, ErrUnavailable
-	} // never recreate a lost permit
+	} // never recreate a lost permit; the observation remains queued
+	if staged {
+		if err = h.deliverOperations(ctx); err != nil {
+			return nil, err
+		}
+	}
 	_, healthy := h.cfg.Clock.Sample()
 	if !healthy {
 		return nil, ErrUnavailable
@@ -864,8 +916,9 @@ func (s *Session) RetryQualification(ctx context.Context, key string) (*Session,
 	return s.retry(ctx, key)
 }
 
-func (s *Session) retry(ctx context.Context, key string) (*Session, error) {
+func (s *Session) retry(ctx context.Context, key string) (_ *Session, resultErr error) {
 	h := s.h
+	defer func() { h.observeManagedControlFault(ctx, resultErr) }()
 	command := *s
 	command.foregroundIndependent = s.ingestion() || s.profileReview() || s.standaloneCV() || s.managedDraft()
 	if h.cfg.Qualification && !tokenLabel.MatchString(key) {
@@ -910,6 +963,14 @@ func (s *Session) retry(ctx context.Context, key string) (*Session, error) {
 		if err = h.admissionReady(ctx, tx); err != nil {
 			return nil, err
 		}
+		release, err := h.holdOperations(ctx, tx)
+		if err != nil {
+			return nil, err
+		}
+		defer func() {
+			_ = tx.Rollback()
+			release()
+		}()
 		var maxAttempts int
 		if tx.QueryRowContext(ctx, `SELECT max_attempts FROM ai_fixture_policy WHERE namespace=$1`, h.cfg.Namespace).Scan(&maxAttempts) != nil {
 			return nil, ErrUnavailable
@@ -929,6 +990,9 @@ func (s *Session) retry(ctx context.Context, key string) (*Session, error) {
 			if _, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_stage(namespace,action,coordinate,stage,attempt,binding) VALUES($1,$2,'request','managed_request_draft',$3,$4)`, h.cfg.Namespace, s.id, next, s.root); err != nil {
 				return nil, ErrUnavailable
 			}
+		}
+		if err = h.fault("before_operations_retry_commit"); err != nil {
+			return nil, err
 		}
 	} else if current != next || state != "recoverable" {
 		return nil, ErrDenied

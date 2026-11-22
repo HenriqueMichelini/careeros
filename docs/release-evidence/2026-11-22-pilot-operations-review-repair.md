@@ -1,0 +1,23 @@
+# Pilot operations review repair
+
+The repair addresses the [#291](https://github.com/HenriqueMichelini/careeros/issues/291) Spec and security review findings on local parent `83ad26ccb471851460efc253831905461586b1f4`. The [initial verification](2026-11-22-pilot-operations.md) remains available for the original candidate.
+
+| Review concern | Local regression evidence |
+| --- | --- |
+| Alerts follow committed expense, intent and reconciliation changes | The managed request emits each durable unknown before its fake provider enters, including when terminal proof follows. The three legs trigger the 24,000 microUSD warning once. A real fake over-bound response emits the 2,688 versus 1,344 critical notice. Recovery on a subsequent managed request delivers the original lost-intent observation with zero additional fake sends. |
+| Actual authority faults and diagnostic retention | A real managed auth request during physical PostgreSQL outage emits the unexpected auth incident. A managed control read failure emits one typed diagnostic, which expires at seven elapsed days. A request without a session takes the expected denial path. The restricted incident survives ordinary diagnostic pruning. |
+| Protected admission orders against the journal | An independent stop waits while each real Action or retry transaction owns its journal lease. The Action and the second attempt commit before the stop applies. Subsequent new Action admission fails. |
+| Cause-specific recovery and absence interval | The backup failure stays contained until the injected verifier attests to the exact incident. An uncovered absence stays contained inside the recorded interval. A later verified handling operation can resolve it at the end. |
+| Independent restricted owner access and journal failure | During physical PostgreSQL outage the separately provisioned owner can read the private incident list. An invalid capability and public status cannot disclose it. A saturated journal leaves the last authenticated records readable under the restricted capability and denies protection across fresh opens before and after shared SQL fallback. Provider-free recovery of a surviving Action remains available without a new send. |
+| Public closure and final authorization | A current unrelated compromise receipt and proof preceding a new outage episode both fail closure. The applicable invitation and inference proofs succeed. An owner Session that expires while waiting on either final journal lock cannot change the protected record. |
+| Delayed case intake | The Saturday case preserves receipt at 05:00 UTC and intake at 11:00 UTC. Its Monday response target stays at 05:00 UTC. |
+
+The frozen repair source and raw results are bound by the [manifest](2026-11-22-pilot-operations-review-repair-frozen-source.json) and [summary](2026-11-22-pilot-operations-review-repair-summary.json). The wider adjacent Go race run is preceding-source evidence. Its only subsequent code changes were in `internal/aicontrol/dispatch.go` and `internal/accountapi/pilot_operations_test.go`. `Harness.Open` keeps a queued observation error as a denial for new Action admission and allows separately authorized provider-free recovery of an existing Action. `TestPilotOperationsFailedObservationPreservesProviderFreeActionRecovery` exercises both outcomes at that seam. The exact-final Go race runs include this regression, the neighboring auth/control/reconciliation paths, Draft recovery, and the actual function entrypoints.
+
+The preceding-source account API package finished successfully before the requested interrupt ended that invocation. The frozen repair has its own full account store, managed-control, Draft recovery and function package receipts. The frozen local commands compile in those checks.
+
+The exact-final Go runs recorded 75 passing focused test and subtest events, 55 from Draft recovery and the function entrypoints, and 161 from the remaining adjacent packages. The preceding-source account API run recorded 508 passing test and subtest events and one passing package event. The retained runs verify all 37 admission IDs.
+
+The TypeScript check, Vite build, English and Portuguese browser and scoped vet checks passed. The application UI source retains the prior Node suite result. The original full Go run remains the record for inherited Evaluation Lab behavior.
+
+The exercises use disposable PostgreSQL, synthetic identities, fake notifications and fake provider responses. The recorded backup proof is a separately injected local exercise result. Real backup schedules and readiness, actual operating coverage and hosted behavior remain separate evidence.

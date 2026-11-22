@@ -1,0 +1,322 @@
+{
+  "base": "83ad26ccb471851460efc253831905461586b1f4",
+  "local_synthetic_only": true,
+  "frozen_manifest": "docs/release-evidence/2026-11-22-pilot-operations-review-repair-frozen-source.json",
+  "frozen_manifest_sha256": "dfe684398e39e9a104946a69006be931e9b94f4a7831e5255c78c2fcf1cd6711",
+  "exact_final_focused": {
+    "directory": "/home/henriquemichelini/workstation/careeros/.q91/r-ouwmomft",
+    "args": [
+      "./internal/accountapi",
+      "./internal/aicontrol",
+      "-run",
+      "^Test(PilotOperations|OperatorControl|RestrictedReconciliation|A(28|29))"
+    ],
+    "exit": 0,
+    "passing_test_events": 75,
+    "passing_package_events": 2,
+    "passing_packages": [
+      "professional-information-repo/internal/accountapi",
+      "professional-information-repo/internal/aicontrol"
+    ],
+    "admission_case_ids": [
+      "A28",
+      "A29"
+    ],
+    "repair_passed_tests": [
+      "TestPilotOperationsActualExpenseWarningAndSupportBoundary",
+      "TestPilotOperationsIndependentControlFaultRetriesFromOriginalAttempt",
+      "TestPilotOperationsOrdinaryCaseAndDiagnosticExpiry",
+      "TestPilotOperationsPhysicalOutageKeepsStatusAndContainmentIndependent",
+      "TestPilotOperationsActualUnknownAndBreachRemainSeparate/unknown",
+      "TestPilotOperationsActualUnknownAndBreachRemainSeparate/breach",
+      "TestPilotOperationsActualUnknownAndBreachRemainSeparate",
+      "TestPilotOperationsManagedFaultDiagnosticsExpireFromEvent",
+      "TestPilotOperationsSaturatedJournalDeniesAcrossIndependentOpens",
+      "TestPilotOperationsRechecksOwnerAfterIndependentJournalWait",
+      "TestPilotOperationsAdmissionJournalLeaseOrdersActionAndRetryCommits/action",
+      "TestPilotOperationsAdmissionJournalLeaseOrdersActionAndRetryCommits/retry",
+      "TestPilotOperationsAdmissionJournalLeaseOrdersActionAndRetryCommits",
+      "TestPilotOperationsReplayDeliversLostIntentWithoutInspectOrResend",
+      "TestPilotOperationsFailedObservationPreservesProviderFreeActionRecovery",
+      "TestPilotOperationsWarningAbsenceAndVerifiedReopening"
+    ],
+    "skipped_test_events": 2,
+    "skipped_package_events": 0,
+    "failures": []
+  },
+  "exact_final_entrypoints": {
+    "directory": "/home/henriquemichelini/workstation/careeros/.q91/r-uu5vueqs",
+    "args": [
+      "./internal/draftrecovery",
+      "./netlify/functions/..."
+    ],
+    "exit": 0,
+    "passing_test_events": 55,
+    "passing_package_events": 6,
+    "passing_packages": [
+      "professional-information-repo/netlify/functions/account",
+      "professional-information-repo/netlify/functions/application-draft",
+      "professional-information-repo/netlify/functions/cv-generation",
+      "professional-information-repo/netlify/functions/profile-ingestion",
+      "professional-information-repo/netlify/functions/profile-review",
+      "professional-information-repo/netlify/functions/qualification-gaps"
+    ],
+    "admission_case_ids": [
+      "A29"
+    ],
+    "repair_passed_tests": [],
+    "skipped_test_events": 0,
+    "skipped_package_events": 1,
+    "failures": []
+  },
+  "exact_final_adjacent_remainder": {
+    "directory": "/home/henriquemichelini/workstation/careeros/.q91/r-xalc1lw3",
+    "args": [
+      "./internal/accountstore",
+      "./internal/aicontrol",
+      "./cmd/pilot-operations-local",
+      "./cmd/reconciliation-local"
+    ],
+    "exit": 0,
+    "passing_test_events": 161,
+    "passing_package_events": 2,
+    "passing_packages": [
+      "professional-information-repo/internal/accountstore",
+      "professional-information-repo/internal/aicontrol"
+    ],
+    "admission_case_ids": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A06",
+      "A07",
+      "A08",
+      "A09",
+      "A10",
+      "A11",
+      "A12",
+      "A13",
+      "A14",
+      "A15",
+      "A16",
+      "A17",
+      "A18",
+      "A19",
+      "A20",
+      "A21",
+      "A22",
+      "A23",
+      "A24",
+      "A25",
+      "A26",
+      "A27",
+      "A30",
+      "A31",
+      "A32",
+      "A33",
+      "A34",
+      "A35",
+      "A36",
+      "A37"
+    ],
+    "repair_passed_tests": [],
+    "skipped_test_events": 1,
+    "skipped_package_events": 2,
+    "failures": []
+  },
+  "preceding_source_adjacent_suite": {
+    "directory": "/home/henriquemichelini/workstation/careeros/.q91/r-t_ac9pt_",
+    "args": [
+      "./internal/accountapi",
+      "./internal/accountstore",
+      "./internal/aicontrol",
+      "./internal/draftrecovery",
+      "./cmd/pilot-operations-local",
+      "./cmd/reconciliation-local",
+      "./netlify/functions/..."
+    ],
+    "exit": 1,
+    "passing_test_events": 508,
+    "passing_package_events": 1,
+    "passing_packages": [
+      "professional-information-repo/internal/accountapi"
+    ],
+    "admission_case_ids": [
+      "A23",
+      "A28",
+      "A29",
+      "A32"
+    ],
+    "repair_passed_tests": [
+      "TestPilotOperationsActualExpenseWarningAndSupportBoundary",
+      "TestPilotOperationsIndependentControlFaultRetriesFromOriginalAttempt",
+      "TestPilotOperationsOrdinaryCaseAndDiagnosticExpiry",
+      "TestPilotOperationsPhysicalOutageKeepsStatusAndContainmentIndependent",
+      "TestPilotOperationsActualUnknownAndBreachRemainSeparate/unknown",
+      "TestPilotOperationsActualUnknownAndBreachRemainSeparate/breach",
+      "TestPilotOperationsActualUnknownAndBreachRemainSeparate",
+      "TestPilotOperationsManagedFaultDiagnosticsExpireFromEvent",
+      "TestPilotOperationsSaturatedJournalDeniesAcrossIndependentOpens",
+      "TestPilotOperationsRechecksOwnerAfterIndependentJournalWait",
+      "TestPilotOperationsAdmissionJournalLeaseOrdersActionAndRetryCommits/action",
+      "TestPilotOperationsAdmissionJournalLeaseOrdersActionAndRetryCommits/retry",
+      "TestPilotOperationsAdmissionJournalLeaseOrdersActionAndRetryCommits",
+      "TestPilotOperationsReplayDeliversLostIntentWithoutInspectOrResend",
+      "TestPilotOperationsWarningAbsenceAndVerifiedReopening"
+    ],
+    "skipped_test_events": 10,
+    "skipped_package_events": 0,
+    "failures": [],
+    "subsequent_changes": [
+      {
+        "path": "internal/aicontrol/dispatch.go",
+        "code_path": "Harness.Open existing Action recovery after queued observation failure",
+        "exact_final_cases": [
+          "TestPilotOperationsFailedObservationPreservesProviderFreeActionRecovery",
+          "TestPilotOperationsReplayDeliversLostIntentWithoutInspectOrResend",
+          "TestA29AllAuthenticatedWorkflowConstructors"
+        ],
+        "additional_exact_final_packages": [
+          "./internal/draftrecovery",
+          "./netlify/functions/..."
+        ]
+      },
+      {
+        "path": "internal/accountapi/pilot_operations_test.go",
+        "code_path": "Provider-free recovery and new Action denial regression",
+        "exact_final_cases": [
+          "TestPilotOperationsFailedObservationPreservesProviderFreeActionRecovery"
+        ]
+      }
+    ],
+    "disposition": "The accountapi package completed successfully. A requested interrupt then ended the outer invocation before the remaining packages started."
+  },
+  "exact_final_supplement": {
+    "directory": "/home/henriquemichelini/workstation/careeros/.q91/extra-8q56u73s",
+    "checks": {
+      "tsc": 0,
+      "build": 0,
+      "browser": 0,
+      "default-vet": 1,
+      "scoped-vet": 0,
+      "diff-check": 0
+    },
+    "browser": [
+      {
+        "passed": true,
+        "locale": "en",
+        "evidence": "/tmp/careeros-account-browser-YRle8D",
+        "observed": "React footer and independent Go status page with application API unavailable"
+      },
+      {
+        "passed": true,
+        "locale": "pt-BR",
+        "evidence": "/tmp/careeros-account-browser-FzlpRP",
+        "observed": "React footer and independent Go status page with application API unavailable"
+      }
+    ],
+    "default_vet_baseline": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-opening-285-review-repair-20261122/vet-default.log",
+    "default_vet_baseline_sha256": "449b2077e614d67a727d4aca5d9f84b70d47f83914a785cc398129577d3e0db4",
+    "default_vet_byte_identical": true
+  },
+  "inherited_full_go_and_node": {
+    "path": "docs/release-evidence/2026-11-22-pilot-operations-summary.json",
+    "sha256": "9ba7172e23064581e3e0cb139cf063639523b1a2f60fc6b9d19e38eda36eb499",
+    "description": "Original candidate full Go and unchanged UI Node evidence"
+  },
+  "historical_repair_checkpoints": [
+    "/home/henriquemichelini/workstation/careeros/.q91/r-5599ixwi",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-8merde7s",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-8nvr9zdt",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-gloputzm"
+  ],
+  "receipt_sha256": {
+    "/home/henriquemichelini/workstation/careeros/.q91/extra-8q56u73s/browser.log": "656a57cd7f8fe36067272cc14bad3ed214a03de4a741b77cf5716d9297c19dfe",
+    "/home/henriquemichelini/workstation/careeros/.q91/extra-8q56u73s/build.log": "2aa3a121d5be92067abd7ee84ab445635396e220525f2fd8287dc3ed05f683ac",
+    "/home/henriquemichelini/workstation/careeros/.q91/extra-8q56u73s/default-vet.log": "449b2077e614d67a727d4aca5d9f84b70d47f83914a785cc398129577d3e0db4",
+    "/home/henriquemichelini/workstation/careeros/.q91/extra-8q56u73s/diff-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/home/henriquemichelini/workstation/careeros/.q91/extra-8q56u73s/scoped-vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/home/henriquemichelini/workstation/careeros/.q91/extra-8q56u73s/summary.json": "52fee9335c88f2a397965878b519738bf714b30a14ac0d053a8adf4a3a9aa70e",
+    "/home/henriquemichelini/workstation/careeros/.q91/extra-8q56u73s/tsc.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-5599ixwi/go.jsonl": "2ffd2b56971beb6f542627d4b428c75c50f8c9a586da06747a6c47b1b3017170",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-5599ixwi/postgres.log": "9dae1ae56381a5098702b828c2bb65e85e2c0ef99044d10e0e1f2f78abf8b033",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-5599ixwi/setup.log": "e797e2798b654c0755587253c678eef505bf9e9393b0d1cc51b4f48c77046d69",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-5599ixwi/summary.json": "db4f62d439586e5ff08fb86293676cd20ea92571808846d9580be95b2ae23c4d",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-8merde7s/go.jsonl": "51e397ee1a712a9c3bb71f1e0cba2584764909ce995d39eef0afe746ff09a3b0",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-8merde7s/postgres.log": "fc8b326a3c7d9495d5a00e4dd5f50a69b7f01bdba526fc3c819c4d50bc141cc7",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-8merde7s/setup.log": "ebc9b7d344619d3dc7f59817f99815e0e06c8567c4b39a1ce31104115430b2fa",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-8merde7s/summary.json": "06676804cefd58c50702d34a3099c89a958b4ce3124846df907c0d0435fadd4a",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-8nvr9zdt/go.jsonl": "86f5bb1953347fa8a082dee3ce9138d69995dc02a40acc6872271c0999b14c38",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-8nvr9zdt/postgres.log": "f8f8cad42fe9153b6cd7d9e4da48aafbaf9f8968b04adbe860a859969dc8dc47",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-8nvr9zdt/setup.log": "ac729043209a1098f8e80ec2ae5e6d24db4e3cf7bff1fb61e7240279d5f4e1c6",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-8nvr9zdt/summary.json": "4cb37ac8f1dcecb7bbe91736ceafd86c7e4c1f77d4e5b3bcfe54efe5f7f46a66",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-gloputzm/go.jsonl": "f36971c7b3f90da07d394b33309224fc32bb9bd59b19b1f0d4b6c5b45c7beab0",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-gloputzm/postgres.log": "31e0ff479388763d7ce3567e5ad755175b2d520d04f04f07b4ab423f3307d74c",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-gloputzm/setup.log": "2eb8ee677d6e494a5da3559836bb5a284f6bfb9069a684d3721745671455204a",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-gloputzm/summary.json": "37d74f84364ff17571bc2c9a79d3a05e49101688b294ed2ba493738fa9d6430d",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-ouwmomft/control-restart-after.json": "506a7ca5ac5856b2570acf95b6a1fdf1ebbc81923988e5c746daaf2e0cdc73a3",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-ouwmomft/control-restart-witness.txt": "5da0e82e67bda59a9679e2e6b4354b0e67df8e1505c5aa483c20c5ad42dafa33",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-ouwmomft/go.jsonl": "f0f8cc652c2fdfb36e5e62cd9084f6bbb9a87702fe3c49011f5493118bece57a",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-ouwmomft/postgres.log": "b8b494438349afde61d5e62cfd5241014f0757a8cce7b711c70a11e9c89df0e6",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-ouwmomft/setup.log": "86f7643f71f90eaf79fcf21587650fae154600552e518c0cd7aa37d9bcd0b808",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-ouwmomft/summary.json": "4252b066f7ad7dd1f4955849587d1301d64621a45dbd202b5b85a31fcefb2618",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-t_ac9pt_/control-restart-after.json": "6b5535608a40bbaf93812a513177c75115f80ab066ec8806fe791908709e69b0",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-t_ac9pt_/control-restart-witness.txt": "5da0e82e67bda59a9679e2e6b4354b0e67df8e1505c5aa483c20c5ad42dafa33",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-t_ac9pt_/go.jsonl": "121ba518090bd04c5c950f45ed92c0863ca81e7a5d829803ac14ce0501fa211f",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-t_ac9pt_/lifecycle-restart-after.json": "16dc902f833e40f001adc5cc9f885b1c0e6e03ea007a271b89c1faef1885041d",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-t_ac9pt_/lifecycle-restart-before.json": "16dc902f833e40f001adc5cc9f885b1c0e6e03ea007a271b89c1faef1885041d",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-t_ac9pt_/lifecycle-restart-witness.txt": "894d6362f2e45eb14b51ba29e7a64372fb915613b3a1f7f97e8a840183bd2ae7",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-t_ac9pt_/postgres.log": "84a1e1ae830564a133cfb7d12ff2dd9537d5ab171d07220b0bb7460745454a40",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-t_ac9pt_/setup.log": "a1acef9bbf18aaf3e62f229c82aa59ba5dafa00661959e3d0798429e6fd6f973",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-t_ac9pt_/summary.json": "2fa279bce1bfc995d305972ecaa0e95f94006627d5fd7f51e52b96a2e6d3f36c",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-uu5vueqs/go.jsonl": "7d4fa89abf983ff5e76c89d8beb87fc85fa117c4eca9c30d6ad530d09931822b",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-uu5vueqs/postgres.log": "631768b573a78477675d7e102370ee9ede9b431e403184fef3927b5291bb781a",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-uu5vueqs/setup.log": "46d5d4a3771e95f43682ec78cff584588d8ce38cbd141dc458aa1081e4d614da",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-uu5vueqs/summary.json": "36127ce3d2b93e3b22a6c1e54aa2bb9173a73c9adcb9b60fcc674dd5882b0d31",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-xalc1lw3/go.jsonl": "318092afcf3d46db07fe0870b36cfdfcdda96b7d588a72202a58e8112ed31606",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-xalc1lw3/postgres.log": "f9a7534c3d9f6eb6a4fe7530d845d52bf047c117958ac7518c319f92cc3a1a75",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-xalc1lw3/setup.log": "edde68f914004009fd8f0387bb72b1b3363f32d3682a149079f19d7c84f9303c",
+    "/home/henriquemichelini/workstation/careeros/.q91/r-xalc1lw3/summary.json": "917ab8b1882b5ab7733c556b6139658019d9b285bbcdc4184cb8e59d504e60c5"
+  },
+  "passing_admission_case_ids_across_receipts": [
+    "A01",
+    "A02",
+    "A03",
+    "A04",
+    "A05",
+    "A06",
+    "A07",
+    "A08",
+    "A09",
+    "A10",
+    "A11",
+    "A12",
+    "A13",
+    "A14",
+    "A15",
+    "A16",
+    "A17",
+    "A18",
+    "A19",
+    "A20",
+    "A21",
+    "A22",
+    "A23",
+    "A24",
+    "A25",
+    "A26",
+    "A27",
+    "A28",
+    "A29",
+    "A30",
+    "A31",
+    "A32",
+    "A33",
+    "A34",
+    "A35",
+    "A36",
+    "A37"
+  ]
+}

@@ -24,6 +24,7 @@ type ControlStatus struct {
 	InferenceEpoch     int64  `json:"inferenceEpoch"`
 	SystemGeneration   int64  `json:"systemGeneration"`
 	operationsRequired bool
+	operationsFault    bool
 }
 
 type ControlCommand struct {
@@ -70,14 +71,21 @@ func LockControlTransaction(ctx context.Context, tx *sql.Tx) error {
 	return unavailable(err)
 }
 
+// LockControlStopTransaction orders an add-only emergency stop before later
+// managed operations, including the actual fake provider handoff.
+func LockControlStopTransaction(ctx context.Context, tx *sql.Tx) error {
+	_, err := tx.ExecContext(ctx, "SELECT pg_advisory_xact_lock($1)", controlFence)
+	return unavailable(err)
+}
+
 func controlStatus(ctx context.Context, tx *sql.Tx) (ControlStatus, error) {
 	var s ControlStatus
 	var initialized bool
-	err := tx.QueryRowContext(ctx, `SELECT version,initialized,invitation_stopped,inference_stopped,inference_epoch,system_generation,operations_binding<>'' FROM careeros_control_state WHERE singleton`).Scan(&s.Version, &initialized, &s.InvitationStopped, &s.InferenceStopped, &s.InferenceEpoch, &s.SystemGeneration, &s.operationsRequired)
+	err := tx.QueryRowContext(ctx, `SELECT version,initialized,invitation_stopped,inference_stopped,inference_epoch,system_generation,operations_binding<>'',operations_fault FROM careeros_control_state WHERE singleton`).Scan(&s.Version, &initialized, &s.InvitationStopped, &s.InferenceStopped, &s.InferenceEpoch, &s.SystemGeneration, &s.operationsRequired, &s.operationsFault)
 	if err != nil {
 		return s, unavailable(err)
 	}
-	if !initialized {
+	if !initialized || s.operationsFault {
 		s.InvitationStopped, s.InferenceStopped = true, true
 	}
 	return s, nil
