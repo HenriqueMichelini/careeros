@@ -231,7 +231,7 @@ func TestControlledDraftBrowserServer(t *testing.T) {
 			defer tx.Rollback()
 			_, err = tx.ExecContext(request.Context(), `SELECT id FROM careeros_accounts WHERE id=$1 FOR UPDATE`, r.f.Principal.AccountID)
 			if err == nil {
-				_, err = tx.ExecContext(request.Context(), `UPDATE controlled_draft_test_authority SET delivered_action=(SELECT action_id FROM careeros_draft_actions WHERE owner=$1 AND state='ready' ORDER BY admitted_at DESC LIMIT 1) WHERE owner=$1`, r.f.Principal.AccountID)
+				_, err = tx.ExecContext(request.Context(), `UPDATE controlled_draft_test_authority SET delivered_action=(SELECT action_id FROM careeros_draft_actions WHERE owner=$1 AND state='ready' AND ($2='' OR creation_key=$2) ORDER BY admitted_at DESC LIMIT 1) WHERE owner=$1`, r.f.Principal.AccountID, request.URL.Query().Get("key"))
 			}
 			if err == nil {
 				err = tx.Commit()

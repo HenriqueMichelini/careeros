@@ -193,3 +193,51 @@ test('export rechecks the selected accepted snapshot without substituting anothe
  const different=new DraftReviewClient('a',async()=>Response.json({...value,bundleDigest:'e'.repeat(64)}))
  await assert.rejects(different.exactAccepted(value),/draft_invalid_result/)
 })
+
+
+test('partial review identity survives replacement/reload without browser career content or foreign-owner recovery',async()=>{
+ const saved=storage(),calls=[],value=ready('partly-reviewed')
+ value.bundleDigest='d'.repeat(64);value.delivered=true
+ value.review={schema:'application-draft-human-review-v1',revision:1,artifacts:['summary','resume','cover','answers'].map(artifact=>({artifact,state:artifact==='summary'?'reviewed':'unreviewed'})),accepted:false}
+ const transport=async(url,options={})=>{calls.push({url,options});return Response.json(value)}
+ const client=new DraftReviewClient('a',transport,saved)
+ client.remember(value)
+ const reloaded=new DraftReviewClient('a',transport,saved)
+ assert.deepEqual(await reloaded.previous(),value)
+ assert.deepEqual(calls.map(r=>[r.url,r.options.method??'GET']),[['/api/drafts/partly-reviewed/versions/1','GET']])
+ assert.ok(!JSON.stringify([...saved.values]).includes('Original Person'))
+ assert.ok(!JSON.stringify([...saved.values]).includes('Java'))
+ assert.equal(await new DraftReviewClient('b',transport,saved).previous(),null)
+ assert.equal(calls.length,1)
+ for(const status of [401,403]){
+   const denied=new DraftReviewClient('a',async()=>Response.json({error:'denied'},{status}),saved)
+   await assert.rejects(denied.previous(),status===401?/draft_authentication_required/:/draft_access_denied/)
+   assert.deepEqual(await reloaded.previous(),value,'temporary denial preserves only opaque recovery identity')
+ }
+ for(const changed of [{action:{...value.action,owner:'b'}},{action:{...value.action,id:'another-action'}},{bundleDigest:'e'.repeat(64)},{artifactVersion:0}]){
+   await assert.rejects(new DraftReviewClient('a',async()=>Response.json({...value,...changed}),saved).previous(),/draft_invalid_result/)
+ }
+ const closed={...value,state:'closed',artifactVersion:1};delete closed.bundle;delete closed.job;delete closed.review
+ assert.equal(await new DraftReviewClient('a',async()=>Response.json(closed,{status:410}),saved).previous(),null)
+ assert.equal(await new DraftReviewClient('a',transport,saved).previous(),null,'terminal content must not revive from its pointer')
+})
+
+
+test('partial review and accepted history recover independently and stale or corrupt pointers cannot select content',async()=>{
+ const saved=storage(),value=ready('prior-review');value.bundleDigest='d'.repeat(64);value.delivered=true
+ value.review={schema:'application-draft-human-review-v1',revision:1,artifacts:['summary','resume','cover','answers'].map(artifact=>({artifact,state:artifact==='summary'?'reviewed':'unreviewed'})),accepted:false}
+ const accepted=structuredClone(value);accepted.creationKey='older-accepted';accepted.action.id='older-action';accepted.bundle.binding.action.id='older-action';accepted.review={...value.review,revision:8,accepted:true,acceptedAt:'2026-11-21T00:00:00Z',artifacts:value.review.artifacts.map(a=>({...a,state:'accepted'}))}
+ const client=new DraftReviewClient('a',async url=>Response.json(url==='/api/drafts/accepted'?accepted:value),saved)
+ client.remember(value)
+ assert.deepEqual(await Promise.all([client.accepted(),client.previous()]),[accepted,value])
+ let release
+ const pending=new DraftReviewClient('a',()=>new Promise(resolve=>{release=()=>resolve(Response.json(value))}),saved)
+ const read=pending.previous();pending.cancel();release();await assert.rejects(read,/draft_superseded/)
+ let calls=0
+ const corrupt=new DraftReviewClient('a',async()=>{calls++;return Response.json(value)},saved)
+ const storageKey=[...saved.values.keys()][0]
+ saved.setItem(storageKey,JSON.stringify({...JSON.parse(saved.getItem(storageKey)),action:{...value.action,owner:'b'}}))
+ assert.equal(await corrupt.previous(),null);assert.equal(calls,0)
+ const blocked=new DraftReviewClient('a',fetch,{...saved,setItem(){throw new Error('unavailable')}})
+ assert.throws(()=>blocked.remember(value),/draft_recovery_storage/)
+})

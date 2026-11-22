@@ -20,7 +20,7 @@ for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CA
    // Retry that transport transition only; never swallow a page/assertion error.
    const evaluate=async(expression)=>{for(let n=0;;n++){try{return await rawEvaluate(expression)}catch(error){if(n>=100||!/(Inspected target navigated or closed|Execution context was destroyed|Cannot find context)/.test(String(error)))throw error;await pause(25)}}}
    const wait=async(expression)=>{for(let n=0;n<400;n++){if(await evaluate(`Boolean(${expression})`))return;await pause(25)}throw new Error('Timed out: '+expression)}
-   const control=async(name,method='POST')=>evaluate(`fetch('/api/drafts/test/${name}?token='+encodeURIComponent(draftControlToken),{method:${JSON.stringify(method)}}).then(async r=>{if(!r.ok)throw new Error('fixture control failed');return r.status===204?null:r.json()})`)
+   const control=async(name,method='POST',query='')=>evaluate(`fetch('/api/drafts/test/${name}?token='+encodeURIComponent(draftControlToken)+${JSON.stringify(query)},{method:${JSON.stringify(method)}}).then(async r=>{if(!r.ok)throw new Error('fixture control failed');return r.status===204?null:r.json()})`)
    await wait(`document.querySelector('[data-draft-workspace]')`)
    assert.deepEqual(await control('stats','GET'),managed?{draft:0,qualification:0,allowanceEffects:0}:{generation:0,completion:0,allowanceEffects:0})
    const write = (selector, value) => evaluate(`(() => {
@@ -48,6 +48,65 @@ for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CA
      await wait(`window.draftWire?.documentID && draftWire.documentID!==${JSON.stringify(oldDocument)} && document.querySelector('[data-draft-workspace]')`)
    }
    const stats = n => ({generation:n, completion:n, allowanceEffects:0})
+   if (scenario === 'partial-review-reload' || scenario === 'partial-review-with-accepted') {
+     let olderAccepted
+     const expectedCalls=scenario==='partial-review-with-accepted'?{generation:3,completion:2,allowanceEffects:0}:{generation:2,completion:1,allowanceEffects:0}
+     if (scenario==='partial-review-with-accepted') {
+       await job('Java required.'); await generate()
+       await wait(`document.querySelector('[data-draft-result]')`)
+       await control('review-delivered'); await click('[data-draft-recover]')
+       for (const artifact of ['summary','resume','cover','answers']) {
+         await wait(`document.querySelector('[data-draft-review="${artifact}"]')?.disabled===false`)
+         await click(`[data-draft-review="${artifact}"]`)
+         await wait(`document.querySelector('[data-draft-accept="${artifact}"]')?.disabled===false`)
+         await click(`[data-draft-accept="${artifact}"]`)
+         await wait(`document.querySelector('[data-draft-decision="${artifact}"]').dataset.draftState==='accepted'`)
+       }
+       await wait(`document.querySelector('[data-draft-accepted]') && !document.querySelector('[data-draft-generate]').disabled`)
+       olderAccepted=await evaluate(`document.querySelector('[data-draft-accepted]').dataset.draftAccepted`)
+     }
+     await job('Java required.'); await generate()
+     await wait(`document.querySelector('[data-draft-result]') && document.querySelector('[data-draft-result]').dataset.draftResult!==${JSON.stringify(olderAccepted??'')}`)
+     await wait(`!document.querySelector('[data-draft-recover]').disabled`)
+     const selectedKey=await evaluate(`draftWire.responses.filter(r=>r.path==='/api/drafts'&&r.status===201).at(-1).body.creationKey`)
+     await control('review-delivered','POST','&key='+encodeURIComponent(selectedKey)); await click('[data-draft-recover]')
+     await wait(`document.querySelector('[data-draft-review="summary"]')?.disabled===false`)
+     await click('[data-draft-review="summary"]')
+     await wait(`document.querySelector('[data-draft-accept="summary"]')?.disabled===false`)
+     const original=await evaluate(`draftWire.responses.filter(r=>r.path.endsWith('/review')&&r.status===200).at(-1).body`)
+     assert.equal(original.review.revision,1);assert.equal(original.review.accepted,false)
+     await control('review-failed-replacement'); await job('Java required.'); await generate()
+     await wait(`draftWire.responses.some(r=>r.path==='/api/drafts'&&r.method==='POST'&&r.status===503)`)
+     assert.ok(await evaluate(`Boolean(document.querySelector('[data-draft-result="${original.action.id}"]'))`))
+     await reopen()
+     await wait(`draftWire.responses.some(r=>r.method==='GET'&&r.status===202&&r.body.state==='incomplete') && !document.querySelector('[data-draft-recover]').disabled`)
+     await wait(`document.querySelector('[data-draft-result="${original.action.id}"]')`)
+     const prior=await evaluate(`draftWire.responses.find(r=>r.path===${JSON.stringify('/api/drafts/'+original.creationKey+'/versions/1')}&&r.status===200)?.body`)
+     assert.deepEqual(prior,original,'partial review reload must return the exact stored bundle/version/revision')
+     if (olderAccepted) {
+       await wait(`document.querySelector('[data-draft-accepted]')?.dataset.draftAccepted===${JSON.stringify(olderAccepted)}`)
+       assert.equal((await evaluate(`draftWire.responses.find(r=>r.path==='/api/drafts/accepted'&&r.status===200).body`)).action.id,olderAccepted,'partial read must not cancel accepted-history recovery')
+     }
+     assert.equal(await evaluate(`document.querySelector('[data-draft-accept="summary"]').disabled`),false)
+     assert.ok((await evaluate(`draftWire.requests`)).every(r=>r.method==='GET'),'reload must not mutate or infer')
+     assert.deepEqual(await control('stats','GET'),expectedCalls)
+     const stored=await evaluate(`JSON.stringify([Object.entries(localStorage),Object.entries(sessionStorage)])`)
+     assert.ok(!stored.includes(original.bundle.identity.fullName)&&!stored.includes('Java required.'),'browser storage must contain opaque identity only')
+     await control('expire'); await click('[data-draft-recover]')
+     await wait(`draftWire.responses.some(r=>r.status===401) && !document.querySelector('[data-draft-result]')`)
+     await control('reauth'); await click('[data-draft-recover]')
+     await wait(`document.querySelector('[data-draft-result="${original.action.id}"]')`)
+     await control('deny-read'); await click('[data-draft-recover]')
+     await wait(`draftWire.responses.some(r=>r.status===403) && !document.querySelector('[data-draft-result]')`)
+     await control('allow-read'); await click('[data-draft-recover]')
+     await wait(`document.querySelector('[data-draft-accept="summary"]')?.disabled===false`)
+     await click('[data-draft-accept="summary"]')
+     await wait(`document.querySelector('[data-draft-result="${original.action.id}"] [data-draft-decision="summary"]')?.dataset.draftState==='accepted'`)
+     assert.equal(await evaluate(`draftWire.responses.filter(r=>r.path.endsWith('/review')&&r.status===200).at(-1).body.review.revision`),2)
+     assert.deepEqual(await control('stats','GET'),expectedCalls)
+     console.log(JSON.stringify({status:'passed',scenario,locale,evidence,checks:['partly reviewed prior Action survives failed replacement and reload with exact bundle/version/digest/revision','reload and reauth GET only','401/403 hides cached prior review and recovers same identity','explicit decision continues original revision','opaque account-scoped identity only; zero inference or allowance during recovery']}))
+     return
+   }
    if (scenario === 'durable-review') {
      await job('Java required.'); await generate()
      await wait(`document.querySelector('[data-draft-result]')`)
@@ -181,7 +240,7 @@ for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CA
      await control('reauth')
      await click('[data-draft-recover]')
      await wait(`document.querySelector('[data-draft-result]')&&!document.querySelector('[data-draft-recover]').disabled`)
-     assert.deepEqual(await evaluate(`draftWire.responses.filter(r=>r.method==='GET'&&r.status===200&&r.path.startsWith('/api/drafts/')).at(-1).body`),original)
+     assert.deepEqual(await evaluate(`draftWire.responses.filter(r=>r.method==='GET'&&r.status===200&&r.path===${JSON.stringify('/api/drafts/'+original.creationKey+'/versions/1')}).at(-1).body`),original)
      assert.deepEqual(await control('stats','GET'),counters)
      await control('suspend-test-grant')
      await click('[data-draft-analysis-status]')
@@ -192,7 +251,7 @@ for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CA
      await control('restore-test-grant')
      await click('[data-draft-recover]')
      await wait(`document.querySelector('[data-draft-result]')&&!document.querySelector('[data-draft-recover]').disabled`)
-     assert.deepEqual(await evaluate(`draftWire.responses.filter(r=>r.method==='GET'&&r.status===200&&r.path.startsWith('/api/drafts/')).at(-1).body`),original)
+     assert.deepEqual(await evaluate(`draftWire.responses.filter(r=>r.method==='GET'&&r.status===200&&r.path===${JSON.stringify('/api/drafts/'+original.creationKey+'/versions/1')}).at(-1).body`),original)
      assert.deepEqual(await control('stats','GET'),counters)
      console.log(JSON.stringify({status:'passed',scenario,locale,evidence,checks:['actual qualification-status GET 401 and grant 403 hide current and previous protected copies','independent same-account editor and opaque Draft key retained','authorized exact-version GET recovers original with zero new inference']}))
      return
@@ -303,7 +362,7 @@ for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CA
      await control('reauth')
      await evaluate(`window.dispatchEvent(new Event('focus'))`)
      await wait(`document.querySelector('[data-draft-result]') && !document.querySelector('[role="alert"]')`)
-     assert.deepEqual(await evaluate(`draftWire.responses.filter(r=>r.method==='GET'&&r.status===200).at(-1).body`), original)
+     assert.deepEqual(await evaluate(`draftWire.responses.filter(r=>r.method==='GET'&&r.status===200&&r.path===${JSON.stringify('/api/drafts/'+original.creationKey+'/versions/1')}).at(-1).body`), original)
      assert.equal(await evaluate(`document.querySelectorAll('[data-draft-result]').length`), 1)
      assert.equal(await evaluate(`document.querySelector('[data-draft-job]').value`), 'Unsaved wording for this account')
      assert.equal(await evaluate(`document.querySelector(${JSON.stringify(question)}).value`), 'Unsaved question')

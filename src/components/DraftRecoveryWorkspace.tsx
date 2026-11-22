@@ -187,11 +187,12 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
     controller.current = request
     setBusy(true)
     setError("")
-    if (command === "create" && result?.bundle) {
-      setPrevious(result)
-      setResult(null)
-    }
     try {
+      if (command === "create" && result?.bundle) {
+        reviewClient.remember(result)
+        setPrevious(result)
+        setResult(null)
+      }
       let next: RecoveredDraft
       if (command === "recover") {
         next = await client.recover(request.signal)
@@ -226,6 +227,8 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
           const priorAccepted = await reviewClient.accepted(request.signal)
           if (!request.signal.aborted) setAccepted(priorAccepted)
         }
+        const priorReview = await reviewClient.previous(request.signal)
+        if (!request.signal.aborted) setPrevious(priorReview?.action.id === next.action.id ? null : priorReview)
       }
     } catch (e) {
       if (request.signal.aborted || (e instanceof Error && e.message === "draft_superseded")) return
@@ -301,7 +304,11 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
 
   useEffect(() => {
     const request = new AbortController()
-    void reviewClient.accepted(request.signal).then(value => { if (!request.signal.aborted) setAccepted(value) }).catch(e => {
+    // Independent read sequences keep partial review recovery from canceling
+    // accepted-history recovery (or vice versa). Neither path sends inference.
+    void Promise.all([reviewClient.accepted(request.signal), reviewClient.previous(request.signal)]).then(([value, prior]) => {
+      if (!request.signal.aborted) { setAccepted(value); setPrevious(prior) }
+    }).catch(e => {
       if (request.signal.aborted || (e instanceof Error && e.message === "draft_superseded")) return
       if (e instanceof Error && ["draft_authentication_required", "draft_access_denied"].includes(e.message)) { hideProtectedWork(true); setError(e.message === "draft_authentication_required" ? labels.auth : labels.denied) }
     })
