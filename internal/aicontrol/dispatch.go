@@ -144,6 +144,9 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 			return nil, err
 		}
 	}
+	if err = h.deletionAllowsAction(ctx, tx, p.AccountID, id); err != nil {
+		return nil, err
+	}
 	if h.cfg.ProfileReview && workflow == "profile_review" {
 		if err = h.reviewSavedSnapshot(ctx, tx, p.AccountID, rootJSON); err != nil {
 			return nil, err
@@ -906,6 +909,9 @@ func (s *Session) checkCurrentWithSource(ctx context.Context, tx *sql.Tx, source
 	if e := accountstore.AuthorizeTransaction(ctx, tx, s.p); e != nil {
 		return e
 	}
+	if err := s.h.deletionAllowsAction(ctx, tx, s.p.AccountID, s.id); err != nil {
+		return err
+	}
 	if e := s.h.ready(ctx, tx); e != nil {
 		return e
 	}
@@ -951,6 +957,17 @@ func (s *Session) checkCurrentWithSource(ctx context.Context, tx *sql.Tx, source
 		}
 		_, e := s.draftRemaining(ctx, tx, s.foregroundIndependent)
 		return e
+	}
+	return nil
+}
+
+func (h *Harness) deletionAllowsAction(ctx context.Context, tx *sql.Tx, owner, id string) error {
+	var denied bool
+	if err := tx.QueryRowContext(ctx, `SELECT careeros_action_predates_deletion(owner,created_at) FROM ai_fixture_action WHERE namespace=$1 AND id=$2 AND owner=$3`, h.cfg.Namespace, id, owner).Scan(&denied); err != nil {
+		return ErrUnavailable
+	}
+	if denied {
+		return ErrDenied
 	}
 	return nil
 }

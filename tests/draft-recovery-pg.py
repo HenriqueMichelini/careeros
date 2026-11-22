@@ -26,6 +26,7 @@ def main():
     parser.add_argument("--package", action="append", help="Focused Go package; defaults to recovery packages")
     parser.add_argument("--relevant", action="store_true")
     parser.add_argument("--browser", action="store_true")
+    parser.add_argument("--deletion-browser", action="store_true")
     args = parser.parse_args()
     if args.reconciliation_physical_restart and (args.full or args.relevant or args.browser or args.package != ["./internal/aicontrol"] or args.pattern != "TestRestrictedReconciliationExplicitKeyRetirementKeepsIndependentSurvivors"):
         parser.error("physical restart requires its dedicated single-package, single-test schedule")
@@ -81,16 +82,16 @@ def main():
                     env["CAREEROS_RECONCILIATION_PHYSICAL_RESTART"] = "1"
                 if base_executable:
                     env["CAREEROS_RECONCILIATION_BASE_EXECUTABLE"] = str(base_executable)
-                command = ["go", "test", "-json", "-race", "-vet=off", "-timeout=180s", "-count=1"]
-                if args.browser:
-                    command = ["node", "tests/draft-recovery-browser.check.mjs"]
+                command = ["go", "test", "-p=1", "-json", "-race", "-vet=off", "-timeout=600s", "-count=1"]
+                if args.browser or args.deletion_browser:
+                    command = ["node", "tests/account-deletion-browser.check.mjs" if args.deletion_browser else "tests/draft-recovery-browser.check.mjs"]
                 elif args.full:
                     command += ["./..."]
                 elif args.relevant:
-                    command += helper.PACKAGES + ["./internal/draftrecovery"]
+                    command += helper.PACKAGES + ["./internal/draftrecovery", "./internal/auth", "./cmd/deletion-local"]
                 else:
                     command += ["-run", args.pattern, *(args.package or ["./internal/accountapi", "./internal/draftrecovery"])]
-                receipt_name = "browser.jsonl" if args.browser else "go.jsonl"
+                receipt_name = "browser.jsonl" if args.browser or args.deletion_browser else "go.jsonl"
                 with (evidence / receipt_name).open("x") as output:
                     result = run(command, env=env, output=output)
                 events = []
@@ -103,7 +104,7 @@ def main():
                            "pass_events": sum(e.get("Action") == "pass" for e in events),
                            "failures": [{"package": e.get("Package"), "test": e.get("Test")} for e in events if e.get("Action") == "fail"],
                            "skips": [{"package": e.get("Package"), "test": e.get("Test")} for e in events if e.get("Action") == "skip"]}
-                if args.browser:
+                if args.browser or args.deletion_browser:
                     summary["browser_cells"] = [e for e in events if e.get("status") == "passed"]
                 if args.relevant:
                     summary["admission"] = helper.summarize(evidence / "go.jsonl")

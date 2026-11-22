@@ -30,3 +30,6 @@ export function managedProfileReviewOwner(accountId: string, section: string, st
   if (!owner) { owner = new ManagedProfileReview(accountId, storage, section); owners.set(key, owner) }
   return owner
 }
+export function forgetManagedProfileReview(accountId: string) {
+  for(const [key,owner] of owners)if(JSON.parse(key)[0]===accountId){owner.reset();owners.delete(key)}
+}

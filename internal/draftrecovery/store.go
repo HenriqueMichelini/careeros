@@ -410,6 +410,18 @@ func (s *Store) load(ctx context.Context, tx *sql.Tx, p auth.Principal, key stri
 	if err != nil {
 		return r, d, now, err
 	}
+	// A restored historical purpose/shared/content row cannot revive a Profile
+	// deleted under newer surviving account-owned authority.
+	var profileDeleted bool
+	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM careeros_deleted_profiles WHERE account_id=$1 AND profile_id=$2)`, p.AccountID, []byte(r.binding.Profile.ID)).Scan(&profileDeleted); err != nil {
+		return r, d, now, ErrDenied
+	}
+	if profileDeleted {
+		d.Deleted = true
+		d.Read = false
+		d.Generate = false
+		d.Publish = false
+	}
 	previous := r.State
 	shared := sharedClosure(sharedState)
 	staleUndelivered := false

@@ -31,3 +31,6 @@ export function managedIngestionOwner(scope: string, accountId: string, storage?
   ingestionOwners.set(key, owner)
   return owner
 }
+export function forgetManagedIngestion(accountId: string) {
+  for(const [key,owner] of ingestionOwners)if(JSON.parse(key)[1]===accountId){owner.reset();ingestionOwners.delete(key)}
+}

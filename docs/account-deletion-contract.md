@@ -1,0 +1,31 @@
+# Account-owned deletion contract
+
+Selected source: [#288 owner contract 6645200501](https://github.com/HenriqueMichelini/careeros/issues/288#issuecomment-6645200501), together with explicit deletion 6330893921, recovery-copy ceiling 6324994944, retained classes 6644621228, restricted survivors 6645082417 and opening ordering 6644976301. These selections authorize no live disposal. This implementation is exercised only with synthetic accounts and disposable PostgreSQL.
+
+## Record and effect matrix
+
+| Operation | Winning fence | Primary removal | Preserved authority/evidence |
+| --- | --- | --- | --- |
+| Delete Profile | Authenticated owner, exact Profile ID/revision and explicit confirmation; immutable operation ID commits with Profile tombstone and bound Action terminal fences | Profile/provenance, bound Draft input/bundle/answers/support and review decisions; no independent content reference is deleted | Sign-in, original grant clocks, consumed allowance, restricted expense/remote holds/replay/deny records |
+| Close account | Explicit owner confirmation; durable account closure and operation commit, revoke ordinary sessions/invitations/grant | All account career content, Profile and bound history; account display/contact bytes removed | Subject-to-account deny mapping, minimal closure/deletion and independent financial/replay evidence; fresh sign-in can issue deletion-status-only authority, never workspace authority |
+| Revoke pilot access | Trusted operator command records earliest effective access end | No immediate content deletion | Original grant/allowance; read/export of retained content until earliest access end +30 days for fresh trusted identity; suspension/compromise denies retrieval without resetting clocks |
+
+The retained schema contains one raw Profile and per-Action Draft input/bundle, with review records cascading from content. There is no shared cross-account content store: independently retained Actions referencing a different Profile survive Profile deletion. No prompt history, partial generation buffer, export file or duplicate Profile is added.
+
+## Public and cleanup seams
+
+- Explicit deletion request binds `operationId`, `kind` (`profile` or `account`), `profileId`/`revision` for Profile deletion and literal `confirm: true`. Ownership comes only from the verified session and consistent account header. Unknown fields, missing confirmation and stale/foreign bindings fail without effects.
+- POST commits the operation and fence before returning `fenced_pending`. Replays recover the same operation; changed-content reuse conflicts. GET retrieves metadata only and never starts deletion, inference, cleanup or allowance consumption.
+- A code-owned bounded cleanup command processes an existing fenced operation. It removes only affected primary content and verifies absence before `active_content_removed`; errors persist `failed` and the fence stays closed. Retrying cleanup is deliberate/idempotent and cannot repeat a customer effect.
+- Closed-account status requires a newly verified provider identity and separately scoped status session. Old workspace sessions are revoked. Status-only sessions cannot authenticate any ordinary endpoint or reactivate a grant/account. Status includes no career content or provider subject.
+- No optional export, background grace or arbitrary active-purge timer delays the fence/queue. UI clears affected protected copies after confirmation and recovers operation status without automatic resubmission.
+
+## Serialization and clocks
+
+Existing pilot authority lock precedes the account/session locks. All deletion/Save/dispatch/publication/review/opening writers serialize on the account; purpose/shared Action rows and allowance rows are locked before final trusted time and mutation. The deletion transaction terminalizes affected purpose admissions/actions and releases only still-reserved customer allowance; delivered effects remain unchanged. Provider dispatches, counted scope money and outstanding capacity are untouched. Every later Save rejects a deleted Profile identity, including new operation keys; a replacement has a new identity. Source equality/final response guards reject old transient work after deletion.
+
+Freeze tests at actual public router/client seams: first Profile request/status tracer; two-owner/stale/confirmation/replay/lost response; Save and all bound Draft publication/review/opening races in both orders; no restoration of old identity; real PostgreSQL/process restart; cleanup failure/retry; least-privilege content denial and survivor equality; EN/PT deliberate confirmation/status and protected-copy hiding. Financial assertions may inspect the restricted fixture authority to prove no expense/capacity/refund changes, independently of customer results.
+
+## Residual copies and recovery interface
+
+`active_content_removed` means affected primary content/references are absent, not universal erasure. Canonical Profile removal already happens at the original fence, so the conservative recovery-copy ceiling uses that original `fencedAt` plus 30 elapsed days; shorter retention is allowed. `removedAt` separately records all affected primary cleanup completion. Failed/delayed cleanup, retries, copying and restoring cannot extend the ceiling. Provider/recipient outcomes remain `not_verified` unless separately established. A durable minimal tombstone export/reapply interface carries opaque owner/Profile/operation and original fence/removal anchors for downstream restore reconciliation. It never opens restored service or claims a hosted restore proof. Essential expense/replay/deny survivors follow their own purpose review, not 168 hours or content TTL. Customer-held downloads and Google's account are not centrally deleted.

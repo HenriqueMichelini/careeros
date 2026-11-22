@@ -310,7 +310,9 @@ func TestPilotInvitationExpiryReissueAndRevocation(t *testing.T) {
 		}
 	}
 	status, err := store.ActivatePilot(context.Background(), who.Principal, "activate", reissued.InvitationID, true)
-	if err != nil || status.CanDraft || status.CanStandalone || status.CanRetrieve || status.State != "revoked" {
+	// #288's selected known early access-end rule preserves read/export only;
+	// redemption/reissue still cannot recreate generation rights or extend time.
+	if err != nil || status.CanDraft || status.CanStandalone || !status.CanRetrieve || status.RetrieveUntil == nil || !status.RetrieveUntil.Before(first.ExpiresAt.Add(30*24*time.Hour)) || status.State != "revoked" {
 		t.Fatalf("revoked replay: %+v %v", status, err)
 	}
 	current, exists, err := store.AuthStores().Accounts.Get(context.Background(), who.Account.ID)

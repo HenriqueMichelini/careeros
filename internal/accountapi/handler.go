@@ -21,6 +21,7 @@ func New(service *auth.Service, store *accountstore.Store) http.Handler {
 	var profile http.Handler = auth.UnavailableHandler()
 	if service != nil && store != nil {
 		routes := http.NewServeMux()
+		deletionRoutes(routes, store)
 		routes.HandleFunc("GET /api/profile/export", func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.RawQuery != "" {
 				respond(w, nil, accountstore.ErrValidation)
@@ -42,14 +43,10 @@ func New(service *auth.Service, store *accountstore.Store) http.Handler {
 			}
 		})
 		routes.HandleFunc("GET /api/profile/current", func(w http.ResponseWriter, r *http.Request) {
-			p, _ := auth.PrincipalFromRequest(r)
-			result, err := store.ReadProfile(r.Context(), p, "")
-			respond(w, result, err)
+			profileResponse(w, r, store, "")
 		})
 		routes.HandleFunc("GET /api/profile/operations/{operation}", func(w http.ResponseWriter, r *http.Request) {
-			p, _ := auth.PrincipalFromRequest(r)
-			result, err := store.ReadProfile(r.Context(), p, r.PathValue("operation"))
-			respond(w, result, err)
+			profileResponse(w, r, store, r.PathValue("operation"))
 		})
 		routes.HandleFunc("PUT /api/profile/current", func(w http.ResponseWriter, r *http.Request) {
 			// Reject client ownership fields, ambiguous JSON and extra documents.
@@ -70,8 +67,12 @@ func New(service *auth.Service, store *accountstore.Store) http.Handler {
 				return
 			}
 			p, _ := auth.PrincipalFromRequest(r)
-			result, err := store.SaveProfile(r.Context(), p, input.OperationID, input.ExpectedRevision, input.Document)
-			respond(w, result, err)
+			_, err = store.SaveProfile(r.Context(), p, input.OperationID, input.ExpectedRevision, input.Document)
+			if err != nil {
+				respond(w, nil, err)
+				return
+			}
+			profileResponse(w, r, store, input.OperationID)
 		})
 		profile = service.Protect(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			p, _ := auth.PrincipalFromRequest(r)
@@ -89,7 +90,28 @@ func New(service *auth.Service, store *accountstore.Store) http.Handler {
 	mux.Handle("/api/profile/export", profile)
 	mux.Handle("/api/profile/current", profile)
 	mux.Handle("/api/profile/operations/", profile)
+	mux.Handle("/api/deletion/", profile)
+	if service != nil && store != nil {
+		status := http.NewServeMux()
+		deletionRoutes(status, store)
+		mux.Handle("GET /api/deletion/operations/{operation}", service.ProtectDeletionStatus(pilotAccount(status)))
+		mux.Handle("GET /api/deletion/status", service.ProtectDeletionStatus(pilotAccount(status)))
+	}
 	return mux
+}
+
+func profileResponse(w http.ResponseWriter, r *http.Request, store *accountstore.Store, operation string) {
+	p, _ := auth.PrincipalFromRequest(r)
+	started := false
+	err := store.WithProfileResult(r.Context(), p, operation, func(v accountstore.ProfileResult) error {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Cache-Control", "no-store")
+		started = true
+		return json.NewEncoder(w).Encode(v)
+	})
+	if err != nil && !started {
+		respond(w, nil, err)
+	}
 }
 
 func respond(w http.ResponseWriter, result any, err error) { workflowauth.Respond(w, result, err) }

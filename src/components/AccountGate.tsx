@@ -2,10 +2,12 @@ import { useEffect, useRef, useState, type ReactNode } from "react"
 import { AccountProfile, csrfHeaders } from "../lib/accountProfile"
 import { getInitialLocale } from "../lib/i18n"
 import PilotAccess from "./PilotAccess"
+import AccountDeletion, { deletionEvent, deletionSignalKey } from "./AccountDeletion"
 import { StoreProvider } from "../lib/store"
 
 interface Session {
   authenticated: boolean
+  deletionStatusOnly?: boolean
   account?: { id: string }
   expiresAt?: string
 }
@@ -22,6 +24,7 @@ export default function AccountGate({
   const [client, setClient] = useState<AccountProfile | null>(null)
   const [checking, setChecking] = useState(true)
   const [logoutIntent, setLogoutIntent] = useState(false)
+  const [deletionPending,setDeletionPending] = useState(false)
   const clients = useRef(new Map<string, AccountProfile>())
   const current = useRef<AccountProfile | null>(null)
   const epoch = useRef(0)
@@ -51,11 +54,27 @@ export default function AccountGate({
       setSession(value)
       setError(false)
       const accountId = value.authenticated ? value.account!.id : null
+      if(value.deletionStatusOnly&&value.account?.id){
+        const old=clients.current.get(value.account.id)
+        old?.forgetDeletedWork();clients.current.delete(value.account.id)
+        window.dispatchEvent(new CustomEvent(deletionEvent,{detail:{accountId:value.account.id}}))
+      }
+      if(accountId&&current.current?.accountId===accountId){
+        const before=JSON.stringify(current.current.deletedProfileIds)
+        await current.current.open()
+        if(ticket!==epoch.current)return
+        if(before!==JSON.stringify(current.current.deletedProfileIds)){
+          window.dispatchEvent(new CustomEvent(deletionEvent,{detail:{accountId}}))
+          window.location.reload()
+          return
+        }
+      }
       if (current.current?.accountId !== accountId) {
         current.current?.dispose()
         current.current = null
         setClient(null)
         setLogoutIntent(false)
+        setDeletionPending(false)
       }
       if (accountId && !current.current) {
         const next =
@@ -80,11 +99,24 @@ export default function AccountGate({
       if (document.visibilityState === "visible") void probe()
     }
     window.addEventListener("focus", focus)
+    const deleted=(event:Event)=>{
+      const owner=(event as CustomEvent<{accountId?:string}>).detail?.accountId
+      if(!owner||!current.current||owner!==current.current.accountId)return
+      setDeletionPending(true);current.current.forgetDeletedWork()
+    }
+    const otherTab=(event:StorageEvent)=>{
+      if(event.key!==deletionSignalKey||!event.newValue)return
+      try{const v=JSON.parse(event.newValue);if(v.accountId===current.current?.accountId){deleted(new CustomEvent(deletionEvent,{detail:v}));window.location.reload()}}catch{/* Invalid metadata is not authority. */}
+    }
+    window.addEventListener(deletionEvent,deleted)
+    window.addEventListener("storage",otherTab)
     document.addEventListener("visibilitychange", visible)
     return () => {
       epoch.current++
       for (const retained of clients.current.values()) retained.dispose()
       window.removeEventListener("focus", focus)
+      window.removeEventListener(deletionEvent,deleted)
+      window.removeEventListener("storage",otherTab)
       document.removeEventListener("visibilitychange", visible)
     }
   }, [])
@@ -142,6 +174,8 @@ export default function AccountGate({
     anchor.click()
     setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
+  if(!checking&&session?.deletionStatusOnly&&session.account?.id)
+    return <AccountDeletion key={session.account.id} accountId={session.account.id} pt={pt}/>
   if (!client)
     return (
       <SignedOutGate
@@ -160,7 +194,8 @@ export default function AccountGate({
         pt={pt}
         retry={() => void probe()}
       />
-      <div hidden={checking}>
+      {!checking&&<AccountDeletion key={client.accountId} accountId={client.accountId} account={client} pt={pt} withhold={()=>setDeletionPending(true)}/>}
+      <div hidden={checking||deletionPending}>
         <div className="flex items-center justify-between border-b px-4 py-2 text-sm">
           <span>
             {pt

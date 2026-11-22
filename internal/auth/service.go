@@ -71,9 +71,10 @@ type AccountView struct {
 }
 
 type SessionView struct {
-	Authenticated bool         `json:"authenticated"`
-	Account       *AccountView `json:"account,omitempty"`
-	ExpiresAt     *time.Time   `json:"expiresAt,omitempty"`
+	Authenticated      bool         `json:"authenticated"`
+	DeletionStatusOnly bool         `json:"deletionStatusOnly,omitempty"`
+	Account            *AccountView `json:"account,omitempty"`
+	ExpiresAt          *time.Time   `json:"expiresAt,omitempty"`
 }
 
 // Service owns the sign-in transaction, account mapping and session
@@ -270,7 +271,8 @@ func (s *Service) resolveAccount(ctx context.Context, transaction Transaction, i
 	if err != nil {
 		return Account{}, err
 	}
-	if account.Status != AccountActive {
+	_, closedStatus := s.sessions.(ClosedStatusSessionStore)
+	if account.Status != AccountActive && !(account.Status == AccountDeleted && closedStatus && transaction.PreviousSessionID == "") {
 		return Account{}, ErrForbidden
 	}
 	// A logout-all that raced the provider exchange must invalidate this
@@ -304,8 +306,22 @@ func (s *Service) issueSession(ctx context.Context, transaction Transaction, acc
 		CreatedAt:  now,
 		ExpiresAt:  expiresAt,
 	}
-	if err := s.sessions.Create(ctx, session, transaction.PreviousSessionID, now); err != nil {
-		return LoginResult{}, err
+	var createErr error
+	if account.Status == AccountDeleted {
+		closed, ok := s.sessions.(ClosedStatusSessionStore)
+		if !ok {
+			return LoginResult{}, ErrForbidden
+		}
+		if session.ExpiresAt.After(now.Add(10 * time.Minute)) {
+			session.ExpiresAt = now.Add(10 * time.Minute)
+			expiresAt = session.ExpiresAt
+		}
+		createErr = closed.CreateClosedStatus(ctx, session)
+	} else {
+		createErr = s.sessions.Create(ctx, session, transaction.PreviousSessionID, now)
+	}
+	if createErr != nil {
+		return LoginResult{}, createErr
 	}
 	return LoginResult{
 		Principal: Principal{
@@ -407,6 +423,15 @@ func (s *Service) Logout(ctx context.Context, token string) error {
 		return err
 	}
 	if !ok {
+		if closed, enabled := s.sessions.(ClosedStatusSessionStore); enabled {
+			v, found, err := closed.FindClosedStatusByTokenHash(ctx, hashSecret(token), now)
+			if err != nil {
+				return err
+			}
+			if found {
+				return closed.RevokeClosedStatus(ctx, v.ID)
+			}
+		}
 		return nil
 	}
 	return s.sessions.Revoke(ctx, session.ID)

@@ -29,15 +29,45 @@ type Outcome struct {
 	CommittedRevision int64  `json:"committedRevision"`
 }
 type ProfileResult struct {
-	AccountID string          `json:"accountId"`
-	Document  json.RawMessage `json:"document"`
-	Outcome   *Outcome        `json:"outcome,omitempty"`
+	AccountID         string          `json:"accountId"`
+	Document          json.RawMessage `json:"document"`
+	Outcome           *Outcome        `json:"outcome,omitempty"`
+	DeletedProfileIDs []string        `json:"deletedProfileIds,omitempty"`
 }
 
 // authorized locks the account before its session. Every auth mutation that
 // can revoke this authority takes that same account lock. The DB clock is
 // checked after lock acquisition, including when a request waited at expiry.
 func authorized(ctx context.Context, tx *sql.Tx, p auth.Principal) error {
+	if err := authorizedAccount(ctx, tx, p); err != nil {
+		return err
+	}
+	// A stale restored Profile cannot override its independently surviving
+	// deletion marker. Keep ordinary career access closed until reconciliation.
+	var restoredDeleted bool
+	if err := tx.QueryRowContext(ctx, `SELECT careeros_deleted_profile_restored($1)`, p.AccountID).Scan(&restoredDeleted); err != nil {
+		return unavailable(err)
+	}
+	if restoredDeleted {
+		return auth.ErrForbidden
+	}
+	return nil
+}
+
+func authorizedAccount(ctx context.Context, tx *sql.Tx, p auth.Principal) error {
+	if err := authorizedSession(ctx, tx, p); err != nil {
+		return err
+	}
+	var closed bool
+	if err := tx.QueryRowContext(ctx, `SELECT careeros_account_closed($1)`, p.AccountID).Scan(&closed); err != nil {
+		return unavailable(err)
+	}
+	if closed {
+		return auth.ErrAuthenticationRequired
+	}
+	return nil
+}
+func authorizedSession(ctx context.Context, tx *sql.Tx, p auth.Principal) error {
 	var status auth.AccountStatus
 	var generation uint64
 	err := tx.QueryRowContext(ctx, "SELECT status,generation FROM careeros_accounts WHERE id=$1 FOR UPDATE", p.AccountID).Scan(&status, &generation)
@@ -66,47 +96,82 @@ func currentProfile(ctx context.Context, tx *sql.Tx, owner string) (ProfileResul
 	result := ProfileResult{AccountID: owner, Document: json.RawMessage("null")}
 	err := tx.QueryRowContext(ctx, "SELECT document FROM careeros_profiles WHERE account_id=$1", owner).Scan(&result.Document)
 	if errors.Is(err, sql.ErrNoRows) {
-		return result, nil
+		err = nil
 	}
-	return result, unavailable(err)
+	if err != nil {
+		return result, unavailable(err)
+	}
+	rows, err := tx.QueryContext(ctx, `SELECT profile_id FROM careeros_deleted_profiles WHERE account_id=$1 ORDER BY profile_id`, owner)
+	if err != nil {
+		return result, unavailable(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id []byte
+		if err = rows.Scan(&id); err != nil {
+			return result, unavailable(err)
+		}
+		result.DeletedProfileIDs = append(result.DeletedProfileIDs, string(id))
+	}
+	return result, unavailable(rows.Err())
 }
 func (s *Store) ReadProfile(ctx context.Context, p auth.Principal, operation string) (ProfileResult, error) {
+	var out ProfileResult
+	err := s.WithProfileResult(ctx, p, operation, func(v ProfileResult) error { out = v; return nil })
+	return out, err
+}
+
+// WithProfileResult keeps current authority through the actual outer write.
+// A Save result also passes here after its commit: deletion can replace its
+// response with current empty authority, never release a stale career copy.
+func (s *Store) WithProfileResult(ctx context.Context, p auth.Principal, operation string, write func(ProfileResult) error) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return ProfileResult{}, unavailable(err)
+		return unavailable(err)
 	}
 	defer tx.Rollback()
 	if s.pilot {
 		if err = lockPilot(ctx, tx); err != nil {
-			return ProfileResult{}, err
+			return err
 		}
 	}
 	if err = authorized(ctx, tx, p); err != nil {
-		return ProfileResult{}, err
+		return err
 	}
 	if s.pilot {
 		if err = requirePilot(ctx, tx, p.AccountID, PilotRetrieve); err != nil {
-			return ProfileResult{}, err
+			return err
 		}
 	}
 	result, err := currentProfile(ctx, tx, p.AccountID)
 	if err != nil {
-		return result, err
+		return err
 	}
 	if operation != "" {
 		var id []byte
 		out := &Outcome{OperationID: operation}
 		err = tx.QueryRowContext(ctx, "SELECT profile_id,committed_revision FROM careeros_profile_operations WHERE account_id=$1 AND operation_id=$2", p.AccountID, operation).Scan(&id, &out.CommittedRevision)
 		if errors.Is(err, sql.ErrNoRows) {
-			return result, ErrNotFound
+			return ErrNotFound
 		}
 		if err != nil {
-			return result, unavailable(err)
+			return unavailable(err)
 		}
 		out.ProfileID = string(id)
 		result.Outcome = out
 	}
-	return result, unavailable(tx.Commit())
+	if err = authorized(ctx, tx, p); err != nil {
+		return err
+	}
+	if s.pilot {
+		if err = requirePilot(ctx, tx, p.AccountID, PilotRetrieve); err != nil {
+			return err
+		}
+	}
+	if err = write(result); err != nil {
+		return err
+	}
+	return unavailable(tx.Commit())
 }
 
 func validOperation(id string) bool {
@@ -243,6 +308,13 @@ func (s *Store) SaveProfile(ctx context.Context, p auth.Principal, operation str
 		if err = requirePilot(ctx, tx, p.AccountID, PilotStandalone); err != nil {
 			return ProfileResult{}, err
 		}
+	}
+	var deleted bool
+	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM careeros_deleted_profiles WHERE account_id=$1 AND profile_id=$2)`, p.AccountID, []byte(doc.ID)).Scan(&deleted); err != nil {
+		return ProfileResult{}, unavailable(err)
+	}
+	if deleted {
+		return ProfileResult{}, ErrConflict
 	}
 	if result, completed, err := replayProfile(ctx, tx, p.AccountID, operation, hash[:]); completed || err != nil {
 		return result, err

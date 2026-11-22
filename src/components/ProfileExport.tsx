@@ -23,6 +23,14 @@ export default function ProfileExport({ accountId }: { accountId: string }) {
       request.current?.abort()
     }
   }, [accountId])
+  useEffect(()=>{
+    const deleted=(event:Event)=>{
+      if((event as CustomEvent<{accountId?:string}>).detail?.accountId!==accountId)return
+      generation.current++;request.current?.abort();setBusy(false);setMessage("")
+    }
+    window.addEventListener("careeros-deletion-fence",deleted)
+    return()=>window.removeEventListener("careeros-deletion-fence",deleted)
+  },[accountId])
   async function download() {
     const lease = ++generation.current
     request.current?.abort()

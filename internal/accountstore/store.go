@@ -100,6 +100,13 @@ func (s accounts) Get(ctx context.Context, id string) (auth.Account, bool, error
 	if err != nil {
 		return a, false, unavailable(err)
 	}
+	var closed bool
+	if err = s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM careeros_deletion_operations WHERE account_id=$1 AND kind='account')`, id).Scan(&closed); err != nil {
+		return a, false, unavailable(err)
+	}
+	if closed {
+		a.Status = auth.AccountDeleted
+	}
 	rows, err := s.db.QueryContext(ctx, "SELECT provider,issuer,subject,created_at FROM careeros_identities WHERE account_id=$1", id)
 	if err != nil {
 		return a, false, unavailable(err)
@@ -147,6 +154,13 @@ func (s accounts) FindOrCreateBySubject(ctx context.Context, i auth.IdentityRef,
 	}
 	if err != nil {
 		return a, false, unavailable(err)
+	}
+	var closed bool
+	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM careeros_deletion_operations WHERE account_id=$1 AND kind='account')`, a.ID).Scan(&closed); err != nil {
+		return a, false, unavailable(err)
+	}
+	if closed {
+		a.Status = auth.AccountDeleted
 	}
 	i.CreatedAt = a.CreatedAt
 	a.Identities = []auth.IdentityRef{i}
@@ -216,6 +230,13 @@ func (s sessions) Create(ctx context.Context, v auth.Session, previousID string,
 		return unavailable(err)
 	}
 	if status != auth.AccountActive || generation != v.Generation {
+		return auth.ErrInvalidTransaction
+	}
+	var closed bool
+	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM careeros_deletion_operations WHERE account_id=$1 AND kind='account')`, v.AccountID).Scan(&closed); err != nil {
+		return unavailable(err)
+	}
+	if closed {
 		return auth.ErrInvalidTransaction
 	}
 	if previousID != "" {

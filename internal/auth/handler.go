@@ -84,6 +84,10 @@ func (h *Handler) session(w http.ResponseWriter, r *http.Request) {
 	}
 	principal, err := h.service.Authenticate(r.Context(), token)
 	if err != nil {
+		if closed, e := h.service.AuthenticateDeletionStatus(r.Context(), token); e == nil {
+			writeJSON(w, http.StatusOK, SessionView{DeletionStatusOnly: true, Account: &AccountView{ID: closed.AccountID}, ExpiresAt: &closed.ExpiresAt})
+			return
+		}
 		if !errors.Is(err, ErrAuthenticationRequired) {
 			writeAuthError(w, err)
 			return
@@ -106,7 +110,7 @@ func (h *Handler) logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if token, ok := sessionTokenFromRequest(r); ok {
-		principal, err := h.service.Authenticate(r.Context(), token)
+		principal, err := h.service.AuthenticateDeletionStatus(r.Context(), token)
 		if err != nil && !errors.Is(err, ErrAuthenticationRequired) {
 			writeAuthError(w, err)
 			return

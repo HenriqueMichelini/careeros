@@ -43,3 +43,4 @@ export function managedStandaloneCVOwner(accountId: string, storage?: Storage) {
   if (!owner) { owner = new ManagedStandaloneCV(accountId, storage); owners.set(accountId, owner) }
   return owner
 }
+export function forgetManagedStandaloneCV(accountId: string) { owners.get(accountId)?.reset();owners.delete(accountId) }

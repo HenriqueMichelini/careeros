@@ -10,6 +10,7 @@ function apiProxy() {
     '/api/profile/export',
     '/api/profile/current',
     '/api/profile/operations',
+    '/api/deletion',
     '/api/cv/generate',
     '/api/profile/ingest',
     '/api/profile/review',

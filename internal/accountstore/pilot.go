@@ -43,6 +43,8 @@ type pilotAccess struct {
 	revoked                                       bool
 	eligible                                      sql.NullBool
 	state                                         string
+	accessEnded                                   sql.NullTime
+	retrievalHeld                                 bool
 }
 
 func lockPilot(ctx context.Context, tx *sql.Tx) error {
@@ -93,7 +95,7 @@ func pilotNow(ctx context.Context, tx *sql.Tx) (time.Time, error) {
 }
 func readPilot(ctx context.Context, tx *sql.Tx, owner string) (pilotAccess, error) {
 	var a pilotAccess
-	err := tx.QueryRowContext(ctx, `SELECT invitation_id,invited_at,invitation_expires_at,invitation_revoked,age_eligible,activated_at,expires_at,state,draft_allowance FROM careeros_pilot_access WHERE account_id=$1`, owner).Scan(&a.invitation, &a.invited, &a.invitationExpiry, &a.revoked, &a.eligible, &a.activated, &a.expires, &a.state, &a.allowance)
+	err := tx.QueryRowContext(ctx, `SELECT invitation_id,invited_at,invitation_expires_at,invitation_revoked,age_eligible,activated_at,expires_at,state,draft_allowance,access_ended_at,retrieval_held FROM careeros_pilot_access WHERE account_id=$1`, owner).Scan(&a.invitation, &a.invited, &a.invitationExpiry, &a.revoked, &a.eligible, &a.activated, &a.expires, &a.state, &a.allowance, &a.accessEnded, &a.retrievalHeld)
 	return a, err
 }
 func pilotStatus(owner string, a pilotAccess, now time.Time) PilotStatus {
@@ -122,8 +124,15 @@ func pilotStatus(owner string, a pilotAccess, now time.Time) PilotStatus {
 		return s
 	}
 	s.ExpiresAt = &a.expires.Time
-	until := a.expires.Time.Add(30 * 24 * time.Hour)
+	end := a.expires.Time
+	if a.accessEnded.Valid && a.accessEnded.Time.Before(end) {
+		end = a.accessEnded.Time
+	}
+	until := end.Add(30 * 24 * time.Hour)
 	s.RetrieveUntil = &until
+	if a.state == "revoked" && !a.accessEnded.Valid {
+		s.RetrieveUntil = nil
+	}
 	if a.state == "active" {
 		if now.Before(a.expires.Time) {
 			s.CanDraft = true
@@ -135,6 +144,14 @@ func pilotStatus(owner string, a pilotAccess, now time.Time) PilotStatus {
 		} else {
 			s.State = "expired"
 		}
+	}
+	if a.state == "revoked" && a.accessEnded.Valid && !a.retrievalHeld && !a.revoked && now.Before(until) {
+		s.CanRetrieve = true
+	}
+	if a.retrievalHeld {
+		s.CanRetrieve = false
+		s.CanDraft = false
+		s.CanStandalone = false
 	}
 	return s
 }
@@ -260,10 +277,10 @@ func (s *Store) PilotCommand(ctx context.Context, p auth.Principal, operation st
 		if !a.activated.Valid || a.state == "revoked" {
 			return PilotStatus{}, ErrConflict
 		}
-		_, err = tx.ExecContext(ctx, `UPDATE careeros_pilot_access SET state='suspended' WHERE account_id=$1`, target)
+		_, err = tx.ExecContext(ctx, `UPDATE careeros_pilot_access SET state='suspended',retrieval_held=true WHERE account_id=$1`, target)
 	case "revoke":
 		if a.activated.Valid {
-			_, err = tx.ExecContext(ctx, `UPDATE careeros_pilot_access SET state='revoked' WHERE account_id=$1`, target)
+			_, err = tx.ExecContext(ctx, `UPDATE careeros_pilot_access SET state='revoked',access_ended_at=CASE WHEN state='revoked' AND access_ended_at IS NULL THEN NULL WHEN access_ended_at IS NULL THEN $2 ELSE LEAST(access_ended_at,$2) END,retrieval_held=retrieval_held OR state='suspended' WHERE account_id=$1`, target, now)
 		} else {
 			_, err = tx.ExecContext(ctx, `UPDATE careeros_pilot_access SET invitation_revoked=true WHERE account_id=$1`, target)
 		}

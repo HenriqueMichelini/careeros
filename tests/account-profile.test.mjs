@@ -49,6 +49,18 @@ const candidate = (doc) =>
     value: "Go, ação\0😀",
   })
 
+test("a server deletion tombstone withholds the affected pending Save even if browser cleanup throws", async () => {
+ const doc=migrateProfile(emptyProfileView(),"deleted-profile")
+ const pending={version:1,accountId:"account-a",pendingSave:{operationId:"pending-save",expectedRevision:0,document:candidate(doc)}}
+ const client=new AccountProfile("account-a",()=>{},async()=>reply({accountId:"account-a",document:null,deletedProfileIds:["deleted-profile"]}),{
+  getItem:()=>JSON.stringify(pending),setItem(){},removeItem(){throw Error("storage unavailable")},
+ })
+ const current=await client.open()
+ assert.notEqual(current.id,"deleted-profile")
+ assert.equal(client.hasRecovery(),false)
+ assert.equal(client.recoveryExport().pendingSave,null)
+})
+
 test("new account opens clean without touching legacy Profile storage, and sends explicit Save + CSRF", async () => {
   const original = Object.getOwnPropertyDescriptor(globalThis, "localStorage")
   Object.defineProperty(globalThis, "localStorage", {

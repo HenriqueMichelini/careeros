@@ -18,6 +18,7 @@ export interface ProfileReply {
   accountId: string
   document: ProfileDocument | null
   outcome?: SaveOutcome
+  deletedProfileIds?: string[]
 }
 interface PendingSave {
   operationId: string
@@ -58,6 +59,7 @@ export class AccountProfile {
     return this.exists
   }
   checkpointStored = false
+  deletedProfileIds: string[] = []
   private lease = 0
   private pending: PendingSave | null = null
   private invalidCheckpoint: string | null = null
@@ -156,18 +158,22 @@ export class AccountProfile {
       throw new ProfileStorageError("account_changed")
     if (body.document !== null && !validateProfileDocument(body.document))
       throw new ProfileStorageError("validation")
+    if (body.deletedProfileIds !== undefined && (!Array.isArray(body.deletedProfileIds) || body.deletedProfileIds.some((id: unknown) => typeof id !== "string")))
+      throw new ProfileStorageError("validation")
     return body
   }
   async open(): Promise<ProfileDocument> {
     const lease = this.lease
     const reply = await this.call("/api/profile/current")
     this.assertActive(lease)
+    this.applyDeletionFences(reply.deletedProfileIds ?? [])
     this.exists = reply.document !== null
     return (
       reply.document ?? migrateProfile(emptyProfileView(), crypto.randomUUID())
     )
   }
   private confirm(reply: ProfileReply): ProfileDocument {
+    this.applyDeletionFences(reply.deletedProfileIds ?? [])
     const pending = this.pending
     if (
       !pending ||
@@ -292,6 +298,27 @@ export class AccountProfile {
   }
   recovery() {
     return this.pending ? structuredClone(this.pending) : null
+  }
+  forgetDeletedWork() {
+    this.lease++
+    this.pending = null
+    this.invalidCheckpoint = null
+    this.state = "idle"
+    try { this.storage?.removeItem(this.recoveryKey) } catch { this.checkpointStored = false }
+    this.active = false
+    this.notify()
+  }
+  private applyDeletionFences(ids: string[]) {
+    this.deletedProfileIds = [...ids]
+    if ((this.pending && ids.includes(this.pending.document.id)) || (this.invalidCheckpoint !== null && ids.length > 0)) {
+      this.lease++
+      this.pending = null
+      this.invalidCheckpoint = null
+      this.state = "idle"
+      // Failed browser cleanup cannot preserve a protected visible candidate.
+      try { this.storage?.removeItem(this.recoveryKey) } catch { this.checkpointStored = false }
+      this.notify()
+    }
   }
 }
 

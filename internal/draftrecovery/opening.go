@@ -121,7 +121,7 @@ func (s *Store) openingGrant(ctx context.Context, tx *sql.Tx, p auth.Principal) 
 	var g openingGrant
 	var activated, expires sql.NullTime
 	err := tx.QueryRowContext(ctx, `SELECT p.activated_at,p.expires_at,
- p.state='active' AND p.age_eligible AND NOT p.invitation_revoked AND p.draft_allowance=5
+ p.state='active' AND p.age_eligible AND NOT p.invitation_revoked AND NOT p.retrieval_held AND p.draft_allowance=5
  AND p.participant_slot BETWEEN 1 AND 5
  FROM careeros_pilot_access p JOIN careeros_identities i USING(provider,issuer,subject)
  WHERE p.account_id=$1 AND i.account_id=$1 FOR UPDATE OF p`, p.AccountID).Scan(&activated, &expires, &g.active)

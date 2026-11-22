@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	applicationdraft "professional-information-repo/backend/application-draft"
 	"professional-information-repo/internal/aicontrol"
@@ -58,13 +59,13 @@ func (s *Store) CreateManaged(ctx context.Context, p auth.Principal, key string,
 }
 
 func managedPilotDecision(ctx context.Context, a Authority) (Decision, error) {
-	var activated, expiry sql.NullTime
+	var activated, expiry, accessEnd sql.NullTime
 	var state string
-	var eligible bool
+	var eligible, held bool
 	err := a.Transaction.QueryRowContext(ctx, `
-		SELECT p.activated_at,p.expires_at,p.state,COALESCE(p.age_eligible,false) AND NOT p.invitation_revoked
+		SELECT p.activated_at,p.expires_at,p.state,COALESCE(p.age_eligible,false) AND NOT p.invitation_revoked,p.access_ended_at,p.retrieval_held
 		FROM careeros_pilot_access p JOIN careeros_identities i USING(provider,issuer,subject)
-		WHERE p.account_id=$1 AND i.account_id=$1`, a.Principal.AccountID).Scan(&activated, &expiry, &state, &eligible)
+		WHERE p.account_id=$1 AND i.account_id=$1`, a.Principal.AccountID).Scan(&activated, &expiry, &state, &eligible, &accessEnd, &held)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Decision{Revoked: true}, nil
 	}
@@ -74,7 +75,7 @@ func managedPilotDecision(ctx context.Context, a Authority) (Decision, error) {
 	if !activated.Valid || !expiry.Valid || activated.Time.UnixMicro() <= 0 {
 		return Decision{Revoked: true}, nil
 	}
-	d := Decision{Epoch: uint64(activated.Time.UnixMicro()), GrantExpiresAt: expiry.Time, Revoked: state != "active" || !eligible}
+	d := Decision{Epoch: uint64(activated.Time.UnixMicro()), GrantExpiresAt: expiry.Time, Revoked: state != "active" || !eligible || held}
 	if a.Action.ID != "" {
 		if err = a.Transaction.QueryRowContext(ctx, `SELECT customer_effect FROM ai_fixture_action WHERE namespace=$1 AND id=$2 AND owner=$3 AND workflow='application_draft'`,
 			a.Action.Namespace, a.Action.ID, a.Principal.AccountID).Scan(&d.Delivered); err != nil {
@@ -83,7 +84,12 @@ func managedPilotDecision(ctx context.Context, a Authority) (Decision, error) {
 	}
 	d.Generate = !d.Revoked && a.Now.Before(d.GrantExpiresAt)
 	d.Publish = d.Generate
-	d.Read = !d.Revoked && (d.Generate || d.Delivered)
+	end := expiry.Time
+	if accessEnd.Valid && accessEnd.Time.Before(end) {
+		end = accessEnd.Time
+	}
+	retrievalState := state == "active" || (state == "revoked" && accessEnd.Valid)
+	d.Read = eligible && !held && retrievalState && (d.Generate || (d.Delivered && a.Now.Before(end.Add(30*24*time.Hour))))
 	return d, nil
 }
 
