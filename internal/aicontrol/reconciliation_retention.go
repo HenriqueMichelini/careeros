@@ -191,9 +191,9 @@ func ensureAttributionFloor(ctx context.Context, tx *sql.Tx) error {
 		return ErrUnavailable
 	}
 	_, err := tx.ExecContext(ctx, `UPDATE ai_recon_state s SET attribution_floor=d.counted FROM ai_fixture_dispatch d WHERE d.namespace=s.namespace AND d.id=s.dispatch AND d.compacted AND EXISTS(
- SELECT 1 FROM ai_recon_command c JOIN LATERAL (
+ SELECT 1 FROM ai_recon_command c LEFT JOIN LATERAL (
  SELECT p.kind,p.detail FROM ai_recon_command p WHERE p.namespace=c.namespace AND p.dispatch=c.dispatch AND p.version<c.version AND p.kind IN ('usage','bill','corrected_bill','maximum') ORDER BY p.version DESC LIMIT 1
  ) prior ON true WHERE c.namespace=s.namespace AND c.dispatch=s.dispatch AND c.kind='compact' AND
- (NOT (prior.detail ? 'source') OR NOT (prior.detail ? 'requestId') OR (prior.kind='usage' AND NOT (prior.detail ? 'usage'))))`)
+ (prior.kind IS NULL OR NOT (prior.detail ? 'source') OR NOT (prior.detail ? 'requestId') OR (prior.kind='usage' AND NOT (prior.detail ? 'usage'))))`)
 	return safe(err)
 }

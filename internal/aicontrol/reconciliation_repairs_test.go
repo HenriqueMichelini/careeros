@@ -207,3 +207,66 @@ func TestReconciliationPriorSchemaUpgradeDistinguishesDeferralFromLoss(t *testin
 		})
 	}
 }
+
+// Unknown obligations have no accepted financial command before retirement.
+// The old-schema upgrade must still preserve their original lost-detail floor.
+func TestReconciliationPriorSchemaUnknownRetirementPreservesFloor(t *testing.T) {
+	f := setup(t, nil)
+	s := f.open(t, "old_unknown_floor")
+	d := f.sent(t, s)
+	operator := reconciliationOperator(t, f)
+	r := f.h.Reconciliation()
+	f.clock.set(d.IntentAt.Add(30*24*time.Hour), true)
+	retire := reconciliationUsage(d, "old_unknown_retirement")
+	retire.Kind = "compact"
+	retire.Evidence.Usage = nil
+	retire.Evidence.Difference = nil
+	retire.Retention = &DetailRetirementReview{Reference: "no_detail_purpose"}
+	applyReconciliation(t, r, operator, retire)
+	if _, err := f.db.Exec(`ALTER TABLE ai_recon_state DROP COLUMN attribution_floor`); err != nil {
+		t.Fatal(err)
+	}
+	upgraded, err := NewSynthetic(context.Background(), f.dsn, f.cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer upgraded.Close()
+	r = upgraded.Reconciliation()
+	state, err := r.Status(context.Background(), operator, d.ID)
+	if err != nil || state.Counted != d.Counted || state.AttributionFloor != d.Counted || state.Remote != "possibly_active" {
+		t.Fatalf("unknown retirement lost original floor: %#v %v", state, err)
+	}
+	higher := reconciliationUsage(d, "late_unknown_bill")
+	higher.Kind = "bill"
+	higher.ExpectedVersion = 1
+	higher.Evidence.Usage = nil
+	higher.Evidence.Gross = pointer(90)
+	higher.Evidence.Difference = pointer(0)
+	result := applyReconciliation(t, r, operator, higher)
+	duplicate, err := r.Apply(context.Background(), operator, higher)
+	if err != nil || !reflect.DeepEqual(result, duplicate) {
+		t.Fatal(result, duplicate, err)
+	}
+	lower := higher
+	lower.ID = "late_unknown_correction"
+	lower.Kind = "corrected_bill"
+	lower.ExpectedVersion = 2
+	lower.Evidence.Revision = 2
+	lower.Evidence.Supersedes = higher.ID
+	lower.Evidence.Gross = pointer(10)
+	if _, err := r.Preview(context.Background(), operator, lower); !errors.Is(err, ErrDenied) {
+		t.Fatal("lower correction erased old unknown floor", err)
+	}
+	if _, err := r.Apply(context.Background(), operator, lower); !errors.Is(err, ErrDenied) {
+		t.Fatal("lower correction applied beneath old unknown floor", err)
+	}
+	state, err = r.Status(context.Background(), operator, d.ID)
+	if err != nil || state.Counted != 90 || state.AttributionFloor != d.Counted || state.Remote != "possibly_active" || !state.AdmissionStopped {
+		t.Fatal(state, err)
+	}
+	for _, scope := range state.Scopes {
+		if scope.Counted != 90 || scope.Occupied != 1 {
+			t.Fatal(scope)
+		}
+	}
+}
