@@ -29,6 +29,7 @@ type restartHandoff struct {
 	DSN, Account, Session, CSRF, Witness string
 	Expected                             []byte
 	Managed                              bool
+	Accepted                             bool
 	Unknown                              []byte
 }
 
@@ -94,6 +95,15 @@ func witness(t *testing.T, path, kind string) {
 }
 
 func TestControlledDraftPostgresAndServerProcessRestartReadsExactBundle(t *testing.T) {
+	controlledDraftRestart(t, false)
+}
+
+func TestDurableDraftReviewPostgresAndServerProcessRestart(t *testing.T) {
+	controlledDraftRestart(t, true)
+}
+
+func controlledDraftRestart(t *testing.T, accepted bool) {
+	t.Helper()
 	dsn, pgctl, data, log := privateRestartPostgres(t)
 	t.Setenv("CAREEROS_TEST_DATABASE_URL", dsn)
 	r := newRecoveryFixture(t, nil)
@@ -110,7 +120,24 @@ func TestControlledDraftPostgresAndServerProcessRestartReadsExactBundle(t *testi
 	if created.Code != 201 {
 		t.Fatalf("creation: %d %s", created.Code, created.Body.String())
 	}
-	handoff := restartHandoff{DSN: r.f.DSN, Account: r.f.Principal.AccountID, Session: r.f.Login.SessionToken, CSRF: r.f.Login.CSRFToken, Witness: path, Expected: created.Body.Bytes()}
+	if accepted {
+		var result draftrecovery.Result
+		json.Unmarshal(created.Body.Bytes(), &result)
+		r.authority(t, `UPDATE controlled_draft_test_authority SET delivered_action=$1`, result.Action.ID)
+		for i, artifact := range []string{"summary", "resume", "cover", "answers"} {
+			for j, operation := range []string{"review", "accept"} {
+				w := r.request(t, "POST", "/api/drafts/physical-restart/versions/1/review", "", humanCommand(result, artifact+"-"+operation, artifact, operation, int64(2*i+j)))
+				if w.Code != 200 {
+					t.Fatalf("pre-restart review %d %s", w.Code, w.Body.String())
+				}
+			}
+		}
+		created = r.request(t, "GET", "/api/drafts/physical-restart/versions/1", "", nil)
+		if created.Code != 200 {
+			t.Fatal("accepted snapshot unavailable")
+		}
+	}
+	handoff := restartHandoff{DSN: r.f.DSN, Account: r.f.Principal.AccountID, Session: r.f.Login.SessionToken, CSRF: r.f.Login.CSRFToken, Witness: path, Expected: created.Body.Bytes(), Accepted: accepted}
 	raw, _ := json.Marshal(handoff)
 	handoffPath := filepath.Join(t.TempDir(), "handoff.json")
 	if err := os.WriteFile(handoffPath, raw, 0600); err != nil {
@@ -272,7 +299,11 @@ func TestControlledDraftRestartChild(t *testing.T) {
 
 func checkRestartReads(t *testing.T, router http.Handler, in restartHandoff) {
 	t.Helper()
-	for _, route := range []string{"/api/drafts/physical-restart", "/api/drafts/physical-restart/versions/1", "/.netlify/functions/account/api/drafts/physical-restart/versions/1"} {
+	routes := []string{"/api/drafts/physical-restart", "/api/drafts/physical-restart/versions/1", "/.netlify/functions/account/api/drafts/physical-restart/versions/1"}
+	if in.Accepted {
+		routes = append(routes, "/api/drafts/accepted")
+	}
+	for _, route := range routes {
 		request := httptest.NewRequest(http.MethodGet, route, nil)
 		request.Header.Set("X-CareerOS-Account", in.Account)
 		request.AddCookie(&http.Cookie{Name: "__Host-careeros_session", Value: in.Session})

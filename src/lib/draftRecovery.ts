@@ -14,12 +14,21 @@ export interface DraftInput {
 }
 export interface DraftAction { namespace: string; id: string; owner: string; workflow: "application_draft" }
 export interface DraftClaim { field?: string; text: string; state: "supported"; nonfactual: boolean; sources: { kind: string; profileId: string; id: string; revision: number }[]; jobSources: { start: number; end: number; quote: string }[]; concerns: string[] }
+export type DraftArtifact = "summary" | "resume" | "cover" | "answers"
+export interface DraftHumanReview {
+  schema: "application-draft-human-review-v1"
+  revision: number
+  artifacts: { artifact: DraftArtifact; state: "unreviewed" | "reviewed" | "accepted" }[]
+  accepted: boolean
+  acceptedAt?: string
+}
 export interface RecoveredDraft {
   action: DraftAction; creationKey: string
   state: "pending" | "incomplete" | "ready" | "closed" | "deleted"
   artifactVersion: number; admittedAt: string; deadline: string
   historical: boolean; cleanupQueued: boolean
   attempt?: number; retryAllowed?: boolean
+  bundleDigest?: string; delivered?: boolean; review?: DraftHumanReview
   job?: { posting: string; analysis?: unknown; qualification?: { actionId: string; contextDigest: string } }
   context?: { answers: DraftInput["answers"]; confirmations: DraftInput["confirmations"]; selectedFactIds: string[] }
   bundle?: {
@@ -42,13 +51,20 @@ const digest = (v: unknown): v is string => typeof v === "string" && /^[a-f0-9]{
 
 // This validates the recovery envelope, not semantic quality or billing. The
 // server's frozen required-check snapshots remain the original review evidence.
-function parseResult(value: unknown, account: string, key: string): RecoveredDraft | null {
+export function parseResult(value: unknown, account: string, key: string): RecoveredDraft | null {
   if (!object(value) || !object(value.action)) return null
   const r = value as unknown as RecoveredDraft
   if (r.creationKey !== key || r.action.owner !== account || r.action.workflow !== "application_draft" || !token(r.action.namespace) || !token(r.action.id) || !["pending", "incomplete", "ready", "closed", "deleted"].includes(r.state) || ![0, 1].includes(r.artifactVersion) || !Number.isFinite(Date.parse(r.admittedAt)) || !Number.isFinite(Date.parse(r.deadline)) || typeof r.historical !== "boolean" || typeof r.cleanupQueued !== "boolean") return null
   if ((r.attempt !== undefined && ![1, 2].includes(r.attempt)) ||
       (r.retryAllowed !== undefined && (typeof r.retryAllowed !== "boolean" ||
         (r.retryAllowed && (r.state !== "incomplete" || r.attempt !== 1))))) return null
+  if (r.review !== undefined) {
+    const review = r.review
+    if (r.state !== "ready" || !digest(r.bundleDigest) || (r.delivered !== undefined && typeof r.delivered !== "boolean") || !object(review) || review.schema !== "application-draft-human-review-v1" || !Number.isSafeInteger(review.revision) || review.revision < 0 || review.revision > 8 || !Array.isArray(review.artifacts) || review.artifacts.length !== 4 || typeof review.accepted !== "boolean") return null
+    const names = ["summary", "resume", "cover", "answers"]
+    if (review.artifacts.some((a, i) => !object(a) || a.artifact !== names[i] || !["unreviewed", "reviewed", "accepted"].includes(a.state))) return null
+    if (review.accepted !== review.artifacts.every(a => a.state === "accepted") || review.accepted !== (typeof review.acceptedAt === "string" && Number.isFinite(Date.parse(review.acceptedAt)))) return null
+  }
   if (r.state !== "ready") return r.bundle === undefined && r.job === undefined && r.context === undefined ? r : null
   const b = r.bundle
   if (r.artifactVersion !== 1 || !b || b.schema !== "application-draft-bundle-v1" || !object(b.binding) || !object(b.binding.action) || !actionEqual(r.action, b.binding.action) || !object(b.binding.profileSource) || !text(b.binding.profileSource.id) || !Number.isSafeInteger(b.binding.profileSource.revision) || b.binding.profileSource.revision < 1 || !["en", "pt-BR"].includes(b.binding.language) || !digest(b.binding.sourceDigest) || !digest(b.binding.inputDigest) || !["controlled-complete-draft-v1", "application-draft-local-20261104-v1"].includes(b.binding.generationVersion) || b.binding.reviewVersion !== "application-draft-review-snapshot-v1" || !r.job || !text(r.job.posting)) return null

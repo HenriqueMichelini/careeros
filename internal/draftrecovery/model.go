@@ -182,6 +182,9 @@ type Result struct {
 	Attempt       int              `json:"attempt,omitempty"`
 	RetryAllowed  bool             `json:"retryAllowed,omitempty"`
 	Bundle        *Bundle          `json:"bundle,omitempty"`
+	BundleDigest  string           `json:"bundleDigest,omitempty"`
+	Delivered     bool             `json:"delivered,omitempty"`
+	Review        *HumanReview     `json:"review,omitempty"`
 	Job           *Job             `json:"job,omitempty"`
 	Context       *RetainedContext `json:"context,omitempty"`
 }

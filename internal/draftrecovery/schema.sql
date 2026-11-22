@@ -34,6 +34,19 @@ CREATE TABLE IF NOT EXISTS careeros_draft_content (
 );
 REVOKE ALL ON careeros_draft_content FROM PUBLIC;
 REVOKE ALL ON careeros_draft_actions FROM PUBLIC;
+CREATE TABLE IF NOT EXISTS careeros_draft_reviews (
+ namespace text NOT NULL, action_id text NOT NULL, artifact_version integer NOT NULL CHECK(artifact_version=1),
+ published_digest text NOT NULL, revision bigint NOT NULL CHECK(revision>=1),
+ decisions bytea NOT NULL CHECK(octet_length(decisions)<=16384), accepted_at timestamptz,
+ PRIMARY KEY(namespace,action_id),
+ FOREIGN KEY(namespace,action_id) REFERENCES careeros_draft_content(namespace,action_id) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS careeros_draft_review_commands (
+ namespace text NOT NULL, action_id text NOT NULL, decision_key text NOT NULL, binding text NOT NULL,
+ PRIMARY KEY(namespace,action_id,decision_key),
+ FOREIGN KEY(namespace,action_id) REFERENCES careeros_draft_content(namespace,action_id) ON DELETE CASCADE
+);
+REVOKE ALL ON careeros_draft_reviews,careeros_draft_review_commands FROM PUBLIC;
 -- Defaults may grant a parent role SELECT before these tables are created.
 -- Begin with only their owner, including when ledger roles inherit that parent.
 DO $draft_content_acl$
@@ -43,9 +56,9 @@ BEGIN
    SELECT DISTINCT role.rolname FROM pg_class relation
    CROSS JOIN LATERAL aclexplode(COALESCE(relation.relacl,acldefault('r',relation.relowner))) permission
    JOIN pg_roles role ON role.oid=permission.grantee
-   WHERE relation.oid IN ('careeros_draft_actions'::regclass,'careeros_draft_content'::regclass,'careeros_draft_admissions'::regclass)
+   WHERE relation.oid IN ('careeros_draft_actions'::regclass,'careeros_draft_content'::regclass,'careeros_draft_admissions'::regclass,'careeros_draft_reviews'::regclass,'careeros_draft_review_commands'::regclass)
      AND permission.grantee<>relation.relowner
  LOOP
-   EXECUTE format('REVOKE ALL ON TABLE careeros_draft_actions,careeros_draft_content,careeros_draft_admissions FROM %I',denied.rolname);
+   EXECUTE format('REVOKE ALL ON TABLE careeros_draft_actions,careeros_draft_content,careeros_draft_admissions,careeros_draft_reviews,careeros_draft_review_commands FROM %I',denied.rolname);
  END LOOP;
 END $draft_content_acl$;

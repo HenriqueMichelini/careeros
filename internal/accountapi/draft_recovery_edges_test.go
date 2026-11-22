@@ -244,7 +244,7 @@ func TestControlledDraftContentExcludesInheritedLedgerDefaultPrivileges(t *testi
 	if allowed {
 		t.Fatal("retained career content inherited by AI-ledger runtime role through default privileges")
 	}
-	for _, table := range []string{"careeros_draft_actions", "careeros_draft_admissions"} {
+	for _, table := range []string{"careeros_draft_actions", "careeros_draft_admissions", "careeros_draft_reviews", "careeros_draft_review_commands"} {
 		if err := r.f.DB.QueryRow(`SELECT has_table_privilege($1,$2,'SELECT')`, runtimeRole, table).Scan(&allowed); err != nil || allowed {
 			t.Fatalf("ledger role inherited restricted recovery metadata: %s allowed=%v err=%v", table, allowed, err)
 		}

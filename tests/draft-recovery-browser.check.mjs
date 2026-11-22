@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import {spawn} from 'node:child_process'
+import {spawn,execFileSync} from 'node:child_process'
 import {mkdtempSync,writeFileSync,createWriteStream} from 'node:fs'
 import {tmpdir} from 'node:os'
 import {join} from 'node:path'
@@ -30,6 +30,14 @@ for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CA
    })()`)
    const job = value => write('[data-draft-job]', value)
    const click = selector => evaluate(`document.querySelector(${JSON.stringify(selector)}).click()`)
+   const keyboardClick = async selector => {
+     await call('Page.bringToFront')
+     await wait(`document.querySelector(${JSON.stringify(selector)})?.getClientRects().length>0 && !document.querySelector(${JSON.stringify(selector)}).disabled`)
+     await evaluate(`document.querySelector(${JSON.stringify(selector)}).focus()`)
+     assert.equal(await evaluate(`document.activeElement===document.querySelector(${JSON.stringify(selector)})`),true,'keyboard target did not gain focus')
+     await call('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13,text:'\r'})
+     await call('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13})
+   }
    const generate = async () => {
      await wait(`!document.querySelector('[data-draft-generate]').disabled`)
      await click('[data-draft-generate]')
@@ -40,6 +48,111 @@ for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CA
      await wait(`window.draftWire?.documentID && draftWire.documentID!==${JSON.stringify(oldDocument)} && document.querySelector('[data-draft-workspace]')`)
    }
    const stats = n => ({generation:n, completion:n, allowanceEffects:0})
+   if (scenario === 'durable-review') {
+     await job('Java required.'); await generate()
+     await wait(`document.querySelector('[data-draft-result]')`)
+     await control('review-delivered')
+     await click('[data-draft-recover]')
+     await wait(`document.querySelector('[data-draft-review="summary"]')?.disabled===false`)
+     await evaluate('window.dropReviewResponse=true')
+     await click('[data-draft-review="summary"]')
+     await wait(`document.querySelector('[role="alert"]')`)
+     await click('[data-draft-recover]')
+     await wait(`document.querySelector('[data-draft-accept="summary"]').disabled===false`)
+     for (const artifact of ['summary','resume','cover','answers']) {
+       if (artifact!=='summary') { await click(`[data-draft-review="${artifact}"]`); await wait(`document.querySelector('[data-draft-accept="${artifact}"]').disabled===false`) }
+       await click(`[data-draft-accept="${artifact}"]`)
+       await wait(`document.querySelector('[data-draft-decision="${artifact}"]').dataset.draftState==='accepted'`)
+     }
+     await wait(`document.querySelector('[data-draft-accepted]')`)
+     const original=await evaluate(`draftWire.responses.filter(r=>r.path.endsWith('/review')&&r.status===200).at(-1).body`)
+     assert.equal(original.review.revision,8);assert.equal(original.review.accepted,true)
+     await reopen()
+     await wait(`document.querySelector('[data-draft-accepted]') && draftWire.responses.some(r=>r.path==='/api/drafts/accepted'&&r.status===200)`)
+     assert.deepEqual(await evaluate(`draftWire.responses.find(r=>r.path==='/api/drafts/accepted'&&r.status===200).body.bundle`),original.bundle)
+     await control('review-failed-replacement')
+     await job('Java required.')
+     await generate()
+     await wait(`draftWire.responses.some(r=>r.path==='/api/drafts'&&r.method==='POST'&&r.status===503) && document.querySelector('[role="alert"]')`)
+     assert.equal(await evaluate(`document.querySelector('[data-draft-accepted]').dataset.draftAccepted`),original.action.id,'failed replacement hid prior accepted work')
+     await click('[data-draft-recover]')
+     await wait(`draftWire.responses.some(r=>r.method==='GET'&&r.status===202&&r.body.state==='incomplete') && !document.querySelector('[data-draft-recover]').disabled`)
+     await control('profile-change')
+     await click('[data-draft-recover]')
+     await wait(`document.querySelector('[data-draft-accepted]')?.textContent.includes(${JSON.stringify(locale==='en'?'Profile has changed':'Perfil mudou')})`)
+     await call('Browser.grantPermissions',{origin:await evaluate('location.origin'),permissions:['clipboardReadWrite','clipboardSanitizedWrite']})
+     for (const width of [1440,390]) {
+       await call('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width===390})
+       await evaluate('document.fonts.ready')
+       assert.ok(await evaluate(`document.documentElement.scrollWidth<=innerWidth+2`),'workspace overflows the viewport')
+       for (const artifact of ['summary','resume','cover','answers']) {
+         console.log(JSON.stringify({checkpoint:'accepted-export-start',locale,width,artifact,evidence}))
+         await wait(`document.querySelector('[data-draft-copy="${artifact}"]')?.disabled===false`)
+         await keyboardClick(`[data-draft-copy="${artifact}"]`)
+         try { await wait(`document.querySelector('[data-draft-export-status]')?.dataset.draftExportStatus==='copied'`) }
+         catch(error) { console.log(JSON.stringify({checkpoint:'clipboard-diagnostic',locale,width,artifact,details:await evaluate(`(async()=>({secure:isSecureContext,focus:document.hasFocus(),visible:document.visibilityState,active:document.activeElement?.outerHTML,status:document.querySelector('[data-draft-export-status]')?.textContent,permissions:await Promise.all(['clipboard-write','clipboard-read'].map(async name=>{try{return[name,(await navigator.permissions.query({name})).state]}catch{return[name,'unsupported']}})),requests:draftWire.requests.slice(-5).map(r=>[r.method,r.path])}))()`)})); throw error }
+         const copied=await evaluate('navigator.clipboard.readText()')
+         assert.ok(copied.includes(original.action.id)&&copied.includes(locale==='en'?'Profile revision 2':'Revisão do Perfil 2'))
+         assert.ok(copied.toLocaleLowerCase().includes(locale==='en'?'historical':'histórico'))
+         await evaluate('window.draftPrintCalls=0;window.print=()=>{window.draftPrintCalls++}')
+         await call('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9})
+         await call('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9})
+         assert.equal(await evaluate(`document.activeElement===document.querySelector('[data-draft-pdf="${artifact}"]')`),true,'PDF is not keyboard reachable from Copy')
+         await keyboardClick(`[data-draft-pdf="${artifact}"]`)
+         await wait('window.draftPrintCalls===1')
+         const pdf=await call('Page.printToPDF',{printBackground:true,preferCSSPageSize:true})
+         const path=join(evidence,`accepted-${locale}-${width}-${artifact}.pdf`)
+         writeFileSync(path,Buffer.from(pdf.data,'base64'))
+         const pdfText=execFileSync('pdftotext',['-layout',path,'-'],{encoding:'utf8'})
+         assert.ok(pdfText.includes(original.action.id),`PDF lost exact identity ${artifact}`)
+         assert.ok(pdfText.toLocaleLowerCase().includes(locale==='en'?'historical':'histórico'),`PDF lost historical disclosure ${artifact}`)
+         const normalized=pdfText.replace(/\s+/g,' ')
+         assert.ok(normalized.includes(locale==='en'?'Profile revision 2':'Revisão do Perfil 2'),`PDF lost original revision ${artifact}`)
+         if(artifact==='summary')assert.ok(normalized.includes(original.bundle.roleSummary))
+         if(artifact==='resume')assert.ok(normalized.includes(original.bundle.identity.fullName.toUpperCase())&&normalized.includes('Java'))
+         if(artifact==='cover')assert.ok(normalized.includes(original.bundle.coverLetter.replace(/\s+/g,' ')),'PDF changed frozen letter/signature')
+         assert.match(execFileSync('pdfinfo',[path],{encoding:'utf8'}),/Pages:\s+1\b/)
+         await evaluate("window.dispatchEvent(new Event('afterprint'))")
+         console.log(JSON.stringify({checkpoint:'accepted-export-passed',locale,width,artifact,evidence}))
+       }
+     }
+     await call('Browser.setPermission',{permission:{name:'clipboard-write'},setting:'denied',origin:await evaluate('location.origin')})
+     await evaluate('window.originalExecCommand=document.execCommand;document.execCommand=()=>false')
+     await keyboardClick('[data-draft-copy="summary"]')
+     await wait(`document.querySelector('[data-draft-export-status]')?.dataset.draftExportStatus==='failed'`)
+     assert.equal(await evaluate(`document.activeElement===document.querySelector('[data-draft-copy="summary"]')`),true,'failed clipboard lost keyboard focus')
+     await evaluate('document.execCommand=window.originalExecCommand')
+     await call('Browser.setPermission',{permission:{name:'clipboard-write'},setting:'granted',origin:await evaluate('location.origin')})
+     await evaluate(`document.querySelector('[data-draft-accepted-preview] .cv-paper-content').style.minHeight='2000px';window.draftPrintCalls=0`)
+     await keyboardClick('[data-draft-pdf="resume"]')
+     await wait(`document.querySelector('[data-draft-export-status]')?.dataset.draftExportStatus==='overflow'`)
+     assert.equal(await evaluate('draftPrintCalls'),0,'overflow opened a clipped PDF')
+     await evaluate(`document.querySelector('[data-draft-accepted-preview] .cv-paper-content').style.removeProperty('min-height')`)
+     await job('Independent same-account unsaved text')
+     const recoveryKeys=await evaluate(`Object.entries(sessionStorage).filter(([key])=>key.startsWith('careeros_draft_recovery:'))`)
+     await control('expire')
+     await keyboardClick('[data-draft-copy="summary"]')
+     await wait(`draftWire.responses.some(r=>r.method==='GET'&&r.status===401) && !document.querySelector('[data-draft-accepted]')`)
+     assert.equal(await evaluate(`document.querySelectorAll('[data-draft-result],[data-draft-support],.results-print-root').length`),0,'denial left a protected copy')
+     assert.equal(await evaluate(`document.querySelector('[data-draft-job]').value`),'Independent same-account unsaved text')
+     assert.deepEqual(await evaluate(`Object.entries(sessionStorage).filter(([key])=>key.startsWith('careeros_draft_recovery:'))`),recoveryKeys)
+     await control('reauth')
+     await evaluate("window.dispatchEvent(new Event('focus'))")
+     await wait(`document.querySelector('[data-draft-recover]')?.getClientRects().length>0`)
+     await click('[data-draft-recover]')
+     await wait(`document.querySelector('[data-draft-accepted]') && !document.querySelector('[data-draft-recover]').disabled`)
+     assert.equal(await evaluate(`document.querySelector('[data-draft-accepted]').dataset.draftAccepted`),original.action.id)
+     await control('deny-read')
+     await keyboardClick('[data-draft-copy="summary"]')
+     await wait(`draftWire.responses.some(r=>r.method==='GET'&&r.status===403) && !document.querySelector('[data-draft-accepted]')`)
+     assert.equal(await evaluate(`document.querySelectorAll('[data-draft-result],[data-draft-support],.results-print-root').length`),0)
+     await control('allow-read')
+     await click('[data-draft-recover]')
+     await wait(`document.querySelector('[data-draft-accepted]')`)
+     assert.deepEqual(await control('stats','GET'),{generation:2,completion:1,allowanceEffects:0})
+     console.log(JSON.stringify({status:'passed',scenario,locale,evidence,checks:['actual review and explicit Accept per immutable artifact','lost committed decision acknowledgment recovered by GET','exact accepted bundle reload with zero inference/allowance','failed replacement preserves accepted snapshot/currentness','historical exact-version trusted keyboard clipboard and actual one-page PDF at desktop and390px','clipboard denial announces failure and restores focus','A4 overflow prevents print','401/403 hides every protected copy and preserves opaque key/independent editor','same-account reauth recovers by GET without callbacks']}))
+     return
+   }
    if (scenario==='managed-status-denial') {
      await job('Java required.')
      await generate()

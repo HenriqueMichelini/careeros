@@ -18,11 +18,13 @@ export default function ArtifactReviewPanel({
   accepted,
   document,
   onAccept,
+  historicalExportNotice,
 }: {
   review: ArtifactReview
   accepted?: AcceptedArtifacts
   document: ProfileDocument | null
   onAccept: (review: ArtifactReview, accepted: AcceptedArtifacts) => void
+  historicalExportNotice?: string
 }) {
   const { t } = useI18n()
   const [draft, setDraft] = useState(review)
@@ -47,7 +49,7 @@ export default function ArtifactReviewPanel({
       <p className="text-sm text-[var(--color-muted-fg)]">
         {t("resumeReview.limits")}
       </p>
-      {!current && <p role="alert">{t("resumeReview.stale")}</p>}
+      {!current && <p role={historicalExportNotice ? "status" : "alert"}>{historicalExportNotice ?? t("resumeReview.stale")}</p>}
       {!editing ? (
         <button className={button} onClick={() => setEditing(true)}>
           {t("resumeReview.edit")}

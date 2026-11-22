@@ -5,11 +5,12 @@ import {tmpdir} from 'node:os'
 import {join} from 'node:path'
 import ts from 'typescript'
 const dir=mkdtempSync(join(tmpdir(),'draft-recovery-client-'))
-for(const name of ['draftRecovery','workflowRequest','cover-letter']){
+for(const name of ['draftRecovery','draftReview','workflowRequest','cover-letter']){
  const source=readFileSync(new URL(`../src/lib/${name}.ts`,import.meta.url),'utf8')
- writeFileSync(join(dir,`${name}.mjs`),ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText.replaceAll('"./workflowRequest"','"./workflowRequest.mjs"'))
+ writeFileSync(join(dir,`${name}.mjs`),ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText.replaceAll('"./workflowRequest"','"./workflowRequest.mjs"').replaceAll('"./draftRecovery"','"./draftRecovery.mjs"'))
 }
 const {DraftRecoveryClient}=await import(join(dir,'draftRecovery.mjs'))
+const {DraftReviewClient}=await import(join(dir,'draftReview.mjs'))
 function storage(){const values=new Map();return{values,getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)}}
 const input={profileSource:{id:'p',revision:1},job:{posting:'Java confidential fixture.'},answers:[],confirmations:[],selectedFactIds:[],language:'en'}
 function ready(key,owner='a'){
@@ -149,4 +150,46 @@ test('managed Retry needs authenticated known failure and reuses the original op
  assert.deepEqual(posts.map(p => p.creation), [key, key, key])
  assert.deepEqual(posts.map(p => p.body), [input, input, input])
  assert.deepEqual([...saved.values.values()], [key])
+})
+
+test('durable review lost acknowledgment recovers exact accepted version without generation or content storage', async () => {
+ const saved=storage(), requests=[]
+ const value=ready('reviewed')
+ value.bundleDigest='d'.repeat(64); value.delivered=true
+ value.review={schema:'application-draft-human-review-v1',revision:0,artifacts:['summary','resume','cover','answers'].map(artifact=>({artifact,state:'unreviewed'})),accepted:false}
+ const transport=async(url,options={})=>{
+   requests.push({url,options})
+   if(options.method==='POST')throw new TypeError('lost write acknowledgment')
+   return Response.json(value)
+ }
+ const client=new DraftReviewClient('a',transport)
+ await assert.rejects(client.decide(value,'summary','review'),/draft_outcome_unknown/)
+ await assert.rejects(client.decide(value,'summary','review'),/draft_outcome_unknown/)
+ assert.equal(JSON.parse(requests[0].options.body).decisionKey,JSON.parse(requests[1].options.body).decisionKey)
+ const result=await client.accepted()
+ assert.equal(result,null,'unaccepted snapshot must not become accepted recovery')
+ assert.equal(requests.filter(r=>r.url==='/api/drafts').length,0)
+ assert.deepEqual([...saved.values],[])
+})
+
+test('review client rejects a foreign accepted snapshot and authoritative denials stay typed', async()=>{
+ const client=new DraftReviewClient('a',async()=>Response.json(ready('other','b')))
+ await assert.rejects(client.accepted(),/draft_invalid_result/)
+ for(const status of [401,403]){
+   const denied=new DraftReviewClient('a',async()=>Response.json({error:'denied'},{status}))
+   await assert.rejects(denied.accepted(),status===401?/draft_authentication_required/:/draft_access_denied/)
+ }
+})
+
+test('export rechecks the selected accepted snapshot without substituting another candidate',async()=>{
+ const value=ready('accepted-version')
+ value.bundleDigest='d'.repeat(64);value.delivered=true
+ value.review={schema:'application-draft-human-review-v1',revision:8,artifacts:['summary','resume','cover','answers'].map(artifact=>({artifact,state:'accepted'})),accepted:true,acceptedAt:'2026-11-21T00:00:00Z'}
+ const calls=[]
+ const client=new DraftReviewClient('a',async(url,options)=>{calls.push([url,options]);return Response.json({...value,historical:true})})
+ const recovered=await client.exactAccepted(value)
+ assert.equal(recovered.historical,true);assert.deepEqual(recovered.bundle,value.bundle)
+ assert.equal(calls[0][0],'/api/drafts/accepted-version/versions/1');assert.equal(calls[0][1].method,undefined)
+ const different=new DraftReviewClient('a',async()=>Response.json({...value,bundleDigest:'e'.repeat(64)}))
+ await assert.rejects(different.exactAccepted(value),/draft_invalid_result/)
 })

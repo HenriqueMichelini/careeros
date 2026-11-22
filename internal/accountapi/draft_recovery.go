@@ -97,6 +97,36 @@ func NewControlledDraftRecovery(service *auth.Service, store *draftrecovery.Stor
 }
 
 func registerDraftReads(mux *http.ServeMux, store *draftrecovery.Store) {
+	mux.HandleFunc("GET /api/drafts/accepted", func(w http.ResponseWriter, r *http.Request) {
+		p, _ := auth.PrincipalFromRequest(r)
+		if err := store.WithAccepted(r.Context(), p, func(result draftrecovery.Result) error { return encodeDraftResult(w, result, false) }); err != nil {
+			draftRecoveryError(w, err)
+		}
+	})
+	mux.HandleFunc("POST /api/drafts/{key}/versions/{version}/review", func(w http.ResponseWriter, r *http.Request) {
+		if r.PathValue("version") != "1" {
+			draftRecoveryError(w, draftrecovery.ErrNotFound)
+			return
+		}
+		raw, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 4096))
+		if err != nil || !accountstore.StrictJSON(raw) {
+			draftRecoveryError(w, draftrecovery.ErrInvalid)
+			return
+		}
+		var command draftrecovery.ReviewCommand
+		decoder := json.NewDecoder(bytes.NewReader(raw))
+		decoder.DisallowUnknownFields()
+		if decoder.Decode(&command) != nil {
+			draftRecoveryError(w, draftrecovery.ErrInvalid)
+			return
+		}
+		p, _ := auth.PrincipalFromRequest(r)
+		if err = store.ApplyReview(r.Context(), p, r.PathValue("key"), command); err != nil {
+			draftRecoveryError(w, err)
+			return
+		}
+		writeDraftResult(store, w, r, r.PathValue("key"), false)
+	})
 	mux.HandleFunc("GET /api/drafts/{key}", func(w http.ResponseWriter, r *http.Request) {
 		writeDraftResult(store, w, r, r.PathValue("key"), false)
 	})
@@ -112,21 +142,25 @@ func registerDraftReads(mux *http.ServeMux, store *draftrecovery.Store) {
 func writeDraftResult(store *draftrecovery.Store, w http.ResponseWriter, r *http.Request, key string, created bool) {
 	p, _ := auth.PrincipalFromRequest(r)
 	err := store.WithResult(r.Context(), p, key, func(result draftrecovery.Result) error {
-		status := http.StatusOK
-		if result.State == "pending" || result.State == "incomplete" {
-			status = http.StatusAccepted
-		} else if result.State == "closed" || result.State == "deleted" {
-			status = http.StatusGone
-		} else if created {
-			status = http.StatusCreated
-		}
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(status)
-		return json.NewEncoder(w).Encode(result)
+		return encodeDraftResult(w, result, created)
 	})
 	if err != nil {
 		draftRecoveryError(w, err)
 	}
+}
+
+func encodeDraftResult(w http.ResponseWriter, result draftrecovery.Result, created bool) error {
+	status := http.StatusOK
+	if result.State == "pending" || result.State == "incomplete" {
+		status = http.StatusAccepted
+	} else if result.State == "closed" || result.State == "deleted" {
+		status = http.StatusGone
+	} else if created {
+		status = http.StatusCreated
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(status)
+	return json.NewEncoder(w).Encode(result)
 }
 
 func draftRecoveryError(w http.ResponseWriter, err error) {

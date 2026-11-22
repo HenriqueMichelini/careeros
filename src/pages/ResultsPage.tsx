@@ -1,5 +1,4 @@
 import ArtifactReviewPanel from "../components/ArtifactReviewPanel"
-import { artifactsCurrent } from "../lib/artifactReview"
 import ResumeReviewPanel from "../components/ResumeReviewPanel"
 import { resumeReviewCurrent } from "../lib/resumeReview"
 import { useEffect, useRef, useState } from "react"
@@ -7,6 +6,7 @@ import { useI18n, useStore } from "../lib/store"
 import { Page } from "../lib/types"
 import { TranslationKey } from "../lib/i18n"
 import GeneratedResumePreview from "../components/GeneratedResumePreview"
+import type { ProfileDocument } from "../lib/profileDocument"
 
 type Tab = "summary" | "resume" | "cover" | "answers"
 type PdfTarget = "resume" | "cover"
@@ -162,14 +162,15 @@ export default function ResultsPage({ setPage }: Props) {
   }
 
   const acceptedResume = materials.acceptedResume
+  const exportAllowed = !state.profileError || state.profileError === "stale"
   const resumeUsable =
-    !!acceptedResume && resumeReviewCurrent(acceptedResume, profileDocument)
+    !!acceptedResume && exportAllowed
   const resumeContent = acceptedResume?.markdown ?? ""
   const resumeIdentity = acceptedResume?.identityProfile ?? state.repository
 
   const acceptedArtifacts = materials.acceptedArtifacts
   const artifactsUsable =
-    !!acceptedArtifacts && artifactsCurrent(acceptedArtifacts, profileDocument)
+    !!acceptedArtifacts && exportAllowed
   const coverContent = acceptedArtifacts?.coverLetter ?? ""
   const tabContent: Record<Tab, string> = {
     summary: acceptedArtifacts?.jobSummary ?? "",
@@ -178,9 +179,20 @@ export default function ResultsPage({ setPage }: Props) {
     answers: acceptedArtifacts?.applicationAnswers ?? "",
   }
 
+  const historical = (source: ProfileDocument) => state.profileError === "stale" || !resumeReviewCurrent({ sourceSnapshot: source }, profileDocument)
+  const snapshotDisclosure = (source?: ProfileDocument) => source ? `${state.uiLocale === "pt-BR" ? "Retrato aceito neste navegador · Revisão original do Perfil" : "Accepted browser snapshot · Original Profile revision"} ${source.revision} · ${source.id}${historical(source) ? state.uiLocale === "pt-BR" ? "\nHistórico: o Perfil mudou. O suporte original não foi reavaliado." : "\nHistorical: the Profile has changed. Original support has not been rechecked." : ""}` : ""
+  const activeSource = activeTab === "resume" ? acceptedResume?.sourceSnapshot : acceptedArtifacts?.sourceSnapshot
+  const notice = activeSource && historical(activeSource) ? snapshotDisclosure(activeSource) : undefined
+  const annotate = (node: HTMLElement, source?: ProfileDocument) => {
+    const text = snapshotDisclosure(source)
+    if (!text) return
+    const note = document.createElement("p"); note.textContent = text; note.style.cssText = "font-size:9px;white-space:pre-wrap;overflow-wrap:anywhere;margin-bottom:10px"
+    ;(node.querySelector(".cv-paper-content") ?? node).prepend(note)
+  }
+
   async function handleCopy() {
     if (activeTab === "resume" ? !resumeUsable : !artifactsUsable) return
-    const text =
+    const content =
       activeTab === "resume"
         ? [
             resumeIdentity.fullName,
@@ -193,6 +205,7 @@ export default function ResultsPage({ setPage }: Props) {
             .filter(Boolean)
             .join("\n\n")
         : tabContent[activeTab]
+    const text = [snapshotDisclosure(activeSource), content].filter(Boolean).join("\n\n")
     const attempt = ++copyAttemptRef.current
     const isCurrent = () => attempt === copyAttemptRef.current
     copyFocusRef.current =
@@ -213,7 +226,9 @@ export default function ResultsPage({ setPage }: Props) {
       const paper =
         resumePreviewRef.current?.querySelector<HTMLElement>(".cv-paper")
       if (!paper) return
-      const measure = paper.cloneNode(true) as HTMLElement
+      printContent = paper.cloneNode(true) as HTMLElement
+      annotate(printContent, acceptedResume?.sourceSnapshot)
+      const measure = printContent.cloneNode(true) as HTMLElement
       measure.classList.add("cv-export-measure")
       measure.style.zoom = "1"
       document.body.append(measure)
@@ -226,11 +241,12 @@ export default function ResultsPage({ setPage }: Props) {
         setPdfOverflow(true)
         return
       }
-      printContent = (paper.cloneNode(true) as HTMLElement)
     } else {
       const cover = document.querySelector<HTMLElement>(".results-cover-print")
       if (!cover) return
-      const measure = cover.cloneNode(true) as HTMLElement
+      printContent = cover.cloneNode(true) as HTMLElement
+      annotate(printContent, acceptedArtifacts?.sourceSnapshot)
+      const measure = printContent.cloneNode(true) as HTMLElement
       measure.classList.add("cv-export-measure")
       measure.style.display = "block"
       document.body.append(measure)
@@ -240,7 +256,6 @@ export default function ResultsPage({ setPage }: Props) {
         setPdfOverflow(true)
         return
       }
-      printContent = (cover.cloneNode(true) as HTMLElement)
     }
     setPdfOverflow(false)
     printCleanupRef.current?.()
@@ -375,6 +390,7 @@ export default function ResultsPage({ setPage }: Props) {
       </div>
 
       {/* Content */}
+      {notice && <p role="status" data-results-history className="my-4 whitespace-pre-wrap break-words text-sm">{notice}</p>}
       <div
         className="results-content mt-0 min-w-0 p-4 sm:p-8"
         style={{
@@ -405,6 +421,7 @@ export default function ResultsPage({ setPage }: Props) {
                   },
                 })
               }
+              historicalExportNotice={notice}
             />
           ) : (
             <p role="alert" className="mb-6">
@@ -520,6 +537,7 @@ export default function ResultsPage({ setPage }: Props) {
                     },
                   })
                 }
+                historicalExportNotice={notice}
               />
             ) : (
               <p role="alert" className="mb-6">

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/subtle"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -47,6 +48,7 @@ func TestControlledDraftBrowserServer(t *testing.T) {
 	var r *recoveryFixture
 	var omitNextCatalog atomic.Bool
 	var failNextAnalysis atomic.Bool
+	var failNextControlled atomic.Bool
 	if cfg.Managed {
 		f, actions, provider, store, _, _ := managedDraftFixture(t)
 		r = &recoveryFixture{f: f, actions: actions, store: store}
@@ -115,6 +117,9 @@ func TestControlledDraftBrowserServer(t *testing.T) {
 		// Reuse the actual controlled callbacks, with independent counters.
 		r.router = accountapi.NewControlledDraftRecovery(service, r.store, func(ctx context.Context, g draftrecovery.Generation) (draftrecovery.Bundle, error) {
 			r.sends.Add(1)
+			if failNextControlled.Swap(false) {
+				return draftrecovery.Bundle{}, errors.New("controlled incomplete replacement")
+			}
 			return completeRecoveryBundle(g), nil
 		})
 	}
@@ -205,6 +210,38 @@ func TestControlledDraftBrowserServer(t *testing.T) {
 		} else {
 			writeJSON(w, map[string]any{"generation": r.sends.Load(), "completion": r.checks.Load(), "allowanceEffects": effects})
 		}
+	}))
+	mux.HandleFunc("/api/drafts/test/review-failed-replacement", guard(func(w http.ResponseWriter, _ *http.Request) {
+		if cfg.Managed {
+			http.Error(w, "controlled only", 400)
+			return
+		}
+		failNextControlled.Store(true)
+		w.WriteHeader(204)
+	}))
+	// Inject the already-selected opening decision for review tests only. This
+	// neither implements the #285 protocol nor changes customer allowance.
+	mux.HandleFunc("/api/drafts/test/review-delivered", guard(func(w http.ResponseWriter, request *http.Request) {
+		if cfg.Managed {
+			http.Error(w, "controlled decision only", 400)
+			return
+		}
+		tx, err := r.f.DB.BeginTx(request.Context(), nil)
+		if err == nil {
+			defer tx.Rollback()
+			_, err = tx.ExecContext(request.Context(), `SELECT id FROM careeros_accounts WHERE id=$1 FOR UPDATE`, r.f.Principal.AccountID)
+			if err == nil {
+				_, err = tx.ExecContext(request.Context(), `UPDATE controlled_draft_test_authority SET delivered_action=(SELECT action_id FROM careeros_draft_actions WHERE owner=$1 AND state='ready' ORDER BY admitted_at DESC LIMIT 1) WHERE owner=$1`, r.f.Principal.AccountID)
+			}
+			if err == nil {
+				err = tx.Commit()
+			}
+		}
+		if err != nil {
+			http.Error(w, "controlled delivery decision", 500)
+			return
+		}
+		w.WriteHeader(204)
 	}))
 	mux.HandleFunc("/api/drafts/test/expire", guard(func(w http.ResponseWriter, request *http.Request) {
 		mu.Lock()

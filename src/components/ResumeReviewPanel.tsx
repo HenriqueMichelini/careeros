@@ -17,11 +17,13 @@ export default function ResumeReviewPanel({
   accepted,
   document,
   onAccept,
+  historicalExportNotice,
 }: {
   review: ResumeReview
   accepted?: AcceptedResume
   document: ProfileDocument | null
   onAccept: (review: ResumeReview, accepted: AcceptedResume) => void
+  historicalExportNotice?: string
 }) {
   const { t } = useI18n()
   const [draft, setDraft] = useState(review)
@@ -54,7 +56,7 @@ export default function ResumeReviewPanel({
       <p className="text-sm text-[var(--color-muted-fg)]">
         {t("resumeReview.limits")}
       </p>
-      {!current && <p role="alert">{t("resumeReview.stale")}</p>}
+      {!current && <p role={historicalExportNotice ? "status" : "alert"}>{historicalExportNotice ?? t("resumeReview.stale")}</p>}
       {!editing ? (
         <button
           className={buttonClass}

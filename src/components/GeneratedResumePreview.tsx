@@ -49,11 +49,13 @@ export default function GeneratedResumePreview({
   cvLanguage = "en",
   profile,
   onEditProfile,
+  readOnlyIdentity = false,
 }: {
   cvLanguage?: Locale
   resume: string
   profile: ProfessionalRepository
   onEditProfile: () => void
+  readOnlyIdentity?: boolean
 }) {
   const typography = useCvPreferences()
   const { t } = useI18n()
@@ -147,13 +149,13 @@ export default function GeneratedResumePreview({
       {(!name || contacts.length === 0) && (
         <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs leading-5 text-[var(--color-muted-fg)]">
           <span>{t("results.resumeMissingIdentity")}</span>
-          <button
+          {!readOnlyIdentity && <button
             type="button"
             onClick={onEditProfile}
             className="underline underline-offset-2 text-[var(--color-accent)]"
           >
             {t("nav.profile")}
-          </button>
+          </button>}
         </div>
       )}
       <div ref={slotRef} className="cv-preview-slot min-w-0 overflow-x-auto">

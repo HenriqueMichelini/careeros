@@ -571,6 +571,13 @@ func (s *Store) WithResult(ctx context.Context, p auth.Principal, key string, wr
 			return ErrDenied
 		}
 		r.Bundle = &b
+		r.BundleDigest = r.publishedDigest
+		r.Delivered = d.Delivered
+		review, err := s.humanReview(ctx, tx, r)
+		if err != nil {
+			return err
+		}
+		r.Review = &review
 		r.Job = &in.Job
 		r.Context = &RetainedContext{in.Answers, in.Confirmations, in.SelectedFactIDs}
 		var source []byte

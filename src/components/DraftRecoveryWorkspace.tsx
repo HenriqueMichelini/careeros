@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { DraftRecoveryClient, type DraftClaim, type DraftInput, type RecoveredDraft } from "../lib/draftRecovery"
+import { DraftRecoveryClient, type DraftArtifact, type DraftClaim, type DraftInput, type RecoveredDraft } from "../lib/draftRecovery"
+import { DraftReviewClient } from "../lib/draftReview"
 import { findProfileGaps, QualificationGapsError, type QualificationAnalysis } from "../lib/ai"
 import { ManagedQualification, QualificationStatusDenied } from "../lib/managedQualification"
 import { useStore } from "../lib/store"
 import JobContextReview from "./JobContextReview"
 import RequirementEvidenceReview from "./RequirementEvidenceReview"
+import AcceptedDraftExports from "./AcceptedDraftExports"
 
 const messages = {
   en: {
@@ -15,6 +17,11 @@ const messages = {
   },
 }
 type Labels = typeof messages.en
+
+const reviewMessages = {
+  en: { review: "Mark reviewed", accept: "Accept this artifact", accepted: "Accepted", reviewed: "Reviewed", unreviewed: "Not reviewed", waiting: "Open the complete Draft before reviewing it. Accepting remains a separate choice and does not use another Draft.", snapshot: "Accepted Application Draft snapshot", conflict: "This review changed in another tab. Check this exact Draft before deciding again.", failed: "The decision could not be confirmed. Check this exact Draft to recover its saved review; no generation is needed." },
+  "pt-BR": { review: "Marcar como revisado", accept: "Aceitar este material", accepted: "Aceito", reviewed: "Revisado", unreviewed: "Não revisado", waiting: "Abra o rascunho completo antes de revisá-lo. Aceitar continua sendo uma escolha separada e não usa outro rascunho.", snapshot: "Retrato aceito do rascunho de candidatura", conflict: "Esta revisão mudou em outra aba. Verifique este rascunho exato antes de decidir novamente.", failed: "Não foi possível confirmar a decisão. Verifique este rascunho para recuperar a revisão salva; não é necessário gerar novamente." },
+}
 
 const managedMessages = {
   en: {
@@ -64,11 +71,25 @@ function SourceReview({ result, labels }: { result: RecoveredDraft; labels: Labe
   </details>
 }
 
-function BundleView({ result, labels }: { result: RecoveredDraft; labels: Labels }) {
+function BundleView({ result, labels, busy = false, onDecision }: { result: RecoveredDraft; labels: Labels; busy?: boolean; onDecision?: (result: RecoveredDraft, artifact: DraftArtifact, operation: "review" | "accept") => void }) {
   const b = result.bundle!
+  const { profileDocument, state } = useStore()
+  const historical = result.historical || state.profileError === "stale" || (!!profileDocument && (profileDocument.id !== b.binding.profileSource.id || profileDocument.revision !== b.binding.profileSource.revision))
+  const reviewLabels = reviewMessages[b.binding.language]
   return <article className="space-y-5" data-draft-result={result.action.id} data-draft-version={result.artifactVersion}>
-    <header className="border rounded p-4 space-y-2"><p role="status">{labels.ready}</p><p className="text-sm break-words">{labels.version} {result.artifactVersion} · {labels.source} {b.binding.profileSource.revision} · {b.binding.language} · {result.action.id}</p>{result.historical && <p role="status">{labels.historical}</p>}</header>
-    {[{ label: labels.summary, content: b.roleSummary, id: "summary" }, { label: labels.resume, content: [b.identity.fullName, b.identity.email, b.identity.phone, b.identity.location, b.identity.professionalLinks, b.resume].filter(Boolean).join("\n\n"), id: "resume" }, { label: labels.cover, content: b.coverLetter, id: "cover" }, { label: labels.answers, content: b.employerAnswers.state === "none_requested" ? labels.none : b.employerAnswers.text, id: "answers" }].map(artifact => <section className="border rounded p-5" key={artifact.id} data-draft-artifact={artifact.id}><h2 className="text-xl font-semibold mb-3">{artifact.label}</h2><pre className="whitespace-pre-wrap break-words font-sans text-sm leading-relaxed">{artifact.content}</pre></section>)}
+    <header className="border rounded p-4 space-y-2"><p role="status">{labels.ready}</p><p className="text-sm break-words">{labels.version} {result.artifactVersion} · {labels.source} {b.binding.profileSource.revision} · {b.binding.language} · {result.action.id}</p>{historical && <p role="status">{labels.historical}</p>}</header>
+    {[{ label: labels.summary, content: b.roleSummary, id: "summary" }, { label: labels.resume, content: [b.identity.fullName, b.identity.email, b.identity.phone, b.identity.location, b.identity.professionalLinks, b.resume].filter(Boolean).join("\n\n"), id: "resume" }, { label: labels.cover, content: b.coverLetter, id: "cover" }, { label: labels.answers, content: b.employerAnswers.state === "none_requested" ? labels.none : b.employerAnswers.text, id: "answers" }].map(artifact => {
+      const decision = result.review?.artifacts.find(a => a.artifact === artifact.id)
+      return <section className="border rounded p-5" key={artifact.id} data-draft-artifact={artifact.id}>
+        <h2 className="text-xl font-semibold mb-3">{artifact.label}</h2><pre className="whitespace-pre-wrap break-words font-sans text-sm leading-relaxed">{artifact.content}</pre>
+        {decision && <div className="mt-4 flex flex-wrap items-center gap-3" data-draft-decision={artifact.id} data-draft-state={decision.state}>
+          <span role="status">{reviewLabels[decision.state]}</span>
+          {onDecision && <><button data-draft-review={artifact.id} className="border rounded px-3 py-2 disabled:opacity-50" disabled={busy || !result.delivered || decision.state !== "unreviewed"} onClick={() => onDecision(result, artifact.id as DraftArtifact, "review")}>{reviewLabels.review}</button>
+          <button data-draft-accept={artifact.id} className="border rounded px-3 py-2 disabled:opacity-50" disabled={busy || !result.delivered || decision.state !== "reviewed"} onClick={() => onDecision(result, artifact.id as DraftArtifact, "accept")}>{reviewLabels.accept}</button></>}
+        </div>}
+      </section>
+    })}
+    {onDecision && !result.delivered && <p role="status">{reviewLabels.waiting}</p>}
     <SourceReview result={result} labels={labels} />
     <details className="border rounded p-4"><summary>{labels.posting}</summary><p className="mt-3 whitespace-pre-wrap break-words">{result.job?.posting}</p></details>
     {!!result.context && !!(result.context.answers.length || result.context.confirmations.length) && <details className="border rounded p-4"><summary>{labels.originalContext}</summary>{[...result.context.answers, ...result.context.confirmations].map((a, i) => <div className="mt-3" key={i}><p className="font-medium">{a.requirement}</p><p className="whitespace-pre-wrap break-words">{a.userContext}</p></div>)}</details>}
@@ -95,6 +116,7 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
   const managedLabels = managedMessages[state.uiLocale]
   const managed = import.meta.env.VITE_CAREEROS_PILOT_MODE === "1"
   const client = useMemo(() => new DraftRecoveryClient(accountId), [accountId])
+  const reviewClient = useMemo(() => new DraftReviewClient(accountId), [accountId])
   const qualification = useMemo(() => new ManagedQualification(accountId), [accountId])
   const emptyEditor = (): DraftEditor => ({ job: "", language: state.cvLanguage, question: "", answer: "" })
   const [editor, setEditor] = useState(() => editors.get(accountId) ?? emptyEditor())
@@ -107,6 +129,7 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
   const [analysis, setAnalysis] = useState<{ binding: string; result: QualificationAnalysis } | null>(null)
   const [analyzing, setAnalyzing] = useState(false)
   const [analysisAttempted, setAnalysisAttempted] = useState(false)
+  const [accepted, setAccepted] = useState<RecoveredDraft | null>(null)
   const analysisBinding = JSON.stringify([profileDocument?.id, profileDocument?.revision, job])
   const currentAnalysisBinding = useRef(analysisBinding)
   currentAnalysisBinding.current = analysisBinding
@@ -114,11 +137,37 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
   const inputBinding = JSON.stringify([analysisBinding, language, question, answer, currentAnalysis?.draftContextProof])
   const submitted = useRef<{ binding: string; input: DraftInput } | null>(null)
 
-  function hideProtectedWork() {
+  function hideProtectedWork(cancelPending = false) {
     setResult(null)
     setPrevious(null)
     setAnalysis(null)
     submitted.current = null
+    setAccepted(null)
+    reviewClient.cancel()
+    if (cancelPending) {
+      controller.current?.abort()
+      client.cancel()
+      setBusy(false)
+      setAnalyzing(false)
+    }
+  }
+
+  async function decide(target: RecoveredDraft, artifact: DraftArtifact, operation: "review" | "accept") {
+    controller.current?.abort()
+    const request = new AbortController(); controller.current = request
+    setBusy(true); setError("")
+    try {
+      const next = await reviewClient.decide(target, artifact, operation, request.signal)
+      if (request.signal.aborted) return
+      if (result?.action.id === next.action.id) setResult(next)
+      if (previous?.action.id === next.action.id) setPrevious(next)
+      if (next.review?.accepted) setAccepted(next)
+    } catch (e) {
+      if (request.signal.aborted || (e instanceof Error && e.message === "draft_superseded")) return
+      const code = e instanceof Error ? e.message : ""
+      if (["draft_authentication_required", "draft_access_denied", "draft_account_changed"].includes(code)) hideProtectedWork(true)
+      setError(code === "draft_authentication_required" ? labels.auth : code === "draft_access_denied" ? labels.denied : code === "draft_review_conflict" ? reviewMessages[state.uiLocale].conflict : reviewMessages[state.uiLocale].failed)
+    } finally { if (controller.current === request && !request.signal.aborted) setBusy(false) }
   }
 
   function updateEditor(change: Partial<DraftEditor>) {
@@ -166,14 +215,23 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
         next = await client.create(input, request.signal)
       }
       if (!request.signal.aborted) {
-        if (next.state === "closed" || next.state === "deleted") hideProtectedWork()
+        if (next.state === "closed" || next.state === "deleted") {
+          hideProtectedWork()
+        }
         setResult(next)
+        if (next.review?.accepted) setAccepted(next)
+        else {
+          // Checking a newer failed/pending candidate also refreshes the
+          // separately authorized accepted history, without inference.
+          const priorAccepted = await reviewClient.accepted(request.signal)
+          if (!request.signal.aborted) setAccepted(priorAccepted)
+        }
       }
     } catch (e) {
       if (request.signal.aborted || (e instanceof Error && e.message === "draft_superseded")) return
       const code = e instanceof Error ? e.message : "draft_outcome_unknown"
       if (code === "draft_authentication_required" || code === "draft_access_denied" || code === "draft_account_changed") {
-        hideProtectedWork()
+        hideProtectedWork(true)
       }
       if (code === "draft_account_changed") setEditor(emptyEditor())
       const message: Record<string, string> = {
@@ -216,13 +274,13 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
     } catch (e) {
       if (request.signal.aborted) return
       if (e instanceof QualificationStatusDenied) {
-        hideProtectedWork()
+        hideProtectedWork(true)
         setError(e.status === 401 ? labels.auth : labels.denied)
         return
       }
       if (e instanceof QualificationGapsError) {
         qualification.knownFailure(e.retryAllowed)
-        if (["authentication_required", "account_changed", "forbidden", "qualification_denied"].includes(e.code)) hideProtectedWork()
+        if (["authentication_required", "account_changed", "forbidden", "qualification_denied"].includes(e.code)) hideProtectedWork(true)
       }
       setError(managedLabels.analysisFailed)
     } finally {
@@ -240,6 +298,15 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
       client.cancel()
     }
   }, [client])
+
+  useEffect(() => {
+    const request = new AbortController()
+    void reviewClient.accepted(request.signal).then(value => { if (!request.signal.aborted) setAccepted(value) }).catch(e => {
+      if (request.signal.aborted || (e instanceof Error && e.message === "draft_superseded")) return
+      if (e instanceof Error && ["draft_authentication_required", "draft_access_denied"].includes(e.message)) { hideProtectedWork(true); setError(e.message === "draft_authentication_required" ? labels.auth : labels.denied) }
+    })
+    return () => { request.abort(); reviewClient.cancel() }
+  }, [reviewClient])
 
   const sourceBlocked = busy || !profileSaved || profileSaving || !!state.profileError || !profileDocument || !job.trim()
   const blocked = sourceBlocked || client.state === "uncertain" || client.state === "pending"
@@ -266,7 +333,8 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
     {result?.state === "pending" && <p role="status">{labels.pending}</p>}
     {result?.state === "incomplete" && <p role="status">{labels.incomplete}</p>}
     {(result?.state === "closed" || result?.state === "deleted") && <p role="status">{labels.closed}</p>}
-    {result?.bundle && <BundleView result={result} labels={labels} />}
-    {previous?.bundle && <details className="border rounded p-4"><summary>{labels.previous}</summary><div className="mt-4"><BundleView result={previous} labels={labels} /></div></details>}
+    {result?.bundle && <BundleView result={result} labels={labels} busy={busy} onDecision={(target, artifact, operation) => void decide(target, artifact, operation)} />}
+    {accepted?.bundle && <section className="border rounded p-5 space-y-4" data-draft-accepted={accepted.action.id}><h2 className="text-xl font-semibold">{reviewMessages[state.uiLocale].snapshot}</h2><BundleView result={accepted} labels={labels} /><AcceptedDraftExports result={accepted} client={reviewClient} historical={state.profileError === "stale" || (!!profileDocument && (profileDocument.id !== accepted.bundle.binding.profileSource.id || profileDocument.revision !== accepted.bundle.binding.profileSource.revision))} onFresh={fresh => { setAccepted(fresh); if (result?.action.id === fresh.action.id) setResult(fresh); if (previous?.action.id === fresh.action.id) setPrevious(fresh) }} onDenied={code => { hideProtectedWork(true); setError(code === "draft_authentication_required" ? labels.auth : labels.denied) }} /></section>}
+    {previous?.bundle && <details className="border rounded p-4"><summary>{labels.previous}</summary><div className="mt-4"><BundleView result={previous} labels={labels} busy={busy} onDecision={(target, artifact, operation) => void decide(target, artifact, operation)} /></div></details>}
   </main>
 }
