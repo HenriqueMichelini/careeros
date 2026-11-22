@@ -12,6 +12,7 @@ async function freePort(){return new Promise(resolve=>{const server=createServer
 for (const scenario of (process.env.CAREEROS_DRAFT_BROWSER_CASE ? [process.env.CAREEROS_DRAFT_BROWSER_CASE] : ['recovery','corrected-creation','access-denial','managed-journey','managed-status-denial']))
 for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CAREEROS_DRAFT_BROWSER_LOCALE] : ['en','pt-BR'])){
  const managed=scenario==='managed-journey'||scenario==='managed-status-denial'
+ const opening=scenario==='complete-opening'
  const apiPort=await freePort(),token=randomUUID(),api=`http://127.0.0.1:${apiPort}`,evidence=mkdtempSync(join(tmpdir(),'careeros-draft-real-browser-'))
  let server,serverExit
  try{
@@ -22,7 +23,7 @@ for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CA
    const wait=async(expression)=>{for(let n=0;n<400;n++){if(await evaluate(`Boolean(${expression})`))return;await pause(25)}throw new Error('Timed out: '+expression)}
    const control=async(name,method='POST',query='')=>evaluate(`fetch('/api/drafts/test/${name}?token='+encodeURIComponent(draftControlToken)+${JSON.stringify(query)},{method:${JSON.stringify(method)}}).then(async r=>{if(!r.ok)throw new Error('fixture control failed');return r.status===204?null:r.json()})`)
    await wait(`document.querySelector('[data-draft-workspace]')`)
-   assert.deepEqual(await control('stats','GET'),managed?{draft:0,qualification:0,allowanceEffects:0}:{generation:0,completion:0,allowanceEffects:0})
+   assert.deepEqual(await control('stats','GET'),managed?{draft:0,qualification:0,allowanceEffects:0}:opening?{generation:0,completion:0,allowanceEffects:0,reserved:0}:{generation:0,completion:0,allowanceEffects:0})
    const write = (selector, value) => evaluate(`(() => {
      const input = document.querySelector(${JSON.stringify(selector)});
      Object.getOwnPropertyDescriptor(Object.getPrototypeOf(input), 'value').set.call(input, ${JSON.stringify(value)});
@@ -48,6 +49,55 @@ for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CA
      await wait(`window.draftWire?.documentID && draftWire.documentID!==${JSON.stringify(oldDocument)} && document.querySelector('[data-draft-workspace]')`)
    }
    const stats = n => ({generation:n, completion:n, allowanceEffects:0})
+   if(opening){
+     await job('Java required.');await generate()
+     await wait(`document.querySelector('[data-draft-result]') && !document.querySelector('[data-draft-recover]').disabled`)
+     const original=await evaluate(`draftWire.responses.find(r=>r.path==='/api/drafts'&&r.status===201).body`)
+     assert.equal(original.opening.state,'reserved');assert.equal(original.delivered??false,false)
+     assert.deepEqual(await control('stats','GET'),{generation:1,completion:1,allowanceEffects:0,reserved:1})
+     assert.equal(await evaluate(`draftWire.requests.filter(r=>r.path.includes('/opening')).length`),0,'readiness must never auto-confirm')
+     assert.equal(await evaluate(`document.querySelectorAll('[data-draft-artifact], [data-draft-support]').length`),0,'readiness must not present the complete review before the deliberate opening flow')
+     await wait(`document.querySelector('[data-draft-open]')?.disabled===false`)
+     for (const hiddenMode of ['hidden', 'display', 'visibility', 'ancestor']) {
+       await evaluate(`(()=>{window.withholdOpeningSupport=true;window.openingObserver=new MutationObserver(()=>{const support=document.querySelector('[data-draft-support]');if(window.withholdOpeningSupport&&support){const mode=${JSON.stringify(hiddenMode)};if(mode==='hidden')support.hidden=true;else if(mode==='display')support.style.display='none';else if(mode==='visibility')support.style.visibility='hidden';else{window.hiddenOpeningAncestor=support.parentElement;hiddenOpeningAncestor.style.display='none'}}});openingObserver.observe(document.querySelector('[data-draft-workspace]'),{childList:true,subtree:true});return null})()`)
+       await keyboardClick('[data-draft-open]')
+       await wait(`(document.querySelector('[role="alert"]') || draftWire.responses.some(r=>r.path.endsWith('/opening/confirm')&&r.status===200)) && !document.querySelector('[data-draft-recover]').disabled`)
+       assert.equal(await evaluate(`draftWire.requests.filter(r=>r.path.includes('/opening')).length`),0,hiddenMode+' required support must send neither receipt nor ACK')
+       assert.deepEqual(await control('stats','GET'),{generation:1,completion:1,allowanceEffects:0,reserved:1})
+       await evaluate(`(()=>{window.withholdOpeningSupport=false;openingObserver.disconnect();if(window.hiddenOpeningAncestor)hiddenOpeningAncestor.style.display='';return null})()`)
+       await click('[data-draft-recover]')
+       await wait(`document.querySelector('[data-draft-open]')?.disabled===false`)
+     }
+     await job('Independent same-account opening note')
+     await control('expire');await keyboardClick('[data-draft-open]')
+     await wait(`draftWire.responses.some(r=>r.path.endsWith('/opening')&&r.status===401) && !document.querySelector('[data-draft-result]')`)
+     assert.equal(await evaluate(`document.querySelector('[data-draft-job]').value`),'Independent same-account opening note')
+     await control('reauth');await click('[data-draft-recover]')
+     await wait(`document.querySelector('[data-draft-open]')?.disabled===false`)
+     assert.equal(await evaluate(`draftWire.requests.filter(r=>r.path.endsWith('/opening/confirm')).length`),0,'reauthentication must not submit ACK')
+     await evaluate('window.dropOpeningResponse=true')
+     await keyboardClick('[data-draft-open]')
+     await wait(`draftWire.responses.some(r=>r.path.endsWith('/opening/confirm')&&r.status===200) && document.querySelector('[role="alert"]')`)
+     assert.deepEqual(await control('stats','GET'),{generation:1,completion:1,allowanceEffects:1,reserved:0})
+     await click('[data-draft-recover]')
+     await wait(`document.querySelector('[data-draft-review="summary"]')?.disabled===false`)
+     const settled=await evaluate(`draftWire.responses.filter(r=>r.method==='GET'&&r.body.delivered===true).at(-1).body`)
+     assert.deepEqual(settled.bundle,original.bundle);assert.deepEqual(settled.action,original.action);assert.equal(settled.artifactVersion,original.artifactVersion)
+     await reopen()
+     await wait(`document.querySelector('[data-draft-review="summary"]')?.disabled===false`)
+     assert.ok((await evaluate('draftWire.requests')).every(r=>r.method==='GET'),'reload must recover without any mutation')
+     await click('[data-draft-review="summary"]');await wait(`document.querySelector('[data-draft-accept="summary"]')?.disabled===false`)
+     await click('[data-draft-accept="summary"]');await wait(`document.querySelector('[data-draft-decision="summary"]')?.dataset.draftState==='accepted'`)
+     await control('deny-read');await click('[data-draft-recover]')
+     await wait(`draftWire.responses.some(r=>r.status===403)&&!document.querySelector('[data-draft-result]')`)
+     await control('allow-read');await click('[data-draft-recover]')
+     await wait(`document.querySelector('[data-draft-result]')`)
+     assert.deepEqual(await control('stats','GET'),{generation:1,completion:1,allowanceEffects:1,reserved:0})
+     assert.equal(await evaluate(`draftWire.requests.filter(r=>r.path.endsWith('/opening/confirm')).length`),0,'reopen/Accept/403 recovery must not reconfirm')
+     assert.ok(!await evaluate(`JSON.stringify(Object.entries(sessionStorage)).includes('Original Person')`))
+     console.log(JSON.stringify({status:'passed',scenario,locale,evidence,checks:['actual finite pilot grant reserved before generation','server-ready and withheld committed support cause no ACK/effect','deliberate full committed review opens exact bound manifest','lost real committed confirmation response recovers by GET','reload/Accept/reauth add no effect','401/403 hides protected copies and preserves independent input','generation1/check1/one allowance effect']}))
+     return
+   }
    if (scenario === 'storage-terminal-404' || scenario === 'storage-terminal-410') {
      const terminal=scenario.endsWith('404')?404:410
      await job('Java required.'); await generate()
@@ -476,7 +526,7 @@ for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CA
    assert.deepEqual(await control('stats','GET'),{generation:1,completion:1,allowanceEffects:0})
    console.log(JSON.stringify({status:'passed',scenario,locale,evidence,checks:['actual React→Vite proxy→Go authenticated controlled router→PostgreSQL','lost creation reply after real publication','byte-value exact full DTO reload','generation1/check1 remain unchanged','expiry/reauth preserves unsaved text','historical original signature/source','foreign account isolation','zero Profile/Accept/allowance writes','opaque-key-only browser storage']}))
   },{path:'/tests/draft-recovery-harness.html',env:{VITE_CAREEROS_DRAFT_RECOVERY_MODE:'1',VITE_CAREEROS_PILOT_MODE:managed?'1':'0',CAREEROS_API_TARGET:api},initialize:`localStorage.setItem('careeros_locale',${JSON.stringify(locale)});window.draftControlToken=${JSON.stringify(token)};window.dropDraftResponse=${scenario === 'recovery'||scenario==='managed-journey'}`,beforeNavigate:async({port})=>{
-   const file=join(evidence,'config.json');writeFileSync(file,JSON.stringify({Origin:`http://127.0.0.1:${port}`,Address:`127.0.0.1:${apiPort}`,Token:token,Managed:managed,Language:locale}),{mode:0o600})
+   const file=join(evidence,'config.json');writeFileSync(file,JSON.stringify({Origin:`http://127.0.0.1:${port}`,Address:`127.0.0.1:${apiPort}`,Token:token,Managed:managed,Opening:opening,Language:locale}),{mode:0o600})
    const log=createWriteStream(join(evidence,'server.jsonl'),{flags:'wx'})
    server=spawn('rtk',['proxy','go','test','-json','-vet=off','-count=1','-run','^TestControlledDraftBrowserServer$','-timeout=180s','./internal/accountapi'],{cwd:root,env:{...process.env,CAREEROS_DRAFT_BROWSER_CONFIG:file,GOCACHE:'/tmp/careeros-go-cache'},stdio:['ignore','pipe','pipe']});server.stdout.pipe(log);server.stderr.pipe(log);serverExit=new Promise(resolve=>server.on('exit',code=>{log.end();resolve(code)}))
    for(let i=0;i<150;i++){try{if((await fetch(`${api}/api/drafts/test/health?token=${token}`)).ok)return}catch{};if(server.exitCode!==null)throw new Error('Private Go browser server exited; see '+evidence);await pause(100)}

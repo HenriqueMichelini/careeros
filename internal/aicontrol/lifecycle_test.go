@@ -149,6 +149,11 @@ func restoreFixtureImage(t *testing.T, c *sql.Conn, prefix string, tables []stri
 
 func TestA32_ActualStaleSQLRestoreNeedsIndependentObligationReconciliation(t *testing.T) {
 	f := setup(t, nil)
+	var purposeTables string
+	if err := f.db.QueryRow(`SELECT COALESCE(string_agg(tablename,',' ORDER BY tablename),'none') FROM pg_tables WHERE schemaname=current_schema() AND tablename LIKE 'careeros_draft_%'`).Scan(&purposeTables); err != nil {
+		t.Fatal(err)
+	}
+	t.Log("A32 installed purpose tables:", purposeTables)
 	saveLifecycleProfile(t, f)
 	intent := f.open(t, "restore_intent")
 	deleted := f.open(t, "restore_delete")

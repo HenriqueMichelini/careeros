@@ -29,6 +29,7 @@ export interface RecoveredDraft {
   historical: boolean; cleanupQueued: boolean
   attempt?: number; retryAllowed?: boolean
   bundleDigest?: string; delivered?: boolean; review?: DraftHumanReview
+  opening?: { policy: "complete-draft-opening-local-20261122-v1"; state: "reserved" | "delivered" | "released"; confirmedAt?: string }
   job?: { posting: string; analysis?: unknown; qualification?: { actionId: string; contextDigest: string } }
   context?: { answers: DraftInput["answers"]; confirmations: DraftInput["confirmations"]; selectedFactIds: string[] }
   bundle?: {
@@ -58,6 +59,9 @@ export function parseResult(value: unknown, account: string, key: string): Recov
   if ((r.attempt !== undefined && ![1, 2].includes(r.attempt)) ||
       (r.retryAllowed !== undefined && (typeof r.retryAllowed !== "boolean" ||
         (r.retryAllowed && (r.state !== "incomplete" || r.attempt !== 1))))) return null
+  if (r.opening !== undefined && (!object(r.opening) || r.opening.policy !== "complete-draft-opening-local-20261122-v1" || !["reserved", "delivered", "released"].includes(r.opening.state) ||
+      (r.opening.state === "delivered") !== (typeof r.opening.confirmedAt === "string" && Number.isFinite(Date.parse(r.opening.confirmedAt))) ||
+      (r.state === "ready" && (!!r.delivered !== (r.opening.state === "delivered") || r.opening.state === "released")))) return null
   if (r.review !== undefined) {
     const review = r.review
     if (r.state !== "ready" || !digest(r.bundleDigest) || (r.delivered !== undefined && typeof r.delivered !== "boolean") || !object(review) || review.schema !== "application-draft-human-review-v1" || !Number.isSafeInteger(review.revision) || review.revision < 0 || review.revision > 8 || !Array.isArray(review.artifacts) || review.artifacts.length !== 4 || typeof review.accepted !== "boolean") return null

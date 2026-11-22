@@ -184,6 +184,7 @@ type Result struct {
 	Bundle        *Bundle          `json:"bundle,omitempty"`
 	BundleDigest  string           `json:"bundleDigest,omitempty"`
 	Delivered     bool             `json:"delivered,omitempty"`
+	Opening       *OpeningStatus   `json:"opening,omitempty"`
 	Review        *HumanReview     `json:"review,omitempty"`
 	Job           *Job             `json:"job,omitempty"`
 	Context       *RetainedContext `json:"context,omitempty"`

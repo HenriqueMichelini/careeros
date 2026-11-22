@@ -47,6 +47,30 @@ CREATE TABLE IF NOT EXISTS careeros_draft_review_commands (
  FOREIGN KEY(namespace,action_id) REFERENCES careeros_draft_content(namespace,action_id) ON DELETE CASCADE
 );
 REVOKE ALL ON careeros_draft_reviews,careeros_draft_review_commands FROM PUBLIC;
+-- Non-content customer outcomes survive purpose-content cleanup. The real pilot
+-- activation is the finite-grant identity; synthetic AI laboratory units are not.
+CREATE TABLE IF NOT EXISTS careeros_draft_allowance (
+ namespace text NOT NULL, action_id text NOT NULL,
+ owner text NOT NULL REFERENCES careeros_pilot_access(account_id),
+ grant_activated_at timestamptz NOT NULL, grant_expires_at timestamptz NOT NULL,
+ admitted_at timestamptz NOT NULL, deadline timestamptz NOT NULL,
+ state text NOT NULL CHECK(state IN ('reserved','delivered','released')),
+ confirmed_at timestamptz, released_at timestamptz,
+ PRIMARY KEY(namespace,action_id),
+ FOREIGN KEY(namespace,action_id) REFERENCES ai_fixture_action(namespace,id),
+ CHECK((state='delivered')=(confirmed_at IS NOT NULL)),
+ CHECK((state='released')=(released_at IS NOT NULL))
+);
+CREATE TABLE IF NOT EXISTS careeros_draft_opening_receipts (
+ namespace text NOT NULL, action_id text NOT NULL, receipt_id text NOT NULL,
+ session_binding text NOT NULL, artifact_version integer NOT NULL CHECK(artifact_version=1),
+ bundle_digest text NOT NULL, manifest_digest text NOT NULL,
+ policy_version text NOT NULL, issued_at timestamptz NOT NULL,
+ PRIMARY KEY(namespace,action_id,receipt_id),
+ UNIQUE(namespace,action_id,session_binding,manifest_digest),
+ FOREIGN KEY(namespace,action_id) REFERENCES careeros_draft_allowance(namespace,action_id)
+);
+REVOKE ALL ON careeros_draft_allowance,careeros_draft_opening_receipts FROM PUBLIC;
 -- Defaults may grant a parent role SELECT before these tables are created.
 -- Begin with only their owner, including when ledger roles inherit that parent.
 DO $draft_content_acl$
@@ -56,9 +80,9 @@ BEGIN
    SELECT DISTINCT role.rolname FROM pg_class relation
    CROSS JOIN LATERAL aclexplode(COALESCE(relation.relacl,acldefault('r',relation.relowner))) permission
    JOIN pg_roles role ON role.oid=permission.grantee
-   WHERE relation.oid IN ('careeros_draft_actions'::regclass,'careeros_draft_content'::regclass,'careeros_draft_admissions'::regclass,'careeros_draft_reviews'::regclass,'careeros_draft_review_commands'::regclass)
+   WHERE relation.oid IN ('careeros_draft_actions'::regclass,'careeros_draft_content'::regclass,'careeros_draft_admissions'::regclass,'careeros_draft_reviews'::regclass,'careeros_draft_review_commands'::regclass,'careeros_draft_allowance'::regclass,'careeros_draft_opening_receipts'::regclass)
      AND permission.grantee<>relation.relowner
  LOOP
-   EXECUTE format('REVOKE ALL ON TABLE careeros_draft_actions,careeros_draft_content,careeros_draft_admissions,careeros_draft_reviews,careeros_draft_review_commands FROM %I',denied.rolname);
+   EXECUTE format('REVOKE ALL ON TABLE careeros_draft_actions,careeros_draft_content,careeros_draft_admissions,careeros_draft_reviews,careeros_draft_review_commands,careeros_draft_allowance,careeros_draft_opening_receipts FROM %I',denied.rolname);
  END LOOP;
 END $draft_content_acl$;

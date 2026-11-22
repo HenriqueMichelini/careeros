@@ -30,6 +30,9 @@ type restartHandoff struct {
 	Expected                             []byte
 	Managed                              bool
 	Accepted                             bool
+	Opening                              bool
+	OpeningReceipt, OpeningCommand       []byte
+	Allowance                            []byte
 	Unknown                              []byte
 }
 
@@ -247,6 +250,10 @@ func TestControlledDraftRestartChild(t *testing.T) {
 	service, err := auth.NewService(cfg, registry, store.AuthStores())
 	if err != nil {
 		t.Fatal(err)
+	}
+	if in.Opening {
+		checkOpeningRestartChild(t, service, in)
+		return
 	}
 	if in.Managed {
 		h, recovery := openManagedDraftFixture(t, in.DSN, "managed-draft", managedDraftFullBound)

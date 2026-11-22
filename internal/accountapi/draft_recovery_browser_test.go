@@ -36,6 +36,7 @@ func TestControlledDraftBrowserServer(t *testing.T) {
 	var cfg struct {
 		Origin, Address, Token, Language string
 		Managed                          bool
+		Opening                          bool
 	}
 	raw, err := os.ReadFile(path)
 	if err != nil || json.Unmarshal(raw, &cfg) != nil || len(cfg.Token) < 32 {
@@ -77,6 +78,32 @@ func TestControlledDraftBrowserServer(t *testing.T) {
 		}
 	} else {
 		r = newRecoveryFixture(t, nil)
+		if cfg.Opening {
+			if _, err = r.f.DB.Exec(`INSERT INTO careeros_pilot_operators(account_id) VALUES($1)`, r.f.Principal.AccountID); err != nil {
+				t.Fatal(err)
+			}
+			identity := auth.IdentityRef{Provider: "google", Issuer: "https://accounts.google.com", Subject: "fixture-account"}
+			invited, err := r.f.Store.PilotCommand(context.Background(), r.f.Principal, "opening-invite", accountstore.PilotCommand{Kind: "invite", Identity: identity})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err = r.f.Store.PilotCommand(context.Background(), r.f.Principal, "opening-clear", accountstore.PilotCommand{Kind: "clear", Identity: identity}); err != nil {
+				t.Fatal(err)
+			}
+			if _, err = r.f.Store.ActivatePilot(context.Background(), r.f.Principal, "opening-activate", invited.InvitationID, true); err != nil {
+				t.Fatal(err)
+			}
+			if _, err = r.f.DB.Exec(`UPDATE controlled_draft_test_authority c SET grant_end=p.expires_at,epoch=(extract(epoch FROM p.activated_at)*1000000)::bigint FROM careeros_pilot_access p WHERE p.account_id=c.owner`); err != nil {
+				t.Fatal(err)
+			}
+			if err = r.store.Close(); err != nil {
+				t.Fatal(err)
+			}
+			r.store, err = draftrecovery.OpenLocalOpening(context.Background(), r.f.DSN, r.config)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
 	}
 	var doc profiledocument.Document
 	if json.Unmarshal(r.f.Document, &doc) != nil {
@@ -205,6 +232,15 @@ func TestControlledDraftBrowserServer(t *testing.T) {
 			http.Error(w, "fixture query", 500)
 			return
 		}
+		if cfg.Opening {
+			var consumed, reserved int
+			if err := r.f.DB.QueryRow(`SELECT count(*) FILTER(WHERE customer_effect),count(*) FILTER(WHERE customer_reserved) FROM ai_fixture_action`).Scan(&consumed, &reserved); err != nil {
+				http.Error(w, "fixture opening counts", 500)
+				return
+			}
+			writeJSON(w, map[string]any{"generation": r.sends.Load(), "completion": r.checks.Load(), "allowanceEffects": consumed, "reserved": reserved})
+			return
+		}
 		if cfg.Managed {
 			writeJSON(w, map[string]any{"draft": r.sends.Load(), "qualification": r.checks.Load(), "allowanceEffects": effects})
 		} else {
@@ -248,7 +284,7 @@ func TestControlledDraftBrowserServer(t *testing.T) {
 	// Inject the already-selected opening decision for review tests only. This
 	// neither implements the #285 protocol nor changes customer allowance.
 	mux.HandleFunc("/api/drafts/test/review-delivered", guard(func(w http.ResponseWriter, request *http.Request) {
-		if cfg.Managed {
+		if cfg.Managed || cfg.Opening {
 			http.Error(w, "controlled decision only", 400)
 			return
 		}
@@ -359,6 +395,9 @@ func TestControlledDraftBrowserServer(t *testing.T) {
 	mux.HandleFunc("/api/drafts/test/stop", guard(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(204); once.Do(func() { close(stop) }) }))
 	mux.Handle("/api/drafts", r.router)
 	mux.Handle("/api/drafts/", r.router)
+	if cfg.Opening {
+		mux.Handle("/api/draft-allowance", r.router)
+	}
 	if cfg.Managed {
 		mux.Handle("/", r.router)
 	} else {

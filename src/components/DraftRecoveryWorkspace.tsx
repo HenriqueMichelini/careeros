@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { DraftRecoveryClient, type DraftArtifact, type DraftClaim, type DraftInput, type RecoveredDraft } from "../lib/draftRecovery"
 import { DraftReviewClient } from "../lib/draftReview"
+import { DraftOpeningClient } from "../lib/draftOpening"
 import { findProfileGaps, QualificationGapsError, type QualificationAnalysis } from "../lib/ai"
 import { ManagedQualification, QualificationStatusDenied } from "../lib/managedQualification"
 import { useStore } from "../lib/store"
@@ -21,6 +22,11 @@ type Labels = typeof messages.en
 const reviewMessages = {
   en: { review: "Mark reviewed", accept: "Accept this artifact", accepted: "Accepted", reviewed: "Reviewed", unreviewed: "Not reviewed", waiting: "Open the complete Draft before reviewing it. Accepting remains a separate choice and does not use another Draft.", snapshot: "Accepted Application Draft snapshot", conflict: "This review changed in another tab. Check this exact Draft before deciding again.", failed: "The decision could not be confirmed. Check this exact Draft to recover its saved review; no generation is needed." },
   "pt-BR": { review: "Marcar como revisado", accept: "Aceitar este material", accepted: "Aceito", reviewed: "Revisado", unreviewed: "Não revisado", waiting: "Abra o rascunho completo antes de revisá-lo. Aceitar continua sendo uma escolha separada e não usa outro rascunho.", snapshot: "Retrato aceito do rascunho de candidatura", conflict: "Esta revisão mudou em outra aba. Verifique este rascunho exato antes de decidir novamente.", failed: "Não foi possível confirmar a decisão. Verifique este rascunho para recuperar a revisão salva; não é necessário gerar novamente." },
+}
+
+const openingMessages = {
+  en: { available: "Complete Draft ready to open. Opening it for review uses one Draft.", open: "Open this complete Draft", opening: "Opening the complete Draft for review…", delivered: "This exact Draft is opened for review. One Draft has been used.", incomplete: "A required part of this review is unavailable. Check this Draft before opening it.", uncertain: "Opening could not be confirmed. Check this Draft to recover its current status; it will not be generated again." },
+  "pt-BR": { available: "Rascunho completo pronto para abrir. A abertura para revisão usa um rascunho.", open: "Abrir este rascunho completo", opening: "Abrindo o rascunho completo para revisão…", delivered: "Este rascunho exato está aberto para revisão. Um rascunho foi usado.", incomplete: "Uma parte obrigatória da revisão está indisponível. Verifique este rascunho antes de abri-lo.", uncertain: "Não foi possível confirmar a abertura. Verifique o status deste rascunho; ele não será gerado novamente." },
 }
 
 const managedMessages = {
@@ -71,13 +77,53 @@ function SourceReview({ result, labels }: { result: RecoveredDraft; labels: Labe
   </details>
 }
 
-function BundleView({ result, labels, busy = false, onDecision }: { result: RecoveredDraft; labels: Labels; busy?: boolean; onDecision?: (result: RecoveredDraft, artifact: DraftArtifact, operation: "review" | "accept") => void }) {
+function BundleView({ result, labels, busy = false, onDecision, onOpening }: { result: RecoveredDraft; labels: Labels; busy?: boolean; onDecision?: (result: RecoveredDraft, artifact: DraftArtifact, operation: "review" | "accept") => void; onOpening?: (result: RecoveredDraft, availableParts: () => string[]) => Promise<boolean> }) {
   const b = result.bundle!
+  const article = useRef<HTMLElement | null>(null)
+  const [openingRequested, setOpeningRequested] = useState(false)
+  const [openingFailed, setOpeningFailed] = useState(false)
+  const attempt = useRef<RecoveredDraft | null>(null)
+  const openCallback = useRef(onOpening)
+  openCallback.current = onOpening
   const { profileDocument, state } = useStore()
   const historical = result.historical || state.profileError === "stale" || (!!profileDocument && (profileDocument.id !== b.binding.profileSource.id || profileDocument.revision !== b.binding.profileSource.revision))
   const reviewLabels = reviewMessages[b.binding.language]
-  return <article className="space-y-5" data-draft-result={result.action.id} data-draft-version={result.artifactVersion}>
-    <header className="border rounded p-4 space-y-2"><p role="status">{labels.ready}</p><p className="text-sm break-words">{labels.version} {result.artifactVersion} · {labels.source} {b.binding.profileSource.revision} · {b.binding.language} · {result.action.id}</p>{historical && <p role="status">{labels.historical}</p>}</header>
+  const openingLabels = openingMessages[b.binding.language]
+  function availableParts() {
+    const node = article.current
+    // A server DTO or receipt is not review availability. The exact selected
+    // article and all required artifact/support nodes must be committed first.
+    return node?.isConnected && node.dataset.draftResult === result.action.id && node.dataset.draftVersion === String(result.artifactVersion) && node.dataset.draftDigest === result.bundleDigest
+      ? [["role_summary", '[data-draft-artifact="summary"]'], ["resume", '[data-draft-artifact="resume"]'], ["cover_letter", '[data-draft-artifact="cover"]'], ["employer_answers", '[data-draft-artifact="answers"]'], ["support", "[data-draft-support]"]].filter(([, selector]) => { const part = node.querySelector<HTMLElement>(selector); if (!part?.isConnected) return false
+        // Expandable support remains available while collapsed. Explicit CSS or
+        // ancestor hiding makes it unavailable, even though its DTO is complete.
+        for (let ancestor: HTMLElement | null = part; ancestor; ancestor = ancestor.parentElement) {
+          const style = ancestor.ownerDocument.defaultView?.getComputedStyle(ancestor)
+          if (ancestor.hidden || ancestor.getAttribute("aria-hidden") === "true" || !style || style.display === "none" || style.visibility === "hidden" || style.visibility === "collapse" || style.contentVisibility === "hidden") return false
+        }
+        return true }).map(([part]) => part)
+      : []
+  }
+  useEffect(() => { setOpeningRequested(false); setOpeningFailed(false); attempt.current = null }, [result])
+  useEffect(() => {
+    if (!openingRequested || attempt.current !== result || result.delivered || result.opening?.state !== "reserved") return
+    let current = true
+    // Commit the review first. The next frame also lets real availability
+    // failures withhold confirmation; readiness alone never starts this flow.
+    const frame = requestAnimationFrame(() => {
+      void openCallback.current?.(result, availableParts).then(ok => {
+        if (current && !ok) { setOpeningRequested(false); setOpeningFailed(true) }
+      })
+    })
+    return () => { current = false; cancelAnimationFrame(frame) }
+  }, [openingRequested, result])
+  const metadata = <><p className="text-sm break-words">{labels.version} {result.artifactVersion} · {labels.source} {b.binding.profileSource.revision} · {b.binding.language} · {result.action.id}</p>{historical && <p role="status">{labels.historical}</p>}</>
+  if (result.opening && !result.delivered && !openingRequested) return <article ref={article} className="border rounded p-4 space-y-3" data-draft-result={result.action.id} data-draft-version={result.artifactVersion} data-draft-digest={result.bundleDigest}>
+    <p role="status">{openingFailed ? openingLabels.uncertain : openingLabels.available}</p>{metadata}
+    {onOpening && !openingFailed && <button data-draft-open className="border rounded px-4 py-2 disabled:opacity-50" disabled={busy} onClick={() => { attempt.current = result; setOpeningRequested(true) }}>{openingLabels.open}</button>}
+  </article>
+  return <article ref={article} className="space-y-5" data-draft-result={result.action.id} data-draft-version={result.artifactVersion} data-draft-digest={result.bundleDigest}>
+    <header className="border rounded p-4 space-y-2"><p role="status">{result.opening ? result.delivered ? openingLabels.delivered : openingLabels.opening : labels.ready}</p>{metadata}</header>
     {[{ label: labels.summary, content: b.roleSummary, id: "summary" }, { label: labels.resume, content: [b.identity.fullName, b.identity.email, b.identity.phone, b.identity.location, b.identity.professionalLinks, b.resume].filter(Boolean).join("\n\n"), id: "resume" }, { label: labels.cover, content: b.coverLetter, id: "cover" }, { label: labels.answers, content: b.employerAnswers.state === "none_requested" ? labels.none : b.employerAnswers.text, id: "answers" }].map(artifact => {
       const decision = result.review?.artifacts.find(a => a.artifact === artifact.id)
       return <section className="border rounded p-5" key={artifact.id} data-draft-artifact={artifact.id}>
@@ -117,6 +163,7 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
   const managed = import.meta.env.VITE_CAREEROS_PILOT_MODE === "1"
   const client = useMemo(() => new DraftRecoveryClient(accountId), [accountId])
   const reviewClient = useMemo(() => new DraftReviewClient(accountId), [accountId])
+  const openingClient = useMemo(() => new DraftOpeningClient(accountId), [accountId])
   const qualification = useMemo(() => new ManagedQualification(accountId), [accountId])
   const emptyEditor = (): DraftEditor => ({ job: "", language: state.cvLanguage, question: "", answer: "" })
   const [editor, setEditor] = useState(() => editors.get(accountId) ?? emptyEditor())
@@ -144,6 +191,7 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
     submitted.current = null
     setAccepted(null)
     reviewClient.cancel()
+    openingClient.cancel()
     if (cancelPending) {
       controller.current?.abort()
       client.cancel()
@@ -167,6 +215,25 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
       const code = e instanceof Error ? e.message : ""
       if (["draft_authentication_required", "draft_access_denied", "draft_account_changed"].includes(code)) hideProtectedWork(true)
       setError(code === "draft_authentication_required" ? labels.auth : code === "draft_access_denied" ? labels.denied : code === "draft_review_conflict" ? reviewMessages[state.uiLocale].conflict : reviewMessages[state.uiLocale].failed)
+    } finally { if (controller.current === request && !request.signal.aborted) setBusy(false) }
+  }
+
+  async function openComplete(target: RecoveredDraft, availableParts: () => string[]) {
+    controller.current?.abort()
+    const request = new AbortController(); controller.current = request
+    setBusy(true); setError("")
+    try {
+      const next = await openingClient.open(target, availableParts, request.signal)
+      if (request.signal.aborted) return false
+      if (result?.action.id === next.action.id) setResult(next)
+      if (previous?.action.id === next.action.id) setPrevious(next)
+      return true
+    } catch (e) {
+      if (request.signal.aborted || (e instanceof Error && e.message === "draft_superseded")) return false
+      const code = e instanceof Error ? e.message : ""
+      if (["draft_authentication_required", "draft_access_denied", "draft_account_changed"].includes(code)) hideProtectedWork(true)
+      setError(code === "draft_authentication_required" ? labels.auth : code === "draft_access_denied" ? labels.denied : code === "draft_opening_incomplete" ? openingMessages[state.uiLocale].incomplete : openingMessages[state.uiLocale].uncertain)
+      return false
     } finally { if (controller.current === request && !request.signal.aborted) setBusy(false) }
   }
 
@@ -299,8 +366,9 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
     return () => {
       controller.current?.abort()
       client.cancel()
+      openingClient.cancel()
     }
-  }, [client])
+  }, [client, openingClient])
 
   useEffect(() => {
     const request = new AbortController()
@@ -340,8 +408,8 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
     {result?.state === "pending" && <p role="status">{labels.pending}</p>}
     {result?.state === "incomplete" && <p role="status">{labels.incomplete}</p>}
     {(result?.state === "closed" || result?.state === "deleted") && <p role="status">{labels.closed}</p>}
-    {result?.bundle && <BundleView result={result} labels={labels} busy={busy} onDecision={(target, artifact, operation) => void decide(target, artifact, operation)} />}
+    {result?.bundle && <BundleView result={result} labels={labels} busy={busy} onDecision={(target, artifact, operation) => void decide(target, artifact, operation)} onOpening={(target, available) => openComplete(target, available)} />}
     {accepted?.bundle && <section className="border rounded p-5 space-y-4" data-draft-accepted={accepted.action.id}><h2 className="text-xl font-semibold">{reviewMessages[state.uiLocale].snapshot}</h2><BundleView result={accepted} labels={labels} /><AcceptedDraftExports result={accepted} client={reviewClient} historical={state.profileError === "stale" || (!!profileDocument && (profileDocument.id !== accepted.bundle.binding.profileSource.id || profileDocument.revision !== accepted.bundle.binding.profileSource.revision))} onFresh={fresh => { setAccepted(fresh); if (result?.action.id === fresh.action.id) setResult(fresh); if (previous?.action.id === fresh.action.id) setPrevious(fresh) }} onDenied={code => { hideProtectedWork(true); setError(code === "draft_authentication_required" ? labels.auth : labels.denied) }} /></section>}
-    {previous?.bundle && <details className="border rounded p-4"><summary>{labels.previous}</summary><div className="mt-4"><BundleView result={previous} labels={labels} busy={busy} onDecision={(target, artifact, operation) => void decide(target, artifact, operation)} /></div></details>}
+    {previous?.bundle && <details className="border rounded p-4"><summary>{labels.previous}</summary><div className="mt-4"><BundleView result={previous} labels={labels} busy={busy} onDecision={(target, artifact, operation) => void decide(target, artifact, operation)} onOpening={(target, available) => openComplete(target, available)} /></div></details>}
   </main>
 }

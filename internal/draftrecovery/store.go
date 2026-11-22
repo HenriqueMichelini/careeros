@@ -26,6 +26,7 @@ type Store struct {
 	db      *sql.DB
 	cfg     Config
 	managed bool
+	opening bool
 }
 
 func Open(ctx context.Context, dsn string, cfg Config) (*Store, error) {
@@ -111,6 +112,16 @@ func (s *Store) decision(ctx context.Context, tx *sql.Tx, p auth.Principal, a Ac
 	d, err := s.cfg.Decisions.Decide(ctx, Authority{tx, p, a, now})
 	if err != nil {
 		return d, now, err
+	}
+	if s.opening && a.ID != "" {
+		// Injected policy may further restrict rights; it cannot invent a
+		// customer delivery. Only this protocol's committed settlement does.
+		var state string
+		e := tx.QueryRowContext(ctx, `SELECT state FROM careeros_draft_allowance WHERE namespace=$1 AND action_id=$2 AND owner=$3`, a.Namespace, a.ID, p.AccountID).Scan(&state)
+		if e != nil && !errors.Is(e, sql.ErrNoRows) {
+			return Decision{}, now, ErrDenied
+		}
+		d.Delivered = state == "delivered"
 	}
 	// An adapter may block. Its initial trusted time is not a final read/send
 	// clock; refresh the exact session and PostgreSQL time after it returns.
@@ -328,6 +339,11 @@ func (s *Store) create(ctx context.Context, p auth.Principal, key string, input 
 	if _, err = tx.ExecContext(ctx, `INSERT INTO careeros_draft_content(namespace,action_id,input) VALUES($1,$2,$3)`, action.Namespace, action.ID, raw); err != nil {
 		return Result{}, empty, false, ErrDenied
 	}
+	if s.opening {
+		if err = s.reserveOpening(ctx, tx, p, action, admitted); err != nil {
+			return Result{}, empty, false, err
+		}
+	}
 	if err = tx.Commit(); err != nil {
 		return Result{}, empty, false, ErrDenied
 	}
@@ -370,7 +386,7 @@ func (s *Store) load(ctx context.Context, tx *sql.Tx, p auth.Principal, key stri
 	previous := r.State
 	shared := sharedClosure(sharedState)
 	staleUndelivered := false
-	if s.managed && !d.Delivered && r.generationAttempt != 0 &&
+	if (s.managed || s.opening) && !d.Delivered && r.generationAttempt != 0 &&
 		(r.State == "ready" || r.State == "pending" || r.State == "incomplete") {
 		var source []byte
 		e := tx.QueryRowContext(ctx, `SELECT document FROM careeros_profiles WHERE account_id=$1`, p.AccountID).Scan(&source)
@@ -411,6 +427,20 @@ func (s *Store) load(ctx context.Context, tx *sql.Tx, p auth.Principal, key stri
 			if _, err = tx.ExecContext(ctx, `UPDATE ai_fixture_action SET state=$3 WHERE namespace=$1 AND id=$2 AND NOT customer_effect`, r.Action.Namespace, r.Action.ID, r.State); err != nil {
 				return r, d, now, ErrDenied
 			}
+		}
+		if s.opening {
+			if err = s.releaseOpening(ctx, tx, r); err != nil {
+				return r, d, now, err
+			}
+		}
+	}
+	if s.opening {
+		r.Opening, err = s.openingStatus(ctx, tx, r)
+		if err != nil {
+			return r, d, now, err
+		}
+		if r.Opening != nil {
+			r.Delivered = r.Opening.State == "delivered"
 		}
 	}
 	return r, d, now, nil
