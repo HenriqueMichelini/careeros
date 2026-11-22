@@ -1,0 +1,22 @@
+# Terminal Draft review withholding repair — 22 November 2026
+
+This bounded frontend repair closes the confirmed security P2 at `4e3032fbfc8cededc09503f4259d58aa2c4fde0c`. The [summary](2026-11-22-durable-draft-review-security-repair-summary.json) binds 13 runtime/11 fixture blobs, all 224 unchanged production Go/SQL/module blobs and direct receipt hashes. Original 21 November and first 22 November evidence remain unchanged.
+
+## Reproduction and repair
+
+The original independent proof used the actual unchanged client with an injected throwing StoragePort plus a workspace source trace. It was not a browser/Go test. Its exact proof SHA256 is `f3f7d9948217e7e496109deb84595b204e0a6172cc6b1d92eed8a4f608f5283b`; the proof and probe are retained locally.
+
+Both permanent client cases first failed: terminal 404 and 410 called `removeItem` before returning null; a cleanup exception replaced the terminal result with a generic error, leaving the cached prior view. The actual React→Vite→Go/private PostgreSQL 404 RED also reproduced that outcome: after the reached storage-removal fault, two protected prior/support DOM nodes remained instead of zero.
+
+`forgetPrevious` now catches only local pointer-removal failure. A confirmed terminal result still returns null and clears protected prior content. An opaque leftover pointer grants no rights; another GET remains subject to server authority. Temporary 401/403 handling, exact identity checks, account isolation and accepted/partial independence are unchanged. No new content/history retention or read right is introduced.
+
+## Validation and evidence level
+
+- **433 Node cases pass across 28 files**, including the separate 404/410 throwing-removeItem regressions and both inherited 44-vector parity corpora. TypeScript and explicit account/pilot/recovery build pass.
+- **Eight actual EN/PT browser cells pass**: terminal 404, terminal 410, partial/accepted coexistence and normal session/access denial with foreign-owner isolation. Terminal cells assert the browser fault was reached, prior/support copies disappear despite the remaining opaque pointer, and generation 2/completion 1/allowance 0 do not change. Recovery/reauthentication remain GET-only; coexistence retains its independent original identities.
+- The 404 browser schedule fault-injects a missing opaque prior key and receives an actual authenticated router 404. It does not delete a real retained record. The 410 schedule uses a private test-only exact-key purpose-state closure under the account lock, then receives the actual router's terminal Result. This is **synthetic terminal-state injection**, not execution or proof of actual deletion lifecycle, grants, hosted recovery or later slices.
+- The access-denial schedule initially failed a harness assumption that the first completed Draft GET represented the current Action. Prior recovery can win that race. The assertion now targets the intended creation key and still compares the entire DTO; only those two cells were rerun. This failure is retained separately. No runtime change was needed. Earlier terminal/coexistence cells used identical production runtime and unchanged executed fixture branches before that assertion-only correction; no single all-green eight-cell aggregate is claimed.
+- **All 224 production Go/SQL/module blobs remain unchanged.** Original 1,224 relevant PG/race events/all 37 admission IDs, actual PostgreSQL/fresh-server restart proof, full Go 2,472 passing events with 25 retained Lab test failures plus package failure, and 15 baseline vet diagnostics are reused with exact blob provenance. These are not fresh repaired-head executions. Scoped vet had passed with the documented exclusions. The changed Go browser fixture is freshly compiled in the actual browser schedules.
+- The original **16 PDFs/export visual checks were not rerun**; unchanged export components retain that historical evidence. The original Firefox current/exact-base assertion failure remains an explicit limitation. Independent source/security review remains distinct from the managed scanner's retained setup limitation.
+
+Owned browser/PG commands were terminal before receipts moved from `.r284s22` to `.local-recovery/draft-review-284-security-repair-20261122/checks`. Raw bytes are unchanged; generated build outputs were restored. Independent Standards/Spec/security followups on the committed repair head are pending. No provider access/calls/spending, real grants/participants, hosted operation, #285 implementation or remote mutation occurred.

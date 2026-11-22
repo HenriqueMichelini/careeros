@@ -241,3 +241,19 @@ test('partial review and accepted history recover independently and stale or cor
  const blocked=new DraftReviewClient('a',fetch,{...saved,setItem(){throw new Error('unavailable')}})
  assert.throws(()=>blocked.remember(value),/draft_recovery_storage/)
 })
+
+
+for (const terminal of [404,410]) test(`terminal ${terminal} prior-review withholding wins even when browser pointer removal throws`,async()=>{
+   const saved=storage(),value=ready('terminal-prior')
+   value.bundleDigest='d'.repeat(64);value.delivered=true
+   value.review={schema:'application-draft-human-review-v1',revision:1,artifacts:['summary','resume','cover','answers'].map(artifact=>({artifact,state:artifact==='summary'?'reviewed':'unreviewed'})),accepted:false}
+   let ended=false
+   const transport=async()=>ended?Response.json(terminal===404?{error:'draft_not_found'}:{...value,state:'deleted',bundle:undefined,job:undefined,context:undefined,review:undefined,cleanupQueued:true},{status:terminal}):Response.json(value)
+   const client=new DraftReviewClient('a',transport,{...saved,removeItem(){throw new Error('synthetic storage removal unavailable')}})
+   client.remember(value)
+   assert.deepEqual(await client.previous(),value)
+   ended=true
+   assert.equal(await client.previous(),null,`${terminal} authority must clear protected prior content despite failed metadata cleanup`)
+   assert.equal(saved.values.size,1,'failed best-effort cleanup may leave opaque identity, never retained content authority')
+   assert.equal(await client.previous(),null,'repeated status remains terminal without reviving content')
+})

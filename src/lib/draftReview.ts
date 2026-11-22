@@ -19,6 +19,11 @@ export class DraftReviewClient {
   constructor(readonly accountId: string, private readonly transport: typeof fetch = fetch, private readonly storage: StoragePort | null = typeof sessionStorage === "undefined" ? null : sessionStorage) {}
   cancel() { this.sequence++; this.previousSequence++ }
   private get storageKey() { return `careeros_draft_review_previous:${encodeURIComponent(this.accountId)}` }
+  private forgetPrevious() {
+    // Terminal server authority withholds content even if local metadata cannot
+    // be removed. The leftover opaque pointer never grants read permission.
+    try { this.storage?.removeItem(this.storageKey) } catch { /* Best-effort pointer cleanup only. */ }
+  }
 
   // One bounded opaque pointer preserves the prior complete review when the
   // latest creation key advances. Career wording remains server-authorized GET
@@ -38,11 +43,11 @@ export class DraftReviewClient {
     const payload = await response.json().catch(() => null)
     if (sequence !== this.previousSequence) throw new Error("draft_superseded")
     this.denied(response.status)
-    if (response.status === 404 && payload?.error === "draft_not_found") { this.storage?.removeItem(this.storageKey); return null }
+    if (response.status === 404 && payload?.error === "draft_not_found") { this.forgetPrevious(); return null }
     if (!response.ok && response.status !== 410) throw new Error("draft_outcome_unknown")
     const result = parseResult(payload, this.accountId, selected.creationKey)
     if (!result || JSON.stringify(result.action) !== JSON.stringify(selected.action) || result.artifactVersion !== selected.artifactVersion) throw new Error("draft_invalid_result")
-    if (result.state === "closed" || result.state === "deleted") { this.storage?.removeItem(this.storageKey); return null }
+    if (result.state === "closed" || result.state === "deleted") { this.forgetPrevious(); return null }
     if (result.state !== "ready" || !result.review || result.bundleDigest !== selected.bundleDigest) throw new Error("draft_invalid_result")
     return structuredClone(result)
   }

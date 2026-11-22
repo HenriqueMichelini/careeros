@@ -219,6 +219,32 @@ func TestControlledDraftBrowserServer(t *testing.T) {
 		failNextControlled.Store(true)
 		w.WriteHeader(204)
 	}))
+	// Local-only fault injection selects an exact purpose Action, so the actual
+	// router can return terminal authority for a cached prior bundle while the
+	// newer incomplete Action remains readable. No hosted deletion is executed.
+	mux.HandleFunc("/api/drafts/test/review-close-key", guard(func(w http.ResponseWriter, request *http.Request) {
+		key := request.URL.Query().Get("key")
+		if cfg.Managed || key == "" {
+			http.Error(w, "controlled exact key required", 400)
+			return
+		}
+		tx, err := r.f.DB.BeginTx(request.Context(), nil)
+		if err == nil {
+			defer tx.Rollback()
+			_, err = tx.ExecContext(request.Context(), `SELECT id FROM careeros_accounts WHERE id=$1 FOR UPDATE`, r.f.Principal.AccountID)
+			if err == nil {
+				_, err = tx.ExecContext(request.Context(), `UPDATE careeros_draft_actions SET state='closed' WHERE owner=$1 AND creation_key=$2`, r.f.Principal.AccountID, key)
+			}
+			if err == nil {
+				err = tx.Commit()
+			}
+		}
+		if err != nil {
+			http.Error(w, "controlled closure", 500)
+			return
+		}
+		w.WriteHeader(204)
+	}))
 	// Inject the already-selected opening decision for review tests only. This
 	// neither implements the #285 protocol nor changes customer allowance.
 	mux.HandleFunc("/api/drafts/test/review-delivered", guard(func(w http.ResponseWriter, request *http.Request) {

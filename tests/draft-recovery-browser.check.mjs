@@ -48,6 +48,38 @@ for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CA
      await wait(`window.draftWire?.documentID && draftWire.documentID!==${JSON.stringify(oldDocument)} && document.querySelector('[data-draft-workspace]')`)
    }
    const stats = n => ({generation:n, completion:n, allowanceEffects:0})
+   if (scenario === 'storage-terminal-404' || scenario === 'storage-terminal-410') {
+     const terminal=scenario.endsWith('404')?404:410
+     await job('Java required.'); await generate()
+     await wait(`document.querySelector('[data-draft-result]') && !document.querySelector('[data-draft-recover]').disabled`)
+     await control('review-delivered'); await click('[data-draft-recover]')
+     await wait(`document.querySelector('[data-draft-review="summary"]')?.disabled===false`)
+     await click('[data-draft-review="summary"]')
+     await wait(`document.querySelector('[data-draft-accept="summary"]')?.disabled===false`)
+     const original=await evaluate(`draftWire.responses.filter(r=>r.path.endsWith('/review')&&r.status===200).at(-1).body`)
+     await control('review-failed-replacement'); await job('Java required.'); await generate()
+     await wait(`draftWire.responses.some(r=>r.path==='/api/drafts'&&r.status===503) && !document.querySelector('[data-draft-recover]').disabled`)
+     await click('[data-draft-recover]')
+     await wait(`draftWire.responses.some(r=>r.status===202&&r.body.state==='incomplete') && !document.querySelector('[data-draft-recover]').disabled`)
+     assert.equal(await evaluate(`document.querySelectorAll('[data-draft-result]').length`),1)
+     const key=await evaluate(`Object.keys(sessionStorage).find(k=>k.startsWith('careeros_draft_review_previous:'))`)
+     assert.ok(key)
+     let terminalKey=original.creationKey
+     if (terminal===404) {
+       terminalKey='synthetic-unavailable-prior'
+       await evaluate(`(()=>{const key=${JSON.stringify(key)};const p=JSON.parse(sessionStorage.getItem(key));p.creationKey=${JSON.stringify(terminalKey)};sessionStorage.setItem(key,JSON.stringify(p))})()`)
+     } else await control('review-close-key','POST','&key='+encodeURIComponent(original.creationKey))
+     await evaluate(`window.originalRemoveItem=Storage.prototype.removeItem;window.removalFailures=0;Storage.prototype.removeItem=function(key){if(key.startsWith('careeros_draft_review_previous:')){window.removalFailures++;throw new Error('synthetic storage removal unavailable')}return originalRemoveItem.call(this,key)}`)
+     await click('[data-draft-recover]')
+     await wait(`draftWire.responses.some(r=>r.path===${JSON.stringify('/api/drafts/'+terminalKey+'/versions/1')}&&r.status===${terminal}) && !document.querySelector('[data-draft-recover]').disabled`)
+     assert.equal(await evaluate(`window.removalFailures`),1,'test must reach the throwing removeItem path')
+     assert.equal(await evaluate(`document.querySelectorAll('[data-draft-result], [data-draft-support], [data-draft-accepted], [data-draft-accepted-preview]').length`),0,'terminal prior authority must hide every cached protected copy even when pointer cleanup throws')
+     assert.ok(await evaluate(`sessionStorage.getItem(${JSON.stringify(key)})!==null`),'fault must leave opaque pointer behind')
+     assert.deepEqual(await control('stats','GET'),{generation:2,completion:1,allowanceEffects:0})
+     await evaluate(`Storage.prototype.removeItem=window.originalRemoveItem`)
+     console.log(JSON.stringify({status:'passed',scenario,locale,evidence,terminal,checks:['actual private Go router terminal response for cached prior identity','throwing browser removeItem reached','protected prior/support/accepted copies withheld independently of metadata cleanup','opaque pointer alone remains; no inference or allowance']}))
+     return
+   }
    if (scenario === 'partial-review-reload' || scenario === 'partial-review-with-accepted') {
      let olderAccepted
      const expectedCalls=scenario==='partial-review-with-accepted'?{generation:3,completion:2,allowanceEffects:0}:{generation:2,completion:1,allowanceEffects:0}
@@ -375,7 +407,7 @@ for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CA
      await control('allow-read')
      await reopen()
      await wait(`document.querySelector('[data-draft-result]')`)
-     assert.deepEqual(await evaluate(`draftWire.responses.find(r=>r.method==='GET' && r.status===200).body`), original)
+     assert.deepEqual(await evaluate(`draftWire.responses.find(r=>r.method==='GET' && r.status===200 && r.path===${JSON.stringify('/api/drafts/'+original.creationKey+'/versions/1')}).body`), original)
      assert.equal(await evaluate(`document.querySelector('[data-draft-job]').value`), '', 'authorized original job was copied into the independent editor')
      await job('Foreign scope must not inherit this wording')
      await evaluate(`draftWire.holdNextReady=true`)
