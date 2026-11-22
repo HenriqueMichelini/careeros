@@ -209,6 +209,34 @@ GRANT EXECUTE ON FUNCTION ai_fixture_abandon(text,text) TO %[2]s;
 			}
 		}
 	}
+	// The separate reconciliation authority is installed only by this disposable
+	// migrator. Neither runtime nor elevated commands can install/elevate actors.
+	var reconGranted bool
+	if tx.QueryRowContext(ctx, `SELECT has_table_privilege($1,'ai_recon_operator','SELECT')`, reviewerRole).Scan(&reconGranted) != nil {
+		return nil, nil, "", ErrUnavailable
+	}
+	if !reconGranted {
+		ddl := fmt.Sprintf(`
+REVOKE ALL ON ai_recon_operator,ai_recon_command,ai_recon_state,ai_recon_stop,ai_recon_event,ai_recon_key,ai_recon_contract,ai_recon_action_key,ai_recon_terminal_proof,ai_recon_bounds_review,ai_recon_legacy_marker,ai_recon_rate_revision FROM PUBLIC, %[1]s, %[2]s, %[3]s;
+GRANT SELECT ON ai_recon_stop,ai_recon_contract,ai_recon_key,ai_recon_action_key TO %[1]s;
+GRANT INSERT ON ai_recon_action_key TO %[1]s;
+GRANT INSERT ON ai_recon_contract TO %[1]s;
+GRANT UPDATE(epoch) ON ai_fixture_namespace TO %[1]s;
+CREATE FUNCTION ai_recon_namespace_guard() RETURNS trigger LANGUAGE plpgsql AS $ns$
+BEGIN
+ IF current_user<>pg_get_userbyid((SELECT relowner FROM pg_class WHERE oid=TG_RELID)) AND current_user<>'%[2]s' THEN RAISE EXCEPTION 'runtime cannot mutate namespace'; END IF;
+ RETURN NEW;
+END $ns$;
+CREATE TRIGGER ai_recon_namespace_guard BEFORE UPDATE ON ai_fixture_namespace FOR EACH ROW EXECUTE FUNCTION ai_recon_namespace_guard();
+GRANT SELECT ON ai_recon_operator,ai_recon_command,ai_recon_state,ai_recon_stop,ai_recon_event,ai_recon_key,ai_recon_contract,ai_recon_action_key,ai_recon_terminal_proof,ai_recon_bounds_review,ai_recon_legacy_marker,ai_recon_rate_revision TO %[2]s;
+GRANT INSERT ON ai_recon_legacy_marker,ai_recon_rate_revision TO %[2]s;
+GRANT UPDATE(version) ON ai_recon_operator TO %[2]s;
+GRANT UPDATE(data) ON ai_fixture_observation TO %[2]s;
+GRANT INSERT,UPDATE ON ai_recon_command,ai_recon_state,ai_recon_stop,ai_recon_event,ai_recon_key TO %[2]s;`, runtimeRole, reviewerRole, supportRole)
+		if _, err = tx.ExecContext(ctx, ddl); err != nil {
+			return nil, nil, "", ErrUnavailable
+		}
+	}
 	if tx.Commit() != nil {
 		return nil, nil, "", ErrUnavailable
 	}

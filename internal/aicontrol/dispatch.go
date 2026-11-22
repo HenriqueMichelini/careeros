@@ -44,10 +44,6 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 	if h.cfg.Qualification && workflow != "qualification_gaps" && !(h.cfg.Ingestion && workflow == "profile_ingestion") && !(h.cfg.ProfileReview && workflow == "profile_review") && !(h.cfg.StandaloneCV && workflow == "cv_generation") && !(h.cfg.ManagedDraft && workflow == "application_draft") {
 		return nil, ErrDenied
 	}
-	binding, err := h.fingerprint(p.AccountID, "root/"+workflow, rootJSON)
-	if err != nil {
-		return nil, err
-	}
 	lease, err := h.cfg.Gate.capture(h.cfg.Namespace)
 	if err != nil {
 		return nil, err
@@ -57,6 +53,14 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 		return nil, err
 	}
 	defer tx.Rollback()
+	h, err = h.actionBindingHarness(ctx, tx, p, key)
+	if err != nil {
+		return nil, err
+	}
+	binding, err := h.fingerprint(p.AccountID, "root/"+workflow, rootJSON)
+	if err != nil {
+		return nil, err
+	}
 	grantVersion, err := h.checkGrant(ctx, tx, p, 0)
 	if err != nil {
 		return nil, err
@@ -86,6 +90,9 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 			return nil, ErrConflict
 		}
 	} else if errors.Is(err, sql.ErrNoRows) {
+		if err = h.admissionReady(ctx, tx); err != nil {
+			return nil, err
+		}
 		if h.cfg.Qualification {
 			if err = h.managedOpen(ctx, tx, p.AccountID, workflow, "", true); err != nil {
 				return nil, err
@@ -124,6 +131,9 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 		}
 		_, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_action(namespace,id,owner,creation_key,workflow,binding,profile_binding,grant_version,execution_binding,execution_version) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, h.cfg.Namespace, id, p.AccountID, key, workflow, binding, profile, grantVersion, execution, h.executionVersion(workflow))
 		if err != nil {
+			return nil, ErrUnavailable
+		}
+		if _, err = tx.ExecContext(ctx, `INSERT INTO ai_recon_action_key(namespace,action,key_version) VALUES($1,$2,$3)`, h.cfg.Namespace, id, h.cfg.BindingKeyVersion); err != nil {
 			return nil, ErrUnavailable
 		}
 	} else {
@@ -358,6 +368,9 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (Dispatch, error) {
 		return zero, err
 	}
 	defer tx.Rollback()
+	if err = h.admissionReady(ctx, tx); err != nil {
+		return zero, err
+	}
 	if _, err = h.checkGrant(ctx, tx, s.p, s.grantVersion); err != nil {
 		return zero, err
 	}
@@ -546,6 +559,13 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (Dispatch, error) {
 			return zero, ErrUnavailable
 		}
 	}
+	currency := "SYN"
+	if h.cfg.Qualification {
+		currency = "USD"
+	}
+	if _, err = tx.ExecContext(ctx, `INSERT INTO ai_recon_contract(namespace,dispatch,provider,model,tier,rate_id,currency,billing_namespace) VALUES($1,$2,$3,$4,$5,$6,$7,'synthetic')`, h.cfg.Namespace, id, leg.Provider, stageIdentity.Model, stageIdentity.Tier, h.cfg.RatePolicyVersion, currency); err != nil {
+		return zero, ErrUnavailable
+	}
 	if err = h.fault("before_reserve_commit"); err != nil {
 		return zero, err
 	}
@@ -566,9 +586,13 @@ func (s *Session) invoke(ctx context.Context, d Dispatch, req *http.Request, raw
 	if !(d.Provider == "openai" && req.URL.Host == "api.openai.com" && req.URL.Path == "/v1/chat/completions" || d.Provider == "typesafe" && req.URL.Host == "api.typesafe.ai" && req.URL.Path == "/v1/systemone") {
 		return nil, ErrDenied
 	}
-	h.mu.Lock()
-	respond := h.responder
-	h.mu.Unlock()
+	source := h
+	if h.origin != nil {
+		source = h.origin
+	}
+	source.mu.Lock()
+	respond := source.responder
+	source.mu.Unlock()
 	if respond == nil {
 		return nil, ErrDenied
 	}
@@ -581,6 +605,9 @@ func (s *Session) invoke(ctx context.Context, d Dispatch, req *http.Request, raw
 		return nil, err
 	}
 	defer tx.Rollback()
+	if err = h.admissionReady(ctx, tx); err != nil {
+		return nil, err
+	}
 	if _, err = h.checkGrant(ctx, tx, s.p, s.grantVersion); err != nil {
 		return nil, err
 	}
@@ -685,6 +712,9 @@ func (s *Session) invoke(ctx context.Context, d Dispatch, req *http.Request, raw
 		return nil, err
 	}
 	defer handoff.Rollback()
+	if err = h.admissionReady(ctx, handoff); err != nil {
+		return nil, err
+	}
 	if err = s.checkCurrent(ctx, handoff); err != nil {
 		return nil, err
 	}
@@ -811,6 +841,9 @@ func (s *Session) retry(ctx context.Context, key string) (*Session, error) {
 	}
 	next := s.attempt + 1
 	if current == s.attempt && state == "failed" {
+		if err = h.admissionReady(ctx, tx); err != nil {
+			return nil, err
+		}
 		var maxAttempts int
 		if tx.QueryRowContext(ctx, `SELECT max_attempts FROM ai_fixture_policy WHERE namespace=$1`, h.cfg.Namespace).Scan(&maxAttempts) != nil {
 			return nil, ErrUnavailable

@@ -210,7 +210,18 @@ func (h *Harness) observeResponse(ctx context.Context, p auth.Principal, d Dispa
 				defer cancel()
 				reviewer := h.SyntheticReviewer()
 				if complete && o.Estimate != nil {
-					_ = reviewer.ApplyEvidence(proofCtx, p, Evidence{ID: "usage_" + d.ID, Dispatch: d.ID, Provider: d.Provider, Kind: "estimate", Model: o.Model, Tier: o.Tier, Amount: o.Estimate})
+					source := h
+					if h.origin != nil {
+						source = h.origin
+					}
+					source.mu.Lock()
+					validatedCoverage := source.usageCoverage != nil
+					source.mu.Unlock()
+					if validatedCoverage {
+						_ = h.settleSavedObservation(proofCtx, p, d.ID, true)
+					} else {
+						_ = h.recordRuntimeObservation(proofCtx, p, d, o)
+					}
 				}
 				if fakeTerminal {
 					_ = reviewer.ApplyEvidence(proofCtx, p, Evidence{ID: "terminal_" + d.ID, Dispatch: d.ID, Provider: d.Provider, Kind: "terminal"})

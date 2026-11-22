@@ -164,7 +164,7 @@ func TestA32_ActualStaleSQLRestoreNeedsIndependentObligationReconciliation(t *te
 	// Include all fixture tables, including additions such as append-only
 	// observations, while preserving their FK insertion order.
 	tables := []string{"ai_fixture_namespace", "ai_fixture_policy", "ai_fixture_grant", "ai_fixture_scope", "ai_fixture_action", "ai_fixture_stage", "ai_fixture_child", "ai_fixture_dispatch", "ai_fixture_allocation", "ai_fixture_evidence"}
-	rows, err := conn.QueryContext(context.Background(), `SELECT tablename FROM pg_tables WHERE schemaname=current_schema() AND tablename LIKE 'ai_fixture_%' ORDER BY tablename`)
+	rows, err := conn.QueryContext(context.Background(), `SELECT tablename FROM pg_tables WHERE schemaname=current_schema() AND (tablename LIKE 'ai_fixture_%' OR tablename LIKE 'ai_recon_%') ORDER BY tablename`)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,0 +1,24 @@
+package aicontrol
+
+import (
+ "context"
+ "encoding/hex"
+ "encoding/json"
+ "os"
+ "testing"
+)
+
+// Built only inside an immutable ea8b97d archive. The deliberate child exit
+// bypasses test cleanup, leaving the actual old schema for the upgrade reader.
+func TestLegacyReconciliationFixtureExport(t *testing.T){
+ f:=setup(t,func(c *SyntheticConfig){c.Limit=10000;c.Capacity=3})
+ s:=f.open(t,"genuine_base_action");d:=f.sent(t,s)
+ if err:=f.h.SyntheticReviewer().ApplyEvidence(context.Background(),f.p,Evidence{ID:"genuine_base_estimate",Dispatch:d.ID,Provider:"openai",Kind:"estimate",Amount:pointer(35)});err!=nil{t.Fatal(err)}
+ var root,execution,dispatch,evidence []byte
+ if err:=f.db.QueryRow(`SELECT a.binding,a.execution_binding,d.binding,e.binding FROM ai_fixture_action a JOIN ai_fixture_dispatch d ON d.namespace=a.namespace AND d.action=a.id JOIN ai_fixture_evidence e ON e.namespace=d.namespace AND e.dispatch=d.id WHERE a.id=$1`,s.ID()).Scan(&root,&execution,&dispatch,&evidence);err!=nil{t.Fatal(err)}
+ record:=struct{Base,DSN,Token,Action,Dispatch,Root,Execution,DispatchBinding,EvidenceBinding string}{"ea8b97defb6d0c9593f2bf959bfe007d32ac93c8",f.dsn,f.token,s.ID(),d.ID,hex.EncodeToString(root),hex.EncodeToString(execution),hex.EncodeToString(dispatch),hex.EncodeToString(evidence)}
+ raw,err:=json.Marshal(record);if err!=nil{t.Fatal(err)}
+ file,err:=os.OpenFile(os.Getenv("CAREEROS_RECONCILIATION_EXPORT_PATH"),os.O_CREATE|os.O_EXCL|os.O_WRONLY,0600);if err!=nil{t.Fatal(err)}
+ if _,err=file.Write(raw);err!=nil{t.Fatal(err)};if err=file.Sync();err!=nil{t.Fatal(err)};file.Close()
+ os.Exit(73)
+}

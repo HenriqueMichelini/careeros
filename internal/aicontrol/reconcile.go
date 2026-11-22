@@ -129,12 +129,15 @@ func (r *Reviewer) ApplyEvidence(ctx context.Context, p auth.Principal, e Eviden
 		return ErrDenied
 	}
 	raw, _ := json.Marshal(e)
-	binding, err := r.h.fingerprint(p.AccountID, "evidence", raw)
+	if found, err := r.legacyEvidenceReplay(ctx, p, e, raw); found || err != nil {
+		return err
+	}
+	binding, err := r.legacyInputFingerprint(ctx, p, e.Dispatch, "evidence", raw)
 	if err != nil {
 		return err
 	}
 	return r.h.mutateDispatch(ctx, p, e.Dispatch, func(tx *sql.Tx, d Dispatch) error {
-		if d.Provider != e.Provider || d.State == "reserved" || d.State == "aborted" || d.Compacted {
+		if d.Provider != e.Provider || d.State == "reserved" || d.State == "aborted" {
 			return ErrDenied
 		}
 		var old []byte
@@ -148,6 +151,13 @@ func (r *Reviewer) ApplyEvidence(ctx context.Context, p auth.Principal, e Eviden
 		}
 		if !errors.Is(err, sql.ErrNoRows) {
 			return ErrUnavailable
+		}
+		// Retired detail is not a blanket evidence tombstone. Keep the original
+		// command digest for duplicate recovery and accept only non-decreasing late
+		// numeric evidence through this legacy fixture helper. The restricted owner
+		// surface additionally validates source/coverage and contains breaches.
+		if d.Compacted && e.Kind != "terminal" && *e.Amount < d.Counted {
+			return ErrDenied
 		}
 		if e.Kind == "terminal" {
 			if d.Remote != "terminal_proven" {
@@ -218,7 +228,7 @@ func (r *Reviewer) ReviewConservativeClosure(ctx context.Context, p auth.Princip
 		if err != nil {
 			return ErrUnavailable
 		}
-		binding, err := r.h.fingerprint(p.AccountID, "conservative-closure-audit", raw)
+		binding, err := r.legacyInputFingerprint(ctx, p, id, "conservative-closure-audit", raw)
 		if err != nil {
 			return err
 		}

@@ -123,7 +123,7 @@ func (s *Session) qualificationLimits(ctx context.Context, tx *sql.Tx, leg Leg, 
 		return ErrUnavailable
 	}
 	// Unresolved obligations stay in every rolling pool even after 24 hours.
-	err = tx.QueryRowContext(ctx, `SELECT COALESCE(sum(d.counted) FILTER(WHERE a.owner=$2),0),COALESCE(sum(d.counted),0) FROM ai_fixture_dispatch d JOIN ai_fixture_action a ON a.namespace=d.namespace AND a.id=d.action WHERE d.namespace=$1 AND (COALESCE(d.intent_at,a.created_at)>clock_timestamp()-interval '24 hours' OR d.remote_state<>'terminal_proven' OR d.expense IS NULL)`, s.h.cfg.Namespace, s.p.AccountID).Scan(&accountDay, &globalDay)
+	err = tx.QueryRowContext(ctx, `SELECT COALESCE(sum(d.counted) FILTER(WHERE a.owner=$2),0),COALESCE(sum(d.counted),0) FROM ai_fixture_dispatch d JOIN ai_fixture_action a ON a.namespace=d.namespace AND a.id=d.action WHERE d.namespace=$1 AND (COALESCE(d.intent_at,a.created_at)>clock_timestamp()-interval '24 hours' OR d.remote_state<>'terminal_proven' OR d.expense IS NULL OR d.counted>d.expense)`, s.h.cfg.Namespace, s.p.AccountID).Scan(&accountDay, &globalDay)
 	if err != nil {
 		return ErrUnavailable
 	}

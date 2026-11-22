@@ -53,6 +53,8 @@ func (systemClock) Sample() (time.Time, bool) { return time.Now().UTC(), true }
 type SyntheticConfig struct {
 	Namespace                                       string
 	BindingKey                                      [32]byte
+	BindingKeyVersion                               string
+	BindingVerificationKeys                         map[string][32]byte
 	Limit                                           int64
 	Capacity, MaxDispatches, MaxStages, MaxAttempts int
 	CustomerUnits                                   int64
@@ -74,17 +76,19 @@ type SyntheticConfig struct {
 }
 
 func DefaultSyntheticConfig(namespace string, gate *SyntheticGate) SyntheticConfig {
-	return SyntheticConfig{Namespace: namespace, BindingKey: sha256.Sum256([]byte("synthetic-only-key-not-a-credential")), Limit: 100, Capacity: 1, MaxDispatches: 32, MaxStages: 32, MaxAttempts: 3, CustomerUnits: 3, MaxInputBytes: 16 << 20, MaxOutputTokens: 1000000, ExpiresAt: time.Now().Add(time.Hour), Gate: gate, Clock: systemClock{}, ExecutionPolicyVersion: "synthetic-execution-v1", RatePolicyVersion: "synthetic-unit-v1"}
+	return SyntheticConfig{Namespace: namespace, BindingKey: sha256.Sum256([]byte("synthetic-only-key-not-a-credential")), BindingKeyVersion: "input_v1", Limit: 100, Capacity: 1, MaxDispatches: 32, MaxStages: 32, MaxAttempts: 3, CustomerUnits: 3, MaxInputBytes: 16 << 20, MaxOutputTokens: 1000000, ExpiresAt: time.Now().Add(time.Hour), Gate: gate, Clock: systemClock{}, ExecutionPolicyVersion: "synthetic-execution-v1", RatePolicyVersion: "synthetic-unit-v1"}
 }
 
 type Harness struct {
-	db          *sql.DB
-	reviewerDB  *sql.DB
-	supportRole string
-	cfg         SyntheticConfig
-	mu          sync.Mutex
-	responder   func(context.Context, string, *http.Request) (*http.Response, error)
-	hooks       map[string]func() error
+	db            *sql.DB
+	reviewerDB    *sql.DB
+	supportRole   string
+	cfg           SyntheticConfig
+	mu            sync.Mutex
+	responder     func(context.Context, string, *http.Request) (*http.Response, error)
+	hooks         map[string]func() error
+	origin        *Harness
+	usageCoverage UsageCoverageValidator
 }
 
 var tokenLabel = regexp.MustCompile(`^[A-Za-z0-9_-]{1,128}$`)
@@ -96,6 +100,17 @@ var stages = map[string]bool{"field_validation": true, "extraction": true, "reco
 // literal loopback address. It never reads environment variables or account files.
 // The caller must first install existing account tables in this disposable schema.
 func NewSynthetic(ctx context.Context, dsn string, cfg SyntheticConfig) (*Harness, error) {
+	verification := map[string][32]byte{}
+	for v, k := range cfg.BindingVerificationKeys {
+		verification[v] = k
+	}
+	cfg.BindingVerificationKeys = verification
+	if cfg.BindingKeyVersion == "" {
+		cfg.BindingKeyVersion = "input_v1"
+	}
+	if !tokenLabel.MatchString(cfg.BindingKeyVersion) {
+		return nil, ErrDenied
+	}
 	if (cfg.Ingestion || cfg.ProfileReview || cfg.StandaloneCV || cfg.ManagedDraft) && !cfg.Qualification {
 		return nil, ErrDenied
 	}
@@ -143,8 +158,30 @@ func NewSynthetic(ctx context.Context, dsn string, cfg SyntheticConfig) (*Harnes
 			return fail()
 		}
 	}
+	var reconciliationExists bool
+	if tx.QueryRowContext(ctx, "SELECT to_regclass('ai_recon_operator') IS NOT NULL").Scan(&reconciliationExists) != nil {
+		return fail()
+	}
+	if !reconciliationExists {
+		if _, err = tx.ExecContext(ctx, reconciliationSchema); err != nil {
+			return fail()
+		}
+		// Upgrade only exact known inherited execution identities. Unknown contracts
+		// stay unvalued and therefore fail closed; no live pricing is discovered.
+		if _, err = tx.ExecContext(ctx, `INSERT INTO ai_recon_contract(namespace,dispatch,provider,model,tier,rate_id,currency,billing_namespace)
+ SELECT d.namespace,d.id,d.provider,CASE d.provider WHEN 'openai' THEN 'gpt-6-luna' ELSE 'jev-1.13.0' END,'standard',
+ CASE a.execution_version WHEN 'synthetic-execution-v1' THEN 'synthetic-unit-v1' ELSE 'qualification-usd-20261102-v1' END,
+ CASE a.execution_version WHEN 'synthetic-execution-v1' THEN 'SYN' ELSE 'USD' END,'synthetic'
+ FROM ai_fixture_dispatch d JOIN ai_fixture_action a ON a.namespace=d.namespace AND a.id=d.action
+ WHERE a.execution_version IN ('synthetic-execution-v1','qualification-local-20261102-v1',$1,$2,$3,$4)`, IngestionPolicyVersion, ProfileReviewPolicyVersion, StandaloneCVPolicyVersion, ManagedDraftPolicyVersion); err != nil {
+			return fail()
+		}
+	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_namespace(id,epoch) VALUES($1,1) ON CONFLICT DO NOTHING`, cfg.Namespace)
 	if err != nil {
+		return fail()
+	}
+	if err = installBindingVersions(ctx, tx, cfg); err != nil {
 		return fail()
 	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO ai_fixture_policy(namespace,expires_at,max_dispatches,max_attempts,max_stages,units,max_input_bytes,max_output_tokens) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT DO NOTHING`, cfg.Namespace, cfg.ExpiresAt, cfg.MaxDispatches, cfg.MaxAttempts, cfg.MaxStages, cfg.CustomerUnits, cfg.MaxInputBytes, cfg.MaxOutputTokens)
@@ -192,6 +229,9 @@ func (h *Harness) SetFault(phase string, fn func() error) {
 	h.hooks[phase] = fn
 }
 func (h *Harness) fault(phase string) error {
+	if h.origin != nil {
+		return h.origin.fault(phase)
+	}
 	h.mu.Lock()
 	f := h.hooks[phase]
 	h.mu.Unlock()
@@ -203,10 +243,23 @@ func (h *Harness) fault(phase string) error {
 func (h *Harness) ready(ctx context.Context, tx *sql.Tx) error {
 	var epoch int64
 	var retired bool
-	if tx.QueryRowContext(ctx, `SELECT epoch,retired FROM ai_fixture_namespace WHERE id=$1`, h.cfg.Namespace).Scan(&epoch, &retired) != nil {
+	if tx.QueryRowContext(ctx, `SELECT epoch,retired FROM ai_fixture_namespace WHERE id=$1 FOR SHARE`, h.cfg.Namespace).Scan(&epoch, &retired) != nil {
 		return ErrUnavailable
 	}
 	if retired || !h.cfg.Gate.permits(h.cfg.Namespace, epoch) {
+		return ErrDenied
+	}
+	return nil
+}
+
+// admissionReady is separate from provider-free status/result authority.
+// begin already holds the namespace SHARE fence; containment takes UPDATE.
+func (h *Harness) admissionReady(ctx context.Context, tx *sql.Tx) error {
+	var stopped bool
+	if tx.QueryRowContext(ctx, `SELECT COALESCE((SELECT stopped FROM ai_recon_stop WHERE namespace=$1),false)`, h.cfg.Namespace).Scan(&stopped) != nil {
+		return ErrUnavailable
+	}
+	if stopped {
 		return ErrDenied
 	}
 	return nil
