@@ -20,6 +20,8 @@ Expiry and seven-days-before-removal notices retain stable identity and original
 
 Metadata authorization is separate from canonical career-read eligibility. A valid session whose current Profile is fenced/unreadable can still inspect lifecycle metadata. The `careerReadAllowed` observation guides the Profile UI; it is not a capability authorizing later requests. Those requests retain their own current fences. AccountGate does not misclassify a legitimate career 403 as a lost sign-in. It withholds protected copies and pending merged-recovery downloads while retaining opaque keys and independently entered same-owner work for authorized recovery. Activation remains deliberate; its subsequent focus/session check performs GETs only.
 
+A successful metadata refresh that denies career reads immediately clears the current client read guard, hides the entire protected workspace/recovery subtree and cancels pending exports through the existing owner-bound denial event. It does not wait for focus or another session probe. A later positive metadata observation alone cannot restore those copies; recovery requires a fresh session/Profile authority check. Metadata stays accessible, and normal retained-read rights or an independently authorized replacement Profile are not turned into deletion.
+
 Only trusted known content-window expiry invokes the existing deletion invalidation signal, canceling old same-owner export/Save/AI/editor callbacks. Ordinary grant access end still preserves the selected 30-day read/export period. An old Profile A fence does not represent deletion of valid Profile B. Already customer-held downloads are outside central control.
 
 ## Invitations and active Profile provenance

@@ -1,0 +1,207 @@
+{
+  "base": "5a0088f711ea00462b4f8260b0a7aba392014ea6",
+  "synthetic_only": true,
+  "runtime_files": [
+    {
+      "path": "cmd/lifecycle-local/main.go",
+      "sha256": "768c70c4130233765500dc0c860494b6aba222ff4ac53d54334e718aa3f6861a",
+      "git_blob": "3043f4c9fbdce37bf3ba32617977f115440c22b8"
+    },
+    {
+      "path": "internal/accountapi/handler.go",
+      "sha256": "011b757b73acca759d23a102efd18c54ebcb0eb868d98748e9eab614b750dc22",
+      "git_blob": "cb051a55bf3a23e2f694084fe6d6ba8e9a17303c"
+    },
+    {
+      "path": "internal/accountapi/pilot.go",
+      "sha256": "3deb103ed109a75f767a0b954bc52fad5c8e5ad16eb901818ecd4c80d606fb43",
+      "git_blob": "8e8bc268e1958cc4b0f98c0b005f89acf51b22c0"
+    },
+    {
+      "path": "internal/accountstore/invitation_cleanup.go",
+      "sha256": "25a30f4244043c09bd764ab0384191d3423366c88601ff82aad10c943f0362f5",
+      "git_blob": "82074163777bcaf519794ac97ebbed3de30619f3"
+    },
+    {
+      "path": "internal/accountstore/lifecycle.go",
+      "sha256": "1e5c76997d97b531610f50e18c66ead9a5b3fe2aaf938c07a1e499920da7d26e",
+      "git_blob": "cfe4bd4f500739cb738f9e3e10c4873f9202d644"
+    },
+    {
+      "path": "internal/accountstore/lifecycle_recovery.go",
+      "sha256": "6cbb311e366eb464cec289f367c6f79bab58534852aea6a30f5329dc56b1cc94",
+      "git_blob": "c594488a9b34fde6d8d49d24db24d0031effc890"
+    },
+    {
+      "path": "internal/accountstore/lifecycle_residual.go",
+      "sha256": "1744e28bce8c1320db94367f7c2197f120966baf0a5c6d97f81f9ea1f13bf60e",
+      "git_blob": "1311a834a6217762dc03a66a1570c3c3c3ab47ae"
+    },
+    {
+      "path": "internal/accountstore/pilot.go",
+      "sha256": "4f736b00a51263c5b0e88a0e227b24981b465121a1f2a54179eb73e2d38956e8",
+      "git_blob": "ebc1d71dde23e5ee254d6b7d7b665b9962d2256e"
+    },
+    {
+      "path": "internal/accountstore/profile.go",
+      "sha256": "8cffbba5b73579f3879db42a062da5a064c97655b1e0b358554271f6461458d8",
+      "git_blob": "a9f39acdcb88b7474123fb899edcb37883f30049"
+    },
+    {
+      "path": "internal/accountstore/profile_pruning.go",
+      "sha256": "563fb2877a17f2ae19ed00f6442b1c52249ac6ab95f7addf59c9fc53b20b32b1",
+      "git_blob": "51179705f61e56a95efd0c418e84b6df17d68567"
+    },
+    {
+      "path": "internal/accountstore/schema.sql",
+      "sha256": "e436693c7991da5d6a96321fa7de1b417d6faaaec55e5a9f37fc478797d423f0",
+      "git_blob": "90f9298376fb57605de0042226033d30586d8120"
+    },
+    {
+      "path": "internal/aicontrol/qualification.go",
+      "sha256": "6d8ca52ef5de7ab98c750d28e3f6b459a5966ad61a6028cf816884a00aa8109a",
+      "git_blob": "c24458f812b3157b1c7df9c439218f8688dbfd49"
+    },
+    {
+      "path": "internal/aicontrol/roles.go",
+      "sha256": "883de1ef2613163d25711282bf929e5e692aabd46b79656f0a7c9baafa471522",
+      "git_blob": "c41249dc14085cf852ff04ad5a1762e4e06eec83"
+    },
+    {
+      "path": "internal/profiledocument/retention.go",
+      "sha256": "4620d3fb5040ed795743694d886ccfda0d133bdf577ca5a7ad6a58cc5645c425",
+      "git_blob": "14a9420907a872dd834bac63a37feebbfd9c90cb"
+    },
+    {
+      "path": "src/components/AccountGate.tsx",
+      "sha256": "3e7132b7ed847ab9c7c29e0a6ee47296b99197c7cbf10bd497fab6c045c930be",
+      "git_blob": "757a6d3940958a275ef874975090ae763ea83b18"
+    },
+    {
+      "path": "src/components/AccountLifecycle.tsx",
+      "sha256": "475aad204af953243a862f451046efa61d11751995fc9f0c76ff245f949f27fc",
+      "git_blob": "dba2c4cf1ec812ac62c64e8e01009d09cbfe3fc3"
+    },
+    {
+      "path": "src/components/PilotAccess.tsx",
+      "sha256": "07381f59dfe68827f1b1c210cf0ee41aabd6034fd4a5dd817a6673a89a3484e0",
+      "git_blob": "905d1925ebc5e283a639a9a18b054f59f2d560ce"
+    },
+    {
+      "path": "src/components/ProfileExport.tsx",
+      "sha256": "4d632d13397d63bca0519af237f674a3a811a9b2b536d9819635c98c6252ae9d",
+      "git_blob": "b93371fe78d063ef55f84c4327af589b3e581312"
+    },
+    {
+      "path": "src/lib/accountLifecycle.ts",
+      "sha256": "befee1e7dbd9af0597c6254a9873510c4eeaec7c8107f4ee8d18a68d1ab4811a",
+      "git_blob": "f4e8e7ff8fb34b95f288eca5ea94b22ef1ac85e9"
+    },
+    {
+      "path": "src/lib/accountProfile.ts",
+      "sha256": "dde3737c5adc959594e1d6d0292a511305600866f71c7daf74f844c37f62a7ed",
+      "git_blob": "abea84ac27da4ddaa52ed569636a1d20505ea5e0"
+    },
+    {
+      "path": "src/lib/i18n.ts",
+      "sha256": "1f7b494bb4c73f1e4309779677fee7490a30b3d2ccea319ae74970589928a0a8",
+      "git_blob": "addaa8939174d5f5d8867f386823479c2402df46"
+    },
+    {
+      "path": "src/lib/profileDocument.ts",
+      "sha256": "779b16ade16ba3cf99812ac1bf7f40eeec1ab34b61ce6521105af24fc8eb9674",
+      "git_blob": "652cf3aa3ef7607daa99561b6343303acd23b47c"
+    },
+    {
+      "path": "src/lib/profileStorage.ts",
+      "sha256": "671a0ae06e7d75f407b5e1f7c83b3223ac8a13cec8893993b61c1b7f6610f27f",
+      "git_blob": "e754c520f21be2301f84be2a0c2a12bf6b1a1e9a"
+    },
+    {
+      "path": "vite.config.ts",
+      "sha256": "f269819db862f55e6678cede84482b173525a5e75ecf29200e77ef359da8cf24",
+      "git_blob": "fac181a0653a8918b86c5948226c483e155f3028"
+    }
+  ],
+  "fixture_files": [
+    {
+      "path": "internal/accountapi/deletion_authority_test.go",
+      "sha256": "1c2e8519a1f3e2f320f826fcc3ba5eb5158c360b4d3e561ea1d41e98a64f0394",
+      "git_blob": "895e65a56a428f6d91ed3fbc8d1ca7ba8dd71443"
+    },
+    {
+      "path": "internal/accountapi/deletion_browser_test.go",
+      "sha256": "978d5db4071b96c79bc5bdc61c327e483ab6ad18d0d61e5768f37b59ea71bff7",
+      "git_blob": "6b32cf0ae2c83f004c40ac606bd31b99fb97f4a0"
+    },
+    {
+      "path": "internal/accountapi/lifecycle_draft_test.go",
+      "sha256": "fad0d039bd39bbe311c73ba8d00aef28bf1904e3b5cca51216aa22676439ff4c",
+      "git_blob": "8127ba6db6cdc8142158f4979dbd7b0da3bd1e2b"
+    },
+    {
+      "path": "internal/accountapi/lifecycle_edges_test.go",
+      "sha256": "b55187c983dbd8f79feca5e08e70e6425989ae2e6731fd24fc35427e548a8250",
+      "git_blob": "83d2f7250ad85bf3af2f076099ba2b54a54a21f7"
+    },
+    {
+      "path": "internal/accountapi/lifecycle_restart_test.go",
+      "sha256": "7271b4d8c38356460a9a33fe7673d00e3674c98e266629c2eb8b89ffdb258ad4",
+      "git_blob": "9426b98fb9d17e70781e75ec44568f6a5793a699"
+    },
+    {
+      "path": "internal/accountapi/lifecycle_test.go",
+      "sha256": "f8d15bd5bbb8321efd808e06da284d92c1e7f37b4070cccc85c6c9f676d1bf92",
+      "git_blob": "5c48eb5fee8f12598e0565f97eed1988e949e9bb"
+    },
+    {
+      "path": "internal/accountapi/pilot_test.go",
+      "sha256": "e4ed0f77d87ffe9d0cfae3cbc7bda961490a578b1880a23e54afbff25532cc76",
+      "git_blob": "0bce40fc7cf575934850c5c2998edb5f144b6605"
+    },
+    {
+      "path": "internal/profiledocument/retention_test.go",
+      "sha256": "d5910e6c682c94d7e5ad542ead61d35cb5cca6dfb76f889fdc7e270579033b20",
+      "git_blob": "005842dec21a617fb35709b071b5c0b83eb10b50"
+    },
+    {
+      "path": "tests/account-lifecycle-browser.check.mjs",
+      "sha256": "8f420312732719ea8d684cf045eebbe16484e0d1792e7ac1e4e23aa6d760204b",
+      "git_blob": "473c489519cd08c060e921c2b514d8b26de4b659"
+    },
+    {
+      "path": "tests/account-lifecycle.test.mjs",
+      "sha256": "d09d9891c42bedae06faa8d500c16daeb667710c1785c50836a0bffca99e8888",
+      "git_blob": "e4df3a269c6fb33035a57c8ceabf77426480c1b7"
+    },
+    {
+      "path": "tests/draft-recovery-pg.py",
+      "sha256": "781a93c2d2958c90e93a401c19ff91aefaab8329d1cdd46993f0a11784795f54",
+      "git_blob": "680e79b61a461a3e1526642f39f976b62d85e8be"
+    },
+    {
+      "path": "tests/evidence-mvp.test.mjs",
+      "sha256": "d8b275f0a5dd31220dceba418af7640643f1319b47d2be71d51538a8c722e6cc",
+      "git_blob": "1f4326887b422fd8867c75815d532c601c4a6c93"
+    },
+    {
+      "path": "tests/profile-document.test.mjs",
+      "sha256": "119c01d8e7d023c7c59284fd1be4c0bb64d9945c3d7fde497e5bf18f45b9e360",
+      "git_blob": "89213b411b4dd8ec915a91f8f58f85abfe5326e8"
+    }
+  ],
+  "documents": [
+    {
+      "path": "docs/managed-never-paid-cleanup-local.md",
+      "sha256": "4773a077d935ea2d6435aad49aed22f09d849f7756ea4e1e18e5abf80e6a13a4",
+      "git_blob": "2155138fed9d0aeafb49cb93dae5ca5df8814595"
+    },
+    {
+      "path": "docs/never-paid-cleanup-contract.md",
+      "sha256": "de7c8febee9844781afd8bd13f264e47d7527097ee1509dc4914472df8e090ed",
+      "git_blob": "57b0659d5421eb041ed58b668893edf15557a215"
+    }
+  ],
+  "review_base": "63b20b29d16de955c77869c9faf417dc642e9a75",
+  "original_review_head": "5a0088f711ea00462b4f8260b0a7aba392014ea6"
+}

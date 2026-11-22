@@ -9,7 +9,7 @@ import {withAccountBrowser,pause} from "./account-browser.fixture.mjs"
 const root=new URL("..",import.meta.url).pathname
 const port=()=>new Promise(resolve=>{const s=createServer();s.listen(0,"127.0.0.1",()=>{const n=s.address().port;s.close(()=>resolve(n))})})
 const selected=process.env.CAREEROS_LIFECYCLE_BROWSER_CELL
-const cells=selected?[["en",selected]]:[["en","notice"],["en","cleanup"],["pt-BR","notice"],["pt-BR","cleanup"]]
+const cells=selected?(selected==="career-denied"?[["en",selected],["pt-BR",selected]]:[["en",selected]]):[["en","notice"],["en","cleanup"],["pt-BR","notice"],["pt-BR","cleanup"]]
 for(const [locale,kind] of cells){
  const apiPort=await port(),api=`http://127.0.0.1:${apiPort}`,token=randomUUID(),evidence=mkdtempSync(join(tmpdir(),"careeros-lifecycle-browser-"));let server,exit
  try{
@@ -21,15 +21,39 @@ for(const [locale,kind] of cells){
    if(kind==="career-denied"){
     await evaluate(`(async()=>{const owner=deletionWire.session.account.id;const doc=(await fetch('/api/profile/current',{headers:{'X-CareerOS-Account':owner}}).then(r=>r.json())).document;const expected=doc.revision;doc.revision++;for(const f of doc.facts)if(f.owner.id===doc.id)f.owner.revision=doc.revision;const f=doc.facts[0];f.value='UNSAVED OWNER WORDING';f.revision++;f.origin={kind:'manual_edit',original:'user'};f.approval='approved';f.support='invalidated';f.normalization={observed:f.value,canonical:null,policy:'exact-alias-v1'};window.pendingOwner=owner;sessionStorage.setItem('careeros_pending_profile_v1:'+owner,JSON.stringify({version:1,accountId:owner,pendingSave:{operationId:'browser-pending',expectedRevision:expected,document:doc}}));location.reload()})()`)
     await wait(`document.querySelector('[data-sign-out]')&&document.querySelector('[data-lifecycle-notice]')`)
-    await control("pruning-read-deny");await evaluate(`window.dispatchEvent(new Event('focus'))`)
-    await wait(`document.querySelector('[data-account-lifecycle]')&&!document.querySelector('[data-sign-out]').closest('[hidden]')`)
-    await pause(150);await press("[data-sign-out]");await wait(`document.querySelector('[data-pending-logout]')`)
-    assert.equal(await evaluate(`Boolean(document.querySelector('[data-logout-download]'))`),false,"known career403 still offers protected merged recovery download")
+    await wait(`document.querySelector('header nav')`)
+    await evaluate(`[...document.querySelectorAll('header nav button')].find(b=>['PROFILE','PERFIL'].includes(b.textContent.trim().toUpperCase())).click()`)
+    await wait(`document.querySelector('[data-profile-export-download]')`)
+    await evaluate(`window.holdExport=true;window.reviewDownloads=0;const create=URL.createObjectURL.bind(URL);URL.createObjectURL=(...args)=>{window.reviewDownloads++;return create(...args)};document.querySelector('[data-profile-export-download]').click()`)
+    await wait(`typeof window.releaseExport==='function'`)
+    await evaluate(`document.querySelector('[data-sign-out]').click()`)
+    await wait(`document.querySelector('[data-pending-logout]')&&document.querySelector('[data-logout-download]')`)
+    await evaluate(`window.reviewFocusCount=0;window.addEventListener('focus',()=>window.reviewFocusCount++);const prior=window.fetch;window.fetch=async(...args)=>{const r=await prior(...args);if(String(args[0])==='/api/lifecycle/status')window.reviewLifecycle=await r.clone().json();return r}`)
+    await control("pruning-read-deny");await evaluate(`document.querySelector('[data-lifecycle-refresh]').click()`)
+    await wait(`window.reviewLifecycle?.careerReadAllowed===false`);await pause(100)
+    await evaluate(`document.querySelector('[data-logout-download]')?.click()`)
+    const observed=await evaluate(`({focusEvents:reviewFocusCount,careerReadAllowed:reviewLifecycle.careerReadAllowed,contentExpired:reviewLifecycle.contentExpired,metadataVisible:Boolean(document.querySelector('[data-account-lifecycle]')),downloadOffered:Boolean(document.querySelector('[data-logout-download]')),downloads:reviewDownloads})`)
+    console.log(JSON.stringify({review:"direct metadata refresh without focus",observed,evidence}))
+    assert.equal(observed.focusEvents,0,"focus/probe contaminated direct metadata refresh")
+    assert.equal(observed.contentExpired,false,"ordinary read fence, not whole-window expiry")
+    assert.equal(observed.metadataVisible,true)
+    assert.equal(observed.downloadOffered,false,"known career-read denial from lifecycle refresh leaves protected merged recovery download")
+    assert.equal(observed.downloads,0,"protected pending export performed after known read denial")
+    assert.equal(await evaluate(`[...document.querySelectorAll('button')].some(b=>!b.closest('[hidden]')&&/download|baixar/i.test(b.textContent))`),false,"another protected recovery download remains visible")
+    await evaluate(`window.releaseExport()`);await pause(150)
+    assert.equal(await evaluate(`window.reviewDownloads`),0,"held native export created a download after direct metadata denial")
     assert.equal(await evaluate(`Boolean(sessionStorage.getItem('careeros_pending_profile_v1:'+deletionWire.session.account.id))`),true,"independent pending input/key was erased")
-    await control("pruning-read-clear");await evaluate(`window.dispatchEvent(new Event('focus'))`)
+    await control("pruning-read-clear");await evaluate(`window.reviewLifecycle=null;document.querySelector('[data-lifecycle-refresh]').click()`)
+    await wait(`window.reviewLifecycle?.careerReadAllowed===true`);await pause(100)
+    assert.equal(await evaluate(`Boolean(document.querySelector('[data-logout-download]'))`),false,"metadata alone restored protected read access")
+    await evaluate(`window.dispatchEvent(new Event('focus'))`)
     await wait(`document.querySelector('[data-logout-download]')`)
     assert.equal(await evaluate(`deletionWire.calls.some(x=>x.method==='PUT')`),false,"recovery auto-saved")
-    console.log(JSON.stringify({status:"passed",locale,kind,evidence,checks:["real account/session remains valid while older Profile fence denies career reads","metadata stays accessible on same-owner focus","merged protected recovery download withheld during career403","opaque key and independently entered pending wording retained","authorized reconciliation permits deliberate recovery again/zero automatic Save or inference"],limits:["private synthetic pruning fence/reconciliation","test-injected account-scoped pending checkpoint"]}));return
+    const oldOwner=await evaluate(`deletionWire.session.account.id`)
+    await control("switch");await evaluate(`window.dispatchEvent(new Event('focus'))`)
+    await wait(`deletionWire.session.account.id!==${JSON.stringify(oldOwner)}&&document.querySelector('[data-sign-out]')&&!document.querySelector('[data-sign-out]').closest('[hidden]')`)
+    assert.equal(await evaluate(`Boolean(document.querySelector('[data-pending-logout]'))||document.body.textContent.includes('UNSAVED OWNER WORDING')`),false,"foreign scope inherited protected pending work")
+    console.log(JSON.stringify({status:"passed",locale,kind,evidence,checks:["direct lifecycle GET refresh denies career reads with zero focus events","metadata and independent pending input remain accessible","merged pending download and held native export canceled immediately","positive metadata alone cannot restore protected access","fresh same-owner authority permits deliberate recovery/zero automatic Save or inference","foreign scope receives no prior pending result or wording"],limits:["private synthetic pruning fence/reconciliation","test-injected account-scoped pending checkpoint"]}));return
    }
    if(kind==="late-export"){
     await wait(`document.querySelector('header nav')`)

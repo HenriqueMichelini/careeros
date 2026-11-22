@@ -1,13 +1,15 @@
 import {useEffect,useRef,useState} from "react"
 import {LifecycleError,readLifecycle,type LifecycleStatus} from "../lib/accountLifecycle"
 
-export default function AccountLifecycle({accountId,pt,denied,expired}:Readonly<{accountId:string;pt:boolean;denied:()=>void;expired:()=>void}>){
+export default function AccountLifecycle({accountId,pt,denied,readDenied,expired}:Readonly<{accountId:string;pt:boolean;denied:()=>void;readDenied:()=>void;expired:()=>void}>){
   const [status,setStatus]=useState<LifecycleStatus|null>(null),[error,setError]=useState(false),[refresh,setRefresh]=useState(0)
   const notified=useRef(false)
   useEffect(()=>{
     const controller=new AbortController();let active=true,timer:ReturnType<typeof setTimeout>|undefined
     void readLifecycle(accountId,controller.signal).then(v=>{
-      if(!active)return;setStatus(v);setError(false)
+      if(!active)return
+      if(!v.careerReadAllowed)readDenied()
+      setStatus(v);setError(false)
       if(v.contentExpired&&!notified.current){notified.current=true;expired()}
       if(v.nextCheckAt)timer=setTimeout(()=>setRefresh(n=>n+1),Math.min(2_147_483_647,Math.max(1,Date.parse(v.nextCheckAt)-Date.now()+20)))
     }).catch(e=>{if(!active)return;setStatus(null);setError(true);if(e instanceof LifecycleError&&(e.status===401||e.status===403))denied()})

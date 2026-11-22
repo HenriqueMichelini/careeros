@@ -34,6 +34,12 @@ export default function AccountGate({
   const current = useRef<AccountProfile | null>(null)
   const epoch = useRef(0)
   const pt = getInitialLocale() === "pt-BR"
+  const withholdCareer = (accountId: string) => {
+    if (current.current?.accountId !== accountId) return
+    careerReadAllowed.current = false
+    setCareerDenied(true)
+    window.dispatchEvent(new CustomEvent("careeros-career-read-denied", { detail: { accountId } }))
+  }
   const probe = async () => {
     const ticket = ++epoch.current
     careerReadAllowed.current=false
@@ -208,7 +214,7 @@ export default function AccountGate({
         retry={() => void probe()}
       />
       {!checking&&<AccountDeletion key={client.accountId} accountId={client.accountId} account={client} pt={pt} withhold={()=>setDeletionPending(true)}/>}
-      {!checking&&pilot&&<AccountLifecycle key={client.accountId} accountId={client.accountId} pt={pt} denied={()=>void probe()} expired={()=>window.dispatchEvent(new CustomEvent(deletionEvent,{detail:{accountId:client.accountId}}))}/>}
+      {!checking&&pilot&&<AccountLifecycle key={client.accountId} accountId={client.accountId} pt={pt} denied={()=>{withholdCareer(client.accountId);void probe()}} readDenied={()=>withholdCareer(client.accountId)} expired={()=>window.dispatchEvent(new CustomEvent(deletionEvent,{detail:{accountId:client.accountId}}))}/>}
       <div hidden={checking||deletionPending}>
         <div className="flex items-center justify-between border-b px-4 py-2 text-sm">
           <span>
@@ -237,9 +243,11 @@ export default function AccountGate({
           />
         )}
         <PilotFrame pilot={pilot} accountId={client.accountId} pt={pt}>
-          <StoreProvider key={client.accountId} account={client}>
-            <div hidden={careerDenied}>{children}</div>
-          </StoreProvider>
+          <div hidden={careerDenied}>
+            <StoreProvider key={client.accountId} account={client}>
+              {children}
+            </StoreProvider>
+          </div>
         </PilotFrame>
       </div>
     </>
