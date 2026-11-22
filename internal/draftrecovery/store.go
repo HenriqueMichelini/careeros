@@ -319,6 +319,30 @@ func (s *Store) create(ctx context.Context, p auth.Principal, key string, input 
 	if !guard.sourceMatches(g) {
 		return Result{}, empty, false, ErrConflict
 	}
+	if s.opening {
+		if _, err = s.openingGrant(ctx, tx, p); err != nil {
+			return Result{}, empty, false, err
+		}
+		if err = s.resolveOpeningReservations(ctx, tx, p); err != nil {
+			return Result{}, empty, false, err
+		}
+		// Resolving older outcomes can wait. Re-evaluate the restrictive
+		// authority before persisting this Action's generation witness.
+		d, now, err = s.decision(ctx, tx, p, action)
+		if err != nil {
+			return Result{}, empty, false, err
+		}
+		if guardClosed(guard, d, now) {
+			if err = s.closeAdmission(ctx, tx, p, key, decisionClosure(d)); err != nil {
+				return Result{}, empty, false, ErrDenied
+			}
+			if err = tx.Commit(); err != nil {
+				return Result{}, empty, false, ErrDenied
+			}
+			r, e := s.Read(ctx, p, key)
+			return r, empty, false, e
+		}
+	}
 	deadline := admitted.Add(CustomerWindow)
 	if guard.grantEnd.Before(deadline) {
 		deadline = guard.grantEnd
@@ -374,14 +398,16 @@ func (s *Store) load(ctx context.Context, tx *sql.Tx, p auth.Principal, key stri
 	if err != nil {
 		return r, Decision{}, time.Time{}, err
 	}
-	d, now, err := s.decision(ctx, tx, p, r.Action)
-	if err != nil {
-		return r, d, now, err
-	}
 	var sharedState string
 	var attempt int
 	if err = tx.QueryRowContext(ctx, `SELECT state,attempt FROM ai_fixture_action WHERE namespace=$1 AND id=$2 AND owner=$3 AND workflow='application_draft' FOR UPDATE`, r.Action.Namespace, r.Action.ID, p.AccountID).Scan(&sharedState, &attempt); err != nil {
-		return r, d, now, ErrDenied
+		return r, Decision{}, time.Time{}, ErrDenied
+	}
+	// The shared Action lock can wait past a deadline or restrictive decision.
+	// Neither status nor a protected read may use authority from before it.
+	d, now, err := s.decision(ctx, tx, p, r.Action)
+	if err != nil {
+		return r, d, now, err
 	}
 	previous := r.State
 	shared := sharedClosure(sharedState)

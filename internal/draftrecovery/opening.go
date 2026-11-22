@@ -172,11 +172,8 @@ func (s *Store) reserveOpening(ctx context.Context, tx *sql.Tx, p auth.Principal
 	if tx.QueryRowContext(ctx, `SELECT clock_timestamp()`).Scan(&now) != nil || !g.active || !now.Before(g.expires) || !now.Before(admitted.Add(CustomerWindow)) {
 		return ErrDenied
 	}
-	if err = s.resolveOpeningReservations(ctx, tx, p); err != nil {
-		return err
-	}
-	// Resolving another outcome can wait on its row. The new witness must not
-	// use the grant/session/time sample from before that wait.
+	// Create has already resolved older reservations and rechecked their
+	// restrictive authority before inserting the new generation witness.
 	if err = accountstore.AuthorizeTransaction(ctx, tx, p); err != nil {
 		return err
 	}
