@@ -171,23 +171,24 @@ type Bundle struct {
 	Support     Support         `json:"support"`
 }
 type Result struct {
-	Action        Action           `json:"action"`
-	CreationKey   string           `json:"creationKey"`
-	State         string           `json:"state"`
-	Version       int              `json:"artifactVersion"`
-	AdmittedAt    time.Time        `json:"admittedAt"`
-	Deadline      time.Time        `json:"deadline"`
-	Historical    bool             `json:"historical"`
-	CleanupQueued bool             `json:"cleanupQueued"`
-	Attempt       int              `json:"attempt,omitempty"`
-	RetryAllowed  bool             `json:"retryAllowed,omitempty"`
-	Bundle        *Bundle          `json:"bundle,omitempty"`
-	BundleDigest  string           `json:"bundleDigest,omitempty"`
-	Delivered     bool             `json:"delivered,omitempty"`
-	Opening       *OpeningStatus   `json:"opening,omitempty"`
-	Review        *HumanReview     `json:"review,omitempty"`
-	Job           *Job             `json:"job,omitempty"`
-	Context       *RetainedContext `json:"context,omitempty"`
+	Action         Action           `json:"action"`
+	CreationKey    string           `json:"creationKey"`
+	State          string           `json:"state"`
+	Version        int              `json:"artifactVersion"`
+	AdmittedAt     time.Time        `json:"admittedAt"`
+	Deadline       time.Time        `json:"deadline"`
+	Historical     bool             `json:"historical"`
+	CleanupQueued  bool             `json:"cleanupQueued"`
+	Attempt        int              `json:"attempt,omitempty"`
+	RetryAllowed   bool             `json:"retryAllowed,omitempty"`
+	TerminalPolicy string           `json:"terminalPolicy,omitempty"`
+	Bundle         *Bundle          `json:"bundle,omitempty"`
+	BundleDigest   string           `json:"bundleDigest,omitempty"`
+	Delivered      bool             `json:"delivered,omitempty"`
+	Opening        *OpeningStatus   `json:"opening,omitempty"`
+	Review         *HumanReview     `json:"review,omitempty"`
+	Job            *Job             `json:"job,omitempty"`
+	Context        *RetainedContext `json:"context,omitempty"`
 }
 type RetainedContext struct {
 	Answers         []Answer `json:"answers"`

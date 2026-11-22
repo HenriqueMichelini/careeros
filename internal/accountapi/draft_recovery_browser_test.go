@@ -37,6 +37,7 @@ func TestControlledDraftBrowserServer(t *testing.T) {
 		Origin, Address, Token, Language string
 		Managed                          bool
 		Opening                          bool
+		Terminal                         bool
 	}
 	raw, err := os.ReadFile(path)
 	if err != nil || json.Unmarshal(raw, &cfg) != nil || len(cfg.Token) < 32 {
@@ -49,16 +50,32 @@ func TestControlledDraftBrowserServer(t *testing.T) {
 	var r *recoveryFixture
 	var omitNextCatalog atomic.Bool
 	var failNextAnalysis atomic.Bool
+	var failNextDraft atomic.Bool
 	var failNextControlled atomic.Bool
 	if cfg.Managed {
 		f, actions, provider, store, _, _ := managedDraftFixture(t)
 		r = &recoveryFixture{f: f, actions: actions, store: store}
+		if cfg.Terminal {
+			r.store, err = draftrecovery.OpenManagedTerminal(context.Background(), f.DSN, draftrecovery.Config{
+				Actions: actions, BindingKey: []byte("synthetic-managed-draft-binding-key"),
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() { r.store.Close() })
+			if err = r.store.Migrate(context.Background()); err != nil {
+				t.Fatal(err)
+			}
+		}
 		provider.DraftLanguage = cfg.Language
 		if err = actions.SetQualificationResponder(func(ctx context.Context, name string, request *http.Request) (*http.Response, bool, error) {
 			workflow, _ := aidispatch.WorkflowRoot(ctx)
 			switch workflow {
 			case "application_draft":
 				r.sends.Add(1)
+				if aidiagnostics.StageName(ctx) == "generation" && failNextDraft.Swap(false) {
+					return &http.Response{StatusCode: 429, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(`{"error":"controlled generation failure"}`))}, true, nil
+				}
 				if aidiagnostics.StageName(ctx) == "artifact_support" && omitNextCatalog.Swap(false) {
 					provider.OmitDraftCatalog = true
 					defer func() { provider.OmitDraftCatalog = false }()
@@ -139,7 +156,11 @@ func TestControlledDraftBrowserServer(t *testing.T) {
 		t.Fatal(err)
 	}
 	if cfg.Managed {
-		r.router = accountapi.NewSyntheticDraft(service, r.f.Store, r.actions, r.store)
+		if cfg.Terminal {
+			r.router = accountapi.NewSyntheticTerminalDraft(service, r.f.Store, r.actions, r.store)
+		} else {
+			r.router = accountapi.NewSyntheticDraft(service, r.f.Store, r.actions, r.store)
+		}
 	} else {
 		// Reuse the actual controlled callbacks, with independent counters.
 		r.router = accountapi.NewControlledDraftRecovery(service, r.store, func(ctx context.Context, g draftrecovery.Generation) (draftrecovery.Bundle, error) {
@@ -183,10 +204,43 @@ func TestControlledDraftBrowserServer(t *testing.T) {
 			omitNextCatalog.Store(true)
 			w.WriteHeader(204)
 		}))
+		mux.HandleFunc("/api/drafts/test/fail-next-draft", guard(func(w http.ResponseWriter, _ *http.Request) {
+			failNextDraft.Store(true)
+			w.WriteHeader(204)
+		}))
 		mux.HandleFunc("/api/drafts/test/fail-next-analysis", guard(func(w http.ResponseWriter, _ *http.Request) {
 			failNextAnalysis.Store(true)
 			w.WriteHeader(204)
 		}))
+		for _, revoked := range []bool{true, false} {
+			route := "restore-injected-revocation"
+			if revoked {
+				route = "inject-revoked-invitation"
+			}
+			mux.HandleFunc("/api/drafts/test/"+route, guard(func(w http.ResponseWriter, request *http.Request) {
+				// Test-only restrictive state injection; not an operator
+				// transition for revoking an already activated invitation.
+				mu.Lock()
+				principal := current.Principal
+				mu.Unlock()
+				tx, err := r.f.DB.BeginTx(request.Context(), nil)
+				if err == nil {
+					defer tx.Rollback()
+					err = accountstore.AuthorizeTransaction(request.Context(), tx, principal)
+				}
+				if err == nil {
+					_, err = tx.ExecContext(request.Context(), `UPDATE careeros_pilot_access SET invitation_revoked=$2 WHERE account_id=$1`, principal.AccountID, revoked)
+				}
+				if err == nil {
+					err = tx.Commit()
+				}
+				if err != nil {
+					http.Error(w, "synthetic restrictive authority injection", 500)
+					return
+				}
+				w.WriteHeader(204)
+			}))
+		}
 		for _, suspended := range []bool{true, false} {
 			route := "restore-test-grant"
 			if suspended {
@@ -232,13 +286,17 @@ func TestControlledDraftBrowserServer(t *testing.T) {
 			http.Error(w, "fixture query", 500)
 			return
 		}
-		if cfg.Opening {
+		if cfg.Opening || cfg.Terminal {
 			var consumed, reserved int
 			if err := r.f.DB.QueryRow(`SELECT count(*) FILTER(WHERE customer_effect),count(*) FILTER(WHERE customer_reserved) FROM ai_fixture_action`).Scan(&consumed, &reserved); err != nil {
 				http.Error(w, "fixture opening counts", 500)
 				return
 			}
-			writeJSON(w, map[string]any{"generation": r.sends.Load(), "completion": r.checks.Load(), "allowanceEffects": consumed, "reserved": reserved})
+			if cfg.Terminal {
+				writeJSON(w, map[string]any{"draft": r.sends.Load(), "qualification": r.checks.Load(), "allowanceEffects": consumed, "reserved": reserved})
+			} else {
+				writeJSON(w, map[string]any{"generation": r.sends.Load(), "completion": r.checks.Load(), "allowanceEffects": consumed, "reserved": reserved})
+			}
 			return
 		}
 		if cfg.Managed {
@@ -395,7 +453,7 @@ func TestControlledDraftBrowserServer(t *testing.T) {
 	mux.HandleFunc("/api/drafts/test/stop", guard(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(204); once.Do(func() { close(stop) }) }))
 	mux.Handle("/api/drafts", r.router)
 	mux.Handle("/api/drafts/", r.router)
-	if cfg.Opening {
+	if cfg.Opening || cfg.Terminal {
 		mux.Handle("/api/draft-allowance", r.router)
 	}
 	if cfg.Managed {

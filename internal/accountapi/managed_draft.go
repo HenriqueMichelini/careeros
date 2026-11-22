@@ -93,6 +93,9 @@ func NewSyntheticDraft(service *auth.Service, profiles *accountstore.Store, h *a
 	for _, path := range []string{"/api/drafts", "/api/drafts/", "/api/application-draft", "/.netlify/functions/application-draft"} {
 		router.Handle(path, draftHandler)
 	}
+	if drafts.OpeningEnabled() {
+		router.Handle("/api/draft-allowance", draftHandler)
+	}
 	router.Handle("/.netlify/functions/account/", http.StripPrefix("/.netlify/functions/account", router))
 	router.Handle("/", base)
 	return router

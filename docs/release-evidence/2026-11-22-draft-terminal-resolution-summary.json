@@ -1,0 +1,3406 @@
+{
+  "issue": 286,
+  "synthetic_only": true,
+  "base": "1ecb2e0668e1c58373a5b3bb0fcb5768302e2efb",
+  "worktree": "/home/henriquemichelini/workstation/careeros/.local-worktrees/qualification-277-20261102",
+  "branch": "codex/batch-277-qualification-20261102",
+  "frozen_at": "2026-11-22T10:32:21.140422+00:00",
+  "runtime_blobs": {
+    "internal/accountapi/draft_recovery.go": {
+      "git_blob": "4e45034c84b789e97c8c0c27469af672f6880b6a",
+      "sha256": "65cdcc25cf7c2066f0348a148ac3304e87e646f3555af957623fcd790e8434c5"
+    },
+    "internal/accountapi/draft_terminal.go": {
+      "git_blob": "9fdcbbf565b4020b554f4d24015de01b7ceb5800",
+      "sha256": "5c3404d0751afc2252b1fe1d63dbf8c14d93e7e63b6ed796368d3318dad2447b"
+    },
+    "internal/accountapi/managed_draft.go": {
+      "git_blob": "fc99ae154aa4bf00c3ed7ff3ecf75d140bd69500",
+      "sha256": "9d7fe0a26bafbb72603823ab9d068662fc47dd76bcb622ccb3cdbc2f7c1ac37b"
+    },
+    "internal/draftrecovery/model.go": {
+      "git_blob": "c6836566b4ead5dd469f10f0edefd46abb68aeab",
+      "sha256": "a231510ea7a215529a521e8205d95fa96a4943a3ca2fc4f99859a665acb85eb5"
+    },
+    "internal/draftrecovery/opening.go": {
+      "git_blob": "72d37940a09c60c8570bc5ad633cb75d8627ecdb",
+      "sha256": "ff8b3a26c44adbf0929dbcc39d1019635c98372cd488581d0e5cf63bbdb911d3"
+    },
+    "internal/draftrecovery/retry.go": {
+      "git_blob": "6bb1f8d8621ca368630503f1f67be5658c47f086",
+      "sha256": "87e6b0c00b97d856c65446b9c9fba05133b801778b9af823887857eddbdd429e"
+    },
+    "internal/draftrecovery/store.go": {
+      "git_blob": "c6891168338b945d6be7390780a299283d337c69",
+      "sha256": "82688185104a6e261943809d8b841c6131823b724ed2dca827078a895475801d"
+    },
+    "internal/draftrecovery/terminal.go": {
+      "git_blob": "4dd23ee5a82fd4071f1a07802ef51f542c9226ea",
+      "sha256": "d4d6255de7e0697f83068d678743216220f1a665f73713056cb590f8fecda866"
+    },
+    "src/components/DraftRecoveryWorkspace.tsx": {
+      "git_blob": "4078edc8ac324ab4fc47155e5af31625424ec97c",
+      "sha256": "15bd3bb59d5764536ad2fefb2b8db7b830f85c5e4d244b323cf215e1f28344b1"
+    },
+    "src/lib/draftOpening.ts": {
+      "git_blob": "3fd66caca9a05b20b3de1ae2a2fbf2e42dd2b25e",
+      "sha256": "58f9ed1b7c665a0932d1afd5e04ca093b91606c99d51daaf69f0ac25add737d2"
+    },
+    "src/lib/draftRecovery.ts": {
+      "git_blob": "3e2379b2cec339f2237670bcc94261b38cc2b854",
+      "sha256": "9f5e122692a6be1ab23356966d95c9d67f3d090ab783455ffdecd285bc70e13c"
+    }
+  },
+  "fixture_blobs": {
+    "internal/accountapi/draft_recovery_browser_test.go": {
+      "git_blob": "809234e335a542488989c44e51cf9101b871196e",
+      "sha256": "429f4ac365776bc35b34c3dc58d1882e9a0d6884a8e4aefa99b0c7c5c4f32150"
+    },
+    "internal/accountapi/draft_terminal_cancel_test.go": {
+      "git_blob": "eedc051c1bd9f2db1f11e408c8759504aa294046",
+      "sha256": "ab00fb54d6c76e9139f436a16067bcca68655c00d22c76c16b6d1e4ee1021be0"
+    },
+    "internal/accountapi/draft_terminal_fences_test.go": {
+      "git_blob": "1163fce93a7bb61ea4801cc230107cf9964585d3",
+      "sha256": "d2b9f41e89cee3cd57a3031d2d5cabffced9011acde7a1569ebea4911fc96a84"
+    },
+    "internal/accountapi/draft_terminal_process_test.go": {
+      "git_blob": "b1b68dd47870fbe96a0a246e655595b19459bb5d",
+      "sha256": "efb900c1b30aaeaf6cf92360d6736887e8ef1fbb10d26a48739677820f74fc89"
+    },
+    "internal/accountapi/draft_terminal_retry_test.go": {
+      "git_blob": "4199b033767b3afb4d9bb9d3d862c066a657f6e9",
+      "sha256": "e302c0e8f25b9c5f4c5da5d327b631c4ac776f8623d49d147a4c3f88f5fc11bc"
+    },
+    "internal/accountapi/draft_terminal_test.go": {
+      "git_blob": "d4645d54f95059701a3b0557a191555ef4819934",
+      "sha256": "95d4301a022d47eabb3ef9067082f9e7b52e473f8598d4d87a8ff4f0bd29ef03"
+    },
+    "tests/draft-opening-client.test.mjs": {
+      "git_blob": "76153fb49b543d7122a0db5b974fc01ea4c64d06",
+      "sha256": "d342786ddf41d3268bcf60ee96c5748c897e32a372cb7ff52069fdd29029529c"
+    },
+    "tests/draft-recovery-browser.check.mjs": {
+      "git_blob": "f7f133c0d91b32bcbc818d1da2016fa9af39a619",
+      "sha256": "23dbdbc11eb9644de29e1a5899404cac882b7f14bcd61b36f3dc83632f18f1b0"
+    },
+    "tests/draft-recovery-client.test.mjs": {
+      "git_blob": "4c7695b2b9ab1cb53df8bca2e399d5ada67567d2",
+      "sha256": "afa7f89fb93496d88f746724380bbabab9a57584462b483cc05dd3d95e90e8ba"
+    },
+    "tests/draft-recovery-harness.jsx": {
+      "git_blob": "5d23d2a836f5cefdd7ba19c13b0e215beafde688",
+      "sha256": "97457f95e18cbcd3503b8a77009adc9f3691340f435983b2c139b7e500c1e240"
+    }
+  },
+  "focused_go": {
+    "directory": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-n6j163j7",
+    "summary": {
+      "synthetic_only": true,
+      "go_exit": 0,
+      "pass_events": 31,
+      "failures": [],
+      "skips": [
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestManagedTerminalProcessChild"
+        }
+      ]
+    }
+  },
+  "relevant_go": {
+    "directory": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-km91k4e8",
+    "summary": {
+      "synthetic_only": true,
+      "go_exit": 0,
+      "pass_events": 1286,
+      "failures": [],
+      "skips": [
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestRestrictedReconciliationGenuineBaseUpgrade"
+        },
+        {
+          "package": "professional-information-repo/internal/openaihttp",
+          "test": null
+        },
+        {
+          "package": "professional-information-repo/internal/fieldvalidation",
+          "test": null
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestJourneyDemoServer"
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestPilotRestartChild"
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestControlledDraftBrowserServer"
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestControlledDraftRestartChild"
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestManagedTerminalProcessChild"
+        },
+        {
+          "package": "professional-information-repo/internal/draftrecovery",
+          "test": null
+        }
+      ],
+      "admission": {
+        "synthetic_only": true,
+        "cases": {
+          "A01": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA01_DuplicateAcrossProcesses",
+                "status": "pass"
+              }
+            ]
+          },
+          "A02": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA02_ChangedReplay",
+                "status": "pass"
+              }
+            ]
+          },
+          "A03": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA03_ActualStagePromptSchemaModelAndTierMustMatchIdentity",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA03_ActualStagePromptSchemaModelAndTierMustMatchIdentity/model",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA03_ActualStagePromptSchemaModelAndTierMustMatchIdentity/prompt",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA03_ActualStagePromptSchemaModelAndTierMustMatchIdentity/schema",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA03_ActualStagePromptSchemaModelAndTierMustMatchIdentity/tier",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA03_DelayedHandoffCannotUseChangedExecutionPolicy",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA03_FrozenExecutionPolicyRejectsChangedReplay",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA03_FrozenExecutionPolicyRejectsChangedReplay/attempt_limit",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA03_FrozenExecutionPolicyRejectsChangedReplay/customer_units",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA03_FrozenExecutionPolicyRejectsChangedReplay/dispatch_limit",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA03_FrozenExecutionPolicyRejectsChangedReplay/execution_version",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA03_FrozenExecutionPolicyRejectsChangedReplay/expiry",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA03_FrozenExecutionPolicyRejectsChangedReplay/input_limit",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA03_FrozenExecutionPolicyRejectsChangedReplay/output_limit",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA03_FrozenExecutionPolicyRejectsChangedReplay/rate_version",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA03_FrozenExecutionPolicyRejectsChangedReplay/scope_budget",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA03_FrozenExecutionPolicyRejectsChangedReplay/scope_capacity",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA03_FrozenExecutionPolicyRejectsChangedReplay/stage_limit",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA03_PrivatePrincipalAndSavedProfile",
+                "status": "pass"
+              }
+            ]
+          },
+          "A04": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA04_AtomicFinalBudgetAcrossProcesses",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA04_IndependentlyLimitedScopes",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA04_IndependentlyLimitedScopes/account/capacity",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA04_IndependentlyLimitedScopes/account/money",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA04_IndependentlyLimitedScopes/global/capacity",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA04_IndependentlyLimitedScopes/global/money",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA04_IndependentlyLimitedScopes/provider:openai/capacity",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA04_IndependentlyLimitedScopes/provider:openai/money",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA04_ReopeningFixtureDoesNotRunDDLOverActiveAdmission",
+                "status": "pass"
+              }
+            ]
+          },
+          "A05": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/attempts",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/binding_key",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/capacity",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/clock",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/dispatches",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/gate",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/input",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/money_overflow",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/output",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/policy",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/stages",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA05_AbsentAuthorityOrFiniteEnvelopeFailsClosed/store",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA05_FiniteFailClosedConfiguration",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA05_MissingOrRevokedGrantCannotMintRights",
+                "status": "pass"
+              }
+            ]
+          },
+          "A06": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA06_ReservationRollback",
+                "status": "pass"
+              }
+            ]
+          },
+          "A07": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA07_AbandonClaimRace",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA07_ReservationCrashAndProcessAbandonClaim",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA07_ReservationCrashAndProcessAbandonClaim/abandon_first",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA07_ReservationCrashAndProcessAbandonClaim/claim_first",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA07_ReservationCrashAndProcessAbandonClaim/race",
+                "status": "pass"
+              }
+            ]
+          },
+          "A08": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA08_CrashAfterIntentBeforeInvocation",
+                "status": "pass"
+              }
+            ]
+          },
+          "A09": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/backend/cv-generation",
+                "test": "TestA09_ActualHandlerFailureOutcomesKeepReachedObligations",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/backend/cv-generation",
+                "test": "TestA09_ActualHandlerFailureOutcomesKeepReachedObligations/malformed_content",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/backend/cv-generation",
+                "test": "TestA09_ActualHandlerFailureOutcomesKeepReachedObligations/malformed_envelope",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/backend/cv-generation",
+                "test": "TestA09_ActualHandlerFailureOutcomesKeepReachedObligations/provider_outage",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/backend/cv-generation",
+                "test": "TestA09_ActualHandlerFailureOutcomesKeepReachedObligations/provider_timeout",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/backend/cv-generation",
+                "test": "TestA09_ActualHandlerFailureOutcomesKeepReachedObligations/rate_limited",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/backend/cv-generation",
+                "test": "TestA09_ActualHandlerFailureOutcomesKeepReachedObligations/refused",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/backend/cv-generation",
+                "test": "TestA09_ActualHandlerFailureOutcomesKeepReachedObligations/truncated",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA09_ProcessCrashAfterInvocationBeforeObservation",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA09_UncertainOutcomesRetainExposure",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA09_UncertainOutcomesRetainExposure/0",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA09_UncertainOutcomesRetainExposure/200",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA09_UncertainOutcomesRetainExposure/429",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA09_UncertainOutcomesRetainExposure/500",
+                "status": "pass"
+              }
+            ]
+          },
+          "A10": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA10_NoRedirectOrTransportRetry",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aidispatch",
+                "test": "TestA10_ControlledSendIsOneInvocationWithoutRedirectRetryOrCredential",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aidispatch",
+                "test": "TestA10_ControlledSendIsOneInvocationWithoutRedirectRetryOrCredential/Permanent_Redirect",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aidispatch",
+                "test": "TestA10_ControlledSendIsOneInvocationWithoutRedirectRetryOrCredential/Service_Unavailable",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aidispatch",
+                "test": "TestA10_ControlledSendIsOneInvocationWithoutRedirectRetryOrCredential/Temporary_Redirect",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aidispatch",
+                "test": "TestA10_ControlledSendIsOneInvocationWithoutRedirectRetryOrCredential/Too_Many_Requests",
+                "status": "pass"
+              }
+            ]
+          },
+          "A11": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA11_RevocationOrdering",
+                "status": "pass"
+              }
+            ]
+          },
+          "A12": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA12_DurableRetryAndStaleAttempt",
+                "status": "pass"
+              }
+            ]
+          },
+          "A13": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA13_AppendOnlyProviderMetadataAndMissingRate",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA13_AppendOnlyProviderMetadataAndMissingRate/invalid",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA13_AppendOnlyProviderMetadataAndMissingRate/missing_rate",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA13_AppendOnlyProviderMetadataAndMissingRate/openai",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA13_AppendOnlyProviderMetadataAndMissingRate/typesafe",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA13_AppendOnlyProviderMetadataAndMissingRate/unsupported",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA13_ObservationPreservesProviderReadError",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA13_ProviderSpecificUsageMissingness",
+                "status": "pass"
+              }
+            ]
+          },
+          "A14": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA14_EstimateAndResidualFloor",
+                "status": "pass"
+              }
+            ]
+          },
+          "A15": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA15_ConfirmedEvidenceIdempotency",
+                "status": "pass"
+              }
+            ]
+          },
+          "A16": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA16_ReservationBreach",
+                "status": "pass"
+              }
+            ]
+          },
+          "A17": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA17_ConservativeClosureAuditIsDurableAndImmutable",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA17_SevenDaysIsEligibilityOnly",
+                "status": "pass"
+              }
+            ]
+          },
+          "A18": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA18_PeriodAndStageDoNotRenewAnchor",
+                "status": "pass"
+              }
+            ]
+          },
+          "A19": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA19_ClockUncertaintyDeniesClosure",
+                "status": "pass"
+              }
+            ]
+          },
+          "A20": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA20_PhysicalReleaseNeedsIndependentTerminalProof",
+                "status": "pass"
+              }
+            ]
+          },
+          "A21": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA21_PreDeliveryCancelSeparatesExpense",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA21_TimeoutCancelAndLateEventsPreserveThreeRights",
+                "status": "pass"
+              }
+            ]
+          },
+          "A22": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA22_CancelAndDeliveryRaceWithLostAcknowledgment",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA22_CancelAndDeliveryRaceWithLostAcknowledgment/cancel_wins",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA22_CancelAndDeliveryRaceWithLostAcknowledgment/open_wins",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA22_DeliveryEffectOnceIndependentOfAccept",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA22_DraftAllowanceBelongsOnlyToApplicationDraft",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA22_DraftAllowanceBelongsOnlyToApplicationDraft/application_draft",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA22_DraftAllowanceBelongsOnlyToApplicationDraft/cv_generation",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA22_DraftAllowanceBelongsOnlyToApplicationDraft/profile_ingestion",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA22_DraftAllowanceBelongsOnlyToApplicationDraft/profile_review",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA22_DraftAllowanceBelongsOnlyToApplicationDraft/qualification_gaps",
+                "status": "pass"
+              }
+            ]
+          },
+          "A23": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/accountapi",
+                "test": "TestA23ActualDraftQualityDoesNotBecomeSupplierExpense",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/accountapi",
+                "test": "TestA23ActualDraftQualityDoesNotBecomeSupplierExpense/artifact_review_unavailable",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/accountapi",
+                "test": "TestA23ActualDraftQualityDoesNotBecomeSupplierExpense/cv_only",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/accountapi",
+                "test": "TestA23ActualDraftQualityDoesNotBecomeSupplierExpense/honest_gap",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/accountapi",
+                "test": "TestA23ActualDraftQualityDoesNotBecomeSupplierExpense/incomplete_answers",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/accountapi",
+                "test": "TestA23ActualDraftQualityDoesNotBecomeSupplierExpense/resume_review_unavailable",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/accountapi",
+                "test": "TestA23ActualDraftQualityDoesNotBecomeSupplierExpense/unsupported_answer",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA23_IncompleteBundleCannotConsume",
+                "status": "pass"
+              }
+            ]
+          },
+          "A24": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA24_ClosedUnconfirmedActionCannotAcquireLateCharge",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA24_CustomerDeadlineIndependentFromFinancialWindow",
+                "status": "pass"
+              }
+            ]
+          },
+          "A25": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA25_LostOutputLookupNeverInfers",
+                "status": "pass"
+              }
+            ]
+          },
+          "A26": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/backend/profile-ingestion",
+                "test": "TestA26_SubmissionStagesReplayBindBeforeEveryActualAdapter",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/backend/profile-ingestion",
+                "test": "TestA26_SubmissionStagesReplayBindBeforeEveryActualAdapter/clarification_original_and_answer_are_independent_bounded_dispatches",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/backend/profile-ingestion",
+                "test": "TestA26_SubmissionStagesReplayBindBeforeEveryActualAdapter/focus_replay_and_changed_authenticated_child",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/backend/profile-ingestion",
+                "test": "TestA26_SubmissionStagesReplayBindBeforeEveryActualAdapter/provider-free_plan_and_assemble,_extract_duplicate_and_changed_handoff",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA26_ChildIdentityCannotBeBorrowedAtReservationOrIntent",
+                "status": "pass"
+              }
+            ]
+          },
+          "A27": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/backend/profile-ingestion",
+                "test": "TestA27_LegacyV1V2AndWholeActionCaps",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/backend/profile-ingestion",
+                "test": "TestA27_LegacyV1V2AndWholeActionCaps/last_valid_planned_batch_cannot_bypass_exhausted_Action_cap",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/backend/profile-ingestion",
+                "test": "TestA27_LegacyV1V2AndWholeActionCaps/maximum_input_and_minimum_legacy_portion_share_the_Action_cap",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/backend/profile-ingestion",
+                "test": "TestA27_LegacyV1V2AndWholeActionCaps/maximum_thirty-claim_focus_is_bounded_before_a_subsequent_focus",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/backend/profile-ingestion",
+                "test": "TestA27_LegacyV1V2AndWholeActionCaps/protocol-v0",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/backend/profile-ingestion",
+                "test": "TestA27_LegacyV1V2AndWholeActionCaps/protocol-v1",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/backend/profile-ingestion",
+                "test": "TestA27_LegacyV1V2AndWholeActionCaps/protocol-v2",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/backend/profile-ingestion",
+                "test": "TestA27_LegacyV1V2AndWholeActionCaps/provider-free_planning_consumes_a_finite_stage_allocation",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA27_ProviderStageAndClarificationShareOneFiniteLimit",
+                "status": "pass"
+              }
+            ]
+          },
+          "A28": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/accountapi",
+                "test": "TestA28SkippedLegsHaveNoInventedDispatch",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/accountapi",
+                "test": "TestA28SkippedLegsHaveNoInventedDispatch/no_pending_resume_claims",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/accountapi",
+                "test": "TestA28SkippedLegsHaveNoInventedDispatch/reused_job",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/accountapi",
+                "test": "TestA28SkippedLegsHaveNoInventedDispatch/zero_requirements",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/accountapi",
+                "test": "TestA28StructuredAnalysisThenReviewedDraftSevenDispatches",
+                "status": "pass"
+              }
+            ]
+          },
+          "A29": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/accountapi",
+                "test": "TestA29AllAuthenticatedWorkflowConstructors",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/accountapi",
+                "test": "TestA29AllAuthenticatedWorkflowConstructors//api/application-draft",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/accountapi",
+                "test": "TestA29AllAuthenticatedWorkflowConstructors//api/cv/generate",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/accountapi",
+                "test": "TestA29AllAuthenticatedWorkflowConstructors//api/profile/ingest",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/accountapi",
+                "test": "TestA29AllAuthenticatedWorkflowConstructors//api/profile/review",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/accountapi",
+                "test": "TestA29AllAuthenticatedWorkflowConstructors//api/qualification-gaps",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/application-draft",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/application-draft",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/application-draft",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//.netlify/functions/application-draft",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/application-draft",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//api/application-draft",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/application-draft",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/application-draft",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//.netlify/functions/application-draft",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/application-draft",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//api/application-draft",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/application-draft",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/configured_session_missing_policy",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/cv-generation",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/cv-generation",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/cv-generation",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//.netlify/functions/cv-generation",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/cv-generation",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//api/cv/generate",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/cv-generation",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/cv-generation",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//.netlify/functions/cv-generation",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/cv-generation",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//api/cv/generate",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/cv-generation",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/configured_session_missing_policy",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/profile-ingestion",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/profile-ingestion",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/profile-ingestion",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//.netlify/functions/profile-ingestion",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/profile-ingestion",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//api/profile/ingest",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/profile-ingestion",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/profile-ingestion",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//.netlify/functions/profile-ingestion",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/profile-ingestion",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//api/profile/ingest",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/profile-ingestion",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/configured_session_missing_policy",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/profile-review",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/profile-review",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/profile-review",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//.netlify/functions/profile-review",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/profile-review",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//api/profile/review",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/profile-review",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/profile-review",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//.netlify/functions/profile-review",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/profile-review",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//api/profile/review",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/profile-review",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/configured_session_missing_policy",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/qualification-gaps",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/qualification-gaps",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/qualification-gaps",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//.netlify/functions/qualification-gaps",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/qualification-gaps",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//api/qualification-gaps",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/qualification-gaps",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/qualification-gaps",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//.netlify/functions/qualification-gaps",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/qualification-gaps",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//api/qualification-gaps",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/netlify/functions/qualification-gaps",
+                "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/configured_session_missing_policy",
+                "status": "pass"
+              }
+            ]
+          },
+          "A30": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA30_CompactionKeepsReplayAndExpense",
+                "status": "pass"
+              }
+            ]
+          },
+          "A31": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA31_ProfileAndAccountDeletionRecreationRetainNonContentObligations",
+                "status": "pass"
+              }
+            ]
+          },
+          "A32": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/accountapi",
+                "test": "TestA32ProtectedResultHandoffRejectsPreviouslyParsedResultAfterGateCloses",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/accountapi",
+                "test": "TestA32ProtectedResultWriteMustFinishBeforeSuccessfulDrain",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/accountapi",
+                "test": "TestA32ProtectedResultWriteMustFinishBeforeSuccessfulDrain/body",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/accountapi",
+                "test": "TestA32ProtectedResultWriteMustFinishBeforeSuccessfulDrain/header",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA32_ActualStaleSQLRestoreNeedsIndependentObligationReconciliation",
+                "status": "pass"
+              }
+            ]
+          },
+          "A33": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA33_RetirementRequiresDrainedSendersAndAllExplicitHorizons",
+                "status": "pass"
+              }
+            ]
+          },
+          "A34": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA34RestrictedMetadataDoesNotEnterOrdinaryDiagnostics",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA34_RestrictedSQLRolesAndSafeRelease",
+                "status": "pass"
+              }
+            ]
+          },
+          "A35": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA35_DelayedIntentCannotOutliveSendAuthority",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA35_DelayedIntentCannotOutliveSendAuthority/grant",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA35_DelayedIntentCannotOutliveSendAuthority/policy",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA35_DelayedIntentCannotOutliveSendAuthority/session",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA35_ExpiryDuringRealSQLScopeContention",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA35_ExpiryDuringRealSQLScopeContention/grant/claim",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA35_ExpiryDuringRealSQLScopeContention/grant/reserve",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA35_ExpiryDuringRealSQLScopeContention/policy/claim",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA35_ExpiryDuringRealSQLScopeContention/policy/reserve",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA35_ExpiryDuringRealSQLScopeContention/session/claim",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA35_ExpiryDuringRealSQLScopeContention/session/reserve",
+                "status": "pass"
+              }
+            ]
+          },
+          "A36": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA36_ActualLostCreateHTTPResponse",
+                "status": "pass"
+              },
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA36_CreationHandshakeLostAcknowledgment",
+                "status": "pass"
+              }
+            ]
+          },
+          "A37": {
+            "status": "pass",
+            "tests": [
+              {
+                "package": "professional-information-repo/internal/aicontrol",
+                "test": "TestA37_CommitDelayCannotShortenWindow",
+                "status": "pass"
+              }
+            ]
+          }
+        },
+        "failed_packages": []
+      }
+    }
+  },
+  "full_go": {
+    "directory": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-uwo4n91j",
+    "summary": {
+      "synthetic_only": true,
+      "go_exit": 1,
+      "pass_events": 2534,
+      "failures": [
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": "TestCVRetainedReplayUsesNoDispatchesAndKeepsSemanticFailures"
+        },
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": "TestProcessRunnerExecutesAllowlistedGoContractsWithoutInference"
+        },
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": "TestProcessRunnerCannotReadHostSentinelsOrReachHostLoopback"
+        },
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": "TestProcessRunnerCancellationStopsDetachedChildAndGrandchild"
+        },
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": "TestProcessRunnerDeadlineRetainsPartialTreeAndUnreachedTest"
+        },
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": "TestProcessRunnerBoundsOutputAndStopsFollowingTests"
+        },
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": "TestProcessRunnerReusesSectionBrowserHarnessWithScreenshotEvidence"
+        },
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": "TestProcessRunnerExecutesExistingNodeCanonicalContracts"
+        },
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": "TestProcessRunnerCrashRetainsDistinctOutcome"
+        },
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": "TestProcessRunnerUsesOfflineFieldHelpers"
+        },
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": "TestProcessRunnerCDPPDFIsDistinctAndSurvivesExport"
+        },
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-canonical"
+        },
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-ingestion"
+        },
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-job-application"
+        },
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-cv"
+        },
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-ingestion"
+        },
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-job-reuse"
+        },
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-artifact-review"
+        },
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": "TestProcessRunnerExistingWorkflowSelectorsExecute"
+        },
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": "TestProcessRunnerAssertionRegressionCompletesWithFail"
+        },
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-canonical-edit"
+        },
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-ingestion"
+        },
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-enrichment"
+        },
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-application-reuse"
+        },
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes"
+        },
+        {
+          "package": "professional-information-repo/internal/evaluationlab",
+          "test": null
+        }
+      ],
+      "skips": [
+        {
+          "package": "professional-information-repo/cmd/account-migrate",
+          "test": null
+        },
+        {
+          "package": "professional-information-repo/cmd/pilot-local",
+          "test": null
+        },
+        {
+          "package": "professional-information-repo/cmd/reconciliation-local",
+          "test": null
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestJourneyDemoServer"
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestPilotRestartChild"
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestControlledDraftBrowserServer"
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestControlledDraftRestartChild"
+        },
+        {
+          "package": "professional-information-repo/internal/accountapi",
+          "test": "TestManagedTerminalProcessChild"
+        },
+        {
+          "package": "professional-information-repo/internal/aicontrol",
+          "test": "TestRestrictedReconciliationGenuineBaseUpgrade"
+        },
+        {
+          "package": "professional-information-repo/internal/draftrecovery",
+          "test": null
+        },
+        {
+          "package": "professional-information-repo/internal/fieldvalidation",
+          "test": null
+        },
+        {
+          "package": "professional-information-repo/internal/jobcontext",
+          "test": null
+        },
+        {
+          "package": "professional-information-repo/internal/openaihttp",
+          "test": null
+        },
+        {
+          "package": "professional-information-repo/internal/qualificationmatching",
+          "test": null
+        },
+        {
+          "package": "professional-information-repo/internal/releasecapture",
+          "test": null
+        },
+        {
+          "package": "professional-information-repo/internal/testsupport",
+          "test": null
+        },
+        {
+          "package": "professional-information-repo/internal/testsupport/aiadmission",
+          "test": null
+        },
+        {
+          "package": "professional-information-repo/internal/workflowauth",
+          "test": null
+        },
+        {
+          "package": "professional-information-repo/lab/api",
+          "test": null
+        },
+        {
+          "package": "professional-information-repo/lab/buildmanifest",
+          "test": null
+        },
+        {
+          "package": "professional-information-repo/scripts/ai-diagnostics",
+          "test": null
+        },
+        {
+          "package": "professional-information-repo/scripts/application-context",
+          "test": null
+        },
+        {
+          "package": "professional-information-repo/scripts/field-validation/remediation",
+          "test": null
+        },
+        {
+          "package": "professional-information-repo/scripts/preview-preflight",
+          "test": null
+        },
+        {
+          "package": "professional-information-repo/scripts/qualification-evidence",
+          "test": null
+        },
+        {
+          "package": "professional-information-repo/scripts/semantic-quality",
+          "test": null
+        }
+      ]
+    },
+    "command": {
+      "name": "full-go",
+      "command": [
+        "python3",
+        "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/run.py",
+        "--full"
+      ],
+      "exit": 1,
+      "started": "2026-11-22T10:40:14.006409+00:00",
+      "finished": "2026-11-22T10:49:58.437479+00:00",
+      "receipt": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/full-go.log",
+      "sha256": "023186ed44d4aff2de2aa843a626a637683e80855ac908ccb1d7d7d7dc3b9948",
+      "entries": [
+        {
+          "evidence": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-uwo4n91j",
+          "synthetic_only": true,
+          "go_exit": 1,
+          "pass_events": 2534,
+          "failures": [
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": "TestCVRetainedReplayUsesNoDispatchesAndKeepsSemanticFailures"
+            },
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": "TestProcessRunnerExecutesAllowlistedGoContractsWithoutInference"
+            },
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": "TestProcessRunnerCannotReadHostSentinelsOrReachHostLoopback"
+            },
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": "TestProcessRunnerCancellationStopsDetachedChildAndGrandchild"
+            },
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": "TestProcessRunnerDeadlineRetainsPartialTreeAndUnreachedTest"
+            },
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": "TestProcessRunnerBoundsOutputAndStopsFollowingTests"
+            },
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": "TestProcessRunnerReusesSectionBrowserHarnessWithScreenshotEvidence"
+            },
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": "TestProcessRunnerExecutesExistingNodeCanonicalContracts"
+            },
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": "TestProcessRunnerCrashRetainsDistinctOutcome"
+            },
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": "TestProcessRunnerUsesOfflineFieldHelpers"
+            },
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": "TestProcessRunnerCDPPDFIsDistinctAndSurvivesExport"
+            },
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-canonical"
+            },
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-ingestion"
+            },
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-job-application"
+            },
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-cv"
+            },
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-ingestion"
+            },
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-job-reuse"
+            },
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-artifact-review"
+            },
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": "TestProcessRunnerExistingWorkflowSelectorsExecute"
+            },
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": "TestProcessRunnerAssertionRegressionCompletesWithFail"
+            },
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-canonical-edit"
+            },
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-ingestion"
+            },
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-enrichment"
+            },
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-application-reuse"
+            },
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes"
+            },
+            {
+              "package": "professional-information-repo/internal/evaluationlab",
+              "test": null
+            }
+          ],
+          "skips": [
+            {
+              "package": "professional-information-repo/cmd/account-migrate",
+              "test": null
+            },
+            {
+              "package": "professional-information-repo/cmd/pilot-local",
+              "test": null
+            },
+            {
+              "package": "professional-information-repo/cmd/reconciliation-local",
+              "test": null
+            },
+            {
+              "package": "professional-information-repo/internal/accountapi",
+              "test": "TestJourneyDemoServer"
+            },
+            {
+              "package": "professional-information-repo/internal/accountapi",
+              "test": "TestPilotRestartChild"
+            },
+            {
+              "package": "professional-information-repo/internal/accountapi",
+              "test": "TestControlledDraftBrowserServer"
+            },
+            {
+              "package": "professional-information-repo/internal/accountapi",
+              "test": "TestControlledDraftRestartChild"
+            },
+            {
+              "package": "professional-information-repo/internal/accountapi",
+              "test": "TestManagedTerminalProcessChild"
+            },
+            {
+              "package": "professional-information-repo/internal/aicontrol",
+              "test": "TestRestrictedReconciliationGenuineBaseUpgrade"
+            },
+            {
+              "package": "professional-information-repo/internal/draftrecovery",
+              "test": null
+            },
+            {
+              "package": "professional-information-repo/internal/fieldvalidation",
+              "test": null
+            },
+            {
+              "package": "professional-information-repo/internal/jobcontext",
+              "test": null
+            },
+            {
+              "package": "professional-information-repo/internal/openaihttp",
+              "test": null
+            },
+            {
+              "package": "professional-information-repo/internal/qualificationmatching",
+              "test": null
+            },
+            {
+              "package": "professional-information-repo/internal/releasecapture",
+              "test": null
+            },
+            {
+              "package": "professional-information-repo/internal/testsupport",
+              "test": null
+            },
+            {
+              "package": "professional-information-repo/internal/testsupport/aiadmission",
+              "test": null
+            },
+            {
+              "package": "professional-information-repo/internal/workflowauth",
+              "test": null
+            },
+            {
+              "package": "professional-information-repo/lab/api",
+              "test": null
+            },
+            {
+              "package": "professional-information-repo/lab/buildmanifest",
+              "test": null
+            },
+            {
+              "package": "professional-information-repo/scripts/ai-diagnostics",
+              "test": null
+            },
+            {
+              "package": "professional-information-repo/scripts/application-context",
+              "test": null
+            },
+            {
+              "package": "professional-information-repo/scripts/field-validation/remediation",
+              "test": null
+            },
+            {
+              "package": "professional-information-repo/scripts/preview-preflight",
+              "test": null
+            },
+            {
+              "package": "professional-information-repo/scripts/qualification-evidence",
+              "test": null
+            },
+            {
+              "package": "professional-information-repo/scripts/semantic-quality",
+              "test": null
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "full_comparison": {
+    "equal_exact_base_retained_failure_set": true,
+    "new_failures": [],
+    "missing_retained_failures": [],
+    "retained_base_summary_path": "docs/release-evidence/2026-11-22-complete-draft-opening-review-repair-summary.json",
+    "retained_base_summary_git_blob": "6c448a793790a778c33b9fcc8c0a643665439dc7",
+    "retained_base_summary_sha256": "b653bda813fa8c9e3ba7c33f0d89b8988e1e42de136689aa3ebaf6547903801c",
+    "unchanged_baseline_dependency_trees": {
+      "internal/evaluationlab": {
+        "base_tree": "3beeafd02bee6d141c648f86e9266828f1ceb688",
+        "delta_empty": true
+      },
+      "internal/semanticeval": {
+        "base_tree": "1bcfe62c759023f409c15941fe148c0281b23e96",
+        "delta_empty": true
+      },
+      "docs/evaluations/cv-lab": {
+        "base_tree": "8415c58de16336dd4000665b5cc83453cceca08c",
+        "delta_empty": true
+      },
+      "backend/cv-generation": {
+        "base_tree": "a6f66ddc0fb08f99e5cdb8676ea92f180ba8a4d1",
+        "delta_empty": true
+      },
+      "internal/aidispatch": {
+        "base_tree": "c01f471ce1f885bd92415155787b78fcef4138e9",
+        "delta_empty": true
+      },
+      "internal/openaihttp": {
+        "base_tree": "c06424e5828422be732af1b0eb76cf4f12553d59",
+        "delta_empty": true
+      }
+    }
+  },
+  "node": {
+    "tests": 444,
+    "pass": 444,
+    "fail": 0,
+    "skipped": 0
+  },
+  "static": [
+    {
+      "name": "node-isolated",
+      "command": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "tests/account-profile.test.mjs",
+        "tests/artifact-review.test.mjs",
+        "tests/contact-profile.test.mjs",
+        "tests/cv-choices.test.mjs",
+        "tests/cv-generation.test.mjs",
+        "tests/cv-preferences.test.mjs",
+        "tests/cv-source-parity.test.mjs",
+        "tests/cv-support-integration.test.mjs",
+        "tests/draft-opening-client.test.mjs",
+        "tests/draft-recovery-client.test.mjs",
+        "tests/evidence-mvp.test.mjs",
+        "tests/field-validation.test.mjs",
+        "tests/ingestion-recovery.test.mjs",
+        "tests/ingestion-review.test.mjs",
+        "tests/ingestion-submission-save.test.mjs",
+        "tests/ingestion-submission.test.mjs",
+        "tests/ingestion.test.mjs",
+        "tests/lab-dashboard.test.mjs",
+        "tests/managed-cv.test.mjs",
+        "tests/managed-ingestion.test.mjs",
+        "tests/managed-profile-review.test.mjs",
+        "tests/managed-qualification.test.mjs",
+        "tests/pilot-access.test.mjs",
+        "tests/profile-document.test.mjs",
+        "tests/profile-projection-parity.test.mjs",
+        "tests/qualification-evidence.test.mjs",
+        "tests/resume-review.test.mjs",
+        "tests/section-review-evaluation.test.mjs",
+        "tests/submission-protocol.test.mjs"
+      ],
+      "exit": 0,
+      "started": "2026-11-22T10:34:14.325317+00:00",
+      "finished": "2026-11-22T10:34:17.854103+00:00",
+      "receipt": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/node-isolated.log",
+      "sha256": "d26ae90b733dc4954541bc9712fde394220bc542a0bfbe71f90155a29560c8a2"
+    },
+    {
+      "name": "tsc",
+      "command": [
+        "node",
+        "node_modules/typescript/bin/tsc",
+        "--noEmit"
+      ],
+      "exit": 0,
+      "started": "2026-11-22T10:34:17.854630+00:00",
+      "finished": "2026-11-22T10:34:21.942579+00:00",
+      "receipt": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/tsc.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "build",
+      "command": [
+        "node",
+        "node_modules/vite/bin/vite.js",
+        "build"
+      ],
+      "exit": 0,
+      "started": "2026-11-22T10:34:21.942872+00:00",
+      "finished": "2026-11-22T10:34:22.580995+00:00",
+      "receipt": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/build.log",
+      "sha256": "51cbf6eedc3488395a542fd9157dfd42d7ad3011a5739e687780260a118a7acc"
+    },
+    {
+      "name": "vet-default",
+      "command": [
+        "go",
+        "vet",
+        "./..."
+      ],
+      "exit": 1,
+      "started": "2026-11-22T10:34:22.581248+00:00",
+      "finished": "2026-11-22T10:34:23.041491+00:00",
+      "receipt": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/vet-default.log",
+      "sha256": "449b2077e614d67a727d4aca5d9f84b70d47f83914a785cc398129577d3e0db4"
+    },
+    {
+      "name": "vet-scoped",
+      "command": [
+        "go",
+        "vet",
+        "-composites=false",
+        "-stdversion=false",
+        "./..."
+      ],
+      "exit": 0,
+      "started": "2026-11-22T10:34:23.041744+00:00",
+      "finished": "2026-11-22T10:34:23.521514+00:00",
+      "receipt": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/vet-scoped.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "vet_comparison": {
+    "default_exit": 1,
+    "default_diagnostics": 15,
+    "byte_equal_retained_base_receipt": true,
+    "retained_receipt": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-opening-285-review-repair-20261122/vet-default.log",
+    "scoped_exit": 0,
+    "scope_exclusions": [
+      "composites",
+      "stdversion"
+    ]
+  },
+  "browser_runs": [
+    {
+      "name": "browser-terminal-resolution",
+      "command": [
+        "python3",
+        "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/run.py",
+        "--browser"
+      ],
+      "case": "terminal-resolution",
+      "exit": 0,
+      "started": "2026-11-22T10:39:08.432871+00:00",
+      "finished": "2026-11-22T10:39:25.789635+00:00",
+      "receipt": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/browser-terminal-resolution.log",
+      "sha256": "2cd49370566bfc430b5b21efd64bafed9c1ab2c87c1117e818f4cddb315810e9",
+      "entries": [
+        {
+          "evidence": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-vf1d3v0j",
+          "synthetic_only": true,
+          "go_exit": 0,
+          "pass_events": 0,
+          "failures": [],
+          "skips": [],
+          "browser_cells": [
+            {
+              "status": "passed",
+              "scenario": "terminal-resolution",
+              "locale": "en",
+              "evidence": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-41bLgB",
+              "checks": [
+                "actual managed four-stage generation plus finite pilot reservation",
+                "exact Action cancel and terminal GET zero consumption",
+                "known failure deliberate stable Retry; lost Retry reply GET only",
+                "original Action/admission/deadline preserved across attempt two",
+                "lost cancellation ACK blocks all current commands while prior accepted work remains",
+                "401/403 hide all protected copies; same-account input and opaque key retained",
+                "14 provider stages total/one opening effect/no automatic resend"
+              ]
+            },
+            {
+              "status": "passed",
+              "scenario": "terminal-resolution",
+              "locale": "pt-BR",
+              "evidence": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-m6rmEz",
+              "checks": [
+                "actual managed four-stage generation plus finite pilot reservation",
+                "exact Action cancel and terminal GET zero consumption",
+                "known failure deliberate stable Retry; lost Retry reply GET only",
+                "original Action/admission/deadline preserved across attempt two",
+                "lost cancellation ACK blocks all current commands while prior accepted work remains",
+                "401/403 hide all protected copies; same-account input and opaque key retained",
+                "14 provider stages total/one opening effect/no automatic resend"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "browser-complete-opening",
+      "command": [
+        "python3",
+        "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/run.py",
+        "--browser"
+      ],
+      "case": "complete-opening",
+      "exit": 0,
+      "started": "2026-11-22T10:39:25.789894+00:00",
+      "finished": "2026-11-22T10:39:42.198788+00:00",
+      "receipt": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/browser-complete-opening.log",
+      "sha256": "ee25c81a625db864d8f7b23e2ffe542ef694a6bebca91a697eec51c541896602",
+      "entries": [
+        {
+          "evidence": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-i8qergu_",
+          "synthetic_only": true,
+          "go_exit": 0,
+          "pass_events": 0,
+          "failures": [],
+          "skips": [],
+          "browser_cells": [
+            {
+              "status": "passed",
+              "scenario": "complete-opening",
+              "locale": "en",
+              "evidence": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-P8dBe0",
+              "checks": [
+                "actual finite pilot grant reserved before generation",
+                "server-ready and withheld committed support cause no ACK/effect",
+                "deliberate full committed review opens exact bound manifest",
+                "lost real committed confirmation response recovers by GET",
+                "reload/Accept/reauth add no effect",
+                "401/403 hides protected copies and preserves independent input",
+                "generation1/check1/one allowance effect"
+              ]
+            },
+            {
+              "status": "passed",
+              "scenario": "complete-opening",
+              "locale": "pt-BR",
+              "evidence": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-UO9Pcn",
+              "checks": [
+                "actual finite pilot grant reserved before generation",
+                "server-ready and withheld committed support cause no ACK/effect",
+                "deliberate full committed review opens exact bound manifest",
+                "lost real committed confirmation response recovers by GET",
+                "reload/Accept/reauth add no effect",
+                "401/403 hides protected copies and preserves independent input",
+                "generation1/check1/one allowance effect"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "browser-managed-journey",
+      "command": [
+        "python3",
+        "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/run.py",
+        "--browser"
+      ],
+      "case": "managed-journey",
+      "exit": 0,
+      "started": "2026-11-22T10:39:42.199095+00:00",
+      "finished": "2026-11-22T10:39:58.343010+00:00",
+      "receipt": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/browser-managed-journey.log",
+      "sha256": "27605b4020c2e2eb4e40c9adb126526d5a166c9ef7abd94c98459ad3feaa77de",
+      "entries": [
+        {
+          "evidence": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-tc5c0mvr",
+          "synthetic_only": true,
+          "go_exit": 0,
+          "pass_events": 0,
+          "failures": [],
+          "skips": [],
+          "browser_cells": [
+            {
+              "status": "passed",
+              "scenario": "managed-journey",
+              "locale": "en",
+              "evidence": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-3EGWvV",
+              "checks": [
+                "actual saved Profile through authenticated qualification and distinct four-stage Draft",
+                "lost POST response after real publication",
+                "exact version reopened GET-only",
+                "opaque-key-only browser storage",
+                "incomplete replacement preserves previous exact work",
+                "stale closure hides current and cached protected content without extra sends or allowance effect"
+              ]
+            },
+            {
+              "status": "passed",
+              "scenario": "managed-journey",
+              "locale": "pt-BR",
+              "evidence": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-hg0Hu1",
+              "checks": [
+                "actual saved Profile through authenticated qualification and distinct four-stage Draft",
+                "lost POST response after real publication",
+                "exact version reopened GET-only",
+                "opaque-key-only browser storage",
+                "incomplete replacement preserves previous exact work",
+                "stale closure hides current and cached protected content without extra sends or allowance effect"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "browser-access-denial",
+      "command": [
+        "python3",
+        "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/run.py",
+        "--browser"
+      ],
+      "case": "access-denial",
+      "exit": 0,
+      "started": "2026-11-22T10:39:58.343375+00:00",
+      "finished": "2026-11-22T10:40:14.006068+00:00",
+      "receipt": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/browser-access-denial.log",
+      "sha256": "d6647b324e34400344c81bfb20db97628b7a26ff552ac833c6e3f35b15c62da0",
+      "entries": [
+        {
+          "evidence": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-vr6x_vs0",
+          "synthetic_only": true,
+          "go_exit": 0,
+          "pass_events": 0,
+          "failures": [],
+          "skips": [],
+          "browser_cells": [
+            {
+              "status": "passed",
+              "scenario": "access-denial",
+              "locale": "en",
+              "evidence": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-kIWiFg",
+              "checks": [
+                "real 401 hides current and previous bundles with original context",
+                "same account editor and opaque key preserved",
+                "reauth exact result and unchanged callbacks",
+                "real 403 hides recovered view",
+                "authorized original never autofills editor",
+                "foreign switch discards wording and late ready reply"
+              ]
+            },
+            {
+              "status": "passed",
+              "scenario": "access-denial",
+              "locale": "pt-BR",
+              "evidence": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-pLN3fc",
+              "checks": [
+                "real 401 hides current and previous bundles with original context",
+                "same account editor and opaque key preserved",
+                "reauth exact result and unchanged callbacks",
+                "real 403 hides recovered view",
+                "authorized original never autofills editor",
+                "foreign switch discards wording and late ready reply"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "actual_browser_cells": [
+    {
+      "status": "passed",
+      "scenario": "terminal-resolution",
+      "locale": "en",
+      "evidence": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-41bLgB",
+      "checks": [
+        "actual managed four-stage generation plus finite pilot reservation",
+        "exact Action cancel and terminal GET zero consumption",
+        "known failure deliberate stable Retry; lost Retry reply GET only",
+        "original Action/admission/deadline preserved across attempt two",
+        "lost cancellation ACK blocks all current commands while prior accepted work remains",
+        "401/403 hide all protected copies; same-account input and opaque key retained",
+        "14 provider stages total/one opening effect/no automatic resend"
+      ]
+    },
+    {
+      "status": "passed",
+      "scenario": "terminal-resolution",
+      "locale": "pt-BR",
+      "evidence": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-m6rmEz",
+      "checks": [
+        "actual managed four-stage generation plus finite pilot reservation",
+        "exact Action cancel and terminal GET zero consumption",
+        "known failure deliberate stable Retry; lost Retry reply GET only",
+        "original Action/admission/deadline preserved across attempt two",
+        "lost cancellation ACK blocks all current commands while prior accepted work remains",
+        "401/403 hide all protected copies; same-account input and opaque key retained",
+        "14 provider stages total/one opening effect/no automatic resend"
+      ]
+    },
+    {
+      "status": "passed",
+      "scenario": "complete-opening",
+      "locale": "en",
+      "evidence": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-P8dBe0",
+      "checks": [
+        "actual finite pilot grant reserved before generation",
+        "server-ready and withheld committed support cause no ACK/effect",
+        "deliberate full committed review opens exact bound manifest",
+        "lost real committed confirmation response recovers by GET",
+        "reload/Accept/reauth add no effect",
+        "401/403 hides protected copies and preserves independent input",
+        "generation1/check1/one allowance effect"
+      ]
+    },
+    {
+      "status": "passed",
+      "scenario": "complete-opening",
+      "locale": "pt-BR",
+      "evidence": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-UO9Pcn",
+      "checks": [
+        "actual finite pilot grant reserved before generation",
+        "server-ready and withheld committed support cause no ACK/effect",
+        "deliberate full committed review opens exact bound manifest",
+        "lost real committed confirmation response recovers by GET",
+        "reload/Accept/reauth add no effect",
+        "401/403 hides protected copies and preserves independent input",
+        "generation1/check1/one allowance effect"
+      ]
+    },
+    {
+      "status": "passed",
+      "scenario": "managed-journey",
+      "locale": "en",
+      "evidence": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-3EGWvV",
+      "checks": [
+        "actual saved Profile through authenticated qualification and distinct four-stage Draft",
+        "lost POST response after real publication",
+        "exact version reopened GET-only",
+        "opaque-key-only browser storage",
+        "incomplete replacement preserves previous exact work",
+        "stale closure hides current and cached protected content without extra sends or allowance effect"
+      ]
+    },
+    {
+      "status": "passed",
+      "scenario": "managed-journey",
+      "locale": "pt-BR",
+      "evidence": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-hg0Hu1",
+      "checks": [
+        "actual saved Profile through authenticated qualification and distinct four-stage Draft",
+        "lost POST response after real publication",
+        "exact version reopened GET-only",
+        "opaque-key-only browser storage",
+        "incomplete replacement preserves previous exact work",
+        "stale closure hides current and cached protected content without extra sends or allowance effect"
+      ]
+    },
+    {
+      "status": "passed",
+      "scenario": "access-denial",
+      "locale": "en",
+      "evidence": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-kIWiFg",
+      "checks": [
+        "real 401 hides current and previous bundles with original context",
+        "same account editor and opaque key preserved",
+        "reauth exact result and unchanged callbacks",
+        "real 403 hides recovered view",
+        "authorized original never autofills editor",
+        "foreign switch discards wording and late ready reply"
+      ]
+    },
+    {
+      "status": "passed",
+      "scenario": "access-denial",
+      "locale": "pt-BR",
+      "evidence": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-pLN3fc",
+      "checks": [
+        "real 401 hides current and previous bundles with original context",
+        "same account editor and opaque key preserved",
+        "reauth exact result and unchanged callbacks",
+        "real 403 hides recovered view",
+        "authorized original never autofills editor",
+        "foreign switch discards wording and late ready reply"
+      ]
+    },
+    {
+      "status": "passed",
+      "scenario": "terminal-revocation",
+      "locale": "en",
+      "evidence": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-H7Tc1B",
+      "checks": [
+        "accepted prior S plus unopened current B",
+        "actual pilot suspension yields opening403 and terminal current metadata",
+        "all protected copies withheld during paused terminal GET",
+        "prior history requires independent fresh read and remains hidden after403",
+        "restore uses GET only; original accepted snapshot/one effect/eight provider calls unchanged"
+      ]
+    },
+    {
+      "status": "passed",
+      "scenario": "terminal-revocation",
+      "locale": "pt-BR",
+      "evidence": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-M42nRL",
+      "checks": [
+        "accepted prior S plus unopened current B",
+        "actual pilot suspension yields opening403 and terminal current metadata",
+        "all protected copies withheld during paused terminal GET",
+        "prior history requires independent fresh read and remains hidden after403",
+        "restore uses GET only; original accepted snapshot/one effect/eight provider calls unchanged"
+      ]
+    },
+    {
+      "status": "passed",
+      "scenario": "terminal-revoked-fixture",
+      "locale": "en",
+      "evidence": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-tJo1yW",
+      "checks": [
+        "accepted prior S plus unopened current B",
+        "test-only invitation_revoked state injection (not an operator transition) yields opening403 and terminal metadata",
+        "all protected copies withheld during paused terminal GET",
+        "prior history requires independent fresh read and remains hidden after403",
+        "restore uses GET only; original accepted snapshot/one effect/eight provider calls unchanged"
+      ]
+    },
+    {
+      "status": "passed",
+      "scenario": "terminal-revoked-fixture",
+      "locale": "pt-BR",
+      "evidence": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-y2w5ri",
+      "checks": [
+        "accepted prior S plus unopened current B",
+        "test-only invitation_revoked state injection (not an operator transition) yields opening403 and terminal metadata",
+        "all protected copies withheld during paused terminal GET",
+        "prior history requires independent fresh read and remains hidden after403",
+        "restore uses GET only; original accepted snapshot/one effect/eight provider calls unchanged"
+      ]
+    }
+  ],
+  "physical_restart": {
+    "test": "TestManagedTerminalTwoServerProcessesRaceThenPhysicalRestartPreservesWinner",
+    "in_final_relevant": "pass",
+    "in_final_full": "pass",
+    "kind": "real private fsync PostgreSQL immediate restart plus two independent command processes and a fresh post-restart server process",
+    "witness": "four synced fake provider stages, asserted inside test; temporary witness itself removed by test cleanup"
+  },
+  "old_purpose_restore_scope": "Only purpose and allowance rows restored; independent current shared terminal Action and admission guard retained. No hosted or whole-database restore proof.",
+  "development_reds": [
+    {
+      "directory": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-1lqft1pn",
+      "kind": "new cancellation endpoint missing404"
+    },
+    {
+      "directory": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-18am48ji",
+      "kind": "Retry rolled back first terminal observation"
+    },
+    {
+      "directory": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-fswqztr1",
+      "kind": "both Retry phases lost cancellation/deletion observation"
+    },
+    {
+      "directory": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-m0gnpgzi",
+      "kind": "actual browser missing cancellation control"
+    }
+  ],
+  "other_failed_attempts": [
+    {
+      "directory": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-ryaoy4b4",
+      "kind": "browser assertion queried absent Retry control after lost reply; test corrected without runtime change"
+    },
+    {
+      "directory": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-ms40hha0",
+      "kind": "new test unused import compile error"
+    },
+    {
+      "directory": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-h4jqqyup",
+      "kind": "new child race fixture lacked private schema in DSN"
+    },
+    {
+      "directory": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-6ujzawj8",
+      "kind": "diagnosed same test-only DSN issue before barrier"
+    },
+    {
+      "directory": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-j2pctz73",
+      "kind": "new test-local variable declaration compile error"
+    }
+  ],
+  "node_harness_attempt": {
+    "command_receipt": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/static-summary.json",
+    "log": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/node.log",
+    "tests": 444,
+    "pass": 441,
+    "fail": 3,
+    "scope": "No process isolation caused unchanged pilot test document globals to collide. Normal isolated command on identical source passes444; not a product/baseline failure."
+  },
+  "toolchain": {
+    "go": "go1.26.4 linux/amd64",
+    "module": "go1.24",
+    "go_effective_flags": [
+      "-p=1",
+      "-json",
+      "-race",
+      "-vet=off",
+      "-timeout=600s",
+      "-count=1"
+    ],
+    "harness_wrapper": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/run.py",
+    "product_deadlines_unchanged": true
+  },
+  "review_status": "review-ready checkpoint; independent immutable-head Standards, Spec and security assessments pending",
+  "limits": [
+    "No real provider calls, accounts, credentials, spending, participant grants/admission, hosting/deployment, hosted recovery or GitHub mutation.",
+    "No new retained content class/table; no Draft/customer policy reselection.",
+    "Optional genuine-base exporter not requested in these final Go runs; unchanged key/migration source retains previously reviewed #283 evidence, not fresh upgrade proof.",
+    "Suspension browser cell uses actual supported synthetic suspension; invitation_revoked browser cell is direct test-only restrictive-state injection, not an activated-invitation operator transition.",
+    "Old PDF/export evidence is inherited and not rerun for unchanged export components; current browser recovery/Accept/currentness checks are separate.",
+    "Default vet/full Go are not green. Prior unsupported linked-worktree managed scanner setup is not represented as a completed scan; final security review will be independent source/evidence assessment."
+  ],
+  "receipts": [
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/browser-access-denial.log",
+      "available_at_checkpoint": true,
+      "bytes": 1157,
+      "sha256": "d6647b324e34400344c81bfb20db97628b7a26ff552ac833c6e3f35b15c62da0"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/browser-complete-opening.log",
+      "available_at_checkpoint": true,
+      "bytes": 1353,
+      "sha256": "ee25c81a625db864d8f7b23e2ffe542ef694a6bebca91a697eec51c541896602"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/browser-final-summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 9592,
+      "sha256": "533af1a28245c6b311990b8803c85b6a567a8d2a0728be0fe9e74453690ff518"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/browser-managed-journey.log",
+      "available_at_checkpoint": true,
+      "bytes": 1285,
+      "sha256": "27605b4020c2e2eb4e40c9adb126526d5a166c9ef7abd94c98459ad3feaa77de"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/browser-terminal-resolution.log",
+      "available_at_checkpoint": true,
+      "bytes": 1565,
+      "sha256": "2cd49370566bfc430b5b21efd64bafed9c1ab2c87c1117e818f4cddb315810e9"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/build.log",
+      "available_at_checkpoint": true,
+      "bytes": 1015,
+      "sha256": "51cbf6eedc3488395a542fd9157dfd42d7ad3011a5739e687780260a118a7acc"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/client-final.json",
+      "available_at_checkpoint": true,
+      "bytes": 170,
+      "sha256": "19089849cee444166d0db7cac5a85d0e597798ab6099fe669fa2e174bfaf6c32"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/client-final.log",
+      "available_at_checkpoint": true,
+      "bytes": 1891,
+      "sha256": "64622a8c51bf28d733eca3fd74b606db930548444e5a6d550b0d343a898c4057"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/client-green/node.tap",
+      "available_at_checkpoint": true,
+      "bytes": 4039,
+      "sha256": "5f2dc32cac26d4a29a0110ca150a1cd035093721eb353bda0a78e5f4c3ec2069"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/client-green/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 243,
+      "sha256": "783d72a837e7c9a3f4017b9b485980b9727541934280ad9136945165db0bb9d9"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/frozen-source.json",
+      "available_at_checkpoint": true,
+      "bytes": 4336,
+      "sha256": "5b0c6cfb4394fdf75b215baa1131d993a12c35ee982df5f57940f5ab704b78ee"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/full-go-command.json",
+      "available_at_checkpoint": true,
+      "bytes": 8683,
+      "sha256": "ba0d05718d284f23bc87b9e33664e3e12e71ba68fd2c498efdd50aa93ae3d5fd"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/full-go.log",
+      "available_at_checkpoint": true,
+      "bytes": 6141,
+      "sha256": "023186ed44d4aff2de2aa843a626a637683e80855ac908ccb1d7d7d7dc3b9948"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/node-isolated.log",
+      "available_at_checkpoint": true,
+      "bytes": 99550,
+      "sha256": "d26ae90b733dc4954541bc9712fde394220bc542a0bfbe71f90155a29560c8a2"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/node.log",
+      "available_at_checkpoint": true,
+      "bytes": 103480,
+      "sha256": "9879a524424d9dc5820392a28f0b5ae2fd971cbfa091b918694db74571bc07f7"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/opening-client-final.json",
+      "available_at_checkpoint": true,
+      "bytes": 169,
+      "sha256": "68dc2fb5492c904731dd52b943e099f7dcc16f64a07ab77842b66027eeb307f6"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/opening-client-final.log",
+      "available_at_checkpoint": true,
+      "bytes": 881,
+      "sha256": "52faa4856f96b0d701a6bfd5516f1a61280be1b592ebc36ffa2a513228c949c1"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/run.py",
+      "available_at_checkpoint": true,
+      "bytes": 642,
+      "sha256": "93290fca8ea02ea48bda386d0d5251a28d47f04c6797494e70f970f6ac1b6296"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/static-final-summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 3433,
+      "sha256": "1efc2ea5940efb6e60f7d649d4a713d81849edd6968bd1de6521e47f2d94e823"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/static-summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 1677,
+      "sha256": "b90cbe1d6a21cdffd1a35a229d35c06d0584a12c43905d84db6eb2522175994f"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/tsc-final.json",
+      "available_at_checkpoint": true,
+      "bytes": 161,
+      "sha256": "19a671f2f040314dc55cb8a47565c768eaeba8345c1032c1db76a5d65c13fa9b"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/tsc-final.log",
+      "available_at_checkpoint": true,
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/tsc-first.json",
+      "available_at_checkpoint": true,
+      "bytes": 193,
+      "sha256": "f40d4e1678144007cbf715bf9eb9bcd2132c1e77607303f86b8ae666148050ce"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/tsc-first.log",
+      "available_at_checkpoint": true,
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/tsc.log",
+      "available_at_checkpoint": true,
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/vet-default.log",
+      "available_at_checkpoint": true,
+      "bytes": 2236,
+      "sha256": "449b2077e614d67a727d4aca5d9f84b70d47f83914a785cc398129577d3e0db4"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/vet-scoped.log",
+      "available_at_checkpoint": true,
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-terminal-286-20261122/write-evidence.py",
+      "available_at_checkpoint": true,
+      "bytes": 7853,
+      "sha256": "21dbbda1e61c300fd49b6354d461201f717aa5de16b6bbba4e7694695ef54b65"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-18am48ji/go.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 5274,
+      "sha256": "dc692a4c9c5ca006fc89c8eb1e3f278a0bb29627981a1515e9694dffea3e8c09"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-18am48ji/postgres.log",
+      "available_at_checkpoint": true,
+      "bytes": 189,
+      "sha256": "d0f0a5f5bfab4dc8ac67c09a2324dd739af4857266c44e5abaacb76c4f02adcc"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-18am48ji/setup.log",
+      "available_at_checkpoint": true,
+      "bytes": 1080,
+      "sha256": "2ecceda7e2369285f8f62a2bc64eedb880edce0bf25181fdac3b71e22fd0ddc9"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-18am48ji/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 690,
+      "sha256": "a0e168488b51f0b632f7d8c4bf03f112a3585d07af8d6a387657206b75cfd628"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-1lqft1pn/go.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 1894,
+      "sha256": "628d38ccdecd0ec2379e3d7f95f1c3663986600031d64aca4854f8ac2ece6ffa"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-1lqft1pn/postgres.log",
+      "available_at_checkpoint": true,
+      "bytes": 189,
+      "sha256": "0133f57d3231aaf4015277468c3f5e10e37f56dc4a8b14ffa0fa0ca6f90d1a21"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-1lqft1pn/setup.log",
+      "available_at_checkpoint": true,
+      "bytes": 1080,
+      "sha256": "f19e8e307745ee9bc95971840792d307a5bd3e71187d3fcb564a4936731e9e63"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-1lqft1pn/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 362,
+      "sha256": "d3d4a8b85a41be244947511be00cf69ecff1a091a73adfc5c8ea05850f143e51"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-6ujzawj8/go.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 4489,
+      "sha256": "3f862750d96757c6cbcf5b8c8a781e7130073032ac03ff625ef7a99c02c01d10"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-6ujzawj8/postgres.log",
+      "available_at_checkpoint": true,
+      "bytes": 189,
+      "sha256": "46bcb2556ad6c40ae15f809b91d068a4dd5e656de2436d38bce1e41b4848f774"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-6ujzawj8/setup.log",
+      "available_at_checkpoint": true,
+      "bytes": 1080,
+      "sha256": "40acac84244fe5155456fd9fa9ef1eeab72a023d803fdbaa28c91b8a6d5359c4"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-6ujzawj8/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 377,
+      "sha256": "a8baeaac1c98b3595714d34698bf50444e5ee7f33e812d2c1419175494e26031"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-7z4gzxz9/go.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 8051,
+      "sha256": "f69be719df5791753d215c67b762a305389757b33ff756ab13073b86883f449f"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-7z4gzxz9/postgres.log",
+      "available_at_checkpoint": true,
+      "bytes": 189,
+      "sha256": "876bbea7fe94ffb351c7b10b384b1c71ae35a588b75e0ecd573dbd426b132996"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-7z4gzxz9/setup.log",
+      "available_at_checkpoint": true,
+      "bytes": 1080,
+      "sha256": "c8786347b913a277c9958530b607fba3018f9f229201d73a92c6587242574550"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-7z4gzxz9/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 98,
+      "sha256": "95c8806cdad5a8cc5e797c8d1a53bb9d98d03c72ae9a301b6a6c1b993317811b"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-a0vxavct/go.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 4818,
+      "sha256": "ab1c3d165552c051a397446774efb727ebddbfff340e2cae5af613ce62b52253"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-a0vxavct/postgres.log",
+      "available_at_checkpoint": true,
+      "bytes": 189,
+      "sha256": "1ad8264a1a7eda752bddcc2fe51d026328433f0746375636bd9393544b369d3e"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-a0vxavct/setup.log",
+      "available_at_checkpoint": true,
+      "bytes": 1080,
+      "sha256": "d7077d40eb465065c79f82d253537797bc839f71da17af2a5bccfe0526bbccb2"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-a0vxavct/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 98,
+      "sha256": "d66568e003b93b45d3f3a52712c522768ad3f6566acf7625eb0124fa2ec6455a"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-a_utzqhg/browser.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 1047,
+      "sha256": "9bf1baaaa034b7c33ac79566da3ab3ed45035a8a2c06bc74b8bf1980c494e901"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-a_utzqhg/postgres.log",
+      "available_at_checkpoint": true,
+      "bytes": 189,
+      "sha256": "f11ca0544ae9fccbbc69724d4b5d0d38fd9c09a06945dad26a6e2b5625f5c5f5"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-a_utzqhg/setup.log",
+      "available_at_checkpoint": true,
+      "bytes": 1080,
+      "sha256": "3acb9e0d8aa12270300671ddccc56af14a95a84b47556b93c4c1976bcbb857ce"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-a_utzqhg/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 1374,
+      "sha256": "aad4ff75b23e3d9865e29db9a9bfcd3460e71f8ad92bf365804055c9fce206f4"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-aq910pcv/go.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 1602,
+      "sha256": "df1ece6177e0e85c86e95b99a0b41b269d3dbd9ecf33469ef85791b6ef833ebe"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-aq910pcv/postgres.log",
+      "available_at_checkpoint": true,
+      "bytes": 189,
+      "sha256": "8282a824554af27a6cbe8911a9b47c5e31f7790333f7e8211872f9c9eed2684a"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-aq910pcv/setup.log",
+      "available_at_checkpoint": true,
+      "bytes": 1080,
+      "sha256": "f7b40a8e3a9454687c0bee2f2505a5069a5b1badb6c8fdc449a1f27e6e179d4f"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-aq910pcv/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 98,
+      "sha256": "83c8913745ddaa4a7d33fd9b6c99037eaba744939fc7d41813385b80fa5485c4"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-atuti_1k/go.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 2133,
+      "sha256": "09719fa6bf0ec36d7ecf4e0ecc88299933d0539f460d9214a2c986bc916ad8a0"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-atuti_1k/postgres.log",
+      "available_at_checkpoint": true,
+      "bytes": 189,
+      "sha256": "ae22db475ef4baad388e74cf4977b381f90afbb12aafb79512a1d55acd6ce545"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-atuti_1k/setup.log",
+      "available_at_checkpoint": true,
+      "bytes": 1080,
+      "sha256": "a2a7eee5e7460b76a17a65815e99855c051da44a29d85a4b4bb3460ef8d7aa43"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-atuti_1k/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 98,
+      "sha256": "83c8913745ddaa4a7d33fd9b6c99037eaba744939fc7d41813385b80fa5485c4"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-fswqztr1/go.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 9486,
+      "sha256": "14a67c56383fed5cdb75f6d2f82a6d2563040e65ce35ed3aae8e4dc2cc2cea35"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-fswqztr1/postgres.log",
+      "available_at_checkpoint": true,
+      "bytes": 189,
+      "sha256": "9ce292f018864a2846bbaa83a05b7669ef77ef529bd85e24cccafe6598df3b66"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-fswqztr1/setup.log",
+      "available_at_checkpoint": true,
+      "bytes": 1080,
+      "sha256": "579c516df87759fd03266b22fa23a606b357e049d5bc1bc427ec465c8a9aeeba"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-fswqztr1/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 1098,
+      "sha256": "6e329750d673845fab77ec8b31c3cfe7b2e159d5dd6516e8b181f0a15be6ed84"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-h4jqqyup/go.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 21646,
+      "sha256": "c460d68aa5994dcc76850aae90e3c84b32dfd80b702960ed36c2e33d67bc4d22"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-h4jqqyup/postgres.log",
+      "available_at_checkpoint": true,
+      "bytes": 189,
+      "sha256": "c1546390f8b0275e8e820f972354f07c8dfc239a8a21228a49a1c886bca74aa0"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-h4jqqyup/setup.log",
+      "available_at_checkpoint": true,
+      "bytes": 1080,
+      "sha256": "f0f9c432df08ae852fb26cf957ad61e5340679e8d075258e88069db386b1a01d"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-h4jqqyup/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 378,
+      "sha256": "d4a4e331364e55b82c7de54ebbe40194db9085e4cac6156c273b66649fe7dec4"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-i8qergu_/browser.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 1123,
+      "sha256": "0097d4ce5a33197e59b22b04856a8841ed38c57cd1d9f88b32c46ff86514766d"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-i8qergu_/postgres.log",
+      "available_at_checkpoint": true,
+      "bytes": 189,
+      "sha256": "7ea4adc475efe4d86c85d5ecb373d588d2e319a507265d6f3ab0cf693727c5b8"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-i8qergu_/setup.log",
+      "available_at_checkpoint": true,
+      "bytes": 1080,
+      "sha256": "bb2d57aa02af098dcaf46f4f394b038d8618e7ef17fb970bb6069d120890f37e"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-i8qergu_/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 1486,
+      "sha256": "afbef80bed55f0a802fe58ad6399e8bff8d96f5f1fcca7bf84866195f01ad199"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-j2pctz73/go.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 1510,
+      "sha256": "9ba0ae77f8c1c57f7e70c03d704b55f6f5d241fa704acf83b585918e7231f6e5"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-j2pctz73/postgres.log",
+      "available_at_checkpoint": true,
+      "bytes": 189,
+      "sha256": "0bfbbc39f7e45035b30c2aa928ff29bf2bc14550a8608a0a10e5ff2e3987af05"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-j2pctz73/setup.log",
+      "available_at_checkpoint": true,
+      "bytes": 1080,
+      "sha256": "f3e5e9b419b76ab5d9ca4d764d5762c936e57a20d551e77d583a98ad3beb7bed"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-j2pctz73/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 202,
+      "sha256": "f1428634989482a1afce8cec0839560657c71f800d263f0b567cee8a0620253b"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-jyjawq9b/go.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 1630,
+      "sha256": "27c21ca54880478f0f973b002bb68c3a09cd35ca5572f7e547ff0489e8c1b98a"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-jyjawq9b/postgres.log",
+      "available_at_checkpoint": true,
+      "bytes": 189,
+      "sha256": "8266ebe439cabb242f3c4c80baa0e4d574e1b024b40416c8c75e25634043a7ae"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-jyjawq9b/setup.log",
+      "available_at_checkpoint": true,
+      "bytes": 1080,
+      "sha256": "2e75681eb4e0f79ae3446ea3b7d2cfa0e56bbe821f1299feb944487eef54ef88"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-jyjawq9b/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 98,
+      "sha256": "83c8913745ddaa4a7d33fd9b6c99037eaba744939fc7d41813385b80fa5485c4"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-km91k4e8/go.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 2854050,
+      "sha256": "f4608ef75811d811eae1d7bb286681078b61c722076ddbc95f163587e6f3000d"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-km91k4e8/postgres.log",
+      "available_at_checkpoint": true,
+      "bytes": 189,
+      "sha256": "09e934f1786941e64b8cfbad81f16a8c1136f07539859d7accc9e54c82121cd2"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-km91k4e8/setup.log",
+      "available_at_checkpoint": true,
+      "bytes": 1080,
+      "sha256": "d381d2122a9b3443b71287f6eef76c9b7562c9f451245365ad4e1bd9879b52ce"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-km91k4e8/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 48477,
+      "sha256": "2274e0a3bdeb60f4240acccd1c6238acbef2de161fc56a38d635c4e8d840d143"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-m0gnpgzi/browser.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 3238,
+      "sha256": "de86ab348211e43febc3c39075e85bdafbefa70ccdfeef1e6578d6c78e2c4578"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-m0gnpgzi/postgres.log",
+      "available_at_checkpoint": true,
+      "bytes": 189,
+      "sha256": "ecbab2151489982fd5540796974800fdd8003767e6577d5a21d786b9d6d10a91"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-m0gnpgzi/setup.log",
+      "available_at_checkpoint": true,
+      "bytes": 1080,
+      "sha256": "7d37ad6d453722c575342a99843e072a5a67365bcc5df82d72a0e60dedb2d561"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-m0gnpgzi/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 121,
+      "sha256": "68ff67ec06a3b4f7cacc1828677df94ca35459d2110bd022eb4ef18d5ee0b0a6"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-ms40hha0/go.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 1289,
+      "sha256": "70601f2a37ae10ea3f5a2e5b7bb3ee935ca0188e5db9df5735c172077161af78"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-ms40hha0/postgres.log",
+      "available_at_checkpoint": true,
+      "bytes": 189,
+      "sha256": "820246aa18bfeb45c0839b2973099d32b6cd3df1d44669be6cba9096c5ef56d0"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-ms40hha0/setup.log",
+      "available_at_checkpoint": true,
+      "bytes": 1080,
+      "sha256": "0e5ea9781bda1a5662f2880ce160fb47caba518eaac571ae28a0a135c46d3910"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-ms40hha0/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 202,
+      "sha256": "f1428634989482a1afce8cec0839560657c71f800d263f0b567cee8a0620253b"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-n6j163j7/go.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 35490,
+      "sha256": "cbfa9331d9adae096a244d8d8ea413cdb4eb2e7271479b430e91d49c356d227c"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-n6j163j7/postgres.log",
+      "available_at_checkpoint": true,
+      "bytes": 189,
+      "sha256": "3b13f9acf2c0a720f7a4b15f8a32f90abb5f025378f2d68f55862b7f9635ae61"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-n6j163j7/setup.log",
+      "available_at_checkpoint": true,
+      "bytes": 1080,
+      "sha256": "38bfd3105229a1520b1688537d163b070d8a24d57e3c33e7ffb271b5d719df6d"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-n6j163j7/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 232,
+      "sha256": "8debca58fdcd57af1edc627c20e88d563c519fd3e5de773bbd8fff38c4dd05b3"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-qikosiyz/browser.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 1141,
+      "sha256": "366dce962b49007c01dc1b428861fd772e4daac22d18d120f0563cca9b664c9f"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-qikosiyz/postgres.log",
+      "available_at_checkpoint": true,
+      "bytes": 189,
+      "sha256": "b4ba476cebde01cadb5fbeb9ed0a92578aff59e2958600a685bda1b2e6f8e78c"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-qikosiyz/setup.log",
+      "available_at_checkpoint": true,
+      "bytes": 1080,
+      "sha256": "143317bcb5017d1a8644d71bc5824f384fe109f14088c9281ebafa769110e477"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-qikosiyz/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 1468,
+      "sha256": "fdd2d81e9a796107564ee9c64f065919b07c6e9f36db13c032b9fa9cb71196a9"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-ryaoy4b4/browser.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 4668,
+      "sha256": "106eb50bf9c8952a194ea250508d2cd57c2d3df6d9f0f92d8abc4477755da2c6"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-ryaoy4b4/postgres.log",
+      "available_at_checkpoint": true,
+      "bytes": 189,
+      "sha256": "cc7ad51216f0321dd1fad3e090c7d8ccab448a847d6af31363a1f1a968b782cb"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-ryaoy4b4/setup.log",
+      "available_at_checkpoint": true,
+      "bytes": 1080,
+      "sha256": "c94afc6355f21681b5a2d45e0ab303c4faef4c99b8ba1369ead2242dc44dc430"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-ryaoy4b4/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 121,
+      "sha256": "68ff67ec06a3b4f7cacc1828677df94ca35459d2110bd022eb4ef18d5ee0b0a6"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-tc5c0mvr/browser.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 1057,
+      "sha256": "18dff13eceeb87c4cbe8c74b00e733feaf5f119d07a6f72072b29506fbfe9e97"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-tc5c0mvr/postgres.log",
+      "available_at_checkpoint": true,
+      "bytes": 189,
+      "sha256": "478fed4ba752579aa377a23fba85c2cdce3deb46c5095f1afdfb42e82a052fd9"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-tc5c0mvr/setup.log",
+      "available_at_checkpoint": true,
+      "bytes": 1080,
+      "sha256": "0bfef6d789e6e285d214432f7bf9f3d7d404913034959f6a37ba916df4ef1d66"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-tc5c0mvr/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 1402,
+      "sha256": "028a276fc56e9085ee9877ac2ff02292a26d8ac4e7f7ddd653d3eff544266adc"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-uwo4n91j/go.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 6439985,
+      "sha256": "43d1f7e852f933ac71f9372c1828534e9d19cefeb64199544e6dd356654a52de"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-uwo4n91j/postgres.log",
+      "available_at_checkpoint": true,
+      "bytes": 189,
+      "sha256": "4a76c5c5f679ccc095093fe954323d4fb96766980751b417c30f5c93ba19206c"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-uwo4n91j/setup.log",
+      "available_at_checkpoint": true,
+      "bytes": 1080,
+      "sha256": "5142d2bb921e7314c8aea38ebb779ccd787498b3a92827b0682cfafb78a277c3"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-uwo4n91j/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 7212,
+      "sha256": "e2d57dd5859dffd03d782580c7aec9db21bff934cbc4375155eb234f8be1bc4d"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-vf1d3v0j/browser.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 1335,
+      "sha256": "2c16e52580030a9f035ea2bedf9dcb1f2fdfa510cf3f9c08a6c93571ec9b8250"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-vf1d3v0j/postgres.log",
+      "available_at_checkpoint": true,
+      "bytes": 189,
+      "sha256": "87d35a3ec68a570923cb93d63ed57a522d045566aa55342a67d3055b56617025"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-vf1d3v0j/setup.log",
+      "available_at_checkpoint": true,
+      "bytes": 1080,
+      "sha256": "f2328b721da44e22b48ecb457d8369fc0fb28034d5e2a12a076873792001b0f6"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-vf1d3v0j/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 1698,
+      "sha256": "1943b7a42df4b34caee84a20080cd4473f7a7f86757c2c14719e19b97a6f8cc0"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-vr6x_vs0/browser.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 929,
+      "sha256": "ae9018e151e3372da7de14e57d00fd9c2d55a7df31158d3a8ae3195db245dafc"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-vr6x_vs0/postgres.log",
+      "available_at_checkpoint": true,
+      "bytes": 189,
+      "sha256": "a13257cf584f9599e1e472a573028ba7bb57aa2ef50652126139326de533a2da"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-vr6x_vs0/setup.log",
+      "available_at_checkpoint": true,
+      "bytes": 1080,
+      "sha256": "7d088fa4197d8bff2160037575ccb58d37bd8ee657ba24d8d6ebb0dd5604ce3f"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-vr6x_vs0/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 1274,
+      "sha256": "5d8aa8b9c3652e8a111ef20471e3457055d4429b04caded130eca82491081ca4"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-ww82m_x7/browser.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 767,
+      "sha256": "bc4b8b430416e31e2f95cf0e6a9779d18463d3d2b2c6be8ff0aae856ae31eb0d"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-ww82m_x7/postgres.log",
+      "available_at_checkpoint": true,
+      "bytes": 189,
+      "sha256": "0954b7083e4a68ad482464a4d7ac7373389f725c3e6919e1289f86975b2db56f"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-ww82m_x7/setup.log",
+      "available_at_checkpoint": true,
+      "bytes": 1080,
+      "sha256": "3a806b2b184d42b45f9bdd04532956688077fae63ac1e5d0abc89886e22d134b"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-ww82m_x7/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 1076,
+      "sha256": "3b5b4c98887fd2d8fe4c72b2e706ded04dd3f031026923d8f0e137b739cd3a7b"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-x4gm0put/browser.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 666,
+      "sha256": "67b88b631607d05161a272e9f0340c50ae231d1a94aa1d8641e7555220e81325"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-x4gm0put/postgres.log",
+      "available_at_checkpoint": true,
+      "bytes": 189,
+      "sha256": "fc0ddf442d9d0dc58e888f7e4a487f798f9b2b0a22664dbc1c9ff687edd79f13"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-x4gm0put/setup.log",
+      "available_at_checkpoint": true,
+      "bytes": 1080,
+      "sha256": "852aefc3a930f9244bea2e9b689cc04c53bf46d6dd17ecf69ef1b8ef1e075e3b"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-281-check-x4gm0put/summary.json",
+      "available_at_checkpoint": true,
+      "bytes": 909,
+      "sha256": "17729f8a81842c46f359d3c1684b25079283e1453d70b37637060209eddb0000"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-3EGWvV/config.json",
+      "available_at_checkpoint": true,
+      "bytes": 174,
+      "sha256": "7f809c8e678577ecd882edfe1712d800bb7c7ad4eef1324537ee2887881b36e1"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-3EGWvV/server.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 4027,
+      "sha256": "fa79f193ebfc493a9fa5651424ddd0ddfc160537aac87d6f5ee2d8493025e462"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-41bLgB/config.json",
+      "available_at_checkpoint": true,
+      "bytes": 173,
+      "sha256": "dab555c5d134d61f96993168935be43a501f4d1b72a72ef34d30201c5232bd9f"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-41bLgB/server.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 1684,
+      "sha256": "07758ecfc981624ab14aa86da2662e0d7179bbc56c2756481816e133ef7d05a6"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-8kRWim/config.json",
+      "available_at_checkpoint": true,
+      "bytes": 176,
+      "sha256": "f0905a7b9ba1cb5a6bbaa38255e7f19cff30dc829a1d2b90cca34cfc7299b4d2"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-8kRWim/server.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 1690,
+      "sha256": "4351bfbaaadd2efce94e885a91bed7e6a66992fd68d1dda777da55cec6f16acc"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-8p6ymw/config.json",
+      "available_at_checkpoint": true,
+      "bytes": 173,
+      "sha256": "2bd207b5efd0cd1d1076ed77769e716d71baf6c4e0f9d28344f74c45727ee04a"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-8p6ymw/server.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 1689,
+      "sha256": "61bdb362d4ab4d9f3bdaecd08d97afee95457eb026048360622cccd66f696997"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-H7Tc1B/config.json",
+      "available_at_checkpoint": true,
+      "bytes": 173,
+      "sha256": "d1d02ad24b4601bacf123b35c27fdf3ddd85359b78a1d9cb595aba87711a859e"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-H7Tc1B/server.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 1690,
+      "sha256": "368e396551b450b2c194dbcff8b879454a95563876a41de23cf46f7cb0b84dd7"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-M42nRL/config.json",
+      "available_at_checkpoint": true,
+      "bytes": 176,
+      "sha256": "c5af3b3e87b4915ce50f252ac3c42f37b2b9f71eea0e52d0be0f6a5e10858c63"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-M42nRL/server.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 1688,
+      "sha256": "ddb6634d0b0f4b9973365dd65f5dccbdaebdce96111fde474f680635fe1c767d"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-P8dBe0/config.json",
+      "available_at_checkpoint": true,
+      "bytes": 174,
+      "sha256": "251d84f57f73d9e553124d2a48f250ab84634f93c20aa0b3f5f9566bfad0f743"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-P8dBe0/server.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 1689,
+      "sha256": "a8b96b9914efc4869c61a07d36da32ea70e8b0749318088ae7efd7244f21df24"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-UO9Pcn/config.json",
+      "available_at_checkpoint": true,
+      "bytes": 177,
+      "sha256": "0bf79f1b8c803e1744528c26ebddfce2090797efd286aebbeb4a9ce104b36809"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-UO9Pcn/server.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 1689,
+      "sha256": "be676efb6d6b6572fc1e07455f65c3485bbe0ec3190d754bc23a9f027854a7c1"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-Zba2ox/config.json",
+      "available_at_checkpoint": true,
+      "bytes": 173,
+      "sha256": "38b148302e1d80f5d021935da1f2d43633a032d5afecfdf5e9ff7f02b944a9e5"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-Zba2ox/server.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 1687,
+      "sha256": "a4a19f098199edf7639be60552498d006566a3f9fcdfcd562c32ab6241f09b5d"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-hg0Hu1/config.json",
+      "available_at_checkpoint": true,
+      "bytes": 177,
+      "sha256": "4460903bcfdbbacddf2ca4b4da2cbb5d7944bb98d2f41291d7c977c0f5c623bd"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-hg0Hu1/server.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 4028,
+      "sha256": "153249ff2da4986960b915c834a2b52d0794af118468ee3cb6ab1b83c00fab43"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-hit94I/config.json",
+      "available_at_checkpoint": true,
+      "bytes": 173,
+      "sha256": "c5c853921822180093704a6bdc3e51f7c0fd6c142dab474abef8a087e2e86b30"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-hit94I/server.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 1703,
+      "sha256": "fdde95a071bb40032227a8be81f780b0e808ff90106d022dcad885262029d842"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-hqSznt/config.json",
+      "available_at_checkpoint": true,
+      "bytes": 173,
+      "sha256": "80b52d74642a2479b2702cde5ad7470fa3f43f86cbb7c17f1457eaf0282d100b"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-hqSznt/server.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 1694,
+      "sha256": "ab612b22244f63bb2d8403544293d6620609ecc63ba30d74bf52b6ea839a6413"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-kIWiFg/config.json",
+      "available_at_checkpoint": true,
+      "bytes": 175,
+      "sha256": "74435273d5b834afe14a2171d2d71d7a7fa490877a2f578c685a42f85ffe0708"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-kIWiFg/server.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 1689,
+      "sha256": "6dbad1f0950b335592077fed3153b936e5e4244502a5ac56d64b69799a562395"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-m6rmEz/config.json",
+      "available_at_checkpoint": true,
+      "bytes": 176,
+      "sha256": "b803a3912cc1f214250abe75f3775d1047fd2caa9a415bd4af2d58c35caab803"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-m6rmEz/server.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 1685,
+      "sha256": "60d1c401344f33bbba4c8003b2aa49187a61b284e415f9686a10be9b581f7891"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-pLN3fc/config.json",
+      "available_at_checkpoint": true,
+      "bytes": 178,
+      "sha256": "42e91d4bbac4177a8a8dc8c7c1b11a53c6cbf34a055924f055e67b06030297ec"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-pLN3fc/server.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 1689,
+      "sha256": "080e79f642fcf791896558a07927934d70d228f7ad3a3f7fc6bf0d67a755fff3"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-tJo1yW/config.json",
+      "available_at_checkpoint": true,
+      "bytes": 173,
+      "sha256": "6d558fcce5a7e66427971a9ea7ba3037a71d7aa29aeb0ff1a25480a50e61900e"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-tJo1yW/server.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 1702,
+      "sha256": "fa86b24a26a598e592bed46be18885c7bc40cc80dcb63116ee91f5ff53de689f"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-y2w5ri/config.json",
+      "available_at_checkpoint": true,
+      "bytes": 176,
+      "sha256": "1bc568ba384b497b1fcb7d8295de55a21e45fa3d71f637ed3d52ab468f4f836d"
+    },
+    {
+      "path": "/home/henriquemichelini/workstation/careeros/.q86/careeros-draft-real-browser-y2w5ri/server.jsonl",
+      "available_at_checkpoint": true,
+      "bytes": 1688,
+      "sha256": "eca003dac881d84b1373d46a2f01f1aa5916acab5780497abc266f8165204a94"
+    }
+  ]
+}

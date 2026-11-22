@@ -28,6 +28,7 @@ export interface RecoveredDraft {
   artifactVersion: number; admittedAt: string; deadline: string
   historical: boolean; cleanupQueued: boolean
   attempt?: number; retryAllowed?: boolean
+  terminalPolicy?: "draft-terminal-resolution-local-20261122-v1"
   bundleDigest?: string; delivered?: boolean; review?: DraftHumanReview
   opening?: { policy: "complete-draft-opening-local-20261122-v1"; state: "reserved" | "delivered" | "released"; confirmedAt?: string }
   job?: { posting: string; analysis?: unknown; qualification?: { actionId: string; contextDigest: string } }
@@ -59,6 +60,7 @@ export function parseResult(value: unknown, account: string, key: string): Recov
   if ((r.attempt !== undefined && ![1, 2].includes(r.attempt)) ||
       (r.retryAllowed !== undefined && (typeof r.retryAllowed !== "boolean" ||
         (r.retryAllowed && (r.state !== "incomplete" || r.attempt !== 1))))) return null
+  if (r.terminalPolicy !== undefined && (r.terminalPolicy !== "draft-terminal-resolution-local-20261122-v1" || (r.state === "ready" && r.opening === undefined))) return null
   if (r.opening !== undefined && (!object(r.opening) || r.opening.policy !== "complete-draft-opening-local-20261122-v1" || !["reserved", "delivered", "released"].includes(r.opening.state) ||
       (r.opening.state === "delivered") !== (typeof r.opening.confirmedAt === "string" && Number.isFinite(Date.parse(r.opening.confirmedAt))) ||
       (r.state === "ready" && (!!r.delivered !== (r.opening.state === "delivered") || r.opening.state === "released")))) return null
@@ -89,10 +91,11 @@ export class DraftRecoveryClient {
   private sequence = 0
   private retryKey: string | null = null
   private retryAllowed = false
+  private terminalMode = false
   private readonly storageKey: string
   state: RecoveredDraft["state"] | "idle" | "uncertain" | "absent" = "idle"
 
-  constructor(readonly accountId: string, private readonly storage: StoragePort | null = typeof sessionStorage === "undefined" ? null : sessionStorage, private readonly transport: typeof fetch = fetch) {
+  constructor(readonly accountId: string, private readonly storage: StoragePort | null = typeof sessionStorage === "undefined" ? null : sessionStorage, private readonly transport: typeof fetch = fetch, private readonly withholdProtected: () => void = () => {}) {
     this.storageKey = `careeros_draft_recovery:${encodeURIComponent(accountId)}`
     try { const key = storage?.getItem(this.storageKey); if (token(key)) { this.key = key; this.state = "uncertain" } } catch { /* Creation will fail before sending if recovery storage is unavailable. */ }
   }
@@ -106,7 +109,7 @@ export class DraftRecoveryClient {
     const key = this.state === "absent" && this.key ? this.key : crypto.randomUUID()
     try { if (!this.storage) throw new Error(); this.storage.setItem(this.storageKey, key) } catch { throw new Error("draft_recovery_storage") }
     this.key = key; this.action = null; this.state = "uncertain"
-    this.retryKey = null; this.retryAllowed = false
+    this.retryKey = null; this.retryAllowed = false; this.terminalMode = false
     return this.request(key, "POST", input, signal)
   }
   async recover(signal?: AbortSignal): Promise<RecoveredDraft> {
@@ -120,16 +123,38 @@ export class DraftRecoveryClient {
     this.state = "uncertain"
     return this.request(this.key, "POST", input, signal, this.retryKey)
   }
-  private async request(key: string, method: "GET" | "POST", input?: DraftInput, signal?: AbortSignal, retryKey?: string): Promise<RecoveredDraft> {
+  async cancelAction(signal?: AbortSignal): Promise<RecoveredDraft> {
+    if (!this.key || !this.action || !this.terminalMode || ["uncertain", "idle", "absent"].includes(this.state)) throw new Error("draft_recover_first")
+    this.retryAllowed = false
+    this.state = "uncertain"
+    return this.request(this.key, "POST", undefined, signal, undefined, { ...this.action })
+  }
+  private async request(key: string, method: "GET" | "POST", input?: DraftInput, signal?: AbortSignal, retryKey?: string, cancellation?: DraftAction): Promise<RecoveredDraft> {
     const sequence = ++this.sequence
     let confirmedAbsent = false
     try {
-      const response = await this.transport(method === "POST" ? "/api/drafts" : `/api/drafts/${encodeURIComponent(key)}/versions/1`, {
-        ...(method === "POST" ? { method, body: JSON.stringify(input) } : {}),
-        headers: { ...workflowHeaders(this.accountId), ...(method === "POST" ? { "Content-Type": "application/json", "X-CareerOS-Action-Key": key } : {}), ...(retryKey ? { "X-CareerOS-Retry-Key": retryKey } : {}) },
+      const url = cancellation ? `/api/drafts/${encodeURIComponent(key)}/cancel` : method === "POST" ? "/api/drafts" : `/api/drafts/${encodeURIComponent(key)}/versions/1`
+      let response = await this.transport(url, {
+        ...(method === "POST" ? { method, body: JSON.stringify(cancellation ? { action: cancellation } : input) } : {}),
+        headers: { ...workflowHeaders(this.accountId), ...(method === "POST" ? { "Content-Type": "application/json", ...(!cancellation ? { "X-CareerOS-Action-Key": key } : {}) } : {}), ...(retryKey ? { "X-CareerOS-Retry-Key": retryKey } : {}) },
         signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30_000)]) : AbortSignal.timeout(30_000),
       })
-      const payload = await response.json().catch(() => null)
+      let payload = await response.json().catch(() => null)
+      if (response.status === 403 && method === "POST" && this.terminalMode && this.action) {
+        if (sequence !== this.sequence || key !== this.key || signal?.aborted) throw new Error("draft_superseded")
+        this.withholdProtected()
+        // Resolve the selected Action before treating its terminal denial as
+        // loss of the whole account. This GET cannot resend or authorize work.
+        response = await this.transport(`/api/drafts/${encodeURIComponent(key)}/versions/1`, {
+          headers: workflowHeaders(this.accountId), signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(30_000)]) : AbortSignal.timeout(30_000),
+        })
+        payload = await response.json().catch(() => null)
+        const terminal = parseResult(payload, this.accountId, key)
+        if (response.status !== 410 || !terminal || !["closed", "deleted"].includes(terminal.state) || !actionEqual(this.action, terminal.action)) {
+          if (response.status === 401) throw new Error("draft_authentication_required")
+          throw new Error("draft_access_denied")
+        }
+      }
       if (sequence !== this.sequence || key !== this.key) throw new Error("draft_superseded")
       if (response.status === 401) throw new Error("draft_authentication_required")
       if (response.status === 403) throw new Error("draft_access_denied")
@@ -148,6 +173,7 @@ export class DraftRecoveryClient {
       if (!result || (this.action && !actionEqual(this.action, result.action))) throw new Error("draft_invalid_result")
       this.action = { ...result.action }; this.state = result.state
       this.retryAllowed = result.retryAllowed === true
+      this.terminalMode = result.terminalPolicy === "draft-terminal-resolution-local-20261122-v1"
       return structuredClone(result)
     } catch (error) {
       if (sequence !== this.sequence || key !== this.key) throw new Error("draft_superseded")

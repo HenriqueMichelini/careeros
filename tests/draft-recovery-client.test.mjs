@@ -152,6 +152,66 @@ test('managed Retry needs authenticated known failure and reuses the original op
  assert.deepEqual([...saved.values.values()], [key])
 })
 
+test('server cancellation needs recovered exact identity and lost replies require GET recovery', async () => {
+ const saved=storage(),calls=[]
+ const key='cancel-exact-action'
+ saved.setItem('careeros_draft_recovery:a',key)
+ const {bundle,job,...metadata}=ready(key)
+ const pending={...metadata,state:'pending',artifactVersion:0,attempt:1,terminalPolicy:'draft-terminal-resolution-local-20261122-v1',opening:{policy:'complete-draft-opening-local-20261122-v1',state:'reserved'}}
+ const closed={...pending,state:'closed',cleanupQueued:true,opening:{...pending.opening,state:'released'}}
+ let committed=false
+ const transport=async(url,options={})=>{
+   calls.push({url,options})
+   if(options.method==='POST'){
+     assert.equal(url,`/api/drafts/${key}/cancel`)
+     assert.deepEqual(JSON.parse(options.body),{action:pending.action})
+     committed=true
+     throw new TypeError('lost committed cancellation response')
+   }
+   return Response.json(committed?closed:pending,{status:committed?410:202})
+ }
+ const client=new DraftRecoveryClient('a',saved,transport)
+ await assert.rejects(async()=>client.cancelAction(),/draft_recover_first/)
+ assert.equal(calls.length,0)
+ assert.equal((await client.recover()).state,'pending')
+ client.cancel() // Local response invalidation is not server cancellation.
+ assert.equal(calls.length,1)
+ assert.equal(client.state,'pending')
+ await assert.rejects(client.cancelAction(),/draft_outcome_unknown/)
+ await assert.rejects(client.cancelAction(),/draft_recover_first/)
+ assert.equal(calls.filter(c=>c.options.method==='POST').length,1)
+ assert.deepEqual(await client.recover(),closed)
+ assert.deepEqual(calls.map(c=>c.options.method??'GET'),['GET','POST','GET'])
+ assert.equal(calls[1].options.headers['X-CareerOS-Account'],'a')
+ assert.equal(calls[1].options.headers['X-OpenAI-Api-Key'],undefined)
+ assert.deepEqual([...saved.values.values()],[key])
+})
+
+test('cancellation rejects unavailable mode, foreign outcome and typed access denial', async()=>{
+ const key='cancel-guarded'
+ const saved=storage();saved.setItem('careeros_draft_recovery:a',key)
+ let posts=0
+ const legacy=new DraftRecoveryClient('a',saved,async(_,options={})=>{
+   if(options.method==='POST')posts++
+   return Response.json(ready(key))
+ })
+ await legacy.recover()
+ await assert.rejects(async()=>legacy.cancelAction(),/draft_recover_first/)
+ assert.equal(posts,0)
+ const {bundle,job,...metadata}=ready(key)
+ const pending={...metadata,state:'pending',artifactVersion:0,terminalPolicy:'draft-terminal-resolution-local-20261122-v1',opening:{policy:'complete-draft-opening-local-20261122-v1',state:'reserved'}}
+ for(const status of [401,403,200]){
+   const client=new DraftRecoveryClient('a',saved,async(_,options={})=>{
+     if(options.method!=='POST')return Response.json(pending,{status:202})
+     if(status!==200)return Response.json({error:'denied'},{status})
+     return Response.json({...pending,state:'closed',action:{...pending.action,owner:'foreign'},opening:{...pending.opening,state:'released'}})
+   })
+   await client.recover()
+   await assert.rejects(client.cancelAction(),status===401?/draft_authentication_required/:status===403?/draft_access_denied/:/draft_invalid_result/)
+   assert.equal(client.state,'uncertain')
+ }
+})
+
 test('durable review lost acknowledgment recovers exact accepted version without generation or content storage', async () => {
  const saved=storage(), requests=[]
  const value=ready('reviewed')
@@ -256,4 +316,22 @@ for (const terminal of [404,410]) test(`terminal ${terminal} prior-review withho
    assert.equal(await client.previous(),null,`${terminal} authority must clear protected prior content despite failed metadata cleanup`)
    assert.equal(saved.values.size,1,'failed best-effort cleanup may leave opaque identity, never retained content authority')
    assert.equal(await client.previous(),null,'repeated status remains terminal without reviving content')
+})
+
+
+test('terminal Retry denial resolves exact Action by GET and withholds before ambiguity',async()=>{
+ const saved=storage(),calls=[];let key,withheld=false
+ const transport=async(url,options={})=>{
+  calls.push([url,options.method??'GET'])
+  if(options.method==='POST'&&!key){key=options.headers['X-CareerOS-Action-Key'];return Response.json({...ready(key),state:'incomplete',bundle:undefined,job:undefined,attempt:1,retryAllowed:true,terminalPolicy:'draft-terminal-resolution-local-20261122-v1',opening:{policy:'complete-draft-opening-local-20261122-v1',state:'reserved'}},{status:202})}
+  if(options.method==='POST')return Response.json({error:'draft_denied'},{status:403})
+  assert.equal(withheld,true,'protected copies must be withheld before awaiting terminal status')
+  return Response.json({...ready(key),state:'closed',bundle:undefined,job:undefined,attempt:1,retryAllowed:false,terminalPolicy:'draft-terminal-resolution-local-20261122-v1',opening:{policy:'complete-draft-opening-local-20261122-v1',state:'released'}},{status:410})
+ }
+ const client=new DraftRecoveryClient('a',saved,transport,()=>{withheld=true})
+ await client.create(input);const result=await client.retry(input)
+ assert.equal(result.state,'closed');assert.equal(client.state,'closed')
+ assert.deepEqual(calls.map(c=>c[1]),['POST','POST','GET'])
+ await assert.rejects(client.retry(input),/draft_recover_first/)
+ assert.equal(calls.length,3)
 })

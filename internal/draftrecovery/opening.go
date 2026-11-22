@@ -71,8 +71,20 @@ func OpenLocalOpening(ctx context.Context, dsn string, cfg Config) (*Store, erro
 	if cfg.Decisions == nil {
 		return nil, ErrDenied
 	}
-	additional := cfg.Decisions
-	cfg.Decisions = DecisionFunc(func(ctx context.Context, a Authority) (Decision, error) {
+	cfg.Decisions = restrictivePilotDecisions(cfg.Decisions)
+	s, err := Open(ctx, dsn, cfg)
+	if err != nil {
+		return nil, err
+	}
+	s.opening = true
+	return s, nil
+}
+
+func restrictivePilotDecisions(additional Decisions) Decisions {
+	if additional == nil {
+		return DecisionFunc(managedPilotDecision)
+	}
+	return DecisionFunc(func(ctx context.Context, a Authority) (Decision, error) {
 		base, err := managedPilotDecision(ctx, a)
 		if err != nil {
 			return base, err
@@ -96,12 +108,6 @@ func OpenLocalOpening(ctx context.Context, dsn string, cfg Config) (*Store, erro
 		}
 		return base, nil
 	})
-	s, err := Open(ctx, dsn, cfg)
-	if err != nil {
-		return nil, err
-	}
-	s.opening = true
-	return s, nil
 }
 
 func (s *Store) OpeningEnabled() bool { return s != nil && s.opening }

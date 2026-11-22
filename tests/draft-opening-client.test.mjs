@@ -99,3 +99,18 @@ test('review availability is rechecked after receipt response before ACK',async(
  await assert.rejects(client.open(ready(),()=>available),/draft_opening_incomplete/)
  assert.equal(calls,1,'the issued receipt must not become ACK authority after required review support disappears')
 })
+
+
+test('terminal composition resolves an Action-only opening rejection by exact GET without hiding independent history',async()=>{
+ const selected={...ready(),terminalPolicy:'draft-terminal-resolution-local-20261122-v1'}
+ const closed={...selected,state:'closed',bundle:undefined,job:undefined,review:undefined,cleanupQueued:true,opening:{policy,state:'released'}}
+ let withheld=false;const calls=[]
+ const client=new DraftOpeningClient('owner',async(url,options)=>{calls.push([url,options.method??'GET']);if(calls.length===1)return Response.json({error:'draft_denied'},{status:403});assert.equal(withheld,true);return Response.json(closed,{status:410})},()=>{withheld=true})
+ assert.deepEqual(await client.open(selected,parts),JSON.parse(JSON.stringify(closed)))
+ assert.deepEqual(calls,[['/api/drafts/original-key/versions/1/opening','POST'],['/api/drafts/original-key/versions/1','GET']])
+ for(const outcome of [Response.json({error:'denied'},{status:403}),Response.json({...closed,action:{...closed.action,id:'foreign-action'}},{status:410})]){
+  let n=0
+  const denied=new DraftOpeningClient('owner',async()=>++n===1?Response.json({error:'denied'},{status:403}):outcome)
+  await assert.rejects(denied.open(selected,parts),/draft_access_denied/)
+ }
+})

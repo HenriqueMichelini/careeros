@@ -23,10 +23,11 @@ import (
 var schema string
 
 type Store struct {
-	db      *sql.DB
-	cfg     Config
-	managed bool
-	opening bool
+	db       *sql.DB
+	cfg      Config
+	managed  bool
+	opening  bool
+	terminal bool
 }
 
 func Open(ctx context.Context, dsn string, cfg Config) (*Store, error) {
@@ -468,6 +469,9 @@ func (s *Store) load(ctx context.Context, tx *sql.Tx, p auth.Principal, key stri
 		if r.Opening != nil {
 			r.Delivered = r.Opening.State == "delivered"
 		}
+	}
+	if s.TerminalEnabled() {
+		r.TerminalPolicy = TerminalPolicyVersion
 	}
 	return r, d, now, nil
 }

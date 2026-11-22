@@ -151,6 +151,11 @@ export interface DraftEditor {
 
 type DraftEditors = Map<string, DraftEditor>
 
+const terminalMessages = {
+  en: { cancel: "Cancel this Draft", pending: "Confirming cancellation…", closed: "This Action is closed without using a Draft." },
+  "pt-BR": { cancel: "Cancelar este rascunho", pending: "Confirmando o cancelamento…", closed: "Esta Ação foi encerrada sem usar um rascunho." },
+}
+
 export default function DraftRecoveryWorkspace({ editors }: { editors: DraftEditors }) {
   const { accountId } = useStore()
   return accountId ? <AccountDraftRecoveryWorkspace key={accountId} accountId={accountId} editors={editors} /> : null
@@ -160,10 +165,11 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
   const { profileDocument, profileSaved, profileSaving, state } = useStore()
   const labels = messages[state.uiLocale]
   const managedLabels = managedMessages[state.uiLocale]
+  const terminalLabels = terminalMessages[state.uiLocale]
   const managed = import.meta.env.VITE_CAREEROS_PILOT_MODE === "1"
-  const client = useMemo(() => new DraftRecoveryClient(accountId), [accountId])
+  const client = useMemo(() => new DraftRecoveryClient(accountId, undefined, fetch, withholdProtectedCopies), [accountId])
   const reviewClient = useMemo(() => new DraftReviewClient(accountId), [accountId])
-  const openingClient = useMemo(() => new DraftOpeningClient(accountId), [accountId])
+  const openingClient = useMemo(() => new DraftOpeningClient(accountId, fetch, withholdProtectedCopies), [accountId])
   const qualification = useMemo(() => new ManagedQualification(accountId), [accountId])
   const emptyEditor = (): DraftEditor => ({ job: "", language: state.cvLanguage, question: "", answer: "" })
   const [editor, setEditor] = useState(() => editors.get(accountId) ?? emptyEditor())
@@ -171,6 +177,8 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
   const [result, setResult] = useState<RecoveredDraft | null>(null)
   const [previous, setPrevious] = useState<RecoveredDraft | null>(null)
   const [busy, setBusy] = useState(false)
+  const [cancelPending, setCancelPending] = useState(false)
+  const [openingUncertain, setOpeningUncertain] = useState(false)
   const [error, setError] = useState("")
   const controller = useRef<AbortController | null>(null)
   const [analysis, setAnalysis] = useState<{ binding: string; result: QualificationAnalysis } | null>(null)
@@ -184,18 +192,23 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
   const inputBinding = JSON.stringify([analysisBinding, language, question, answer, currentAnalysis?.draftContextProof])
   const submitted = useRef<{ binding: string; input: DraftInput } | null>(null)
 
-  function hideProtectedWork(cancelPending = false) {
+  function withholdProtectedCopies() {
     setResult(null)
     setPrevious(null)
     setAnalysis(null)
-    submitted.current = null
     setAccepted(null)
+  }
+
+  function hideProtectedWork(cancelPending = false) {
+    withholdProtectedCopies()
+    submitted.current = null
     reviewClient.cancel()
     openingClient.cancel()
     if (cancelPending) {
       controller.current?.abort()
       client.cancel()
       setBusy(false)
+      setCancelPending(false)
       setAnalyzing(false)
     }
   }
@@ -227,10 +240,22 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
       if (request.signal.aborted) return false
       if (result?.action.id === next.action.id) setResult(next)
       if (previous?.action.id === next.action.id) setPrevious(next)
-      return true
+      setOpeningUncertain(false)
+      if (next.state === "closed" || next.state === "deleted") {
+        // Terminal metadata does not establish career-read rights. Every
+        // independent protected copy must pass its own current read fence.
+        hideProtectedWork()
+        setResult(next)
+        const priorAccepted = await reviewClient.accepted(request.signal)
+        if (!request.signal.aborted) setAccepted(priorAccepted)
+        const prior = await reviewClient.previous(request.signal)
+        if (!request.signal.aborted) setPrevious(prior?.action.id === next.action.id ? null : prior)
+      }
+      return next.state === "ready" && next.delivered === true
     } catch (e) {
       if (request.signal.aborted || (e instanceof Error && e.message === "draft_superseded")) return false
       const code = e instanceof Error ? e.message : ""
+      if (code !== "draft_opening_incomplete") setOpeningUncertain(true)
       if (["draft_authentication_required", "draft_access_denied", "draft_account_changed"].includes(code)) hideProtectedWork(true)
       setError(code === "draft_authentication_required" ? labels.auth : code === "draft_access_denied" ? labels.denied : code === "draft_opening_incomplete" ? openingMessages[state.uiLocale].incomplete : openingMessages[state.uiLocale].uncertain)
       return false
@@ -248,11 +273,12 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
     setEditor(next)
   }
 
-  async function run(command: "create" | "recover" | "retry") {
+  async function run(command: "create" | "recover" | "retry" | "cancel") {
     controller.current?.abort()
     const request = new AbortController()
     controller.current = request
     setBusy(true)
+    setCancelPending(command === "cancel")
     setError("")
     try {
       if (command === "create" && result?.bundle) {
@@ -261,7 +287,10 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
         setResult(null)
       }
       let next: RecoveredDraft
-      if (command === "recover") {
+      if (command === "cancel") {
+        openingClient.cancel()
+        next = await client.cancelAction(request.signal)
+      } else if (command === "recover") {
         next = await client.recover(request.signal)
       } else if (command === "retry") {
         if (!submitted.current || submitted.current.binding !== inputBinding) throw new Error("draft_input")
@@ -283,6 +312,7 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
         next = await client.create(input, request.signal)
       }
       if (!request.signal.aborted) {
+        setOpeningUncertain(false)
         if (next.state === "closed" || next.state === "deleted") {
           hideProtectedWork()
         }
@@ -300,6 +330,14 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
     } catch (e) {
       if (request.signal.aborted || (e instanceof Error && e.message === "draft_superseded")) return
       const code = e instanceof Error ? e.message : "draft_outcome_unknown"
+      if (command === "cancel" && result) {
+        const target = result.action.id
+        // An uncertain cancellation withholds only this Action until GET
+        // resolves it. Independently authorized prior work stays separate.
+        setResult(value => value?.action.id === target ? null : value)
+        setPrevious(value => value?.action.id === target ? null : value)
+        setAccepted(value => value?.action.id === target ? null : value)
+      }
       if (code === "draft_authentication_required" || code === "draft_access_denied" || code === "draft_account_changed") {
         hideProtectedWork(true)
       }
@@ -318,7 +356,7 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
       }
       setError(message[code] ?? labels.failed)
     } finally {
-      if (controller.current === request && !request.signal.aborted) setBusy(false)
+      if (controller.current === request && !request.signal.aborted) { setBusy(false); setCancelPending(false) }
     }
   }
 
@@ -384,8 +422,9 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
   }, [reviewClient])
 
   const sourceBlocked = busy || !profileSaved || profileSaving || !!state.profileError || !profileDocument || !job.trim()
-  const blocked = sourceBlocked || client.state === "uncertain" || client.state === "pending"
-  const retryDraft = managed && result?.retryAllowed && submitted.current?.binding === inputBinding
+  const blocked = sourceBlocked || openingUncertain || client.state === "uncertain" || client.state === "pending"
+  const retryDraft = managed && !openingUncertain && client.state !== "uncertain" && result?.retryAllowed && submitted.current?.binding === inputBinding
+  const cancelDraft = result?.terminalPolicy === "draft-terminal-resolution-local-20261122-v1" && !result.delivered && result.state !== "closed" && result.state !== "deleted"
   return <main className="max-w-6xl mx-auto px-6 py-10 space-y-6" data-draft-workspace>
     <header><h1 className="text-3xl font-bold">{labels.title}</h1><p className="mt-2 text-sm">{labels.intro}</p></header>
     <section className="border rounded p-5 space-y-4">
@@ -400,14 +439,14 @@ function AccountDraftRecoveryWorkspace({ accountId, editors }: { accountId: stri
         <JobContextReview context={currentAnalysis.jobContext} />
         <RequirementEvidenceReview matches={currentAnalysis.matches ?? []} />
       </div>}
-      <div className="flex flex-wrap gap-3"><button data-draft-generate className="border rounded px-4 py-2 disabled:opacity-50" disabled={blocked} onClick={() => void run("create")}>{client.hasKey() && client.state !== "absent" ? labels.another : labels.generate}</button>{retryDraft && <button data-draft-retry className="border rounded px-4 py-2" disabled={sourceBlocked} onClick={() => void run("retry")}>{managedLabels.retryDraft}</button>}{client.hasKey() && <button data-draft-recover className="border rounded px-4 py-2" disabled={busy} onClick={() => void run("recover")}>{busy ? labels.waiting : labels.status}</button>}</div>
+      <div className="flex flex-wrap gap-3"><button data-draft-generate className="border rounded px-4 py-2 disabled:opacity-50" disabled={blocked} onClick={() => void run("create")}>{client.hasKey() && client.state !== "absent" ? labels.another : labels.generate}</button>{retryDraft && <button data-draft-retry className="border rounded px-4 py-2" disabled={sourceBlocked} onClick={() => void run("retry")}>{managedLabels.retryDraft}</button>}{cancelDraft && <button data-draft-cancel className="border rounded px-4 py-2 disabled:opacity-50" disabled={busy || openingUncertain || client.state === "uncertain"} onClick={() => void run("cancel")}>{terminalLabels.cancel}</button>}{client.hasKey() && <button data-draft-recover className="border rounded px-4 py-2" disabled={busy} onClick={() => void run("recover")}>{busy ? labels.waiting : labels.status}</button>}</div>
       <p className="text-sm">{labels.noSave}</p>
     </section>
-    {busy && <p role="status">{analyzing ? managedLabels.analyzing : labels.recover}</p>}
+    {busy && <p role="status">{cancelPending ? terminalLabels.pending : analyzing ? managedLabels.analyzing : labels.recover}</p>}
     {error && <p role="alert" className="border rounded p-4">{error}</p>}
     {result?.state === "pending" && <p role="status">{labels.pending}</p>}
     {result?.state === "incomplete" && <p role="status">{labels.incomplete}</p>}
-    {(result?.state === "closed" || result?.state === "deleted") && <p role="status">{labels.closed}</p>}
+    {(result?.state === "closed" || result?.state === "deleted") && <p role="status" data-draft-terminal-state={result.state}>{result.opening?.state === "released" ? terminalLabels.closed : labels.closed}</p>}
     {result?.bundle && <BundleView result={result} labels={labels} busy={busy} onDecision={(target, artifact, operation) => void decide(target, artifact, operation)} onOpening={(target, available) => openComplete(target, available)} />}
     {accepted?.bundle && <section className="border rounded p-5 space-y-4" data-draft-accepted={accepted.action.id}><h2 className="text-xl font-semibold">{reviewMessages[state.uiLocale].snapshot}</h2><BundleView result={accepted} labels={labels} /><AcceptedDraftExports result={accepted} client={reviewClient} historical={state.profileError === "stale" || (!!profileDocument && (profileDocument.id !== accepted.bundle.binding.profileSource.id || profileDocument.revision !== accepted.bundle.binding.profileSource.revision))} onFresh={fresh => { setAccepted(fresh); if (result?.action.id === fresh.action.id) setResult(fresh); if (previous?.action.id === fresh.action.id) setPrevious(fresh) }} onDenied={code => { hideProtectedWork(true); setError(code === "draft_authentication_required" ? labels.auth : labels.denied) }} /></section>}
     {previous?.bundle && <details className="border rounded p-4"><summary>{labels.previous}</summary><div className="mt-4"><BundleView result={previous} labels={labels} busy={busy} onDecision={(target, artifact, operation) => void decide(target, artifact, operation)} onOpening={(target, available) => openComplete(target, available)} /></div></details>}

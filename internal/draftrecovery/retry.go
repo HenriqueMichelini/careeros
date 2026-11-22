@@ -40,7 +40,7 @@ func (s *Store) RetryManaged(ctx context.Context, p auth.Principal, key, retryKe
 	defer tx.Rollback()
 	r, err := s.draftRetryState(ctx, tx, p, key, in, digest, reuse)
 	if err != nil {
-		return empty, false, err
+		return empty, false, persistRetryTerminal(tx, r.record, err)
 	}
 	if r.Attempt == 2 && r.retryKey != retryKey {
 		return empty, false, ErrConflict
@@ -79,8 +79,8 @@ func (s *Store) draftRetryState(ctx context.Context, tx *sql.Tx, p auth.Principa
 		return result, err
 	}
 	if r.State == "closed" || r.State == "deleted" {
-		// The caller rolls back on error. The protected read path commits any
-		// terminal closure before reporting it.
+		// Both admission and purpose-claim callers preserve this terminal
+		// observation before denying Retry; no later GET is required.
 		return result, ErrDenied
 	}
 	if !d.Generate || r.generationAttempt == 0 || r.binding.GenerationVersion != aicontrol.ManagedDraftPolicyVersion {
@@ -112,7 +112,7 @@ func (s *Store) claimDraftRetry(ctx context.Context, p auth.Principal, key, retr
 	defer tx.Rollback()
 	r, err := s.draftRetryState(ctx, tx, p, key, in, digest, reuse)
 	if err != nil {
-		return empty, false, err
+		return empty, false, persistRetryTerminal(tx, r.record, err)
 	}
 	if r.Attempt != 2 || r.retryKey != retryKey || r.Action.ID != session.ID() {
 		return empty, false, ErrDenied
@@ -135,4 +135,13 @@ func (s *Store) claimDraftRetry(ctx context.Context, p auth.Principal, key, retr
 	g := r.source
 	g.Binding, g.session, g.jobContext = r.binding, session, reuse.raw
 	return g, true, nil
+}
+
+func persistRetryTerminal(tx *sql.Tx, r record, cause error) error {
+	if r.State == "closed" || r.State == "deleted" {
+		if err := tx.Commit(); err != nil {
+			return ErrDenied
+		}
+	}
+	return cause
 }

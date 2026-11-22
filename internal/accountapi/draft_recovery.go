@@ -100,6 +100,9 @@ func registerDraftReads(mux *http.ServeMux, store *draftrecovery.Store) {
 	if store.OpeningEnabled() {
 		registerDraftOpening(mux, store)
 	}
+	if store.TerminalEnabled() {
+		registerDraftTerminal(mux, store)
+	}
 	mux.HandleFunc("GET /api/drafts/accepted", func(w http.ResponseWriter, r *http.Request) {
 		p, _ := auth.PrincipalFromRequest(r)
 		if err := store.WithAccepted(r.Context(), p, func(result draftrecovery.Result) error { return encodeDraftResult(w, result, false) }); err != nil {

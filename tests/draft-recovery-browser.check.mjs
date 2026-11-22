@@ -11,7 +11,8 @@ const root=new URL('..',import.meta.url).pathname
 async function freePort(){return new Promise(resolve=>{const server=createServer();server.listen(0,'127.0.0.1',()=>{const port=server.address().port;server.close(()=>resolve(port))})})}
 for (const scenario of (process.env.CAREEROS_DRAFT_BROWSER_CASE ? [process.env.CAREEROS_DRAFT_BROWSER_CASE] : ['recovery','corrected-creation','access-denial','managed-journey','managed-status-denial']))
 for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CAREEROS_DRAFT_BROWSER_LOCALE] : ['en','pt-BR'])){
- const managed=scenario==='managed-journey'||scenario==='managed-status-denial'
+ const terminal=scenario.startsWith('terminal-')
+ const managed=scenario==='managed-journey'||scenario==='managed-status-denial'||terminal
  const opening=scenario==='complete-opening'
  const apiPort=await freePort(),token=randomUUID(),api=`http://127.0.0.1:${apiPort}`,evidence=mkdtempSync(join(tmpdir(),'careeros-draft-real-browser-'))
  let server,serverExit
@@ -23,7 +24,7 @@ for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CA
    const wait=async(expression)=>{for(let n=0;n<400;n++){if(await evaluate(`Boolean(${expression})`))return;await pause(25)}throw new Error('Timed out: '+expression)}
    const control=async(name,method='POST',query='')=>evaluate(`fetch('/api/drafts/test/${name}?token='+encodeURIComponent(draftControlToken)+${JSON.stringify(query)},{method:${JSON.stringify(method)}}).then(async r=>{if(!r.ok)throw new Error('fixture control failed');return r.status===204?null:r.json()})`)
    await wait(`document.querySelector('[data-draft-workspace]')`)
-   assert.deepEqual(await control('stats','GET'),managed?{draft:0,qualification:0,allowanceEffects:0}:opening?{generation:0,completion:0,allowanceEffects:0,reserved:0}:{generation:0,completion:0,allowanceEffects:0})
+   assert.deepEqual(await control('stats','GET'),terminal?{draft:0,qualification:0,allowanceEffects:0,reserved:0}:managed?{draft:0,qualification:0,allowanceEffects:0}:opening?{generation:0,completion:0,allowanceEffects:0,reserved:0}:{generation:0,completion:0,allowanceEffects:0})
    const write = (selector, value) => evaluate(`(() => {
      const input = document.querySelector(${JSON.stringify(selector)});
      Object.getOwnPropertyDescriptor(Object.getPrototypeOf(input), 'value').set.call(input, ${JSON.stringify(value)});
@@ -49,6 +50,103 @@ for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CA
      await wait(`window.draftWire?.documentID && draftWire.documentID!==${JSON.stringify(oldDocument)} && document.querySelector('[data-draft-workspace]')`)
    }
    const stats = n => ({generation:n, completion:n, allowanceEffects:0})
+   if(scenario==='terminal-revocation'||scenario==='terminal-revoked-fixture'){
+     await job('Java required.');await generate();await wait(`document.querySelector('[data-draft-open]')?.disabled===false`)
+     await keyboardClick('[data-draft-open]')
+     for(const artifact of ['summary','resume','cover','answers']){
+       await wait(`document.querySelector('[data-draft-review="${artifact}"]')?.disabled===false`);await click(`[data-draft-review="${artifact}"]`)
+       await wait(`document.querySelector('[data-draft-accept="${artifact}"]')?.disabled===false`);await click(`[data-draft-accept="${artifact}"]`)
+       await wait(`document.querySelector('[data-draft-decision="${artifact}"]')?.dataset.draftState==='accepted'`)
+     }
+     await wait(`document.querySelector('[data-draft-accepted]') && !document.querySelector('[data-draft-generate]').disabled`)
+     const prior=await evaluate(`document.querySelector('[data-draft-accepted]').dataset.draftAccepted`)
+     await generate();await wait(`document.querySelector('[data-draft-open]')?.disabled===false`)
+     await job('Independent terminal authority note')
+     await control(scenario==='terminal-revoked-fixture'?'inject-revoked-invitation':'suspend-test-grant');await evaluate('draftWire.holdNextTerminal=true');await keyboardClick('[data-draft-open]')
+     await wait(`draftWire.releaseTerminal && draftWire.responses.some(r=>r.status===403)`)
+     assert.equal(await evaluate(`document.querySelectorAll('[data-draft-result], [data-draft-support], [data-draft-accepted], [data-draft-accepted-preview]').length`),0,'ambiguous opening403 must withhold every protected copy before terminal status returns')
+     await evaluate('draftWire.releaseTerminal()')
+     await wait(`draftWire.responses.some(r=>r.path==='/api/drafts/accepted'&&r.status===403) && !document.querySelector('[data-draft-recover]').disabled`)
+     assert.equal(await evaluate(`document.querySelectorAll('[data-draft-result], [data-draft-support], [data-draft-accepted], [data-draft-accepted-preview]').length`),0,'terminal metadata cannot establish prior historical-read rights')
+     assert.equal(await evaluate(`document.querySelector('[data-draft-job]').value`),'Independent terminal authority note')
+     await control(scenario==='terminal-revoked-fixture'?'restore-injected-revocation':'restore-test-grant');await click('[data-draft-recover]')
+     await wait(`document.querySelector('[data-draft-accepted]')?.dataset.draftAccepted===${JSON.stringify(prior)} && !document.querySelector('[data-draft-recover]').disabled`)
+     assert.deepEqual(await control('stats','GET'),{draft:8,qualification:0,allowanceEffects:1,reserved:0})
+     assert.equal(await evaluate(`draftWire.requests.filter(r=>r.path.endsWith('/opening/confirm')).length`),1)
+     console.log(JSON.stringify({status:'passed',scenario,locale,evidence,checks:['accepted prior S plus unopened current B',scenario==='terminal-revoked-fixture'?'test-only invitation_revoked state injection (not an operator transition) yields opening403 and terminal metadata':'actual pilot suspension yields opening403 and terminal current metadata','all protected copies withheld during paused terminal GET','prior history requires independent fresh read and remains hidden after403','restore uses GET only; original accepted snapshot/one effect/eight provider calls unchanged']}))
+     return
+   }
+   if(terminal){
+     await job('Java required.');await generate()
+     await wait(`document.querySelector('[data-draft-result]') && !document.querySelector('[data-draft-recover]').disabled`)
+     const original=await evaluate(`draftWire.responses.find(r=>r.path==='/api/drafts'&&r.status===201).body`)
+     assert.equal(original.terminalPolicy,'draft-terminal-resolution-local-20261122-v1')
+     assert.deepEqual(await control('stats','GET'),{draft:4,qualification:0,allowanceEffects:0,reserved:1})
+     await wait(`document.querySelector('[data-draft-cancel]')?.disabled===false`)
+     await keyboardClick('[data-draft-cancel]')
+     await wait(`draftWire.responses.some(r=>r.path.endsWith('/cancel')&&r.status===200) && document.querySelector('[data-draft-terminal-state]') && !document.querySelector('[data-draft-recover]').disabled`)
+     const closed=await evaluate(`draftWire.responses.find(r=>r.path.endsWith('/cancel')&&r.status===200).body`)
+     assert.equal(closed.state,'closed');assert.equal(closed.delivered??false,false);assert.equal(closed.bundle,undefined)
+     assert.deepEqual(closed.action,original.action)
+     await click('[data-draft-recover]')
+     await wait(`draftWire.responses.some(r=>r.method==='GET'&&r.status===410)&&!document.querySelector('[data-draft-recover]').disabled`)
+     assert.deepEqual(await control('stats','GET'),{draft:4,qualification:0,allowanceEffects:0,reserved:0})
+     assert.equal(await evaluate(`draftWire.requests.filter(r=>r.path.endsWith('/cancel')&&r.method==='POST').length`),1)
+     // A deliberate second Action fails at generation. Status is required
+     // before a single explicit Retry; a lost committed Retry reply uses GET.
+     await control('fail-next-draft');await generate()
+     await wait(`draftWire.responses.some(r=>r.path==='/api/drafts'&&r.status===503) && !document.querySelector('[data-draft-recover]').disabled`)
+     await click('[data-draft-recover]')
+     await wait(`document.querySelector('[data-draft-retry]')?.disabled===false`)
+     const known=await evaluate(`draftWire.responses.filter(r=>r.method==='GET'&&r.status===202).at(-1).body`)
+     assert.equal(known.retryAllowed,true);assert.equal(known.attempt,1)
+     await evaluate('window.dropDraftResponse=true');await keyboardClick('[data-draft-retry]')
+     await wait(`draftWire.responses.filter(r=>r.path==='/api/drafts'&&r.status===201).length===2 && document.querySelector('[role="alert"]')`)
+     assert.equal(await evaluate(`document.querySelector('[data-draft-generate]').disabled`),true)
+     assert.ok(await evaluate(`!document.querySelector('[data-draft-retry]') || (!document.querySelector('[data-draft-retry]') || document.querySelector('[data-draft-retry]').disabled)`))
+     await click('[data-draft-recover]');await wait(`document.querySelector('[data-draft-open]')?.disabled===false`)
+     const retried=await evaluate(`draftWire.responses.filter(r=>r.method==='GET'&&r.status===200&&r.body.attempt===2).at(-1).body`)
+     assert.deepEqual(retried.action,known.action);assert.equal(retried.deadline,known.deadline);assert.equal(retried.admittedAt,known.admittedAt)
+     await keyboardClick('[data-draft-open]')
+     for(const artifact of ['summary','resume','cover','answers']){
+       await wait(`document.querySelector('[data-draft-review="${artifact}"]')?.disabled===false`)
+       await click(`[data-draft-review="${artifact}"]`)
+       await wait(`document.querySelector('[data-draft-accept="${artifact}"]')?.disabled===false`)
+       await click(`[data-draft-accept="${artifact}"]`)
+       await wait(`document.querySelector('[data-draft-decision="${artifact}"]')?.dataset.draftState==='accepted'`)
+     }
+     await wait(`document.querySelector('[data-draft-accepted]') && !document.querySelector('[data-draft-generate]').disabled`)
+     const prior=await evaluate(`document.querySelector('[data-draft-accepted]').dataset.draftAccepted`)
+     assert.equal(prior,known.action.id)
+     // A third Action is canceled, but its committed acknowledgment is lost.
+     // Keep independent accepted work while withholding every current command.
+     await generate();await wait(`document.querySelector('[data-draft-cancel]')?.disabled===false`)
+     const current=await evaluate(`draftWire.responses.filter(r=>r.path==='/api/drafts'&&r.status===201).at(-1).body`)
+     await evaluate('window.dropCancellationResponse=true');await keyboardClick('[data-draft-cancel]')
+     await wait(`draftWire.responses.filter(r=>r.path.endsWith('/cancel')&&r.status===200).length===2 && document.querySelector('[role="alert"]') && !document.querySelector('[data-draft-recover]').disabled`)
+     assert.equal(await evaluate(`document.querySelector('[data-draft-result="${current.action.id}"]')`),null)
+     assert.equal(await evaluate(`document.querySelector('[data-draft-accepted]')?.dataset.draftAccepted`),prior)
+     assert.equal(await evaluate(`document.querySelector('[data-draft-generate]').disabled`),true)
+     assert.ok(await evaluate(`!document.querySelector('[data-draft-open]') && !document.querySelector('[data-draft-cancel]') && (!document.querySelector('[data-draft-retry]') || document.querySelector('[data-draft-retry]').disabled)`))
+     assert.deepEqual(await control('stats','GET'),{draft:14,qualification:0,allowanceEffects:1,reserved:0})
+     await click('[data-draft-recover]');await wait(`document.querySelector('[data-draft-terminal-state]') && !document.querySelector('[data-draft-recover]').disabled`)
+     assert.equal(await evaluate(`document.querySelector('[data-draft-accepted]')?.dataset.draftAccepted`),prior)
+     assert.equal(await evaluate(`draftWire.requests.filter(r=>r.path.endsWith('/cancel')&&r.method==='POST').length`),2)
+     assert.equal(await evaluate(`draftWire.requests.filter(r=>r.retryKey).length`),1)
+     // Global authority loss hides every copy; reauthentication is GET-only.
+     await job('Independent same-account terminal note')
+     for(const code of [401,403]){
+       await control(code===401?'expire':'suspend-test-grant');await click('[data-draft-recover]')
+       await wait(`draftWire.responses.some(r=>r.status===${code}) && !document.querySelector('[data-draft-accepted]')`)
+       assert.equal(await evaluate(`document.querySelectorAll('[data-draft-result], [data-draft-support], [data-draft-accepted-preview]').length`),0)
+       assert.equal(await evaluate(`document.querySelector('[data-draft-job]').value`),'Independent same-account terminal note')
+       await control(code===401?'reauth':'restore-test-grant');await click('[data-draft-recover]')
+       await wait(`document.querySelector('[data-draft-accepted]')?.dataset.draftAccepted===${JSON.stringify(prior)} && !document.querySelector('[data-draft-recover]').disabled`)
+     }
+     assert.deepEqual(await control('stats','GET'),{draft:14,qualification:0,allowanceEffects:1,reserved:0})
+     console.log(JSON.stringify({status:'passed',scenario,locale,evidence,checks:['actual managed four-stage generation plus finite pilot reservation','exact Action cancel and terminal GET zero consumption','known failure deliberate stable Retry; lost Retry reply GET only','original Action/admission/deadline preserved across attempt two','lost cancellation ACK blocks all current commands while prior accepted work remains','401/403 hide all protected copies; same-account input and opaque key retained','14 provider stages total/one opening effect/no automatic resend']}))
+     return
+   }
    if(opening){
      await job('Java required.');await generate()
      await wait(`document.querySelector('[data-draft-result]') && !document.querySelector('[data-draft-recover]').disabled`)
@@ -526,7 +624,7 @@ for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CA
    assert.deepEqual(await control('stats','GET'),{generation:1,completion:1,allowanceEffects:0})
    console.log(JSON.stringify({status:'passed',scenario,locale,evidence,checks:['actual React→Vite proxy→Go authenticated controlled router→PostgreSQL','lost creation reply after real publication','byte-value exact full DTO reload','generation1/check1 remain unchanged','expiry/reauth preserves unsaved text','historical original signature/source','foreign account isolation','zero Profile/Accept/allowance writes','opaque-key-only browser storage']}))
   },{path:'/tests/draft-recovery-harness.html',env:{VITE_CAREEROS_DRAFT_RECOVERY_MODE:'1',VITE_CAREEROS_PILOT_MODE:managed?'1':'0',CAREEROS_API_TARGET:api},initialize:`localStorage.setItem('careeros_locale',${JSON.stringify(locale)});window.draftControlToken=${JSON.stringify(token)};window.dropDraftResponse=${scenario === 'recovery'||scenario==='managed-journey'}`,beforeNavigate:async({port})=>{
-   const file=join(evidence,'config.json');writeFileSync(file,JSON.stringify({Origin:`http://127.0.0.1:${port}`,Address:`127.0.0.1:${apiPort}`,Token:token,Managed:managed,Opening:opening,Language:locale}),{mode:0o600})
+   const file=join(evidence,'config.json');writeFileSync(file,JSON.stringify({Origin:`http://127.0.0.1:${port}`,Address:`127.0.0.1:${apiPort}`,Token:token,Managed:managed,Opening:opening,Terminal:terminal,Language:locale}),{mode:0o600})
    const log=createWriteStream(join(evidence,'server.jsonl'),{flags:'wx'})
    server=spawn('rtk',['proxy','go','test','-json','-vet=off','-count=1','-run','^TestControlledDraftBrowserServer$','-timeout=180s','./internal/accountapi'],{cwd:root,env:{...process.env,CAREEROS_DRAFT_BROWSER_CONFIG:file,GOCACHE:'/tmp/careeros-go-cache'},stdio:['ignore','pipe','pipe']});server.stdout.pipe(log);server.stderr.pipe(log);serverExit=new Promise(resolve=>server.on('exit',code=>{log.end();resolve(code)}))
    for(let i=0;i<150;i++){try{if((await fetch(`${api}/api/drafts/test/health?token=${token}`)).ok)return}catch{};if(server.exitCode!==null)throw new Error('Private Go browser server exited; see '+evidence);await pause(100)}
