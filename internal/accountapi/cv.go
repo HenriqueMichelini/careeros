@@ -90,6 +90,12 @@ func NewSyntheticStandaloneCV(service *auth.Service, store *accountstore.Store, 
 			qualificationError(w, err)
 			return
 		}
+		finishLocal, err := session.BeginLocalExecution(r.Context())
+		if err != nil {
+			qualificationError(w, err)
+			return
+		}
+		defer finishLocal()
 		ctx := aidispatch.WithController(r.Context(), session)
 		authority, _ := r.Context().Value(qualificationAuthorityKey{}).(*qualificationAuthority)
 		if authority == nil {

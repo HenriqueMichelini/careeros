@@ -56,6 +56,12 @@ func (h *Harness) managedOpen(ctx context.Context, tx *sql.Tx, owner, workflow, 
 		WITH actions AS (
 			SELECT a.*, (
 				(a.state='recoverable' AND NOT a.execution_finished) OR
+				(a.workflow<>'application_draft' AND (
+					(NOT a.execution_finished AND NOT a.local_execution_tracking) OR EXISTS(
+						SELECT 1 FROM ai_fixture_stage l WHERE l.namespace=a.namespace AND l.action=a.id
+						AND l.stage='local_execution' AND l.receipt_id=''
+					)
+				)) OR
 				(a.workflow='application_draft' AND a.execution_version=$5 AND EXISTS(
 					SELECT 1 FROM ai_fixture_dispatch d WHERE d.namespace=a.namespace AND d.action=a.id
 					AND d.state IN ('intent','observed') AND d.remote_state<>'terminal_proven'
@@ -194,9 +200,10 @@ func (h *Harness) SetQualificationResponder(fn func(context.Context, string, *ht
 	return nil
 }
 
-// FinishQualification marks only local execution finished after all intended
-// fake calls are authoritatively terminal. It stores no result content or debit.
-// Unknown/incomplete remote work continues to occupy the action slot.
+// FinishQualification records workflow completion only after all intended fake
+// calls are authoritatively terminal. Local invocation leases independently hold
+// capacity through handler return, including after content/customer terminality.
+// Neither completion mechanism reconciles unknown remote work or expense.
 func (s *Session) FinishQualification(ctx context.Context, knownFailure bool) error {
 	return s.finishManaged(ctx, knownFailure, false)
 }

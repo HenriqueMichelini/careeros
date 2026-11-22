@@ -40,7 +40,7 @@ func (s *Session) stageLimit(ctx context.Context, tx *sql.Tx) (int, error) {
 		maximum = managedDraftPolicy.Attempts*(managedDraftPolicy.TypeSafeCalls+managedDraftPolicy.OpenAICalls) + 1
 	}
 	var count int
-	if tx.QueryRowContext(ctx, `SELECT (SELECT count(*) FROM ai_fixture_stage WHERE namespace=$1 AND action=$2)+(SELECT count(*) FROM ai_fixture_child WHERE namespace=$1 AND action=$2)`, s.h.cfg.Namespace, s.id).Scan(&count) != nil {
+	if tx.QueryRowContext(ctx, `SELECT (SELECT count(*) FROM ai_fixture_stage WHERE namespace=$1 AND action=$2 AND stage<>'local_execution')+(SELECT count(*) FROM ai_fixture_child WHERE namespace=$1 AND action=$2)`, s.h.cfg.Namespace, s.id).Scan(&count) != nil {
 		return 0, ErrUnavailable
 	}
 	if count >= maximum {

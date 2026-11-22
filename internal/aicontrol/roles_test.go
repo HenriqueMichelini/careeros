@@ -98,6 +98,10 @@ func TestA34_RestrictedSQLRolesAndSafeRelease(t *testing.T) {
 		}
 	}
 	for _, query := range []string{
+		`UPDATE ai_fixture_stage SET receipt_id='returned'`,
+		`UPDATE ai_fixture_action SET local_execution_tracking=true`,
+		`INSERT INTO ai_fixture_action(namespace,id,owner,creation_key,workflow,binding,profile_binding,grant_version,execution_binding,execution_version,local_execution_tracking) SELECT namespace,'forged-tracking',owner,'forged-tracking',workflow,binding,profile_binding,grant_version,execution_binding,execution_version,true FROM ai_fixture_action LIMIT 1`,
+		`INSERT INTO ai_fixture_stage(namespace,action,coordinate,stage,attempt,binding,receipt_id) SELECT namespace,id,'forged-local','local_execution',attempt,binding,'returned' FROM ai_fixture_action LIMIT 1`,
 		`UPDATE ai_fixture_dispatch SET floor_amount=0,counted=0`,
 		`UPDATE ai_fixture_dispatch SET expense=0`,
 		`DELETE FROM ai_fixture_dispatch`,

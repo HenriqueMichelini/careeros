@@ -80,6 +80,12 @@ func newSyntheticQualification(service *auth.Service, store *accountstore.Store,
 			_ = json.NewEncoder(w).Encode(status)
 			return
 		}
+		finishLocal, err := session.BeginLocalExecution(r.Context())
+		if err != nil {
+			qualificationError(w, err)
+			return
+		}
+		defer finishLocal()
 		ctx := aidispatch.WithController(r.Context(), session)
 		authority, _ := r.Context().Value(qualificationAuthorityKey{}).(*qualificationAuthority)
 		if authority == nil {

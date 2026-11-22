@@ -55,6 +55,33 @@ func syntheticRolePools(ctx context.Context, admin *sql.DB, dsn string, ingestio
 			}
 		}
 	}
+	// Old Actions stay conservatively untracked; only new rows get the
+	// database-owned admission default. Runtime has no INSERT/UPDATE grant on
+	// this column. Returned local leases also require the code-owned reviewer
+	// capability, not a raw stage INSERT using runtime's ordinary stage grant.
+	var localInstalled bool
+	if tx.QueryRowContext(ctx, `SELECT to_regprocedure('ai_fixture_local_execution_guard()') IS NOT NULL`).Scan(&localInstalled) != nil {
+		return nil, nil, "", ErrUnavailable
+	}
+	if !localInstalled {
+		if _, err = tx.ExecContext(ctx, fmt.Sprintf(`
+ALTER TABLE ai_fixture_action ADD COLUMN IF NOT EXISTS local_execution_tracking boolean NOT NULL DEFAULT false;
+ALTER TABLE ai_fixture_action ALTER COLUMN local_execution_tracking SET DEFAULT true;
+CREATE FUNCTION ai_fixture_local_execution_guard() RETURNS trigger
+LANGUAGE plpgsql SET search_path=pg_catalog,pg_temp AS $guard$
+BEGIN
+ IF current_user='%[1]s' AND NEW.stage='local_execution' AND NEW.receipt_id<>'' THEN
+   RAISE EXCEPTION 'runtime cannot attest local callback return';
+ END IF;
+ RETURN NEW;
+END $guard$;
+REVOKE ALL ON FUNCTION ai_fixture_local_execution_guard() FROM PUBLIC;
+CREATE TRIGGER ai_fixture_local_execution_guard BEFORE INSERT ON ai_fixture_stage
+ FOR EACH ROW EXECUTE FUNCTION ai_fixture_local_execution_guard();
+`, runtimeRole)); err != nil {
+			return nil, nil, "", ErrUnavailable
+		}
+	}
 	// The schema-local marker and all privileges commit atomically. Reopening
 	// a fixture authenticates existing restricted roles without reacquiring DDL
 	// locks against admissions already using those tables. Missing/stale fixture

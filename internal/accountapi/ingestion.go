@@ -81,6 +81,12 @@ func NewSyntheticIngestion(service *auth.Service, store *accountstore.Store, h *
 			_ = json.NewEncoder(w).Encode(aicontrol.QualificationStatus{ActionID: session.ID(), State: stage.State, RetryAllowed: stage.RetryAllowed})
 			return
 		}
+		finishLocal, err := stage.Session.BeginLocalExecution(r.Context())
+		if err != nil {
+			qualificationError(w, err)
+			return
+		}
+		defer finishLocal()
 		authority, _ := r.Context().Value(qualificationAuthorityKey{}).(*qualificationAuthority)
 		if authority == nil {
 			qualificationError(w, aicontrol.ErrDenied)

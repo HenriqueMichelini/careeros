@@ -30,6 +30,7 @@ CREATE TABLE ai_fixture_action (
  result_ref text NOT NULL DEFAULT '', compacted boolean NOT NULL DEFAULT false,
  grant_version bigint NOT NULL CHECK(grant_version>0),
  created_at timestamptz NOT NULL DEFAULT clock_timestamp(), execution_finished boolean NOT NULL DEFAULT false,
+ local_execution_tracking boolean NOT NULL DEFAULT true,
  retry_creation_key text NOT NULL DEFAULT '',
  PRIMARY KEY(namespace,id), UNIQUE(namespace,owner,creation_key),
  CHECK((NOT customer_reserved AND NOT customer_effect) OR workflow='application_draft')

@@ -1,0 +1,276 @@
+{
+  "issue": 288,
+  "review_base": "5269458cecf6064a5e26676ec660302ca44ff40e",
+  "original_review_head": "3502e6ddbe7c2704a9639809a541885ac447059a",
+  "synthetic_only": true,
+  "runtime": [
+    {
+      "path": "cmd/deletion-local/main.go",
+      "blob": "b13d406394fd800c8b2d6f8b1fdc52b741be3a3b",
+      "sha256": "ff78a2a38e51a12b2cd3d2e1ff5451c8750f6dcc622b45bcc47dfd03d3bdbb52"
+    },
+    {
+      "path": "internal/accountapi/cv.go",
+      "blob": "c60a79b7ff2f63703e9ba2785959ae25fd61733f",
+      "sha256": "118dca5b1744e8a162c02702b6d38af9665f4639c74b5f79fd7a205ba81e7467"
+    },
+    {
+      "path": "internal/accountapi/deletion.go",
+      "blob": "b167e975dc67791620931a14e076d6d68a17e440",
+      "sha256": "e420b7f817574538b5b0cf4d5f4189e3aa34282ea3a93db304245b3177ba533a"
+    },
+    {
+      "path": "internal/accountapi/handler.go",
+      "blob": "501a003b8af7a3d1b639179a372eaf7608abb9dc",
+      "sha256": "bbd0b39b280b34a5bea2656e829528e02408373265917ea248d2d2d7bc7d4af3"
+    },
+    {
+      "path": "internal/accountapi/ingestion.go",
+      "blob": "fa287e693a4a622b9119353b2b5ffad9f20fe876",
+      "sha256": "045a18c39fd805d77306269d4215d382129b07e5d2813f2badbc6570b737e11b"
+    },
+    {
+      "path": "internal/accountapi/pilot.go",
+      "blob": "56299f1b132fba83c05212343550cd35c6feae67",
+      "sha256": "354ab8fc75daac7ed8afc7308890a544973f913a9d13a7f5e974e45e38bcd7ee"
+    },
+    {
+      "path": "internal/accountapi/profile_review.go",
+      "blob": "f323eb3877f0e1bb0fed64932ce7270630e3a628",
+      "sha256": "84b929709cc13738e6727eac4d78eb6d7ff67e2ba5f1d369a770e42433b15dc7"
+    },
+    {
+      "path": "internal/accountapi/qualification.go",
+      "blob": "14e9d0ef428a27a510a9b772040a4f2c5e83f26e",
+      "sha256": "2a82037f72003df48acb5ab829305b99719504c5fcfc349a62188b6081706988"
+    },
+    {
+      "path": "internal/accountstore/deletion.go",
+      "blob": "d43fed3aca2314839663af081dd35f97f1f269d9",
+      "sha256": "ea08c9fdf8d0a6a56d202dd5aeefb3e644c0ee76f96328dc3c93ee58a1466b14"
+    },
+    {
+      "path": "internal/accountstore/deletion_recovery.go",
+      "blob": "6f4039322ab7cce24b42afeceeb4bdc03bdf8171",
+      "sha256": "855db5e18ae302bd7bfca067b0060e39bc9cb1bd8b6aeed905a5f67bc14853f7"
+    },
+    {
+      "path": "internal/accountstore/deletion_status.go",
+      "blob": "926454760403cde2a955de9c1c1f21a94daa1b49",
+      "sha256": "9c797b016927da8e91f9f9d656d5d379f994b4eb87965a33de953cce268cd48b"
+    },
+    {
+      "path": "internal/accountstore/pilot.go",
+      "blob": "21e0f92279f0add706d9e5c5be381e8e5161d60e",
+      "sha256": "17668908128d15e7ce567d3e2d7f7db28e53f5b52dde465e9ee07614de09813f"
+    },
+    {
+      "path": "internal/accountstore/profile.go",
+      "blob": "cdf061b1aa62eb2b015846221b0ecde56839792d",
+      "sha256": "41cb6ef29c7c8db7be3e37b321e2e24d919692ff270b0e75fcaec1fdf54fbf35"
+    },
+    {
+      "path": "internal/accountstore/schema.sql",
+      "blob": "9dcf2db1d92251008ea40179c69fba1afdf8b641",
+      "sha256": "c7c100cfba8437b3eff2a0c824e0ff109a3695f477372d53ed50dab87d0591cc"
+    },
+    {
+      "path": "internal/accountstore/store.go",
+      "blob": "b7e641cda588ebf8e187249b866968b2a0e26f6b",
+      "sha256": "72a3b5f1be48fa9cdcbf8deef36fb7329479f4caf9d6bd8657dd939709fcfe14"
+    },
+    {
+      "path": "internal/aicontrol/dispatch.go",
+      "blob": "f9bbbaea19f8e1eef7b7de59f35e48a4d94407eb",
+      "sha256": "f6a7dc266f3fef0d7c88c024e96bca3fd9e08635e146b7ae9c419673463e094a"
+    },
+    {
+      "path": "internal/aicontrol/local_execution.go",
+      "blob": "6ec5d1ad338a39d2df2bac00fb5663deee2a37bc",
+      "sha256": "55f359ebe50628d40c2e78f32f27de0c1ecae9bcfdf7e51c4e876d1ae50ab1f1"
+    },
+    {
+      "path": "internal/aicontrol/qualification.go",
+      "blob": "19aecbccc34acde45b540bb3c441bf6471128255",
+      "sha256": "ed0a8aff2ae7d898c70935713b4033159380706ca65108b14632d9829e8a2af0"
+    },
+    {
+      "path": "internal/aicontrol/roles.go",
+      "blob": "7e8aa92258bb89048c91906f85ad266fc31212f7",
+      "sha256": "7fb0b9c64fc9030e0aba35345458f4169d2d65f3cff7d1067080a304f1d0ba5c"
+    },
+    {
+      "path": "internal/aicontrol/schema.sql",
+      "blob": "9d15e5b8cd6f91286048086fe7d9149aeee47267",
+      "sha256": "cc6ff272c691eb28b665628fb411c032ff9e618c5d98d2c4e48f1c75c0e569d0"
+    },
+    {
+      "path": "internal/aicontrol/stages.go",
+      "blob": "7a9d4195c6a60da78f0a3dfe2b860aa6b085bd77",
+      "sha256": "b1c83a4dffbf41be2815a143af80848e1fe0ac35844d6dde5fe23df92daaab65"
+    },
+    {
+      "path": "internal/auth/deletion_status.go",
+      "blob": "7a34dd0148c1ad545602499fd10ff009c1801f63",
+      "sha256": "aa130209b2c5ed5fc7c1e945b672fbfff27a39fe4a321088610eead94580974c"
+    },
+    {
+      "path": "internal/auth/handler.go",
+      "blob": "6bc83e2f10a425021060fe131cf76ccf0e7a3789",
+      "sha256": "d56d836cd1ff15ea486f5e702b057e8cf90f0c88bb0675a42a7f0a5e89cf047e"
+    },
+    {
+      "path": "internal/auth/service.go",
+      "blob": "9be222e7fdf0c08534d10aa34b1aeb9b51f860dc",
+      "sha256": "e4b2bb5224533763c5bf205abea023c7120eb12ed677e087804dcfce99a128d8"
+    },
+    {
+      "path": "internal/draftrecovery/managed.go",
+      "blob": "bf57537431d0a3bfa355fa0a3435379e5af13541",
+      "sha256": "c785906557800b7d5fc05dbce8e0af40efabb000d0a98774f3f8da62481793aa"
+    },
+    {
+      "path": "internal/draftrecovery/opening.go",
+      "blob": "3589d87bde54f1e747006d8405f3d7aadd400d87",
+      "sha256": "8a31269e2c4f199130e7d9f8eb6302c5acd3541db527d94fe202d5cc3a3c1716"
+    },
+    {
+      "path": "internal/draftrecovery/store.go",
+      "blob": "c6bd3493e0c0371dea7394da712461219c62b496",
+      "sha256": "8575db62d9c26cc3e098faeb0fdb2ed22609a413f3e6a476c5a46457bdd88d81"
+    },
+    {
+      "path": "src/App.tsx",
+      "blob": "cadc0777e17131c790e015a22ad4c1987eda99ea",
+      "sha256": "ba64a7563f99bfc04b680419045f5fdc1a4355a237346aedb37ef23a8f412308"
+    },
+    {
+      "path": "src/components/AccountDeletion.tsx",
+      "blob": "01cf2b19ea9bfab6734e29c465e8a4cce3909442",
+      "sha256": "8d6b81f0221b0c5e1b85014b254504f1b4a8c457691d1ca6b0e956efb4cbc0bb"
+    },
+    {
+      "path": "src/components/AccountGate.tsx",
+      "blob": "85c9e26063b8d14cae0a229277c5b2097573a476",
+      "sha256": "e1995eb619f87dd5612f985c8fde20cb3cfdbe874c118be973d3e7dd5d173257"
+    },
+    {
+      "path": "src/components/ProfileExport.tsx",
+      "blob": "e74272127ff13b963c84b0fb7b82a418c4928238",
+      "sha256": "7d3b0dea36684e903dbb0322438ccd692276323a5fa584a69240520da2c9cd8b"
+    },
+    {
+      "path": "src/lib/accountDeletion.ts",
+      "blob": "5fa78f2eaf4e89bbe3174970101058ae6dee02e3",
+      "sha256": "fc193ff282f7d651909f4cde48e655546f1e8cecea543b0ebc7c79e9382fb40c"
+    },
+    {
+      "path": "src/lib/accountProfile.ts",
+      "blob": "3a634e3448159e3435e569f0aee149d8e666bb43",
+      "sha256": "5ca7f0523e81cfc4d87336173159dc8bfcffef928366b6d1282776d234cb0e0d"
+    },
+    {
+      "path": "src/lib/managedIngestion.ts",
+      "blob": "f29ca970554a33df0ff2a6ad7d50e20d26ccfbd9",
+      "sha256": "8238f762377bec85ac82ed180458095f2d13c5b0580d6f79cc97a8a903513769"
+    },
+    {
+      "path": "src/lib/managedProfileReview.ts",
+      "blob": "cfcfcda2d417ae09cca82d895bc3edccdb8e4a83",
+      "sha256": "6e6ca7b906167a6b45c42369d3ba10aa00fa3e15634992111b4cff3efb5c8848"
+    },
+    {
+      "path": "src/lib/managedStandaloneCV.ts",
+      "blob": "772378bd6c8e671cf802704ae3de4afd2c67790c",
+      "sha256": "334f1aa67767effc98da3b91af77493762a83b6cee6425d7fcce6c51b0e731af"
+    },
+    {
+      "path": "vite.config.ts",
+      "blob": "f6dbdf3477ff2299363ad5a431e73297ba88e106",
+      "sha256": "f3a32c05fdd5a30e8fe9e4c0a0abb5e62afb2df5ef8ce87c0c095f84c80c0082"
+    }
+  ],
+  "fixtures": [
+    {
+      "path": "internal/accountapi/deletion_authority_test.go",
+      "blob": "e73f83ba3d94023109e93d803bf7dacd078c90a5",
+      "sha256": "8d87e3695e2781ee91f22b7b6710964faef3a13a344bbdef2f10d9dfec5e133f"
+    },
+    {
+      "path": "internal/accountapi/deletion_browser_test.go",
+      "blob": "38d959b8c8661c08ce8b05cbabddeab5ca54369e",
+      "sha256": "d4742cf88a29605901ce9dc4cea554e5d5aa0ec589f299f2514d0d2c954295ef"
+    },
+    {
+      "path": "internal/accountapi/deletion_capacity_test.go",
+      "blob": "94b57ad651900d1d0db3adbcdf7466ae97779c88",
+      "sha256": "c6a2f596a981d45ab95450cebbc5e26a46ebb7cc5d17080577757a908335f5b2"
+    },
+    {
+      "path": "internal/accountapi/deletion_cli_test.go",
+      "blob": "26fbeb5b4e3ff0a26fd32859ea4893f36d0cb217",
+      "sha256": "59bbed5072c7dd304b10891b52b9ae8ec8f65a753955a7f431c417b1ac75ad6d"
+    },
+    {
+      "path": "internal/accountapi/deletion_edges_test.go",
+      "blob": "9150fa6b65cbf6d181faf3dc3d5fb1c2289f618d",
+      "sha256": "8924734b88fd6d41fee2964f69c252f1f7c6c414be9d619a14052811874f031d"
+    },
+    {
+      "path": "internal/accountapi/deletion_restart_test.go",
+      "blob": "2a1319d485571b0272237fe23a6400e20125dbbb",
+      "sha256": "67e1b3736381511124350d0562a18e22cdbb7f811de2609cb586a98743796066"
+    },
+    {
+      "path": "internal/accountapi/deletion_test.go",
+      "blob": "d1348753d6775161edcbb8e3d445dc1d4737dee5",
+      "sha256": "26460783318859997e107f824e2a732db5c541449c00bafa0badc10ebd0b462d"
+    },
+    {
+      "path": "internal/accountapi/pilot_test.go",
+      "blob": "306d16041454ff1fd9f9d3067885757e4d5726e6",
+      "sha256": "004f4291becd7e4a0f91e0a6b3c66b6cf37d950816b27085ada386d9b7e4fb8d"
+    },
+    {
+      "path": "internal/aicontrol/local_execution_test.go",
+      "blob": "a9ad06487dd2701ebab88133bcc0fa6558861db1",
+      "sha256": "bb1536bb7d327569b2e19fec8af0f4ecea69dbe98118710d90fd79de79dc2f47"
+    },
+    {
+      "path": "internal/aicontrol/roles_test.go",
+      "blob": "8dd97dc564fd378c9ada9038abebcbd6a127bd91",
+      "sha256": "bf409a1857722af3d7a9514ebc9ae02c459ff07d591b8dbfd42c0cdfd4cb5d3c"
+    },
+    {
+      "path": "tests/account-deletion-browser.check.mjs",
+      "blob": "d3a403c3e801e63659b30f791c22f2cc2ba41946",
+      "sha256": "b36603b1aebe5352b5e4cebafb0ff33f3d5617d827b28cc3cfc24155434f9892"
+    },
+    {
+      "path": "tests/account-deletion-harness.html",
+      "blob": "41d149e47c5cd99d2c72e0da015c3ac43a3a6763",
+      "sha256": "002cc8b648a6c6ff65c8ed42742901cc70011154e7f2d12a85bea8b3dbabb976"
+    },
+    {
+      "path": "tests/account-deletion-harness.jsx",
+      "blob": "305808667ab82b6884df6f99c3f5c7a21ba6ebe8",
+      "sha256": "b88dd51407fc16836c70a1d556ad1b733dae2fc3a5213e315d10d46e2bbb1b61"
+    },
+    {
+      "path": "tests/account-deletion.test.mjs",
+      "blob": "cecd0794776038b26ebd677d55b6fabbf01ef58a",
+      "sha256": "af95cdcea7f87203fff3d25d4236da5472b51adb4ab56b86a304e118465f0d38"
+    },
+    {
+      "path": "tests/account-profile.test.mjs",
+      "blob": "19166d5641514f95b58e405082fc940ff35324b3",
+      "sha256": "a3d865fc3cbae7eeda2897f4f55e6147ceb2374a6d2ffebff4f4acd28ad214e5"
+    },
+    {
+      "path": "tests/draft-recovery-pg.py",
+      "blob": "1c6f1cea61a80e8bc857a3bf940c133e1eb481ab",
+      "sha256": "0f9a9b3017e09e6f530cf634b39871c5a9b44899ed4442478bf8cf4c01d9481e"
+    }
+  ],
+  "final_runtime_after_legacy_no_return_regression": true
+}
