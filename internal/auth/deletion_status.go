@@ -37,10 +37,47 @@ func (s *Service) AuthenticateDeletionStatus(ctx context.Context, token string) 
 	if err != nil {
 		return Principal{}, err
 	}
-	if !found || account.Status != AccountDeleted || account.Generation != v.Generation {
+	if !found || (account.Status != AccountDeleted && account.Status != AccountCompromised) || account.Generation != v.Generation {
 		return Principal{}, ErrAuthenticationRequired
 	}
 	return Principal{AccountID: account.ID, SessionID: v.ID, Generation: v.Generation, ExpiresAt: v.ExpiresAt, tokenHash: v.TokenHash, csrfHash: v.CSRFHash}, nil
+}
+
+// ProtectRestrictedRights is only for the separately scoped compromised-account
+// rights process. It never authenticates a workspace/read/export/inference path.
+func (s *Service) ProtectRestrictedRights(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		if unsafeMethod(r.Method) && !s.SameOrigin(r) {
+			writeAuthError(w, ErrForbidden)
+			return
+		}
+		token, ok := sessionTokenFromRequest(r)
+		if !ok {
+			writeAuthError(w, ErrAuthenticationRequired)
+			return
+		}
+		p, err := s.AuthenticateDeletionStatus(r.Context(), token)
+		if err != nil {
+			writeAuthError(w, err)
+			return
+		}
+		account, found, err := s.accounts.Get(r.Context(), p.AccountID)
+		if err != nil {
+			writeAuthError(w, err)
+			return
+		}
+		if !found || account.Status != AccountCompromised && !(account.Status == AccountDeleted && r.Method == http.MethodGet) {
+			writeAuthError(w, ErrForbidden)
+			return
+		}
+		if unsafeMethod(r.Method) && !validRequestCSRF(s, r, p) {
+			writeAuthError(w, ErrForbidden)
+			return
+		}
+		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), principalContextKey{}, p)))
+	})
 }
 
 // ProtectDeletionStatus permits only metadata GETs. It is never the middleware

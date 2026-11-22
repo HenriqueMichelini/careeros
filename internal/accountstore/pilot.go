@@ -45,6 +45,7 @@ type pilotAccess struct {
 	state                                         string
 	accessEnded                                   sql.NullTime
 	retrievalHeld                                 bool
+	compromiseHeld                                bool
 }
 
 func lockPilot(ctx context.Context, tx *sql.Tx) error {
@@ -58,6 +59,10 @@ func (s *Store) pilotTransaction(ctx context.Context, p auth.Principal, target s
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, unavailable(err)
+	}
+	if err = LockControlTransaction(ctx, tx); err != nil {
+		tx.Rollback()
+		return nil, err
 	}
 	if err = lockPilot(ctx, tx); err != nil {
 		tx.Rollback()
@@ -95,7 +100,7 @@ func pilotNow(ctx context.Context, tx *sql.Tx) (time.Time, error) {
 }
 func readPilot(ctx context.Context, tx *sql.Tx, owner string) (pilotAccess, error) {
 	var a pilotAccess
-	err := tx.QueryRowContext(ctx, `SELECT invitation_id,invited_at,invitation_expires_at,invitation_revoked,age_eligible,activated_at,expires_at,state,draft_allowance,access_ended_at,retrieval_held FROM careeros_pilot_access WHERE account_id=$1`, owner).Scan(&a.invitation, &a.invited, &a.invitationExpiry, &a.revoked, &a.eligible, &a.activated, &a.expires, &a.state, &a.allowance, &a.accessEnded, &a.retrievalHeld)
+	err := tx.QueryRowContext(ctx, `SELECT invitation_id,invited_at,invitation_expires_at,invitation_revoked,age_eligible,activated_at,expires_at,state,draft_allowance,access_ended_at,retrieval_held,control_compromise_held FROM careeros_pilot_access WHERE account_id=$1`, owner).Scan(&a.invitation, &a.invited, &a.invitationExpiry, &a.revoked, &a.eligible, &a.activated, &a.expires, &a.state, &a.allowance, &a.accessEnded, &a.retrievalHeld, &a.compromiseHeld)
 	if err == nil && a.invitation.Valid {
 		var denied bool
 		if e := tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM careeros_invitation_cleanup WHERE account_id=$1 AND invitation_id=$2)`, owner, a.invitation.String).Scan(&denied); e != nil {
@@ -135,6 +140,7 @@ func pilotStatus(owner string, a pilotAccess, now time.Time) PilotStatus {
 		} else {
 			s.State = "uninvited"
 		}
+		s.CanActivate = s.CanActivate && !a.compromiseHeld
 		return s
 	}
 	s.ExpiresAt = &a.expires.Time
@@ -162,7 +168,7 @@ func pilotStatus(owner string, a pilotAccess, now time.Time) PilotStatus {
 	if a.state == "revoked" && a.accessEnded.Valid && !a.retrievalHeld && !a.revoked && now.Before(until) {
 		s.CanRetrieve = true
 	}
-	if a.retrievalHeld {
+	if a.retrievalHeld || a.compromiseHeld {
 		s.CanRetrieve = false
 		s.CanDraft = false
 		s.CanStandalone = false
@@ -177,7 +183,25 @@ func statusInTransaction(ctx context.Context, tx *sql.Tx, owner string) (PilotSt
 		return PilotStatus{}, unavailable(err)
 	}
 	now, err := pilotNow(ctx, tx)
-	return pilotStatus(owner, a, now), err
+	if err != nil {
+		return PilotStatus{}, err
+	}
+	controls, err := controlStatus(ctx, tx)
+	if err != nil {
+		return PilotStatus{}, err
+	}
+	result := pilotStatus(owner, a, now)
+	var compromised bool
+	if err = tx.QueryRowContext(ctx, `SELECT careeros_control_account_denied($1)`, owner).Scan(&compromised); err != nil {
+		return PilotStatus{}, unavailable(err)
+	}
+	result.CanActivate = result.CanActivate && !controls.InvitationStopped && !compromised
+	if compromised {
+		result.CanDraft = false
+		result.CanStandalone = false
+		result.CanRetrieve = false
+	}
+	return result, nil
 }
 func (s *Store) PilotStatus(ctx context.Context, p auth.Principal) (PilotStatus, error) {
 	tx, err := s.pilotTransaction(ctx, p, "")
@@ -242,6 +266,22 @@ func (s *Store) PilotCommand(ctx context.Context, p auth.Principal, operation st
 	if !permitted {
 		return PilotStatus{}, auth.ErrForbidden
 	}
+	if command.Kind == "invite" {
+		controls, e := controlStatus(ctx, tx)
+		if e != nil {
+			return PilotStatus{}, e
+		}
+		if controls.InvitationStopped {
+			return PilotStatus{}, auth.ErrForbidden
+		}
+		var compromised bool
+		if e = tx.QueryRowContext(ctx, `SELECT careeros_control_account_denied($1)`, target).Scan(&compromised); e != nil {
+			return PilotStatus{}, unavailable(e)
+		}
+		if compromised {
+			return PilotStatus{}, auth.ErrForbidden
+		}
+	}
 	// The identity must still belong to the same locked account.
 	if err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM careeros_identities WHERE provider=$1 AND issuer=$2 AND subject=$3 AND account_id=$4)", []byte(command.Identity.Provider), []byte(command.Identity.Issuer), []byte(command.Identity.Subject), target).Scan(&permitted); err != nil {
 		return PilotStatus{}, unavailable(err)
@@ -299,17 +339,17 @@ func (s *Store) PilotCommand(ctx context.Context, p auth.Principal, operation st
 		if !a.activated.Valid || a.state == "revoked" {
 			return PilotStatus{}, ErrConflict
 		}
-		_, err = tx.ExecContext(ctx, `UPDATE careeros_pilot_access SET state='suspended',retrieval_held=true WHERE account_id=$1`, target)
+		_, err = tx.ExecContext(ctx, `UPDATE careeros_pilot_access SET state='suspended',retrieval_held=true,authority_version=authority_version+1 WHERE account_id=$1 AND authority_version<9223372036854775807`, target)
 	case "revoke":
 		if a.activated.Valid {
-			_, err = tx.ExecContext(ctx, `UPDATE careeros_pilot_access SET state='revoked',access_ended_at=CASE WHEN state='revoked' AND access_ended_at IS NULL THEN NULL WHEN access_ended_at IS NULL THEN $2 ELSE LEAST(access_ended_at,$2) END,retrieval_held=retrieval_held OR state='suspended' WHERE account_id=$1`, target, now)
+			_, err = tx.ExecContext(ctx, `UPDATE careeros_pilot_access SET state='revoked',access_ended_at=CASE WHEN state='revoked' AND access_ended_at IS NULL THEN NULL WHEN access_ended_at IS NULL THEN $2 ELSE LEAST(access_ended_at,$2) END,retrieval_held=retrieval_held OR (state='suspended' AND NOT control_compromise_held),authority_version=authority_version+1 WHERE account_id=$1 AND authority_version<9223372036854775807`, target, now)
 		} else {
 			if a.invitation.Valid && a.invitationExpiry.Valid {
 				if err = recordInvitationCleanup(ctx, tx, target, a.invitation.String, a.invitationExpiry.Time, now, nil); err != nil {
 					return PilotStatus{}, err
 				}
 			}
-			_, err = tx.ExecContext(ctx, `UPDATE careeros_pilot_access SET invitation_revoked=true WHERE account_id=$1`, target)
+			_, err = tx.ExecContext(ctx, `UPDATE careeros_pilot_access SET invitation_revoked=true,authority_version=authority_version+1 WHERE account_id=$1 AND authority_version<9223372036854775807`, target)
 		}
 	}
 	if err != nil {
@@ -336,6 +376,13 @@ func (s *Store) ActivatePilot(ctx context.Context, p auth.Principal, operation, 
 		return PilotStatus{}, err
 	}
 	defer tx.Rollback()
+	controls, err := controlStatus(ctx, tx)
+	if err != nil {
+		return PilotStatus{}, err
+	}
+	if controls.InvitationStopped {
+		return PilotStatus{}, auth.ErrForbidden
+	}
 	hash := sha256.Sum256([]byte("activate-v1:" + invitation))
 	_, replay, err := pilotReplay(ctx, tx, p.AccountID, operation, hash[:])
 	if err != nil {

@@ -15,7 +15,7 @@ func (s sessions) CreateClosedStatus(ctx context.Context, v auth.Session) error 
 	}
 	defer tx.Rollback()
 	var valid bool
-	err = tx.QueryRowContext(ctx, `SELECT status='deleted' AND generation=$2 AND EXISTS(SELECT 1 FROM careeros_deletion_operations d WHERE d.account_id=a.id AND d.kind='account') FROM careeros_accounts a WHERE id=$1 FOR UPDATE`, v.AccountID, v.Generation).Scan(&valid)
+	err = tx.QueryRowContext(ctx, `SELECT generation=$2 AND ((status='deleted' AND EXISTS(SELECT 1 FROM careeros_deletion_operations d WHERE d.account_id=a.id AND d.kind='account')) OR (status='active' AND careeros_control_account_denied(a.id))) FROM careeros_accounts a WHERE id=$1 FOR UPDATE`, v.AccountID, v.Generation).Scan(&valid)
 	if err != nil || !valid {
 		return auth.ErrForbidden
 	}
@@ -48,6 +48,13 @@ func authorizeDeletionStatus(ctx context.Context, tx *sql.Tx, p auth.Principal) 
 		return auth.ErrAuthenticationRequired
 	}
 	if state == "active" {
+		var denied bool
+		if err := tx.QueryRowContext(ctx, `SELECT careeros_control_account_denied($1)`, p.AccountID).Scan(&denied); err != nil {
+			return unavailable(err)
+		}
+		if denied {
+			return authorizeRestrictedRights(ctx, tx, p)
+		}
 		return authorizedAccount(ctx, tx, p)
 	}
 	if state != "deleted" || generation != p.Generation {

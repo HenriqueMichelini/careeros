@@ -11,6 +11,7 @@ import { StoreProvider } from "../lib/store"
 interface Session {
   authenticated: boolean
   deletionStatusOnly?: boolean
+  restrictedRights?: boolean
   account?: { id: string }
   expiresAt?: string
 }
@@ -65,6 +66,7 @@ export default function AccountGate({
         throw new Error("Invalid session response")
       setSession(value)
       setError(false)
+      if(value.restrictedRights&&value.account?.id)withholdCareer(value.account.id)
       const accountId = value.authenticated ? value.account!.id : null
       if(value.deletionStatusOnly&&value.account?.id){
         const old=clients.current.get(value.account.id)
@@ -195,6 +197,8 @@ export default function AccountGate({
   }
   if(!checking&&session?.deletionStatusOnly&&session.account?.id)
     return <AccountDeletion key={session.account.id} accountId={session.account.id} pt={pt}/>
+  if(!checking&&session?.restrictedRights&&session.account?.id)
+    return <AccountDeletion key={session.account.id+":restricted"} accountId={session.account.id} pt={pt} restrictedRights/>
   if (!client)
     return (
       <SignedOutGate

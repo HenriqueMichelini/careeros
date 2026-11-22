@@ -134,6 +134,12 @@ func setup(t *testing.T, change func(*SyntheticConfig)) *fixture {
 	}
 	svc := authService(t, store)
 	p, token := login(t, svc, "fixture-owner")
+	if e = store.BootstrapLocalControlOperator(context.Background(), auth.IdentityRef{Provider: "google", Issuer: "https://accounts.google.com", Subject: "fixture-owner"}); e != nil {
+		t.Fatal(e)
+	}
+	if _, e = store.LocalControls(nil).InitializeSynthetic(context.Background(), p, "fresh-core-control"); e != nil {
+		t.Fatal(e)
+	}
 	gate := NewSyntheticGate()
 	cfg := DefaultSyntheticConfig("fixture", gate)
 	clock := &fixtureClock{now: time.Now().UTC(), healthy: true}

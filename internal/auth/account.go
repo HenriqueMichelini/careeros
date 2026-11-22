@@ -11,9 +11,10 @@ import (
 type AccountStatus string
 
 const (
-	AccountActive    AccountStatus = "active"
-	AccountSuspended AccountStatus = "suspended"
-	AccountDeleted   AccountStatus = "deleted"
+	AccountActive      AccountStatus = "active"
+	AccountSuspended   AccountStatus = "suspended"
+	AccountDeleted     AccountStatus = "deleted"
+	AccountCompromised AccountStatus = "compromised"
 )
 
 // IdentityRef is an opaque provider subject. Email is never part of this key.

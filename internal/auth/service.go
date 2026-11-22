@@ -73,6 +73,7 @@ type AccountView struct {
 type SessionView struct {
 	Authenticated      bool         `json:"authenticated"`
 	DeletionStatusOnly bool         `json:"deletionStatusOnly,omitempty"`
+	RestrictedRights   bool         `json:"restrictedRights,omitempty"`
 	Account            *AccountView `json:"account,omitempty"`
 	ExpiresAt          *time.Time   `json:"expiresAt,omitempty"`
 }
@@ -272,7 +273,7 @@ func (s *Service) resolveAccount(ctx context.Context, transaction Transaction, i
 		return Account{}, err
 	}
 	_, closedStatus := s.sessions.(ClosedStatusSessionStore)
-	if account.Status != AccountActive && !(account.Status == AccountDeleted && closedStatus && transaction.PreviousSessionID == "") {
+	if account.Status != AccountActive && !((account.Status == AccountDeleted || account.Status == AccountCompromised) && closedStatus && transaction.PreviousSessionID == "") {
 		return Account{}, ErrForbidden
 	}
 	// A logout-all that raced the provider exchange must invalidate this
@@ -307,7 +308,7 @@ func (s *Service) issueSession(ctx context.Context, transaction Transaction, acc
 		ExpiresAt:  expiresAt,
 	}
 	var createErr error
-	if account.Status == AccountDeleted {
+	if account.Status == AccountDeleted || account.Status == AccountCompromised {
 		closed, ok := s.sessions.(ClosedStatusSessionStore)
 		if !ok {
 			return LoginResult{}, ErrForbidden

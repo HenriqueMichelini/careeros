@@ -45,3 +45,11 @@ test("a deliberate corrected confirmation after authenticated no-record recovery
  await client.confirm(input)
  assert.deepEqual(calls.filter(([,i])=>i.method==="POST").map(([,i])=>JSON.parse(i.body).operationId),["delete-one","delete-one"])
 })
+
+test("fresh restricted-rights deletion uses only the scoped account-close route and recovers by GET",async()=>{
+ const calls=[];const restrictedStatus={...status,operationId:"restricted-delete",kind:"account"}
+ const client=new AccountDeletion("owner-a",storage(),async(path,init)=>{calls.push([path,init.method]);return new Response(JSON.stringify(restrictedStatus),{status:init.method==="POST"?202:200})},()=>"restricted-delete",true)
+ assert.deepEqual(await client.confirm({kind:"account",profileId:"",revision:0}),restrictedStatus)
+ assert.deepEqual(await client.recover(),restrictedStatus)
+ assert.deepEqual(calls,[["/api/rights/deletion/operations","POST"],["/api/rights/deletion/operations/restricted-delete","GET"]])
+})

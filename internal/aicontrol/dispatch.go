@@ -374,6 +374,9 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (Dispatch, error) {
 	if err = h.admissionReady(ctx, tx); err != nil {
 		return zero, err
 	}
+	if err = s.checkInferenceEpoch(ctx, tx); err != nil {
+		return zero, err
+	}
 	if _, err = h.checkGrant(ctx, tx, s.p, s.grantVersion); err != nil {
 		return zero, err
 	}
@@ -611,6 +614,9 @@ func (s *Session) invoke(ctx context.Context, d Dispatch, req *http.Request, raw
 	if err = h.admissionReady(ctx, tx); err != nil {
 		return nil, err
 	}
+	if err = s.checkInferenceEpoch(ctx, tx); err != nil {
+		return nil, err
+	}
 	if _, err = h.checkGrant(ctx, tx, s.p, s.grantVersion); err != nil {
 		return nil, err
 	}
@@ -718,6 +724,9 @@ func (s *Session) invoke(ctx context.Context, d Dispatch, req *http.Request, raw
 	if err = h.admissionReady(ctx, handoff); err != nil {
 		return nil, err
 	}
+	if err = s.checkInferenceEpoch(ctx, handoff); err != nil {
+		return nil, err
+	}
 	if err = s.checkCurrent(ctx, handoff); err != nil {
 		return nil, err
 	}
@@ -727,6 +736,46 @@ func (s *Session) invoke(ctx context.Context, d Dispatch, req *http.Request, raw
 	if err = handoff.Commit(); err != nil {
 		return nil, ErrUnavailable
 	}
+	if err = h.fault("after_handoff_commit"); err != nil {
+		return nil, err
+	}
+	dispatchLease, err := accountstore.HoldControlDispatch(ctx, h.db)
+	if err != nil {
+		return nil, err
+	}
+	defer dispatchLease.Close()
+	if err = h.fault("after_dispatch_lease"); err != nil {
+		return nil, err
+	}
+	// A committed preflight is not a reusable dispatch permit. Revalidate
+	// after acquiring the cross-instance fake-entry lease; an operator may
+	// have won while this intent was delayed after its first check.
+	final, err := dispatchLease.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer final.Rollback()
+	if err = accountstore.AuthorizeTransaction(ctx, final, s.p); err != nil {
+		return nil, err
+	}
+	if err = h.ready(ctx, final); err != nil {
+		return nil, err
+	}
+	if err = h.admissionReady(ctx, final); err != nil {
+		return nil, err
+	}
+	if err = s.checkInferenceEpoch(ctx, final); err != nil {
+		return nil, err
+	}
+	if err = s.checkCurrent(ctx, final); err != nil {
+		return nil, err
+	}
+	if err = s.stageAction(ctx, final); err != nil {
+		return nil, err
+	}
+	if err = final.Commit(); err != nil {
+		return nil, ErrUnavailable
+	}
 	cloned := req.Clone(ctx)
 	cloned.Header = http.Header{"Content-Type": []string{"application/json"}}
 	cloned.Body = io.NopCloser(bytes.NewReader(raw))
@@ -734,6 +783,13 @@ func (s *Session) invoke(ctx context.Context, d Dispatch, req *http.Request, raw
 	resp, callErr := s.gate.invoke(ctx, func(callCtx context.Context) (*http.Response, error) {
 		return respond(callCtx, d.Provider, cloned.WithContext(callCtx))
 	}) // one fake gateway handoff; no network client
+	dispatchLease.Close()
+	if err = h.fault("after_controlled_callback"); err != nil {
+		if resp != nil && resp.Body != nil {
+			_ = resp.Body.Close()
+		}
+		return nil, err
+	}
 	_, _ = h.db.ExecContext(context.WithoutCancel(ctx), `UPDATE ai_fixture_dispatch SET state='observed',local_finished=true WHERE namespace=$1 AND id=$2 AND state='intent'`, h.cfg.Namespace, d.ID)
 	return h.observeResponse(ctx, s.p, d, resp, callErr)
 }
@@ -896,6 +952,19 @@ func (s *Session) childSession(id, parent string) *Session {
 
 type authorityReader interface {
 	QueryRowContext(context.Context, string, ...any) *sql.Row
+}
+
+// Provider admission, unlike result/status authority, is bound to the original
+// attempt's control epoch. Reopening cannot reinterpret an old permit as new.
+func (s *Session) checkInferenceEpoch(ctx context.Context, tx *sql.Tx) error {
+	var current bool
+	if err := tx.QueryRowContext(ctx, `SELECT control_epoch=careeros_current_inference_epoch() FROM ai_fixture_action WHERE namespace=$1 AND id=$2 AND owner=$3 AND attempt=$4`, s.h.cfg.Namespace, s.id, s.p.AccountID, s.attempt).Scan(&current); err != nil {
+		return ErrDenied
+	}
+	if !current {
+		return ErrDenied
+	}
+	return nil
 }
 
 func (s *Session) checkCurrent(ctx context.Context, tx *sql.Tx) error {

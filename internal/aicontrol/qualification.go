@@ -32,7 +32,7 @@ func (h *Harness) qualificationGrant(ctx context.Context, tx authorityReader, p 
 	var valid bool
 	// Account/session locks are already held by begin. #276 operator commands
 	// take the same account lock, so eligibility cannot change behind this read.
-	err := tx.QueryRowContext(ctx, `SELECT COALESCE((extract(epoch FROM activated_at)*1000000)::bigint,0), state='active' AND age_eligible AND NOT invitation_revoked AND NOT retrieval_held AND NOT careeros_invitation_denied($1) AND expires_at>clock_timestamp() AND EXISTS(SELECT 1 FROM careeros_identities i WHERE i.account_id=$1 AND i.provider=p.provider AND i.issuer=p.issuer AND i.subject=p.subject) FROM careeros_pilot_access p WHERE account_id=$1`, p.AccountID).Scan(&version, &valid)
+	err := tx.QueryRowContext(ctx, `SELECT COALESCE((extract(epoch FROM activated_at)*1000000)::bigint,0), state='active' AND age_eligible AND NOT invitation_revoked AND NOT retrieval_held AND NOT control_compromise_held AND NOT careeros_invitation_denied($1) AND expires_at>clock_timestamp() AND EXISTS(SELECT 1 FROM careeros_identities i WHERE i.account_id=$1 AND i.provider=p.provider AND i.issuer=p.issuer AND i.subject=p.subject) FROM careeros_pilot_access p WHERE account_id=$1`, p.AccountID).Scan(&version, &valid)
 	if err == sql.ErrNoRows {
 		return 0, ErrDenied
 	}

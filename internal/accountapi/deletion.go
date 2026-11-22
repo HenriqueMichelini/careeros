@@ -10,7 +10,10 @@ import (
 )
 
 func deletionRoutes(mux *http.ServeMux, store *accountstore.Store) {
-	mux.HandleFunc("POST /api/deletion/operations", func(w http.ResponseWriter, r *http.Request) {
+	deletionRoutesAt(mux, store, "/api/deletion", false)
+}
+func deletionRoutesAt(mux *http.ServeMux, store *accountstore.Store, prefix string, restricted bool) {
+	mux.HandleFunc("POST "+prefix+"/operations", func(w http.ResponseWriter, r *http.Request) {
 		raw, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 4096))
 		if err != nil || !accountstore.StrictJSON(raw) {
 			respond(w, nil, accountstore.ErrValidation)
@@ -24,7 +27,12 @@ func deletionRoutes(mux *http.ServeMux, store *accountstore.Store) {
 			return
 		}
 		p, _ := auth.PrincipalFromRequest(r)
-		result, err := store.StartDeletion(r.Context(), p, in)
+		var result accountstore.DeletionStatus
+		if restricted {
+			result, err = store.StartRestrictedDeletion(r.Context(), p, in)
+		} else {
+			result, err = store.StartDeletion(r.Context(), p, in)
+		}
 		if err != nil {
 			respond(w, nil, err)
 			return
@@ -47,6 +55,6 @@ func deletionRoutes(mux *http.ServeMux, store *accountstore.Store) {
 			respond(w, nil, err)
 		}
 	}
-	mux.HandleFunc("GET /api/deletion/operations/{operation}", status)
-	mux.HandleFunc("GET /api/deletion/status", status)
+	mux.HandleFunc("GET "+prefix+"/operations/{operation}", status)
+	mux.HandleFunc("GET "+prefix+"/status", status)
 }

@@ -85,7 +85,12 @@ func (h *Handler) session(w http.ResponseWriter, r *http.Request) {
 	principal, err := h.service.Authenticate(r.Context(), token)
 	if err != nil {
 		if closed, e := h.service.AuthenticateDeletionStatus(r.Context(), token); e == nil {
-			writeJSON(w, http.StatusOK, SessionView{DeletionStatusOnly: true, Account: &AccountView{ID: closed.AccountID}, ExpiresAt: &closed.ExpiresAt})
+			account, found, e := h.service.accounts.Get(r.Context(), closed.AccountID)
+			if e != nil || !found {
+				writeAuthError(w, ErrUnavailable)
+				return
+			}
+			writeJSON(w, http.StatusOK, SessionView{DeletionStatusOnly: account.Status == AccountDeleted, RestrictedRights: account.Status == AccountCompromised, Account: &AccountView{ID: closed.AccountID}, ExpiresAt: &closed.ExpiresAt})
 			return
 		}
 		if !errors.Is(err, ErrAuthenticationRequired) {

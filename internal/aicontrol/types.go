@@ -258,6 +258,13 @@ func (h *Harness) ready(ctx context.Context, tx *sql.Tx) error {
 // admissionReady is separate from provider-free status/result authority.
 // begin already holds the namespace SHARE fence; containment takes UPDATE.
 func (h *Harness) admissionReady(ctx context.Context, tx *sql.Tx) error {
+	var inferenceAllowed bool
+	if tx.QueryRowContext(ctx, `SELECT careeros_inference_allowed()`).Scan(&inferenceAllowed) != nil {
+		return ErrUnavailable
+	}
+	if !inferenceAllowed {
+		return ErrDenied
+	}
 	var stopped bool
 	if tx.QueryRowContext(ctx, `SELECT COALESCE((SELECT stopped FROM ai_recon_stop WHERE namespace=$1),false)`, h.cfg.Namespace).Scan(&stopped) != nil {
 		return ErrUnavailable
@@ -271,6 +278,10 @@ func (h *Harness) begin(ctx context.Context, p auth.Principal) (*sql.Tx, error) 
 	tx, e := h.db.BeginTx(ctx, nil)
 	if e != nil {
 		return nil, ErrUnavailable
+	}
+	if e = accountstore.LockControlTransaction(ctx, tx); e != nil {
+		tx.Rollback()
+		return nil, e
 	}
 	if e = accountstore.AuthorizeTransaction(ctx, tx, p); e != nil {
 		tx.Rollback()

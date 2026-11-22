@@ -33,6 +33,7 @@ type Fixture struct {
 	Store             *accountstore.Store
 	Service           *auth.Service
 	Login             auth.LoginResult
+	ControlOperator   auth.LoginResult
 	Principal         auth.Principal
 	Document          json.RawMessage
 	ProfileProjection map[string]any
@@ -112,6 +113,21 @@ func NewFixture(t *testing.T) *Fixture {
 		t.Fatal(err)
 	}
 	f.Principal = f.Login.Principal
+	controlStart, err := f.Service.BeginLogin(context.Background(), "google", "/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	controlURL, _ := url.Parse(controlStart.URL)
+	f.ControlOperator, err = f.Service.CompleteLogin(context.Background(), "google", controlURL.Query().Get("state"), "fixture-control-operator", controlStart.BindingToken)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = f.Store.BootstrapLocalControlOperator(context.Background(), auth.IdentityRef{Provider: "google", Issuer: "https://accounts.google.com", Subject: "fixture-control-operator"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = f.Store.LocalControls(nil).InitializeSynthetic(context.Background(), f.ControlOperator.Principal, "fresh-control-fixture"); err != nil {
+		t.Fatal(err)
+	}
 	f.Document = profile(t)
 	if _, err = f.Store.SaveProfile(context.Background(), f.Principal, "synthetic-initial", 0, f.Document); err != nil {
 		t.Fatal(err)

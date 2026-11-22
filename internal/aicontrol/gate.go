@@ -4,14 +4,19 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"sort"
 	"sync"
+	"sync/atomic"
 )
 
 // SyntheticGate is independent in-memory fixture authority, never a hosted
 // recovery implementation. Close fences new handoffs and cancels active local
 // callbacks; Drain separately proves callbacks, bodies and result writes exited. No
 // operation here releases provider expense or possible-remote capacity.
+var syntheticGateSequence atomic.Uint64
+
 type SyntheticGate struct {
+	id         uint64
 	mu         sync.Mutex
 	namespaces map[string]*gateNamespace
 	changed    chan struct{}
@@ -25,6 +30,91 @@ type gateNamespace struct {
 	active  map[*gateCall]struct{}
 }
 type gateCall struct{ cancel context.CancelFunc }
+type syntheticExclusion struct {
+	gate     *SyntheticGate
+	versions map[string]uint64
+	epochs   map[string]int64
+}
+
+func (g *SyntheticGate) wholeSystemExclusion() (syntheticExclusion, error) {
+	if g == nil {
+		return syntheticExclusion{}, ErrDenied
+	}
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if len(g.namespaces) == 0 {
+		return syntheticExclusion{}, ErrDenied
+	}
+	proof := syntheticExclusion{gate: g, versions: map[string]uint64{}, epochs: map[string]int64{}}
+	for name, n := range g.namespaces {
+		if n.open || n.retired || len(n.active) != 0 {
+			return syntheticExclusion{}, ErrDenied
+		}
+		proof.versions[name] = n.version
+		proof.epochs[name] = n.epoch
+	}
+	return proof, nil
+}
+func (e syntheticExclusion) valid() bool {
+	if e.gate == nil {
+		return false
+	}
+	e.gate.mu.Lock()
+	defer e.gate.mu.Unlock()
+	return e.validLocked()
+}
+func (e syntheticExclusion) validLocked() bool {
+	if len(e.versions) != len(e.gate.namespaces) {
+		return false
+	}
+	for name, version := range e.versions {
+		n := e.gate.namespaces[name]
+		if n == nil || n.open || n.retired || n.version != version || n.epoch != e.epochs[name] || len(n.active) != 0 {
+			return false
+		}
+	}
+	return true
+}
+
+// Lock the complete local authority set before checking the checkpoint and
+// opening it. A newer independent Close must win even at this final boundary.
+func openSyntheticExclusions(proofs map[*SyntheticGate]syntheticExclusion, epochs map[*SyntheticGate]map[string]int64) error {
+	gates := make([]*SyntheticGate, 0, len(proofs))
+	for gate := range proofs {
+		gates = append(gates, gate)
+	}
+	sort.Slice(gates, func(i, j int) bool { return gates[i].id < gates[j].id })
+	for _, gate := range gates {
+		gate.mu.Lock()
+	}
+	defer func() {
+		for i := len(gates) - 1; i >= 0; i-- {
+			gates[i].mu.Unlock()
+		}
+	}()
+	for _, gate := range gates {
+		proof := proofs[gate]
+		if !proof.validLocked() || len(epochs[gate]) != len(proof.epochs) {
+			return ErrDenied
+		}
+		for name, previous := range proof.epochs {
+			if epochs[gate][name] != previous+1 {
+				return ErrDenied
+			}
+		}
+	}
+	for _, gate := range gates {
+		for name, epoch := range epochs[gate] {
+			n := gate.namespaces[name]
+			n.version++
+			n.epoch = epoch
+			n.open = true
+		}
+		gate.notifyLocked()
+	}
+	return nil
+}
+
 type gateLease struct {
 	gate      *SyntheticGate
 	namespace string
@@ -33,7 +123,7 @@ type gateLease struct {
 }
 
 func NewSyntheticGate() *SyntheticGate {
-	return &SyntheticGate{namespaces: map[string]*gateNamespace{}, changed: make(chan struct{})}
+	return &SyntheticGate{id: syntheticGateSequence.Add(1), namespaces: map[string]*gateNamespace{}, changed: make(chan struct{})}
 }
 func (g *SyntheticGate) notifyLocked() { close(g.changed); g.changed = make(chan struct{}) }
 func (g *SyntheticGate) stateLocked(namespace string) *gateNamespace {

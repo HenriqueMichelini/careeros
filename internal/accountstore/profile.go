@@ -65,6 +65,13 @@ func authorizedAccount(ctx context.Context, tx *sql.Tx, p auth.Principal) error 
 	if closed {
 		return auth.ErrAuthenticationRequired
 	}
+	var compromised bool
+	if err := tx.QueryRowContext(ctx, `SELECT careeros_control_account_denied($1)`, p.AccountID).Scan(&compromised); err != nil {
+		return unavailable(err)
+	}
+	if compromised {
+		return auth.ErrForbidden
+	}
 	return nil
 }
 func authorizedSession(ctx context.Context, tx *sql.Tx, p auth.Principal) error {

@@ -29,6 +29,7 @@ def main():
     parser.add_argument("--browser", action="store_true")
     parser.add_argument("--deletion-browser", action="store_true")
     parser.add_argument("--lifecycle-browser", action="store_true")
+    parser.add_argument("--operator-browser", action="store_true")
     args = parser.parse_args()
     if args.reconciliation_physical_restart and (args.full or args.relevant or args.browser or args.package != ["./internal/aicontrol"] or args.pattern != "TestRestrictedReconciliationExplicitKeyRetirementKeepsIndependentSurvivors"):
         parser.error("physical restart requires its dedicated single-package, single-test schedule")
@@ -85,8 +86,8 @@ def main():
                 if base_executable:
                     env["CAREEROS_RECONCILIATION_BASE_EXECUTABLE"] = str(base_executable)
                 command = ["go", "test", "-p=1", "-json", "-race", "-vet=off", "-timeout=600s", "-count=1"]
-                if args.browser or args.deletion_browser or args.lifecycle_browser:
-                    script = "tests/account-lifecycle-browser.check.mjs" if args.lifecycle_browser else "tests/account-deletion-browser.check.mjs" if args.deletion_browser else "tests/draft-recovery-browser.check.mjs"
+                if args.browser or args.deletion_browser or args.lifecycle_browser or args.operator_browser:
+                    script = "tests/operator-control-browser.check.mjs" if args.operator_browser else "tests/account-lifecycle-browser.check.mjs" if args.lifecycle_browser else "tests/account-deletion-browser.check.mjs" if args.deletion_browser else "tests/draft-recovery-browser.check.mjs"
                     command = ["node", script]
                 elif args.full:
                     command += ["./..."]
@@ -94,7 +95,7 @@ def main():
                     command += helper.PACKAGES + ["./internal/draftrecovery", "./internal/auth", "./cmd/deletion-local"]
                 else:
                     command += ["-run", args.pattern, *(args.package or ["./internal/accountapi", "./internal/draftrecovery"])]
-                receipt_name = "browser.jsonl" if args.browser or args.deletion_browser or args.lifecycle_browser else "go.jsonl"
+                receipt_name = "browser.jsonl" if args.browser or args.deletion_browser or args.lifecycle_browser or args.operator_browser else "go.jsonl"
                 with (evidence / receipt_name).open("x") as output:
                     result = run(command, env=env, output=output)
                 events = []
@@ -107,7 +108,7 @@ def main():
                            "pass_events": sum(e.get("Action") == "pass" for e in events),
                            "failures": [{"package": e.get("Package"), "test": e.get("Test")} for e in events if e.get("Action") == "fail"],
                            "skips": [{"package": e.get("Package"), "test": e.get("Test")} for e in events if e.get("Action") == "skip"]}
-                if args.browser or args.deletion_browser or args.lifecycle_browser:
+                if args.browser or args.deletion_browser or args.lifecycle_browser or args.operator_browser:
                     summary["browser_cells"] = [e for e in events if e.get("status") == "passed"]
                 if args.relevant:
                     summary["admission"] = helper.summarize(evidence / "go.jsonl")

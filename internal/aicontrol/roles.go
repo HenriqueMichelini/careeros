@@ -82,6 +82,36 @@ CREATE TRIGGER ai_fixture_local_execution_guard BEFORE INSERT ON ai_fixture_stag
 			return nil, nil, "", ErrUnavailable
 		}
 	}
+	var controlEpochInstalled bool
+	if tx.QueryRowContext(ctx, `SELECT to_regprocedure('ai_fixture_control_epoch_guard()') IS NOT NULL`).Scan(&controlEpochInstalled) != nil {
+		return nil, nil, "", ErrUnavailable
+	}
+	if !controlEpochInstalled {
+		if _, err = tx.ExecContext(ctx, fmt.Sprintf(`
+ALTER TABLE ai_fixture_action ADD COLUMN IF NOT EXISTS control_epoch bigint NOT NULL DEFAULT 1 CHECK(control_epoch>0);
+ALTER TABLE ai_fixture_action ALTER COLUMN control_epoch SET DEFAULT careeros_current_inference_epoch();
+CREATE FUNCTION ai_fixture_control_epoch_guard() RETURNS trigger
+LANGUAGE plpgsql SET search_path=%[1]s,pg_catalog,pg_temp AS $guard$
+BEGIN
+ IF current_user IN ('%[2]s','%[3]s','%[4]s') THEN
+  IF TG_OP='INSERT' THEN
+   NEW.control_epoch:=careeros_current_inference_epoch();
+  ELSIF current_user='%[2]s' AND OLD.state='failed' AND NEW.state='recoverable' AND NEW.attempt=OLD.attempt+1 AND NOT OLD.compacted THEN
+   IF NOT careeros_inference_allowed() THEN RAISE EXCEPTION 'inference stopped'; END IF;
+   IF OLD.execution_version<>'synthetic-execution-v1' AND EXISTS(SELECT 1 FROM ai_fixture_dispatch d WHERE d.namespace=OLD.namespace AND d.action=OLD.id AND (d.state<>'observed' OR d.remote_state<>'terminal_proven')) THEN RAISE EXCEPTION 'unknown intent cannot create fresh attempt'; END IF;
+   NEW.control_epoch:=careeros_current_inference_epoch();
+  ELSIF NEW.control_epoch IS DISTINCT FROM OLD.control_epoch THEN
+   RAISE EXCEPTION 'restricted role cannot forge inference epoch';
+  END IF;
+ END IF;
+ RETURN NEW;
+END $guard$;
+REVOKE ALL ON FUNCTION ai_fixture_control_epoch_guard() FROM PUBLIC;
+CREATE TRIGGER ai_fixture_control_epoch_guard BEFORE INSERT OR UPDATE ON ai_fixture_action FOR EACH ROW EXECUTE FUNCTION ai_fixture_control_epoch_guard();
+`, schema, runtimeRole, reviewerRole, supportRole)); err != nil {
+			return nil, nil, "", ErrUnavailable
+		}
+	}
 	// The schema-local marker and all privileges commit atomically. Reopening
 	// a fixture authenticates existing restricted roles without reacquiring DDL
 	// locks against admissions already using those tables. Missing/stale fixture
@@ -266,7 +296,7 @@ GRANT INSERT,UPDATE ON ai_recon_command,ai_recon_state,ai_recon_stop,ai_recon_ev
 	}
 	// Additive migration for inherited fixture identities too. These predicates
 	// return only protective booleans; never grant deletion-table/status secrets.
-	if _, err = tx.ExecContext(ctx, fmt.Sprintf(`GRANT EXECUTE ON FUNCTION careeros_account_closed(text),careeros_deleted_profile_restored(text),careeros_action_predates_deletion(text,timestamptz),careeros_invitation_denied(text) TO %s,%s`, runtimeRole, reviewerRole)); err != nil {
+	if _, err = tx.ExecContext(ctx, fmt.Sprintf(`GRANT EXECUTE ON FUNCTION careeros_account_closed(text),careeros_deleted_profile_restored(text),careeros_action_predates_deletion(text,timestamptz),careeros_invitation_denied(text),careeros_inference_allowed(),careeros_current_inference_epoch(),careeros_control_account_denied(text) TO %s,%s`, runtimeRole, reviewerRole)); err != nil {
 		return nil, nil, "", ErrUnavailable
 	}
 	if tx.Commit() != nil {

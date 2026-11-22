@@ -36,12 +36,13 @@ export class AccountDeletion {
   private sequence = 0
   canCorrect = false
   private get storageKey() { return `careeros.deletion.v1:${this.accountId}` }
-  constructor(readonly accountId: string, private storage?: StoragePort, private request: typeof fetch = fetch, private newKey = () => crypto.randomUUID()) {
+  constructor(readonly accountId: string, private storage?: StoragePort, private request: typeof fetch = fetch, private newKey = () => crypto.randomUUID(), private restrictedRights = false) {
     try { const key=storage?.getItem(this.storageKey);if(key&&/^[A-Za-z0-9_-]{1,128}$/.test(key))this.pendingOperation=key } catch { /* Memory pointer remains available. */ }
   }
   cancel() { this.sequence++ }
   private async call(path: string, init: RequestInit): Promise<DeletionStatus> {
     const sequence=this.sequence
+    if(this.restrictedRights)path=path.replace("/api/deletion/","/api/rights/deletion/")
     const response=await this.request(path,{...init,credentials:"same-origin",cache:"no-store",headers:{...workflowHeaders(this.accountId),"Content-Type":"application/json"},signal:AbortSignal.timeout(15000)})
     if(sequence!==this.sequence)throw new DeletionError("unavailable")
     if(response.status===401||response.status===403)throw new DeletionError("authentication")
@@ -59,6 +60,7 @@ export class AccountDeletion {
     return this.call(this.pendingOperation ? `/api/deletion/operations/${encodeURIComponent(this.pendingOperation)}` : "/api/deletion/status",{method:"GET"})
   }
   async confirm(input: {kind: DeletionKind,profileId: string,revision: number}): Promise<DeletionStatus> {
+    if(this.restrictedRights&&input.kind!=="account")throw new DeletionError("conflict")
     if(this.pendingOperation!==null&&!this.canCorrect)throw new DeletionError("uncertain")
     this.pendingOperation??=this.newKey()
     this.canCorrect=false

@@ -53,14 +53,18 @@ func deletionStatus(ctx context.Context, tx *sql.Tx, owner, operation string) (D
 	return v, hash, nil
 }
 
-func (s *Store) deletionTransaction(ctx context.Context, p auth.Principal) (*sql.Tx, error) {
+func (s *Store) deletionTransaction(ctx context.Context, p auth.Principal, restricted bool) (*sql.Tx, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, unavailable(err)
 	}
 	// Same order as PilotCommand/Save, also when ordinary non-pilot mode is used.
 	if err = lockPilot(ctx, tx); err == nil {
-		err = authorized(ctx, tx, p)
+		if restricted {
+			err = authorizeRestrictedRights(ctx, tx, p)
+		} else {
+			err = authorized(ctx, tx, p)
+		}
 	}
 	if err != nil {
 		tx.Rollback()
@@ -70,6 +74,9 @@ func (s *Store) deletionTransaction(ctx context.Context, p auth.Principal) (*sql
 }
 
 func (s *Store) StartDeletion(ctx context.Context, p auth.Principal, in DeletionRequest) (DeletionStatus, error) {
+	return s.startDeletion(ctx, p, in, false)
+}
+func (s *Store) startDeletion(ctx context.Context, p auth.Principal, in DeletionRequest, restricted bool) (DeletionStatus, error) {
 	if !validOperation(in.OperationID) || !in.Confirm || (in.Kind != "profile" && in.Kind != "account") || len(in.ProfileID) > 1024 || in.Revision < 0 {
 		return DeletionStatus{}, ErrValidation
 	}
@@ -78,7 +85,7 @@ func (s *Store) StartDeletion(ctx context.Context, p auth.Principal, in Deletion
 	}
 	raw, _ := json.Marshal(in)
 	hash := sha256.Sum256(raw)
-	tx, err := s.deletionTransaction(ctx, p)
+	tx, err := s.deletionTransaction(ctx, p, restricted)
 	if err != nil {
 		return DeletionStatus{}, err
 	}
@@ -102,7 +109,12 @@ func (s *Store) StartDeletion(ctx context.Context, p auth.Principal, in Deletion
 	if in.Kind == "profile" && (err != nil || string(id) != in.ProfileID || rev != in.Revision) {
 		return prior, ErrConflict
 	}
-	if err = authorized(ctx, tx, p); err != nil {
+	if restricted {
+		err = authorizeRestrictedRights(ctx, tx, p)
+	} else {
+		err = authorized(ctx, tx, p)
+	}
+	if err != nil {
 		return prior, err
 	}
 	generation := p.Generation
@@ -133,7 +145,12 @@ func (s *Store) StartDeletion(ctx context.Context, p auth.Principal, in Deletion
 	// Roll the entire tentative fence back unless current authority still wins.
 	// Initial authorization already excluded older markers under this account
 	// lock. Our own tentative marker must not reject its creating transaction.
-	if err = authorizedSession(ctx, tx, p); err != nil {
+	if restricted {
+		err = authorizeRestrictedRights(ctx, tx, p)
+	} else {
+		err = authorizedSession(ctx, tx, p)
+	}
+	if err != nil {
 		return prior, err
 	}
 	// The primary Profile row is small and removed in the fence transaction.

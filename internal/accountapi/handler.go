@@ -114,6 +114,22 @@ func New(service *auth.Service, store *accountstore.Store) http.Handler {
 		deletionRoutes(status, store)
 		mux.Handle("GET /api/deletion/operations/{operation}", service.ProtectDeletionStatus(pilotAccount(status)))
 		mux.Handle("GET /api/deletion/status", service.ProtectDeletionStatus(pilotAccount(status)))
+		rights := http.NewServeMux()
+		deletionRoutesAt(rights, store, "/api/rights/deletion", true)
+		rights.HandleFunc("GET /api/rights/status", func(w http.ResponseWriter, r *http.Request) {
+			p, _ := auth.PrincipalFromRequest(r)
+			started := false
+			err := store.WithRestrictedRightsStatus(r.Context(), p, func(v accountstore.RestrictedRightsStatus) error {
+				w.Header().Set("Content-Type", "application/json")
+				w.Header().Set("Cache-Control", "no-store")
+				started = true
+				return json.NewEncoder(w).Encode(v)
+			})
+			if err != nil && !started {
+				respond(w, nil, err)
+			}
+		})
+		mux.Handle("/api/rights/", service.ProtectRestrictedRights(pilotAccount(rights)))
 	}
 	return mux
 }

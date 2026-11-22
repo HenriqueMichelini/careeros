@@ -91,6 +91,9 @@ func TestDeletionBrowserServer(t *testing.T) {
 				cookies(w)
 			}
 			w.WriteHeader(204)
+		case "compromise":
+			_, err = store.LocalControls(nil).Apply(r.Context(), operator.Principal, "browser-compromise", accountstore.ControlCommand{Control: "compromise", Stop: true, ExpectedVersion: 1, AccountID: who.Account.ID})
+			w.WriteHeader(204)
 		case "reauth":
 			current = login(t, svc, "deletion-browser")
 			cookies(w)
@@ -158,7 +161,7 @@ func TestDeletionBrowserServer(t *testing.T) {
 	})
 	product := NewPilot(svc, store, nil)
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "POST" && r.URL.Path == "/api/deletion/operations" {
+		if r.Method == "POST" && (r.URL.Path == "/api/deletion/operations" || r.URL.Path == "/api/rights/deletion/operations") {
 			posts.Add(1)
 		}
 		product.ServeHTTP(w, r)

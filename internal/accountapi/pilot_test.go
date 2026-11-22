@@ -30,6 +30,7 @@ func TestPilotExplicitActivationIsAccountBoundAndRecoverable(t *testing.T) {
 	if _, err := db.Exec("INSERT INTO careeros_pilot_operators(account_id) VALUES($1)", operator.Account.ID); err != nil {
 		t.Fatal(err)
 	}
+	initializePilotControls(t, store, operator)
 	identity := auth.IdentityRef{Provider: "google", Issuer: "https://accounts.google.com", Subject: "participant"}
 	issue, err := store.PilotCommand(context.Background(), operator.Principal, "issue-one", accountstore.PilotCommand{Kind: "invite", Identity: identity})
 	if err != nil {
@@ -88,7 +89,17 @@ func pilotFixture(t *testing.T) (string, *accountstore.Store, *auth.Service, *au
 	if _, err := db.Exec("INSERT INTO careeros_pilot_operators(account_id) VALUES($1)", operator.Account.ID); err != nil {
 		t.Fatal(err)
 	}
+	initializePilotControls(t, store, operator)
 	return dsn, store, sa, operator
+}
+func initializePilotControls(t *testing.T, store *accountstore.Store, operator *auth.LoginResult) {
+	t.Helper()
+	if err := store.BootstrapLocalControlOperator(context.Background(), auth.IdentityRef{Provider: "google", Issuer: "https://accounts.google.com", Subject: "operator"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.LocalControls(nil).InitializeSynthetic(context.Background(), operator.Principal, "fresh-control-fixture"); err != nil {
+		t.Fatal(err)
+	}
 }
 func pilotInvite(t *testing.T, store *accountstore.Store, sa *auth.Service, operator *auth.LoginResult, subject string) (*auth.LoginResult, accountstore.PilotStatus) {
 	t.Helper()
@@ -293,8 +304,12 @@ func TestPilotInvitationExpiryReissueAndRevocation(t *testing.T) {
 	if _, err = store.ActivatePilot(context.Background(), who.Principal, "old-invitation", inv.InvitationID, true); err != auth.ErrForbidden {
 		t.Fatalf("old invitation: %v", err)
 	}
-	if reissued.CanActivate { t.Fatal("reissue retained old eligibility clearance") }
-	if _,err=store.PilotCommand(context.Background(),operator.Principal,"clear-reissue",accountstore.PilotCommand{Kind:"clear",Identity:identity});err!=nil{t.Fatal(err)}
+	if reissued.CanActivate {
+		t.Fatal("reissue retained old eligibility clearance")
+	}
+	if _, err = store.PilotCommand(context.Background(), operator.Principal, "clear-reissue", accountstore.PilotCommand{Kind: "clear", Identity: identity}); err != nil {
+		t.Fatal(err)
+	}
 	first, err := store.ActivatePilot(context.Background(), who.Principal, "activate", reissued.InvitationID, true)
 	if err != nil {
 		t.Fatal(err)

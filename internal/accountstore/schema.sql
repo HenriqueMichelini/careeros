@@ -224,3 +224,79 @@ BEGIN
  EXECUTE format('REVOKE ALL ON careeros_lifecycle_notices,careeros_lifecycle_cleanup,careeros_lifecycle_scan,careeros_lifecycle_purpose_cleanup,careeros_lifecycle_residuals,careeros_lifecycle_residual_evidence,careeros_profile_pruning,careeros_invitation_cleanup FROM %I',denied.rolname);
  END LOOP;
 END $lifecycle_acl$;
+
+-- Separate invitation/inference authority. New installations are closed until
+-- an explicit local synthetic initialization or verified operator recovery.
+CREATE TABLE IF NOT EXISTS careeros_control_state (
+ singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton),
+ version bigint NOT NULL DEFAULT 1 CHECK(version>0),
+ initialized boolean NOT NULL DEFAULT false,
+ invitation_stopped boolean NOT NULL DEFAULT true,
+ inference_stopped boolean NOT NULL DEFAULT true,
+ changed_at timestamptz NOT NULL DEFAULT clock_timestamp()
+);
+ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS inference_epoch bigint NOT NULL DEFAULT 1 CHECK(inference_epoch>0);
+ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS system_generation bigint NOT NULL DEFAULT 1 CHECK(system_generation>0);
+INSERT INTO careeros_control_state(singleton) VALUES(true) ON CONFLICT DO NOTHING;
+CREATE TABLE IF NOT EXISTS careeros_control_operators (
+ account_id text PRIMARY KEY REFERENCES careeros_accounts(id),
+ installed_at timestamptz NOT NULL DEFAULT clock_timestamp()
+);
+CREATE TABLE IF NOT EXISTS careeros_control_commands (
+ actor_id text NOT NULL, operation_id text NOT NULL,
+ request_hash bytea NOT NULL CHECK(octet_length(request_hash)=32),
+ result bytea NOT NULL, created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+ PRIMARY KEY(actor_id,operation_id)
+);
+CREATE TABLE IF NOT EXISTS careeros_control_accounts (
+ account_id text PRIMARY KEY REFERENCES careeros_accounts(id),
+ compromised boolean NOT NULL DEFAULT true,
+ minimum_generation numeric(20,0) NOT NULL,
+ stopped_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+ prior_grant_state text, prior_retrieval_held boolean,
+ held_grant_version bigint
+);
+CREATE TABLE IF NOT EXISTS careeros_control_recovery (
+ reference text PRIMARY KEY, actor_id text NOT NULL, operation_id text NOT NULL,
+ evidence bytea NOT NULL, recorded_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+ FOREIGN KEY(actor_id,operation_id) REFERENCES careeros_control_commands(actor_id,operation_id)
+ DEFERRABLE INITIALLY DEFERRED
+);
+ALTER TABLE careeros_pilot_access ADD COLUMN IF NOT EXISTS authority_version bigint NOT NULL DEFAULT 1 CHECK(authority_version>0);
+ALTER TABLE careeros_pilot_access ADD COLUMN IF NOT EXISTS control_compromise_held boolean NOT NULL DEFAULT false;
+REVOKE ALL ON careeros_control_state,careeros_control_operators,careeros_control_commands,careeros_control_accounts,careeros_control_recovery FROM PUBLIC;
+DO $control_functions$
+DECLARE owning_schema text; denied record;
+BEGIN
+ SELECT n.nspname INTO owning_schema FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE c.oid='careeros_control_state'::regclass;
+ IF owning_schema !~ '^[A-Za-z_][A-Za-z0-9_]*$' OR owning_schema ~ '^pg_' THEN RAISE EXCEPTION 'invalid control schema'; END IF;
+ IF EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE c.oid IN ('careeros_control_operators'::regclass,'careeros_control_commands'::regclass,'careeros_control_accounts'::regclass,'careeros_control_recovery'::regclass,'careeros_accounts'::regclass) AND n.nspname<>owning_schema) THEN RAISE EXCEPTION 'mixed control schema'; END IF;
+ EXECUTE format($definition$
+ CREATE OR REPLACE FUNCTION %1$I.careeros_inference_allowed() RETURNS boolean
+ LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $allowed$
+ SELECT COALESCE((SELECT initialized AND NOT inference_stopped FROM %1$I.careeros_control_state WHERE singleton),false)
+ $allowed$;
+ CREATE OR REPLACE FUNCTION %1$I.careeros_current_inference_epoch() RETURNS bigint
+ LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $epoch$
+ SELECT COALESCE((SELECT inference_epoch FROM %1$I.careeros_control_state WHERE singleton AND initialized),0)
+ $epoch$;
+ CREATE OR REPLACE FUNCTION %1$I.careeros_control_account_denied(owner_id text) RETURNS boolean
+ LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $denied$
+ SELECT NOT EXISTS(SELECT 1 FROM %1$I.careeros_control_state WHERE singleton)
+ OR EXISTS(SELECT 1 FROM %1$I.careeros_control_accounts c LEFT JOIN %1$I.careeros_accounts a ON a.id=c.account_id
+ WHERE c.account_id=owner_id AND (c.compromised OR a.id IS NULL OR a.generation<c.minimum_generation))
+ $denied$;
+ REVOKE ALL ON FUNCTION %1$I.careeros_inference_allowed() FROM PUBLIC;
+ REVOKE ALL ON FUNCTION %1$I.careeros_current_inference_epoch() FROM PUBLIC;
+ REVOKE ALL ON FUNCTION %1$I.careeros_control_account_denied(text) FROM PUBLIC;
+ $definition$,owning_schema);
+ FOR denied IN
+ SELECT DISTINCT role.rolname FROM pg_class relation
+ CROSS JOIN LATERAL aclexplode(COALESCE(relation.relacl,acldefault('r',relation.relowner))) permission
+ JOIN pg_roles role ON role.oid=permission.grantee
+ WHERE relation.oid IN ('careeros_control_state'::regclass,'careeros_control_operators'::regclass,'careeros_control_commands'::regclass,'careeros_control_accounts'::regclass,'careeros_control_recovery'::regclass)
+ AND permission.grantee<>relation.relowner
+ LOOP
+ EXECUTE format('REVOKE ALL ON careeros_control_state,careeros_control_operators,careeros_control_commands,careeros_control_accounts,careeros_control_recovery FROM %I',denied.rolname);
+ END LOOP;
+END $control_functions$;

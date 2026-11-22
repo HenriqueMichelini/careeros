@@ -1,0 +1,244 @@
+{
+  "base": "49fb63cb1d25b0d4cdfebbec3639710d1913a3f5",
+  "runtime_files": [
+    {
+      "path": "cmd/control-local/main.go",
+      "git_blob": "9ac96591bbf88affc6ca2d610a21b66303123145",
+      "sha256": "faaafbb47c509f6aa0170642a96c1dad762577694733572b0692315866b68798"
+    },
+    {
+      "path": "internal/accountapi/deletion.go",
+      "git_blob": "945f52bd43c062230e7ef47799abb273b2a24955",
+      "sha256": "171f89f3a9ad342d6b4f52dc7927b2162eeedfd286431e68a47b4a5364803097"
+    },
+    {
+      "path": "internal/accountapi/handler.go",
+      "git_blob": "fd66970116461a1edb666e9cc87ef8147c5d25b2",
+      "sha256": "8941188b59f956099c0f7b1773a5d857e7f9e379a255f231fd40270423f20af4"
+    },
+    {
+      "path": "internal/accountapi/pilot.go",
+      "git_blob": "1cfa8363573c2e46768dd75501b5a681edc5cd1d",
+      "sha256": "f7370c0178efdb8f856a093a97d32a3771903cea9eac4a98fffe0b2a46530b71"
+    },
+    {
+      "path": "internal/accountstore/control_command.go",
+      "git_blob": "8207a1ef48dd79fbb31e0aa0d7beaa4cfea4ea66",
+      "sha256": "2d2b3e55da240c9b5568684382d822ffb9d02c6f6684571457fa6e85ea75d24e"
+    },
+    {
+      "path": "internal/accountstore/control_compromise.go",
+      "git_blob": "1b2a2d80e7a3fcd46a666ba37527bda119b5a3ad",
+      "sha256": "d808b4786633503655331345e3a5ccdc1c26e1d48c162f834ed37a179d8b8965"
+    },
+    {
+      "path": "internal/accountstore/control_dispatch.go",
+      "git_blob": "f5479e16215d2b48313e36b15e61d783980df6e9",
+      "sha256": "5272623866a1df8c788a01a6af5244fc6216d559dc7f1cddc5acdb7ebe4db32e"
+    },
+    {
+      "path": "internal/accountstore/control_rights.go",
+      "git_blob": "714af10fdeb355ba03a4e9c3038c08c5bdcf56fd",
+      "sha256": "a98ac33eb4efec3acff5699e9d84b8124b6019d0ea421b6c4404efbba8d79ecf"
+    },
+    {
+      "path": "internal/accountstore/control_source.go",
+      "git_blob": "37820f39463505e2ba09867aa0e634d7f6a9f1ab",
+      "sha256": "203bd07b5663907d12a21b016ae95eea78252252a9f3301145529647b36f2ea2"
+    },
+    {
+      "path": "internal/accountstore/controls.go",
+      "git_blob": "9a977bc2cbb6d2725701883848a1aeb2cdef3e81",
+      "sha256": "90625be321c297e7f9b9948be67e890b8027e2b1df28dd71024cb5324dbaac24"
+    },
+    {
+      "path": "internal/accountstore/deletion.go",
+      "git_blob": "4f7376b54fbe3eaf9f436e7c31511abf1cdf1396",
+      "sha256": "85b1afe55c0e30c08cb2d28df40991afd5483a73407e58ed0903936f6ccf9423"
+    },
+    {
+      "path": "internal/accountstore/deletion_status.go",
+      "git_blob": "3479e521d3415cc2c81f4cc83b3bc4a2bef65223",
+      "sha256": "892ae36ac743d3fd03c3ff3fdb9bf2d6293150851044c8721345f590adeb5f2c"
+    },
+    {
+      "path": "internal/accountstore/pilot.go",
+      "git_blob": "c412fc7735aded1303088d36d32075a9c9ad1243",
+      "sha256": "913bcb64f6f0d1b82b232e361f53165cb56a50d113469597bdcded793c0fd79b"
+    },
+    {
+      "path": "internal/accountstore/profile.go",
+      "git_blob": "86d82972f59b29750bd67f3f82329e6976cb87b8",
+      "sha256": "f291db8d294ba47498d233a3d62426ac4cf082e5c66d8c7511fd7372e5eb01af"
+    },
+    {
+      "path": "internal/accountstore/schema.sql",
+      "git_blob": "cc054ea17cdcbfd6b2bd73b272140681d891827f",
+      "sha256": "194fd4cb144869d68e504a47ec955bbbfcee0aa0728cf5a728464b9a5739fb36"
+    },
+    {
+      "path": "internal/accountstore/store.go",
+      "git_blob": "6c35b057295987cf1b84890019c83c5308deb3ed",
+      "sha256": "f895d94b6bd710e42460579bd1fc77dc8c0dd6650296dc9065a37006f05e68bc"
+    },
+    {
+      "path": "internal/aicontrol/control_recovery.go",
+      "git_blob": "3b457fc89aaf585794e49efb828e0816a50cea07",
+      "sha256": "2a482f6f91643c12fff92b13aaf2f6ed0b94c3be8f64c20452414c292d152f49"
+    },
+    {
+      "path": "internal/aicontrol/dispatch.go",
+      "git_blob": "5cd48672d7ee0c45fc29c23e2474157347722f4f",
+      "sha256": "14cf03ef15a96198d86adf8b23620022ee1d49d77b59a45658a70394f92f7a22"
+    },
+    {
+      "path": "internal/aicontrol/gate.go",
+      "git_blob": "372dc4c5fae38f42a708fcc7d053b097bffb736d",
+      "sha256": "c3b52c60549a8d557ff1c07cd7f6d2e059a35e26ca782b246e41fd82b2fe79c5"
+    },
+    {
+      "path": "internal/aicontrol/qualification.go",
+      "git_blob": "8803780361d93e9299e410ca9f866f5202690d14",
+      "sha256": "aa951ebcb6a1bf0f68a20139a07d7b2ae2f67c4051b36915914b590bd8049caf"
+    },
+    {
+      "path": "internal/aicontrol/roles.go",
+      "git_blob": "73277c38d0cab868f4df55395b2326ac59dd3486",
+      "sha256": "b81670016f9deaac3bc72f5654a17ec5b9ab59f4f419b93202e0c0361a530118"
+    },
+    {
+      "path": "internal/aicontrol/schema.sql",
+      "git_blob": "38b9e1451b0eec476d8282e2022affea8b313397",
+      "sha256": "225ec71c6e443d263fc13242a97b138fdbf6fc2afa9afe2d3b24e0276b282c92"
+    },
+    {
+      "path": "internal/aicontrol/types.go",
+      "git_blob": "9a89fc5444d4f8cf9fea951d7fab747759b6ea37",
+      "sha256": "42d9783d866efd9823a24eeeb42e1ba0c42ed6375514ad9ace4fa24c339d2a13"
+    },
+    {
+      "path": "internal/auth/account.go",
+      "git_blob": "3b383180ab66a5dbbb7e2217614213b5d7b7f562",
+      "sha256": "71ddea19bf5315692261f6639a2eab19320a6a69046471391da6301f194f4eec"
+    },
+    {
+      "path": "internal/auth/deletion_status.go",
+      "git_blob": "a8c8f806a21aaa6d2d9589c3e22d0c52d3eeada9",
+      "sha256": "5bcaee9e82d9f6aba895f7f5ad674b1053982cf49ffcab68ca13a3b723970383"
+    },
+    {
+      "path": "internal/auth/handler.go",
+      "git_blob": "d261953dd9edd6782697f94681aee54796d010e6",
+      "sha256": "17315208604b56876edb9d570d6782768b057f94b01193508571c12e84b75a97"
+    },
+    {
+      "path": "internal/auth/service.go",
+      "git_blob": "5f54fc5914f98068f0bfdd4c7896c48b41c28210",
+      "sha256": "2b84c2be2ec83b53bf01d44c88f8185225e3e06415ca12e7b470d12c11216d01"
+    },
+    {
+      "path": "src/components/AccountDeletion.tsx",
+      "git_blob": "744d2ad93b7e1dabd6472676010c4b83ff076caf",
+      "sha256": "e66565a9591f33f84a4c342aaece6083edd43b423846407ebfd442283163f1a0"
+    },
+    {
+      "path": "src/components/AccountGate.tsx",
+      "git_blob": "d8ffac066fbc82fbae8bc6147fa0919b929e81c5",
+      "sha256": "640bc006ad23792aae4aa1b37b0d057af913534d4d71e040ed908037831a427d"
+    },
+    {
+      "path": "src/lib/accountDeletion.ts",
+      "git_blob": "44b4df02d4bd41be3011ec79334b4504d669d52f",
+      "sha256": "4122b466e816abdf8f74afc50aa12666b8b7c36b4602eb1ccc1799337ea8305c"
+    },
+    {
+      "path": "vite.config.ts",
+      "git_blob": "9c0cfac46318e342de8d988a006c0e74b7fab6f6",
+      "sha256": "b81a475c4521ee0f0f3cece3be11d9e8118363d20f9527bd3463ca195eff9a73"
+    }
+  ],
+  "fixture_files": [
+    {
+      "path": "internal/accountapi/deletion_browser_test.go",
+      "git_blob": "ce3ff760209cce8b957da18e6014b8198bd94e28",
+      "sha256": "d914b418b12fa65ffd944492c56467464e790fa509eab9cfc086112f49174dcc"
+    },
+    {
+      "path": "internal/accountapi/operator_control_compromise_test.go",
+      "git_blob": "d74601cdafd6f35bc4c0fde7600e9f2dd0f4dc59",
+      "sha256": "6b2021abe5eab185e07f660c0926f96b3f0c83de8d293cedda84321862903a01"
+    },
+    {
+      "path": "internal/accountapi/operator_control_draft_test.go",
+      "git_blob": "8e79004779342c40d09491ea125ba1ef6f263247",
+      "sha256": "738f05b742a758d484c5b160859a9299fd380466f5a329f5e5196c4b594696b5"
+    },
+    {
+      "path": "internal/accountapi/operator_control_managed_test.go",
+      "git_blob": "013794f7cd71046ea335170179c77fa53b28b74b",
+      "sha256": "81f0ee44a885797e0ecb39dbdd0cfae32b453cb99f576266c308f7256b23ca1e"
+    },
+    {
+      "path": "internal/accountapi/operator_control_reopen_test.go",
+      "git_blob": "ec9749da3503d325bb794f199fdc4db62551994f",
+      "sha256": "d51968407f7e215b8417f80c5b1432c583650d292ebf1e4ac777f20ad021a155"
+    },
+    {
+      "path": "internal/accountapi/operator_control_restart_test.go",
+      "git_blob": "f90fec8613b0e6d57adeba73a6e2d83f5f901994",
+      "sha256": "36a8be95f61a2d1f0f4a4f435f048c13e0689f913a86bc701d13b8aaefd2568c"
+    },
+    {
+      "path": "internal/accountapi/operator_control_test.go",
+      "git_blob": "63dcb04fe09ad73ae4bfda93e5912667932e5dd5",
+      "sha256": "6e166b350e7f03a1ed4126f3ad171b79e9a691ce1b4d2edca24b172ccd4541f8"
+    },
+    {
+      "path": "internal/accountapi/pilot_test.go",
+      "git_blob": "1f1bd470248560a4b77359dfc11904791e650bdf",
+      "sha256": "6a057d01564252150a78122e72989f2dfe4a913e9398a6c4cb880a338285da7a"
+    },
+    {
+      "path": "internal/aicontrol/control_reopening_test.go",
+      "git_blob": "fe96f054d8e255303fd5701015c7c2ccf159adec",
+      "sha256": "ba19def47e9d5749d3a137ae71d415a6164c2f9e19d23db623c591461af850e9"
+    },
+    {
+      "path": "internal/aicontrol/control_test.go",
+      "git_blob": "3fc1125d6640727a1dadf153abb310b9d89f813a",
+      "sha256": "934e46adaf8a5e89cc72246122982deb819f5bbd3d50967c87367c81b0d3d503"
+    },
+    {
+      "path": "internal/testsupport/aiadmission/fixture.go",
+      "git_blob": "366516bf34942a1b38ac933878523654ce6f6f55",
+      "sha256": "3e816789bb828d527f1dbc61c547ad13f4409255ea40d17ab613604f14921cb8"
+    },
+    {
+      "path": "tests/account-deletion.test.mjs",
+      "git_blob": "ed4a7424ad8674f2f02efc6821c041002f3330f1",
+      "sha256": "93a3eac285d5ab0f9da2b69618c7be5b7e628fa6d6d9e562fdf9756ac7a64eeb"
+    },
+    {
+      "path": "tests/draft-recovery-pg.py",
+      "git_blob": "193fa7a8dc0f76cc7bd29f27ab90f848a0f3068e",
+      "sha256": "1e552a13c2cb2b2f60a9692974fdc386085e48118408a2d785b48b849dc3c866"
+    },
+    {
+      "path": "tests/operator-control-browser.check.mjs",
+      "git_blob": "40fe9dd91a02949a65378478c0495ef28321f3f5",
+      "sha256": "a980451c9390f909caf4b7ad235bdd6333d4f3027bae7f89fe4c0a0bdc5e0c80"
+    }
+  ],
+  "documents": [
+    {
+      "path": "docs/managed-operator-controls-local.md",
+      "git_blob": "c1bef80ca59478615593547cab43388bda514090",
+      "sha256": "d4b3efee6ff952e3b533051021f90cd2f05866e61d1bcd506f539aca7ada8c2b"
+    },
+    {
+      "path": "docs/operator-control-contract.md",
+      "git_blob": "312a512cf74f48dd6009ee63958a4a315575bb3b",
+      "sha256": "982fd145eee87b8db450be5ba059dc73cf547edd08a093147b8192b4d8caf59f"
+    }
+  ]
+}

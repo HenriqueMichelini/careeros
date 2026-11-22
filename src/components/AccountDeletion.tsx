@@ -8,10 +8,10 @@ function tabStorage() { try { return sessionStorage } catch { return undefined }
 
 // This control is outside the career workspace so an ambiguous confirmation
 // can withhold every protected copy while retaining metadata/status controls.
-export default function AccountDeletion({ accountId, account, pt, withhold }: {
-  accountId: string, account?: AccountProfile, pt: boolean, withhold?: () => void,
+export default function AccountDeletion({ accountId, account, pt, withhold, restrictedRights = false }: {
+  accountId: string, account?: AccountProfile, pt: boolean, withhold?: () => void, restrictedRights?: boolean,
 }) {
-  const [client] = useState(() => new DeletionClient(accountId,tabStorage()))
+  const [client] = useState(() => new DeletionClient(accountId,tabStorage(),fetch,()=>crypto.randomUUID(),restrictedRights))
   const [prepared,setPrepared] = useState<{kind: DeletionKind,profileId:string,revision:number}|null>(null)
   const [status,setStatus] = useState<DeletionStatus|null>(null)
   const [message,setMessage] = useState("")
@@ -35,12 +35,12 @@ export default function AccountDeletion({ accountId, account, pt, withhold }: {
     catch(e){if(live.current)error(e)}finally{if(live.current)setBusy(false)}
   }
   async function prepare(kind: DeletionKind) {
-    if(!account || (client.pendingOperation && !status&&!client.canCorrect))return
+    if((!account&&!(restrictedRights&&kind==="account")) || (client.pendingOperation && !status&&!client.canCorrect))return
     setBusy(true);setMessage("")
     try {
-      const doc=kind==="profile"?await account.open():null
+      const doc=kind==="profile"?await account!.open():null
       if(!live.current)return
-      if(kind==="profile"&&!account.hasSavedProfile){setMessage(pt?"Não há Perfil salvo para excluir.":"There is no saved Profile to delete.");return}
+      if(kind==="profile"&&!account!.hasSavedProfile){setMessage(pt?"Não há Perfil salvo para excluir.":"There is no saved Profile to delete.");return}
       if(!client.canCorrect)client.newOperation();setPrepared({kind,profileId:doc?.id??"",revision:doc?.revision??0})
     }catch(e){if(live.current)error(e)}finally{if(live.current)setBusy(false)}
   }
@@ -52,7 +52,8 @@ export default function AccountDeletion({ accountId, account, pt, withhold }: {
   }
   return <section data-account-deletion className="border-b p-4 text-sm">
     <h2>{pt?"Excluir dados da conta":"Delete account data"}</h2>
-    {account&&<div className="flex gap-4"><button data-delete-profile disabled={busy||Boolean(client.pendingOperation&&!status&&!client.canCorrect)} onClick={()=>void prepare("profile")}>{pt?"Excluir Perfil":"Delete Profile"}</button><button data-close-account disabled={busy||Boolean(client.pendingOperation&&!status&&!client.canCorrect)} onClick={()=>void prepare("account")}>{pt?"Encerrar conta":"Close account"}</button></div>}
+    {restrictedRights&&<p role="status">{pt?"O acesso à conta está temporariamente restrito. Você pode verificar solicitações de exclusão ou confirmar o encerramento da conta. O conteúdo profissional continua bloqueado.":"Account access is temporarily restricted. You can check deletion requests or confirm account closure. Career content remains blocked."}</p>}
+    {(account||restrictedRights)&&<div className="flex gap-4">{account&&<button data-delete-profile disabled={busy||Boolean(client.pendingOperation&&!status&&!client.canCorrect)} onClick={()=>void prepare("profile")}>{pt?"Excluir Perfil":"Delete Profile"}</button>}<button data-close-account disabled={busy||Boolean(client.pendingOperation&&!status&&!client.canCorrect)} onClick={()=>void prepare("account")}>{pt?"Encerrar conta":"Close account"}</button></div>}
     {prepared&&<div role="group" aria-label={pt?"Confirmar exclusão":"Confirm deletion"}>
       <p>{prepared.kind==="profile" ? pt?"Excluir o Perfil salvo e todo o histórico de Candidaturas vinculado a ele? Sua conta e os direitos ainda disponíveis continuam com os prazos originais. Esta ação não devolve usos consumidos.":"Delete the saved Profile and all Draft history linked to it? Your account and unused rights keep their original deadlines. This does not refund consumed uses."
         :pt?"Encerrar a conta, revogar seu acesso e excluir todo o conteúdo profissional? Entrar novamente permitirá apenas verificar a exclusão, sem restaurar conteúdo ou direitos.":"Close the account, revoke access and delete all career content? Signing in again will only let you check deletion, without restoring content or rights."}</p>

@@ -106,6 +106,14 @@ func (s accounts) Get(ctx context.Context, id string) (auth.Account, bool, error
 	}
 	if closed {
 		a.Status = auth.AccountDeleted
+	} else {
+		var denied bool
+		if err = s.db.QueryRowContext(ctx, `SELECT careeros_control_account_denied($1)`, id).Scan(&denied); err != nil {
+			return a, false, unavailable(err)
+		}
+		if denied {
+			a.Status = auth.AccountCompromised
+		}
 	}
 	rows, err := s.db.QueryContext(ctx, "SELECT provider,issuer,subject,created_at FROM careeros_identities WHERE account_id=$1", id)
 	if err != nil {
@@ -161,6 +169,14 @@ func (s accounts) FindOrCreateBySubject(ctx context.Context, i auth.IdentityRef,
 	}
 	if closed {
 		a.Status = auth.AccountDeleted
+	} else {
+		var denied bool
+		if err = tx.QueryRowContext(ctx, `SELECT careeros_control_account_denied($1)`, a.ID).Scan(&denied); err != nil {
+			return a, false, unavailable(err)
+		}
+		if denied {
+			a.Status = auth.AccountCompromised
+		}
 	}
 	i.CreatedAt = a.CreatedAt
 	a.Identities = []auth.IdentityRef{i}
@@ -237,6 +253,13 @@ func (s sessions) Create(ctx context.Context, v auth.Session, previousID string,
 		return unavailable(err)
 	}
 	if closed {
+		return auth.ErrInvalidTransaction
+	}
+	var compromised bool
+	if err = tx.QueryRowContext(ctx, `SELECT careeros_control_account_denied($1)`, v.AccountID).Scan(&compromised); err != nil {
+		return unavailable(err)
+	}
+	if compromised {
 		return auth.ErrInvalidTransaction
 	}
 	if previousID != "" {

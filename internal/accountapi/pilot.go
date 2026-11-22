@@ -29,6 +29,7 @@ func NewPilot(service *auth.Service, store *accountstore.Store, workflows map[st
 	mux.Handle("/api/profile/operations/", profiles)
 	mux.Handle("/api/deletion/", profiles)
 	mux.Handle("/api/lifecycle/status", profiles)
+	mux.Handle("/api/rights/", profiles)
 	pilot := http.NewServeMux()
 	pilot.HandleFunc("GET /api/pilot/status", func(w http.ResponseWriter, r *http.Request) {
 		p, _ := auth.PrincipalFromRequest(r)
