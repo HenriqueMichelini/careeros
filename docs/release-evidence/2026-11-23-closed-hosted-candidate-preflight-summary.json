@@ -1452,9 +1452,9 @@
   },
   "owner_decision_handoff": "https://github.com/HenriqueMichelini/careeros/issues/294#issuecomment-6645316759",
   "packet": {
-    "bytes": 20540,
+    "bytes": 20970,
     "path": "docs/closed-hosted-candidate-preflight.md",
-    "sha256": "73bbabc59ef848d6d0993df879176e8de26889a7347316013aa502bc312149f1"
+    "sha256": "cb8389b4a103c3d69074739e38b8d1742834e9654857718e4d55b27aa20f1660"
   },
   "raw_receipts": [
     {
