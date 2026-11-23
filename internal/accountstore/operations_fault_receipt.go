@@ -3,8 +3,10 @@ package accountstore
 import (
 	"context"
 	"crypto/hmac"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -24,6 +26,20 @@ type operationsFaultReceipt struct {
 	At           time.Time       `json:"at"`
 	LatestAt     time.Time       `json:"latestAt"`
 	Unclassified bool            `json:"unclassified,omitempty"`
+}
+
+type operationsFaultFile struct {
+	kind    OperationsFault
+	stamp   string
+	receipt operationsFaultReceipt
+}
+
+type operationsFaultFiles struct {
+	files        []operationsFaultFile
+	set          string
+	known        bool
+	unclassified bool
+	latest       time.Time
 }
 
 func (j *OperationsJournal) faultReceiptPath(kind OperationsFault) string {
@@ -71,54 +87,121 @@ func (j *OperationsJournal) retainFault(ctx context.Context, receipt operationsF
 }
 
 func (j *OperationsJournal) readFaultReceipt(kind OperationsFault) (operationsFaultReceipt, error) {
-	var receipt operationsFaultReceipt
-	f, err := os.OpenFile(j.faultReceiptPath(kind), os.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_NONBLOCK, 0600)
+	file, err := j.readFaultFile(kind)
 	if err != nil {
-		return receipt, err
+		return operationsFaultReceipt{}, err
+	}
+	if file.receipt.Kind == "" {
+		return operationsFaultReceipt{}, auth.ErrUnavailable
+	}
+	return file.receipt, nil
+}
+
+// An unreadable file contributes only its trusted local identity and any
+// bounded bytes that can be read. Its filename never assigns the fault cause.
+func (j *OperationsJournal) readFaultFile(kind OperationsFault) (operationsFaultFile, error) {
+	file := operationsFaultFile{kind: kind}
+	path := j.faultReceiptPath(kind)
+	info, err := os.Lstat(path)
+	if err != nil {
+		return file, err
+	}
+	stamp, ok := info.Sys().(*syscall.Stat_t)
+	if !ok {
+		return file, auth.ErrUnavailable
+	}
+	metadata := fmt.Sprintf("fault-file\x00%s\x00%d\x00%d\x00%d\x00%d\x00%d", kind, stamp.Dev, stamp.Ino,
+		info.Mode(), info.Size(), info.ModTime().UnixNano())
+	file.stamp = j.binding([]byte(metadata))
+	if !info.Mode().IsRegular() || info.Size() > 512 {
+		return file, nil
+	}
+	f, err := os.OpenFile(path, os.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_NONBLOCK, 0600)
+	if err != nil {
+		return file, nil
 	}
 	defer f.Close()
-	info, err := f.Stat()
-	if err != nil || !info.Mode().IsRegular() || info.Mode().Perm()&0077 != 0 || info.Size() > 512 {
-		return receipt, auth.ErrUnavailable
+	opened, err := f.Stat()
+	if err != nil || !sameFaultFile(info, opened) {
+		return file, auth.ErrUnavailable
 	}
-	raw, err := io.ReadAll(io.LimitReader(f, 513))
+	raw, readErr := io.ReadAll(io.LimitReader(f, 513))
+	current, err := os.Lstat(path)
+	if err != nil || !sameFaultFile(info, current) {
+		return file, auth.ErrUnavailable
+	}
+	if readErr != nil || len(raw) > 512 {
+		return file, nil
+	}
+	hash := sha256.Sum256(raw)
+	file.stamp = j.binding(append([]byte(metadata+"\x00"), hash[:]...))
+	if info.Mode().Perm()&0077 != 0 {
+		return file, nil
+	}
+	file.receipt = j.decodeFaultReceipt(kind, raw)
+	return file, nil
+}
+
+func sameFaultFile(expected, current os.FileInfo) bool {
+	return os.SameFile(expected, current) && expected.Mode() == current.Mode() &&
+		expected.Size() == current.Size() && expected.ModTime().Equal(current.ModTime())
+}
+
+func (j *OperationsJournal) decodeFaultReceipt(kind OperationsFault, raw []byte) operationsFaultReceipt {
+	var receipt operationsFaultReceipt
 	var envelope operationsEnvelope
-	if err != nil || len(raw) > 512 || json.Unmarshal(raw, &envelope) != nil ||
+	if json.Unmarshal(raw, &envelope) != nil ||
 		!hmac.Equal([]byte(envelope.Binding), []byte(j.faultReceiptBinding(envelope.Payload))) ||
 		json.Unmarshal(envelope.Payload, &receipt) != nil || receipt.Kind != kind || receipt.At.IsZero() {
-		return operationsFaultReceipt{}, auth.ErrUnavailable
+		return operationsFaultReceipt{}
 	}
 	if receipt.LatestAt.IsZero() {
 		receipt.LatestAt = receipt.At // Complete receipts from the earlier format.
 	}
 	if receipt.LatestAt.Before(receipt.At) {
-		return operationsFaultReceipt{}, auth.ErrUnavailable
+		return operationsFaultReceipt{}
 	}
-	return receipt, nil
+	return receipt
 }
 
-func (j *OperationsJournal) mirrorFaultReceipts(state *operationsJournalState) (known, unclassified bool, latest time.Time) {
+func (j *OperationsJournal) faultFiles() (operationsFaultFiles, error) {
+	var observed operationsFaultFiles
+	var stamps []byte
 	for _, kind := range recoverableOperationsFaults {
-		receipt, err := j.readFaultReceipt(kind)
+		file, err := j.readFaultFile(kind)
 		if errors.Is(err, os.ErrNotExist) {
 			continue
 		}
 		if err != nil {
-			unclassified = true
-			continue
+			return operationsFaultFiles{}, auth.ErrUnavailable
 		}
-		incident, err := operationsFaultIncident(kind, receipt.At)
-		if err != nil {
-			unclassified = true
-			continue
-		}
-		incident.LatestObservedAt = &receipt.LatestAt
-		j.upsertFault(state, kind, incident)
-		known = true
-		unclassified = unclassified || receipt.Unclassified
-		if receipt.LatestAt.After(latest) {
-			latest = receipt.LatestAt
+		observed.files = append(observed.files, file)
+		stamps = append(stamps, file.stamp...)
+		receipt := file.receipt
+		observed.known = observed.known || receipt.Kind != ""
+		observed.unclassified = observed.unclassified || receipt.Kind == "" || receipt.Unclassified
+		if receipt.LatestAt.After(observed.latest) {
+			observed.latest = receipt.LatestAt
 		}
 	}
-	return known, unclassified, latest
+	if len(stamps) != 0 {
+		observed.set = j.binding(append([]byte("fault-files\x00"), stamps...))
+	}
+	return observed, nil
+}
+
+func (j *OperationsJournal) mirrorFaultReceipts(state *operationsJournalState, observed operationsFaultFiles) error {
+	for _, file := range observed.files {
+		receipt := file.receipt
+		if receipt.Kind == "" {
+			continue
+		}
+		incident, err := operationsFaultIncident(receipt.Kind, receipt.At)
+		if err != nil {
+			return err
+		}
+		incident.LatestObservedAt = &receipt.LatestAt
+		j.upsertFault(state, receipt.Kind, incident)
+	}
+	return nil
 }

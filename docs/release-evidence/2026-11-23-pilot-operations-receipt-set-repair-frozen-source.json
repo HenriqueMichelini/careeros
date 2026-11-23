@@ -1,0 +1,38 @@
+{
+  "issue": 291,
+  "repair_parent": "eaa468ad47f95e056d3841c22773f8ca33e55dfe",
+  "previous_ticket": "089a7ac792b506e20ddd9da506cf9edd22add729",
+  "scope": "six source, test, and operator guide paths frozen before verification",
+  "files": {
+    "docs/managed-pilot-operations-local.md": {
+      "bytes": 14849,
+      "sha256": "2676082acc85f32fcf680822e84f61ce994640be485b061dec9a3a5d6099d382",
+      "git_blob": "d12c450931db1628d0a77025197c4fe7a8abc661"
+    },
+    "internal/accountapi/pilot_operations_cli_test.go": {
+      "bytes": 57680,
+      "sha256": "b8a74dcc312f37ea5d87b2a9ad5c209ac2113418efe1ed3a58d84dd7cdda2d94",
+      "git_blob": "363ecb51e90ce88ff7ce10b158acf8c83488d150"
+    },
+    "internal/accountstore/operations_emergency.go": {
+      "bytes": 14193,
+      "sha256": "f596000dec593b7013f495d7b37b023b1193b09cb7ac35e1b76929ef7ba65818",
+      "git_blob": "7ac873791aa2892227859a3443d07cb72badfe1b"
+    },
+    "internal/accountstore/operations_fault_receipt.go": {
+      "bytes": 6347,
+      "sha256": "421df8cf056d057c55c73eb6b77d0faecd3cf05732bad32f0970ea11d1362498",
+      "git_blob": "476446b5b6b0bd842cf316010b296a766f6cf6e5"
+    },
+    "internal/accountstore/schema.sql": {
+      "bytes": 28176,
+      "sha256": "68b13a644eb81d11ef975077dd469d3eae64cf8530884bfda88a8b3ec413f9bb",
+      "git_blob": "285e31a80aab6e4cb96565bf93f7e55cbc73e10b"
+    },
+    "internal/operationslocal/config.go": {
+      "bytes": 5529,
+      "sha256": "28f74f6dd9415e508963444ae7633b6d6ce43d43ae26f052f538109363680005",
+      "git_blob": "d0c916984e8366e03be5c63f11f86367c3b0bf51"
+    }
+  }
+}

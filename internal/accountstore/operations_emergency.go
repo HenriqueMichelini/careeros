@@ -20,6 +20,7 @@ type OperationsEmergency struct {
 	StartedAt    time.Time         `json:"startedAt"`
 	RecordedAt   time.Time         `json:"recordedAt"`
 	Causes       []OperationsFault `json:"causes"`
+	ReceiptSet   string            `json:"receiptSet,omitempty"`
 	observations map[OperationsFault]struct {
 		At       time.Time `json:"at"`
 		LatestAt time.Time `json:"latestAt"`
@@ -27,8 +28,9 @@ type OperationsEmergency struct {
 }
 
 type OperationsEmergencyReview struct {
-	ObservedAt      time.Time
-	ClassifiedCause OperationsFault
+	ObservedAt       time.Time
+	ReceiptSet       string
+	ClassifiedCauses []OperationsFault
 }
 
 func (j *OperationsJournal) observerCapability() string {
@@ -110,8 +112,9 @@ func readOperationsEmergency(ctx context.Context, tx *sql.Tx) (*OperationsEmerge
 	var raw []byte
 	var observations []byte
 	err := tx.QueryRowContext(ctx, `SELECT operations_fault,operations_fault_id,operations_fault_since,
-	  operations_fault_at,to_json(operations_fault_kinds),operations_fault_observations FROM careeros_control_state WHERE singleton`).
-		Scan(&fault, &e.ID, &started, &recorded, &raw, &observations)
+	  operations_fault_at,to_json(operations_fault_kinds),operations_fault_observations,operations_fault_receipt_set
+	  FROM careeros_control_state WHERE singleton`).
+		Scan(&fault, &e.ID, &started, &recorded, &raw, &observations, &e.ReceiptSet)
 	if err != nil || !fault {
 		return nil, false, unavailable(err)
 	}
@@ -119,6 +122,7 @@ func readOperationsEmergency(ctx context.Context, tx *sql.Tx) (*OperationsEmerge
 		return nil, true, nil // A persisted latch from the earlier composition.
 	}
 	if len(e.ID) != 64 || !validOperation(e.ID) || !started.Valid || !recorded.Valid || started.Time.After(recorded.Time) ||
+		e.ReceiptSet != "" && (len(e.ReceiptSet) != 64 || !validOperation(e.ReceiptSet)) ||
 		json.Unmarshal(raw, &e.Causes) != nil || len(e.Causes) < 1 || len(e.Causes) > 8 ||
 		json.Unmarshal(observations, &e.observations) != nil || len(e.observations) > 8 {
 		return nil, false, auth.ErrUnavailable
@@ -177,7 +181,13 @@ func (o *Operations) replayEmergency(ctx context.Context, p auth.Principal, refe
 	if err != nil || state.ID != o.journal.id {
 		return auth.ErrUnavailable
 	}
-	knownFault, unclassified, latest := o.journal.mirrorFaultReceipts(&state)
+	faultFiles, err := o.journal.faultFiles()
+	if err != nil {
+		return err
+	}
+	if err = o.journal.mirrorFaultReceipts(&state, faultFiles); err != nil {
+		return err
+	}
 	e, legacy, err := readOperationsEmergency(ctx, tx)
 	if err != nil {
 		return err
@@ -195,23 +205,20 @@ func (o *Operations) replayEmergency(ctx context.Context, p auth.Principal, refe
 		if !legacy && !orphan && o.journal.verifyWriteHealth() == nil {
 			return ErrNotFound
 		}
+	}
+	if e == nil || e.ReceiptSet != faultFiles.set || faultFiles.unclassified && !slices.Contains(e.Causes, operationsUnclassifiedFault) {
+		if reference != "" {
+			return auth.ErrForbidden
+		}
 		reason := operationsPersistenceFault
-		if !knownFault || unclassified {
+		if faultFiles.unclassified || e == nil && !faultFiles.known {
 			reason = operationsUnclassifiedFault
 		}
 		if err = markOperationsEmergency(ctx, tx, o.journal.observerCapability(), reason); err != nil {
 			return err
 		}
-		e, _, err = readOperationsEmergency(ctx, tx)
-		if err != nil || e == nil {
-			return auth.ErrUnavailable
-		}
-	} else if unclassified && !slices.Contains(e.Causes, operationsUnclassifiedFault) {
-		if reference != "" {
-			return auth.ErrForbidden
-		}
-		if err = markOperationsEmergency(ctx, tx, o.journal.observerCapability(), operationsUnclassifiedFault); err != nil {
-			return err
+		if _, err = tx.ExecContext(ctx, `UPDATE careeros_control_state SET operations_fault_receipt_set=$1 WHERE singleton`, faultFiles.set); err != nil {
+			return unavailable(err)
 		}
 		e, _, err = readOperationsEmergency(ctx, tx)
 		if err != nil || e == nil {
@@ -222,7 +229,7 @@ func (o *Operations) replayEmergency(ctx context.Context, p auth.Principal, refe
 		return err
 	}
 	if reference != "" {
-		if err = o.reviewEmergency(ctx, tx, p, reference, e, &state, oldHold, latest); err != nil {
+		if err = o.reviewEmergency(ctx, tx, p, reference, e, &state, oldHold, faultFiles); err != nil {
 			return err
 		}
 	} else if err = o.journal.write(state); err != nil {
@@ -254,10 +261,10 @@ func (j *OperationsJournal) mirrorEmergency(state *operationsJournalState, e Ope
 	return nil
 }
 
-func (o *Operations) reviewEmergency(ctx context.Context, tx *sql.Tx, p auth.Principal, reference string, e *OperationsEmergency, state *operationsJournalState, oldHold string, latest time.Time) error {
+func (o *Operations) reviewEmergency(ctx context.Context, tx *sql.Tx, p auth.Principal, reference string, e *OperationsEmergency, state *operationsJournalState, oldHold string, faultFiles operationsFaultFiles) error {
 	review, err := o.cfg.VerifyEmergencyReview(ctx, reference, *e)
 	at := review.ObservedAt
-	if err != nil || !at.After(e.RecordedAt) || at.Before(latest) || at.After(time.Now().UTC()) {
+	if err != nil || review.ReceiptSet != e.ReceiptSet || !at.After(e.RecordedAt) || at.Before(faultFiles.latest) || at.After(time.Now().UTC()) {
 		return auth.ErrForbidden
 	}
 	if err = o.journal.classifyEmergency(state, *e, review); err != nil {
@@ -291,7 +298,7 @@ func (o *Operations) reviewEmergency(ctx context.Context, tx *sql.Tx, p auth.Pri
 	if err = o.journal.write(*state); err != nil {
 		return err
 	}
-	if err = o.journal.clearReviewedFence(); err != nil {
+	if err = o.journal.clearReviewedFence(faultFiles); err != nil {
 		return err
 	}
 	if _, err = tx.ExecContext(ctx, `UPDATE careeros_operations_containment SET resolved=true
@@ -299,8 +306,9 @@ func (o *Operations) reviewEmergency(ctx context.Context, tx *sql.Tx, p auth.Pri
 		return unavailable(err)
 	}
 	result, err := tx.ExecContext(ctx, `UPDATE careeros_control_state SET operations_fault=false,
-	  operations_fault_id='',operations_fault_since=NULL,operations_fault_at=NULL,operations_fault_kinds='{}',operations_fault_observations='{}'
-	  WHERE singleton AND operations_fault AND operations_fault_id=$1`, e.ID)
+	  operations_fault_id='',operations_fault_since=NULL,operations_fault_at=NULL,operations_fault_kinds='{}',
+	  operations_fault_observations='{}',operations_fault_receipt_set=''
+	  WHERE singleton AND operations_fault AND operations_fault_id=$1 AND operations_fault_receipt_set=$2`, e.ID, e.ReceiptSet)
 	if err != nil {
 		return unavailable(err)
 	}
@@ -312,47 +320,62 @@ func (o *Operations) reviewEmergency(ctx context.Context, tx *sql.Tx, p auth.Pri
 
 func (j *OperationsJournal) classifyEmergency(state *operationsJournalState, e OperationsEmergency, review OperationsEmergencyReview) error {
 	if !slices.Contains(e.Causes, operationsUnclassifiedFault) {
-		if review.ClassifiedCause != "" {
+		if len(review.ClassifiedCauses) != 0 {
 			return auth.ErrForbidden
 		}
 		return nil
 	}
-	if review.ClassifiedCause == "no_reportable_fault" {
+	if len(review.ClassifiedCauses) == 1 && review.ClassifiedCauses[0] == "no_reportable_fault" {
 		return nil
 	}
-	incident, err := operationsFaultIncident(review.ClassifiedCause, e.StartedAt)
-	if err != nil {
+	if len(review.ClassifiedCauses) == 0 || len(review.ClassifiedCauses) > len(recoverableOperationsFaults) {
 		return auth.ErrForbidden
 	}
-	if review.ClassifiedCause == OperationsBackupFault || review.ClassifiedCause == OperationsProviderFault {
-		// The signed review gives a conservative latest bound for this newly
-		// classified occurrence, whose precise onset was not recorded.
-		observed := review.ObservedAt.UTC()
-		incident.LatestObservedAt = &observed
+	seen := make(map[OperationsFault]bool, len(review.ClassifiedCauses))
+	for _, kind := range review.ClassifiedCauses {
+		incident, err := operationsFaultIncident(kind, e.StartedAt)
+		if err != nil || seen[kind] {
+			return auth.ErrForbidden
+		}
+		seen[kind] = true
+		if kind == OperationsBackupFault || kind == OperationsProviderFault {
+			// The signed review gives a conservative latest bound when the
+			// newly classified occurrence's precise onset was not recorded.
+			observed := review.ObservedAt.UTC()
+			incident.LatestObservedAt = &observed
+		}
+		j.upsertFault(state, kind, incident)
 	}
-	j.upsertFault(state, review.ClassifiedCause, incident)
 	return nil
 }
 
 // The exclusive journal lease and SQL stop remain held until recovery commits.
-func (j *OperationsJournal) clearReviewedFence() error {
-	for _, offset := range []int64{0, 1} {
-		if err := j.writeFence(offset, 0); err != nil {
-			return err
+func (j *OperationsJournal) clearReviewedFence(reviewed operationsFaultFiles) error {
+	current, err := j.faultFiles()
+	if err != nil || current.set != reviewed.set {
+		return auth.ErrUnavailable
+	}
+	for _, file := range reviewed.files {
+		current, err := j.readFaultFile(file.kind)
+		if err != nil || current.stamp != file.stamp || os.Remove(j.faultReceiptPath(file.kind)) != nil {
+			return auth.ErrUnavailable
 		}
+	}
+	if current, err := j.faultFiles(); err != nil || len(current.files) != 0 {
+		return auth.ErrUnavailable
 	}
 	for _, name := range []string{"journal.pending", "journal.uncertain", "journal.queued"} {
 		if err := os.Remove(filepath.Join(j.cfg.Directory, name)); err != nil && !errors.Is(err, os.ErrNotExist) {
 			return auth.ErrUnavailable
 		}
 	}
-	for _, kind := range recoverableOperationsFaults {
-		if err := os.Remove(j.faultReceiptPath(kind)); err != nil && !errors.Is(err, os.ErrNotExist) {
-			return auth.ErrUnavailable
-		}
-	}
 	if err := j.syncDirectory(); err != nil {
 		return err
+	}
+	for _, offset := range []int64{0, 1} {
+		if err := j.writeFence(offset, 0); err != nil {
+			return err
+		}
 	}
 	return j.verifyWriteHealth()
 }

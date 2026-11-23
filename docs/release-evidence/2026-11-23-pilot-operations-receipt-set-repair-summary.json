@@ -1,0 +1,382 @@
+{
+  "issue": 291,
+  "repair_parent": "eaa468ad47f95e056d3841c22773f8ca33e55dfe",
+  "frozen_source": {
+    "path": "docs/release-evidence/2026-11-23-pilot-operations-receipt-set-repair-frozen-source.json",
+    "bytes": 1596,
+    "sha256": "7604a442767e5df60877e4da23072a7ee0db3419cff3138bdd590e98727943bf"
+  },
+  "scope": "local synthetic identities, operations metadata, fake notifications and providers, and disposable loopback PostgreSQL",
+  "exact_final_focused_go_race": {
+    "command": [
+      "go",
+      "test",
+      "-p=1",
+      "-json",
+      "-race",
+      "-vet=off",
+      "-timeout=600s",
+      "-count=1",
+      "./internal/accountapi",
+      "./internal/accountstore",
+      "./internal/aicontrol",
+      "./cmd/pilot-operations-local",
+      "./cmd/reconciliation-local",
+      "-run",
+      "^(TestPilotOperations|TestOperatorControl|TestRestrictedReconciliation|TestA(28|29))"
+    ],
+    "exit_code": 0,
+    "passed_tests": 115,
+    "passed_packages": 3,
+    "operations_passes": [
+      "TestPilotOperationsReconciliationCLIObservesItsOwnCommittedInvariant/capture",
+      "TestPilotOperationsReconciliationCLIObservesItsOwnCommittedInvariant/capture_unavailable",
+      "TestPilotOperationsReconciliationCLIObservesItsOwnCommittedInvariant/reviewer_expires",
+      "TestPilotOperationsReconciliationCLIObservesItsOwnCommittedInvariant/finance_only",
+      "TestPilotOperationsReconciliationCLIObservesItsOwnCommittedInvariant/priced_live",
+      "TestPilotOperationsReconciliationCLIObservesItsOwnCommittedInvariant/priced_replay",
+      "TestPilotOperationsReconciliationCLIObservesItsOwnCommittedInvariant/priced_replay_after_correction",
+      "TestPilotOperationsReconciliationCLIObservesItsOwnCommittedInvariant/reviewed_maximum_breakdown",
+      "TestPilotOperationsReconciliationCLIObservesItsOwnCommittedInvariant",
+      "TestPilotOperationsOfflineCLIFallsBackToSQLAndRequiresSignedIntervalReview",
+      "TestPilotOperationsSupportCLIReviewAndCloseAcceptEmptyInput",
+      "TestPilotOperationsJournalOnlyCauseSurvivesAndRequiresSeparateProof/backup",
+      "TestPilotOperationsJournalOnlyCauseSurvivesAndRequiresSeparateProof/provider",
+      "TestPilotOperationsJournalOnlyCauseSurvivesAndRequiresSeparateProof",
+      "TestPilotOperationsRepeatedFaultKeepsFirstNoticeAndRequiresCurrentProof/journal",
+      "TestPilotOperationsRepeatedFaultKeepsFirstNoticeAndRequiresCurrentProof/sql_fallback",
+      "TestPilotOperationsRepeatedFaultKeepsFirstNoticeAndRequiresCurrentProof",
+      "TestPilotOperationsPartialFaultReceiptRequiresVerifiedClassification/existing_partial",
+      "TestPilotOperationsPartialFaultReceiptRequiresVerifiedClassification/atomic_replacement",
+      "TestPilotOperationsPartialFaultReceiptRequiresVerifiedClassification",
+      "TestPilotOperationsClassifiedRecurrenceRequiresProofAfterItsReview/backup",
+      "TestPilotOperationsClassifiedRecurrenceRequiresProofAfterItsReview/provider",
+      "TestPilotOperationsClassifiedRecurrenceRequiresProofAfterItsReview",
+      "TestPilotOperationsSignedClearanceFollowsExactReceiptSetAndRetainsBothCauses",
+      "TestPilotOperationsClearanceKeepsReceiptChangedDuringVerification",
+      "TestPilotOperationsActualCLIResolvesOnlySignedBackupAndServiceEpisode",
+      "TestPilotOperationsManualRollingRecoveryKeepsSeparateCrossings",
+      "TestPilotOperationsCaptureGuardRechecksManagedSessionBeforeCommit/reserve",
+      "TestPilotOperationsCaptureGuardRechecksManagedSessionBeforeCommit/intent",
+      "TestPilotOperationsCaptureGuardRechecksManagedSessionBeforeCommit",
+      "TestPilotOperationsInvitationAndActivationRecheckSessionAfterJournalWait/invite",
+      "TestPilotOperationsInvitationAndActivationRecheckSessionAfterJournalWait/activate",
+      "TestPilotOperationsInvitationAndActivationRecheckSessionAfterJournalWait",
+      "TestPilotOperationsEmergencySQLStopOrdersAfterTheActualAdmissionLease",
+      "TestPilotOperationsDurableCrossingSurvivesNewerBelowCapDisplay",
+      "TestPilotOperationsTimeoutAfterHeadersSignalsProviderAndRetainsUnknown",
+      "TestPilotOperationsExpiredSessionAfterFinalJournalWaitNeverEntersFakeProvider",
+      "TestPilotOperationsRestrictedRightsSessionHasNoOnlineOwnerAuthority",
+      "TestPilotOperationsUnwritableLatchPersistsIndependentUncertainty",
+      "TestPilotOperationsAutomaticAndInspectedDraftExhaustionUseTheSameAuthority",
+      "TestPilotOperationsActualExpenseWarningAndSupportBoundary",
+      "TestPilotOperationsIndependentControlFaultRetriesFromOriginalAttempt",
+      "TestPilotOperationsOrdinaryCaseAndDiagnosticExpiry",
+      "TestPilotOperationsPhysicalOutageKeepsStatusAndContainmentIndependent",
+      "TestPilotOperationsActualUnknownAndBreachRemainSeparate/unknown",
+      "TestPilotOperationsActualUnknownAndBreachRemainSeparate/breach",
+      "TestPilotOperationsActualUnknownAndBreachRemainSeparate",
+      "TestPilotOperationsManagedFaultDiagnosticsExpireFromEvent",
+      "TestPilotOperationsSaturatedJournalDeniesAcrossIndependentOpens",
+      "TestPilotOperationsRechecksOwnerAfterIndependentJournalWait",
+      "TestPilotOperationsAdmissionJournalLeaseOrdersActionAndRetryCommits/action",
+      "TestPilotOperationsAdmissionJournalLeaseOrdersActionAndRetryCommits/retry",
+      "TestPilotOperationsAdmissionJournalLeaseOrdersActionAndRetryCommits",
+      "TestPilotOperationsReplayDeliversLostIntentWithoutInspectOrResend",
+      "TestPilotOperationsFailedObservationPreservesProviderFreeActionRecovery",
+      "TestPilotOperationsWarningAbsenceAndVerifiedReopening"
+    ],
+    "admission_ids": [
+      "A28",
+      "A29"
+    ],
+    "passed_by_package": {
+      "professional-information-repo/internal/accountapi": 90,
+      "professional-information-repo/internal/aicontrol": 25
+    },
+    "skips": [
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestOperatorControlRestartChild"
+      ],
+      [
+        "professional-information-repo/internal/aicontrol",
+        "TestRestrictedReconciliationGenuineBaseUpgrade"
+      ]
+    ],
+    "postgres_stopped_and_data_removed": true,
+    "raw": [
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-o6zw_4ii/go.jsonl",
+        "bytes": 199203,
+        "sha256": "77fc3824e5eec4eb7c7c5dda9332e51741c9b6c14bf0fba3bd53ec70682c7eca"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-o6zw_4ii/summary.json",
+        "bytes": 400,
+        "sha256": "41f3a66040c1995b3981ec0e8b6f873e5ccbc54a9487e5c3ef9275079526593f"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-o6zw_4ii/setup.log",
+        "bytes": 1036,
+        "sha256": "284445a84fbff27add0410c30b4c2c993e884e8bf52e90026674b796ef775c7a"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-o6zw_4ii/postgres.log",
+        "bytes": 189,
+        "sha256": "76a4f0035dbb771a4d27c564508a6a579ed5449a25b4a022a4f250c2ffd0b345"
+      }
+    ]
+  },
+  "exact_final_affected_packages_go_race": {
+    "command": [
+      "go",
+      "test",
+      "-p=1",
+      "-json",
+      "-race",
+      "-vet=off",
+      "-timeout=600s",
+      "-count=1",
+      "./internal/accountstore",
+      "./internal/aicontrol",
+      "./internal/operationslocal"
+    ],
+    "exit_code": 0,
+    "passed_tests": 161,
+    "passed_packages": 2,
+    "operations_passes": [],
+    "admission_ids": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A06",
+      "A07",
+      "A08",
+      "A09",
+      "A10",
+      "A11",
+      "A12",
+      "A13",
+      "A14",
+      "A15",
+      "A16",
+      "A17",
+      "A18",
+      "A19",
+      "A20",
+      "A21",
+      "A22",
+      "A23",
+      "A24",
+      "A25",
+      "A26",
+      "A27",
+      "A30",
+      "A31",
+      "A32",
+      "A33",
+      "A34",
+      "A35",
+      "A36",
+      "A37"
+    ],
+    "passed_by_package": {
+      "professional-information-repo/internal/accountstore": 1,
+      "professional-information-repo/internal/aicontrol": 160
+    },
+    "skips": [
+      [
+        "professional-information-repo/internal/aicontrol",
+        "TestRestrictedReconciliationGenuineBaseUpgrade"
+      ]
+    ],
+    "postgres_stopped_and_data_removed": true,
+    "raw": [
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-7puejlae/go.jsonl",
+        "bytes": 153072,
+        "sha256": "8380096435a5305b496579514a5780d3f46bb68fcf226bdfee82aa8c6fb507b1"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-7puejlae/summary.json",
+        "bytes": 231,
+        "sha256": "cc26cd8c14e34cf2fa800fa5b230a40661f14ccf725e99e024ea3d800b80316e"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-7puejlae/setup.log",
+        "bytes": 1036,
+        "sha256": "d6f3ef3526784fce5d8520af6594a69f22442a5657be78231b0fd316c312fc48"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-7puejlae/postgres.log",
+        "bytes": 189,
+        "sha256": "64efd2e067a43f885f376a42ad1e3453f9f13bb85fe3348e6d85902745aa9a85"
+      }
+    ]
+  },
+  "exact_final_scoped_vet": {
+    "check": {
+      "argv": [
+        "go",
+        "vet",
+        "-composites=false",
+        "./internal/accountapi",
+        "./internal/accountstore",
+        "./internal/aicontrol",
+        "./internal/operationslocal",
+        "./cmd/pilot-operations-local",
+        "./cmd/reconciliation-local"
+      ],
+      "exit_code": 0
+    },
+    "raw": [
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/receipt-set-vet-qkh9aspk/scoped-vet.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/receipt-set-vet-qkh9aspk/summary.json",
+        "bytes": 275,
+        "sha256": "a73ae187960105cb1582ab908bd2db2d12767986bb641509e29d1166e76ca93b"
+      }
+    ]
+  },
+  "preceding_checks": {
+    "updated_receipt_review_contract": {
+      "command": [
+        "go",
+        "test",
+        "-p=1",
+        "-json",
+        "-race",
+        "-vet=off",
+        "-timeout=600s",
+        "-count=1",
+        "./internal/accountapi",
+        "-run",
+        "^TestPilotOperations(JournalOnlyCause|PartialFaultReceipt|ClassifiedRecurrence|OfflineCLI)"
+      ],
+      "exit_code": 0,
+      "passed_tests": 10,
+      "passed_packages": 1,
+      "operations_passes": [
+        "TestPilotOperationsOfflineCLIFallsBackToSQLAndRequiresSignedIntervalReview",
+        "TestPilotOperationsJournalOnlyCauseSurvivesAndRequiresSeparateProof/backup",
+        "TestPilotOperationsJournalOnlyCauseSurvivesAndRequiresSeparateProof/provider",
+        "TestPilotOperationsJournalOnlyCauseSurvivesAndRequiresSeparateProof",
+        "TestPilotOperationsPartialFaultReceiptRequiresVerifiedClassification/existing_partial",
+        "TestPilotOperationsPartialFaultReceiptRequiresVerifiedClassification/atomic_replacement",
+        "TestPilotOperationsPartialFaultReceiptRequiresVerifiedClassification",
+        "TestPilotOperationsClassifiedRecurrenceRequiresProofAfterItsReview/backup",
+        "TestPilotOperationsClassifiedRecurrenceRequiresProofAfterItsReview/provider",
+        "TestPilotOperationsClassifiedRecurrenceRequiresProofAfterItsReview"
+      ],
+      "admission_ids": [],
+      "passed_by_package": {
+        "professional-information-repo/internal/accountapi": 10
+      },
+      "skips": [],
+      "postgres_stopped_and_data_removed": true,
+      "raw": [
+        {
+          "path": "/home/henriquemichelini/workstation/careeros/.q91/final-5nl_l1sx/go.jsonl",
+          "bytes": 11205,
+          "sha256": "05a68a5e25d2b5522d2bf582bdb2f3303acd44c8dafc5437a759ff881bcc280c"
+        },
+        {
+          "path": "/home/henriquemichelini/workstation/careeros/.q91/final-5nl_l1sx/summary.json",
+          "bytes": 259,
+          "sha256": "6ceafb59a64344b13fa6a7c97404de9a9ef825c241dac9b120f129b7f467f73a"
+        },
+        {
+          "path": "/home/henriquemichelini/workstation/careeros/.q91/final-5nl_l1sx/setup.log",
+          "bytes": 1036,
+          "sha256": "0e4428acbb8a7021c6375200a78a6773515d7b5ef26e4535a341dd18f8d7a798"
+        },
+        {
+          "path": "/home/henriquemichelini/workstation/careeros/.q91/final-5nl_l1sx/postgres.log",
+          "bytes": 189,
+          "sha256": "c2891d283126db3e2a0513e57d4d770b2b8b7b553aa252c49a1cb2fbc2eb5a81"
+        }
+      ]
+    },
+    "new_receipt_set_regressions": {
+      "command": [
+        "go",
+        "test",
+        "-p=1",
+        "-json",
+        "-race",
+        "-vet=off",
+        "-timeout=600s",
+        "-count=1",
+        "./internal/accountapi",
+        "-run",
+        "^TestPilotOperations(SignedClearance|ClearanceKeeps)"
+      ],
+      "exit_code": 0,
+      "passed_tests": 2,
+      "passed_packages": 1,
+      "operations_passes": [
+        "TestPilotOperationsSignedClearanceFollowsExactReceiptSetAndRetainsBothCauses",
+        "TestPilotOperationsClearanceKeepsReceiptChangedDuringVerification"
+      ],
+      "admission_ids": [],
+      "passed_by_package": {
+        "professional-information-repo/internal/accountapi": 2
+      },
+      "skips": [],
+      "postgres_stopped_and_data_removed": true,
+      "raw": [
+        {
+          "path": "/home/henriquemichelini/workstation/careeros/.q91/final-rrc1g74f/go.jsonl",
+          "bytes": 2685,
+          "sha256": "c87ecc94b16715ee39cbceb8981510c2bc9074c9f4ead16f86512a9cf37edbdd"
+        },
+        {
+          "path": "/home/henriquemichelini/workstation/careeros/.q91/final-rrc1g74f/summary.json",
+          "bytes": 218,
+          "sha256": "5540aca3f79a3f06bba4f8059112e26158c614d7b7dfabd430a616601e1e3c7a"
+        },
+        {
+          "path": "/home/henriquemichelini/workstation/careeros/.q91/final-rrc1g74f/setup.log",
+          "bytes": 1036,
+          "sha256": "b98bb099fdb76df9533b9838d074e76ef9e5fb4ade97a443edea8677671508eb"
+        },
+        {
+          "path": "/home/henriquemichelini/workstation/careeros/.q91/final-rrc1g74f/postgres.log",
+          "bytes": 189,
+          "sha256": "9455cc32dd50e5f989f70b1e81d21eb6fed424c596dcc750936b4eb685971d3b"
+        }
+      ]
+    }
+  },
+  "inherited": {
+    "previous_repair": {
+      "path": "docs/release-evidence/2026-11-23-pilot-operations-accounting-proof-repair-summary.json",
+      "bytes": 14400,
+      "sha256": "31116d425ded728f168e94c0644aea80e85c044187fc9a7640bab83e58d4f408"
+    },
+    "wider_affected_race": {
+      "path": "docs/release-evidence/2026-11-23-pilot-operations-incident-repair-summary.json",
+      "bytes": 23981,
+      "sha256": "047e893e41009ace27202f2cd092918a89f6a038bf844fd42286f832a2d4b242"
+    },
+    "full_repo_and_frontend": {
+      "path": "docs/release-evidence/2026-11-22-pilot-operations-final-repair-summary.json",
+      "bytes": 25614,
+      "sha256": "1ed27793518d73cab170bcd299e47ccbc27ceb9865ae9919719d7b8cd50be9e4"
+    },
+    "prior_affected_go_race_passes": 842,
+    "prior_affected_admission_ids": 37,
+    "evaluation_lab_named_failures": 25,
+    "evaluation_lab_package_failures": 1,
+    "default_go_vet_diagnostics": 15,
+    "unchanged_frontend_node_passes": 453,
+    "unchanged_bilingual_public_status_browser": "passed"
+  }
+}

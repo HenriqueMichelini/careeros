@@ -632,7 +632,8 @@ func TestPilotOperationsJournalOnlyCauseSurvivesAndRequiresSeparateProof(t *test
 			path := filepath.Join(t.TempDir(), "journal-only-recovery.json")
 			env = append(env, "CAREEROS_OPERATIONS_RECOVERY_ARTIFACT="+path, "CAREEROS_OPERATIONS_RECOVERY_PUBLIC_KEY="+hex.EncodeToString(pub))
 			interval := operationslocal.RecoveryStatement{Purpose: "containment", Reference: "fixture-journal-only-reviewed",
-				Incident: status.Emergency.ID, Revision: 1, ObservedAt: time.Now().UTC(), Result: "synthetic_containment_interval_reconciled"}
+				Incident: status.Emergency.ID, Revision: 1, ObservedAt: time.Now().UTC(), Result: "synthetic_containment_interval_reconciled",
+				ReceiptSet: status.Emergency.ReceiptSet}
 			writeOperationsProof(t, path, priv, interval)
 			_, diagnostic, err = runPilotOperationsFixtureCLI(t, "pilot-operations-local", env, nil, "--action", "replay-containment", "--reference", interval.Reference)
 			if err != nil {
@@ -785,7 +786,8 @@ func TestPilotOperationsPartialFaultReceiptRequiresVerifiedClassification(t *tes
 			path := filepath.Join(t.TempDir(), "partial-receipt-review.json")
 			env = append(env, "CAREEROS_OPERATIONS_RECOVERY_ARTIFACT="+path, "CAREEROS_OPERATIONS_RECOVERY_PUBLIC_KEY="+hex.EncodeToString(pub))
 			proof := operationslocal.RecoveryStatement{Purpose: "containment", Reference: "fixture-classified-interval",
-				Incident: status.Emergency.ID, Revision: 1, ObservedAt: time.Now().UTC(), Result: "synthetic_containment_interval_reconciled"}
+				Incident: status.Emergency.ID, Revision: 1, ObservedAt: time.Now().UTC(), Result: "synthetic_containment_interval_reconciled",
+				ReceiptSet: status.Emergency.ReceiptSet}
 			args := []string{"--action", "replay-containment", "--reference", proof.Reference}
 			writeOperationsProof(t, path, priv, proof)
 			if _, _, err = runPilotOperationsFixtureCLI(t, "pilot-operations-local", env, nil, args...); err == nil {
@@ -794,7 +796,7 @@ func TestPilotOperationsPartialFaultReceiptRequiresVerifiedClassification(t *tes
 			if _, err = os.Stat(legacy); err != nil {
 				t.Fatalf("failed review discarded the fail-closed sidecar: %v", err)
 			}
-			proof.ClassifiedCause = accountstore.OperationsBackupFault
+			proof.ClassifiedCauses = []accountstore.OperationsFault{accountstore.OperationsBackupFault}
 			writeOperationsProof(t, path, priv, proof)
 			if _, diagnostic, err := runPilotOperationsFixtureCLI(t, "pilot-operations-local", env, nil, args...); err != nil {
 				t.Fatalf("signed classification could not clear reviewed sidecar: %v %s", err, diagnostic)
@@ -857,7 +859,7 @@ func TestPilotOperationsClassifiedRecurrenceRequiresProofAfterItsReview(t *testi
 			env = append(env, "CAREEROS_OPERATIONS_RECOVERY_ARTIFACT="+path, "CAREEROS_OPERATIONS_RECOVERY_PUBLIC_KEY="+hex.EncodeToString(pub))
 			classification := operationslocal.RecoveryStatement{Purpose: "containment", Reference: "fixture-recurrence-review",
 				Incident: status.Emergency.ID, Revision: 1, ObservedAt: time.Now().UTC(), Result: "synthetic_containment_interval_reconciled",
-				ClassifiedCause: cause.kind}
+				ReceiptSet: status.Emergency.ReceiptSet, ClassifiedCauses: []accountstore.OperationsFault{cause.kind}}
 			writeOperationsProof(t, path, priv, classification)
 			if _, diagnostic, err := runPilotOperationsFixtureCLI(t, "pilot-operations-local", env, nil, "--action", "replay-containment",
 				"--reference", classification.Reference); err != nil {
@@ -894,6 +896,183 @@ func TestPilotOperationsClassifiedRecurrenceRequiresProofAfterItsReview(t *testi
 				t.Fatalf("current cause-specific proof did not resolve the incident: %v %s", err, diagnostic)
 			}
 		})
+	}
+}
+
+func TestPilotOperationsSignedClearanceFollowsExactReceiptSetAndRetainsBothCauses(t *testing.T) {
+	f, h, _, _ := qualificationFixture(t)
+	j, ops, _, directory := pilotOperationsFixture(t, f, h, time.Now)
+	ctx := context.Background()
+	if err := j.SignalOfflineFault(ctx, accountstore.OperationsBackupFault); err != nil {
+		t.Fatal(err)
+	}
+	status, err := ops.OwnerStatus(ctx, f.Principal)
+	if err != nil || len(status.Incidents) != 1 {
+		t.Fatalf("fixture needs the existing backup fault: %+v %v", status, err)
+	}
+	original := status.Incidents[0]
+	backupFile := filepath.Join(directory, "journal.fault.backup_fault")
+	providerFile := filepath.Join(directory, "journal.fault.provider_fault")
+	partial := []byte(`{"payload":`)
+	if err = os.WriteFile(backupFile, partial, 0600); err != nil {
+		t.Fatal(err)
+	}
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(t.TempDir(), "receipt-set-proof.json")
+	env := append(pilotOperationsCLIEnv(t, f, directory, "qualification"),
+		"CAREEROS_OPERATIONS_RECOVERY_ARTIFACT="+path, "CAREEROS_OPERATIONS_RECOVERY_PUBLIC_KEY="+hex.EncodeToString(pub))
+	prepare := func() accountstore.OperationsEmergency {
+		t.Helper()
+		if _, diagnostic, err := runPilotOperationsFixtureCLI(t, "pilot-operations-local", env, nil, "--action", "replay-containment"); err != nil {
+			t.Fatalf("prepare current receipt set: %v %s", err, diagnostic)
+		}
+		status, err := ops.OwnerStatus(ctx, f.Principal)
+		if err != nil || status.Emergency == nil || len(status.Emergency.ReceiptSet) != 64 || !status.ContainmentUnavailable {
+			t.Fatalf("prepared status must expose the private receipt set: %+v %v", status, err)
+		}
+		return *status.Emergency
+	}
+	classify := func(e accountstore.OperationsEmergency, kinds ...accountstore.OperationsFault) operationslocal.RecoveryStatement {
+		return operationslocal.RecoveryStatement{Purpose: "containment", Reference: "fixture-exact-receipt-set",
+			Incident: e.ID, Revision: 1, ObservedAt: time.Now().UTC(), Result: "synthetic_containment_interval_reconciled",
+			ReceiptSet: e.ReceiptSet, ClassifiedCauses: kinds}
+	}
+	clear := func(proof operationslocal.RecoveryStatement, allowed bool) {
+		t.Helper()
+		writeOperationsProof(t, path, priv, proof)
+		_, diagnostic, err := runPilotOperationsFixtureCLI(t, "pilot-operations-local", env, nil, "--action", "replay-containment",
+			"--reference", proof.Reference)
+		if allowed != (err == nil) {
+			t.Fatalf("clearance allowed=%v: %v %s", allowed, err, diagnostic)
+		}
+		for _, receipt := range []string{backupFile, providerFile} {
+			_, err = os.Stat(receipt)
+			if allowed && !errors.Is(err, os.ErrNotExist) || !allowed && err != nil {
+				t.Fatalf("clearance allowed=%v left unexpected receipt state: %v", allowed, err)
+			}
+		}
+	}
+	first := prepare()
+	firstProof := classify(first, accountstore.OperationsBackupFault)
+	if err = os.WriteFile(providerFile, partial, 0600); err != nil {
+		t.Fatal(err)
+	}
+	clear(firstProof, false)
+	added := prepare()
+	if added.ID == first.ID || added.ReceiptSet == first.ReceiptSet || !added.StartedAt.Equal(first.StartedAt) {
+		t.Fatalf("added unreadable receipt must advance the review generation: %+v", added)
+	}
+	addedProof := classify(added, accountstore.OperationsBackupFault, accountstore.OperationsProviderFault)
+	replacement := filepath.Join(directory, "fixture-interrupted-receipt")
+	if err = os.WriteFile(replacement, partial, 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err = os.Rename(replacement, providerFile); err != nil {
+		t.Fatal(err)
+	}
+	clear(addedProof, false)
+	current := prepare()
+	if current.ID == added.ID || current.ReceiptSet == added.ReceiptSet || !current.StartedAt.Equal(first.StartedAt) {
+		t.Fatalf("replacement with identical bytes must advance the receipt generation: %+v", current)
+	}
+	currentProof := classify(current, accountstore.OperationsBackupFault, accountstore.OperationsProviderFault)
+	wrongSet := currentProof
+	wrongSet.ReceiptSet = added.ReceiptSet
+	clear(wrongSet, false)
+	clear(currentProof, true)
+
+	status, err = ops.OwnerStatus(ctx, f.Principal)
+	if err != nil || status.Emergency != nil || status.ContainmentUnavailable {
+		t.Fatalf("verified clearance did not retire the reviewed set: %+v %v", status, err)
+	}
+	causes := map[string]accountstore.OperationsIncident{}
+	for _, incident := range status.Incidents {
+		if incident.Kind == "backup_fault" || incident.Kind == "provider_fault" {
+			if incident.State != "unacknowledged" || incident.LatestObservedAt == nil || !incident.LatestObservedAt.Equal(currentProof.ObservedAt) {
+				t.Fatalf("classification did not preserve a typed open cause and its time bound: %+v", incident)
+			}
+			causes[incident.Kind] = incident
+		}
+	}
+	backup, provider := causes["backup_fault"], causes["provider_fault"]
+	if len(causes) != 2 || backup.ID != original.ID || !backup.EventAt.Equal(original.EventAt) || !provider.EventAt.Equal(first.StartedAt) {
+		t.Fatalf("verified classification lost a cause or its first incident time: %+v", causes)
+	}
+	resolve := func(incident accountstore.OperationsIncident, purpose, result string) {
+		t.Helper()
+		proof := operationslocal.RecoveryStatement{Purpose: purpose, Reference: "fixture-separate-cause-proof", Incident: incident.ID,
+			Revision: incident.Revision, ObservedAt: time.Now().UTC(), Result: result}
+		writeOperationsProof(t, path, priv, proof)
+		if _, diagnostic, err := runPilotOperationsFixtureCLI(t, "pilot-operations-local", env, nil, "--action", "resolve",
+			"--id", incident.ID, "--revision", fmt.Sprint(incident.Revision), "--reference", proof.Reference); err != nil {
+			t.Fatalf("resolve the specific cause: %v %s", err, diagnostic)
+		}
+	}
+	resolve(backup, "backup", "synthetic_restore_check_passed")
+	status, err = ops.OwnerStatus(ctx, f.Principal)
+	if err != nil || !slices.ContainsFunc(status.Incidents, func(incident accountstore.OperationsIncident) bool {
+		return incident.ID == provider.ID && incident.State == "unacknowledged"
+	}) {
+		t.Fatalf("backup proof also resolved the provider cause: %+v %v", status, err)
+	}
+	resolve(provider, "provider", "synthetic_provider_health_check_passed")
+}
+
+func TestPilotOperationsClearanceKeepsReceiptChangedDuringVerification(t *testing.T) {
+	f, h, _, _ := qualificationFixture(t)
+	j, ops, _, directory := pilotOperationsFixture(t, f, h, time.Now)
+	ctx := context.Background()
+	receipt := filepath.Join(directory, "journal.fault.backup_fault")
+	if err := os.WriteFile(receipt, []byte(`{"payload":`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := ops.ReplayEmergency(ctx, f.Principal, ""); err != nil {
+		t.Fatal(err)
+	}
+	status, err := ops.OwnerStatus(ctx, f.Principal)
+	if err != nil || status.Emergency == nil || status.Emergency.ReceiptSet == "" {
+		t.Fatalf("prepare the initial interrupted receipt: %+v %v", status, err)
+	}
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(t.TempDir(), "signed-receipt-review.json")
+	t.Setenv("CAREEROS_OPERATIONS_RECOVERY_ARTIFACT", path)
+	t.Setenv("CAREEROS_OPERATIONS_RECOVERY_PUBLIC_KEY", hex.EncodeToString(pub))
+	proof := operationslocal.RecoveryStatement{Purpose: "containment", Reference: "fixture-verified-then-changed",
+		Incident: status.Emergency.ID, Revision: 1, ObservedAt: time.Now().UTC(), Result: "synthetic_containment_interval_reconciled",
+		ReceiptSet: status.Emergency.ReceiptSet, ClassifiedCauses: []accountstore.OperationsFault{accountstore.OperationsBackupFault}}
+	writeOperationsProof(t, path, priv, proof)
+	verifier, err := operationslocal.Recovery()
+	if err != nil {
+		t.Fatal(err)
+	}
+	replacement := []byte(`{"payload":{"kind":`)
+	ops, err = f.Store.LocalOperations(accountstore.OperationsConfig{Owner: "Henrique", Build: "fixture-receipt-changes-during-review",
+		VerifyEmergencyReview: func(ctx context.Context, reference string, e accountstore.OperationsEmergency) (accountstore.OperationsEmergencyReview, error) {
+			review, err := verifier.VerifyEmergency(ctx, reference, e)
+			if err != nil {
+				return review, err
+			}
+			return review, os.WriteFile(receipt, replacement, 0600)
+		}}, h.LocalOperationsSource(), j)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = ops.ReplayEmergency(ctx, f.Principal, proof.Reference); !errors.Is(err, auth.ErrUnavailable) {
+		t.Fatalf("a receipt changed after verification must preserve the stop: %v", err)
+	}
+	raw, err := os.ReadFile(receipt)
+	if err != nil || !bytes.Equal(raw, replacement) {
+		t.Fatalf("clearance discarded an unreviewed receipt: %v", err)
+	}
+	status, err = ops.OwnerStatus(ctx, f.Principal)
+	if err != nil || status.Emergency == nil || status.Emergency.ID != proof.Incident || !status.ContainmentUnavailable {
+		t.Fatalf("changed receipt must retain the current stop: %+v %v", status, err)
 	}
 }
 

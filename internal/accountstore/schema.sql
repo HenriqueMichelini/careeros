@@ -245,6 +245,7 @@ ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS operations_fault_at 
 ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS operations_fault_since timestamptz;
 ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS operations_fault_kinds text[] NOT NULL DEFAULT '{}';
 ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS operations_fault_observations jsonb NOT NULL DEFAULT '{}';
+ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS operations_fault_receipt_set text NOT NULL DEFAULT '';
 INSERT INTO careeros_control_state(singleton) VALUES(true) ON CONFLICT DO NOTHING;
 CREATE TABLE IF NOT EXISTS careeros_control_operators (
  account_id text PRIMARY KEY REFERENCES careeros_accounts(id),
