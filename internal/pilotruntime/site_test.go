@@ -8,6 +8,9 @@ import (
 	"testing"
 	"testing/fstest"
 	"time"
+
+	"github.com/aws/aws-lambda-go/events"
+	"professional-information-repo/internal/netlifyproxy"
 )
 
 func TestClosedSiteSeparatesAPIFromSPA(t *testing.T) {
@@ -96,5 +99,34 @@ func TestClosedSiteBoundsDependencyRequests(t *testing.T) {
 		if got.Code != expected {
 			t.Fatalf("%s: %d, want %d", path, got.Code, expected)
 		}
+	}
+}
+
+func TestClosedAliasThroughExistingEventAdapter(t *testing.T) {
+	const origin = "http://127.0.0.1:8787"
+	account := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/auth/logout" || r.URL.Query().Get("status") != "fixture" ||
+			r.Header.Get("X-CSRF-Token") != "synthetic" || len(r.Cookies()) != 2 {
+			t.Fatalf("adapter did not preserve the request: %s", r.URL)
+		}
+		w.Header().Add("Set-Cookie", "__Host-careeros_session=; Path=/; Secure; HttpOnly")
+		w.Header().Add("Set-Cookie", "__Host-careeros_csrf=; Path=/; Secure")
+		w.WriteHeader(http.StatusNoContent)
+	})
+	site, err := newSite("127.0.0.1:8787", fstest.MapFS{"index.html": {Data: []byte("closed")}},
+		account, func(context.Context) error { return nil })
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := netlifyproxy.Handle(site, origin+"/.netlify/functions/account/api/auth/logout", t.Context(),
+		events.APIGatewayProxyRequest{
+			HTTPMethod: "POST", QueryStringParameters: map[string]string{"status": "fixture"},
+			MultiValueHeaders: map[string][]string{
+				"Origin": {origin}, "X-CSRF-Token": {"synthetic"},
+				"Cookie": {"__Host-careeros_session=synthetic-session", "__Host-careeros_csrf=synthetic"},
+			},
+		})
+	if err != nil || response.StatusCode != http.StatusNoContent || len(response.MultiValueHeaders["Set-Cookie"]) != 2 {
+		t.Fatalf("event adapter returned %#v, %v", response, err)
 	}
 }

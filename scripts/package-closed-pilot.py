@@ -19,6 +19,7 @@ SCHEMA = "internal/accountstore/schema.sql"
 MEASURED_INPUTS = (
     "go.mod", "go.sum", "package-lock.json", "netlify.toml", PROFILE, SCHEMA,
     "scripts/pilot-runtime/bootstrap.sql", "scripts/pilot-runtime/closed-runtime-grants.sql",
+    "scripts/package-closed-pilot.py", "scripts/test-closed-pilot.py",
 )
 
 
@@ -33,7 +34,7 @@ def digest(file):
         return {"bytes": file.stat().st_size, "sha256": hashlib.file_digest(stream, "sha256").hexdigest()}
 
 
-def build_environment(frontend):
+def build_environment(frontend, source):
     env = {
         key: value for key, value in os.environ.items()
         if not key.startswith(("VITE_", "CAREEROS_", "FIGMA_", "NPM_CONFIG_"))
@@ -42,7 +43,8 @@ def build_environment(frontend):
     env.update({
         "CI": "1", "CGO_ENABLED": "0", "GOENV": "off", "GOPROXY": "off",
         "GOSUMDB": "off", "GOTOOLCHAIN": "local", "GOWORK": "off",
-        "NPM_CONFIG_USERCONFIG": os.devnull, "NPM_CONFIG_GLOBALCONFIG": os.devnull,
+        "NPM_CONFIG_USERCONFIG": os.devnull,
+        "NPM_CONFIG_GLOBALCONFIG": str(source / ".isolated-npm-global"),
         "NODE_ENV": "production",
     })
     env.update(frontend)
@@ -85,7 +87,7 @@ def build(repo, revision, output):
         profile = json.loads((source / PROFILE).read_text())
         # Run the archived script's configured build, regardless of ambient
         # CareerOS/Vite flags or a different working tree's generated assets.
-        env = build_environment(profile["frontend"])
+        env = build_environment(profile["frontend"], source)
         target = run("go", "env", "GOOS", "GOARCH", cwd=source, env=env, capture=True).decode().splitlines()
         toolchain = {
             "go": run("go", "env", "GOVERSION", cwd=source, env=env, capture=True).decode().strip(),

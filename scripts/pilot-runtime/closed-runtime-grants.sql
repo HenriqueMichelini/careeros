@@ -18,9 +18,11 @@ END $fixture$;
 -- grants/invitations, mutate Profile data, or read/write the managed ledger.
 GRANT SELECT ON careeros_accounts, careeros_identities, careeros_sessions, careeros_deletion_status_sessions,
  careeros_profiles, careeros_profile_operations, careeros_deletion_operations, careeros_deleted_profiles,
- careeros_pilot_access, careeros_invitation_cleanup, careeros_control_state,
+ careeros_pilot_access, careeros_invitation_cleanup,
  careeros_lifecycle_notices, careeros_lifecycle_cleanup, careeros_lifecycle_purpose_cleanup,
  careeros_lifecycle_residuals, careeros_profile_pruning TO careeros_pilot_runtime;
+GRANT SELECT (singleton,version,initialized,invitation_stopped,inference_stopped,inference_epoch,
+ system_generation,operations_binding,operations_fault) ON careeros_control_state TO careeros_pilot_runtime;
 -- Store account/session row locks need an UPDATE privilege. These grants
 -- also cover existing logout/logout-all generation and revocation updates.
 GRANT UPDATE (generation) ON careeros_accounts TO careeros_pilot_runtime;
