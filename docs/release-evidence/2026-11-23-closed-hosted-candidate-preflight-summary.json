@@ -1,0 +1,1657 @@
+{
+  "bundle_manifest": {
+    "bytes": 4796,
+    "path": "docs/release-evidence/2026-11-23-closed-hosted-candidate-local-bundle-manifest.json",
+    "sha256": "9d0d563206db096cf297268604ba8d9ba1912e345ec61e6fe482f72f2b909ef1"
+  },
+  "closed_package": {
+    "assertion_count": 63,
+    "browser_external_requests": 0,
+    "events": [
+      {
+        "name": "built_frontend_served",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "spa_navigation",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "unknown_asset",
+        "observed": 404,
+        "result": "pass"
+      },
+      {
+        "name": "unknown_api",
+        "observed": 404,
+        "result": "pass"
+      },
+      {
+        "name": "unknown_function",
+        "observed": 404,
+        "result": "pass"
+      },
+      {
+        "name": "invalid_aliased_path",
+        "observed": 400,
+        "result": "pass"
+      },
+      {
+        "name": "unconfigured_readiness",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_runtime",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_runtime_direct",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "origin_host_cannot_be_forwarded",
+        "observed": 421,
+        "result": "pass"
+      },
+      {
+        "name": "cross_origin_alias",
+        "observed": 403,
+        "result": "pass"
+      },
+      {
+        "name": "unconfigured_allowance",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "unconfigured_allowance_alias",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "packaged_browser_no_external_asset_requests",
+        "observed": {
+          "external_requests": 0,
+          "local_asset_requests": [
+            "/",
+            "/assets/index-C1oxaY4q.js",
+            "/assets/index-BsImqn0Z.css",
+            "/api/auth/session",
+            "/favicon.ico"
+          ],
+          "rendered": true
+        },
+        "result": "pass"
+      },
+      {
+        "name": "absent_schema_stays_closed",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "absent_schema_api",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "startup_never_migrates",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "generic_credentials_not_used_by_packaged_migrator",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "wrong_database_is_denied_before_ddl",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "wrong_role_is_denied_before_ddl",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "arbitrary_connection_options_denied",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "actual_schema_owner_checked_before_ddl",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "embedded_schema_identity_matches_verified_manifest",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "mismatched_schema_identity",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "explicit_additive_migration_reapplied_with_separate_role",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "closed_database_role_grants_and_connection_limit",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "prepared_but_closed_readiness",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "guest_session",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "existing_session_after_repeat_migration",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "account_cookie_typed_denial",
+        "observed": 403,
+        "result": "pass"
+      },
+      {
+        "name": "status_closed_for_uninvited_fixture",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "no_new_google_sign_in",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "no_google_callback",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "wrong_browser_origin",
+        "observed": 403,
+        "result": "pass"
+      },
+      {
+        "name": "activation_without_bound_csrf",
+        "observed": 403,
+        "result": "pass"
+      },
+      {
+        "name": "activation_still_closed",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "unmounted_allowance_stays_unavailable",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "unmounted_allowance_alias_stays_unavailable",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_01",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_02",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_03",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_04",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_05",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_06",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_07",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_08",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_09",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_10",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_11",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_12",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "bounded_request_body",
+        "observed": 413,
+        "result": "pass"
+      },
+      {
+        "name": "restart_retains_authorized_session",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "same_origin_logout_all",
+        "observed": 204,
+        "result": "pass"
+      },
+      {
+        "name": "multiple_secure_host_only_cookie_headers",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "logged_out_cookie_no_longer_authorized",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "packaged_migrator_denies_open_control_state",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "open_control_is_not_accepted_by_closed_package",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "open_control_cannot_enable_managed_alias",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "restored_closed_control_readiness",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "database_loss_preserves_liveness",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "database_loss_closes_readiness",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "database_loss_closes_api",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "owned_postgres_stopped_and_data_removed",
+        "observed": null,
+        "result": "pass"
+      }
+    ],
+    "passed": true,
+    "postgres_disposable": true
+  },
+  "focused_go_race": {
+    "command": [
+      "go",
+      "test",
+      "-p=1",
+      "-race",
+      "-vet=off",
+      "-timeout=180s",
+      "-count=1",
+      "-json",
+      "-run",
+      "^(TestA29.*|TestA28StructuredAnalysisThenReviewedDraftSevenDispatches|TestBeginLogin.*|Test(Google|ProductionGoogleProvider).*|TestCallback.*|TestConcurrentCallbackConsumesTransactionOnce|TestProviderIdentityMapsBySubjectNotEmail|TestLogout.*|TestExpiredAndSuspendedSessionsFailClosed|TestLateLoginAfterLogoutAllIsRejected|TestCSRFValidationUsesPerSessionSecret|TestSameOriginRequiresExactOrigin|TestSafeReturnToRejectsOpenRedirects|TestPostgresProfileOwnershipConcurrencyAndRecovery|TestPostgresRollbackAndActualLostHTTPResponse|TestPostgresSurvivesAllApplicationProcessRestarts|TestPostgresOneUseTransactionsAndAtomicSessionReplacement|TestPilotActualRouterExpiryRightsAndAliases|TestPilotRevocationAndSessionExpiryWinBlockedSave|TestProfileExport(CompleteRetainedValues|OwnershipAndRevocation|PilotWindowAndAlias)|TestManagedIngestion(WholeSubmissionUsesOneActionAndNoResend|AbsentProfileFirstReviewAndExplicitSave|CredentialEnvelopesFailBeforeSend|AuthorityDenials)|TestManagedProfileReview(CurrentnessAndNoCallerAuthority|UsesTwoOpenAILegsAndReplay)|TestManagedCVAuthorityAliasesAndSavedProjection|TestManagedDraft(PublicAuthorityAndOverrideNegatives|PublishesActualWholeVersionAndRecoversWithoutSending|PhysicalRestartKeepsExactReadyAndUnknownIntent)|TestDraftOpening(CompleteReceiptCommitsOnePilotRight|ReceiptAndSettlementSurvivePostgresAndProcessRestart)|TestDurableDraft(AcceptedSnapshotRecoversLostDecisionAndSurvivesReplacement|ReviewPersistsExactArtifactWithoutInference)|TestOperatorControl(PhysicalRestartPreservesStopsAndUnknownHold|InferenceStopUsesSharedAdmission)|TestPilotOperations(PhysicalOutageKeepsStatusAndContainmentIndependent|WarningAbsenceAndVerifiedReopening|ActualExpenseWarningAndSupportBoundary)|TestClosedSite.*|TestClosedAliasThroughExistingEventAdapter|TestDraftAllowanceRoutesToInjectedAccountAdapter)$",
+      "./internal/auth",
+      "./internal/accountapi",
+      "./internal/pilotruntime",
+      "./netlify/functions/profile-ingestion",
+      "./netlify/functions/profile-review",
+      "./netlify/functions/cv-generation",
+      "./netlify/functions/qualification-gaps",
+      "./netlify/functions/application-draft"
+    ],
+    "failures": [],
+    "passed_packages": [
+      "professional-information-repo/internal/auth",
+      "professional-information-repo/internal/accountapi",
+      "professional-information-repo/internal/pilotruntime",
+      "professional-information-repo/netlify/functions/profile-ingestion",
+      "professional-information-repo/netlify/functions/profile-review",
+      "professional-information-repo/netlify/functions/cv-generation",
+      "professional-information-repo/netlify/functions/qualification-gaps",
+      "professional-information-repo/netlify/functions/application-draft"
+    ],
+    "passed_tests": [
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestGoogleAuthorizationURLUsesExactRedirectAndPKCE"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestGoogleExchangeValidatesIDToken"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestGoogleExchangeRejectsBadProviderResponses/provider-error"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestGoogleExchangeRejectsBadProviderResponses/missing-id-token"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestGoogleExchangeRejectsBadProviderResponses/wrong-nonce"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestGoogleExchangeRejectsBadProviderResponses/malformed"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestGoogleExchangeRejectsBadProviderResponses"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestProductionGoogleProviderJWKSCacheLifetime/configured_fallback"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestProductionGoogleProviderJWKSCacheLifetime/default_fallback"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestProductionGoogleProviderJWKSCacheLifetime/invalid_header_uses_config"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestProductionGoogleProviderJWKSCacheLifetime/header_precedes_shorter_config"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestProductionGoogleProviderJWKSCacheLifetime/header_precedes_longer_config"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestProductionGoogleProviderJWKSCacheLifetime/fallback_lower_bound"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestProductionGoogleProviderJWKSCacheLifetime/fallback_upper_bound"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestProductionGoogleProviderJWKSCacheLifetime/header_lower_bound"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestProductionGoogleProviderJWKSCacheLifetime/header_upper_bound"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestProductionGoogleProviderJWKSCacheLifetime"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestBeginLoginRequiresAllowlistedProvider"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestBeginLoginCreatesPKCEAndNonceTransaction"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestCallbackBindingAndReplayAreRejected"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestCallbackStateTamperingDoesNotConsumeRealTransaction"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestConcurrentCallbackConsumesTransactionOnce"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestProviderIdentityMapsBySubjectNotEmail"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestLogoutRevokesSingleSession"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestLogoutAllInvalidatesAllSessionsAndGeneration"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestExpiredAndSuspendedSessionsFailClosed"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestLateLoginAfterLogoutAllIsRejected"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestLogoutRacingProviderExchangeIsRejected"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestCSRFValidationUsesPerSessionSecret"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestSafeReturnToRejectsOpenRedirects"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestSameOriginRequiresExactOrigin"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestPostgresProfileOwnershipConcurrencyAndRecovery/direct_isolation_and_CSRF"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestPostgresProfileOwnershipConcurrencyAndRecovery/concurrent_saves_and_duplicates"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestPostgresProfileOwnershipConcurrencyAndRecovery/invalid_representation_and_retained_data"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestPostgresProfileOwnershipConcurrencyAndRecovery/expiry_status_and_revocation"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestPostgresProfileOwnershipConcurrencyAndRecovery/outage_preserves_session_and_fails_closed"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestPostgresProfileOwnershipConcurrencyAndRecovery"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestPostgresSurvivesAllApplicationProcessRestarts"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestPostgresOneUseTransactionsAndAtomicSessionReplacement"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestPostgresRollbackAndActualLostHTTPResponse"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestPilotActualRouterExpiryRightsAndAliases"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestPilotRevocationAndSessionExpiryWinBlockedSave/revoke"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestPilotRevocationAndSessionExpiryWinBlockedSave/session-expiry"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestPilotRevocationAndSessionExpiryWinBlockedSave"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestProfileExportCompleteRetainedValues"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestProfileExportOwnershipAndRevocation"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestProfileExportPilotWindowAndAlias"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestA29AllAuthenticatedWorkflowConstructors//api/profile/ingest"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestA29AllAuthenticatedWorkflowConstructors//api/profile/review"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestA29AllAuthenticatedWorkflowConstructors//api/cv/generate"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestA29AllAuthenticatedWorkflowConstructors//api/qualification-gaps"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestA29AllAuthenticatedWorkflowConstructors//api/application-draft"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestA29AllAuthenticatedWorkflowConstructors"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestA28StructuredAnalysisThenReviewedDraftSevenDispatches"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedCVAuthorityAliasesAndSavedProjection/no_profile"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedCVAuthorityAliasesAndSavedProjection/foreign_reference"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedCVAuthorityAliasesAndSavedProjection/changed_text"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedCVAuthorityAliasesAndSavedProjection/partial"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedCVAuthorityAliasesAndSavedProjection/extra_evidence"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedCVAuthorityAliasesAndSavedProjection/credential"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedCVAuthorityAliasesAndSavedProjection/envelope"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedCVAuthorityAliasesAndSavedProjection/support_false"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedCVAuthorityAliasesAndSavedProjection/support_omitted"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedCVAuthorityAliasesAndSavedProjection/account"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedCVAuthorityAliasesAndSavedProjection/session"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedCVAuthorityAliasesAndSavedProjection/grant"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedCVAuthorityAliasesAndSavedProjection/postlock"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedCVAuthorityAliasesAndSavedProjection/late_profile"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedCVAuthorityAliasesAndSavedProjection/late_policy"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedCVAuthorityAliasesAndSavedProjection/outer_profile"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedCVAuthorityAliasesAndSavedProjection"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestDraftOpeningReceiptAndSettlementSurvivePostgresAndProcessRestart"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestDraftOpeningCompleteReceiptCommitsOnePilotRight"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedDraftPhysicalRestartKeepsExactReadyAndUnknownIntent"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestDurableDraftAcceptedSnapshotRecoversLostDecisionAndSurvivesReplacement"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestDurableDraftReviewPersistsExactArtifactWithoutInference"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedIngestionAbsentProfileFirstReviewAndExplicitSave"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedIngestionWholeSubmissionUsesOneActionAndNoResend"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedIngestionCredentialEnvelopesFailBeforeSend"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedIngestionAuthorityDenials/stale_profile"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedIngestionAuthorityDenials/expired"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedIngestionAuthorityDenials/suspended"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedIngestionAuthorityDenials/revoked"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedIngestionAuthorityDenials/session"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedIngestionAuthorityDenials/wrong_account"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedIngestionAuthorityDenials/missing_session"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedIngestionAuthorityDenials/caller_credentials"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedIngestionAuthorityDenials"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedDraftPublicAuthorityAndOverrideNegatives"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedDraftPublishesActualWholeVersionAndRecoversWithoutSending"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestOperatorControlInferenceStopUsesSharedAdmission"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestOperatorControlPhysicalRestartPreservesStopsAndUnknownHold"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestPilotOperationsActualExpenseWarningAndSupportBoundary"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestPilotOperationsPhysicalOutageKeepsStatusAndContainmentIndependent"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestPilotOperationsWarningAbsenceAndVerifiedReopening"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedProfileReviewUsesTwoOpenAILegsAndReplay"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedProfileReviewCurrentnessAndNoCallerAuthority/no_profile"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedProfileReviewCurrentnessAndNoCallerAuthority/changed_document"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedProfileReviewCurrentnessAndNoCallerAuthority/changed_section"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedProfileReviewCurrentnessAndNoCallerAuthority/changed_locale"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedProfileReviewCurrentnessAndNoCallerAuthority/credential"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedProfileReviewCurrentnessAndNoCallerAuthority/envelope"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedProfileReviewCurrentnessAndNoCallerAuthority/account"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedProfileReviewCurrentnessAndNoCallerAuthority/expired_session"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedProfileReviewCurrentnessAndNoCallerAuthority/expired_grant"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedProfileReviewCurrentnessAndNoCallerAuthority/postlock"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedProfileReviewCurrentnessAndNoCallerAuthority/changed_before_result"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedProfileReviewCurrentnessAndNoCallerAuthority/policy_before_result"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedProfileReviewCurrentnessAndNoCallerAuthority"
+      },
+      {
+        "package": "professional-information-repo/internal/pilotruntime",
+        "test": "TestClosedSiteSeparatesAPIFromSPA/GET_/"
+      },
+      {
+        "package": "professional-information-repo/internal/pilotruntime",
+        "test": "TestClosedSiteSeparatesAPIFromSPA/GET_/application/draft"
+      },
+      {
+        "package": "professional-information-repo/internal/pilotruntime",
+        "test": "TestClosedSiteSeparatesAPIFromSPA/GET_/assets/app.js"
+      },
+      {
+        "package": "professional-information-repo/internal/pilotruntime",
+        "test": "TestClosedSiteSeparatesAPIFromSPA/GET_/assets/missing.js"
+      },
+      {
+        "package": "professional-information-repo/internal/pilotruntime",
+        "test": "TestClosedSiteSeparatesAPIFromSPA/GET_/api/auth/session"
+      },
+      {
+        "package": "professional-information-repo/internal/pilotruntime",
+        "test": "TestClosedSiteSeparatesAPIFromSPA/GET_/.netlify/functions/account/api/auth/session"
+      },
+      {
+        "package": "professional-information-repo/internal/pilotruntime",
+        "test": "TestClosedSiteSeparatesAPIFromSPA/POST_/.netlify/functions/profile-review"
+      },
+      {
+        "package": "professional-information-repo/internal/pilotruntime",
+        "test": "TestClosedSiteSeparatesAPIFromSPA/GET_/api/draft-allowance"
+      },
+      {
+        "package": "professional-information-repo/internal/pilotruntime",
+        "test": "TestClosedSiteSeparatesAPIFromSPA/GET_/.netlify/functions/account/api/draft-allowance"
+      },
+      {
+        "package": "professional-information-repo/internal/pilotruntime",
+        "test": "TestClosedSiteSeparatesAPIFromSPA/GET_/api/no-such-route"
+      },
+      {
+        "package": "professional-information-repo/internal/pilotruntime",
+        "test": "TestClosedSiteSeparatesAPIFromSPA/GET_/.netlify/functions/no-such-function"
+      },
+      {
+        "package": "professional-information-repo/internal/pilotruntime",
+        "test": "TestClosedSiteSeparatesAPIFromSPA/GET_/%61pi/auth/session"
+      },
+      {
+        "package": "professional-information-repo/internal/pilotruntime",
+        "test": "TestClosedSiteSeparatesAPIFromSPA/GET_/healthz"
+      },
+      {
+        "package": "professional-information-repo/internal/pilotruntime",
+        "test": "TestClosedSiteSeparatesAPIFromSPA/GET_/readyz"
+      },
+      {
+        "package": "professional-information-repo/internal/pilotruntime",
+        "test": "TestClosedSiteSeparatesAPIFromSPA/POST_/application/draft"
+      },
+      {
+        "package": "professional-information-repo/internal/pilotruntime",
+        "test": "TestClosedSiteSeparatesAPIFromSPA"
+      },
+      {
+        "package": "professional-information-repo/internal/pilotruntime",
+        "test": "TestDraftAllowanceRoutesToInjectedAccountAdapter"
+      },
+      {
+        "package": "professional-information-repo/internal/pilotruntime",
+        "test": "TestClosedSiteBoundsDependencyRequests"
+      },
+      {
+        "package": "professional-information-repo/internal/pilotruntime",
+        "test": "TestClosedAliasThroughExistingEventAdapter"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/profile-ingestion",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//api/profile/ingest"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/profile-ingestion",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//.netlify/functions/profile-ingestion"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/profile-ingestion",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/profile-ingestion",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//api/profile/ingest"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/profile-ingestion",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//.netlify/functions/profile-ingestion"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/profile-ingestion",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/profile-ingestion",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/configured_session_missing_policy"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/profile-ingestion",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/profile-review",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//api/profile/review"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/profile-review",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//.netlify/functions/profile-review"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/profile-review",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/profile-review",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//api/profile/review"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/profile-review",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//.netlify/functions/profile-review"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/profile-review",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/profile-review",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/configured_session_missing_policy"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/profile-review",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/cv-generation",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//api/cv/generate"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/cv-generation",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//.netlify/functions/cv-generation"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/cv-generation",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/cv-generation",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//api/cv/generate"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/cv-generation",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//.netlify/functions/cv-generation"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/cv-generation",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/cv-generation",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/configured_session_missing_policy"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/cv-generation",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/qualification-gaps",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//api/qualification-gaps"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/qualification-gaps",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//.netlify/functions/qualification-gaps"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/qualification-gaps",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/qualification-gaps",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//api/qualification-gaps"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/qualification-gaps",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//.netlify/functions/qualification-gaps"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/qualification-gaps",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/qualification-gaps",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/configured_session_missing_policy"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/qualification-gaps",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/application-draft",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//api/application-draft"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/application-draft",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_//.netlify/functions/application-draft"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/application-draft",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/application-draft",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//api/application-draft"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/application-draft",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0//.netlify/functions/application-draft"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/application-draft",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/auth_flag_0"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/application-draft",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials/configured_session_missing_policy"
+      },
+      {
+        "package": "professional-information-repo/netlify/functions/application-draft",
+        "test": "TestA29RealFunctionAuthenticatedPositiveAndManagedDenials"
+      }
+    ],
+    "process_exit": 0,
+    "skips": []
+  },
+  "hosted_observations": {
+    "actual_google_https_callback_and_session": "unobserved",
+    "approved_hosted_internal_grant_and_fake_draft_journey": "unobserved",
+    "deployed_two_account_and_all_route_negatives": "unobserved",
+    "exact_configuration_and_execution_approval": "pending",
+    "final_hosted_source_artifact_schema_config_identities_and_review": "pending",
+    "hosted_restart_resources_controls_alerts_backup_health_privileged_access": "unobserved",
+    "issue_52_environment_substitution": "unapproved",
+    "participant_admission": "closed"
+  },
+  "inherited_local_evidence": {
+    "current_frontend_changed": false,
+    "full_go_race": {
+      "bytes": 14385,
+      "path": "docs/release-evidence/2026-11-23-local-older-pilot-restore-summary.json",
+      "sha256": "8ab1a5269a5beea597f67c15d9819cb504eba2491442c5e605a5550c7e18f97e"
+    },
+    "full_suite_rerun_in_294": false,
+    "package_predecessor": {
+      "bytes": 45874,
+      "path": "docs/release-evidence/2026-11-23-closed-pilot-runtime-summary.json",
+      "sha256": "93e69add9a49ef6b6ffafcf5c3cf869d2520d3f017bbbf80fe1d69b920763b1c"
+    },
+    "restore_repair": {
+      "bytes": 23423,
+      "path": "docs/release-evidence/2026-11-23-local-older-pilot-restore-review-repair-summary.json",
+      "sha256": "2a2713b6d77ac4426160f8cdbba8dd97ca4a2fbf586a6a517433d17d3edaab00"
+    }
+  },
+  "initial_go_fixture": {
+    "corrected_frozen_rerun_passed": true,
+    "failures": [
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestDraftOpeningReceiptAndSettlementSurvivePostgresAndProcessRestart"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedDraftPhysicalRestartKeepsExactReadyAndUnknownIntent"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestOperatorControlPhysicalRestartPreservesStopsAndUnknownHold"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestPilotOperationsPhysicalOutageKeepsStatusAndContainmentIndependent"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": null
+      }
+    ],
+    "process_exit": 1,
+    "reason": "Four restart child socket paths exceeded the local PostgreSQL 107-byte Unix socket limit."
+  },
+  "initial_package_fixture": {
+    "corrected_frozen_rebuild_passed": true,
+    "reason": "The default Go build cache was read-only."
+  },
+  "issue": "https://github.com/HenriqueMichelini/careeros/issues/294",
+  "local_auth_race": {
+    "command": [
+      "go",
+      "test",
+      "-race",
+      "-count=1",
+      "-json",
+      "./internal/auth"
+    ],
+    "failures": [],
+    "passed_packages": [
+      "professional-information-repo/internal/auth"
+    ],
+    "passed_tests": [
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestConfigAcceptsExactGoogleOnlySetup"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestConfigRejectsArbitraryRedirect"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestConfigRejectsPlainHTTPOutsideLoopback"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestConfigRejectsDuplicateProviders"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestConfigFromEnvRequiresOrigin"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestConfigFromEnvSelectsOnlyGoogle"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestRegistryDeniesUnlistedProvider"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestHandlerStartSetsBindingCookieAndSecurityHeaders"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestHandlerDeniesUnlistedProvider"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestHandlerCallbackSetsSessionAndRedirects"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestHandlerCallbackRejectsTamperingAndReplay"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestHandlerSessionProbeIsUnauthenticatedWithoutCookie"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestHandlerSessionProbeClearsRevokedCookie"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestHandlerLogoutRequiresSameOriginAndCSRF"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestHandlerLogoutAllRevokesEverySession"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestHandlerNilServiceFailsClosed"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestGuardRequiresSessionOriginAndCSRF"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestGuardRejectsCrossAccountAndRevokedCommit"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestGuardRevalidatesImmediatelyBeforeCommit"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestOrdinaryLogoutFencesEarlierCallback/callback_after_logout"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestOrdinaryLogoutFencesEarlierCallback/provider_response_after_logout"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestOrdinaryLogoutFencesEarlierCallback"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestOrdinaryLogoutWinsBeforeSessionCommit/same_account"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestOrdinaryLogoutWinsBeforeSessionCommit/different_provider_subject"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestOrdinaryLogoutWinsBeforeSessionCommit"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestGoogleAuthorizationURLUsesExactRedirectAndPKCE"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestGoogleExchangeValidatesIDToken"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestGoogleExchangeRejectsBadProviderResponses/provider-error"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestGoogleExchangeRejectsBadProviderResponses/missing-id-token"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestGoogleExchangeRejectsBadProviderResponses/wrong-nonce"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestGoogleExchangeRejectsBadProviderResponses/malformed"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestGoogleExchangeRejectsBadProviderResponses"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestPKCEChallengeMatchesVerifier"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestProductionGoogleProviderJWKSCacheLifetime/configured_fallback"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestProductionGoogleProviderJWKSCacheLifetime/default_fallback"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestProductionGoogleProviderJWKSCacheLifetime/invalid_header_uses_config"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestProductionGoogleProviderJWKSCacheLifetime/header_precedes_shorter_config"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestProductionGoogleProviderJWKSCacheLifetime/header_precedes_longer_config"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestProductionGoogleProviderJWKSCacheLifetime/fallback_lower_bound"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestProductionGoogleProviderJWKSCacheLifetime/fallback_upper_bound"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestProductionGoogleProviderJWKSCacheLifetime/header_lower_bound"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestProductionGoogleProviderJWKSCacheLifetime/header_upper_bound"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestProductionGoogleProviderJWKSCacheLifetime"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestBeginLoginRequiresAllowlistedProvider"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestBeginLoginCreatesPKCEAndNonceTransaction"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestCallbackBindingAndReplayAreRejected"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestCallbackStateTamperingDoesNotConsumeRealTransaction"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestConcurrentCallbackConsumesTransactionOnce"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestProviderIdentityMapsBySubjectNotEmail"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestSessionTokenIsStoredOnlyAsHash"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestLogoutRevokesSingleSession"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestLogoutAllInvalidatesAllSessionsAndGeneration"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestExpiredAndSuspendedSessionsFailClosed"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestLateLoginAfterLogoutAllIsRejected"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestLogoutRacingProviderExchangeIsRejected"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestNewLoginAfterLogoutAllIsValid"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestOwnershipIsServerDerived"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestRevalidateCatchesRevocationBeforeCommit"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestCSRFValidationUsesPerSessionSecret"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestSafeReturnToRejectsOpenRedirects"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestSameOriginRequiresExactOrigin"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestSessionReplacementRejectsMissingRevokedAndExpiredInitiator/missing"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestSessionReplacementRejectsMissingRevokedAndExpiredInitiator/revoked"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestSessionReplacementRejectsMissingRevokedAndExpiredInitiator/expired"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestSessionReplacementRejectsMissingRevokedAndExpiredInitiator"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestConcurrentSessionReplacementsConsumeInitiatorOnce"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestFailedSessionReplacementPreservesInitiator"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestVerifierAcceptsValidRS256Token"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestVerifierRejectsUnsupportedAlgorithms"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestVerifierRejectsTamperedClaimsAndSignature"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestVerifierRejectsIssuerAudienceExpiryAndNonceMismatches/issuer"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestVerifierRejectsIssuerAudienceExpiryAndNonceMismatches/audience"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestVerifierRejectsIssuerAudienceExpiryAndNonceMismatches/expired"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestVerifierRejectsIssuerAudienceExpiryAndNonceMismatches/nonce"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestVerifierRejectsIssuerAudienceExpiryAndNonceMismatches/missing-subject"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestVerifierRejectsIssuerAudienceExpiryAndNonceMismatches"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestVerifierRefetchesJWKSForRotatedKey"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestVerifierCachesJWKS"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestVerifierRejectsUnknownKey"
+      },
+      {
+        "package": "professional-information-repo/internal/auth",
+        "test": "TestVerifierRejectsSmallRSAKey"
+      }
+    ],
+    "process_exit": 0,
+    "skips": []
+  },
+  "matching_prior_payload": {
+    "bytes": 4796,
+    "path": "docs/release-evidence/2026-11-23-closed-pilot-source-provenance-repair-bundle-manifest.json",
+    "sha256": "cdf65b29f5564c96805335b07bb7f5227ab635ddbd3f7ff8c3b906e33aaaf6cf"
+  },
+  "owner_decision_handoff": "https://github.com/HenriqueMichelini/careeros/issues/294#issuecomment-6645316759",
+  "packet": {
+    "bytes": 20540,
+    "path": "docs/closed-hosted-candidate-preflight.md",
+    "sha256": "73bbabc59ef848d6d0993df879176e8de26889a7347316013aa502bc312149f1"
+  },
+  "raw_receipts": [
+    {
+      "bytes": 1813,
+      "path": "/home/henriquemichelini/workstation/careeros/.q94-9i7xkl/bundle-build.log",
+      "sha256": "1d3f5fb7b63af59afb481fc8d2c8ba878553cea665d057af5c6741e850d53b05"
+    },
+    {
+      "bytes": 1566,
+      "path": "/home/henriquemichelini/workstation/careeros/.q94-9i7xkl/bundle-build-writable-cache.log",
+      "sha256": "70b4e6b2dfd92b53ef71e7cbefc001f4a1a6188f55622050494c29fe549ac617"
+    },
+    {
+      "bytes": 146,
+      "path": "/home/henriquemichelini/workstation/careeros/.q94-9i7xkl/bundle-verify.log",
+      "sha256": "6ed05a3e3d585f01d4293eae015de02920450fd16d9a2dd47fd02de807db59a5"
+    },
+    {
+      "bytes": 6989,
+      "path": "/home/henriquemichelini/workstation/careeros/.q94-9i7xkl/closed-package/summary.json",
+      "sha256": "bc832674e83ec9785b1fc76661d8aedecffd780fc8df75f051f08a1eb64070c6"
+    },
+    {
+      "bytes": 2090,
+      "path": "/home/henriquemichelini/workstation/careeros/.q94-9i7xkl/closed-package/checks.log",
+      "sha256": "5f0570d071c39f5ce4e9e2a0dd71e54e9474facc56e292bcee9ce69056d5c03e"
+    },
+    {
+      "bytes": 189,
+      "path": "/home/henriquemichelini/workstation/careeros/.q94-9i7xkl/closed-package/postgres.log",
+      "sha256": "f681ae29c95018d99743b2cf00e97e06e1efadd1e49898a9eacbd0dd3e8353ee"
+    },
+    {
+      "bytes": 5311,
+      "path": "/home/henriquemichelini/workstation/careeros/.q94-9i7xkl/go-run.py",
+      "sha256": "41e7bc6b65ad673cf660837a50f244ccba0d284df20ff685e14c6ccd2c1b6391"
+    },
+    {
+      "bytes": 2354,
+      "path": "/home/henriquemichelini/workstation/careeros/.q94-9i7xkl/go-run.json",
+      "sha256": "4d30716cb84a7838b56197bb07efb87eeee35bf627885250c56147312f49d7db"
+    },
+    {
+      "bytes": 317109,
+      "path": "/home/henriquemichelini/workstation/careeros/.q94-9i7xkl/go.jsonl",
+      "sha256": "f4888bf95efc06d27e212bb7103fb8eb434f3965d561615253a6e8de876043b5"
+    },
+    {
+      "bytes": 1042,
+      "path": "/home/henriquemichelini/workstation/careeros/.q94-9i7xkl/go-setup.log",
+      "sha256": "8b964cc772722eae03a63f17c680f370e167ecbf946bb15cf3db58f2149b10f9"
+    },
+    {
+      "bytes": 189,
+      "path": "/home/henriquemichelini/workstation/careeros/.q94-9i7xkl/go-postgres.log",
+      "sha256": "021bf6b32df9da8c3ffc1f9e5493af06115d742fd6d0dcfebc99b0882286c288"
+    },
+    {
+      "bytes": 5326,
+      "path": "/home/henriquemichelini/workstation/careeros/.q94-9i7xkl/restart-corrected/go-run.py",
+      "sha256": "c677e1eea6e10ce738d5a2d1f67dd591e14fbd11f8844591d5f72536eeafafbd"
+    },
+    {
+      "bytes": 2354,
+      "path": "/home/henriquemichelini/workstation/careeros/.q94-9i7xkl/restart-corrected/go-run.json",
+      "sha256": "b32a915ba1deb727a62591cf57a908c83c92384f6bc15beec8457226e30cebd4"
+    },
+    {
+      "bytes": 313559,
+      "path": "/home/henriquemichelini/workstation/careeros/.q94-9i7xkl/restart-corrected/go.jsonl",
+      "sha256": "8d9f9620d740e1ab7bfeebfd4bc1c1120e66ac08b7d21f756cf3dbb559bc663c"
+    },
+    {
+      "bytes": 1080,
+      "path": "/home/henriquemichelini/workstation/careeros/.q94-9i7xkl/restart-corrected/go-setup.log",
+      "sha256": "b4bbd3c2a5b2abaf447561856817d81b9e9ce658dd2ffef9dce9135026599ca1"
+    },
+    {
+      "bytes": 189,
+      "path": "/home/henriquemichelini/workstation/careeros/.q94-9i7xkl/restart-corrected/go-postgres.log",
+      "sha256": "b8132915a991420d5aafa60c08b3376e35ca4743910f3484814310c9511b3fa0"
+    },
+    {
+      "bytes": 70561,
+      "path": "/home/henriquemichelini/workstation/careeros/.q94-9i7xkl/auth-full.jsonl",
+      "sha256": "fac20b1da7e22b8bac4384c272b3ac6d15480916ca9330e1d5bd316b7fa0e3a0"
+    },
+    {
+      "bytes": 818,
+      "path": "/home/henriquemichelini/workstation/careeros/.q94-9i7xkl/initial-socket-refusals/careeros-draft-restart-1043016083.log",
+      "sha256": "e3f63ce3bccbd058b4dee7f5137258e3f50c03f46213780f64511b7a4548f26a"
+    },
+    {
+      "bytes": 818,
+      "path": "/home/henriquemichelini/workstation/careeros/.q94-9i7xkl/initial-socket-refusals/careeros-draft-restart-4060758751.log",
+      "sha256": "1a396ace431a0f16db152456bc7165b7b59a6808b06ec6118593832c48be4856"
+    },
+    {
+      "bytes": 816,
+      "path": "/home/henriquemichelini/workstation/careeros/.q94-9i7xkl/initial-socket-refusals/careeros-draft-restart-435018231.log",
+      "sha256": "e256774bdcc919d29342f387fee25e0a9211d42c838d429cd08ebfcabae76fe1"
+    },
+    {
+      "bytes": 816,
+      "path": "/home/henriquemichelini/workstation/careeros/.q94-9i7xkl/initial-socket-refusals/careeros-draft-restart-483779828.log",
+      "sha256": "5feb24d949ddcf04045078a5701f820e0fb162df52e6bc25708e9f9cce3eb01b"
+    }
+  ],
+  "scope": "local_synthetic_preflight",
+  "source": "564b2a21be04ecb9b7e357efdf68710718ae0619",
+  "source_binding_scope": "Local baseline including available migration sources. Only Account migrations were installed by the closed package.",
+  "source_bindings": [
+    {
+      "bytes": 28743,
+      "git_blob": "164e1bdaf1e3e5f833d3c45a17cc209434c506fe",
+      "path": "internal/accountstore/schema.sql",
+      "sha256": "1041d60b99d7418870b7463cc696e6ce064d015f61c73b7c2439fd0c771bea2b"
+    },
+    {
+      "bytes": 5875,
+      "git_blob": "88f31e5040071efca660814926feb4c7ec6302f9",
+      "path": "internal/draftrecovery/schema.sql",
+      "sha256": "3b1454d3363a1355b2915430ae1af78418f2193324cbd766abbd4be03ec3a19a"
+    },
+    {
+      "bytes": 6476,
+      "git_blob": "38b9e1451b0eec476d8282e2022affea8b313397",
+      "path": "internal/aicontrol/schema.sql",
+      "sha256": "225ec71c6e443d263fc13242a97b138fdbf6fc2afa9afe2d3b24e0276b282c92"
+    },
+    {
+      "bytes": 4594,
+      "git_blob": "de4e1784e6b274d74b5937ec261daa17f656afce",
+      "path": "internal/aicontrol/reconciliation.sql",
+      "sha256": "c44d7d1728120259f073b678fcb5b09a520418a12691908daa538d021a52965b"
+    },
+    {
+      "bytes": 21552,
+      "git_blob": "1e75f60edcda05760b02c833d59b237fdea81532",
+      "path": "internal/aicontrol/operations_capture.sql",
+      "sha256": "6d002ca6349c0d9e2b7762f72daae2dfa1a04dfbb08e875d7fa6fa4089e86f40"
+    },
+    {
+      "bytes": 6634,
+      "git_blob": "fd66970116461a1edb666e9cc87ef8147c5d25b2",
+      "path": "internal/accountapi/handler.go",
+      "sha256": "8941188b59f956099c0f7b1773a5d857e7f9e379a255f231fd40270423f20af4"
+    },
+    {
+      "bytes": 8797,
+      "git_blob": "36fde5ca467b6928427c547cd6c00e6be0d6d2b5",
+      "path": "internal/auth/config.go",
+      "sha256": "6db91071e87d0c8bc427abe2bb26c9f26838dbfe0234b432755d8bc8cdeadd5f"
+    },
+    {
+      "bytes": 4141,
+      "git_blob": "cdc4b431fd1e47489be7705a0b2c6ebbdb3f67fe",
+      "path": "internal/pilotruntime/runtime.go",
+      "sha256": "c1d08daab5feb755ca088c2d581edf92bf46e86daece49a74ee278c187ec7276"
+    },
+    {
+      "bytes": 5839,
+      "git_blob": "93846f91e12f69bd5d825f36dbcbcc3bdf7fef37",
+      "path": "internal/pilotruntime/site.go",
+      "sha256": "aa20a8d58a8ee5ca45f48df236ec9c181cc4d98bca56703edd9d919f17e01dcd"
+    },
+    {
+      "bytes": 1000,
+      "git_blob": "ecb0c0fa84544ecf890a670615c247039b4b2c5b",
+      "path": "netlify/functions/account/main.go",
+      "sha256": "96b925f1abeb85a06c825c6909b3b03038e356118df4326bcbb1166d9b101c5b"
+    },
+    {
+      "bytes": 1064,
+      "git_blob": "8f14a99c9b9b6753d50c316f67a1400fb8e3bbd6",
+      "path": "netlify.toml",
+      "sha256": "bbc18ba3aeea7f3daf0945886f0d09fd60f1206dfaef7201e85cdc4607049830"
+    },
+    {
+      "bytes": 1038,
+      "git_blob": "5c179ecdfed977a99da4478160c7fe912220fa60",
+      "path": "scripts/pilot-runtime/build-profile.json",
+      "sha256": "8da60c4580d12075081291bfb1d2635a9be3d9d6f857e9ccda09763b14c4f1ca"
+    },
+    {
+      "bytes": 1241,
+      "git_blob": "7f3a3f4b07d768be7153a141fde52e58086c14c2",
+      "path": "scripts/pilot-runtime/bootstrap.sql",
+      "sha256": "412151cd19ba3023543a2c3809d4172c12f09037771d7f951125c0e7f4a58198"
+    },
+    {
+      "bytes": 3692,
+      "git_blob": "76e73bc167af1da94ba0c81499c1c7248e14062e",
+      "path": "scripts/pilot-runtime/closed-runtime-grants.sql",
+      "sha256": "ebf1af8c36120461a07c117869c33012ec2f535b370413bcf2ab41e3f35a549c"
+    }
+  ],
+  "source_tree": "28a0cc7793269c1742b4819db96d982f6d4d54ce",
+  "status": "blocked_on_separately_authorized_hosted_acceptance"
+}
