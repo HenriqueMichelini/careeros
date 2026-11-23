@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -25,9 +26,33 @@ type restorePostgres struct {
 	running                        bool
 }
 
+var restoreInstalledPath = regexp.MustCompile(`^/[a-zA-Z0-9/_.-]+$`)
+
+func restorePostgresTools(t *testing.T, path string) string {
+	t.Helper()
+	if !filepath.IsAbs(path) {
+		t.Fatal("set the absolute installed PostgreSQL bin directory")
+	}
+	tools, err := filepath.EvalSymlinks(path)
+	if err != nil || !restoreInstalledPath.MatchString(tools) {
+		t.Fatal("set the absolute installed PostgreSQL bin directory with a literal path")
+	}
+	// pg_ctl can resolve its own executable when locating postgres. Keep
+	// both installed paths literal even when the installation uses links.
+	for _, tool := range []string{"pg_ctl", "postgres"} {
+		resolved, err := filepath.EvalSymlinks(filepath.Join(tools, tool))
+		if err != nil || !restoreInstalledPath.MatchString(resolved) {
+			t.Fatal("PostgreSQL server binaries need literal installed paths", tool)
+		}
+	}
+	return tools
+}
+
 func newRestorePostgres(t *testing.T, tools string) *restorePostgres {
 	t.Helper()
-	root, err := os.MkdirTemp("", "co293-")
+	// A private, short path under /tmp keeps both pg_ctl's own startup
+	// arguments and the socket setting independent of caller paths.
+	root, err := os.MkdirTemp("/tmp", "co293-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,21 +81,28 @@ func newRestorePostgres(t *testing.T, tools string) *restorePostgres {
 	if err := os.Mkdir(pg.socket, 0700); err != nil {
 		t.Fatal(err)
 	}
-	if len(pg.socket)+len("/.s.PGSQL.55493") >= 108 || strings.ContainsAny(pg.socket, " \t\n'\\") {
-		t.Fatal("restore rehearsal needs a short private PostgreSQL temporary path")
-	}
 	q := url.Values{"host": {pg.socket}, "port": {"55493"}, "sslmode": {"disable"}, "connect_timeout": {"2"}}
 	pg.dsn = (&url.URL{Scheme: "postgresql", User: url.User("restore_operator"), Path: "/careeros_restore_test", RawQuery: q.Encode()}).String()
 	pg.must(t, "initdb", "-D", pg.data, "--username=restore_operator", "--no-locale", "--encoding=UTF8", "--auth-local=trust", "--auth-host=reject")
+	config := "listen_addresses = ''\nport = 55493\nunix_socket_directories = '" + pg.socket + "'\nunix_socket_permissions = 0700\nlogging_collector = off\n"
+	if err := os.WriteFile(filepath.Join(pg.data, "postgresql.auto.conf"), []byte(config), 0600); err != nil {
+		t.Fatal(err)
+	}
 	pg.running = true
-	pg.must(t, "pg_ctl", "-D", pg.data, "-l", filepath.Join(root, "postgres.log"),
-		"-o", "-h '' -k "+pg.socket+" -p 55493", "-w", "start")
+	pg.must(t, "pg_ctl", "-D", pg.data, "-l", filepath.Join(root, "postgres.log"), "-w", "start")
 	admin, err := url.Parse(pg.dsn)
 	if err != nil {
 		t.Fatal(err)
 	}
 	admin.Path = "/postgres"
 	pg.must(t, "psql", "--no-psqlrc", "--set=ON_ERROR_STOP=on", "--dbname="+admin.String(), "--command=CREATE DATABASE careeros_restore_test")
+	var listen, socket, permissions string
+	db := restoreSQL(t, pg.dsn)
+	err = db.QueryRow(`SELECT current_setting('listen_addresses'), current_setting('unix_socket_directories'),
+		current_setting('unix_socket_permissions')`).Scan(&listen, &socket, &permissions)
+	if err != nil || listen != "" || socket != pg.socket || permissions != "0700" {
+		t.Fatal("owned PostgreSQL did not start with only its private Unix socket", err)
+	}
 	return pg
 }
 
@@ -134,7 +166,7 @@ func (p *restorePostgres) restore(path, expected string) error {
 	if digest, err := restoreFileDigest(path); err != nil || digest != expected {
 		return errors.New("local backup failed its pinned digest check")
 	}
-	return p.command("pg_restore", "--single-transaction", "--exit-on-error", "--no-owner", "--dbname="+p.dsn, path)
+	return p.command("pg_restore", "--single-transaction", "--exit-on-error", "--no-owner", "--dbname="+p.dsn, "--", path)
 }
 
 func restoreFixtureRoles(t *testing.T, source, target *sql.DB) {

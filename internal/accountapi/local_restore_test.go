@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"reflect"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -29,6 +30,7 @@ const (
 	restoreQualification = "qualification"
 	restoreDraft         = "managed-draft"
 	keptDraft            = "restore-kept-draft"
+	archiveClosedDraft   = "restore-already-closed-draft"
 	canceledDraft        = "restore-closed-draft"
 	oldUnknown           = "restore-old-unknown"
 	newUnknown           = "restore-later-unknown"
@@ -171,7 +173,7 @@ func restoreGrant(t *testing.T, f *aiadmission.Fixture, subject string) *aiadmis
 	return who
 }
 
-func restoreDraftFixture(t *testing.T, f *aiadmission.Fixture, h http.Handler) (draftrecovery.Input, draftrecovery.Result, []byte, draftrecovery.OpeningConfirmation) {
+func restoreDraftFixture(t *testing.T, f, archiveOwner *aiadmission.Fixture, h http.Handler) (draftrecovery.Input, draftrecovery.Result, []byte, draftrecovery.OpeningConfirmation) {
 	t.Helper()
 	var doc profiledocument.Document
 	if err := json.Unmarshal(f.Document, &doc); err != nil {
@@ -181,14 +183,22 @@ func restoreDraftFixture(t *testing.T, f *aiadmission.Fixture, h http.Handler) (
 		Job: draftrecovery.Job{Posting: "Java required."}, Language: "en"}
 	var ready draftrecovery.Result
 	var confirmation draftrecovery.OpeningConfirmation
-	for _, key := range []string{keptDraft, canceledDraft} {
-		w := qualificationRequest(t, f, h, "/api/drafts", key, "", restoreJSON(t, input))
+	for _, key := range []string{keptDraft, archiveClosedDraft, canceledDraft} {
+		owner := f
+		if key == archiveClosedDraft {
+			owner = archiveOwner
+		}
+		w := qualificationRequest(t, owner, h, "/api/drafts", key, "", restoreJSON(t, input))
 		restoreCode(t, key+" ready before backup", w, http.StatusCreated)
 		if err := json.Unmarshal(w.Body.Bytes(), &ready); err != nil || ready.Bundle == nil || ready.Bundle.Resume == "" || ready.Bundle.CoverLetter == "" {
 			t.Fatal("fixture did not produce a complete Draft", err)
 		}
 		if key != keptDraft {
-			break
+			if key == archiveClosedDraft {
+				restoreCode(t, "archive Draft delivery closed before backup", openingRequest(t, owner, h, "POST",
+					"/api/drafts/"+key+"/cancel", map[string]any{"action": ready.Action}), http.StatusOK)
+			}
+			continue
 		}
 		receiptResult := openingRequest(t, f, h, "POST", "/api/drafts/"+key+"/versions/1/opening", struct{}{})
 		restoreCode(t, "complete opening receipt", receiptResult, http.StatusOK)
@@ -200,7 +210,8 @@ func restoreDraftFixture(t *testing.T, f *aiadmission.Fixture, h http.Handler) (
 		delivered := openingRequest(t, f, h, "POST", "/api/drafts/"+key+"/versions/1/opening/confirm", confirmation)
 		restoreCode(t, "one delivered right", delivered, http.StatusOK)
 		var result draftrecovery.Result
-		if err := json.Unmarshal(delivered.Body.Bytes(), &result); err != nil || !result.Delivered {
+		if err := json.Unmarshal(delivered.Body.Bytes(), &result); err != nil || !result.Delivered ||
+			result.Opening == nil || result.Opening.ConfirmedAt == nil {
 			t.Fatal("fixture did not persist a completed delivery", err)
 		}
 		review := openingRequest(t, f, h, "POST", "/api/drafts/"+key+"/versions/1/review", humanCommand(result, "restore-reviewed-resume", "resume", "review", 0))
@@ -211,7 +222,7 @@ func restoreDraftFixture(t *testing.T, f *aiadmission.Fixture, h http.Handler) (
 	return input, ready, bytes.Clone(kept.Body.Bytes()), confirmation
 }
 
-func seedRestoreRemovedExcerpt(t *testing.T, f *aiadmission.Fixture) {
+func seedRestoreRemovedExcerpt(t *testing.T, f *aiadmission.Fixture, evidenceID string) {
 	t.Helper()
 	var document map[string]json.RawMessage
 	var evidence []json.RawMessage
@@ -223,7 +234,9 @@ func seedRestoreRemovedExcerpt(t *testing.T, f *aiadmission.Fixture) {
 	}
 	// Simulate a pre-cleanup record in the private fixture. The actual
 	// lifecycle worker owns the subsequent removal.
-	evidence = append(evidence, json.RawMessage(`{"id":"restore-legacy-excerpt","revision":1,"excerpt":"SYNTHETIC DETAIL TO REMOVE","origin":"synthetic","approval":"approved"}`))
+	evidence = append(evidence, restoreJSON(t, map[string]any{
+		"id": evidenceID, "revision": 1, "excerpt": "SYNTHETIC DETAIL TO REMOVE", "origin": "synthetic", "approval": "approved",
+	}))
 	document["evidence"] = restoreJSON(t, evidence)
 	if _, err := f.DB.Exec("UPDATE careeros_profiles SET document=$2 WHERE account_id=$1", f.Principal.AccountID, restoreJSON(t, document)); err != nil {
 		t.Fatal(err)
@@ -234,10 +247,7 @@ func TestLocalOlderPilotRestoreRehearsal(t *testing.T) {
 	if os.Getenv("CAREEROS_LOCAL_RESTORE_REHEARSAL") != "1" {
 		t.Skip("run the explicit disposable older-backup rehearsal")
 	}
-	tools := os.Getenv("CAREEROS_LOCAL_RESTORE_PG_BIN")
-	if !filepath.IsAbs(tools) {
-		t.Fatal("set the absolute installed PostgreSQL bin directory")
-	}
+	tools := restorePostgresTools(t, os.Getenv("CAREEROS_LOCAL_RESTORE_PG_BIN"))
 	// The PG client defaults must not supplement any fixture connection.
 	for _, variable := range os.Environ() {
 		key, _, _ := bytes.Cut([]byte(variable), []byte("="))
@@ -248,6 +258,12 @@ func TestLocalOlderPilotRestoreRehearsal(t *testing.T) {
 			}
 		}
 	}
+	t.Run("verified_retrieval", func(t *testing.T) { rehearseOlderPilotRestore(t, tools, false) })
+	t.Run("retained_namespace_stop", func(t *testing.T) { rehearseOlderPilotRestore(t, tools, true) })
+}
+
+func rehearseOlderPilotRestore(t *testing.T, tools string, stopNamespace bool) {
+	t.Helper()
 	sourcePG, targetPG := newRestorePostgres(t, tools), newRestorePostgres(t, tools)
 	t.Setenv("CAREEROS_TEST_DATABASE_URL", sourcePG.dsn)
 	ctx := context.Background()
@@ -285,13 +301,35 @@ func TestLocalOlderPilotRestoreRehearsal(t *testing.T) {
 	retired := restoreGrant(t, f, "restore-retired-account")
 	revoked := restoreGrant(t, f, "restore-revoked-grant")
 	pruned := restoreGrant(t, f, "restore-cleaned-detail")
-	seedRestoreRemovedExcerpt(t, pruned)
-	input, canceled, kept, confirmation := restoreDraftFixture(t, f, oldDraft)
+	archived := restoreGrant(t, f, "restore-archived-revocation")
+	worker, err := accountstore.NewLifecycleWorker(f.Store, nil, func(_ context.Context, o accountstore.LifecycleResidualObligation) (accountstore.LifecycleResidualEvidence, error) {
+		return accountstore.LifecycleResidualEvidence{ID: "restore-pending-" + o.Class, Revision: 1, State: "pending"}, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	seedRestoreRemovedExcerpt(t, archived, archivePruningID)
+	if _, err := worker.Run(ctx, 10); err != nil {
+		t.Fatal(err)
+	}
+	archivedRevocation := revokeRestoreGrant(t, f, archived, "restore-archived-revocation")
+	archivedDeletion := deleteRestoreProfile(t, revoked)
+	input, canceled, kept, confirmation := restoreDraftFixture(t, f, pruned, oldDraft)
+	if err := purpose.Cleanup(ctx, pruned.Principal, archiveClosedDraft); err != nil {
+		t.Fatal(err)
+	}
+	seedRestoreRemovedExcerpt(t, pruned, laterPruningID)
+	archivedFacts := observeRestoreArchiveFacts(t, f.DB, archived.Principal.AccountID, revoked.Principal.AccountID, pruned.Principal.AccountID)
+	archivedFacts.checkOrigins(t, archivedRevocation, archivedDeletion)
 	oldQualificationBody := f.Body(t, "/api/qualification-gaps")
 	if w := qualificationRequest(t, f, oldQual, "/api/qualification-gaps", oldUnknown, "", oldQualificationBody); w.Code < 400 || beforeCalls.Load() != 1 {
 		t.Fatal("backup must already include one unknown dispatch")
 	}
 	priorUnknown := restoreUnknownDispatch(t, f.DB, restoreQualification, oldUnknown)
+	reviewer := f.ControlOperator.Principal
+	if err := aicontrol.InstallLocalReconciliation(ctx, f.DB, restoreQualification, reviewer.AccountID, time.Now().Add(time.Hour)); err != nil {
+		t.Fatal(err)
+	}
 	oldResult, err := qual.Open(ctx, f.Principal, oldUnknown, "qualification_gaps", oldQualificationBody)
 	if err != nil || oldResult.ResultAllowed(ctx) != nil {
 		t.Fatal("fixture could not capture the old protected result capability", err)
@@ -315,25 +353,22 @@ func TestLocalOlderPilotRestoreRehearsal(t *testing.T) {
 		t.Fatal("current authority must contain a second unknown dispatch missing from backup")
 	}
 	postBackupUnknown := restoreUnknownDispatch(t, f.DB, restoreDraft, newUnknown)
-	if _, err := f.Store.PilotCommand(ctx, f.Principal, "restore-revoke", accountstore.PilotCommand{Kind: "revoke",
-		Identity: auth.IdentityRef{Provider: "google", Issuer: "https://accounts.google.com", Subject: "restore-revoked-grant"}}); err != nil {
-		t.Fatal(err)
+	var namespaceStop restoreNamespaceDecision
+	if stopNamespace {
+		namespaceStop = recordRestoreNamespaceStop(t, f.DB, qual, reviewer, priorUnknown.id)
+		w := qualificationRequest(t, f, oldQual, "/api/qualification-gaps", "restore-fresh-while-namespace-stopped", "", oldQualificationBody)
+		restoreDenied(t, "source fresh request under reviewed qualification stop", w)
+		if beforeCalls.Load() != 1 {
+			t.Fatal("later namespace stop failed to prevent a new fake dispatch")
+		}
 	}
-	originalRevocation, err := f.Store.PilotStatus(ctx, revoked.Principal)
-	if err != nil || originalRevocation.ExpiresAt == nil || originalRevocation.RetrieveUntil == nil {
-		t.Fatal("source revocation must have explicit original access clocks", err)
-	}
+	originalRevocation := revokeRestoreGrant(t, f, revoked, "restore-revoked-grant")
 	deletion, err := f.Store.StartDeletion(ctx, retired.Principal, accountstore.DeletionRequest{OperationID: "restore-delete-account", Kind: "account", Confirm: true})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := f.Store.PurgeDeletion(ctx, retired.Principal.AccountID, deletion.OperationID); err != nil {
-		t.Fatal(err)
-	}
-	worker, err := accountstore.NewLifecycleWorker(f.Store, nil, func(_ context.Context, o accountstore.LifecycleResidualObligation) (accountstore.LifecycleResidualEvidence, error) {
-		return accountstore.LifecycleResidualEvidence{ID: "restore-pending-" + o.Class, Revision: 1, State: "pending"}, nil
-	})
-	if err != nil {
+	deletion, err = f.Store.PurgeDeletion(ctx, retired.Principal.AccountID, deletion.OperationID)
+	if err != nil || deletion.RemovedAt == nil || deletion.RecoveryCopyDeadline == nil {
 		t.Fatal(err)
 	}
 	if _, err := worker.Run(ctx, 10); err != nil {
@@ -372,9 +407,8 @@ func TestLocalOlderPilotRestoreRehearsal(t *testing.T) {
 		t.Fatal(err)
 	}
 	decisions := captureRestoreDecisions(t, f.DB, sourceRecovery, backupDigest)
-	if len(decisions.Pruning.Fences) != 1 || decisions.Pruning.Fences[0].EvidenceID != "restore-legacy-excerpt" {
-		t.Fatal("source did not record the independent detail-removal fence")
-	}
+	laterPruning := restorePruningFence(t, decisions.Pruning, pruned.Principal.AccountID, laterPruningID)
+	restorePruningFence(t, decisions.Pruning, archived.Principal.AccountID, archivePruningID)
 	decisionRaw := restoreJSON(t, decisions)
 	if bytes.Contains(decisionRaw, []byte("SYNTHETIC DETAIL TO REMOVE")) || bytes.Contains(decisionRaw, []byte("I use Java.")) {
 		t.Fatal("decision receipt retained private fixture content")
@@ -416,6 +450,8 @@ func TestLocalOlderPilotRestoreRehearsal(t *testing.T) {
 	targetURL.RawQuery = query.Encode()
 	target := restoreSQL(t, targetURL.String())
 	checkRestoreOlderImage(t, target, retired.Principal.AccountID, revoked.Principal.AccountID, pruned.Principal.AccountID)
+	archivedFacts.checkRetained(t, target, "older archive")
+	checkRestoreNamespaceAbsent(t, target)
 	replacement := restoreTargetRuntime(t, targetURL.String(), &targetCalls)
 	restoreCode(t, "restored backup has no public read", openingRequest(t, f, replacement.http, "GET", "/api/drafts/"+keptDraft, nil), 503)
 	startGeneration := restoreGeneration(t, target)
@@ -434,7 +470,11 @@ func TestLocalOlderPilotRestoreRehearsal(t *testing.T) {
 	for table, rows := range decisions.Tables {
 		missing.Tables[table] = rows
 	}
-	delete(missing.Tables, "ai_fixture_dispatch")
+	if stopNamespace {
+		delete(missing.Tables, "ai_recon_stop")
+	} else {
+		delete(missing.Tables, "ai_fixture_dispatch")
+	}
 	incompletePath := filepath.Join(artifacts, "incomplete.json")
 	restoreWrite(t, incompletePath, restoreJSON(t, missing))
 	incompleteDigest, err := restoreFileDigest(incompletePath)
@@ -470,7 +510,7 @@ func TestLocalOlderPilotRestoreRehearsal(t *testing.T) {
 	}
 	restoreCode(t, "pruning fence blocks direct stale detail access",
 		openingRequest(t, pruned, replacement.http.upstream, "GET", "/api/profile/current", nil), 403)
-	if err := applyRestorePrunedProfile(ctx, target, pinned.Pruning.Fences[0]); err != nil {
+	if err := applyRestorePrunedProfile(ctx, target, laterPruning); err != nil {
 		t.Fatal(err)
 	}
 	targetWorker, err := accountstore.NewLifecycleWorker(replacement.account, nil)
@@ -481,10 +521,15 @@ func TestLocalOlderPilotRestoreRehearsal(t *testing.T) {
 		t.Fatal(err)
 	}
 	pruning, err := targetRecovery.ExportProfilePruning(ctx)
-	if err != nil || len(pruning.Fences) != 1 || !pruning.Fences[0].RemovedAt.Equal(pinned.Pruning.Fences[0].RemovedAt) ||
-		!pruning.Fences[0].RecoveryCopyDeadline.Equal(pinned.Pruning.Fences[0].RecoveryCopyDeadline) {
+	if err != nil || len(pruning.Fences) != 2 {
+		t.Fatal("recovered detail-removal inventory is incomplete", err)
+	}
+	targetPruning := restorePruningFence(t, pruning, pruned.Principal.AccountID, laterPruningID)
+	if !targetPruning.RemovedAt.Equal(laterPruning.RemovedAt) ||
+		!targetPruning.RecoveryCopyDeadline.Equal(laterPruning.RecoveryCopyDeadline) {
 		t.Fatal("detail cleanup replay reset original source anchors", err)
 	}
+	archivedFacts.checkRetained(t, target, "reconciled candidate")
 	if err := replacement.purpose.Cleanup(ctx, f.Principal, canceledDraft); err != nil {
 		t.Fatal(err)
 	}
@@ -528,6 +573,22 @@ func TestLocalOlderPilotRestoreRehearsal(t *testing.T) {
 	if current != startGeneration {
 		t.Fatal("reading or reconciling decisions advanced the generation")
 	}
+	if restored := restoreUnknownDispatch(t, target, restoreQualification, oldUnknown); restored != priorUnknown {
+		t.Fatal("backup unknown changed its identity or intent clock")
+	}
+	if restored := restoreUnknownDispatch(t, target, restoreDraft, newUnknown); restored != postBackupUnknown {
+		t.Fatal("post-backup unknown changed its identity or intent clock")
+	}
+	t.Log("restore observation both original unknown dispatch identities and durable intent clocks retained")
+	if stopNamespace {
+		checkRestoreNamespaceRefusal(t, target, replacement, reopenedOperator.Principal, f, startGeneration, namespaceStop, &targetCalls)
+		if beforeCalls.Load() != 1 || afterCalls.Load() != 1 || len(provider.Calls) != 12 {
+			t.Fatal("stopped branch changed independently expected source fake callback counts")
+		}
+		t.Logf("local restore observation backup_to_quarantine_ms=%d quarantine_to_verified_refusal_ms=%d; backup_sha256=%s decisions_sha256=%s; no selected hosted target",
+			started.Sub(backupFinished).Milliseconds(), time.Since(started).Milliseconds(), backupDigest, decisionDigest)
+		return
+	}
 	restoreAdvanceGeneration(t, replacement, reopenedOperator.Principal, startGeneration, sourcePG, f.DB)
 	fresh := restoreAccount(f, controlFreshIdentity(t, replacement.service, "fixture-account"))
 	restoreDenied(t, "old session on the recovered system",
@@ -538,15 +599,18 @@ func TestLocalOlderPilotRestoreRehearsal(t *testing.T) {
 	if !bytes.Equal(prunedProfile.Body.Bytes(), originalPruned.Body.Bytes()) {
 		t.Fatal("restored pruning changed retained Profile details")
 	}
+	archiveRevoked := restoreAccount(archived, controlFreshIdentity(t, replacement.service, "restore-archived-revocation"))
+	recoveredArchiveGrant, err := replacement.account.PilotStatus(ctx, archiveRevoked.Principal)
+	if err != nil || !sameRestoreRevocation(archivedRevocation, recoveredArchiveGrant) {
+		t.Fatal("archived revocation and access rights changed for the fresh Session", err)
+	}
+	restoreCode(t, "archived closed delivery remains closed",
+		openingRequest(t, recoveredPruned, replacement.http, "GET", "/api/drafts/"+archiveClosedDraft+"/versions/1", nil), 410)
+	restoreCode(t, "archived closed delivery refuses a fresh receipt",
+		openingRequest(t, recoveredPruned, replacement.http, "POST", "/api/drafts/"+archiveClosedDraft+"/versions/1/opening", struct{}{}), 403)
 	checkRestoreRecovered(t, target, replacement, fresh, retired, revoked, input, kept, confirmation, deletion, originalRevocation, &targetCalls)
-	if restored := restoreUnknownDispatch(t, target, restoreQualification, oldUnknown); restored != priorUnknown {
-		t.Fatal("backup unknown changed its identity or intent clock")
-	}
-	if restored := restoreUnknownDispatch(t, target, restoreDraft, newUnknown); restored != postBackupUnknown {
-		t.Fatal("post-backup unknown changed its identity or intent clock")
-	}
-	t.Log("restore observation both original unknown dispatch identities and durable intent clocks retained")
-	if beforeCalls.Load() != 1 || afterCalls.Load() != 1 || len(provider.Calls) != 8 || targetCalls.Load() != 0 {
+	archivedFacts.checkRetained(t, target, "recovered application")
+	if beforeCalls.Load() != 1 || afterCalls.Load() != 1 || len(provider.Calls) != 12 || targetCalls.Load() != 0 {
 		t.Fatal("recovery changed independently expected fake callback counts")
 	}
 	t.Logf("local restore observation backup_to_quarantine_ms=%d quarantine_to_verified_retrieval_ms=%d; backup_sha256=%s decisions_sha256=%s; no selected hosted target",
@@ -615,11 +679,11 @@ func checkRestoreOlderImage(t *testing.T, db *sql.DB, retired, revoked, pruned s
 		(SELECT status FROM careeros_accounts WHERE id=$1), (SELECT state FROM careeros_pilot_access WHERE account_id=$2),
 		EXISTS(SELECT 1 FROM careeros_profiles WHERE account_id=$3 AND convert_from(document,'UTF8') LIKE '%SYNTHETIC DETAIL TO REMOVE%')`, retired, revoked, pruned).
 		Scan(&profiles, &draftContent, &unknown, &effects, &reviews, &fences, &oldAccount, &oldGrant, &oldExcerpt)
-	if err != nil || profiles != 4 || draftContent != 2 || unknown != 1 || effects != 1 || reviews != 1 || fences != 0 || oldAccount != "active" || oldGrant != "active" || !oldExcerpt {
+	if err != nil || profiles != 4 || draftContent != 2 || unknown != 1 || effects != 1 || reviews != 1 || fences != 1 || oldAccount != "active" || oldGrant != "active" || !oldExcerpt {
 		t.Fatalf("not the independently expected older image profiles=%d, Drafts=%d, unknown=%d, delivered=%d, reviews=%d, fences=%d, account=%s, grant=%s: %v",
 			profiles, draftContent, unknown, effects, reviews, fences, oldAccount, oldGrant, err)
 	}
-	t.Log("restore observation older backup: Profiles=4, complete Drafts=2, reviewed=1, delivered=1, unknown=1; later detail/deletion and revocation decisions absent")
+	t.Log("restore observation older backup: Profiles=4, complete Drafts=2, reviewed=1, delivered=1, unknown=1; the separate later detail/deletion and revocation decisions are absent")
 }
 
 func restoreAdvanceGeneration(t *testing.T, runtime restoreRuntime, operator auth.Principal, generation int64, source *restorePostgres, old *sql.DB) {
@@ -678,6 +742,7 @@ func checkRestoreRecovered(t *testing.T, db *sql.DB, runtime restoreRuntime, fre
 	if reply.Code != 200 || json.Unmarshal(reply.Body.Bytes(), &allowance) != nil || allowance != (openingAllowance{5, 1, 1, 3}) {
 		t.Fatal("finite allowance no longer reflects one delivery, one unresolved reservation", allowance, reply.Code)
 	}
+	checkFreshRestoreConfirmation(t, fresh, runtime.http, kept, confirmation)
 	for _, path := range []string{"/api/profile/current", "/api/profile/export", "/api/drafts/" + keptDraft} {
 		if w := openingRequest(t, deleted, runtime.http, "GET", path, nil); w.Code < 400 {
 			t.Fatal("deleted account cookie exposed restored content")
@@ -687,15 +752,18 @@ func checkRestoreRecovered(t *testing.T, db *sql.DB, runtime restoreRuntime, fre
 	var status accountstore.DeletionStatus
 	err := runtime.account.WithDeletionStatus(ctx, closed.Principal, originalDeletion.OperationID, func(v accountstore.DeletionStatus) error { status = v; return nil })
 	if err != nil || status.State != "active_content_removed" || !status.FencedAt.Equal(originalDeletion.FencedAt) ||
-		status.RecoveryCopyDeadline == nil || !status.RecoveryCopyDeadline.Equal(originalDeletion.FencedAt.Add(720*time.Hour)) {
+		status.RemovedAt == nil || !status.RemovedAt.Equal(*originalDeletion.RemovedAt) ||
+		status.RecoveryCopyDeadline == nil || !status.RecoveryCopyDeadline.Equal(*originalDeletion.RecoveryCopyDeadline) ||
+		!status.RecoveryCopyDeadline.Equal(originalDeletion.FencedAt.Add(720*time.Hour)) {
 		t.Fatal("restored deletion metadata failed to preserve original fence and copy clock", err)
 	}
 	relogged := restoreAccount(revoked, controlFreshIdentity(t, runtime.service, "restore-revoked-grant"))
 	grant, err := runtime.account.PilotStatus(ctx, relogged.Principal)
-	if err != nil || grant.State != "revoked" || grant.CanActivate || grant.CanDraft || grant.CanStandalone || grant.ExpiresAt == nil || grant.RetrieveUntil == nil ||
-		!grant.ExpiresAt.Equal(*originalRevocation.ExpiresAt) || !grant.RetrieveUntil.Equal(*originalRevocation.RetrieveUntil) {
+	if err != nil || !sameRestoreRevocation(originalRevocation, grant) {
 		t.Fatal("revoked grant was resurrected", err)
 	}
+	restoreCode(t, "Profile deleted before backup remains absent for the fresh Session",
+		openingRequest(t, relogged, runtime.http, "GET", "/api/profile/export", nil), 404)
 	var profiles, content, effects, unknown, copyEvidence, qualificationOccupied, draftOccupied int
 	var qSpend, dSpend int64
 	err = db.QueryRow(`SELECT (SELECT count(*) FROM careeros_profiles WHERE account_id=$1),
@@ -708,7 +776,10 @@ func checkRestoreRecovered(t *testing.T, db *sql.DB, runtime restoreRuntime, fre
 		(SELECT occupied FROM ai_fixture_scope WHERE namespace='qualification' AND scope='global'),
 		(SELECT occupied FROM ai_fixture_scope WHERE namespace='managed-draft' AND scope='global')`, deleted.Principal.AccountID, originalDeletion.FencedAt).
 		Scan(&profiles, &content, &effects, &unknown, &copyEvidence, &qSpend, &dSpend, &qualificationOccupied, &draftOccupied)
-	if err != nil || profiles != 0 || content != 1 || effects != 1 || unknown != 2 || copyEvidence != 1 || qSpend != 1_344 || dSpend != 72_032 || qualificationOccupied != 1 || draftOccupied != 1 {
+	// Each of the three complete Drafts retains its 35,344-microUSD
+	// dispatch cost (1,344 + 12,000 + 10,000 + 12,000). The unknown
+	// adds its original 1,344-microUSD field-validation reservation.
+	if err != nil || profiles != 0 || content != 1 || effects != 1 || unknown != 2 || copyEvidence != 1 || qSpend != 1_344 || dSpend != 107_376 || qualificationOccupied != 1 || draftOccupied != 1 {
 		t.Fatalf("recovery changed independently expected evidence: deleted Profiles=%d content=%d delivered=%d unknown=%d copy receipts=%d counted=(%d,%d): %v",
 			profiles, content, effects, unknown, copyEvidence, qSpend, dSpend, err)
 	}
@@ -733,4 +804,39 @@ func checkRestoreRecovered(t *testing.T, db *sql.DB, runtime restoreRuntime, fre
 	}
 	t.Logf("restore observation reconciled: deleted content absent, copy anchor unchanged, reviewed Draft exact, grants preserved, allowance=%+v spend_microUSD=(%d,%d) occupancy=(%d,%d) unknown=%d, no resend",
 		allowance, qSpend, dSpend, qualificationOccupied, draftOccupied, unknown)
+}
+
+func sameRestoreRevocation(original, recovered accountstore.PilotStatus) bool {
+	return recovered.State == "revoked" && !recovered.CanActivate && !recovered.CanDraft && !recovered.CanStandalone &&
+		recovered.CanRetrieve == original.CanRetrieve && recovered.ExpiresAt != nil && recovered.RetrieveUntil != nil &&
+		recovered.ExpiresAt.Equal(*original.ExpiresAt) && recovered.RetrieveUntil.Equal(*original.RetrieveUntil)
+}
+
+func checkFreshRestoreConfirmation(t *testing.T, fresh *aiadmission.Fixture, handler http.Handler, kept []byte, old draftrecovery.OpeningConfirmation) {
+	t.Helper()
+	const route = "/api/drafts/" + keptDraft + "/versions/1/opening"
+	var original draftrecovery.Result
+	if err := json.Unmarshal(kept, &original); err != nil || !original.Delivered || original.Bundle == nil ||
+		original.Opening == nil || original.Opening.ConfirmedAt == nil {
+		t.Fatal("original delivery evidence did not retain its complete artifact and confirmation clock", err)
+	}
+	issued := openingRequest(t, fresh, handler, "POST", route, struct{}{})
+	restoreCode(t, "fresh replacement session issued a valid receipt", issued, 200)
+	var receipt draftrecovery.OpeningReceipt
+	if err := json.Unmarshal(issued.Body.Bytes(), &receipt); err != nil || receipt.Receipt == "" || receipt.Receipt == old.Receipt ||
+		receipt.BundleDigest != original.BundleDigest || !reflect.DeepEqual(receipt.Manifest, old.Manifest) {
+		t.Fatal("fresh receipt is not bound to the same delivered artifact and a new session", err)
+	}
+	confirmation := draftrecovery.OpeningConfirmation{Receipt: receipt.Receipt, BundleDigest: receipt.BundleDigest, Manifest: receipt.Manifest}
+	for _, label := range []string{"fresh replacement session confirms recovered delivery", "fresh receipt confirmation replays the same delivery"} {
+		confirmed := openingRequest(t, fresh, handler, "POST", route+"/confirm", confirmation)
+		restoreCode(t, label, confirmed, 200)
+		var actual draftrecovery.Result
+		if err := json.Unmarshal(confirmed.Body.Bytes(), &actual); err != nil || !actual.Delivered ||
+			actual.Action != original.Action || actual.Version != original.Version || actual.BundleDigest != original.BundleDigest ||
+			!reflect.DeepEqual(actual.Bundle, original.Bundle) || actual.Opening == nil || actual.Opening.State != "delivered" ||
+			actual.Opening.ConfirmedAt == nil || !actual.Opening.ConfirmedAt.Equal(*original.Opening.ConfirmedAt) {
+			t.Fatal("replayed confirmation changed the artifact or original confirmation clock", err)
+		}
+	}
 }
