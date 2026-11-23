@@ -1,0 +1,15 @@
+# Closed pilot package review repair
+
+This [#292](https://github.com/HenriqueMichelini/careeros/issues/292) repair applies to the synthetic local package. The [initial verification](2026-11-23-closed-pilot-runtime.md) retains its original source and observations. The [runtime procedure](../closed-pilot-runtime-local.md) gives the current commands. Hosted configuration remains an [unapproved proposal](../closed-pilot-hosted-proposal.md).
+
+| Repair | Exact local result |
+| --- | --- |
+| Reproducible offline build | Two independent builds from `4661a7167fd8e4717f5fdfa3b63c0614367f34e4` produced the same manifest and payload. One build supplied conflicting Go target/experiment/module settings, mixed-case npm configuration, and Vite flags. The effective Go configuration stayed pinned to Linux/amd64 v1 with default experiments and no direct module or VCS resolution. npm stayed offline with the fixed script shell. |
+| Trusted manifest | Verification rejected an altered payload and a changed manifest using the original independently expected SHA-256. The launch runner rejected the changed manifest before starting either executable or a database fixture. The successful rehearsal ran the runtime and migrator from the privately copied, verified bundle. |
+| Existing Draft allowance binding | The real package returned typed 503 on the canonical route and the direct Account alias when the policy was unmounted. The Go route fixture passed an explicitly injected allowance adapter through both paths. |
+| Local browser assets | Chromium rendered the actual packaged JS and CSS, with zero outside-origin requests in the intercepted page. The recorded requests were the local document, JS, CSS, session probe and favicon. The regular V1 build kept its earlier CSS bytes and font reference. The closed build omitted the Google Fonts import. |
+| Guarded migration | The packaged migrator refused the generic reference, wrong database, wrong role, connection options and wrong schema owner. The probe still found no Account table after those refusals. The dedicated migrator applied and reapplied the shared Account schema on disposable PostgreSQL, then refused migration when the fixture opened one control. The verified bundle matched the runtime's embedded schema digest. |
+
+The exact package rehearsal passed 63 checks. The exact affected Go race run recorded 104 passing test and subtest events across four passing packages. The three command packages compiled, scoped vet and TypeScript passed, and both browser scripts passed syntax checks. The first affected run failed because its synthetic auth listener could not bind loopback in the sandbox. The corrected local run passed with the same source.
+
+The earlier full Go, restart, Node and default vet results retain their original source boundary. The revised bundle is bound by its [manifest](2026-11-23-closed-pilot-package-repair-bundle-manifest.json). The [frozen repair source](2026-11-23-closed-pilot-package-repair-frozen-source.json) and [raw receipt bindings](2026-11-23-closed-pilot-package-repair-summary.json) record the exact checks and artifacts used here.

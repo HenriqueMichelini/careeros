@@ -1,0 +1,74 @@
+{
+  "files": {
+    "cmd/pilot-runtime-migrate/main.go": {
+      "bytes": 613,
+      "git_blob": "bbd33f6553d327b6e7df8a4830327dccb36d4e88",
+      "sha256": "969d516b8552a8cc8596360a9e069fccd1d9ee7e782dd958deaabcfe59eab651"
+    },
+    "docs/closed-pilot-runtime-local.md": {
+      "bytes": 10842,
+      "git_blob": "e7aa7243631b2e293f95da544acc0fe5edc4501f",
+      "sha256": "767e91574174f958edaa1984b6d01c58136668d5ad303ae86ddd226ef503baa6"
+    },
+    "internal/accountstore/pilot_package.go": {
+      "bytes": 6170,
+      "git_blob": "178ff13718462a9599bec8bcb2d4fe988f66d245",
+      "sha256": "42681bddcc1e2362104161c3fbd621cbf2921d1a991b8b2fc3dd88ad043a7044"
+    },
+    "internal/accountstore/store.go": {
+      "bytes": 13640,
+      "git_blob": "f1c939c43fdff71adc6447ce064fcc92caf1c78f",
+      "sha256": "f00922b4b8508d7d5b0a84104d4f91a06e746eb44c38c35e58eb8c169c8aa5f5"
+    },
+    "internal/pilotruntime/runtime.go": {
+      "bytes": 4141,
+      "git_blob": "cdc4b431fd1e47489be7705a0b2c6ebbdb3f67fe",
+      "sha256": "c1d08daab5feb755ca088c2d581edf92bf46e86daece49a74ee278c187ec7276"
+    },
+    "internal/pilotruntime/site.go": {
+      "bytes": 5839,
+      "git_blob": "93846f91e12f69bd5d825f36dbcbcc3bdf7fef37",
+      "sha256": "aa20a8d58a8ee5ca45f48df236ec9c181cc4d98bca56703edd9d919f17e01dcd"
+    },
+    "internal/pilotruntime/site_test.go": {
+      "bytes": 5838,
+      "git_blob": "798565a4d73ce364a58901fc8e3a5dd1305ae0e7",
+      "sha256": "e3d55252cb3f29e5c17ba86e034e36222ab53080ba9be561e6d4d92984e443b4"
+    },
+    "scripts/package-closed-pilot.py": {
+      "bytes": 8589,
+      "git_blob": "dbcf9b6d0c3cbe85d9f08a8eab092cf16e56ef07",
+      "sha256": "80fdf89a7f3a3feaa53477231780d29e08d43134ab3d6fb25b1c50224a9ecfc8"
+    },
+    "scripts/pilot-runtime/build-profile.json": {
+      "bytes": 1038,
+      "git_blob": "5c179ecdfed977a99da4478160c7fe912220fa60",
+      "sha256": "8da60c4580d12075081291bfb1d2635a9be3d9d6f857e9ccda09763b14c4f1ca"
+    },
+    "scripts/test-closed-pilot.py": {
+      "bytes": 19498,
+      "git_blob": "bfbe9b8582dd59d651e389e676774d4173da26c0",
+      "sha256": "c28b0b23c906ddc9651f06e486025203d35cc54c4f6216605d8b88110b9f31e5"
+    },
+    "tests/account-browser.fixture.mjs": {
+      "bytes": 8844,
+      "git_blob": "d264d000de1ffaab61252e9a4bc2ad2b452b8dfd",
+      "sha256": "61f19baba75c7d3584acd3437e6e437719d5e1e787c3d7f9472c95e7b6fc457c"
+    },
+    "tests/closed-pilot-package-browser.check.mjs": {
+      "bytes": 907,
+      "git_blob": "69f351410446d7409e7ea0cc70bd42be046aad28",
+      "sha256": "816bfbc4c6bb691c30640cef96df996e2f8385b3cebc27c0fbc8c1998f55d6b8"
+    },
+    "vite.config.ts": {
+      "bytes": 13268,
+      "git_blob": "51990a70b65121bdeed35d21750db4612509f478",
+      "sha256": "034114e6b8db30627def5fe07f4050d5d537da53e6012b36c6f24dac208a683d"
+    }
+  },
+  "issue": 292,
+  "repair_parent": "e8016bca306edb1d4927856ae221e15a0b816897",
+  "scope": "local synthetic only",
+  "source": "4661a7167fd8e4717f5fdfa3b63c0614367f34e4",
+  "tree": "33d03ec496c18be638bfac308e091ee1b2cbafc5"
+}

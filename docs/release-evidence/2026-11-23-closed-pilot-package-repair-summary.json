@@ -1,0 +1,502 @@
+{
+  "actual_package_checks": {
+    "events": [
+      {
+        "name": "built_frontend_served",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "spa_navigation",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "unknown_asset",
+        "observed": 404,
+        "result": "pass"
+      },
+      {
+        "name": "unknown_api",
+        "observed": 404,
+        "result": "pass"
+      },
+      {
+        "name": "unknown_function",
+        "observed": 404,
+        "result": "pass"
+      },
+      {
+        "name": "invalid_aliased_path",
+        "observed": 400,
+        "result": "pass"
+      },
+      {
+        "name": "unconfigured_readiness",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_runtime",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_runtime_direct",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "origin_host_cannot_be_forwarded",
+        "observed": 421,
+        "result": "pass"
+      },
+      {
+        "name": "cross_origin_alias",
+        "observed": 403,
+        "result": "pass"
+      },
+      {
+        "name": "unconfigured_allowance",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "unconfigured_allowance_alias",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "packaged_browser_no_external_asset_requests",
+        "observed": {
+          "external_requests": 0,
+          "local_asset_requests": [
+            "/",
+            "/assets/index-C1oxaY4q.js",
+            "/assets/index-BsImqn0Z.css",
+            "/api/auth/session",
+            "/favicon.ico"
+          ],
+          "rendered": true
+        },
+        "result": "pass"
+      },
+      {
+        "name": "absent_schema_stays_closed",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "absent_schema_api",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "startup_never_migrates",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "generic_credentials_not_used_by_packaged_migrator",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "wrong_database_is_denied_before_ddl",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "wrong_role_is_denied_before_ddl",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "arbitrary_connection_options_denied",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "actual_schema_owner_checked_before_ddl",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "embedded_schema_identity_matches_verified_manifest",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "mismatched_schema_identity",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "explicit_additive_migration_reapplied_with_separate_role",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "closed_database_role_grants_and_connection_limit",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "prepared_but_closed_readiness",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "guest_session",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "existing_session_after_repeat_migration",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "account_cookie_typed_denial",
+        "observed": 403,
+        "result": "pass"
+      },
+      {
+        "name": "status_closed_for_uninvited_fixture",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "no_new_google_sign_in",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "no_google_callback",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "wrong_browser_origin",
+        "observed": 403,
+        "result": "pass"
+      },
+      {
+        "name": "activation_without_bound_csrf",
+        "observed": 403,
+        "result": "pass"
+      },
+      {
+        "name": "activation_still_closed",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "unmounted_allowance_stays_unavailable",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "unmounted_allowance_alias_stays_unavailable",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_01",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_02",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_03",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_04",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_05",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_06",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_07",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_08",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_09",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_10",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_11",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_12",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "bounded_request_body",
+        "observed": 413,
+        "result": "pass"
+      },
+      {
+        "name": "restart_retains_authorized_session",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "same_origin_logout_all",
+        "observed": 204,
+        "result": "pass"
+      },
+      {
+        "name": "multiple_secure_host_only_cookie_headers",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "logged_out_cookie_no_longer_authorized",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "packaged_migrator_denies_open_control_state",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "open_control_is_not_accepted_by_closed_package",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "open_control_cannot_enable_managed_alias",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "restored_closed_control_readiness",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "database_loss_preserves_liveness",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "database_loss_closes_readiness",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "database_loss_closes_api",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "owned_postgres_stopped_and_data_removed",
+        "observed": null,
+        "result": "pass"
+      }
+    ],
+    "package_manifest_sha256": "36b5cdcf1e8ffe01c5ab5f2589b6e63dddf41911ddc2beb26d112af42bb5a605",
+    "pass": true,
+    "synthetic_only": true
+  },
+  "bundle": {
+    "account_schema_sha256": "1041d60b99d7418870b7463cc696e6ce064d015f61c73b7c2439fd0c771bea2b",
+    "conflicting_inputs": [
+      "GOAMD64=v3",
+      "GOEXPERIMENT=ambient_invalid",
+      "GOFLAGS=-mod=vendor",
+      "GOPRIVATE=github.com",
+      "GONOPROXY=github.com",
+      "GOVCS=*:all",
+      "npm_config_script_shell=/dev/null",
+      "npm_config_offline=false",
+      "npm_config_userconfig=/dev/null",
+      "NPM_CONFIG_SCRIPT_SHELL=/dev/null",
+      "VITE_CAREEROS_PILOT_MODE=0",
+      "CAREEROS_CLOSED_LOCAL_ASSETS=0",
+      "FIGMA_PUBLIC_URL=http://127.0.0.1:9/unused"
+    ],
+    "manifest_sha256": "36b5cdcf1e8ffe01c5ab5f2589b6e63dddf41911ddc2beb26d112af42bb5a605",
+    "payload_files": 8,
+    "reproducible_builds": 2
+  },
+  "committed_bundle_manifest": {
+    "bytes": 4303,
+    "path": "docs/release-evidence/2026-11-23-closed-pilot-package-repair-bundle-manifest.json",
+    "sha256": "36b5cdcf1e8ffe01c5ab5f2589b6e63dddf41911ddc2beb26d112af42bb5a605"
+  },
+  "exact_affected_checks": {
+    "browser_script_syntax_exit": 0,
+    "changed_manifest_exit": 1,
+    "changed_payload_exit": 1,
+    "closed_css_has_no_inherited_google_font_requests": true,
+    "closed_css_sha256": "a028d74a3d698e7728fc16fa2f9348cfd8de43a7135db5400b3a97962a2975dc",
+    "go_command": [
+      "go",
+      "test",
+      "-p=1",
+      "-race",
+      "-json",
+      "-count=1",
+      "./internal/pilotruntime",
+      "./internal/accountstore",
+      "./internal/netlifyproxy",
+      "./internal/auth",
+      "./cmd/pilot-runtime-local",
+      "./cmd/pilot-runtime-migrate",
+      "./cmd/account-migrate"
+    ],
+    "go_package_pass_events": 4,
+    "go_test_pass_events": 104,
+    "manifest_sha256": "36b5cdcf1e8ffe01c5ab5f2589b6e63dddf41911ddc2beb26d112af42bb5a605",
+    "same_manifest_and_payload_under_conflicting_environment": true,
+    "scoped_vet_exit": 0,
+    "typescript_exit": 0,
+    "untrusted_runner_started_no_runtime_or_migrator": true,
+    "v1_css_matches_previous": true,
+    "v1_css_sha256": "3d9d67663f7ee1260f716b52012c746c2cb88e1481d5cd13e86fadfa1b9e2641"
+  },
+  "frozen_source": {
+    "bytes": 3045,
+    "path": "docs/release-evidence/2026-11-23-closed-pilot-package-repair-frozen-source.json",
+    "sha256": "cf847415ce876223aca6bf5bc4d681ab696fc6fb3ffc5c6493bb83b909b256d6"
+  },
+  "inherited_evidence": {
+    "earlier_inherited_default_vet_diagnostics": 15,
+    "earlier_inherited_evaluation_lab_failures": 24,
+    "earlier_restart_fixture_test_events_rechecked_green": 11,
+    "full_go_test_pass_events_before_repair": 2663,
+    "node_file_count": 32,
+    "node_passes": 453,
+    "prior": {
+      "bytes": 45874,
+      "path": "docs/release-evidence/2026-11-23-closed-pilot-runtime-summary.json",
+      "sha256": "93e69add9a49ef6b6ffafcf5c3cf869d2520d3f017bbbf80fe1d69b920763b1c"
+    }
+  },
+  "issue": 292,
+  "preceding_sandbox_limitation": "auth test process could not bind its loopback fixture; corrected exact run passed",
+  "raw": [
+    {
+      "bytes": 4303,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/repair-a/manifest.json",
+      "sha256": "36b5cdcf1e8ffe01c5ab5f2589b6e63dddf41911ddc2beb26d112af42bb5a605"
+    },
+    {
+      "bytes": 4303,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/repair-b/manifest.json",
+      "sha256": "36b5cdcf1e8ffe01c5ab5f2589b6e63dddf41911ddc2beb26d112af42bb5a605"
+    },
+    {
+      "bytes": 6989,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/check-repair-exact/summary.json",
+      "sha256": "cecfccfb1426b931fa59779e395f9a0dce8fe1c3f6a26151b82fb031fbc85e53"
+    },
+    {
+      "bytes": 2090,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/check-repair-exact/checks.log",
+      "sha256": "970ab7196b47fecd3ff1521a038175165d0cb61715abd792c5eab543a1904da3"
+    },
+    {
+      "bytes": 189,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/check-repair-exact/postgres.log",
+      "sha256": "b70b29b5f91f65dac0c5620b8f2d2e0d5cb8a7488c6d2477d194b3a2c062bae2"
+    },
+    {
+      "bytes": 0,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/repair-checks-exact/account-browser.fixture.mjs.syntax.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 95,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/repair-checks-exact/before-launch-denial/checks.log",
+      "sha256": "2626d6b22c4afbde7e1d17c5469a40555b5e8f0e2828feee074ce17b3ede2ff6"
+    },
+    {
+      "bytes": 159,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/repair-checks-exact/before-launch-denial/summary.json",
+      "sha256": "b1f87a63036571c1771c7046195029769f7174d9726d4b2e8f0b23428ae9ed92"
+    },
+    {
+      "bytes": 0,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/repair-checks-exact/closed-pilot-package-browser.check.mjs.syntax.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 96391,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/repair-checks-exact/go.jsonl",
+      "sha256": "22a88f1050245068473f9804f88d8cf0f5fccd8c07ec58489404e19bdbc3f27c"
+    },
+    {
+      "bytes": 1005,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/repair-checks-exact/summary.json",
+      "sha256": "97ee3d80e84a09a6533172377ee33f2b1f50fc93c9e7600e270d7c6efcdc941a"
+    },
+    {
+      "bytes": 0,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/repair-checks-exact/typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/repair-checks-exact/vet.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 40019,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/repair-v1/assets/index-BCcoVfRX.css",
+      "sha256": "3d9d67663f7ee1260f716b52012c746c2cb88e1481d5cd13e86fadfa1b9e2641"
+    },
+    {
+      "bytes": 40019,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/candidate-a/frontend/assets/index-BCcoVfRX.css",
+      "sha256": "3d9d67663f7ee1260f716b52012c746c2cb88e1481d5cd13e86fadfa1b9e2641"
+    },
+    {
+      "bytes": 39875,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/repair-a/frontend/assets/index-BsImqn0Z.css",
+      "sha256": "a028d74a3d698e7728fc16fa2f9348cfd8de43a7135db5400b3a97962a2975dc"
+    },
+    {
+      "bytes": 54129,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/repair-checks/go.jsonl",
+      "sha256": "f7dea98b79021b909eaca5bcba6aaa52403dd485407c5151db432534b1e2cf43"
+    }
+  ],
+  "repair_parent": "e8016bca306edb1d4927856ae221e15a0b816897",
+  "scope": "local synthetic closed package and disposable PostgreSQL only",
+  "source": "4661a7167fd8e4717f5fdfa3b63c0614367f34e4",
+  "source_tree": "33d03ec496c18be638bfac308e091ee1b2cbafc5"
+}
