@@ -68,7 +68,8 @@ func runPilotOperationsFixtureCLI(t *testing.T, program string, env []string, in
 
 func TestPilotOperationsReconciliationCLIObservesItsOwnCommittedInvariant(t *testing.T) {
 	for _, mode := range []string{"capture", "capture_unavailable", "reviewer_expires", "finance_only",
-		"finance_priced_live", "finance_priced_corrected", "finance_priced_atomicity", "finance_denied_account", "finance_denied_profile", "finance_denied_compromise",
+		"finance_priced_live", "finance_priced_corrected", "finance_priced_atomicity", "finance_priced_event_finality", "finance_priced_stop_finality",
+		"finance_denied_account", "finance_denied_profile", "finance_denied_compromise",
 		"priced_live", "priced_replay", "priced_replay_after_correction", "reviewed_maximum_breakdown"} {
 		t.Run(mode, func(t *testing.T) { pilotOperationsReconciliationCLI(t, mode) })
 	}
@@ -135,7 +136,7 @@ func pilotOperationsReconciliationCLI(t *testing.T, mode string) {
 		financeEnv := append(slices.Clone(env), "CAREEROS_OPERATIONS_JOURNAL_DIRECTORY=", "CAREEROS_OPERATIONS_JOURNAL_KEY=")
 		if mode == "finance_priced_atomicity" {
 			// Simulate a write that returns successfully while the source amount
-			// stays unchanged. The private receipt must fail at the commit boundary.
+			// stays unchanged. The private receipt and financial write must roll back together.
 			if _, err := f.DB.Exec(`CREATE FUNCTION fixture_skip_finance_accounting() RETURNS trigger
 			 LANGUAGE plpgsql AS $fixture$ BEGIN RETURN OLD; END $fixture$;
 			 CREATE TRIGGER fixture_skip_finance_accounting BEFORE UPDATE OF counted ON ai_fixture_dispatch
@@ -143,6 +144,10 @@ func pilotOperationsReconciliationCLI(t *testing.T, mode string) {
 				t.Fatal(err)
 			}
 			verifyFinanceTransitionRolledBack(t, f, financeEnv, raw)
+			return
+		}
+		if strings.HasSuffix(mode, "_finality") {
+			verifyFinanceReceiptFinality(t, f, financeEnv, raw, mode)
 			return
 		}
 		if strings.HasPrefix(mode, "finance_denied_") {
@@ -188,7 +193,8 @@ func pilotOperationsReconciliationCLI(t *testing.T, mode string) {
 			if priced && command == evidence.ID {
 				firstDispatch = dispatch
 			}
-			if err = f.DB.QueryRow(`SELECT e.created_at,e.obligation,e.reserved,d.awaiting_observer AND d.evidence=jsonb_build_object(
+			if err = f.DB.QueryRow(`SELECT e.created_at,e.obligation,e.reserved,d.awaiting_observer AND d.source_transaction IS NOT NULL
+			 AND octet_length(d.source_binding)=32 AND d.evidence=jsonb_build_object(
 			 'ID',e.id,'Rate',$2::text,'Amount',e.obligation,'Maximum',e.reserved,'Kind',$3::text,'At',e.created_at,'IncidentDispatch',$4::text)
 			 FROM ai_recon_event e JOIN careeros_operations_deferred d ON d.namespace=e.namespace AND d.event_id=e.id
 			 WHERE e.namespace='qualification' AND e.id=$1`, command, aicontrol.QualificationRateID, criticalKind, firstDispatch).
@@ -504,6 +510,35 @@ func verifyFinanceTransitionRolledBack(t *testing.T, f *aiadmission.Fixture, env
 		Scan(&changed); err != nil || changed {
 		t.Fatalf("denied attestation changed the financial event, stop, or private observations: %v %v", changed, err)
 	}
+}
+
+func verifyFinanceReceiptFinality(t *testing.T, f *aiadmission.Fixture, env []string, command []byte, mode string) {
+	t.Helper()
+	var installed int
+	if err := f.DB.QueryRow(`SELECT count(*) FROM pg_trigger
+	 WHERE tgrelid IN ('ai_fixture_dispatch'::regclass,'ai_recon_command'::regclass,'ai_recon_event'::regclass,
+	  'ai_recon_stop'::regclass,'ai_recon_state'::regclass,'ai_recon_contract'::regclass)
+	 AND tgname='careeros_guard_finance_receipt' AND tgenabled='O' AND tgconstraint=0 AND NOT tgdeferrable`).Scan(&installed); err != nil || installed != 6 {
+		t.Fatalf("expected immediate guards on all bound finance records: %d %v", installed, err)
+	}
+	// Simulate two independent bookkeeping faults after the counted amount
+	// has been written, so the amount alone still agrees with the receipt.
+	var fault string
+	switch mode {
+	case "finance_priced_event_finality":
+		fault = `UPDATE ai_recon_event SET owner_review_required=false WHERE namespace=NEW.namespace AND dispatch=NEW.id;`
+	case "finance_priced_stop_finality":
+		fault = `UPDATE ai_recon_stop SET stopped=false WHERE namespace=NEW.namespace AND stopped;`
+	default:
+		t.Fatalf("unexpected finance finality fixture: %s", mode)
+	}
+	if _, err := f.DB.Exec(`CREATE FUNCTION fixture_finance_bookkeeping_fault() RETURNS trigger
+	 LANGUAGE plpgsql AS $fixture$ BEGIN ` + fault + ` RETURN NEW; END $fixture$;
+	 CREATE TRIGGER fixture_finance_bookkeeping_fault AFTER UPDATE OF counted ON ai_fixture_dispatch
+	 FOR EACH ROW WHEN (NEW.counted>OLD.counted) EXECUTE FUNCTION fixture_finance_bookkeeping_fault()`); err != nil {
+		t.Fatal(err)
+	}
+	verifyFinanceTransitionRolledBack(t, f, env, command)
 }
 
 func applyOperationsReconciliationCLI(t *testing.T, env []string, command aicontrol.ReconciliationCommand) {

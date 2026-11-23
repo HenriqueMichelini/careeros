@@ -344,6 +344,10 @@ CREATE TABLE IF NOT EXISTS careeros_operations_deferred (
 );
 ALTER TABLE careeros_operations_deferred ADD COLUMN IF NOT EXISTS awaiting_observer boolean NOT NULL DEFAULT false;
 ALTER TABLE careeros_operations_deferred ADD COLUMN IF NOT EXISTS source_dispatch text NOT NULL DEFAULT '';
+ALTER TABLE careeros_operations_deferred ADD COLUMN IF NOT EXISTS source_transaction xid8;
+ALTER TABLE careeros_operations_deferred ADD COLUMN IF NOT EXISTS source_binding bytea;
+CREATE INDEX IF NOT EXISTS careeros_operations_deferred_origin ON careeros_operations_deferred(source_transaction,namespace)
+ WHERE source_transaction IS NOT NULL;
 REVOKE ALL ON careeros_operations_deferred FROM PUBLIC;
 
 DO $operations_functions$

@@ -1,0 +1,27 @@
+{
+  "issue": 291,
+  "repair_parent": "325e07decfc6f6112fe4c93ce2037fae7d1bc209",
+  "cumulative_base": "089a7ac792b506e20ddd9da506cf9edd22add729",
+  "files": {
+    "docs/managed-pilot-operations-local.md": {
+      "git_blob": "54307e49b19a54df8d02139f78e4c57e306ebd83",
+      "sha256": "978ff5b2b0345aa113c487b1570489b15cdeb418fd3914ff56f1e8c53011a3e2",
+      "bytes": 15831
+    },
+    "internal/accountapi/pilot_operations_cli_test.go": {
+      "git_blob": "57495483d6d0f92b027c98c029bd6aa5ef579dc1",
+      "sha256": "e41b470510fea08b9aececbe3879c9a367a9b2dd8bfba628592955a1ee175800",
+      "bytes": 73100
+    },
+    "internal/accountstore/schema.sql": {
+      "git_blob": "164e1bdaf1e3e5f833d3c45a17cc209434c506fe",
+      "sha256": "1041d60b99d7418870b7463cc696e6ce064d015f61c73b7c2439fd0c771bea2b",
+      "bytes": 28743
+    },
+    "internal/aicontrol/operations_capture.sql": {
+      "git_blob": "1e75f60edcda05760b02c833d59b237fdea81532",
+      "sha256": "6d002ca6349c0d9e2b7762f72daae2dfa1a04dfbb08e875d7fa6fa4089e86f40",
+      "bytes": 21552
+    }
+  }
+}
