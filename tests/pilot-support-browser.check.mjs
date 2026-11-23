@@ -57,6 +57,13 @@ try {
         [status, `${origin}/status/${locale}`],
       ])
       assert.equal(await evaluate("document.querySelector('footer').textContent.includes('LEGACY_SENTINEL')"), false)
+      const otherLocale = locale === "en" ? "pt-BR" : "en"
+      const footerUses = lang => `document.querySelector('footer li:last-child a').href.endsWith('/status/${lang}')`
+      await evaluate(`document.documentElement.lang = ${JSON.stringify(otherLocale)}`)
+      await wait(footerUses(otherLocale))
+      assert.equal(await evaluate("localStorage.getItem('careeros_locale')"), locale)
+      await evaluate(`document.documentElement.lang = ${JSON.stringify(locale)}`)
+      await wait(footerUses(locale))
       await call("Page.navigate", { url: links[2][1] })
       await wait(`document.querySelector('html[lang="${locale}"] time')`)
       assert.ok((await evaluate("document.querySelector('main').textContent")).includes(impact))

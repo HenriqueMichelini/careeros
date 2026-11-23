@@ -3,6 +3,7 @@ package aicontrol
 import (
 	"context"
 	"database/sql"
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"math"
@@ -14,6 +15,9 @@ import (
 	"professional-information-repo/internal/accountstore"
 	"professional-information-repo/internal/auth"
 )
+
+//go:embed operations_capture.sql
+var operationsCaptureSQL string
 
 type operationsSource struct{ h *Harness }
 
@@ -34,7 +38,7 @@ func (r *Reconciliation) LocalOperationsSource(ctx context.Context) (accountstor
 	}
 	cfg := r.h.cfg
 	cfg.Qualification = true
-	return (&Harness{reviewerDB: r.h.reviewerDB, cfg: cfg}).LocalOperationsSource(), nil
+	return (&Harness{reviewerDB: r.h.reviewerDB, cfg: cfg, origin: r.h}).LocalOperationsSource(), nil
 }
 
 func (s *operationsSource) CheckOperationsStore(ctx context.Context, store *accountstore.Store) error {
@@ -45,9 +49,13 @@ func (s *operationsSource) CheckOperationsStore(ctx context.Context, store *acco
 }
 
 func (s *operationsSource) BindOperations(ops *accountstore.Operations) {
-	s.h.mu.Lock()
-	defer s.h.mu.Unlock()
-	s.h.operations = ops
+	h := s.h
+	if h.origin != nil {
+		h = h.origin
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.operations = ops
 }
 
 func (h *Harness) localOperations() *accountstore.Operations {
@@ -78,234 +86,203 @@ func (h *Harness) holdOperations(ctx context.Context, tx *sql.Tx) (func(), error
 	return release, err
 }
 
-func (s *operationsSource) OperationsSample(ctx context.Context) (accountstore.OperationsRiskSample, error) {
-	var out accountstore.OperationsRiskSample
-	if s == nil || s.h == nil || !s.h.cfg.Qualification {
-		return out, ErrDenied
+type capturedOperations struct {
+	At                time.Time
+	Active, Exhausted int64
+	Scopes            []struct {
+		Name           string
+		Limit, Counted int64
 	}
-	h := s.h
-	tx, err := h.reviewerDB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
-	if err != nil {
-		return out, ErrUnavailable
+	Entries []struct {
+		Action, Owner, Policy, Dispatch, Remote, Category string
+		Attempt, Amount, Maximum, Observed                int64
+		Expense                                           *int64
+		At                                                time.Time
 	}
-	defer tx.Rollback()
-	out, err = h.sampleOperations(ctx, tx)
-	if err != nil {
-		return out, err
+	Event *struct {
+		ID, Rate, Kind  string
+		Amount, Maximum int64
+		At              time.Time
 	}
-	if err = tx.Commit(); err != nil {
-		return out, ErrUnavailable
-	}
-	return out, nil
 }
 
-func (h *Harness) sampleOperations(ctx context.Context, tx *sql.Tx) (accountstore.OperationsRiskSample, error) {
-	var out accountstore.OperationsRiskSample
-	var err error
-	if err = tx.QueryRowContext(ctx, `SELECT clock_timestamp()`).Scan(&out.At); err != nil {
-		return out, ErrUnavailable
-	}
-	out.Namespace = h.cfg.Namespace
-	out.Figures.At, out.Figures.Currency = out.At, "USD"
-	var namespaces int
-	var selected bool
-	if tx.QueryRowContext(ctx, `SELECT count(*),COALESCE(bool_and(id=$1 AND NOT retired),false) FROM ai_fixture_namespace`, h.cfg.Namespace).Scan(&namespaces, &selected) != nil {
-		return out, ErrUnavailable
-	}
-	if namespaces != 1 || !selected {
-		return out, nil
-	}
-	rows, err := tx.QueryContext(ctx, `SELECT scope,limit_amount,counted FROM ai_fixture_scope WHERE namespace=$1 ORDER BY scope`, h.cfg.Namespace)
+func (s *operationsSource) OperationsSample(ctx context.Context) (accountstore.OperationsRiskSample, error) {
+	tx, err := s.h.reviewerDB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
 	if err != nil {
+		return accountstore.OperationsRiskSample{}, ErrUnavailable
+	}
+	defer tx.Rollback()
+	var raw []byte
+	if err := tx.QueryRowContext(ctx, `SELECT careeros_operations_snapshot($1,NULL)`, s.h.cfg.Namespace).Scan(&raw); err != nil {
+		return accountstore.OperationsRiskSample{}, ErrUnavailable
+	}
+	if tx.Commit() != nil {
+		return accountstore.OperationsRiskSample{}, ErrUnavailable
+	}
+	return s.decodeOperations(raw)
+}
+
+func (s *operationsSource) decodeOperations(raw []byte) (accountstore.OperationsRiskSample, error) {
+	var out accountstore.OperationsRiskSample
+	var capture capturedOperations
+	if len(raw) == 0 || len(raw) > 16<<20 || json.Unmarshal(raw, &capture) != nil ||
+		capture.At.IsZero() || capture.Active < 0 || capture.Exhausted < 0 || len(capture.Scopes) > 65536 || len(capture.Entries) > 65536 {
 		return out, ErrUnavailable
 	}
+	h := s.h
+	out.At, out.Namespace = capture.At, h.cfg.Namespace
+	out.Figures.At, out.Figures.Currency = capture.At, "USD"
+	out.Figures.LocalActiveActions, out.Figures.ExhaustedDraftGrants = capture.Active, capture.Exhausted
 	foundGlobal := false
-	for rows.Next() {
-		var scope string
-		var limit, counted int64
-		if err = rows.Scan(&scope, &limit, &counted); err != nil {
-			break
-		}
+	for _, scope := range capture.Scopes {
 		label := ""
 		switch {
-		case scope == "global":
+		case scope.Name == "global":
+			foundGlobal = scope.Limit == selectedQualificationEnvelope().GlobalTotal
 			label = "pilot_total"
-			foundGlobal = limit == selectedQualificationEnvelope().GlobalTotal
-		case strings.HasPrefix(scope, "provider:"):
+		case scope.Name == "provider:openai" || scope.Name == "provider:typesafe":
 			label = "provider_total"
-		case strings.HasPrefix(scope, "account:"):
+		case strings.HasPrefix(scope.Name, "account:") && tokenLabel.MatchString(strings.TrimPrefix(scope.Name, "account:")):
 			label = "account_grant"
 		default:
-			err = ErrUnavailable
+			return out, ErrUnavailable
 		}
-		if err != nil {
-			break
+		if scope.Limit <= 0 || scope.Counted < 0 {
+			return out, ErrUnavailable
 		}
-		out.Caps = append(out.Caps, accountstore.OperationsCap{Key: h.Reconciliation().digest("operations", "scope", scope),
-			Scope: label, Policy: QualificationRateID, Currency: "USD", Counted: counted, Limit: limit})
-	}
-	if err == nil {
-		err = rows.Err()
-	}
-	rows.Close()
-	if err != nil {
-		return out, ErrUnavailable
+		out.Caps = append(out.Caps, accountstore.OperationsCap{Key: h.Reconciliation().digest("operations", "scope", scope.Name),
+			Scope: label, Policy: QualificationRateID, Currency: "USD", Counted: scope.Counted, Limit: scope.Limit})
 	}
 	if !foundGlobal {
-		return out, nil
-	}
-	rows, err = tx.QueryContext(ctx, `SELECT a.id,a.owner,a.execution_version,d.id,d.attempt,d.counted,
- COALESCE(d.intent_at,a.created_at),d.remote_state,d.expense,d.maximum,d.category,
- COALESCE((o.data->>'estimate')::bigint,0)
- FROM ai_fixture_dispatch d JOIN ai_fixture_action a ON a.namespace=d.namespace AND a.id=d.action
- LEFT JOIN ai_fixture_observation o ON o.namespace=d.namespace AND o.dispatch=d.id AND o.sequence=1
- WHERE d.namespace=$1 ORDER BY a.id,d.attempt,d.id`, h.cfg.Namespace)
-	if err != nil {
 		return out, ErrUnavailable
 	}
 	caps := map[string]accountstore.OperationsCap{}
 	accountDay := map[string]int64{}
 	var globalDay int64
-	count := 0
-	for rows.Next() {
-		count++
-		if count > 65536 {
-			err = ErrUnavailable
-			break
+	for _, d := range capture.Entries {
+		if !tokenLabel.MatchString(d.Action) || !tokenLabel.MatchString(d.Owner) || !tokenLabel.MatchString(d.Dispatch) ||
+			d.At.IsZero() || d.At.After(capture.At) || d.Attempt <= 0 || d.Maximum <= 0 || d.Amount < 0 || d.Observed < 0 ||
+			(d.Expense != nil && *d.Expense < 0) {
+			return out, ErrUnavailable
 		}
-		var action, owner, policy, dispatch, remote, category string
-		var attempt, amount, maximum, observed int64
-		var at time.Time
-		var expense sql.NullInt64
-		if err = rows.Scan(&action, &owner, &policy, &dispatch, &attempt, &amount, &at, &remote, &expense, &maximum, &category, &observed); err != nil {
-			break
+		switch d.Remote {
+		case "not_started", "possibly_active", "terminal_proven":
+		default:
+			return out, ErrUnavailable
 		}
-		attemptLimit, actionLimit, ok := operationsMoneyLimits(policy)
-		if !ok || amount < 0 || !addOperationsFigures(&out.Figures, amount, expense, observed, category) {
-			err = ErrUnavailable
-			break
+		switch d.Category {
+		case "reserved_maximum", "unknown_maximum", "supported_estimate", "reviewed_conservative_maximum", "confirmed_bill", "aborted_unsent":
+		default:
+			return out, ErrUnavailable
 		}
-		if _, tracked := accountDay[owner]; !tracked {
-			accountDay[owner] = 0
+		attemptLimit, actionLimit, ok := operationsMoneyLimits(d.Policy)
+		expense := sql.NullInt64{}
+		if d.Expense != nil {
+			expense = sql.NullInt64{Int64: *d.Expense, Valid: true}
 		}
-		event := accountstore.OperationsRiskEvent{Key: h.Reconciliation().digest("operations", "dispatch", dispatch),
-			At: at, Policy: policy, Exposure: amount, Maximum: maximum}
-		if remote == "possibly_active" {
+		if !ok || !addOperationsFigures(&out.Figures, d.Amount, expense, d.Observed, d.Category) {
+			return out, ErrUnavailable
+		}
+		event := accountstore.OperationsRiskEvent{Key: h.Reconciliation().digest("operations", "dispatch", d.Dispatch),
+			At: d.At, Policy: d.Policy, Exposure: d.Maximum, Maximum: d.Maximum}
+		if d.Remote == "possibly_active" {
 			out.Figures.PossibleRemote++
 			event.Kind = "unknown_dispatch"
-			event.Exposure = maximum
 			out.Events = append(out.Events, event)
 		}
-		if amount > maximum {
-			event.Kind = "maximum_breach"
-			event.Exposure = amount
+		if d.Amount > d.Maximum {
+			event.Kind, event.Exposure = "maximum_breach", d.Amount
 			out.Events = append(out.Events, event)
 		}
 		for _, cap := range []struct {
 			key, scope string
 			limit      int64
-		}{{action + "/" + strconv.FormatInt(attempt, 10), "attempt", attemptLimit}, {action, "action", actionLimit}} {
+		}{
+			{d.Action + "/" + strconv.FormatInt(d.Attempt, 10), "attempt", attemptLimit},
+			{d.Action, "action", actionLimit},
+		} {
 			key := cap.scope + "/" + cap.key
-			v := caps[key]
-			if amount > math.MaxInt64-v.Counted {
-				err = ErrUnavailable
-				break
+			value := caps[key]
+			if d.Amount > math.MaxInt64-value.Counted {
+				return out, ErrUnavailable
 			}
-			v.Key = h.Reconciliation().digest("operations", cap.scope, cap.key)
-			v.Scope, v.Policy, v.Currency, v.Limit = cap.scope, policy, "USD", cap.limit
-			v.Counted += amount
-			caps[key] = v
+			value.Key = h.Reconciliation().digest("operations", cap.scope, cap.key)
+			value.Scope, value.Policy, value.Currency, value.Limit = cap.scope, d.Policy, "USD", cap.limit
+			value.Counted += d.Amount
+			caps[key] = value
 		}
-		if err != nil {
-			break
+		if _, tracked := accountDay[d.Owner]; !tracked {
+			accountDay[d.Owner] = 0
 		}
-		// Exactly the original rolling admission predicate: unresolved amounts
-		// and differences carry even after the original intent is 24h old.
-		if at.After(out.At.Add(-24*time.Hour)) || remote != "terminal_proven" || !expense.Valid || amount > expense.Int64 {
-			if amount > math.MaxInt64-globalDay || amount > math.MaxInt64-accountDay[owner] {
-				err = ErrUnavailable
-				break
+		if d.At.After(out.At.Add(-24*time.Hour)) || d.Remote != "terminal_proven" || !expense.Valid || d.Amount > expense.Int64 {
+			if d.Amount > math.MaxInt64-globalDay || d.Amount > math.MaxInt64-accountDay[d.Owner] {
+				return out, ErrUnavailable
 			}
-			globalDay += amount
-			accountDay[owner] += amount
+			globalDay += d.Amount
+			accountDay[d.Owner] += d.Amount
 		}
 	}
-	if err == nil {
-		err = rows.Err()
-	}
-	rows.Close()
-	if err != nil {
-		return out, ErrUnavailable
-	}
-	err = tx.QueryRowContext(ctx, `SELECT
- (SELECT count(DISTINCT a.id) FROM ai_fixture_action a JOIN ai_fixture_stage s
- ON s.namespace=a.namespace AND s.action=a.id AND s.attempt=a.attempt
- WHERE a.namespace=$1 AND a.state='recoverable' AND s.stage='local_execution' AND s.receipt_id=''),
- (SELECT count(*) FROM ai_fixture_grant g WHERE g.namespace=$1 AND NOT g.revoked AND g.expires_at>$2
- AND (SELECT count(*) FROM ai_fixture_action a WHERE a.namespace=g.namespace AND a.owner=g.owner
- AND (a.customer_reserved OR a.customer_effect))>=g.units)`, h.cfg.Namespace, out.At).
-		Scan(&out.Figures.LocalActiveActions, &out.Figures.ExhaustedDraftGrants)
-	if err != nil {
-		return out, ErrUnavailable
+	if event := capture.Event; event != nil {
+		if !tokenLabel.MatchString(event.ID) || !tokenLabel.MatchString(event.Rate) ||
+			event.Amount < 0 || event.Maximum <= 0 || event.At.IsZero() || event.At.After(capture.At) ||
+			(event.Kind != "maximum_breach" && event.Kind != "invariant_breach") {
+			return out, ErrUnavailable
+		}
+		out.Events = append(out.Events, accountstore.OperationsRiskEvent{
+			Key: h.Reconciliation().digest("operations", "reconciliation", event.ID), Kind: event.Kind,
+			At: event.At, Policy: event.Rate, Exposure: event.Amount, Maximum: event.Maximum,
+		})
 	}
 	for _, cap := range caps {
 		out.Caps = append(out.Caps, cap)
 	}
-	p := selectedQualificationEnvelope()
+	envelope := selectedQualificationEnvelope()
 	for owner, amount := range accountDay {
 		out.Caps = append(out.Caps, accountstore.OperationsCap{Key: h.Reconciliation().digest("operations", "account_rolling24h", owner),
-			Scope: "account_rolling24h", Policy: QualificationRateID, Currency: "USD", Counted: amount, Limit: p.AccountDay})
+			Scope: "account_rolling24h", Policy: QualificationRateID, Currency: "USD", Counted: amount, Limit: envelope.AccountDay})
 	}
 	out.Caps = append(out.Caps, accountstore.OperationsCap{Key: h.Reconciliation().digest("operations", "global_rolling24h", h.cfg.Namespace),
-		Scope: "global_rolling24h", Policy: QualificationRateID, Currency: "USD", Counted: globalDay, Limit: p.GlobalDay})
+		Scope: "global_rolling24h", Policy: QualificationRateID, Currency: "USD", Counted: globalDay, Limit: envelope.GlobalDay})
 	sort.Slice(out.Caps, func(a, b int) bool { return out.Caps[a].Key < out.Caps[b].Key })
 	out.Complete = true
 	return out, nil
 }
 
-// A staged sample is committed with the ledger change. Another enrolled
-// process can replay it if the originating process ends before delivery.
-func (h *Harness) stageOperations(ctx context.Context, tx *sql.Tx, extra *accountstore.OperationsRiskEvent) (bool, error) {
-	var required bool
-	if tx.QueryRowContext(ctx, `SELECT careeros_operations_required()`).Scan(&required) != nil {
+// The database derives the observation from the locked ledger transition.
+// Neither configured runtime nor the application supplies numeric evidence.
+func (h *Harness) stageOperations(ctx context.Context, tx *sql.Tx, event *string) (bool, error) {
+	var enabled bool
+	if tx.QueryRowContext(ctx, `SELECT careeros_operations_required()`).Scan(&enabled) != nil {
 		return false, ErrUnavailable
 	}
-	if !required {
+	if !enabled {
 		return false, nil
 	}
-	sample, err := h.sampleOperations(ctx, tx)
-	if err != nil || !sample.Complete {
+	if tx.QueryRowContext(ctx, `SELECT careeros_capture_operations($1,$2)`, h.cfg.Namespace, event).Scan(&enabled) != nil {
 		return true, ErrUnavailable
 	}
-	if extra != nil {
-		extra.At = sample.At
-		sample.Events = append(sample.Events, *extra)
-	}
-	raw, err := json.Marshal(sample)
-	if err != nil {
-		return true, ErrUnavailable
-	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO careeros_operations_pending(namespace,sample) VALUES($1,$2)`, h.cfg.Namespace, raw)
-	return true, safe(err)
+	return enabled, nil
 }
 
 func (s *operationsSource) DrainOperations(ctx context.Context, publish func(accountstore.OperationsRiskSample) error) error {
 	db := s.h.reviewerDB
 	for {
 		var id int64
+		var version int
 		var raw []byte
-		err := db.QueryRowContext(ctx, `SELECT id,sample FROM careeros_operations_pending
-		  WHERE namespace=$1 ORDER BY id LIMIT 1`, s.h.cfg.Namespace).Scan(&id, &raw)
+		err := db.QueryRowContext(ctx, `SELECT id,source_version,sample FROM careeros_operations_pending
+		  WHERE namespace=$1 ORDER BY id LIMIT 1`, s.h.cfg.Namespace).Scan(&id, &version, &raw)
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil
 		}
+		if err != nil || version != 2 || id <= 0 {
+			return ErrUnavailable
+		}
+		sample, err := s.decodeOperations(raw)
 		if err != nil {
-			return ErrUnavailable
+			return err
 		}
-		var sample accountstore.OperationsRiskSample
-		if json.Unmarshal(raw, &sample) != nil {
-			return ErrUnavailable
-		}
+		sample.DurableSequence = id
 		if err = publish(sample); err != nil {
 			return err
 		}

@@ -148,7 +148,9 @@ func (o *Operations) reviewIncident(ctx context.Context, p auth.Principal, id st
 				if o.cfg.VerifyBackupRecovery == nil || !validOperation(recovery) {
 					return auth.ErrForbidden
 				}
-				proof, err := o.cfg.VerifyBackupRecovery(ctx, recovery, record.Incident)
+				incident := record.Incident
+				incident.Revision = record.Revision
+				proof, err := o.cfg.VerifyBackupRecovery(ctx, recovery, incident)
 				if err != nil || proof.Before(record.Incident.EventAt) || proof.After(o.journal.cfg.Clock().UTC()) {
 					return auth.ErrForbidden
 				}
@@ -200,7 +202,7 @@ func (o *Operations) HoldProtected(ctx context.Context, control string) (func(),
 	if err != nil {
 		return nil, auth.ErrUnavailable
 	}
-	if err = o.journal.checkFence(); err != nil {
+	if err = o.journal.verifyWriteHealth(); err != nil {
 		unlock()
 		return nil, err
 	}
@@ -238,7 +240,7 @@ func (s *Store) holdOperations(ctx context.Context, required bool, control strin
 func (o *Operations) synchronizeContainment(ctx context.Context) error {
 	var pending []containment
 	err := o.journal.transaction(ctx, true, func(state *operationsJournalState) error {
-		if err := o.journal.checkFence(); err != nil {
+		if err := o.journal.checkPendingFence(); err != nil {
 			return err
 		}
 		for id, record := range state.Records {
@@ -291,27 +293,6 @@ func (o *Operations) synchronizeEmergencyStop(ctx context.Context) error {
 }
 
 func applyOperationsContainment(ctx context.Context, tx *sql.Tx, event containment) error {
-	result, err := tx.ExecContext(ctx, `INSERT INTO careeros_operations_containment(incident_id,incident_revision,invitation_stopped)
-		  VALUES ($1,$2,$3) ON CONFLICT DO NOTHING`, event.id, event.revision, event.invitations)
-	if err != nil {
-		return unavailable(err)
-	}
-	count, err := result.RowsAffected()
-	if err != nil {
-		return unavailable(err)
-	}
-	if count == 0 {
-		return nil
-	}
-	result, err = tx.ExecContext(ctx, `UPDATE careeros_control_state SET inference_stopped=true,
-		  invitation_stopped=invitation_stopped OR $1,version=version+1,
-		  inference_epoch=inference_epoch+1,changed_at=clock_timestamp()
-		  WHERE singleton AND version<9223372036854775807 AND inference_epoch<9223372036854775807`, event.invitations)
-	if err != nil {
-		return unavailable(err)
-	}
-	if count, err = result.RowsAffected(); err != nil || count != 1 {
-		return auth.ErrUnavailable
-	}
-	return nil
+	_, err := tx.ExecContext(ctx, `SELECT careeros_operations_add_hold($1,$2,$3)`, event.id, event.revision, event.invitations)
+	return unavailable(err)
 }

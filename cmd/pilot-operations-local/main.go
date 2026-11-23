@@ -19,12 +19,13 @@ import (
 	"professional-information-repo/internal/accountstore"
 	"professional-information-repo/internal/aicontrol"
 	"professional-information-repo/internal/auth"
+	"professional-information-repo/internal/operationslocal"
 )
 
 type options struct {
 	action, kind, impact, state, at, listen, subject, role, id string
 	revision                                                   int
-	synthetic                                                  bool
+	synthetic, newEpisode                                      bool
 	reference                                                  string
 }
 
@@ -42,6 +43,7 @@ func main() {
 	flag.StringVar(&o.id, "id", "", "incident, case or verified recovery reference")
 	flag.IntVar(&o.revision, "revision", 0, "incident revision")
 	flag.StringVar(&o.reference, "reference", "", "independently verified recovery reference")
+	flag.BoolVar(&o.newEpisode, "new-episode", false, "start a distinct public outage episode")
 	flag.Parse()
 	if err := run(o); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -53,20 +55,9 @@ func run(o options) error {
 	if !o.synthetic {
 		return fmt.Errorf("--synthetic-only is required")
 	}
-	raw, err := hex.DecodeString(os.Getenv("CAREEROS_OPERATIONS_JOURNAL_KEY"))
-	if err != nil || len(raw) != 32 {
+	config, configured, err := operationslocal.JournalConfig(os.Stderr)
+	if err != nil || !configured {
 		return fmt.Errorf("configure the private local operations journal")
-	}
-	var key [32]byte
-	copy(key[:], raw)
-	config := accountstore.OperationsJournalConfig{
-		Directory: os.Getenv("CAREEROS_OPERATIONS_JOURNAL_DIRECTORY"), BindingKey: key,
-		Notify: func(_ context.Context, n accountstore.OperationsNotification) accountstore.OperationsDelivery {
-			if json.NewEncoder(os.Stderr).Encode(n) != nil {
-				return accountstore.OperationsFailed
-			}
-			return accountstore.OperationsDelivered
-		},
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
@@ -92,7 +83,23 @@ func run(o options) error {
 		if e != nil {
 			return accountstore.ErrValidation
 		}
+		if o.newEpisode {
+			return status.BeginOutage(ctx, o.impact, o.state, next)
+		}
 		return status.PublishOutage(ctx, o.impact, o.state, next)
+	case "outage-episode":
+		status, err := accountstore.OpenLocalOperationsStatus(config)
+		if err != nil {
+			return err
+		}
+		id, err := status.Episode(ctx)
+		if err != nil {
+			return err
+		}
+		if id == "" {
+			return accountstore.ErrNotFound
+		}
+		return json.NewEncoder(os.Stdout).Encode(map[string]string{"episode": id})
 	}
 	journal, err := accountstore.OpenLocalOperationsJournal(config)
 	if err != nil {
@@ -150,9 +157,6 @@ func runDatabase(ctx context.Context, o options, journal *accountstore.Operation
 	token := os.Getenv("CAREEROS_OPERATIONS_SESSION_TOKEN")
 	p, err := service.Authenticate(ctx, token)
 	if err != nil {
-		p, err = service.AuthenticateDeletionStatus(ctx, token)
-	}
-	if err != nil {
 		return err
 	}
 	recon, err := aicontrol.OpenLocalReconciliation(ctx, os.Getenv("CAREEROS_OPERATIONS_READER_URL"), os.Getenv("CAREEROS_OPERATIONS_NAMESPACE"))
@@ -164,7 +168,16 @@ func runDatabase(ctx context.Context, o options, journal *accountstore.Operation
 	if err != nil {
 		return err
 	}
-	ops, err := store.LocalOperations(accountstore.OperationsConfig{Build: "synthetic-local", Owner: "Henrique"}, source, journal)
+	cfgOps := accountstore.OperationsConfig{Build: "synthetic-local", Owner: "Henrique"}
+	if o.action == "resolve" || o.action == "publish-recovery" {
+		verifier, err := operationslocal.Recovery()
+		if err != nil {
+			return err
+		}
+		cfgOps.VerifyBackupRecovery = verifier.VerifyBackup
+		cfgOps.VerifyServiceRecovery = verifier.VerifyService
+	}
+	ops, err := store.LocalOperations(cfgOps, source, journal)
 	if err != nil {
 		return err
 	}
@@ -236,7 +249,7 @@ func runDatabase(ctx context.Context, o options, journal *accountstore.Operation
 		}
 		return out.Encode(result)
 	case "publish-recovery":
-		return ops.PublishVerifiedRecovery(ctx, p, o.id, o.kind)
+		return ops.PublishVerifiedRecoveryWithServiceProof(ctx, p, o.id, o.kind, o.reference)
 	default:
 		return accountstore.ErrValidation
 	}

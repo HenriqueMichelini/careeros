@@ -37,6 +37,35 @@ func (s *LocalOperationsStatus) PublishOutage(ctx context.Context, impact, statu
 	return s.journal.PublishOutage(ctx, impact, status, next)
 }
 
+func (s *LocalOperationsStatus) BeginOutage(ctx context.Context, impact, status string, next time.Time) error {
+	return s.journal.publishOutage(ctx, impact, status, next, true, nil)
+}
+
+// Episode is available only to explicitly configured local operators.
+func (s *LocalOperationsStatus) Episode(ctx context.Context) (string, error) {
+	return s.journal.activeEpisode(ctx)
+}
+
+func (s *Store) ActiveOperationsOutage(ctx context.Context) (string, error) {
+	ops := s.LocalOperationsObserver()
+	if ops == nil {
+		return "", nil
+	}
+	return ops.journal.activeEpisode(ctx)
+}
+
+func (j *OperationsJournal) activeEpisode(ctx context.Context) (string, error) {
+	public := j.publicJournal()
+	var id string
+	err := public.transaction(ctx, false, func(state *operationsJournalState) error {
+		if state.Public != nil && state.Public.Status != "recovered" && state.PublicEpisode != nil {
+			id = state.PublicEpisode.ID
+		}
+		return nil
+	})
+	return id, err
+}
+
 func (s *LocalOperationsStatus) PublicStatus(ctx context.Context) (OperationsPublicStatus, error) {
 	return s.journal.PublicStatus(ctx)
 }
@@ -45,17 +74,17 @@ func (s *LocalOperationsStatus) PublicStatus(ctx context.Context) (OperationsPub
 // local owner capability: it requires the explicitly configured private
 // journal under owned OS storage, and works without the application database.
 func (j *OperationsJournal) PublishOutage(ctx context.Context, impact, status string, next time.Time) error {
-	return j.publishOutage(ctx, impact, status, next, nil)
+	return j.publishOutage(ctx, impact, status, next, false, nil)
 }
 
-func (j *OperationsJournal) publishOutage(ctx context.Context, impact, status string, next time.Time, authorize func() error) error {
+func (j *OperationsJournal) publishOutage(ctx context.Context, impact, status string, next time.Time, newEpisode bool, authorize func() error) error {
 	if status != "investigating" && status != "paused" && status != "recovering" {
 		return ErrValidation
 	}
-	return j.publish(ctx, OperationsPublicStatus{Impact: impact, Status: status, NextUpdateAt: &next}, authorize)
+	return j.publish(ctx, OperationsPublicStatus{Impact: impact, Status: status, NextUpdateAt: &next}, newEpisode, authorize)
 }
 
-func (j *OperationsJournal) publish(ctx context.Context, update OperationsPublicStatus, authorize func() error) error {
+func (j *OperationsJournal) publish(ctx context.Context, update OperationsPublicStatus, newEpisode bool, authorize func() error) error {
 	switch update.Impact {
 	case "service", "invitations_and_inference", "inference":
 	default:
@@ -76,7 +105,7 @@ func (j *OperationsJournal) publish(ctx context.Context, update OperationsPublic
 			}
 			update.NextUpdateAt = &next
 		}
-		if state.PublicEpisode == nil || state.Public == nil || state.Public.Status == "recovered" || state.Public.Impact != update.Impact {
+		if newEpisode || state.PublicEpisode == nil || state.Public == nil || state.Public.Status == "recovered" || state.Public.Impact != update.Impact {
 			id, err := newID()
 			if err != nil {
 				return auth.ErrUnavailable
@@ -121,6 +150,10 @@ func (j *OperationsJournal) PublicStatus(ctx context.Context) (OperationsPublicS
 // PublishVerifiedRecovery runs through the current owner session and shared
 // control fence. An independent outage publisher cannot assert recovery.
 func (o *Operations) PublishVerifiedRecovery(ctx context.Context, p auth.Principal, reference, limitation string) error {
+	return o.PublishVerifiedRecoveryWithServiceProof(ctx, p, reference, limitation, "")
+}
+
+func (o *Operations) PublishVerifiedRecoveryWithServiceProof(ctx context.Context, p auth.Principal, reference, limitation, serviceProof string) error {
 	if !validOperation(reference) || limitation != "" && limitation != "limited_pilot" {
 		return ErrValidation
 	}
@@ -137,7 +170,7 @@ func (o *Operations) PublishVerifiedRecovery(ctx context.Context, p auth.Princip
 		return auth.ErrForbidden
 	}
 	return o.journal.transaction(ctx, false, func(state *operationsJournalState) error {
-		if err := o.journal.checkFence(); err != nil {
+		if err := o.journal.checkPendingFence(); err != nil {
 			return err
 		}
 		now := o.journal.cfg.Clock().UTC()
@@ -148,7 +181,7 @@ func (o *Operations) PublishVerifiedRecovery(ctx context.Context, p auth.Princip
 		}
 		public := o.journal.publicJournal()
 		return public.transaction(ctx, true, func(status *operationsJournalState) error {
-			if err := o.journal.checkFence(); err != nil {
+			if err := o.journal.verifyWriteHealth(); err != nil {
 				return err
 			}
 			if err := supportActor(ctx, tx, p, true); err != nil {
@@ -161,7 +194,19 @@ func (o *Operations) PublishVerifiedRecovery(ctx context.Context, p auth.Princip
 			if both && controls.InvitationStopped {
 				return auth.ErrForbidden
 			}
-			if err := verifyEpisodeRecovery(ctx, tx, controls.Version, reference, status.PublicEpisode.RecordedAt, both); err != nil {
+			episode := status.PublicEpisode
+			if status.Public.Impact == "service" {
+				if !validOperation(serviceProof) || o.cfg.VerifyServiceRecovery == nil {
+					return auth.ErrForbidden
+				}
+				at, err := o.cfg.VerifyServiceRecovery(ctx, serviceProof, episode.ID)
+				if err != nil || !at.After(episode.RecordedAt) || at.After(time.Now().UTC()) {
+					return auth.ErrForbidden
+				}
+			} else if serviceProof != "" {
+				return ErrValidation
+			}
+			if err := verifyEpisodeRecovery(ctx, tx, controls.Version, reference, episode.ID, episode.RecordedAt, both); err != nil {
 				return err
 			}
 			if err := supportActor(ctx, tx, p, true); err != nil {
@@ -173,7 +218,7 @@ func (o *Operations) PublishVerifiedRecovery(ctx context.Context, p auth.Princip
 	})
 }
 
-func verifyEpisodeRecovery(ctx context.Context, tx *sql.Tx, version int64, reference string, since time.Time, both bool) error {
+func verifyEpisodeRecovery(ctx context.Context, tx *sql.Tx, version int64, reference, episode string, since time.Time, both bool) error {
 	var verified bool
 	err := tx.QueryRowContext(ctx, `WITH commands AS (
 	  SELECT actor_id,operation_id,convert_from(result,'UTF8')::jsonb AS receipt FROM careeros_control_commands
@@ -184,6 +229,7 @@ func verifyEpisodeRecovery(ctx context.Context, tx *sql.Tx, version int64, refer
 	  FROM careeros_control_recovery r JOIN commands c
 	  ON c.actor_id=r.actor_id AND c.operation_id=r.operation_id
 	  WHERE r.recorded_at>$1 AND (convert_from(r.evidence,'UTF8')::jsonb->>'wholeSystemExcluded')='false'
+	  AND (convert_from(r.evidence,'UTF8')::jsonb->>'outageEpisode')=$5
 	), applicable AS (
 	  SELECT * FROM proofs p WHERE p.control IN ('inference','invitations') AND NOT EXISTS(
 	    SELECT 1 FROM careeros_operations_containment h WHERE h.created_at>=p.recorded_at
@@ -195,7 +241,7 @@ func verifyEpisodeRecovery(ctx context.Context, tx *sql.Tx, version int64, refer
 	SELECT EXISTS(SELECT 1 FROM applicable p WHERE reference=$2 AND version<=$3 AND (control='inference' OR $4)
 	  AND NOT EXISTS(SELECT 1 FROM applicable latest WHERE latest.control=p.control AND latest.version>p.version))
 	  AND EXISTS(SELECT 1 FROM applicable WHERE control='inference')
-	  AND (NOT $4 OR EXISTS(SELECT 1 FROM applicable WHERE control='invitations'))`, since, reference, version, both).Scan(&verified)
+	  AND (NOT $4 OR EXISTS(SELECT 1 FROM applicable WHERE control='invitations'))`, since, reference, version, both, episode).Scan(&verified)
 	if err != nil {
 		return unavailable(err)
 	}
@@ -266,7 +312,7 @@ func (o *Operations) PlanAbsence(ctx context.Context, p auth.Principal, plan Ope
 		}
 		return result, err
 	}
-	publishErr := o.journal.publishOutage(ctx, "invitations_and_inference", "paused", plan.NextUpdateAt, func() error { return supportActor(ctx, tx, p, true) })
+	publishErr := o.journal.publishOutage(ctx, "invitations_and_inference", "paused", plan.NextUpdateAt, true, func() error { return supportActor(ctx, tx, p, true) })
 	if err = tx.Rollback(); err != nil {
 		return result, unavailable(err)
 	}

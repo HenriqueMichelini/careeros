@@ -103,6 +103,12 @@ func (r *SyntheticControlRecovery) Prepare(ctx context.Context, p auth.Principal
 		return "", auth.ErrUnavailable
 	}
 	checkpoint.evidence = accountstore.ControlRecoveryEvidence{Reference: reference, ActorID: p.AccountID, Control: command.Control, AccountID: command.AccountID, StopVersion: status.Version, Recovery: opaque(), Reconciliation: opaque(), Generation: status.SystemGeneration, WholeSystemExcluded: whole}
+	if command.Control == "inference" || command.Control == "invitations" {
+		checkpoint.evidence.OutageEpisode, err = r.store.ActiveOperationsOutage(ctx)
+		if err != nil {
+			return "", err
+		}
+	}
 	observation, _ := json.Marshal(struct {
 		Digests []string
 		Epochs  []int64
@@ -156,6 +162,15 @@ func (r *SyntheticControlRecovery) RecheckControlRecovery(ctx context.Context, p
 	checkpoint, ok := r.checkpoint(command)
 	if !ok || checkpoint.evidence != evidence || evidence.ActorID != p.AccountID || evidence.Control != command.Control || evidence.AccountID != command.AccountID || evidence.StopVersion != command.ExpectedVersion {
 		return auth.ErrForbidden
+	}
+	if command.Control == "inference" || command.Control == "invitations" {
+		episode, err := r.store.ActiveOperationsOutage(ctx)
+		if err != nil {
+			return err
+		}
+		if episode != evidence.OutageEpisode {
+			return auth.ErrForbidden
+		}
 	}
 	if err := r.namespaceInventory(ctx); err != nil {
 		return err

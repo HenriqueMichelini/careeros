@@ -578,14 +578,9 @@ func (r *Reconciliation) Apply(ctx context.Context, p auth.Principal, c Reconcil
 	if err = r.authorize(ctx, tx, p); err != nil {
 		return result, err
 	}
-	var extra *accountstore.OperationsRiskEvent
+	var extra *string
 	if c.Kind == "unpriced" || breach && d.MaximumBreached {
-		kind := "maximum_breach"
-		if c.Kind == "unpriced" {
-			kind = "invariant_breach"
-		}
-		extra = &accountstore.OperationsRiskEvent{Key: r.digest("operations", "reconciliation", c.ID), Kind: kind,
-			Policy: e.Rate, Exposure: result.After, Maximum: d.Maximum}
+		extra = &c.ID
 	}
 	// Observation failure must never roll back a recorded financial obligation.
 	if _, err = tx.ExecContext(ctx, "SAVEPOINT operations_observation"); err != nil {

@@ -606,12 +606,20 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (_ Dispatch, resultErr e
 	if err != nil {
 		return zero, err
 	}
+	if staged {
+		if err = h.fault("after_operations_reserve_snapshot"); err != nil {
+			return zero, err
+		}
+	}
 	if tx.Commit() != nil {
 		return zero, ErrUnavailable
 	}
 	release()
 	release = func() {}
 	if staged {
+		if err = h.fault("before_operations_reserve_delivery"); err != nil {
+			return zero, err
+		}
 		if err = h.deliverOperations(ctx); err != nil {
 			return zero, err
 		}
@@ -807,6 +815,11 @@ func (s *Session) invoke(ctx context.Context, d Dispatch, req *http.Request, raw
 		return nil, err
 	}
 	defer final.Rollback()
+	releaseOperations, err := h.holdOperations(ctx, final)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { releaseOperations() }()
 	if err = accountstore.AuthorizeTransaction(ctx, final, s.p); err != nil {
 		return nil, err
 	}
@@ -825,11 +838,12 @@ func (s *Session) invoke(ctx context.Context, d Dispatch, req *http.Request, raw
 	if err = s.stageAction(ctx, final); err != nil {
 		return nil, err
 	}
-	releaseOperations, err := h.holdOperations(ctx, final)
-	if err != nil {
+	if err = accountstore.AuthorizeTransaction(ctx, final, s.p); err != nil {
 		return nil, err
 	}
-	defer func() { releaseOperations() }()
+	if err = s.checkCurrent(ctx, final); err != nil {
+		return nil, err
+	}
 	if err = final.Commit(); err != nil {
 		return nil, ErrUnavailable
 	}

@@ -1,0 +1,619 @@
+{
+  "issue": 291,
+  "repair_parent": "5d1d54bd37c2226b3a2cda6a3be88493b9c06539",
+  "scope": "local synthetic accounts, fake providers, fake notifications, disposable PostgreSQL",
+  "frozen_manifest": {
+    "path": "docs/release-evidence/2026-11-22-pilot-operations-final-repair-frozen-source.json",
+    "bytes": 5105,
+    "sha256": "0713b21fe1178e7310c441ffc55f6c429666cb359ac6e8ccd83aef52895cad95"
+  },
+  "only_documentation_changed_during_wider_checks": [
+    "docs/managed-pilot-operations-local.md"
+  ],
+  "go_command": [
+    "go",
+    "test",
+    "-p=1",
+    "-json",
+    "-race",
+    "-vet=off",
+    "-timeout=600s",
+    "-count=1",
+    "./..."
+  ],
+  "full_race": {
+    "directory": "/home/henriquemichelini/workstation/careeros/.q91/final-434w3j7y",
+    "args": [
+      "./..."
+    ],
+    "exit_code": 1,
+    "pass_events": 2616,
+    "package_pass_events": 26,
+    "operations_passes": [
+      "TestPilotOperationsReconciliationCLIObservesItsOwnCommittedInvariant",
+      "TestPilotOperationsActualCLIResolvesOnlySignedBackupAndServiceEpisode",
+      "TestPilotOperationsDurableCrossingSurvivesNewerBelowCapDisplay",
+      "TestPilotOperationsTimeoutAfterHeadersSignalsProviderAndRetainsUnknown",
+      "TestPilotOperationsExpiredSessionAfterFinalJournalWaitNeverEntersFakeProvider",
+      "TestPilotOperationsRestrictedRightsSessionHasNoOnlineOwnerAuthority",
+      "TestPilotOperationsUnwritableLatchPersistsIndependentUncertainty",
+      "TestPilotOperationsAutomaticAndInspectedDraftExhaustionUseTheSameAuthority",
+      "TestPilotOperationsActualExpenseWarningAndSupportBoundary",
+      "TestPilotOperationsIndependentControlFaultRetriesFromOriginalAttempt",
+      "TestPilotOperationsOrdinaryCaseAndDiagnosticExpiry",
+      "TestPilotOperationsPhysicalOutageKeepsStatusAndContainmentIndependent",
+      "TestPilotOperationsActualUnknownAndBreachRemainSeparate/unknown",
+      "TestPilotOperationsActualUnknownAndBreachRemainSeparate/breach",
+      "TestPilotOperationsActualUnknownAndBreachRemainSeparate",
+      "TestPilotOperationsManagedFaultDiagnosticsExpireFromEvent",
+      "TestPilotOperationsSaturatedJournalDeniesAcrossIndependentOpens",
+      "TestPilotOperationsRechecksOwnerAfterIndependentJournalWait",
+      "TestPilotOperationsAdmissionJournalLeaseOrdersActionAndRetryCommits/action",
+      "TestPilotOperationsAdmissionJournalLeaseOrdersActionAndRetryCommits/retry",
+      "TestPilotOperationsAdmissionJournalLeaseOrdersActionAndRetryCommits",
+      "TestPilotOperationsReplayDeliversLostIntentWithoutInspectOrResend",
+      "TestPilotOperationsFailedObservationPreservesProviderFreeActionRecovery",
+      "TestPilotOperationsWarningAbsenceAndVerifiedReopening"
+    ],
+    "admission_case_ids": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A06",
+      "A07",
+      "A08",
+      "A09",
+      "A10",
+      "A11",
+      "A12",
+      "A13",
+      "A14",
+      "A15",
+      "A16",
+      "A17",
+      "A18",
+      "A19",
+      "A20",
+      "A21",
+      "A22",
+      "A23",
+      "A24",
+      "A25",
+      "A26",
+      "A27",
+      "A28",
+      "A29",
+      "A30",
+      "A31",
+      "A32",
+      "A33",
+      "A34",
+      "A35",
+      "A36",
+      "A37"
+    ],
+    "failures": [
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestCVRetainedReplayUsesNoDispatchesAndKeepsSemanticFailures"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExecutesAllowlistedGoContractsWithoutInference"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCannotReadHostSentinelsOrReachHostLoopback"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCancellationStopsDetachedChildAndGrandchild"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerDeadlineRetainsPartialTreeAndUnreachedTest"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerBoundsOutputAndStopsFollowingTests"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerReusesSectionBrowserHarnessWithScreenshotEvidence"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExecutesExistingNodeCanonicalContracts"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCrashRetainsDistinctOutcome"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerUsesOfflineFieldHelpers"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCDPPDFIsDistinctAndSurvivesExport"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-canonical"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-ingestion"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-job-application"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-cv"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-ingestion"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-job-reuse"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-artifact-review"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAssertionRegressionCompletesWithFail"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-canonical-edit"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-ingestion"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-enrichment"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-application-reuse"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": ""
+      }
+    ],
+    "skipped_tests": [
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestDeletionBrowserServer"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestJourneyDemoServer"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestPilotRestartChild"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestProfileExportBrowserServer"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestDeletionRestartChild"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestControlledDraftBrowserServer"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestControlledDraftRestartChild"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedTerminalProcessChild"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestLifecycleRestartChild"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestOperatorControlRestartChild"
+      },
+      {
+        "package": "professional-information-repo/internal/aicontrol",
+        "test": "TestRestrictedReconciliationGenuineBaseUpgrade"
+      }
+    ],
+    "pass_tests_by_package": {
+      "professional-information-repo/backend/application-draft": 150,
+      "professional-information-repo/backend/cv-generation": 54,
+      "professional-information-repo/backend/profile-ingestion": 309,
+      "professional-information-repo/backend/profile-review": 21,
+      "professional-information-repo/backend/qualification-gaps": 98,
+      "professional-information-repo/cmd/profile-review": 3,
+      "professional-information-repo/internal/accountapi": 517,
+      "professional-information-repo/internal/accountstore": 1,
+      "professional-information-repo/internal/aicontrol": 160,
+      "professional-information-repo/internal/aidiagnostics": 24,
+      "professional-information-repo/internal/aidispatch": 9,
+      "professional-information-repo/internal/auth": 80,
+      "professional-information-repo/internal/cvsource": 1,
+      "professional-information-repo/internal/evaluationlab": 572,
+      "professional-information-repo/internal/netlifyproxy": 4,
+      "professional-information-repo/internal/preprocessing": 105,
+      "professional-information-repo/internal/profiledocument": 33,
+      "professional-information-repo/internal/profilevalidation": 1,
+      "professional-information-repo/internal/semanticeval": 386,
+      "professional-information-repo/netlify/functions/account": 1,
+      "professional-information-repo/netlify/functions/application-draft": 11,
+      "professional-information-repo/netlify/functions/cv-generation": 11,
+      "professional-information-repo/netlify/functions/profile-ingestion": 11,
+      "professional-information-repo/netlify/functions/profile-review": 10,
+      "professional-information-repo/netlify/functions/qualification-gaps": 11,
+      "professional-information-repo/scripts/field-validation/verify": 31,
+      "professional-information-repo/scripts/workflow-settings": 2
+    },
+    "raw": [
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-434w3j7y/summary.json",
+        "bytes": 172,
+        "sha256": "6cbb47658a12b269b26d7e697b273e9e4986803693bcecbacc33b0b1dccd143a"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-434w3j7y/go.jsonl",
+        "bytes": 6053030,
+        "sha256": "8f74a570b5417a80b6033d35eaf0b1d655975243ad12c5b4b62b22389726aa67"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-434w3j7y/setup.log",
+        "bytes": 1036,
+        "sha256": "bbe65291a3252fe84aa315278bb0fb69f525d35f469bde7e3915df8c93221208"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-434w3j7y/postgres.log",
+        "bytes": 187,
+        "sha256": "651b34ce4e9f818330e0aa58296fc93d03caeb0ab78fab0412b6e73653b25b74"
+      }
+    ],
+    "postgres_fixture_stopped": true
+  },
+  "inherited_evaluation_lab": {
+    "baseline_summary": "docs/release-evidence/2026-11-22-pilot-operations-summary.json",
+    "same_failed_event_set": true,
+    "named_failed_test_events": 25,
+    "failed_packages": [
+      "professional-information-repo/internal/evaluationlab"
+    ]
+  },
+  "focused_frozen_go": {
+    "directory": "/home/henriquemichelini/workstation/careeros/.q91/final-6qbks0ag",
+    "args": [
+      "./internal/accountapi",
+      "-run",
+      "^TestPilotOperations(AutomaticAndInspectedDraft|DurableCrossing|UnwritableLatch)"
+    ],
+    "exit_code": 0,
+    "pass_events": 3,
+    "package_pass_events": 1,
+    "operations_passes": [
+      "TestPilotOperationsDurableCrossingSurvivesNewerBelowCapDisplay",
+      "TestPilotOperationsUnwritableLatchPersistsIndependentUncertainty",
+      "TestPilotOperationsAutomaticAndInspectedDraftExhaustionUseTheSameAuthority"
+    ],
+    "admission_case_ids": [],
+    "failures": [],
+    "skipped_tests": [],
+    "pass_tests_by_package": {
+      "professional-information-repo/internal/accountapi": 3
+    },
+    "raw": [
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-6qbks0ag/summary.json",
+        "bytes": 247,
+        "sha256": "9f66d0bf74a329f514b942227c22398a2af4c69dfb02186825a59a12aa897244"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-6qbks0ag/go.jsonl",
+        "bytes": 7347,
+        "sha256": "4692cd4dfd72d7bdb6ec267bff4ddf8e4aa4960727952ac1958e4c520b903421"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-6qbks0ag/setup.log",
+        "bytes": 1036,
+        "sha256": "48f9378b193fbaa31a6cbea8fd03f6c77c3014355374d6fa851dece863f6851d"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-6qbks0ag/postgres.log",
+        "bytes": 187,
+        "sha256": "16f88d51f15d1fa901d1f8cce98ed4ef79f8b2ff2fcaea4cb0030808bc734d44"
+      }
+    ],
+    "postgres_fixture_stopped": true
+  },
+  "node": {
+    "directory": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju",
+    "files": 32,
+    "passed": 453,
+    "command_per_file": [
+      "node",
+      "--test",
+      "--test-isolation=none",
+      "--test-reporter=tap",
+      "<file>"
+    ],
+    "raw": [
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/account-deletion.test.tap",
+        "bytes": 1158,
+        "sha256": "072c4f5144369c826b8fcfd10fbe87ba361984a254ea76535af2170183cc7fa2"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/account-lifecycle.test.tap",
+        "bytes": 383,
+        "sha256": "2e9036e86b74085d6e4ffca6d02b7daf9588c0fb78a548f725b4d2eb8b9d533a"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/account-profile.test.tap",
+        "bytes": 2596,
+        "sha256": "8b4bca5a3672e6e98be0660cccc04ff70f7889febf1e25f72c81bfe39b69c713"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/artifact-review.test.tap",
+        "bytes": 979,
+        "sha256": "a56d727b70f699642e57655eba94d09b24fa8b775cf4ca11d3d6c8e3029d34c4"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/contact-profile.test.tap",
+        "bytes": 2126,
+        "sha256": "3c39e0e51a92b3af8543cd3941b9cf2fa81c6b83935249106ff69d779b46397c"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/cv-choices.test.tap",
+        "bytes": 849,
+        "sha256": "94c95ccd4171d103eb97e2c3e3a6075e57f213b3087cc5aab5ce10b65bc816a9"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/cv-generation.test.tap",
+        "bytes": 6690,
+        "sha256": "995bc0719283c0f1b8567383116e23c5ce612781209508fe2dbd15e5e973b81b"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/cv-preferences.test.tap",
+        "bytes": 360,
+        "sha256": "1f8c467672fde677578916a69e3c6863705adfbbcb547fa462d5e5ad17e058e0"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/cv-source-parity.test.tap",
+        "bytes": 9869,
+        "sha256": "c745661429475079260805ad000cda414e0292dc3e9e93e42822de7b2308f89b"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/cv-support-integration.test.tap",
+        "bytes": 1634,
+        "sha256": "9ec8d90ca967c32f127f7ea299900b2e357ee0a4c81450e02ee7ba7a3f87680d"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/draft-opening-client.test.tap",
+        "bytes": 1931,
+        "sha256": "01693f36cfdb145294058baa24ca50ba6c8c2a9702ec5ec1239b1e1de0d9c111"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/draft-recovery-client.test.tap",
+        "bytes": 4271,
+        "sha256": "fcea6679a39c81c8773495a8ef9b1465f16ae36bb460defefeb79d752ec09f61"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/evidence-mvp.test.tap",
+        "bytes": 2210,
+        "sha256": "b2f97d3191d41ca6bc2d9c075f00b53da64b27bebf6376e4d693633563dfb2be"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/field-validation.test.tap",
+        "bytes": 4000,
+        "sha256": "fa7b05724f535e8bdb02138933de12d622aab4880b8d241fbf7a53532d221860"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/ingestion-recovery.test.tap",
+        "bytes": 4827,
+        "sha256": "37b4dab5fdd4281fd13d7655894ab21a37de82381e667a948031b0de40fc8d32"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/ingestion-review.test.tap",
+        "bytes": 5251,
+        "sha256": "0942e4528d233af0b4a324d369a35bccf3c40e49ae4dfae44eda9f1ea95798a4"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/ingestion-submission-save.test.tap",
+        "bytes": 4198,
+        "sha256": "4f1f1f2ce4e3603977ee9b80115a0379466f94b10621e6aee57b4dbf05e5bc79"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/ingestion-submission.test.tap",
+        "bytes": 3402,
+        "sha256": "c010705f14d31ba3ad6622b99642c493eaa5c676ded2d39b38169a945cee2ce5"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/ingestion.test.tap",
+        "bytes": 6970,
+        "sha256": "3d8f0e577eee2ae0cc5f384cf3095030e5d9326e3b8476707887ee5dcee3c5d9"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/lab-dashboard.test.tap",
+        "bytes": 384,
+        "sha256": "55b675fc7c9eb7b1eca2ea7dda1ddac19fb5045a8b4c13d5f505968b4deb7a93"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/managed-cv.test.tap",
+        "bytes": 859,
+        "sha256": "8f48a81e0cb52f1cbe7f06eb8c54a0cb7f47cc3907193a80814c870b66661d32"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/managed-ingestion.test.tap",
+        "bytes": 1029,
+        "sha256": "16ca605d9de505102377892c29bc3a5022b6aa047afd8e00d42fc10df6c0c725"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/managed-profile-review.test.tap",
+        "bytes": 630,
+        "sha256": "d609c2358ba835dd40a950ec34ee0f5d7a5f88dd5bfdf36263c03f2a238aec3e"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/managed-qualification.test.tap",
+        "bytes": 791,
+        "sha256": "a2eecadbe6fc424014986c0b9a90cad39318af18739dfe9f3c8acc949c1032ea"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/pilot-access.test.tap",
+        "bytes": 816,
+        "sha256": "b746829d01606e34f1ac5f178e1bd7987a3987d7202d4e090f9b0a05e8310ec5"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/profile-document.test.tap",
+        "bytes": 12117,
+        "sha256": "a094a0ea67d5d0c41024d3c122eed9a10f6640146ff97b2a419cdf54db34bff3"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/profile-export.test.tap",
+        "bytes": 576,
+        "sha256": "eb60a7706f6f2cdba086b57daffd911c06c1daf92a1e26c74d1f7347b0433f02"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/profile-projection-parity.test.tap",
+        "bytes": 10409,
+        "sha256": "b828fd36648c9fbd041b6d96f475ed361fe4be30ff141d4fcf416e5d6fc9a537"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/qualification-evidence.test.tap",
+        "bytes": 599,
+        "sha256": "0b2ac9246f8f908bd9b5d3887815ec12a290bbbc00ba312cf38fe5c06ad51d7c"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/resume-review.test.tap",
+        "bytes": 1396,
+        "sha256": "a2eac1d43ca0428714e2064a31208958f587a9830ff9b874cefe80ce4dd0aa13"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/section-review-evaluation.test.tap",
+        "bytes": 1011,
+        "sha256": "ab761e704d811bf3c6a248e57819a8faea7d2c41168e97d85f0ddbccef11b185"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/submission-protocol.test.tap",
+        "bytes": 10450,
+        "sha256": "6baffab15b7c71c11391ff4b9c417003d1b8f4a0b32adbc3f9d91d64c12115e2"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-1ynvnqju/summary.json",
+        "bytes": 2603,
+        "sha256": "f207db8846f693b414543a194c0eeb0e8b4e2c76fb574fad3968fdd5794bf71f"
+      }
+    ]
+  },
+  "companion": {
+    "directory": "/home/henriquemichelini/workstation/careeros/.q91/final-companion-_zfqwrmr",
+    "checks": {
+      "tsc.log": {
+        "exit_code": 0
+      },
+      "build.log": {
+        "exit_code": 0
+      },
+      "browser.log": {
+        "exit_code": 0
+      },
+      "default-vet.log": {
+        "exit_code": 1
+      },
+      "scoped-vet.log": {
+        "exit_code": 0
+      }
+    },
+    "browser_locales": [
+      "en",
+      "pt-BR"
+    ],
+    "default_vet_diagnostics": 15,
+    "default_vet_baseline": {
+      "path": "/home/henriquemichelini/workstation/careeros/.local-recovery/draft-opening-285-review-repair-20261122/vet-default.log",
+      "bytes": 2236,
+      "sha256": "449b2077e614d67a727d4aca5d9f84b70d47f83914a785cc398129577d3e0db4"
+    },
+    "raw": [
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-companion-_zfqwrmr/browser.log",
+        "bytes": 343,
+        "sha256": "5611dfcabe5b3f53d5818009387b0f0b8c44d003b08ac2e6dd36151d0a0df15a"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-companion-_zfqwrmr/build.log",
+        "bytes": 1472,
+        "sha256": "fb5c087562826251f2c46c7c545d2a005f0889aabba735315be6d383787e82ef"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-companion-_zfqwrmr/default-vet.log",
+        "bytes": 2236,
+        "sha256": "449b2077e614d67a727d4aca5d9f84b70d47f83914a785cc398129577d3e0db4"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-companion-_zfqwrmr/scoped-vet.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-companion-_zfqwrmr/tsc.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "/home/henriquemichelini/workstation/careeros/.q91/final-companion-_zfqwrmr/summary.json",
+        "bytes": 219,
+        "sha256": "e0614caff4335c24005750d874ce074bf5e17b7ddfa997cec809fc699adaae71"
+      }
+    ]
+  },
+  "preceding_runs": {
+    "first_operations_focus": {
+      "path": "/home/henriquemichelini/workstation/careeros/.q91/final-4a9irpwd/go.jsonl",
+      "bytes": 40532,
+      "sha256": "eceda6d076338ceb0a2584f380d02c0a3693fae11a10e7a39bd2bba171fde24c"
+    },
+    "draft_fixture_namespace_failure": {
+      "path": "/home/henriquemichelini/workstation/careeros/.q91/final-w8b4h0go/go.jsonl",
+      "bytes": 2967,
+      "sha256": "11f3b9a9d403c049d00a8ae4256e2843a7482b11089208b934984441f37e52cb"
+    },
+    "unused_test_import_build_failure": {
+      "path": "/home/henriquemichelini/workstation/careeros/.q91/final-0myn3qwq/go.jsonl",
+      "bytes": 1336,
+      "sha256": "a0100ead1ea519de8cf6dc1593f3b69a4ad2f6c9c8a5a8ee0693b3b0ac0ee41f"
+    },
+    "node_subprocess_sandbox_denial": {
+      "path": "/home/henriquemichelini/workstation/careeros/.q91/final-node-al3_0brv/summary.json",
+      "bytes": 2602,
+      "sha256": "5de2fc58f89625385f88b0d822218ebb7c7c9e5ea7e684b8830b32b9112a9bb0"
+    }
+  },
+  "durability_boundary": "Complete simultaneous loss of the independent journal and shared SQL write authorities requires independent interval reconciliation before resuming from restored media."
+}

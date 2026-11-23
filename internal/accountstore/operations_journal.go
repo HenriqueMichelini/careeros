@@ -59,17 +59,18 @@ type operationsJournalRecord struct {
 	RecoveryBinding string             `json:"recoveryBinding,omitempty"`
 }
 type operationsJournalState struct {
-	Version        int                                `json:"version"`
-	ID             string                             `json:"id"`
-	Records        map[string]operationsJournalRecord `json:"records"`
-	Figures        *OperationsFigures                 `json:"figures,omitempty"`
-	Persistence    string                             `json:"persistence,omitempty"`
-	Backup         string                             `json:"backup,omitempty"`
-	Public         *OperationsPublicStatus            `json:"public,omitempty"`
-	PublicEpisode  *operationsPublicEpisode           `json:"publicEpisode,omitempty"`
-	Rolling        map[string]time.Time               `json:"rolling,omitempty"`
-	FenceInstalled bool                               `json:"fenceInstalled,omitempty"`
-	OfflineOwner   []byte                             `json:"offlineOwner,omitempty"`
+	Version             int                                `json:"version"`
+	ID                  string                             `json:"id"`
+	Records             map[string]operationsJournalRecord `json:"records"`
+	Figures             *OperationsFigures                 `json:"figures,omitempty"`
+	Persistence         string                             `json:"persistence,omitempty"`
+	Backup              string                             `json:"backup,omitempty"`
+	Public              *OperationsPublicStatus            `json:"public,omitempty"`
+	PublicEpisode       *operationsPublicEpisode           `json:"publicEpisode,omitempty"`
+	Rolling             map[string]time.Time               `json:"rolling,omitempty"`
+	LastDurableSequence int64                              `json:"lastDurableSequence,omitempty"`
+	FenceInstalled      bool                               `json:"fenceInstalled,omitempty"`
+	OfflineOwner        []byte                             `json:"offlineOwner,omitempty"`
 }
 type operationsEnvelope struct {
 	Payload json.RawMessage `json:"payload"`
@@ -149,7 +150,7 @@ func (j *OperationsJournal) withState(ctx context.Context, persist, containment 
 	unlock, err := j.lock(ctx, persist)
 	if err != nil {
 		if containment {
-			return errors.Join(err, j.sealFence())
+			return errors.Join(err, j.sealFence(), j.sealIndependent())
 		}
 		return err
 	}
@@ -157,7 +158,7 @@ func (j *OperationsJournal) withState(ctx context.Context, persist, containment 
 	state, err := j.read()
 	if err != nil {
 		if containment {
-			return errors.Join(err, j.sealFence())
+			return errors.Join(err, j.sealFence(), j.sealIndependent())
 		}
 		return err
 	}
@@ -167,10 +168,13 @@ func (j *OperationsJournal) withState(ctx context.Context, persist, containment 
 	if !containment {
 		return j.write(state)
 	}
-	// A synced byte in an existing file survives an interrupted or saturated
-	// append while the preceding authenticated incident list stays readable.
-	if err = j.checkFence(); err != nil {
-		return err
+	// Persist uncertainty independently of the in-place latch. A failed
+	// latch write can leave its previous bytes readable.
+	if err = j.checkPendingFence(); err != nil {
+		return errors.Join(err, j.sealIndependent())
+	}
+	if err = j.createFenceFile("journal.pending"); err != nil {
+		return errors.Join(err, j.sealFence(), j.sealIndependent())
 	}
 	if err = j.setFence(1); err != nil {
 		return errors.Join(err, j.sealFence())
@@ -181,7 +185,83 @@ func (j *OperationsJournal) withState(ctx context.Context, persist, containment 
 	if err = j.setFence(0); err != nil {
 		return errors.Join(err, j.sealFence())
 	}
+	if err = os.Remove(filepath.Join(j.cfg.Directory, "journal.pending")); err != nil {
+		return errors.Join(auth.ErrUnavailable, j.sealFence())
+	}
+	if err = j.syncDirectory(); err != nil {
+		return errors.Join(err, j.sealFence())
+	}
 	return nil
+}
+
+func (j *OperationsJournal) syncDirectory() error {
+	dir, err := os.Open(j.cfg.Directory)
+	if err != nil {
+		return auth.ErrUnavailable
+	}
+	defer dir.Close()
+	if err = dir.Sync(); err != nil {
+		return auth.ErrUnavailable
+	}
+	return nil
+}
+
+func (j *OperationsJournal) createFenceFile(name string) error {
+	path := filepath.Join(j.cfg.Directory, name)
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY|syscall.O_NOFOLLOW, 0600)
+	if err != nil {
+		return auth.ErrUnavailable
+	}
+	_, err = f.Write([]byte{1})
+	if err == nil {
+		err = f.Sync()
+	}
+	closeErr := f.Close()
+	if err != nil || closeErr != nil {
+		return auth.ErrUnavailable
+	}
+	return j.syncDirectory()
+}
+
+func (j *OperationsJournal) checkPendingFence() error {
+	if err := j.checkFence(); err != nil {
+		return err
+	}
+	for _, name := range []string{"journal.pending", "journal.uncertain"} {
+		_, err := os.Lstat(filepath.Join(j.cfg.Directory, name))
+		if !errors.Is(err, os.ErrNotExist) {
+			return auth.ErrUnavailable
+		}
+	}
+	return nil
+}
+
+func (j *OperationsJournal) sealIndependent() error {
+	return j.createFenceFile("journal.uncertain")
+}
+
+// verifyWriteHealth uses the same data and directory durability as a
+// required update without modifying the authenticated incident list.
+func (j *OperationsJournal) verifyWriteHealth() error {
+	if err := j.checkPendingFence(); err != nil {
+		return err
+	}
+	id, err := newID()
+	if err != nil {
+		return auth.ErrUnavailable
+	}
+	name := ".journal-health-" + id
+	defer os.Remove(filepath.Join(j.cfg.Directory, name))
+	if err = j.createFenceFile(name); err != nil {
+		return errors.Join(err, j.sealIndependent())
+	}
+	if err = os.Remove(filepath.Join(j.cfg.Directory, name)); err != nil {
+		return auth.ErrUnavailable
+	}
+	if err = j.syncDirectory(); err != nil {
+		return errors.Join(err, j.sealIndependent())
+	}
+	return j.checkPendingFence()
 }
 
 func (j *OperationsJournal) installFence() error {
@@ -345,12 +425,7 @@ func (j *OperationsJournal) write(state operationsJournalState) error {
 	if err != nil || closeErr != nil || os.Rename(name, filepath.Join(j.cfg.Directory, j.name+".json")) != nil {
 		return auth.ErrUnavailable
 	}
-	dir, err := os.Open(j.cfg.Directory)
-	if err != nil {
-		return auth.ErrUnavailable
-	}
-	defer dir.Close()
-	return dir.Sync()
+	return j.syncDirectory()
 }
 func (j *OperationsJournal) upsert(state *operationsJournalState, key string, incident OperationsIncident, recurring bool) bool {
 	id := j.binding([]byte("incident\x00" + key))
@@ -377,7 +452,7 @@ func (j *OperationsJournal) status(ctx context.Context) (OperationsStatus, error
 }
 
 func (j *OperationsJournal) restrictedStatus(state *operationsJournalState) OperationsStatus {
-	status := OperationsStatus{Incidents: []OperationsIncident{}, Persistence: "unobserved", Backup: "unobserved", ContainmentUnavailable: j.checkFence() != nil}
+	status := OperationsStatus{Incidents: []OperationsIncident{}, Persistence: "unobserved", Backup: "unobserved", ContainmentUnavailable: j.checkPendingFence() != nil}
 	status.Figures = state.Figures
 	if state.Persistence != "" {
 		status.Persistence = state.Persistence

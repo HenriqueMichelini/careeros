@@ -24,6 +24,13 @@ func qualificationFixture(t *testing.T) (*aiadmission.Fixture, *aicontrol.Harnes
 }
 func qualificationBoundFixture(t *testing.T, bound func(string, []byte) (int64, bool)) (*aiadmission.Fixture, *aicontrol.Harness, *aiadmission.Provider, http.Handler) {
 	t.Helper()
+	gate := aicontrol.NewSyntheticGate()
+	gate.Reconcile("qualification", 1)
+	return qualificationConfigFixture(t, aicontrol.QualificationSyntheticConfig("qualification", gate, bound))
+}
+
+func qualificationConfigFixture(t *testing.T, cfg aicontrol.SyntheticConfig) (*aiadmission.Fixture, *aicontrol.Harness, *aiadmission.Provider, http.Handler) {
+	t.Helper()
 	f := aiadmission.NewFixture(t)
 	ctx := context.Background()
 	if _, err := f.DB.Exec(`INSERT INTO careeros_pilot_operators(account_id) VALUES($1)`, f.Principal.AccountID); err != nil {
@@ -40,9 +47,6 @@ func qualificationBoundFixture(t *testing.T, bound func(string, []byte) (int64, 
 	if _, err = f.Store.ActivatePilot(ctx, f.Principal, "activate", invite.InvitationID, true); err != nil {
 		t.Fatal(err)
 	}
-	gate := aicontrol.NewSyntheticGate()
-	gate.Reconcile("qualification", 1)
-	cfg := aicontrol.QualificationSyntheticConfig("qualification", gate, bound)
 	cfg.ExpiresAt = time.Now().Add(time.Hour)
 	h, err := aicontrol.NewSynthetic(ctx, f.DSN, cfg)
 	if err != nil {

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"net"
 	"net/http"
 	"regexp"
 	"sync"
@@ -186,10 +187,8 @@ func (h *Harness) appendObservation(ctx context.Context, d Dispatch, sequence in
 	return safe(e)
 }
 func (h *Harness) observeResponse(ctx context.Context, p auth.Principal, d Dispatch, resp *http.Response, callErr error) (*http.Response, error) {
-	if ops := h.localOperations(); ops != nil && (callErr != nil && !errors.Is(callErr, context.Canceled) || resp != nil && resp.StatusCode >= 500) {
-		signalCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
-		_ = ops.ObserveFault(signalCtx, accountstore.OperationsProviderFault)
-		cancel()
+	if callErr != nil && !errors.Is(callErr, context.Canceled) || resp != nil && resp.StatusCode >= 500 {
+		h.reportProviderFault(ctx)
 	}
 	requestID := ""
 	if resp != nil {
@@ -208,8 +207,13 @@ func (h *Harness) observeResponse(ctx context.Context, p auth.Principal, d Dispa
 	if resp != nil && resp.Body != nil {
 		fakeTerminal := h.cfg.Qualification && callErr == nil && resp.Header.Get("X-CareerOS-Fake-Terminal") == "1"
 		resp.Header.Del("X-CareerOS-Fake-Terminal")
-		resp.Body = &observedBody{ReadCloser: resp.Body, finish: func(raw []byte, complete bool) {
+		resp.Body = &observedBody{ReadCloser: resp.Body, finish: func(raw []byte, complete bool, bodyErr error) {
 			o := observation(d.Provider, requestID, raw, complete, h.cfg.Qualification)
+			var timeout net.Error
+			if errors.Is(bodyErr, context.DeadlineExceeded) || errors.As(bodyErr, &timeout) && timeout.Timeout() {
+				o.BodyState = "transport_error"
+				h.reportProviderFault(ctx)
+			}
 			_ = h.appendObservation(ctx, d, 1, o)
 			if h.cfg.Qualification {
 				proofCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
@@ -240,12 +244,20 @@ func (h *Harness) observeResponse(ctx context.Context, p auth.Principal, d Dispa
 	return resp, callErr
 }
 
+func (h *Harness) reportProviderFault(ctx context.Context) {
+	if ops := h.localOperations(); ops != nil {
+		signalCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+		defer cancel()
+		_ = ops.ObserveFault(signalCtx, accountstore.OperationsProviderFault)
+	}
+}
+
 type observedBody struct {
 	io.ReadCloser
 	buf      bytes.Buffer
 	overflow bool
 	once     sync.Once
-	finish   func([]byte, bool)
+	finish   func([]byte, bool, error)
 }
 
 func (b *observedBody) Read(p []byte) (int, error) {
@@ -259,12 +271,12 @@ func (b *observedBody) Read(p []byte) (int, error) {
 		}
 	}
 	if e != nil {
-		b.once.Do(func() { b.finish(b.buf.Bytes(), e == io.EOF && !b.overflow) })
+		b.once.Do(func() { b.finish(b.buf.Bytes(), e == io.EOF && !b.overflow, e) })
 	}
 	return n, e
 }
 func (b *observedBody) Close() error {
 	e := b.ReadCloser.Close()
-	b.once.Do(func() { b.finish(nil, false) })
+	b.once.Do(func() { b.finish(nil, false, e) })
 	return e
 }

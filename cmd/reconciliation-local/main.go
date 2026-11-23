@@ -17,6 +17,7 @@ import (
 	"professional-information-repo/internal/accountstore"
 	"professional-information-repo/internal/aicontrol"
 	"professional-information-repo/internal/auth"
+	"professional-information-repo/internal/operationslocal"
 )
 
 type accountReader struct{ db *sql.DB }
@@ -94,6 +95,25 @@ func run() error {
 		return err
 	}
 	defer command.Close()
+	if *mode == "apply" {
+		config, configured, err := operationslocal.JournalConfig(os.Stderr)
+		if err != nil {
+			return err
+		}
+		if configured {
+			journal, err := accountstore.OpenLocalOperationsJournal(config)
+			if err != nil {
+				return err
+			}
+			source, err := command.LocalOperationsSource(ctx)
+			if err != nil {
+				return err
+			}
+			if _, err = store.AttachLocalOperationsObserver(ctx, accountstore.OperationsConfig{Build: "synthetic-local", Owner: "Henrique"}, source, journal); err != nil {
+				return err
+			}
+		}
+	}
 	var result any
 	if *mode == "status" {
 		result, err = command.Status(ctx, principal, *dispatch)

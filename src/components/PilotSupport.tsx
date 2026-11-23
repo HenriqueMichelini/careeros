@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { getInitialLocale } from "../lib/i18n"
+import { getInitialLocale, isLocale } from "../lib/i18n"
 
 const copy = {
   en: {
@@ -36,7 +36,10 @@ function localStatusOrigin(raw: string | undefined) {
 export default function PilotSupport() {
   const [locale, setLocale] = useState(getInitialLocale)
   useEffect(() => {
-    const observer = new MutationObserver(() => setLocale(getInitialLocale()))
+    const observer = new MutationObserver(() => {
+      const current = document.documentElement.lang
+      if (isLocale(current)) setLocale(current)
+    })
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] })
     return () => observer.disconnect()
   }, [])

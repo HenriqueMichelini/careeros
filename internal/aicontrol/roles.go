@@ -299,9 +299,15 @@ GRANT INSERT,UPDATE ON ai_recon_command,ai_recon_state,ai_recon_stop,ai_recon_ev
 	if _, err = tx.ExecContext(ctx, fmt.Sprintf(`GRANT EXECUTE ON FUNCTION careeros_account_closed(text),careeros_deleted_profile_restored(text),careeros_action_predates_deletion(text,timestamptz),careeros_invitation_denied(text),careeros_inference_allowed(),careeros_current_inference_epoch(),careeros_control_account_denied(text),careeros_operations_required() TO %s,%s`, runtimeRole, reviewerRole)); err != nil {
 		return nil, nil, "", ErrUnavailable
 	}
-	if _, err = tx.ExecContext(ctx, fmt.Sprintf(`GRANT INSERT(namespace,sample) ON careeros_operations_pending TO %[1]s,%[2]s;
-	  GRANT USAGE ON SEQUENCE careeros_operations_pending_id_seq TO %[1]s,%[2]s;
+	if _, err = tx.ExecContext(ctx, fmt.Sprintf(operationsCaptureSQL, fmt.Sprintf("%q", schema))); err != nil {
+		return nil, nil, "", ErrUnavailable
+	}
+	if _, err = tx.ExecContext(ctx, fmt.Sprintf(`REVOKE INSERT(namespace,sample),INSERT ON careeros_operations_pending FROM %[1]s,%[2]s;
+	  REVOKE USAGE ON SEQUENCE careeros_operations_pending_id_seq FROM %[1]s,%[2]s;
 	  GRANT SELECT,DELETE ON careeros_operations_pending TO %[2]s;
+	  GRANT EXECUTE ON FUNCTION careeros_capture_operations(text,text) TO %[1]s,%[2]s;
+	  GRANT EXECUTE ON FUNCTION careeros_operations_snapshot(text,text) TO %[2]s;
+	  GRANT EXECUTE ON FUNCTION careeros_operations_attach_matches(text),careeros_operations_add_hold(text,bigint,boolean) TO %[2]s;
 	  GRANT EXECUTE ON FUNCTION careeros_operations_fault_stop() TO %[2]s`, runtimeRole, reviewerRole)); err != nil {
 		return nil, nil, "", ErrUnavailable
 	}

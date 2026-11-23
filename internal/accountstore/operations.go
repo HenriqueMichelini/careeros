@@ -29,12 +29,13 @@ type OperationsCap struct {
 	Counted, Limit               int64
 }
 type OperationsRiskSample struct {
-	At        time.Time
-	Namespace string
-	Complete  bool
-	Caps      []OperationsCap
-	Events    []OperationsRiskEvent
-	Figures   OperationsFigures
+	At              time.Time
+	Namespace       string
+	Complete        bool
+	Caps            []OperationsCap
+	Events          []OperationsRiskEvent
+	Figures         OperationsFigures
+	DurableSequence int64
 }
 type OperationsRiskEvent struct {
 	Key, Kind, Policy string
@@ -58,8 +59,9 @@ type OperationsConfig struct {
 	Build, Owner string
 	// The registered drill verifier checks the referenced backup recovery
 	// observation for this exact incident. A label alone grants no authority.
-	VerifyBackupRecovery func(context.Context, string, OperationsIncident) (time.Time, error)
-	VerifyPreparedCover  func(context.Context, OperationsAbsence) error
+	VerifyBackupRecovery  func(context.Context, string, OperationsIncident) (time.Time, error)
+	VerifyServiceRecovery func(context.Context, string, string) (time.Time, error)
+	VerifyPreparedCover   func(context.Context, OperationsAbsence) error
 }
 
 type OperationsIncident struct {
@@ -134,10 +136,46 @@ func (s *Store) LocalOperations(cfg OperationsConfig, source OperationsRiskSourc
 	if err = tx.Commit(); err != nil {
 		return nil, unavailable(err)
 	}
+	return s.installOperations(cfg, source, journal, binding), nil
+}
+
+// AttachLocalOperationsObserver proves a previously enrolled journal binding.
+// The observer can drain ledger-derived records and apply add-only containment.
+func (s *Store) AttachLocalOperationsObserver(ctx context.Context, cfg OperationsConfig, source OperationsRiskSource, journal *OperationsJournal) (*Operations, error) {
+	binding, ok := source.(OperationsRiskBinding)
+	if s == nil || !ok || journal == nil || cfg.Owner != "Henrique" || !validOperation(cfg.Build) {
+		return nil, ErrValidation
+	}
+	if err := binding.CheckOperationsStore(ctx, s); err != nil {
+		return nil, err
+	}
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
+	if err != nil {
+		return nil, unavailable(err)
+	}
+	defer tx.Rollback()
+	if err = localControlDatabase(ctx, tx); err != nil {
+		return nil, err
+	}
+	handle := journal.binding([]byte("operation-authority\x00" + journal.id))
+	var valid bool
+	if err = tx.QueryRowContext(ctx, `SELECT careeros_operations_attach_matches($1)`, handle).Scan(&valid); err != nil {
+		return nil, unavailable(err)
+	}
+	if !valid {
+		return nil, auth.ErrForbidden
+	}
+	if err = tx.Commit(); err != nil {
+		return nil, unavailable(err)
+	}
+	return s.installOperations(cfg, source, journal, binding), nil
+}
+
+func (s *Store) installOperations(cfg OperationsConfig, source OperationsRiskSource, journal *OperationsJournal, binding OperationsRiskBinding) *Operations {
 	ops := &Operations{store: s, cfg: cfg, source: source, journal: journal}
 	s.operations.Store(ops)
 	binding.BindOperations(ops)
-	return ops, nil
+	return ops
 }
 
 func (o *Operations) Inspect(ctx context.Context) error {
@@ -147,9 +185,6 @@ func (o *Operations) Inspect(ctx context.Context) error {
 	}
 	if !sample.Complete || sample.At.IsZero() || !validOperation(sample.Namespace) {
 		return errors.Join(auth.ErrUnavailable, o.ObserveFault(ctx, OperationsAuthorityFault))
-	}
-	if err = o.observeDraftGrants(ctx, &sample.Figures); err != nil {
-		return errors.Join(err, o.ObserveFault(context.WithoutCancel(ctx), OperationsAuthorityFault))
 	}
 	if err = o.DrainCommittedRisk(ctx); err != nil {
 		return err
@@ -200,23 +235,6 @@ func (o *Operations) ProvisionOfflineOwner(ctx context.Context, p auth.Principal
 	})
 }
 
-func (o *Operations) observeDraftGrants(ctx context.Context, figures *OperationsFigures) error {
-	tx, err := o.store.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
-	if err != nil {
-		return unavailable(err)
-	}
-	defer tx.Rollback()
-	hasDrafts, err := installed(ctx, tx, "careeros_draft_allowance")
-	if err != nil || !hasDrafts {
-		return err
-	}
-	err = tx.QueryRowContext(ctx, `SELECT count(*) FROM careeros_pilot_access p WHERE p.state='active'
-	 AND p.expires_at>$1 AND p.age_eligible AND NOT p.invitation_revoked AND NOT p.retrieval_held
-	 AND (SELECT count(*) FROM careeros_draft_allowance a WHERE a.owner=p.account_id
-	 AND (a.state='delivered' OR a.state='reserved' AND a.deadline>$1))>=p.draft_allowance`, figures.At).Scan(&figures.ExhaustedDraftGrants)
-	return unavailable(err)
-}
-
 func (o *Operations) recordSample(ctx context.Context, sample OperationsRiskSample) error {
 	for _, cap := range sample.Caps {
 		if cap.Limit <= 0 || cap.Counted < 0 || cap.Key == "" {
@@ -224,8 +242,14 @@ func (o *Operations) recordSample(ctx context.Context, sample OperationsRiskSamp
 		}
 	}
 	return o.journal.containmentTransaction(ctx, func(state *operationsJournalState) error {
-		if state.Figures == nil || !sample.At.Before(state.Figures.At) {
+		if sample.DurableSequence > state.LastDurableSequence {
 			o.recordCaps(state, sample)
+			state.LastDurableSequence = sample.DurableSequence
+		} else if sample.DurableSequence == 0 && state.LastDurableSequence == 0 &&
+			(state.Figures == nil || !sample.At.Before(state.Figures.At)) {
+			o.recordCaps(state, sample)
+		}
+		if state.Figures == nil || !sample.At.Before(state.Figures.At) {
 			state.Figures = &sample.Figures
 			state.Persistence = "available_at_observation"
 		}
@@ -315,13 +339,7 @@ func (s *Store) BootstrapLocalOperationsRole(ctx context.Context, identity auth.
 }
 
 func operationsActor(ctx context.Context, tx *sql.Tx, p auth.Principal, role string) error {
-	if role == "owner" {
-		if err := authorizedAccount(ctx, tx, p); err != nil {
-			if err = authorizeRestrictedRights(ctx, tx, p); err != nil {
-				return err
-			}
-		}
-	} else if err := authorizedAccount(ctx, tx, p); err != nil {
+	if err := authorizedAccount(ctx, tx, p); err != nil {
 		return err
 	}
 	var allowed bool

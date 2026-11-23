@@ -54,6 +54,7 @@ type ControlRecoveryEvidence struct {
 	WholeSystemExcluded bool   `json:"wholeSystemExcluded"`
 	Exclusion           string `json:"exclusion,omitempty"`
 	Generation          int64  `json:"generation"`
+	OutageEpisode       string `json:"outageEpisode,omitempty"`
 }
 type OperatorControls struct {
 	store    *Store

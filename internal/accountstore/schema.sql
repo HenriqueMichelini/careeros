@@ -335,7 +335,38 @@ ALTER TABLE careeros_operations_containment ADD COLUMN IF NOT EXISTS created_at 
 CREATE TABLE IF NOT EXISTS careeros_operations_pending (
  id bigserial PRIMARY KEY, namespace text NOT NULL, sample bytea NOT NULL
 );
+ALTER TABLE careeros_operations_pending ADD COLUMN IF NOT EXISTS source_version smallint NOT NULL DEFAULT 0;
 REVOKE ALL ON careeros_operations_pending FROM PUBLIC;
+
+DO $operations_functions$
+DECLARE owning_schema text;
+BEGIN
+ SELECT n.nspname INTO owning_schema FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+ WHERE c.oid='careeros_operations_containment'::regclass;
+ EXECUTE format($definitions$
+ CREATE OR REPLACE FUNCTION %1$I.careeros_operations_attach_matches(candidate text) RETURNS boolean
+ LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $match$
+ SELECT COALESCE((SELECT operations_binding<>'' AND operations_binding=candidate
+  FROM %1$I.careeros_control_state WHERE singleton),false)
+ $match$;
+ CREATE OR REPLACE FUNCTION %1$I.careeros_operations_add_hold(incident text,revision bigint,invitations boolean)
+ RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $hold$
+ BEGIN
+  IF incident !~ '^[0-9a-f]{64}$' OR revision<1 THEN RAISE EXCEPTION 'invalid operation hold'; END IF;
+  PERFORM pg_advisory_xact_lock(72481312);
+  INSERT INTO %1$I.careeros_operations_containment(incident_id,incident_revision,invitation_stopped)
+  VALUES (incident,revision,invitations) ON CONFLICT DO NOTHING;
+  IF FOUND THEN
+   UPDATE %1$I.careeros_control_state SET inference_stopped=true,
+    invitation_stopped=invitation_stopped OR invitations,
+    version=version+1,inference_epoch=inference_epoch+1,changed_at=clock_timestamp()
+   WHERE singleton AND operations_binding<>'' AND version<9223372036854775807 AND inference_epoch<9223372036854775807;
+   IF NOT FOUND THEN RAISE EXCEPTION 'operations control authority unavailable'; END IF;
+  END IF;
+ END $hold$;
+ REVOKE ALL ON FUNCTION %1$I.careeros_operations_attach_matches(text),%1$I.careeros_operations_add_hold(text,bigint,boolean) FROM PUBLIC;
+ $definitions$,owning_schema);
+END $operations_functions$;
 CREATE TABLE IF NOT EXISTS careeros_operations_cases (
  id text PRIMARY KEY, purpose text NOT NULL, locale text NOT NULL,
  message text NOT NULL, example text NOT NULL, example_kind text NOT NULL,

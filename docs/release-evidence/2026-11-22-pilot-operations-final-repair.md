@@ -1,0 +1,21 @@
+# Pilot operations authority and recovery repair
+
+This repair closes the remaining [#291](https://github.com/HenriqueMichelini/careeros/issues/291) findings on local parent `5d1d54bd37c2226b3a2cda6a3be88493b9c06539`. The [initial implementation](2026-11-22-pilot-operations.md) and [first review repair](2026-11-22-pilot-operations-review-repair.md) retain their original evidence.
+
+| Behavior | Local verification |
+| --- | --- |
+| Capture order and expense display | The real managed reservation crosses the threshold while an inspector obtains a newer below-cap snapshot. The committed crossing emits one warning and the display keeps the newer timestamp. |
+| Actual restricted reconciliation | The local command uses the authorized reviewer and enrolled journal, applies an unpriced event, emits one immediate typed invariant notice and keeps the inherited #283 stop. The fixture verifies that the runtime role has no direct insert privilege for the pending payload. |
+| Provider timeout and remote uncertainty | The fake response supplies headers and then times out during body read. The request records both a typed provider fault and the distinct durable unknown, while preserving the amount and possible remote occupancy. |
+| Draft authority | The exact same installed Draft allowance reports the exhausted grant during owner inspection and after the next real managed risk capture. |
+| Final readmission gate | A managed send waits on the real shared journal lock. The original Session expires before release of that lock. The fake provider receives no request and the admission decision uses the expired Session state. |
+| Online operator authority | A compromised restricted-rights Session with a matching identity cannot read the online operations list. The separately scoped offline capability still reads the authorized journal. |
+| Interrupted containment | A required update cannot write the original latch, which retains its healthy bytes. The independent marker survives reopening and makes a managed request deny before the fake provider. This path uses the offline journal and does not depend on the SQL fallback. |
+| Backup and public recovery commands | The actual CLI rejects a signed backup observation with the wrong revision, accepts the matching proof and records the result. A same-episode publication keeps the episode. An explicit new outage with the same impact invalidates old control evidence. Broad service closure requires the matched signed service observation along with the applicable #290 evidence. |
+| English and Portuguese support | The real browser exercises a language update with the stored preference still unchanged, the fake contact/feedback links, and the independently served status page with the application API unavailable. |
+
+The [source manifest](2026-11-22-pilot-operations-final-repair-frozen-source.json) binds 22 changed paths. The [summary](2026-11-22-pilot-operations-final-repair-summary.json) records the exact commands, test events, retained failures and raw receipt digests. During the wider checks only the operator guide changed. It clarifies the inherited financial capture behavior if the standalone reviewer omits its observer configuration. All runtime and test blobs were byte-identical throughout those checks.
+
+The complete Go race invocation recorded 2,616 passing test and subtest events across 26 passing packages, including 24 pilot operations events and all 37 admission case IDs. The full Go result remains red for the same 25 named Evaluation Lab failures and the one package failure recorded in the initial candidate. The scoped vet run passed. Default vet emitted the same 15 inherited diagnostics byte for byte. The 453 Node tests across 32 files, TypeScript check, Vite build and both browser locales passed.
+
+The local containment evidence assumes at least one durable record for a required stop. A simultaneous complete loss of both journal and shared SQL durability calls for independent review of the affected interval before resumption from stale media. Backup and service observations in this rehearsal were independently signed synthetic inputs. They establish no backup schedule, service recovery objective or hosted readiness.
