@@ -1,0 +1,148 @@
+{
+  "account_schema_sha256": "1041d60b99d7418870b7463cc696e6ce064d015f61c73b7c2439fd0c771bea2b",
+  "bundle": "closed-pilot-local-v1",
+  "effective_go": {
+    "CGO_ENABLED": "0",
+    "GOAMD64": "v1",
+    "GOARCH": "amd64",
+    "GOENV": "",
+    "GOEXPERIMENT": "",
+    "GOFLAGS": "",
+    "GOINSECURE": "",
+    "GONOPROXY": "none",
+    "GONOSUMDB": "",
+    "GOOS": "linux",
+    "GOPRIVATE": "",
+    "GOPROXY": "off",
+    "GOSUMDB": "off",
+    "GOTOOLCHAIN": "local",
+    "GOVCS": "*:off",
+    "GOWORK": "off"
+  },
+  "inputs": {
+    "go.mod": {
+      "bytes": 431,
+      "sha256": "1afcf2c684f0433d28d0bf2ae4d62c19b1d8941f8ac9c3fba6aecd62b3ca4de1"
+    },
+    "go.sum": {
+      "bytes": 2633,
+      "sha256": "2eff7a44353cc8804084a398180ddcdd9ce23b7a08e1a920edf6f068929bad13"
+    },
+    "internal/accountstore/schema.sql": {
+      "bytes": 28743,
+      "sha256": "1041d60b99d7418870b7463cc696e6ce064d015f61c73b7c2439fd0c771bea2b"
+    },
+    "netlify.toml": {
+      "bytes": 1064,
+      "sha256": "bbc18ba3aeea7f3daf0945886f0d09fd60f1206dfaef7201e85cdc4607049830"
+    },
+    "package-lock.json": {
+      "bytes": 56320,
+      "sha256": "597c48cedf6a1ce92adfe0017616445833ab63da9f101770742983d9c3d3b3ba"
+    },
+    "scripts/package-closed-pilot.py": {
+      "bytes": 14685,
+      "sha256": "a0b27ea288b1fb160a836f9576ab7b5eb5cc0084de187975bee4f3f4d72a2a9f"
+    },
+    "scripts/pilot-runtime/bootstrap.sql": {
+      "bytes": 1241,
+      "sha256": "412151cd19ba3023543a2c3809d4172c12f09037771d7f951125c0e7f4a58198"
+    },
+    "scripts/pilot-runtime/build-profile.json": {
+      "bytes": 1038,
+      "sha256": "8da60c4580d12075081291bfb1d2635a9be3d9d6f857e9ccda09763b14c4f1ca"
+    },
+    "scripts/pilot-runtime/closed-runtime-grants.sql": {
+      "bytes": 3692,
+      "sha256": "ebf1af8c36120461a07c117869c33012ec2f535b370413bcf2ab41e3f35a549c"
+    },
+    "scripts/test-closed-pilot-source.py": {
+      "bytes": 4719,
+      "sha256": "83bf302b1decae41665da29c47b70217f6a5208facad4c5c5ff759d481778d70"
+    },
+    "scripts/test-closed-pilot.py": {
+      "bytes": 19498,
+      "sha256": "c28b0b23c906ddc9651f06e486025203d35cc54c4f6216605d8b88110b9f31e5"
+    },
+    "src/index.css": {
+      "bytes": 5505,
+      "sha256": "04d1709a52177d17ed6954cb59f9c03bb2ddf2ddebf8e73933fcea953063f044"
+    },
+    "tests/account-browser.fixture.mjs": {
+      "bytes": 8844,
+      "sha256": "61f19baba75c7d3584acd3437e6e437719d5e1e787c3d7f9472c95e7b6fc457c"
+    },
+    "tests/closed-pilot-package-browser.check.mjs": {
+      "bytes": 907,
+      "sha256": "816bfbc4c6bb691c30640cef96df996e2f8385b3cebc27c0fbc8c1998f55d6b8"
+    },
+    "vite.config.ts": {
+      "bytes": 13268,
+      "sha256": "034114e6b8db30627def5fe07f4050d5d537da53e6012b36c6f24dac208a683d"
+    }
+  },
+  "npm_options": [
+    "--offline",
+    "--script-shell=/bin/sh"
+  ],
+  "payload": {
+    "bin/pilot-runtime-local": {
+      "bytes": 16598335,
+      "executable": true,
+      "sha256": "a0106e7a7fde5b0041e8e2282f1f002685109a603db299654c15c306dfe7c419"
+    },
+    "bin/pilot-runtime-migrate": {
+      "bytes": 13967797,
+      "executable": true,
+      "sha256": "165a630b0af0ef8747c7c53a9d97e6621b9d9f1303111a87e4da0a9ae476e615"
+    },
+    "build-profile.json": {
+      "bytes": 1038,
+      "executable": false,
+      "sha256": "8da60c4580d12075081291bfb1d2635a9be3d9d6f857e9ccda09763b14c4f1ca"
+    },
+    "frontend/assets/index-BsImqn0Z.css": {
+      "bytes": 39875,
+      "executable": false,
+      "sha256": "a028d74a3d698e7728fc16fa2f9348cfd8de43a7135db5400b3a97962a2975dc"
+    },
+    "frontend/assets/index-C1oxaY4q.js": {
+      "bytes": 753501,
+      "executable": false,
+      "sha256": "0e835dae75024abbc4a7a60faac508e5db60f7c7f894be4f2953c37b94708a35"
+    },
+    "frontend/index.html": {
+      "bytes": 519,
+      "executable": false,
+      "sha256": "0ad39247d7d1dc3c735d0a4ee1dff0c9d1abe6903fb782b7b065e22c3b7cfe69"
+    },
+    "sql/bootstrap.sql": {
+      "bytes": 1241,
+      "executable": false,
+      "sha256": "412151cd19ba3023543a2c3809d4172c12f09037771d7f951125c0e7f4a58198"
+    },
+    "sql/closed-runtime-grants.sql": {
+      "bytes": 3692,
+      "executable": false,
+      "sha256": "ebf1af8c36120461a07c117869c33012ec2f535b370413bcf2ab41e3f35a549c"
+    }
+  },
+  "source_commit": "67f405756797fd5c27c52af6f7325c265a1f742f",
+  "source_materialization": {
+    "directories": 275,
+    "entries": 2658,
+    "executable_files": 8,
+    "internal_file_symlinks": 7,
+    "method": "verified-git-tree-objects-v1",
+    "object_format": "sha1",
+    "regular_files": 2376,
+    "tree_listing_sha256": "cea3769c64c3362887db044bf42a33deeb1c2109cadbab4183017801c5ed0930"
+  },
+  "source_tree": "63d648212efc148c31defe155b6a9381c3e98c85",
+  "target": "linux/amd64",
+  "toolchain": {
+    "go": "go1.26.4",
+    "node": "v24.15.0",
+    "npm": "11.17.0"
+  }
+}

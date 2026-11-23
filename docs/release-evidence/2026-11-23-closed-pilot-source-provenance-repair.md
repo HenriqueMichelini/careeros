@@ -1,0 +1,11 @@
+# Closed pilot package Git source verification
+
+The #292 package builder resolves the requested commit and tree through a controlled Git environment that disables object replacement, lazy fetching, remote transport, and ambient Git overrides. Before running a build command, it checks local Git object identities and writes committed file bytes and modes directly from the named tree. It refuses missing objects and unsupported paths or types before the build. The tracked executable files and internal symlinks needed by the existing package remain usable. [Local packaging procedure](../closed-pilot-runtime-local.md)
+
+The source commit is `67f405756797fd5c27c52af6f7325c265a1f742f` and the tree is `63d648212efc148c31defe155b6a9381c3e98c85`. An independent enumeration of the named tree matched the recorded listing hash and all 2,658 entries. The tree contains 275 directories, 2,376 regular files including eight executables, and seven verified internal symlinks. Three checks in disposable Git repositories confirmed committed bytes and modes in the presence of archive attributes and ambient settings, and early refusal of an unavailable local blob or an external symlink. [Frozen source record](2026-11-23-closed-pilot-source-provenance-repair-frozen-source.json)
+
+Two offline builds from that commit produced the same manifest and payload digests. The second build supplied conflicting ambient Git, Go, npm, and Vite settings. Both builds recorded manifest SHA-256 `cdf65b29f5564c96805335b07bb7f5227ab635ddbd3f7ff8c3b906e33aaaf6cf`. [Exact bundle manifest](2026-11-23-closed-pilot-source-provenance-repair-bundle-manifest.json)
+
+The package rehearsal took that independently expected digest and verified the bundle before running any bundled executable. All 63 checks passed in the Chromium and disposable PostgreSQL run, including the check for zero out-of-loopback browser requests. The verification summary binds eight raw local receipts. [Verification summary](2026-11-23-closed-pilot-source-provenance-repair-summary.json)
+
+The preceding #292 repair supplies the scoped Go results and records the inherited full-suite failures and fixture limits. This repair reran source acquisition, offline package construction and reproducibility, and the exact loopback package rehearsal. [Preceding verification](2026-11-23-closed-pilot-package-repair.md)

@@ -1,0 +1,443 @@
+{
+  "actual_package_checks": {
+    "events": [
+      {
+        "name": "built_frontend_served",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "spa_navigation",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "unknown_asset",
+        "observed": 404,
+        "result": "pass"
+      },
+      {
+        "name": "unknown_api",
+        "observed": 404,
+        "result": "pass"
+      },
+      {
+        "name": "unknown_function",
+        "observed": 404,
+        "result": "pass"
+      },
+      {
+        "name": "invalid_aliased_path",
+        "observed": 400,
+        "result": "pass"
+      },
+      {
+        "name": "unconfigured_readiness",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_runtime",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_runtime_direct",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "origin_host_cannot_be_forwarded",
+        "observed": 421,
+        "result": "pass"
+      },
+      {
+        "name": "cross_origin_alias",
+        "observed": 403,
+        "result": "pass"
+      },
+      {
+        "name": "unconfigured_allowance",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "unconfigured_allowance_alias",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "packaged_browser_no_external_asset_requests",
+        "observed": {
+          "external_requests": 0,
+          "local_asset_requests": [
+            "/",
+            "/assets/index-C1oxaY4q.js",
+            "/assets/index-BsImqn0Z.css",
+            "/api/auth/session",
+            "/favicon.ico"
+          ],
+          "rendered": true
+        },
+        "result": "pass"
+      },
+      {
+        "name": "absent_schema_stays_closed",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "absent_schema_api",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "startup_never_migrates",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "generic_credentials_not_used_by_packaged_migrator",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "wrong_database_is_denied_before_ddl",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "wrong_role_is_denied_before_ddl",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "arbitrary_connection_options_denied",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "actual_schema_owner_checked_before_ddl",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "embedded_schema_identity_matches_verified_manifest",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "mismatched_schema_identity",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "explicit_additive_migration_reapplied_with_separate_role",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "closed_database_role_grants_and_connection_limit",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "prepared_but_closed_readiness",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "guest_session",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "existing_session_after_repeat_migration",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "account_cookie_typed_denial",
+        "observed": 403,
+        "result": "pass"
+      },
+      {
+        "name": "status_closed_for_uninvited_fixture",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "no_new_google_sign_in",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "no_google_callback",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "wrong_browser_origin",
+        "observed": 403,
+        "result": "pass"
+      },
+      {
+        "name": "activation_without_bound_csrf",
+        "observed": 403,
+        "result": "pass"
+      },
+      {
+        "name": "activation_still_closed",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "unmounted_allowance_stays_unavailable",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "unmounted_allowance_alias_stays_unavailable",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_01",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_02",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_03",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_04",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_05",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_06",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_07",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_08",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_09",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_10",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_11",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_12",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "bounded_request_body",
+        "observed": 413,
+        "result": "pass"
+      },
+      {
+        "name": "restart_retains_authorized_session",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "same_origin_logout_all",
+        "observed": 204,
+        "result": "pass"
+      },
+      {
+        "name": "multiple_secure_host_only_cookie_headers",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "logged_out_cookie_no_longer_authorized",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "packaged_migrator_denies_open_control_state",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "open_control_is_not_accepted_by_closed_package",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "open_control_cannot_enable_managed_alias",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "restored_closed_control_readiness",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "database_loss_preserves_liveness",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "database_loss_closes_readiness",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "database_loss_closes_api",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "owned_postgres_stopped_and_data_removed",
+        "observed": null,
+        "result": "pass"
+      }
+    ],
+    "package_manifest_sha256": "cdf65b29f5564c96805335b07bb7f5227ab635ddbd3f7ff8c3b906e33aaaf6cf",
+    "pass": true,
+    "synthetic_only": true
+  },
+  "bundle": {
+    "account_schema_sha256": "1041d60b99d7418870b7463cc696e6ce064d015f61c73b7c2439fd0c771bea2b",
+    "conflicting_inputs": [
+      "GIT_DIR=/tmp/unused-closed-pilot-git",
+      "GIT_WORK_TREE=/tmp/unused-closed-pilot-worktree",
+      "GIT_CONFIG_COUNT=1",
+      "GIT_CONFIG_KEY_0=core.abbrev",
+      "GIT_CONFIG_VALUE_0=5",
+      "GIT_NO_REPLACE_OBJECTS=0",
+      "GIT_NO_LAZY_FETCH=0",
+      "GOAMD64=v3",
+      "GOEXPERIMENT=ambient_invalid",
+      "GOPRIVATE=github.com",
+      "GOVCS=*:all",
+      "npm_config_offline=false",
+      "npm_config_script_shell=/dev/null",
+      "CAREEROS_CLOSED_LOCAL_ASSETS=0"
+    ],
+    "manifest_sha256": "cdf65b29f5564c96805335b07bb7f5227ab635ddbd3f7ff8c3b906e33aaaf6cf",
+    "payload_files": 8,
+    "reproducible_builds": 2
+  },
+  "committed_bundle_manifest": {
+    "bytes": 4796,
+    "path": "docs/release-evidence/2026-11-23-closed-pilot-source-provenance-repair-bundle-manifest.json",
+    "sha256": "cdf65b29f5564c96805335b07bb7f5227ab635ddbd3f7ff8c3b906e33aaaf6cf"
+  },
+  "exact_source_checks": {
+    "exact_manifest_and_payload_equal_under_conflicting_build_environment": true,
+    "fixture_checks_passed": 3,
+    "materialized": {
+      "directories": 275,
+      "entries": 2658,
+      "executable_files": 8,
+      "internal_file_symlinks": 7,
+      "method": "verified-git-tree-objects-v1",
+      "object_format": "sha1",
+      "regular_files": 2376,
+      "tree_listing_sha256": "cea3769c64c3362887db044bf42a33deeb1c2109cadbab4183017801c5ed0930"
+    },
+    "package_manifest_sha256": "cdf65b29f5564c96805335b07bb7f5227ab635ddbd3f7ff8c3b906e33aaaf6cf",
+    "source_tree_listing_and_mode_counts_independently_verified": true,
+    "whitespace_exit": 0
+  },
+  "frozen_source": {
+    "bytes": 895,
+    "path": "docs/release-evidence/2026-11-23-closed-pilot-source-provenance-repair-frozen-source.json",
+    "sha256": "55ea1a69c8f0e435aa1a6f07946b9f0f74960ef2d4c27657c862698a3e0cb6ae"
+  },
+  "inherited_evidence": {
+    "earlier_default_vet_diagnostics": 15,
+    "earlier_full_go_test_pass_events": 2663,
+    "earlier_inherited_evaluation_lab_failures": 24,
+    "earlier_restart_fixture_test_events_rechecked_green": 11,
+    "prior": {
+      "bytes": 14667,
+      "path": "docs/release-evidence/2026-11-23-closed-pilot-package-repair-summary.json",
+      "sha256": "5d0d735b85466d274050f48dc35a03d67019fdb4de22371bab4339d67f3b7635"
+    },
+    "prior_affected_go_race_passes": 104,
+    "prior_node_passes": 453
+  },
+  "issue": 292,
+  "raw": [
+    {
+      "bytes": 4796,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/source-repair-a/manifest.json",
+      "sha256": "cdf65b29f5564c96805335b07bb7f5227ab635ddbd3f7ff8c3b906e33aaaf6cf"
+    },
+    {
+      "bytes": 4796,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/source-repair-b/manifest.json",
+      "sha256": "cdf65b29f5564c96805335b07bb7f5227ab635ddbd3f7ff8c3b906e33aaaf6cf"
+    },
+    {
+      "bytes": 6989,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/check-source-repair-exact/summary.json",
+      "sha256": "b5abb27464ccba50fa6ac73c97c3334fe993e4990ef3fcec535198e9fe22e4da"
+    },
+    {
+      "bytes": 2090,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/check-source-repair-exact/checks.log",
+      "sha256": "7346d157e30d4394b69a898cd532aedc925d8641aed95bdd1f65e90a17bff4bc"
+    },
+    {
+      "bytes": 189,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/check-source-repair-exact/postgres.log",
+      "sha256": "3eebc1c0d604008898ef663fb2c8cf5a4fa65bb6963457ca59fb6da64edc1559"
+    },
+    {
+      "bytes": 630,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/source-repair-checks/summary.json",
+      "sha256": "e838cccd8d2196377c4e179a5acc904025abe92ffd82963e0df3662c5ef4a258"
+    },
+    {
+      "bytes": 424,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/source-repair-checks/source-fixtures.json",
+      "sha256": "884ee5be4b5e623837ab7272337281d8483203a094f11b3460b5581e176b7447"
+    },
+    {
+      "bytes": 265194,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/source-repair-checks/git-tree-listing.bin",
+      "sha256": "cea3769c64c3362887db044bf42a33deeb1c2109cadbab4183017801c5ed0930"
+    }
+  ],
+  "repair_parent": "bc455a1f7a0b083c6ae943d31e43cc15924e4f9e",
+  "scope": "local synthetic closed package and disposable PostgreSQL only",
+  "source": "67f405756797fd5c27c52af6f7325c265a1f742f",
+  "source_tree": "63d648212efc148c31defe155b6a9381c3e98c85"
+}

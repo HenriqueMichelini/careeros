@@ -1,0 +1,24 @@
+{
+  "files": {
+    "docs/closed-pilot-runtime-local.md": {
+      "bytes": 11359,
+      "git_blob": "b851a1290e9c9b3d97f6ba3e755e6907b9171843",
+      "sha256": "992f4b44da40e75aa0abf4d13080e5011e10241e0e1558d0944d91c995c64c89"
+    },
+    "scripts/package-closed-pilot.py": {
+      "bytes": 14685,
+      "git_blob": "bf1d2296c802962f26a159d6c5f2c57de57ea5a6",
+      "sha256": "a0b27ea288b1fb160a836f9576ab7b5eb5cc0084de187975bee4f3f4d72a2a9f"
+    },
+    "scripts/test-closed-pilot-source.py": {
+      "bytes": 4719,
+      "git_blob": "599a9a6afa611d53b8a95f50eba1e7bad7d1d5cc",
+      "sha256": "83bf302b1decae41665da29c47b70217f6a5208facad4c5c5ff759d481778d70"
+    }
+  },
+  "issue": 292,
+  "repair_parent": "bc455a1f7a0b083c6ae943d31e43cc15924e4f9e",
+  "scope": "local synthetic only",
+  "source": "67f405756797fd5c27c52af6f7325c265a1f742f",
+  "tree": "63d648212efc148c31defe155b6a9381c3e98c85"
+}
