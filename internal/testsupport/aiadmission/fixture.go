@@ -94,15 +94,7 @@ func NewFixture(t *testing.T) *Fixture {
 	if err = f.Store.Migrate(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	cfg := auth.Config{PublicOrigin: Origin, SessionTTL: time.Hour, TransactionTTL: time.Minute, Providers: []auth.ProviderConfig{auth.DefaultGoogleProviderConfig(Origin, "synthetic-client", "synthetic-secret")}}
-	registry, err := auth.NewRegistry(fakeOIDC{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	f.Service, err = auth.NewService(cfg, registry, f.Store.AuthStores())
-	if err != nil {
-		t.Fatal(err)
-	}
+	f.Service = NewSyntheticService(t, f.Store)
 	start, err := f.Service.BeginLogin(context.Background(), "google", "/", nil)
 	if err != nil {
 		t.Fatal(err)
@@ -135,6 +127,22 @@ func NewFixture(t *testing.T) *Fixture {
 	f.ProfileProjection = map[string]any{"careerGoals": "", "skills": "Java", "competencies": "", "tools": "", "employmentStatus": "", "currentSalary": "", "desiredSalary": "", "additionalInfo": "", "experience": []any{}, "projects": []any{}}
 	f.Qualifications = map[string]any{"education": []any{}, "certifications": []any{}, "languages": []any{}}
 	return f
+}
+
+// NewSyntheticService reuses the test-only identity exchange when a fresh
+// Store is attached to already installed fixture data.
+func NewSyntheticService(t *testing.T, store *accountstore.Store) *auth.Service {
+	t.Helper()
+	cfg := auth.Config{PublicOrigin: Origin, SessionTTL: time.Hour, TransactionTTL: time.Minute, Providers: []auth.ProviderConfig{auth.DefaultGoogleProviderConfig(Origin, "synthetic-client", "synthetic-secret")}}
+	registry, err := auth.NewRegistry(fakeOIDC{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	service, err := auth.NewService(cfg, registry, store.AuthStores())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return service
 }
 
 func profile(t *testing.T) json.RawMessage {
