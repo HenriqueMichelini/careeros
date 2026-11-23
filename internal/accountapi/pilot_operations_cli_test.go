@@ -128,17 +128,64 @@ func pilotOperationsReconciliationCLI(t *testing.T, mode string) {
 	evidence.Preview = preview.Token
 	raw, _ = json.Marshal(evidence)
 	if mode == "finance_only" {
-		env = append(env, "CAREEROS_OPERATIONS_JOURNAL_DIRECTORY=", "CAREEROS_OPERATIONS_JOURNAL_KEY=")
-		_, diagnostic, err = runPilotOperationsFixtureCLI(t, "reconciliation-local", env, raw, "--namespace", "qualification", "--mode", "apply")
+		financeEnv := append(slices.Clone(env), "CAREEROS_OPERATIONS_JOURNAL_DIRECTORY=", "CAREEROS_OPERATIONS_JOURNAL_KEY=")
+		_, diagnostic, err = runPilotOperationsFixtureCLI(t, "reconciliation-local", financeEnv, raw, "--namespace", "qualification", "--mode", "apply")
 		if err != nil || strings.Contains(string(diagnostic), `"Kind":"invariant_breach"`) {
 			t.Fatalf("finance-only command crossed its independent boundary: %v %s", err, diagnostic)
 		}
-		var inheritedStop, operationsSideEffect bool
+		var inheritedStop, operationsSideEffect, deferred bool
 		if err = f.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM ai_recon_stop WHERE stopped AND event_id=$1),
-		 EXISTS(SELECT 1 FROM careeros_operations_pending) OR EXISTS(SELECT 1 FROM careeros_operations_deferred)
-		 OR EXISTS(SELECT 1 FROM careeros_control_state WHERE operations_fault OR inference_stopped)`, evidence.ID).
-			Scan(&inheritedStop, &operationsSideEffect); err != nil || !inheritedStop || operationsSideEffect {
-			t.Fatalf("finance-only authority changed #291 state or lost #283: %v %v %v", inheritedStop, operationsSideEffect, err)
+		 EXISTS(SELECT 1 FROM careeros_operations_pending)
+		 OR EXISTS(SELECT 1 FROM careeros_control_state WHERE operations_fault OR inference_stopped),
+		 EXISTS(SELECT 1 FROM careeros_operations_deferred WHERE event_id=$1 AND awaiting_observer)`, evidence.ID).
+			Scan(&inheritedStop, &operationsSideEffect, &deferred); err != nil || !inheritedStop || operationsSideEffect || !deferred {
+			t.Fatalf("finance-only path must retain #283 and defer independently verified observation: %v %v %v %v", inheritedStop, operationsSideEffect, deferred, err)
+		}
+		var original time.Time
+		var amount, maximum int64
+		if err = f.DB.QueryRow(`SELECT created_at,obligation,reserved FROM ai_recon_event WHERE id=$1`, evidence.ID).
+			Scan(&original, &amount, &maximum); err != nil || amount != maximum || maximum != 1344 {
+			t.Fatalf("expected the committed unchanged-maximum invariant: %d %d %v", amount, maximum, err)
+		}
+		var rawReceiptAccess bool
+		if err = f.DB.QueryRow(`WITH reader AS (SELECT rolname FROM pg_roles
+		 WHERE rolname='ai_fixture_review_' || substr(encode(sha256(convert_to(current_database() || '/' || current_schema(),'UTF8')),'hex'),1,16))
+		 SELECT has_table_privilege(rolname,'careeros_operations_deferred','SELECT,INSERT,UPDATE,DELETE')
+		 OR has_table_privilege(rolname,'careeros_operations_pending','INSERT,UPDATE,DELETE')
+		 OR has_function_privilege(rolname,'careeros_operations_snapshot(text,text)','EXECUTE')
+		 OR has_function_privilege(rolname,'careeros_replay_operations_captures(text)','EXECUTE') FROM reader`).Scan(&rawReceiptAccess); err != nil || rawReceiptAccess {
+			t.Fatalf("finance role has raw receipt, delivery or replay access: %v %v", rawReceiptAccess, err)
+		}
+		previous := ""
+		for range 2 {
+			out, diagnostic, err := runPilotOperationsFixtureCLI(t, "pilot-operations-local", env, nil, "--action", "inspect")
+			var status accountstore.OperationsStatus
+			if err != nil || json.Unmarshal(out, &status) != nil {
+				t.Fatalf("owner inspection failed: %v %s", err, diagnostic)
+			}
+			var found []accountstore.OperationsIncident
+			for _, incident := range status.Incidents {
+				if incident.Kind == criticalKind {
+					found = append(found, incident)
+				}
+			}
+			if len(found) != 1 || found[0].ID == "" || !found[0].EventAt.Equal(original) || found[0].Severity != "critical" || found[0].Exposure != amount {
+				t.Fatalf("owner inspection lost the exact source event: %+v", found)
+			}
+			wantNotices := 0
+			if previous == "" {
+				wantNotices = 1
+			} else if found[0].ID != previous {
+				t.Fatalf("repeat owner inspection changed event identity: %s", found[0].ID)
+			}
+			if count := strings.Count(string(diagnostic), `"Kind":"invariant_breach"`); count != wantNotices {
+				t.Fatalf("want %d new invariant notice(s), got %d: %s", wantNotices, count, diagnostic)
+			}
+			previous = found[0].ID
+		}
+		if err = f.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM careeros_operations_deferred WHERE event_id=$1)
+		 OR EXISTS(SELECT 1 FROM careeros_operations_pending WHERE critical_event)`, evidence.ID).Scan(&deferred); err != nil || deferred {
+			t.Fatalf("successful owner delivery left its durable source queue pending: %v %v", deferred, err)
 		}
 		return
 	}
@@ -633,7 +680,7 @@ func TestPilotOperationsJournalOnlyCauseSurvivesAndRequiresSeparateProof(t *test
 			env = append(env, "CAREEROS_OPERATIONS_RECOVERY_ARTIFACT="+path, "CAREEROS_OPERATIONS_RECOVERY_PUBLIC_KEY="+hex.EncodeToString(pub))
 			interval := operationslocal.RecoveryStatement{Purpose: "containment", Reference: "fixture-journal-only-reviewed",
 				Incident: status.Emergency.ID, Revision: 1, ObservedAt: time.Now().UTC(), Result: "synthetic_containment_interval_reconciled",
-				ReceiptSet: status.Emergency.ReceiptSet}
+				ReceiptSet: status.Emergency.ReceiptSet, ClassifiedCauses: []accountstore.OperationsFault{"no_reportable_fault"}}
 			writeOperationsProof(t, path, priv, interval)
 			_, diagnostic, err = runPilotOperationsFixtureCLI(t, "pilot-operations-local", env, nil, "--action", "replay-containment", "--reference", interval.Reference)
 			if err != nil {
@@ -1073,6 +1120,97 @@ func TestPilotOperationsClearanceKeepsReceiptChangedDuringVerification(t *testin
 	status, err = ops.OwnerStatus(ctx, f.Principal)
 	if err != nil || status.Emergency == nil || status.Emergency.ID != proof.Incident || !status.ContainmentUnavailable {
 		t.Fatalf("changed receipt must retain the current stop: %+v %v", status, err)
+	}
+}
+
+func TestPilotOperationsMarkerOnlyClearanceUsesCurrentFallbackGeneration(t *testing.T) {
+	f, h, _, _ := qualificationFixture(t)
+	_, ops, _, directory := pilotOperationsFixture(t, f, h, time.Now)
+	ctx := context.Background()
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(t.TempDir(), "marker-interval.json")
+	env := append(pilotOperationsCLIEnv(t, f, directory, "qualification"),
+		"CAREEROS_OPERATIONS_RECOVERY_ARTIFACT="+path, "CAREEROS_OPERATIONS_RECOVERY_PUBLIC_KEY="+hex.EncodeToString(pub))
+	prepare := func() accountstore.OperationsEmergency {
+		t.Helper()
+		if _, diagnostic, err := runPilotOperationsFixtureCLI(t, "pilot-operations-local", env, nil, "--action", "replay-containment"); err != nil {
+			t.Fatalf("prepare marker interval: %v %s", err, diagnostic)
+		}
+		status, err := ops.OwnerStatus(ctx, f.Principal)
+		if err != nil || status.Emergency == nil || len(status.Emergency.ReceiptSet) != 64 || !status.ContainmentUnavailable {
+			t.Fatalf("expected a closed, reviewable marker interval: %+v %v", status, err)
+		}
+		return *status.Emergency
+	}
+	proofFor := func(e accountstore.OperationsEmergency) operationslocal.RecoveryStatement {
+		return operationslocal.RecoveryStatement{Purpose: "containment", Reference: "fixture-markers-review",
+			Incident: e.ID, Revision: 1, ObservedAt: time.Now().UTC(), Result: "synthetic_containment_interval_reconciled",
+			ReceiptSet: e.ReceiptSet, ClassifiedCauses: []accountstore.OperationsFault{accountstore.OperationsBackupFault}}
+	}
+	clear := func(reference string, allowed bool) {
+		t.Helper()
+		_, diagnostic, err := runPilotOperationsFixtureCLI(t, "pilot-operations-local", env, nil, "--action", "replay-containment",
+			"--reference", reference)
+		if allowed != (err == nil) {
+			t.Fatalf("marker review allowed=%v: %v %s", allowed, err, diagnostic)
+		}
+	}
+	var previous accountstore.OperationsEmergency
+	markers := []string{"journal.pending", "journal.uncertain", "journal.queued", "journal.fence"}
+	for _, name := range markers {
+		var oldProof operationslocal.RecoveryStatement
+		if previous.ID != "" {
+			oldProof = proofFor(previous)
+			writeOperationsProof(t, path, priv, oldProof)
+		}
+		marker := []byte{1}
+		if name == "journal.fence" {
+			marker = []byte{1, 1}
+		}
+		// Represent an interrupted local write that left only the durable marker.
+		file := filepath.Join(directory, name)
+		if err = os.WriteFile(file, marker, 0600); err != nil {
+			t.Fatal(err)
+		}
+		if previous.ID != "" {
+			clear(oldProof.Reference, false)
+			if raw, err := os.ReadFile(file); err != nil || !bytes.Equal(raw, marker) {
+				t.Fatalf("older clearance changed the new %s generation: %v", name, err)
+			}
+		}
+		current := prepare()
+		if previous.ID == current.ID || previous.ReceiptSet == current.ReceiptSet {
+			t.Fatalf("%s did not advance the signed recovery generation: %+v", name, current)
+		}
+		previous = current
+	}
+	if unchanged := prepare(); unchanged.ID != previous.ID || unchanged.ReceiptSet != previous.ReceiptSet {
+		t.Fatalf("repeated reads of unchanged markers advanced generation: %+v", unchanged)
+	}
+	proof := proofFor(previous)
+	unclassified := proof
+	unclassified.ClassifiedCauses = nil
+	writeOperationsProof(t, path, priv, unclassified)
+	clear(unclassified.Reference, false)
+	writeOperationsProof(t, path, priv, proof)
+	clear(proof.Reference, true)
+	for _, name := range markers[:3] {
+		if _, err = os.Stat(filepath.Join(directory, name)); !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("reviewed marker %s was retained: %v", name, err)
+		}
+	}
+	if raw, err := os.ReadFile(filepath.Join(directory, "journal.fence")); err != nil || !bytes.Equal(raw, []byte{0, 0}) {
+		t.Fatalf("reviewed latch did not clear: %v", err)
+	}
+	status, err := ops.OwnerStatus(ctx, f.Principal)
+	if err != nil || status.Emergency != nil || !slices.ContainsFunc(status.Incidents, func(incident accountstore.OperationsIncident) bool {
+		return incident.Kind == string(accountstore.OperationsBackupFault) && incident.State == "unacknowledged" &&
+			incident.LatestObservedAt != nil && incident.LatestObservedAt.Equal(proof.ObservedAt)
+	}) {
+		t.Fatalf("verified marker interval did not preserve the independently classified open cause: %+v %v", status, err)
 	}
 }
 

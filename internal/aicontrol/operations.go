@@ -115,7 +115,7 @@ func (s *operationsSource) OperationsSample(ctx context.Context) (accountstore.O
 	}
 	defer tx.Rollback()
 	var raw []byte
-	if err := tx.QueryRowContext(ctx, `SELECT careeros_operations_snapshot($1,NULL)`, s.h.cfg.Namespace).Scan(&raw); err != nil {
+	if err := tx.QueryRowContext(ctx, `SELECT careeros_read_operations_snapshot($1)`, s.h.cfg.Namespace).Scan(&raw); err != nil {
 		return accountstore.OperationsRiskSample{}, ErrUnavailable
 	}
 	if tx.Commit() != nil {
@@ -275,6 +275,10 @@ func (h *Harness) stageOperations(ctx context.Context, tx *sql.Tx) (bool, error)
 
 func (s *operationsSource) DrainOperations(ctx context.Context, publish func(accountstore.OperationsRiskSample) error) error {
 	db := s.h.reviewerDB
+	observer := s.h.localOperations()
+	if observer == nil {
+		return ErrUnavailable
+	}
 	for {
 		var id int64
 		var version int
@@ -282,13 +286,13 @@ func (s *operationsSource) DrainOperations(ctx context.Context, publish func(acc
 		err := db.QueryRowContext(ctx, `SELECT id,source_version,sample FROM careeros_operations_pending
 		  WHERE namespace=$1 ORDER BY id LIMIT 1`, s.h.cfg.Namespace).Scan(&id, &version, &raw)
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil
+			promoted, err := observer.PromoteFinanceCapture(ctx, db, s.h.cfg.Namespace)
+			if err != nil || !promoted {
+				return err
+			}
+			continue
 		}
 		if err != nil || version != 2 || id <= 0 {
-			return ErrUnavailable
-		}
-		observer := s.h.localOperations()
-		if observer == nil {
 			return ErrUnavailable
 		}
 		sample, err := s.decodeOperations(raw)

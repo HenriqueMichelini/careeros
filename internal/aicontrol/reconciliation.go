@@ -451,6 +451,10 @@ func (r *Reconciliation) Preview(ctx context.Context, p auth.Principal, c Reconc
 	return out, r.authorize(ctx, tx, p)
 }
 func (r *Reconciliation) Apply(ctx context.Context, p auth.Principal, c ReconciliationCommand) (ReconciliationPreview, error) {
+	return r.apply(ctx, p, c, "")
+}
+
+func (r *Reconciliation) apply(ctx context.Context, p auth.Principal, c ReconciliationCommand, sessionToken string) (ReconciliationPreview, error) {
 	token := c.Preview
 	c, err := r.normalized(c)
 	if err != nil {
@@ -581,12 +585,20 @@ func (r *Reconciliation) Apply(ctx context.Context, p auth.Principal, c Reconcil
 	// The source records an actual capture failure within this transaction.
 	// Financial evidence and the shared emergency stop remain durable together.
 	var observation int
-	if observer := r.h.localOperations(); observer != nil {
+	observer := r.h.localOperations()
+	if observer != nil {
 		emitEvent := c.Kind == "unpriced" || breach && d.MaximumBreached
 		observation, err = observer.CaptureReconciliation(ctx, tx, r.h.cfg.Namespace, c.ID, emitEvent)
 		if err != nil {
 			return result, err
 		}
+	} else if sessionToken != "" && c.Kind == "unpriced" {
+		if _, err = tx.ExecContext(ctx, `SELECT careeros_defer_finance_operations($1,$2,$3,$4,$5)`,
+			r.h.cfg.Namespace, c.ID, p.AccountID, p.SessionID, sessionToken); err != nil {
+			return result, ErrUnavailable
+		}
+	}
+	if observer != nil || sessionToken != "" && c.Kind == "unpriced" {
 		if err = r.authorize(ctx, tx, p); err != nil {
 			return result, err
 		}

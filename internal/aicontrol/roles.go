@@ -310,8 +310,10 @@ GRANT INSERT,UPDATE ON ai_recon_command,ai_recon_state,ai_recon_stop,ai_recon_ev
 	  REVOKE EXECUTE ON FUNCTION careeros_capture_operations(text,text) FROM %[1]s,%[2]s;
 	  GRANT EXECUTE ON FUNCTION careeros_capture_runtime_operations(text) TO %[1]s;
 	  GRANT EXECUTE ON FUNCTION careeros_capture_reconciliation_operations(text,text,text,boolean),
-	    careeros_ack_operations_capture(text,text,bigint,bytea) TO %[2]s;
-	  GRANT EXECUTE ON FUNCTION careeros_operations_snapshot(text,text) TO %[2]s;
+	    careeros_ack_operations_capture(text,text,bigint,bytea),
+	    careeros_defer_finance_operations(text,text,text,text,text),careeros_promote_finance_operations(text,text),
+	    careeros_read_operations_snapshot(text) TO %[2]s;
+	  REVOKE EXECUTE ON FUNCTION careeros_operations_snapshot(text,text) FROM %[2]s;
 	  GRANT EXECUTE ON FUNCTION careeros_operations_attach_matches(text),careeros_operations_observer_matches(text),
 	    careeros_operations_add_hold(text,text,bigint,boolean),careeros_operations_emergency(text,text) TO %[2]s`, runtimeRole, reviewerRole)); err != nil {
 		return nil, nil, "", ErrUnavailable

@@ -1,0 +1,72 @@
+{
+  "issue": 291,
+  "repair_parent": "82447c266a2634c1a85ba45e8f2348b7dbdeae37",
+  "cumulative_base": "089a7ac792b506e20ddd9da506cf9edd22add729",
+  "files": {
+    "cmd/reconciliation-local/main.go": {
+      "git_blob": "4827e483e9218e76132e9b96c222513f449db0d7",
+      "sha256": "1d33068882a0c7f9533f9e4f4b4199f28ad85b11ea48c8cdee974dab3c7e2e5f",
+      "bytes": 5408
+    },
+    "docs/managed-pilot-operations-local.md": {
+      "git_blob": "22c37e6317ebafc61d0f4d467a8c269a23fa9394",
+      "sha256": "4de0badbc4356af2854f6286d41e9ceb7b3e6f408dcde4b17a9adf1f83b4ee3d",
+      "bytes": 15369
+    },
+    "internal/accountapi/pilot_operations_cli_test.go": {
+      "git_blob": "62355098ac3e8c58d9eba34156e80000d45f70c9",
+      "sha256": "d89c29e916e9d034b844dc03ed719212b4b4840a19f3674f0078ca1759bf2387",
+      "bytes": 64792
+    },
+    "internal/accountstore/control_command.go": {
+      "git_blob": "ef5cc3c70352bb882be39f844897d3b06949f269",
+      "sha256": "3824c6dd50e2db089d3d801d1d11868c444f7dd0c80cd5e60a8540d9c2678a34",
+      "bytes": 9045
+    },
+    "internal/accountstore/operations_emergency.go": {
+      "git_blob": "f2fa18bb44c8c1dbf50f27ee48fb4e17e242b237",
+      "sha256": "c6077c64f8f726953a1159bd971e374925b89b4d4b8bdb676eeff2b953748636",
+      "bytes": 14594
+    },
+    "internal/accountstore/operations_fault_receipt.go": {
+      "git_blob": "8e31eccc1f04e9dd083165487fe4e8931191d8b9",
+      "sha256": "4d4fe79fbc506e45d41b1fd5119205c1e99384045dc9376c87644e19515a7ca2",
+      "bytes": 7448
+    },
+    "internal/accountstore/operations_journal.go": {
+      "git_blob": "89a7a611ee2cabb4c4556b40a9eb628cc64e0866",
+      "sha256": "6847c324a2ee08411de7405a6f99940a788df79953c7f77f0f5255f6781f977a",
+      "bytes": 18466
+    },
+    "internal/accountstore/schema.sql": {
+      "git_blob": "7d6f450433807b7e462835fbd9720fca0194db3d",
+      "sha256": "f3adfb1795ddb6e973c235d2b00c961b87035c413c80ce4cf24c638c0080e8fc",
+      "bytes": 28292
+    },
+    "internal/aicontrol/operations.go": {
+      "git_blob": "7128462ca6502b28981f0b9cdb29db28d5e26d5e",
+      "sha256": "f59fcfbf250028be8eee2018cda0b0bb2ec84e01d7c44e6941e510e989d985e2",
+      "bytes": 13806
+    },
+    "internal/aicontrol/operations_capture.sql": {
+      "git_blob": "76f14b6b46b0b9c6c10544d2c2ca3647ba46f876",
+      "sha256": "106e72146b027241045c3fa06d21e0ec84619018ff5758664b50c70e4d5da8d2",
+      "bytes": 13439
+    },
+    "internal/aicontrol/reconciliation.go": {
+      "git_blob": "9bbf924f06508def8cfd75e2b43659648b9dccc0",
+      "sha256": "360696b227454a7f41bac566880dadbe19c9b106bcb247c543f19fb44381b204",
+      "bytes": 31068
+    },
+    "internal/aicontrol/reconciliation_local.go": {
+      "git_blob": "ad50c7f321e1111c628cdb8989a8fc69c0eed25c",
+      "sha256": "2631126814f502125230239b14cc1341f4f82b96c60cfa9dbcd5d63ad4324b33",
+      "bytes": 2467
+    },
+    "internal/aicontrol/roles.go": {
+      "git_blob": "41544f93bd274fb1f14ec85a935e3f718b7f125f",
+      "sha256": "2f543dc5ededaaaafb37d3281a8df68f3aaa4f7e5db1932e7c6c9ae2b65ad5c6",
+      "bytes": 20661
+    }
+  }
+}

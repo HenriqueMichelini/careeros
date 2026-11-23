@@ -227,7 +227,7 @@ func (j *OperationsJournal) checkPendingFence() error {
 	if err := j.checkFence(); err != nil {
 		return err
 	}
-	for _, name := range []string{"journal.pending", "journal.uncertain", "journal.queued"} {
+	for _, name := range operationsFallbackMarkers {
 		_, err := os.Lstat(filepath.Join(j.cfg.Directory, name))
 		if !errors.Is(err, os.ErrNotExist) {
 			return auth.ErrUnavailable
@@ -251,14 +251,11 @@ func (j *OperationsJournal) queueEmergency(ctx context.Context) error {
 		return err
 	}
 	defer unlock()
-	if _, err := os.Lstat(filepath.Join(j.cfg.Directory, "journal.queued")); err == nil {
-		return nil
-	}
-	return j.createFenceFile("journal.queued")
+	return j.writeAtomic(filepath.Join(j.cfg.Directory, "journal.queued"), []byte{1})
 }
 
 func (j *OperationsJournal) sealIndependent() error {
-	return j.createFenceFile("journal.uncertain")
+	return j.writeAtomic(filepath.Join(j.cfg.Directory, "journal.uncertain"), []byte{1})
 }
 
 // verifyWriteHealth uses the same data and directory durability as a

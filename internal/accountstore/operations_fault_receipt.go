@@ -21,6 +21,8 @@ var recoverableOperationsFaults = []OperationsFault{
 	OperationsAuthFault, OperationsProviderFault, OperationsBackupFault,
 }
 
+var operationsFallbackMarkers = []string{"journal.pending", "journal.uncertain", "journal.queued"}
+
 type operationsFaultReceipt struct {
 	Kind         OperationsFault `json:"kind"`
 	At           time.Time       `json:"at"`
@@ -29,7 +31,7 @@ type operationsFaultReceipt struct {
 }
 
 type operationsFaultFile struct {
-	kind    OperationsFault
+	name    string
 	stamp   string
 	receipt operationsFaultReceipt
 }
@@ -43,8 +45,10 @@ type operationsFaultFiles struct {
 }
 
 func (j *OperationsJournal) faultReceiptPath(kind OperationsFault) string {
-	return filepath.Join(j.cfg.Directory, "journal.fault."+string(kind))
+	return filepath.Join(j.cfg.Directory, faultReceiptName(kind))
 }
+
+func faultReceiptName(kind OperationsFault) string { return "journal.fault." + string(kind) }
 
 func (j *OperationsJournal) faultReceiptBinding(raw []byte) string {
 	return j.binding(append([]byte("fault-receipt\x00"+j.id+"\x00"), raw...))
@@ -100,46 +104,53 @@ func (j *OperationsJournal) readFaultReceipt(kind OperationsFault) (operationsFa
 // An unreadable file contributes only its trusted local identity and any
 // bounded bytes that can be read. Its filename never assigns the fault cause.
 func (j *OperationsJournal) readFaultFile(kind OperationsFault) (operationsFaultFile, error) {
-	file := operationsFaultFile{kind: kind}
-	path := j.faultReceiptPath(kind)
+	file, raw, err := j.readRecoveryFile(faultReceiptName(kind))
+	if err == nil && raw != nil {
+		file.receipt = j.decodeFaultReceipt(kind, raw)
+	}
+	return file, err
+}
+
+func (j *OperationsJournal) readRecoveryFile(name string) (operationsFaultFile, []byte, error) {
+	file := operationsFaultFile{name: name}
+	path := filepath.Join(j.cfg.Directory, name)
 	info, err := os.Lstat(path)
 	if err != nil {
-		return file, err
+		return file, nil, err
 	}
 	stamp, ok := info.Sys().(*syscall.Stat_t)
 	if !ok {
-		return file, auth.ErrUnavailable
+		return file, nil, auth.ErrUnavailable
 	}
-	metadata := fmt.Sprintf("fault-file\x00%s\x00%d\x00%d\x00%d\x00%d\x00%d", kind, stamp.Dev, stamp.Ino,
+	metadata := fmt.Sprintf("recovery-file\x00%s\x00%d\x00%d\x00%d\x00%d\x00%d", name, stamp.Dev, stamp.Ino,
 		info.Mode(), info.Size(), info.ModTime().UnixNano())
 	file.stamp = j.binding([]byte(metadata))
 	if !info.Mode().IsRegular() || info.Size() > 512 {
-		return file, nil
+		return file, nil, nil
 	}
 	f, err := os.OpenFile(path, os.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_NONBLOCK, 0600)
 	if err != nil {
-		return file, nil
+		return file, nil, nil
 	}
 	defer f.Close()
 	opened, err := f.Stat()
 	if err != nil || !sameFaultFile(info, opened) {
-		return file, auth.ErrUnavailable
+		return file, nil, auth.ErrUnavailable
 	}
 	raw, readErr := io.ReadAll(io.LimitReader(f, 513))
 	current, err := os.Lstat(path)
 	if err != nil || !sameFaultFile(info, current) {
-		return file, auth.ErrUnavailable
+		return file, nil, auth.ErrUnavailable
 	}
 	if readErr != nil || len(raw) > 512 {
-		return file, nil
+		return file, nil, nil
 	}
 	hash := sha256.Sum256(raw)
 	file.stamp = j.binding(append([]byte(metadata+"\x00"), hash[:]...))
 	if info.Mode().Perm()&0077 != 0 {
-		return file, nil
+		return file, nil, nil
 	}
-	file.receipt = j.decodeFaultReceipt(kind, raw)
-	return file, nil
+	return file, raw, nil
 }
 
 func sameFaultFile(expected, current os.FileInfo) bool {
@@ -167,6 +178,21 @@ func (j *OperationsJournal) decodeFaultReceipt(kind OperationsFault, raw []byte)
 func (j *OperationsJournal) faultFiles() (operationsFaultFiles, error) {
 	var observed operationsFaultFiles
 	var stamps []byte
+	for _, name := range append([]string{"journal.fence"}, operationsFallbackMarkers...) {
+		file, raw, err := j.readRecoveryFile(name)
+		if errors.Is(err, os.ErrNotExist) && name != "journal.fence" ||
+			err == nil && name == "journal.fence" && len(raw) == 2 && raw[0] == 0 && raw[1] == 0 {
+			continue
+		}
+		if err != nil {
+			return operationsFaultFiles{}, auth.ErrUnavailable
+		}
+		observed.files = append(observed.files, file)
+		stamps = append(stamps, file.stamp...)
+		// A marker records loss of certainty, with no authenticated cause.
+		// A separate typed receipt cannot prove it covers this generation.
+		observed.unclassified = true
+	}
 	for _, kind := range recoverableOperationsFaults {
 		file, err := j.readFaultFile(kind)
 		if errors.Is(err, os.ErrNotExist) {
@@ -185,7 +211,7 @@ func (j *OperationsJournal) faultFiles() (operationsFaultFiles, error) {
 		}
 	}
 	if len(stamps) != 0 {
-		observed.set = j.binding(append([]byte("fault-files\x00"), stamps...))
+		observed.set = j.binding(append([]byte("recovery-files\x00"), stamps...))
 	}
 	return observed, nil
 }

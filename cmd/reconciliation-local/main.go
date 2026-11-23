@@ -81,7 +81,8 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	principal, err := service.Authenticate(ctx, os.Getenv("CAREEROS_RECONCILIATION_LOCAL_SESSION_TOKEN"))
+	sessionToken := os.Getenv("CAREEROS_RECONCILIATION_LOCAL_SESSION_TOKEN")
+	principal, err := service.Authenticate(ctx, sessionToken)
 	if err != nil {
 		return err
 	}
@@ -136,7 +137,7 @@ func run() error {
 		case "preview":
 			result, err = command.Preview(ctx, principal, input)
 		case "apply":
-			result, err = command.Apply(ctx, principal, input)
+			result, err = command.ApplyLocal(ctx, principal, input, sessionToken)
 		default:
 			return errors.New("unsupported mode")
 		}

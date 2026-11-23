@@ -8,6 +8,8 @@ import (
 	"net"
 	"net/url"
 	"strings"
+
+	"professional-information-repo/internal/auth"
 )
 
 // LocalReconciliationDSN rejects hosted routing, alternate connection options,
@@ -61,3 +63,12 @@ func OpenLocalReconciliation(ctx context.Context, dsn, namespace string) (*Recon
 	return &Reconciliation{h: &Harness{db: db, reviewerDB: db, cfg: cfg, hooks: map[string]func() error{}}}, nil
 }
 func (r *Reconciliation) Close() error { return r.h.reviewerDB.Close() }
+
+// ApplyLocal uses the CLI's authenticated session to attest an unpriced
+// transition when the finance process has no enrolled operations observer.
+func (r *Reconciliation) ApplyLocal(ctx context.Context, p auth.Principal, command ReconciliationCommand, sessionToken string) (ReconciliationPreview, error) {
+	if len(sessionToken) < 1 || len(sessionToken) > 128 {
+		return ReconciliationPreview{}, ErrDenied
+	}
+	return r.apply(ctx, p, command, sessionToken)
+}

@@ -77,6 +77,67 @@ BEGIN
 END $capture$;
 REVOKE ALL ON FUNCTION %[1]s.careeros_operations_snapshot(text,text),%[1]s.careeros_capture_operations(text,text) FROM PUBLIC;
 
+CREATE OR REPLACE FUNCTION %[1]s.careeros_read_operations_snapshot(ns text) RETURNS jsonb
+LANGUAGE sql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $read$
+ SELECT %[1]s.careeros_operations_snapshot(ns,NULL)
+$read$;
+
+-- A finance-only command can attest one exact unpriced transition with its
+-- current ordinary reviewer session. The finance database role alone cannot
+-- attest it. Only an enrolled observer can later promote the private receipt.
+CREATE OR REPLACE FUNCTION %[1]s.careeros_defer_finance_operations(ns text, command_ref text, actor_id text, session_id text, session_token text)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $finance$
+BEGIN
+ IF NOT %[1]s.careeros_operations_required() THEN RETURN; END IF;
+ IF session_token IS NULL OR octet_length(session_token) NOT BETWEEN 1 AND 128 OR NOT EXISTS (
+  SELECT 1 FROM %[1]s.careeros_sessions s JOIN %[1]s.careeros_accounts a ON a.id=s.account_id
+    JOIN %[1]s.ai_recon_operator r ON r.namespace=ns AND r.actor=a.id
+   WHERE s.id=session_id AND a.id=actor_id AND s.token_hash=sha256(convert_to(session_token,'UTF8'))
+    AND s.expires_at>clock_timestamp() AND a.status='active' AND s.generation=a.generation
+    AND NOT r.revoked AND r.expires_at>clock_timestamp()
+ ) THEN RAISE EXCEPTION 'current reconciliation reviewer required'; END IF;
+ INSERT INTO %[1]s.careeros_operations_deferred(namespace,event_id,evidence,awaiting_observer)
+ SELECT ns,e.id,jsonb_build_object('ID',e.id,'Rate',contract.rate_id,'Amount',e.obligation,'Maximum',e.reserved,
+   'IncidentDispatch','','Kind','invariant_breach','At',e.created_at),true
+ FROM %[1]s.ai_recon_event e
+ JOIN %[1]s.ai_recon_command c ON c.namespace=e.namespace AND c.id=e.id AND c.dispatch=e.dispatch
+ JOIN %[1]s.ai_recon_state state ON state.namespace=e.namespace AND state.dispatch=e.dispatch
+ JOIN %[1]s.ai_recon_contract contract ON contract.namespace=e.namespace AND contract.dispatch=e.dispatch
+ JOIN %[1]s.ai_fixture_dispatch d ON d.namespace=e.namespace AND d.id=e.dispatch
+ JOIN %[1]s.ai_recon_stop stop ON stop.namespace=e.namespace AND stop.event_id=e.id AND stop.stopped
+ WHERE e.namespace=ns AND e.id=command_ref AND c.actor=actor_id AND c.kind='unpriced'
+  AND state.unpriced AND state.unpriced_command=c.id AND state.version=c.version
+  AND state.unpriced_source=c.source AND state.unpriced_revision=c.source_revision
+  AND d.intent_at IS NOT NULL AND d.state NOT IN ('reserved','aborted')
+  AND c.detail->>'provider'=contract.provider AND c.detail->>'model'=contract.model AND c.detail->>'tier'=contract.tier
+  AND c.detail->>'billingNamespace'=contract.billing_namespace AND c.detail->>'rate' ~ '^[A-Za-z0-9_-]{1,128}$'
+  AND c.detail->>'currency' ~ '^[A-Z]{3}$' AND e.created_at BETWEEN transaction_timestamp() AND clock_timestamp()
+  AND e.obligation=c.after_amount AND e.obligation=d.counted AND e.reserved=d.maximum
+  AND e.obligation=greatest(c.before_amount,d.maximum)
+  AND stop.obligation=e.obligation AND stop.reserved=e.reserved AND stop.contract=e.contract
+  AND c.xmin=pg_current_xact_id()::xid AND e.xmin=c.xmin AND state.xmin=c.xmin AND stop.xmin=c.xmin;
+ IF NOT FOUND THEN RAISE EXCEPTION 'current unpriced transition required'; END IF;
+END $finance$;
+
+CREATE OR REPLACE FUNCTION %[1]s.careeros_promote_finance_operations(capability text, ns text) RETURNS boolean
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $promote$
+DECLARE original_ref text;
+BEGIN
+ IF NOT %[1]s.careeros_operations_observer_matches(capability) THEN
+  RAISE EXCEPTION 'enrolled operations observer required';
+ END IF;
+ IF NOT EXISTS (SELECT 1 FROM %[1]s.careeros_operations_deferred WHERE namespace=ns AND awaiting_observer) THEN
+  RETURN false;
+ END IF;
+ PERFORM pg_advisory_xact_lock(72481324);
+ SELECT event_id INTO original_ref FROM %[1]s.careeros_operations_deferred
+  WHERE namespace=ns AND awaiting_observer ORDER BY (evidence->>'At')::timestamptz,event_id LIMIT 1 FOR UPDATE;
+ IF NOT FOUND THEN RETURN false; END IF;
+ IF NOT %[1]s.careeros_capture_operations(ns,original_ref) THEN RETURN false; END IF;
+ DELETE FROM %[1]s.careeros_operations_deferred WHERE namespace=ns AND event_id=original_ref;
+ RETURN true;
+END $promote$;
+
 CREATE OR REPLACE FUNCTION %[1]s.careeros_capture_runtime_operations(ns text) RETURNS boolean
 LANGUAGE sql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $runtime$
  SELECT %[1]s.careeros_capture_operations(ns,NULL)
@@ -151,5 +212,7 @@ BEGIN
 END $ack$;
 
 REVOKE ALL ON FUNCTION %[1]s.careeros_capture_runtime_operations(text),
+ %[1]s.careeros_read_operations_snapshot(text),%[1]s.careeros_defer_finance_operations(text,text,text,text,text),
+ %[1]s.careeros_promote_finance_operations(text,text),
  %[1]s.careeros_capture_reconciliation_operations(text,text,text,boolean),
  %[1]s.careeros_replay_operations_captures(text),%[1]s.careeros_ack_operations_capture(text,text,bigint,bytea) FROM PUBLIC;

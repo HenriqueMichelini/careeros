@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"os"
 	"path/filepath"
 	"slices"
@@ -46,6 +45,17 @@ func (o *Operations) CaptureReconciliation(ctx context.Context, tx *sql.Tx, name
 		return 0, unavailable(err)
 	}
 	return outcome, nil
+}
+
+// PromoteFinanceCapture reads one source-attested event into the durable
+// delivery queue using the enrolled observer capability.
+func (o *Operations) PromoteFinanceCapture(ctx context.Context, db *sql.DB, namespace string) (bool, error) {
+	var captured bool
+	if err := db.QueryRowContext(ctx, `SELECT careeros_promote_finance_operations($1,$2)`,
+		o.journal.observerCapability(), namespace).Scan(&captured); err != nil {
+		return false, unavailable(err)
+	}
+	return captured, nil
 }
 
 // AcknowledgeCapture discards only the exact source record the journal has
@@ -355,26 +365,29 @@ func (j *OperationsJournal) clearReviewedFence(reviewed operationsFaultFiles) er
 	if err != nil || current.set != reviewed.set {
 		return auth.ErrUnavailable
 	}
+	var latch string
 	for _, file := range reviewed.files {
-		current, err := j.readFaultFile(file.kind)
-		if err != nil || current.stamp != file.stamp || os.Remove(j.faultReceiptPath(file.kind)) != nil {
-			return auth.ErrUnavailable
+		if file.name == "journal.fence" {
+			latch = file.stamp
+			continue
 		}
-	}
-	if current, err := j.faultFiles(); err != nil || len(current.files) != 0 {
-		return auth.ErrUnavailable
-	}
-	for _, name := range []string{"journal.pending", "journal.uncertain", "journal.queued"} {
-		if err := os.Remove(filepath.Join(j.cfg.Directory, name)); err != nil && !errors.Is(err, os.ErrNotExist) {
+		current, _, err := j.readRecoveryFile(file.name)
+		if err != nil || current.stamp != file.stamp || os.Remove(filepath.Join(j.cfg.Directory, file.name)) != nil {
 			return auth.ErrUnavailable
 		}
 	}
 	if err := j.syncDirectory(); err != nil {
 		return err
 	}
-	for _, offset := range []int64{0, 1} {
-		if err := j.writeFence(offset, 0); err != nil {
-			return err
+	if latch != "" {
+		current, _, err := j.readRecoveryFile("journal.fence")
+		if err != nil || current.stamp != latch {
+			return auth.ErrUnavailable
+		}
+		for _, offset := range []int64{0, 1} {
+			if err := j.writeFence(offset, 0); err != nil {
+				return err
+			}
 		}
 	}
 	return j.verifyWriteHealth()

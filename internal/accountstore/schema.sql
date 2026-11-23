@@ -342,6 +342,7 @@ CREATE TABLE IF NOT EXISTS careeros_operations_deferred (
  namespace text NOT NULL, event_id text NOT NULL, evidence jsonb NOT NULL,
  PRIMARY KEY(namespace,event_id)
 );
+ALTER TABLE careeros_operations_deferred ADD COLUMN IF NOT EXISTS awaiting_observer boolean NOT NULL DEFAULT false;
 REVOKE ALL ON careeros_operations_deferred FROM PUBLIC;
 
 DO $operations_functions$
