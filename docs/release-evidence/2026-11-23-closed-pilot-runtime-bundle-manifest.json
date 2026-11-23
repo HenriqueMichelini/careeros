@@ -1,0 +1,96 @@
+{
+  "account_schema_sha256": "1041d60b99d7418870b7463cc696e6ce064d015f61c73b7c2439fd0c771bea2b",
+  "bundle": "closed-pilot-local-v1",
+  "inputs": {
+    "go.mod": {
+      "bytes": 431,
+      "sha256": "1afcf2c684f0433d28d0bf2ae4d62c19b1d8941f8ac9c3fba6aecd62b3ca4de1"
+    },
+    "go.sum": {
+      "bytes": 2633,
+      "sha256": "2eff7a44353cc8804084a398180ddcdd9ce23b7a08e1a920edf6f068929bad13"
+    },
+    "internal/accountstore/schema.sql": {
+      "bytes": 28743,
+      "sha256": "1041d60b99d7418870b7463cc696e6ce064d015f61c73b7c2439fd0c771bea2b"
+    },
+    "netlify.toml": {
+      "bytes": 1064,
+      "sha256": "bbc18ba3aeea7f3daf0945886f0d09fd60f1206dfaef7201e85cdc4607049830"
+    },
+    "package-lock.json": {
+      "bytes": 56320,
+      "sha256": "597c48cedf6a1ce92adfe0017616445833ab63da9f101770742983d9c3d3b3ba"
+    },
+    "scripts/package-closed-pilot.py": {
+      "bytes": 7042,
+      "sha256": "a15ec5a68a96c6b767ead999d69930ea4960b470ec9515a4209596a6d34d9a89"
+    },
+    "scripts/pilot-runtime/bootstrap.sql": {
+      "bytes": 1241,
+      "sha256": "412151cd19ba3023543a2c3809d4172c12f09037771d7f951125c0e7f4a58198"
+    },
+    "scripts/pilot-runtime/build-profile.json": {
+      "bytes": 842,
+      "sha256": "cc5253be4ae909aedca8bfcbce89613123d4c0bcc087474c4b82a23103cd45fd"
+    },
+    "scripts/pilot-runtime/closed-runtime-grants.sql": {
+      "bytes": 3692,
+      "sha256": "ebf1af8c36120461a07c117869c33012ec2f535b370413bcf2ab41e3f35a549c"
+    },
+    "scripts/test-closed-pilot.py": {
+      "bytes": 15799,
+      "sha256": "e88e447c19534145f8547545e3caed9b53909fe3c40d4119d8d5e37d7353105a"
+    }
+  },
+  "payload": {
+    "bin/account-migrate": {
+      "bytes": 13841057,
+      "executable": true,
+      "sha256": "0968898a9c16cd5a09cf714ca8169a3d596928934898dd2c5f6d2757f1f2888b"
+    },
+    "bin/pilot-runtime-local": {
+      "bytes": 16598141,
+      "executable": true,
+      "sha256": "10ae07c6f88a9bb908027282b374c93f97682a394536cb97f73f943c1a8bc9f8"
+    },
+    "build-profile.json": {
+      "bytes": 842,
+      "executable": false,
+      "sha256": "cc5253be4ae909aedca8bfcbce89613123d4c0bcc087474c4b82a23103cd45fd"
+    },
+    "frontend/assets/index-BCcoVfRX.css": {
+      "bytes": 40019,
+      "executable": false,
+      "sha256": "3d9d67663f7ee1260f716b52012c746c2cb88e1481d5cd13e86fadfa1b9e2641"
+    },
+    "frontend/assets/index-Bmkwifry.js": {
+      "bytes": 753501,
+      "executable": false,
+      "sha256": "0e835dae75024abbc4a7a60faac508e5db60f7c7f894be4f2953c37b94708a35"
+    },
+    "frontend/index.html": {
+      "bytes": 519,
+      "executable": false,
+      "sha256": "c890ea732d575814b94a91567bfe7d6d79da2e80a4b1ff3d33620148c4bdf4fa"
+    },
+    "sql/bootstrap.sql": {
+      "bytes": 1241,
+      "executable": false,
+      "sha256": "412151cd19ba3023543a2c3809d4172c12f09037771d7f951125c0e7f4a58198"
+    },
+    "sql/closed-runtime-grants.sql": {
+      "bytes": 3692,
+      "executable": false,
+      "sha256": "ebf1af8c36120461a07c117869c33012ec2f535b370413bcf2ab41e3f35a549c"
+    }
+  },
+  "source_commit": "852709ee10cc441918e18eb00c5d6bce2e330f55",
+  "source_tree": "4fa1f15ee912dfe68c79043250e9c9e973e80ed6",
+  "target": "linux/amd64",
+  "toolchain": {
+    "go": "go1.26.4",
+    "node": "v24.15.0",
+    "npm": "11.17.0"
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "files": {
+    "cmd/pilot-runtime-local/main.go": {
+      "bytes": 1607,
+      "git_blob": "f2ed11dd79b665fdb5d07aa0a19c5e65117f59f0",
+      "sha256": "0046183c45e963f8c3d4a8061280d889ddc831526c3aec0cfe47c0a64d7ff172"
+    },
+    "docs/adr/0001-stateless-user-key-backend.md": {
+      "bytes": 3257,
+      "git_blob": "50210045e3c5f6756e4977a0132173346e784ae0",
+      "sha256": "c15f9e944c7ad9defa56af184008db28e577ed9d8a97229aae9dc73014549a7d"
+    },
+    "docs/adr/0002-go-api-on-netlify-free.md": {
+      "bytes": 1038,
+      "git_blob": "bb83b88bbbcb05c7dbac1f62ce1ddbf98dd234aa",
+      "sha256": "c2637bcdec9dda32a043e1dd11937c7fce112fc090c820caf919ceba5022043b"
+    },
+    "docs/closed-pilot-hosted-proposal.md": {
+      "bytes": 6574,
+      "git_blob": "e5fbd6fccf528cf20079607a7b7100f58ffa48bb",
+      "sha256": "241cf10704aa1cc9819cfb5698b1518219f963b440caa4f434146843cd5fd7ce"
+    },
+    "docs/closed-pilot-runtime-local.md": {
+      "bytes": 9859,
+      "git_blob": "ab6831bf4cd027d1c7b42bf91cd9645934b4abab",
+      "sha256": "6e449651304e8c9e1a8050074f58f3881d0f162e544af2e529888f46bc55738c"
+    },
+    "internal/accountstore/pilot_package.go": {
+      "bytes": 4174,
+      "git_blob": "db7c520ff020ee835c0b4b2e577ab6f0741fd8de",
+      "sha256": "894d18b198f54198224b04a5031bbed644f75f44a3da73a263aff350e50d917b"
+    },
+    "internal/accountstore/store.go": {
+      "bytes": 13419,
+      "git_blob": "449965d5bdcd33c3003113654db8bf277b2dced5",
+      "sha256": "fd276249d7fc603180fbdc01aebf5f91529e5abff2c9a10a8cba3301c6bda5ce"
+    },
+    "internal/pilotruntime/runtime.go": {
+      "bytes": 4109,
+      "git_blob": "d7f2f42d6b6ae7eece243c46b3a16df4545e1214",
+      "sha256": "d15447689f0c2e651b431cc11eedcce658fac35ab633ee1c9f7fe7556f58f2c0"
+    },
+    "internal/pilotruntime/site.go": {
+      "bytes": 5815,
+      "git_blob": "33c396320fdc92b454c409549636576fa8bde446",
+      "sha256": "de9961d0b180affd93ca900e2581881b1262b4078eff296ecb985748a1abe2e8"
+    },
+    "internal/pilotruntime/site_test.go": {
+      "bytes": 4816,
+      "git_blob": "0c59a8ab5958e4f849744d6d7f740342519c72eb",
+      "sha256": "2d64d1feb6ed7547778a5c00959fcd1c80743831617004f08ee550318ec87629"
+    },
+    "scripts/package-closed-pilot.py": {
+      "bytes": 7042,
+      "git_blob": "9d764d1d7c87120ef3720d455d15b1a7b214cba9",
+      "sha256": "a15ec5a68a96c6b767ead999d69930ea4960b470ec9515a4209596a6d34d9a89"
+    },
+    "scripts/pilot-runtime/bootstrap.sql": {
+      "bytes": 1241,
+      "git_blob": "7f3a3f4b07d768be7153a141fde52e58086c14c2",
+      "sha256": "412151cd19ba3023543a2c3809d4172c12f09037771d7f951125c0e7f4a58198"
+    },
+    "scripts/pilot-runtime/build-profile.json": {
+      "bytes": 842,
+      "git_blob": "a90cbb3f1b8ae07cd20cfb012752e8d03218f441",
+      "sha256": "cc5253be4ae909aedca8bfcbce89613123d4c0bcc087474c4b82a23103cd45fd"
+    },
+    "scripts/pilot-runtime/closed-runtime-grants.sql": {
+      "bytes": 3692,
+      "git_blob": "76e73bc167af1da94ba0c81499c1c7248e14062e",
+      "sha256": "ebf1af8c36120461a07c117869c33012ec2f535b370413bcf2ab41e3f35a549c"
+    },
+    "scripts/test-closed-pilot.py": {
+      "bytes": 15799,
+      "git_blob": "c41e2457f7fcbdf96a1a124e81f110941468a0dd",
+      "sha256": "e88e447c19534145f8547545e3caed9b53909fe3c40d4119d8d5e37d7353105a"
+    }
+  },
+  "issue": 292,
+  "previous_ticket": "e8862a5a34487d13b674594ea2cc507de44bd068",
+  "scope": "local synthetic only",
+  "source": "852709ee10cc441918e18eb00c5d6bce2e330f55",
+  "tree": "4fa1f15ee912dfe68c79043250e9c9e973e80ed6"
+}

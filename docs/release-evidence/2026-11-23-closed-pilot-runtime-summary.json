@@ -1,0 +1,1409 @@
+{
+  "actual_package_checks": {
+    "events": [
+      {
+        "name": "built_frontend_served",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "spa_navigation",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "unknown_asset",
+        "observed": 404,
+        "result": "pass"
+      },
+      {
+        "name": "unknown_api",
+        "observed": 404,
+        "result": "pass"
+      },
+      {
+        "name": "unknown_function",
+        "observed": 404,
+        "result": "pass"
+      },
+      {
+        "name": "invalid_aliased_path",
+        "observed": 400,
+        "result": "pass"
+      },
+      {
+        "name": "unconfigured_readiness",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_runtime",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_runtime_direct",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "origin_host_cannot_be_forwarded",
+        "observed": 421,
+        "result": "pass"
+      },
+      {
+        "name": "cross_origin_alias",
+        "observed": 403,
+        "result": "pass"
+      },
+      {
+        "name": "absent_schema_stays_closed",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "absent_schema_api",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "startup_never_migrates",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "mismatched_schema_identity",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "explicit_additive_migration_reapplied_with_separate_role",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "closed_database_role_grants_and_connection_limit",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "prepared_but_closed_readiness",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "guest_session",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "existing_session_after_repeat_migration",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "account_cookie_typed_denial",
+        "observed": 403,
+        "result": "pass"
+      },
+      {
+        "name": "status_closed_for_uninvited_fixture",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "no_new_google_sign_in",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "no_google_callback",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "wrong_browser_origin",
+        "observed": 403,
+        "result": "pass"
+      },
+      {
+        "name": "activation_without_bound_csrf",
+        "observed": 403,
+        "result": "pass"
+      },
+      {
+        "name": "activation_still_closed",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_01",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_02",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_03",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_04",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_05",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_06",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_07",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_08",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_09",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_10",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_11",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "missing_policy_12",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "bounded_request_body",
+        "observed": 413,
+        "result": "pass"
+      },
+      {
+        "name": "restart_retains_authorized_session",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "same_origin_logout_all",
+        "observed": 204,
+        "result": "pass"
+      },
+      {
+        "name": "multiple_secure_host_only_cookie_headers",
+        "observed": null,
+        "result": "pass"
+      },
+      {
+        "name": "logged_out_cookie_no_longer_authorized",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "open_control_is_not_accepted_by_closed_package",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "open_control_cannot_enable_managed_alias",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "restored_closed_control_readiness",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "database_loss_preserves_liveness",
+        "observed": 200,
+        "result": "pass"
+      },
+      {
+        "name": "database_loss_closes_readiness",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "database_loss_closes_api",
+        "observed": 503,
+        "result": "pass"
+      },
+      {
+        "name": "owned_postgres_stopped_and_data_removed",
+        "observed": null,
+        "result": "pass"
+      }
+    ],
+    "package_manifest_sha256": "01709cb90ec7a732b8940c5bf485f00774d50d3f58921ff68953f106f19c584d",
+    "pass": true,
+    "synthetic_only": true
+  },
+  "bundle": {
+    "account_schema_sha256": "1041d60b99d7418870b7463cc696e6ce064d015f61c73b7c2439fd0c771bea2b",
+    "manifest_sha256": "01709cb90ec7a732b8940c5bf485f00774d50d3f58921ff68953f106f19c584d",
+    "mutated_copy_rejected": true,
+    "payload_files": 8,
+    "reproducible_builds": 2
+  },
+  "committed_bundle_manifest": {
+    "bytes": 3260,
+    "path": "docs/release-evidence/2026-11-23-closed-pilot-runtime-bundle-manifest.json",
+    "sha256": "01709cb90ec7a732b8940c5bf485f00774d50d3f58921ff68953f106f19c584d"
+  },
+  "exact_frontend_and_vet": {
+    "default_vet_baseline_matches": true,
+    "default_vet_exit": 1,
+    "files": {
+      "account-deletion.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 4,
+        "skip": 0
+      },
+      "account-lifecycle.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 1,
+        "skip": 0
+      },
+      "account-profile.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 10,
+        "skip": 0
+      },
+      "artifact-review.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 4,
+        "skip": 0
+      },
+      "contact-profile.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 9,
+        "skip": 0
+      },
+      "cv-choices.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 4,
+        "skip": 0
+      },
+      "cv-generation.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 28,
+        "skip": 0
+      },
+      "cv-preferences.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 1,
+        "skip": 0
+      },
+      "cv-source-parity.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 44,
+        "skip": 0
+      },
+      "cv-support-integration.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 3,
+        "skip": 0
+      },
+      "draft-opening-client.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 8,
+        "skip": 0
+      },
+      "draft-recovery-client.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 17,
+        "skip": 0
+      },
+      "evidence-mvp.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 9,
+        "skip": 0
+      },
+      "field-validation.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 16,
+        "skip": 0
+      },
+      "ingestion-recovery.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 22,
+        "skip": 0
+      },
+      "ingestion-review.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 23,
+        "skip": 0
+      },
+      "ingestion-submission-save.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 19,
+        "skip": 0
+      },
+      "ingestion-submission.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 15,
+        "skip": 0
+      },
+      "ingestion.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 31,
+        "skip": 0
+      },
+      "lab-dashboard.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 1,
+        "skip": 0
+      },
+      "managed-cv.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 3,
+        "skip": 0
+      },
+      "managed-ingestion.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 4,
+        "skip": 0
+      },
+      "managed-profile-review.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 2,
+        "skip": 0
+      },
+      "managed-qualification.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 3,
+        "skip": 0
+      },
+      "pilot-access.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 3,
+        "skip": 0
+      },
+      "profile-document.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 50,
+        "skip": 0
+      },
+      "profile-export.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 2,
+        "skip": 0
+      },
+      "profile-projection-parity.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 44,
+        "skip": 0
+      },
+      "qualification-evidence.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 2,
+        "skip": 0
+      },
+      "resume-review.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 6,
+        "skip": 0
+      },
+      "section-review-evaluation.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 4,
+        "skip": 0
+      },
+      "submission-protocol.test.mjs": {
+        "exit": 0,
+        "fail": 0,
+        "pass": 61,
+        "skip": 0
+      }
+    },
+    "pass": 453,
+    "scoped_vet_exit": 0,
+    "skip": 0,
+    "typecheck_exit": 0
+  },
+  "exact_frozen_go_race": {
+    "admission_ids": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A06",
+      "A07",
+      "A08",
+      "A09",
+      "A10",
+      "A11",
+      "A12",
+      "A13",
+      "A14",
+      "A15",
+      "A16",
+      "A17",
+      "A18",
+      "A19",
+      "A20",
+      "A21",
+      "A22",
+      "A23",
+      "A24",
+      "A25",
+      "A26",
+      "A27",
+      "A28",
+      "A29",
+      "A30",
+      "A31",
+      "A32",
+      "A33",
+      "A34",
+      "A35",
+      "A36",
+      "A37"
+    ],
+    "closed_package_test_passes": [
+      "TestClosedSiteSeparatesAPIFromSPA/GET_/",
+      "TestClosedSiteSeparatesAPIFromSPA/GET_/application/draft",
+      "TestClosedSiteSeparatesAPIFromSPA/GET_/assets/app.js",
+      "TestClosedSiteSeparatesAPIFromSPA/GET_/assets/missing.js",
+      "TestClosedSiteSeparatesAPIFromSPA/GET_/api/auth/session",
+      "TestClosedSiteSeparatesAPIFromSPA/GET_/.netlify/functions/account/api/auth/session",
+      "TestClosedSiteSeparatesAPIFromSPA/POST_/.netlify/functions/profile-review",
+      "TestClosedSiteSeparatesAPIFromSPA/GET_/api/no-such-route",
+      "TestClosedSiteSeparatesAPIFromSPA/GET_/.netlify/functions/no-such-function",
+      "TestClosedSiteSeparatesAPIFromSPA/GET_/%61pi/auth/session",
+      "TestClosedSiteSeparatesAPIFromSPA/GET_/healthz",
+      "TestClosedSiteSeparatesAPIFromSPA/GET_/readyz",
+      "TestClosedSiteSeparatesAPIFromSPA/POST_/application/draft",
+      "TestClosedSiteSeparatesAPIFromSPA",
+      "TestClosedSiteBoundsDependencyRequests",
+      "TestClosedAliasThroughExistingEventAdapter"
+    ],
+    "command": [
+      "go",
+      "test",
+      "-p=1",
+      "-json",
+      "-race",
+      "-vet=off",
+      "-timeout=600s",
+      "-count=1",
+      "./..."
+    ],
+    "failures": [
+      [
+        "professional-information-repo/internal/accountapi",
+        ""
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestControlledDraftPostgresAndServerProcessRestartReadsExactBundle"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestDeletionPhysicalPostgresRestartAndFreshStatusProcess"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestDeletionPhysicalPostgresRestartAndFreshStatusProcess/account"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestDeletionPhysicalPostgresRestartAndFreshStatusProcess/profile"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestDraftOpeningReceiptAndSettlementSurvivePostgresAndProcessRestart"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestDurableDraftReviewPostgresAndServerProcessRestart"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestLifecyclePhysicalPostgresRestartRecoversSameStatusWithoutCallbacks"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestManagedDraftPhysicalRestartKeepsExactReadyAndUnknownIntent"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestManagedTerminalTwoServerProcessesRaceThenPhysicalRestartPreservesWinner"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestOperatorControlPhysicalRestartPreservesStopsAndUnknownHold"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestPilotOperationsPhysicalOutageKeepsStatusAndContainmentIndependent"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        ""
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-application-reuse"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-canonical-edit"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-enrichment"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-ingestion"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerAssertionRegressionCompletesWithFail"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerBoundsOutputAndStopsFollowingTests"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerCDPPDFIsDistinctAndSurvivesExport"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerCancellationStopsDetachedChildAndGrandchild"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerCannotReadHostSentinelsOrReachHostLoopback"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerCrashRetainsDistinctOutcome"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerDeadlineRetainsPartialTreeAndUnreachedTest"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExecutesAllowlistedGoContractsWithoutInference"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExecutesExistingNodeCanonicalContracts"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExistingWorkflowSelectorsExecute"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExistingWorkflowSelectorsExecute/go-canonical"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExistingWorkflowSelectorsExecute/go-cv"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExistingWorkflowSelectorsExecute/go-ingestion"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExistingWorkflowSelectorsExecute/go-job-application"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExistingWorkflowSelectorsExecute/node-artifact-review"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExistingWorkflowSelectorsExecute/node-ingestion"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExistingWorkflowSelectorsExecute/node-job-reuse"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerReusesSectionBrowserHarnessWithScreenshotEvidence"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerUsesOfflineFieldHelpers"
+      ]
+    ],
+    "inherited_failure_set_matches": false,
+    "package_passes": 26,
+    "postgres_stopped_and_removed": true,
+    "process_exit": 1,
+    "skips": [
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestControlledDraftBrowserServer"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestControlledDraftRestartChild"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestDeletionBrowserServer"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestDeletionRestartChild"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestJourneyDemoServer"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestLifecycleRestartChild"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestManagedTerminalProcessChild"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestOperatorControlRestartChild"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestPilotRestartChild"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestProfileExportBrowserServer"
+      ],
+      [
+        "professional-information-repo/internal/aicontrol",
+        "TestRestrictedReconciliationGenuineBaseUpgrade"
+      ]
+    ],
+    "test_passes": 2663
+  },
+  "exact_lifecycle_and_control_restart_go_race": {
+    "admission_ids": [],
+    "closed_package_test_passes": [],
+    "command": [
+      "go",
+      "test",
+      "-p=1",
+      "-json",
+      "-race",
+      "-vet=off",
+      "-timeout=600s",
+      "-count=1",
+      "./internal/accountapi",
+      "-run",
+      "^Test(LifecyclePhysicalPostgresRestartRecoversSameStatusWithoutCallbacks|OperatorControlPhysicalRestartPreservesStopsAndUnknownHold)$"
+    ],
+    "failures": [],
+    "inherited_failure_set_matches": false,
+    "package_passes": 1,
+    "postgres_stopped_and_removed": true,
+    "process_exit": 0,
+    "skips": [],
+    "test_pass_names": [
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestLifecyclePhysicalPostgresRestartRecoversSameStatusWithoutCallbacks"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestOperatorControlPhysicalRestartPreservesStopsAndUnknownHold"
+      }
+    ],
+    "test_passes": 2
+  },
+  "exact_restart_go_race": {
+    "admission_ids": [],
+    "closed_package_test_passes": [],
+    "command": [
+      "go",
+      "test",
+      "-p=1",
+      "-json",
+      "-race",
+      "-vet=off",
+      "-timeout=600s",
+      "-count=1",
+      "./internal/accountapi",
+      "-run",
+      "^Test(DeletionPhysicalPostgresRestartAndFreshStatusProcess|DraftOpeningReceiptAndSettlementSurvivePostgresAndProcessRestart|ControlledDraftPostgresAndServerProcessRestartReadsExactBundle|DurableDraftReviewPostgresAndServerProcessRestart|ManagedDraftPhysicalRestartKeepsExactReadyAndUnknownIntent|ManagedTerminalTwoServerProcessesRaceThenPhysicalRestartPreservesWinner|PilotOperationsPhysicalOutageKeepsStatusAndContainmentIndependent)$"
+    ],
+    "failures": [],
+    "inherited_failure_set_matches": false,
+    "package_passes": 1,
+    "postgres_stopped_and_removed": true,
+    "process_exit": 0,
+    "skips": [],
+    "test_pass_names": [
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestDeletionPhysicalPostgresRestartAndFreshStatusProcess/profile"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestDeletionPhysicalPostgresRestartAndFreshStatusProcess/account"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestDeletionPhysicalPostgresRestartAndFreshStatusProcess"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestDraftOpeningReceiptAndSettlementSurvivePostgresAndProcessRestart"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestControlledDraftPostgresAndServerProcessRestartReadsExactBundle"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestDurableDraftReviewPostgresAndServerProcessRestart"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedDraftPhysicalRestartKeepsExactReadyAndUnknownIntent"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedTerminalTwoServerProcessesRaceThenPhysicalRestartPreservesWinner"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestPilotOperationsPhysicalOutageKeepsStatusAndContainmentIndependent"
+      }
+    ],
+    "test_passes": 9
+  },
+  "frozen_source": {
+    "bytes": 3519,
+    "path": "docs/release-evidence/2026-11-23-closed-pilot-runtime-frozen-source.json",
+    "sha256": "172ecf4d21e9c2a48b67adacc12d246ba63a6ec51e8e1ea3398752b899f22261"
+  },
+  "full_suite_reconciliation": {
+    "current_retained_evaluation_lab_failed_set": [
+      [
+        "professional-information-repo/internal/evaluationlab",
+        ""
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-application-reuse"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-canonical-edit"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-enrichment"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-ingestion"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerAssertionRegressionCompletesWithFail"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerBoundsOutputAndStopsFollowingTests"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerCDPPDFIsDistinctAndSurvivesExport"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerCancellationStopsDetachedChildAndGrandchild"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerCannotReadHostSentinelsOrReachHostLoopback"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerCrashRetainsDistinctOutcome"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerDeadlineRetainsPartialTreeAndUnreachedTest"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExecutesAllowlistedGoContractsWithoutInference"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExecutesExistingNodeCanonicalContracts"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExistingWorkflowSelectorsExecute"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExistingWorkflowSelectorsExecute/go-canonical"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExistingWorkflowSelectorsExecute/go-cv"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExistingWorkflowSelectorsExecute/go-ingestion"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExistingWorkflowSelectorsExecute/go-job-application"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExistingWorkflowSelectorsExecute/node-artifact-review"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExistingWorkflowSelectorsExecute/node-ingestion"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExistingWorkflowSelectorsExecute/node-job-reuse"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerReusesSectionBrowserHarnessWithScreenshotEvidence"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerUsesOfflineFieldHelpers"
+      ]
+    ],
+    "full_extra_fixture_failures": [
+      [
+        "professional-information-repo/internal/accountapi",
+        ""
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestControlledDraftPostgresAndServerProcessRestartReadsExactBundle"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestDeletionPhysicalPostgresRestartAndFreshStatusProcess"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestDeletionPhysicalPostgresRestartAndFreshStatusProcess/account"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestDeletionPhysicalPostgresRestartAndFreshStatusProcess/profile"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestDraftOpeningReceiptAndSettlementSurvivePostgresAndProcessRestart"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestDurableDraftReviewPostgresAndServerProcessRestart"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestLifecyclePhysicalPostgresRestartRecoversSameStatusWithoutCallbacks"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestManagedDraftPhysicalRestartKeepsExactReadyAndUnknownIntent"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestManagedTerminalTwoServerProcessesRaceThenPhysicalRestartPreservesWinner"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestOperatorControlPhysicalRestartPreservesStopsAndUnknownHold"
+      ],
+      [
+        "professional-information-repo/internal/accountapi",
+        "TestPilotOperationsPhysicalOutageKeepsStatusAndContainmentIndependent"
+      ]
+    ],
+    "prior_evaluation_lab_failed_set": [
+      [
+        "professional-information-repo/internal/evaluationlab",
+        ""
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestCVRetainedReplayUsesNoDispatchesAndKeepsSemanticFailures"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-application-reuse"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-canonical-edit"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-enrichment"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-ingestion"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerAssertionRegressionCompletesWithFail"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerBoundsOutputAndStopsFollowingTests"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerCDPPDFIsDistinctAndSurvivesExport"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerCancellationStopsDetachedChildAndGrandchild"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerCannotReadHostSentinelsOrReachHostLoopback"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerCrashRetainsDistinctOutcome"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerDeadlineRetainsPartialTreeAndUnreachedTest"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExecutesAllowlistedGoContractsWithoutInference"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExecutesExistingNodeCanonicalContracts"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExistingWorkflowSelectorsExecute"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExistingWorkflowSelectorsExecute/go-canonical"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExistingWorkflowSelectorsExecute/go-cv"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExistingWorkflowSelectorsExecute/go-ingestion"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExistingWorkflowSelectorsExecute/go-job-application"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExistingWorkflowSelectorsExecute/node-artifact-review"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExistingWorkflowSelectorsExecute/node-ingestion"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerExistingWorkflowSelectorsExecute/node-job-reuse"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerReusesSectionBrowserHarnessWithScreenshotEvidence"
+      ],
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestProcessRunnerUsesOfflineFieldHelpers"
+      ]
+    ],
+    "prior_evaluation_lab_failures_passing_in_this_environment": [
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestCVRetainedReplayUsesNoDispatchesAndKeepsSemanticFailures"
+      ]
+    ],
+    "restart_focused_recheck": "all extra named fixture failures pass with CAREEROS_DRAFT_TEST_PGCTL",
+    "unresolved_additional_failures": []
+  },
+  "hosted_status": "unapproved, configuration and verification are separate approvals",
+  "issue": 292,
+  "preceding_rejected_fixture": {
+    "go_log": {
+      "bytes": 4028137,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frozen-full-go/go.jsonl",
+      "sha256": "c55b61c71b38182cfbe36ce16adb170f6f5e365c2de8021ef28ab1f6f3911cc1"
+    },
+    "reason": "the preliminary full Go harness used a loopback database name without the required _test suffix",
+    "summary": {
+      "bytes": 93870,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frozen-full-go/summary.json",
+      "sha256": "6eaa77fc152547574d8093167d486b2e75a8bbc95517cf2ca3b1b05cda868bc3"
+    }
+  },
+  "previous_ticket": "e8862a5a34487d13b674594ea2cc507de44bd068",
+  "raw": [
+    {
+      "bytes": 339,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/bundle-comparison.json",
+      "sha256": "c25987cd4d89d37b7e6cfa9f0f480640a80fe0a90db34a4dc8e249bdc8ed8ee4"
+    },
+    {
+      "bytes": 3260,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/candidate-a/manifest.json",
+      "sha256": "01709cb90ec7a732b8940c5bf485f00774d50d3f58921ff68953f106f19c584d"
+    },
+    {
+      "bytes": 3260,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/candidate-b/manifest.json",
+      "sha256": "01709cb90ec7a732b8940c5bf485f00774d50d3f58921ff68953f106f19c584d"
+    },
+    {
+      "bytes": 5346,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/check-exact/summary.json",
+      "sha256": "b8de36fad644db78983939eeb95004ab41b90623fb5e60bd20e9cfaf69372fa5"
+    },
+    {
+      "bytes": 1440,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/check-exact/checks.log",
+      "sha256": "8bc2c6c6bff66bdb27eff099bacdc9e237f7b9b2517b19935536a931f6313cac"
+    },
+    {
+      "bytes": 189,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/check-exact/postgres.log",
+      "sha256": "6d017a7536467b368ef1b973e7456fb3c29a77e1f0e831d5f89519aadf245f57"
+    },
+    {
+      "bytes": 8252,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frozen-full-go-exact/summary.json",
+      "sha256": "1b8581d9bed6e0c274969b001d9465a1bb4eb30acd9b9f83e319da3ef532a3d7"
+    },
+    {
+      "bytes": 4547910,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frozen-full-go-exact/go.jsonl",
+      "sha256": "cc160aa11c534a683159d9d66fe552491c6e3b7a7cac3b4da0a024481aeac15a"
+    },
+    {
+      "bytes": 966,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frozen-full-go-exact/setup.log",
+      "sha256": "af38b81f803df81a30f609258cded2cb8ea88ff899ff8e193eab8d43cb819aa0"
+    },
+    {
+      "bytes": 189,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frozen-full-go-exact/postgres.log",
+      "sha256": "c235425af0fd031cbf27cf47c6e50bf87988c9458f10512a530a8f2726b07810"
+    },
+    {
+      "bytes": 2361,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/restart-recheck/summary.json",
+      "sha256": "fb2f70c915c9c91cf812ecf2d78b5a655a2049211bba927300462891e5e6f15d"
+    },
+    {
+      "bytes": 12100,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/restart-recheck/go.jsonl",
+      "sha256": "0c663505fcfa014dc07792036d8c4c96c69775fe90b1265298d4142574fd57db"
+    },
+    {
+      "bytes": 966,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/restart-recheck/setup.log",
+      "sha256": "a9c63b310afe139e7abf6d30683433c113ea04f62a3c6445c24d478518c6ff45"
+    },
+    {
+      "bytes": 189,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/restart-recheck/postgres.log",
+      "sha256": "c9d0dc55704b21555b7950c4c1b66e63e1513c1ec02c731fb20fe09056bbefcd"
+    },
+    {
+      "bytes": 914,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/restart-extra/summary.json",
+      "sha256": "bc4b1d1401b5bd538760519dcb5f7823f24d7ce12087df7067e3c11d051ead9f"
+    },
+    {
+      "bytes": 3584,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/restart-extra/go.jsonl",
+      "sha256": "feafd53b85ab6afadd0b89aac1dab7623d9fad855962c6417fed31e4c40b1131"
+    },
+    {
+      "bytes": 966,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/restart-extra/setup.log",
+      "sha256": "e21a4a4c78b812b2a44635999c34cafdd3688648d7817b522986a0b98355c361"
+    },
+    {
+      "bytes": 189,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/restart-extra/postgres.log",
+      "sha256": "eccddb70d313f4c0f6613bb4b73ac8eff8bfed55b93571a1eed4df61029c12bc"
+    },
+    {
+      "bytes": 3688,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/audit.json",
+      "sha256": "f1736a44eabcc7c4bd60a2ff1ae8016cb245eae3fd67467b8192a68bd67b838e"
+    },
+    {
+      "bytes": 0,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 0,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/vet-scoped.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 2236,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/vet-default.log",
+      "sha256": "449b2077e614d67a727d4aca5d9f84b70d47f83914a785cc398129577d3e0db4"
+    },
+    {
+      "bytes": 565,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/account-deletion.test.mjs.tap",
+      "sha256": "7f55c9d960902108339454522646490af11f10cc92ff025617ef1c4c20562cc1"
+    },
+    {
+      "bytes": 229,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/account-lifecycle.test.mjs.tap",
+      "sha256": "7974804963c0d55adfba4cb78eeaa5699514fe699e25691f432e145158009e27"
+    },
+    {
+      "bytes": 1179,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/account-profile.test.mjs.tap",
+      "sha256": "bd191ec2e81738df681f65d2ac5ccdd40fd4d2ec36efad876d5e6e2447e9d05a"
+    },
+    {
+      "bytes": 476,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/artifact-review.test.mjs.tap",
+      "sha256": "0b94e8041d99de614686849832ef30a6859e0c5ac046ae59b8d2419f47867b94"
+    },
+    {
+      "bytes": 960,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/contact-profile.test.mjs.tap",
+      "sha256": "125c87fa4f95731ed2d48b404eb12e32183f5e7cf0ac20c14bb43d298d364820"
+    },
+    {
+      "bytes": 409,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/cv-choices.test.mjs.tap",
+      "sha256": "563941c229f53a4a924b44743c17af724deb74127b4d7da19d9433de0432b312"
+    },
+    {
+      "bytes": 2906,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/cv-generation.test.mjs.tap",
+      "sha256": "6309308d85c2236590c3f49e753aa2f7c494f1c690009aec897a77d5d038a285"
+    },
+    {
+      "bytes": 217,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/cv-preferences.test.mjs.tap",
+      "sha256": "85455d836a381b077fb6098a9b1e97cc9b9eb638b175a50dcb830d35ce144e58"
+    },
+    {
+      "bytes": 4198,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/cv-source-parity.test.mjs.tap",
+      "sha256": "e8e050ac624c9fb08be221375f8891a4b89a9372aa9e6b9a376a37eace1c7ec3"
+    },
+    {
+      "bytes": 1230,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/cv-support-integration.test.mjs.tap",
+      "sha256": "16dd5efaacede648a364035b79d5a9b427a5527904f0f3137705f3af7eb1ce69"
+    },
+    {
+      "bytes": 882,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/draft-opening-client.test.mjs.tap",
+      "sha256": "241cd947f9e5555593de1318a52fd8198988e81b0e312439b60b9a1b409be1d7"
+    },
+    {
+      "bytes": 1891,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/draft-recovery-client.test.mjs.tap",
+      "sha256": "516509011ca8ab46e0626fa2bf8d7ad8901d88a17d8db26bd36b263566ae21ff"
+    },
+    {
+      "bytes": 1008,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/evidence-mvp.test.mjs.tap",
+      "sha256": "d537bb3d72a161e18ddf0729deeb8fc02e842c9d1947121e585ba62856cf96d3"
+    },
+    {
+      "bytes": 1775,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/field-validation.test.mjs.tap",
+      "sha256": "f2e119d6960a01c3900a29cc4da31ff326e4f28fd409e5b8a23d795246084476"
+    },
+    {
+      "bytes": 2079,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/ingestion-recovery.test.mjs.tap",
+      "sha256": "ec02f0ae528a2e09fbee5e3aee2aa6029812c35fb417fbba94b5a56eb500c344"
+    },
+    {
+      "bytes": 2273,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/ingestion-review.test.mjs.tap",
+      "sha256": "a23809fb4da9251dc8411bf78805dc878cc30f496e56c1b07c104362a39509c9"
+    },
+    {
+      "bytes": 1818,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/ingestion-submission-save.test.mjs.tap",
+      "sha256": "a3c667581ba5da6c18e3c6afd762d53ca90910a69da5e2669d20e2cd23e0f8cf"
+    },
+    {
+      "bytes": 1492,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/ingestion-submission.test.mjs.tap",
+      "sha256": "f1ee2ba6fa5f055501795f30c413e8ce5b9ad5347bf70c67d4efc37d85a10394"
+    },
+    {
+      "bytes": 2991,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/ingestion.test.mjs.tap",
+      "sha256": "322294586b4626974a5aaa51e2c1631eb93abd4a4ab29037a93bf245c11e3696"
+    },
+    {
+      "bytes": 231,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/lab-dashboard.test.mjs.tap",
+      "sha256": "787c3cd830a1a72621ebe2815353a00fe28d9652fa3678c3fd112e8b52bbc038"
+    },
+    {
+      "bytes": 431,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/managed-cv.test.mjs.tap",
+      "sha256": "7a822e068c4be2b93cf654012409de6899ca40410d091daf4bedde2ce70f6899"
+    },
+    {
+      "bytes": 500,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/managed-ingestion.test.mjs.tap",
+      "sha256": "af35fff86e1775f4f6f30ed269aaf214551f069c14662d81269617b4a6f1acfe"
+    },
+    {
+      "bytes": 336,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/managed-profile-review.test.mjs.tap",
+      "sha256": "f5eba6fb16a82fc837f16fa9028e72c1f766db2e8a208b4008b41b0e171d530f"
+    },
+    {
+      "bytes": 398,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/managed-qualification.test.mjs.tap",
+      "sha256": "4876dc49a1f1f8239196ee4f8333a4f1c04f9fbf46367d44e6d9cfb6cfc29c67"
+    },
+    {
+      "bytes": 412,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/pilot-access.test.mjs.tap",
+      "sha256": "246eb47c4dce0e73547f44cf43be1a0b58e1460ba2e6e7822cc8ccb06b231c0d"
+    },
+    {
+      "bytes": 5218,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/profile-document.test.mjs.tap",
+      "sha256": "d6369f4a61cb55169ecf75191caaa12bb7b97d7d2e0c122ce646c58d6e4a0de2"
+    },
+    {
+      "bytes": 309,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/profile-export.test.mjs.tap",
+      "sha256": "0c009dbb4fd147ed6eeb58e2983e8def384cb8e49cca4564f07dd833248a9c33"
+    },
+    {
+      "bytes": 4473,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/profile-projection-parity.test.mjs.tap",
+      "sha256": "0dfd73bbe55d6aabcefa432395afb431ad26f7403e0f16682f03d3ba8be67643"
+    },
+    {
+      "bytes": 320,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/qualification-evidence.test.mjs.tap",
+      "sha256": "f7b9404346be5d7fc153246caa970b49c30b41bc02940679c15926cf7147f566"
+    },
+    {
+      "bytes": 648,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/resume-review.test.mjs.tap",
+      "sha256": "13787bfdaff8a43ff8d8964c541c926c9386266a7a68488f70384cf3a3367a04"
+    },
+    {
+      "bytes": 492,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/section-review-evaluation.test.mjs.tap",
+      "sha256": "d333a4d5f69b6def587df9b3ced9d7a7e9fd9b84788c269a814534d2520d4b3e"
+    },
+    {
+      "bytes": 4170,
+      "path": "/home/henriquemichelini/workstation/careeros/.q92/frontend/submission-protocol.test.mjs.tap",
+      "sha256": "18f49dc54d8131949b1a4688405c09d431cfda102f03ace814bcb6450c3defb7"
+    }
+  ],
+  "scope": "local synthetic closed package and disposable PostgreSQL only",
+  "source": "852709ee10cc441918e18eb00c5d6bce2e330f55",
+  "source_tree": "4fa1f15ee912dfe68c79043250e9c9e973e80ed6"
+}
