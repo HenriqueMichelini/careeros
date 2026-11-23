@@ -49,14 +49,8 @@ BEGIN
   INTO exhausted USING sampled_at;
  END IF;
  IF event_ref IS NOT NULL THEN
-  SELECT jsonb_build_object('ID',e.id,'Rate',c.rate_id,'Amount',e.obligation,'Maximum',e.reserved,
-    'Kind',CASE WHEN cmd.kind='unpriced' THEN 'invariant_breach' ELSE 'maximum_breach' END,
-    'At',e.created_at) INTO event
-  FROM %[1]s.ai_recon_event e
-  JOIN %[1]s.ai_recon_command cmd ON cmd.namespace=e.namespace AND cmd.id=e.id
-  JOIN %[1]s.ai_recon_contract c ON c.namespace=e.namespace AND c.dispatch=e.dispatch
-  WHERE e.namespace=ns AND e.id=event_ref AND cmd.dispatch=e.dispatch
-   AND (cmd.kind='unpriced' OR e.obligation>e.reserved);
+  SELECT evidence INTO event FROM %[1]s.careeros_operations_deferred
+   WHERE namespace=ns AND event_id=event_ref;
   IF event IS NULL THEN RETURN NULL; END IF;
  END IF;
  RETURN jsonb_build_object('At',sampled_at,'Scopes',COALESCE(scopes,'[]'::jsonb),'Entries',
@@ -74,26 +68,48 @@ BEGIN
  IF captured IS NULL OR octet_length(captured)>16777216 THEN
   RAISE EXCEPTION 'operations observation unavailable';
  END IF;
- INSERT INTO %[1]s.careeros_operations_pending(namespace,sample,source_version) VALUES(ns,captured,2);
+ INSERT INTO %[1]s.careeros_operations_pending(namespace,sample,source_version,critical_event)
+ VALUES(ns,captured,2,event_ref IS NOT NULL);
  RETURN true;
 END $capture$;
 REVOKE ALL ON FUNCTION %[1]s.careeros_operations_snapshot(text,text),%[1]s.careeros_capture_operations(text,text) FROM PUBLIC;
 
--- Only a fresh authoritative command in this transaction can stage a
--- reconciliation capture or record an actual capture failure. Neither the
--- financial role nor the caller supplies the emergency event or its contents.
-CREATE OR REPLACE FUNCTION %[1]s.careeros_capture_reconciliation_operations(ns text, command_ref text, include_event boolean)
+CREATE OR REPLACE FUNCTION %[1]s.careeros_capture_runtime_operations(ns text) RETURNS boolean
+LANGUAGE sql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $runtime$
+ SELECT %[1]s.careeros_capture_operations(ns,NULL)
+$runtime$;
+
+-- A current enrolled observer and an exact transition in this transaction
+-- jointly authorize the capture. The private receipt survives a failed
+-- capture independently of later financial edits or corrections.
+DROP FUNCTION IF EXISTS %[1]s.careeros_capture_reconciliation_operations(text,text,boolean);
+CREATE OR REPLACE FUNCTION %[1]s.careeros_capture_reconciliation_operations(capability text, ns text, command_ref text, include_event boolean)
 RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $reconciliation$
+DECLARE original jsonb;
 BEGIN
  IF NOT %[1]s.careeros_operations_required() THEN RETURN 0; END IF;
+ IF NOT %[1]s.careeros_operations_observer_matches(capability) THEN
+  RAISE EXCEPTION 'enrolled operations observer required';
+ END IF;
  IF NOT EXISTS(SELECT 1 FROM %[1]s.ai_recon_command c
    WHERE c.namespace=ns AND c.id=command_ref AND c.xmin=pg_current_xact_id()::xid) THEN
   RAISE EXCEPTION 'current reconciliation command required';
  END IF;
- IF include_event AND NOT EXISTS(SELECT 1 FROM %[1]s.ai_recon_event e
+ SELECT jsonb_build_object('ID',e.id,'Rate',contract.rate_id,'Amount',e.obligation,'Maximum',e.reserved,
+   'Kind',CASE WHEN c.kind='unpriced' THEN 'invariant_breach' ELSE 'maximum_breach' END,'At',e.created_at)
+ INTO original FROM %[1]s.ai_recon_event e
    JOIN %[1]s.ai_recon_command c ON c.namespace=e.namespace AND c.id=e.id AND c.dispatch=e.dispatch
-   WHERE e.namespace=ns AND e.id=command_ref AND (c.kind='unpriced' OR e.obligation>e.reserved)) THEN
+   JOIN %[1]s.ai_recon_contract contract ON contract.namespace=e.namespace AND contract.dispatch=e.dispatch
+   JOIN %[1]s.ai_fixture_dispatch d ON d.namespace=e.namespace AND d.id=e.dispatch
+   JOIN %[1]s.ai_recon_stop stop ON stop.namespace=e.namespace AND stop.event_id=e.id AND stop.stopped
+   WHERE e.namespace=ns AND e.id=command_ref AND e.xmin=pg_current_xact_id()::xid
+     AND e.obligation=c.after_amount AND e.obligation=d.counted AND e.reserved=d.maximum
+     AND (c.kind='unpriced' OR e.obligation>e.reserved);
+ IF include_event AND original IS NULL THEN
   RAISE EXCEPTION 'current reconciliation event required';
+ END IF;
+ IF original IS NOT NULL THEN
+  INSERT INTO %[1]s.careeros_operations_deferred(namespace,event_id,evidence) VALUES(ns,command_ref,original);
  END IF;
  BEGIN
   PERFORM %[1]s.careeros_capture_operations(ns,CASE WHEN include_event THEN command_ref ELSE NULL END);
@@ -101,6 +117,34 @@ BEGIN
   IF NOT %[1]s.careeros_operations_record_emergency('persistence_fault') THEN RAISE; END IF;
   RETURN 2;
  END;
+ DELETE FROM %[1]s.careeros_operations_deferred WHERE namespace=ns AND event_id=command_ref;
  RETURN 1;
 END $reconciliation$;
-REVOKE ALL ON FUNCTION %[1]s.careeros_capture_reconciliation_operations(text,text,boolean) FROM PUBLIC;
+
+CREATE OR REPLACE FUNCTION %[1]s.careeros_replay_operations_captures(ns text) RETURNS boolean
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $replay$
+DECLARE original_ref text;
+BEGIN
+ IF NOT %[1]s.careeros_capture_operations(ns,NULL) THEN RETURN false; END IF;
+ FOR original_ref IN SELECT event_id FROM %[1]s.careeros_operations_deferred WHERE namespace=ns
+  ORDER BY (evidence->>'At')::timestamptz,event_id
+ LOOP
+  PERFORM %[1]s.careeros_capture_operations(ns,original_ref);
+  DELETE FROM %[1]s.careeros_operations_deferred WHERE namespace=ns AND event_id=original_ref;
+ END LOOP;
+ RETURN true;
+END $replay$;
+
+CREATE OR REPLACE FUNCTION %[1]s.careeros_ack_operations_capture(capability text, ns text, receipt bigint, fingerprint bytea)
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $ack$
+BEGIN
+ IF NOT %[1]s.careeros_operations_observer_matches(capability) OR receipt<1 OR octet_length(fingerprint)<>32 THEN
+  RETURN false;
+ END IF;
+ DELETE FROM %[1]s.careeros_operations_pending WHERE namespace=ns AND id=receipt AND sha256(sample)=fingerprint;
+ RETURN NOT EXISTS(SELECT 1 FROM %[1]s.careeros_operations_pending WHERE namespace=ns AND id=receipt);
+END $ack$;
+
+REVOKE ALL ON FUNCTION %[1]s.careeros_capture_runtime_operations(text),
+ %[1]s.careeros_capture_reconciliation_operations(text,text,text,boolean),
+ %[1]s.careeros_replay_operations_captures(text),%[1]s.careeros_ack_operations_capture(text,text,bigint,bytea) FROM PUBLIC;

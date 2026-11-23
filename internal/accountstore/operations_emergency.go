@@ -21,8 +21,35 @@ type OperationsEmergency struct {
 	Causes     []OperationsFault `json:"causes"`
 }
 
+type OperationsEmergencyReview struct {
+	ObservedAt      time.Time
+	ClassifiedCause OperationsFault
+}
+
 func (j *OperationsJournal) observerCapability() string {
 	return j.binding([]byte("operation-sql-observer"))
+}
+
+// CaptureReconciliation binds the enrolled observer to the current source
+// transition. Neither the caller nor the finance role supplies the event data.
+func (o *Operations) CaptureReconciliation(ctx context.Context, tx *sql.Tx, namespace, command string, includeEvent bool) (int, error) {
+	var outcome int
+	if err := tx.QueryRowContext(ctx, `SELECT careeros_capture_reconciliation_operations($1,$2,$3,$4)`,
+		o.journal.observerCapability(), namespace, command, includeEvent).Scan(&outcome); err != nil {
+		return 0, unavailable(err)
+	}
+	return outcome, nil
+}
+
+// AcknowledgeCapture discards only the exact source record the journal has
+// consumed. The acknowledgement uses a separate enrolled observer capability.
+func (o *Operations) AcknowledgeCapture(ctx context.Context, db *sql.DB, namespace string, receipt int64, fingerprint [32]byte) error {
+	var removed bool
+	if err := db.QueryRowContext(ctx, `SELECT careeros_ack_operations_capture($1,$2,$3,$4)`,
+		o.journal.observerCapability(), namespace, receipt, fingerprint[:]).Scan(&removed); err != nil || !removed {
+		return auth.ErrUnavailable
+	}
+	return nil
 }
 
 // SignalLocalOperationsFallback uses the previously enrolled observer key
@@ -86,7 +113,7 @@ func readOperationsEmergency(ctx context.Context, tx *sql.Tx) (*OperationsEmerge
 		return nil, true, nil // A persisted latch from the earlier composition.
 	}
 	if len(e.ID) != 64 || !validOperation(e.ID) || !started.Valid || !recorded.Valid || started.Time.After(recorded.Time) ||
-		json.Unmarshal(raw, &e.Causes) != nil || len(e.Causes) < 1 || len(e.Causes) > 7 {
+		json.Unmarshal(raw, &e.Causes) != nil || len(e.Causes) < 1 || len(e.Causes) > 8 {
 		return nil, false, auth.ErrUnavailable
 	}
 	e.StartedAt, e.RecordedAt = started.Time.UTC(), recorded.Time.UTC()
@@ -102,6 +129,9 @@ func (o *Operations) ReplayEmergency(ctx context.Context, p auth.Principal, refe
 	}
 	if err := o.replayEmergency(ctx, p, reference); err != nil {
 		return err
+	}
+	if reference != "" {
+		return o.DrainCommittedRisk(ctx)
 	}
 	return o.Deliver(ctx)
 }
@@ -135,6 +165,10 @@ func (o *Operations) replayEmergency(ctx context.Context, p auth.Principal, refe
 	if err != nil || state.ID != o.journal.id {
 		return auth.ErrUnavailable
 	}
+	knownFault, err := o.journal.mirrorFaultReceipts(&state)
+	if err != nil {
+		return err
+	}
 	e, legacy, err := readOperationsEmergency(ctx, tx)
 	if err != nil {
 		return err
@@ -152,7 +186,11 @@ func (o *Operations) replayEmergency(ctx context.Context, p auth.Principal, refe
 		if !legacy && !orphan && o.journal.verifyWriteHealth() == nil {
 			return ErrNotFound
 		}
-		if err = markOperationsEmergency(ctx, tx, o.journal.observerCapability(), operationsPersistenceFault); err != nil {
+		reason := operationsPersistenceFault
+		if !knownFault {
+			reason = operationsUnclassifiedFault
+		}
+		if err = markOperationsEmergency(ctx, tx, o.journal.observerCapability(), reason); err != nil {
 			return err
 		}
 		e, _, err = readOperationsEmergency(ctx, tx)
@@ -175,7 +213,7 @@ func (o *Operations) replayEmergency(ctx context.Context, p auth.Principal, refe
 
 func (j *OperationsJournal) mirrorEmergency(state *operationsJournalState, e OperationsEmergency) error {
 	for _, kind := range e.Causes {
-		if kind != operationsPersistenceFault {
+		if kind != operationsPersistenceFault && kind != operationsUnclassifiedFault {
 			incident, err := operationsFaultIncident(kind, e.RecordedAt)
 			if err != nil {
 				return auth.ErrUnavailable
@@ -192,9 +230,13 @@ func (j *OperationsJournal) mirrorEmergency(state *operationsJournalState, e Ope
 }
 
 func (o *Operations) reviewEmergency(ctx context.Context, tx *sql.Tx, p auth.Principal, reference string, e *OperationsEmergency, state *operationsJournalState, oldHold string) error {
-	at, err := o.cfg.VerifyEmergencyReview(ctx, reference, *e)
+	review, err := o.cfg.VerifyEmergencyReview(ctx, reference, *e)
+	at := review.ObservedAt
 	if err != nil || !at.After(e.RecordedAt) || at.After(time.Now().UTC()) {
 		return auth.ErrForbidden
+	}
+	if err = o.journal.classifyEmergency(state, *e, review); err != nil {
+		return err
 	}
 	sample, err := o.source.OperationsSample(ctx)
 	if err != nil || !sample.Complete || sample.At.IsZero() || !validOperation(sample.Namespace) {
@@ -203,7 +245,7 @@ func (o *Operations) reviewEmergency(ctx context.Context, tx *sql.Tx, p auth.Pri
 	// A readable snapshot alone does not prove the capture writer recovered.
 	// Commit this source-owned observation together with the verified clearance.
 	var captured bool
-	if err = tx.QueryRowContext(ctx, `SELECT careeros_capture_operations($1,NULL)`, sample.Namespace).Scan(&captured); err != nil || !captured {
+	if err = tx.QueryRowContext(ctx, `SELECT careeros_replay_operations_captures($1)`, sample.Namespace).Scan(&captured); err != nil || !captured {
 		return auth.ErrUnavailable
 	}
 	if err = operationsActor(ctx, tx, p, "owner"); err != nil {
@@ -243,6 +285,28 @@ func (o *Operations) reviewEmergency(ctx context.Context, tx *sql.Tx, p auth.Pri
 	return operationsActor(ctx, tx, p, "owner")
 }
 
+func (j *OperationsJournal) classifyEmergency(state *operationsJournalState, e OperationsEmergency, review OperationsEmergencyReview) error {
+	unknown := false
+	for _, kind := range e.Causes {
+		unknown = unknown || kind == operationsUnclassifiedFault
+	}
+	if !unknown {
+		if review.ClassifiedCause != "" {
+			return auth.ErrForbidden
+		}
+		return nil
+	}
+	if review.ClassifiedCause == "no_reportable_fault" {
+		return nil
+	}
+	incident, err := operationsFaultIncident(review.ClassifiedCause, e.StartedAt)
+	if err != nil {
+		return auth.ErrForbidden
+	}
+	j.upsertFault(state, review.ClassifiedCause, incident)
+	return nil
+}
+
 // The exclusive journal lease and SQL stop remain held until recovery commits.
 func (j *OperationsJournal) clearReviewedFence() error {
 	for _, offset := range []int64{0, 1} {
@@ -252,6 +316,11 @@ func (j *OperationsJournal) clearReviewedFence() error {
 	}
 	for _, name := range []string{"journal.pending", "journal.uncertain", "journal.queued"} {
 		if err := os.Remove(filepath.Join(j.cfg.Directory, name)); err != nil && !errors.Is(err, os.ErrNotExist) {
+			return auth.ErrUnavailable
+		}
+	}
+	for _, kind := range recoverableOperationsFaults {
+		if err := os.Remove(j.faultReceiptPath(kind)); err != nil && !errors.Is(err, os.ErrNotExist) {
 			return auth.ErrUnavailable
 		}
 	}

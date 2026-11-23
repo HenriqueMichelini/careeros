@@ -602,12 +602,15 @@ func (s *Session) Reserve(ctx context.Context, leg Leg) (_ Dispatch, resultErr e
 	if err = s.checkCurrent(ctx, tx); err != nil {
 		return zero, err
 	}
-	staged, err := h.stageOperations(ctx, tx, nil)
+	staged, err := h.stageOperations(ctx, tx)
 	if err != nil {
 		return zero, err
 	}
 	if staged {
 		if err = h.fault("after_operations_reserve_snapshot"); err != nil {
+			return zero, err
+		}
+		if err = s.checkCurrent(ctx, tx); err != nil {
 			return zero, err
 		}
 	}
@@ -740,9 +743,14 @@ func (s *Session) invoke(ctx context.Context, d Dispatch, req *http.Request, raw
 	if err = h.fault("before_intent_commit"); err != nil {
 		return nil, err
 	}
-	staged, err := h.stageOperations(ctx, tx, nil)
+	staged, err := h.stageOperations(ctx, tx)
 	if err != nil {
 		return nil, err
+	}
+	if staged {
+		if err = s.checkCurrent(ctx, tx); err != nil {
+			return nil, err
+		}
 	}
 	if tx.Commit() != nil {
 		return nil, ErrUnavailable

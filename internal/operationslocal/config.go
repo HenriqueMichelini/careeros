@@ -41,6 +41,7 @@ type RecoveryStatement struct {
 	Purpose, Reference, Incident, Episode, Result string
 	Revision                                      int
 	ObservedAt                                    time.Time
+	ClassifiedCause                               accountstore.OperationsFault `json:",omitempty"`
 }
 
 type RecoveryVerifier struct{ statement RecoveryStatement }
@@ -99,7 +100,16 @@ func strictDecode(raw []byte, dst any) bool {
 func (v RecoveryVerifier) VerifyBackup(_ context.Context, ref string, incident accountstore.OperationsIncident) (time.Time, error) {
 	s := v.statement
 	if s.Purpose != "backup" || s.Reference != ref || s.Incident != incident.ID || s.Revision != incident.Revision ||
-		s.Episode != "" || s.Result != "synthetic_restore_check_passed" {
+		s.Episode != "" || s.ClassifiedCause != "" || s.Result != "synthetic_restore_check_passed" {
+		return time.Time{}, auth.ErrForbidden
+	}
+	return s.ObservedAt, nil
+}
+
+func (v RecoveryVerifier) VerifyProvider(_ context.Context, ref string, incident accountstore.OperationsIncident) (time.Time, error) {
+	s := v.statement
+	if s.Purpose != "provider" || s.Reference != ref || s.Incident != incident.ID || s.Revision != incident.Revision ||
+		s.Episode != "" || s.ClassifiedCause != "" || s.Result != "synthetic_provider_health_check_passed" {
 		return time.Time{}, auth.ErrForbidden
 	}
 	return s.ObservedAt, nil
@@ -108,17 +118,17 @@ func (v RecoveryVerifier) VerifyBackup(_ context.Context, ref string, incident a
 func (v RecoveryVerifier) VerifyService(_ context.Context, ref, episode string) (time.Time, error) {
 	s := v.statement
 	if s.Purpose != "service" || s.Reference != ref || s.Episode != episode || s.Incident != "" || s.Revision != 0 ||
-		s.Result != "synthetic_service_probe_passed" {
+		s.ClassifiedCause != "" || s.Result != "synthetic_service_probe_passed" {
 		return time.Time{}, auth.ErrForbidden
 	}
 	return s.ObservedAt, nil
 }
 
-func (v RecoveryVerifier) VerifyEmergency(_ context.Context, ref string, emergency accountstore.OperationsEmergency) (time.Time, error) {
+func (v RecoveryVerifier) VerifyEmergency(_ context.Context, ref string, emergency accountstore.OperationsEmergency) (accountstore.OperationsEmergencyReview, error) {
 	s := v.statement
 	if s.Purpose != "containment" || s.Reference != ref || s.Incident != emergency.ID || s.Revision != 1 ||
 		s.Episode != "" || s.Result != "synthetic_containment_interval_reconciled" {
-		return time.Time{}, auth.ErrForbidden
+		return accountstore.OperationsEmergencyReview{}, auth.ErrForbidden
 	}
-	return s.ObservedAt, nil
+	return accountstore.OperationsEmergencyReview{ObservedAt: s.ObservedAt, ClassifiedCause: s.ClassifiedCause}, nil
 }

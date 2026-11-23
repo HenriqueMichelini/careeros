@@ -208,6 +208,7 @@ func runDatabase(ctx context.Context, o options, journal *accountstore.Operation
 			return err
 		}
 		cfgOps.VerifyBackupRecovery = verifier.VerifyBackup
+		cfgOps.VerifyProviderRecovery = verifier.VerifyProvider
 		cfgOps.VerifyServiceRecovery = verifier.VerifyService
 		cfgOps.VerifyEmergencyReview = verifier.VerifyEmergency
 	}
@@ -259,8 +260,10 @@ func runDatabase(ctx context.Context, o options, journal *accountstore.Operation
 		return out.Encode(map[string]string{"id": result.ID})
 	case "case-update":
 		var input struct{ Response string }
-		if err = decodeInput(&input); err != nil {
-			return err
+		if o.kind == "respond" {
+			if err = decodeInput(&input); err != nil {
+				return err
+			}
 		}
 		return ops.UpdateCase(ctx, p, o.id, o.kind, input.Response)
 	case "case-hold", "case-hold-retire":

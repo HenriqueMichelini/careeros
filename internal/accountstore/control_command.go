@@ -114,7 +114,8 @@ func (c *OperatorControls) Apply(ctx context.Context, p auth.Principal, operatio
 			defer release()
 			var unresolved bool
 			if err = tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM careeros_operations_containment
-		  WHERE NOT resolved AND ($1='inference' OR $1='invitations' AND invitation_stopped))`, command.Control).Scan(&unresolved); err != nil {
+		  WHERE NOT resolved AND ($1='inference' OR $1='invitations' AND invitation_stopped))
+		  OR ($1='inference' AND EXISTS(SELECT 1 FROM careeros_operations_pending WHERE critical_event))`, command.Control).Scan(&unresolved); err != nil {
 				return ControlStatus{}, unavailable(err)
 			}
 			if unresolved {

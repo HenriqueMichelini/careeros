@@ -2,6 +2,7 @@ package aicontrol
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	_ "embed"
 	"encoding/json"
@@ -250,7 +251,7 @@ func (s *operationsSource) decodeOperations(raw []byte) (accountstore.Operations
 
 // The database derives the observation from the locked ledger transition.
 // Neither configured runtime nor the application supplies numeric evidence.
-func (h *Harness) stageOperations(ctx context.Context, tx *sql.Tx, event *string) (bool, error) {
+func (h *Harness) stageOperations(ctx context.Context, tx *sql.Tx) (bool, error) {
 	var enabled bool
 	if tx.QueryRowContext(ctx, `SELECT careeros_operations_required()`).Scan(&enabled) != nil {
 		return false, ErrUnavailable
@@ -258,7 +259,7 @@ func (h *Harness) stageOperations(ctx context.Context, tx *sql.Tx, event *string
 	if !enabled {
 		return false, nil
 	}
-	if tx.QueryRowContext(ctx, `SELECT careeros_capture_operations($1,$2)`, h.cfg.Namespace, event).Scan(&enabled) != nil {
+	if tx.QueryRowContext(ctx, `SELECT careeros_capture_runtime_operations($1)`, h.cfg.Namespace).Scan(&enabled) != nil {
 		return true, ErrUnavailable
 	}
 	return enabled, nil
@@ -278,6 +279,10 @@ func (s *operationsSource) DrainOperations(ctx context.Context, publish func(acc
 		if err != nil || version != 2 || id <= 0 {
 			return ErrUnavailable
 		}
+		observer := s.h.localOperations()
+		if observer == nil {
+			return ErrUnavailable
+		}
 		sample, err := s.decodeOperations(raw)
 		if err != nil {
 			return err
@@ -286,7 +291,7 @@ func (s *operationsSource) DrainOperations(ctx context.Context, publish func(acc
 		if err = publish(sample); err != nil {
 			return err
 		}
-		if _, err = db.ExecContext(ctx, `DELETE FROM careeros_operations_pending WHERE id=$1 AND namespace=$2`, id, s.h.cfg.Namespace); err != nil {
+		if err = observer.AcknowledgeCapture(ctx, db, s.h.cfg.Namespace, id, sha256.Sum256(raw)); err != nil {
 			return ErrUnavailable
 		}
 	}

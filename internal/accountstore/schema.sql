@@ -334,7 +334,13 @@ CREATE TABLE IF NOT EXISTS careeros_operations_pending (
  id bigserial PRIMARY KEY, namespace text NOT NULL, sample bytea NOT NULL
 );
 ALTER TABLE careeros_operations_pending ADD COLUMN IF NOT EXISTS source_version smallint NOT NULL DEFAULT 0;
+ALTER TABLE careeros_operations_pending ADD COLUMN IF NOT EXISTS critical_event boolean NOT NULL DEFAULT false;
 REVOKE ALL ON careeros_operations_pending FROM PUBLIC;
+CREATE TABLE IF NOT EXISTS careeros_operations_deferred (
+ namespace text NOT NULL, event_id text NOT NULL, evidence jsonb NOT NULL,
+ PRIMARY KEY(namespace,event_id)
+);
+REVOKE ALL ON careeros_operations_deferred FROM PUBLIC;
 
 DO $operations_functions$
 DECLARE owning_schema text;
@@ -357,7 +363,7 @@ BEGIN
  LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $record$
  DECLARE observed timestamptz;
  BEGIN
-  IF reason NOT IN ('database_fault','authority_fault','control_fault','auth_fault','provider_fault','backup_fault','persistence_fault') THEN
+  IF reason NOT IN ('database_fault','authority_fault','control_fault','auth_fault','provider_fault','backup_fault','persistence_fault','journal_cause_unconfirmed') THEN
    RAISE EXCEPTION 'invalid operations emergency';
   END IF;
   PERFORM pg_advisory_xact_lock(72481312);

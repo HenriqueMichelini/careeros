@@ -234,6 +234,11 @@ func (j *OperationsJournal) checkPendingFence() error {
 			return auth.ErrUnavailable
 		}
 	}
+	for _, kind := range recoverableOperationsFaults {
+		if _, err := os.Lstat(j.faultReceiptPath(kind)); !errors.Is(err, os.ErrNotExist) {
+			return auth.ErrUnavailable
+		}
+	}
 	return nil
 }
 

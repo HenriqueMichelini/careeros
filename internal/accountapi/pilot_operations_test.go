@@ -764,6 +764,10 @@ func TestPilotOperationsFailedObservationPreservesProviderFreeActionRecovery(t *
 	if lost.Code < 400 || len(provider.Calls) != 0 {
 		t.Fatalf("fixture did not lose the response after durable intent: %d", lost.Code)
 	}
+	var pending int
+	if err := f.DB.QueryRow(`SELECT count(*) FROM careeros_operations_pending`).Scan(&pending); err != nil || pending == 0 {
+		t.Fatalf("fixture lacks the committed undelivered observation: %d %v", pending, err)
+	}
 	h.SetFault("after_intent_commit", nil)
 	j, err := accountstore.OpenLocalOperationsJournal(accountstore.OperationsJournalConfig{Directory: directory,
 		BindingKey: sha256.Sum256([]byte("synthetic-operations-integration")), MaxBytes: 512})
@@ -779,6 +783,10 @@ func TestPilotOperationsFailedObservationPreservesProviderFreeActionRecovery(t *
 	}
 	if _, err = h.Open(ctx, f.Principal, "new-action-after-observer-loss", "qualification_gaps", body); err == nil {
 		t.Fatal("failed persistence allowed a new Action")
+	}
+	var retained int
+	if err = f.DB.QueryRow(`SELECT count(*) FROM careeros_operations_pending`).Scan(&retained); err != nil || retained != pending {
+		t.Fatalf("failed publication removed the unacknowledged observations: %d vs %d %v", retained, pending, err)
 	}
 }
 

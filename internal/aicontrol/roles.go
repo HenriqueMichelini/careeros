@@ -304,10 +304,13 @@ GRANT INSERT,UPDATE ON ai_recon_command,ai_recon_state,ai_recon_stop,ai_recon_ev
 	}
 	if _, err = tx.ExecContext(ctx, fmt.Sprintf(`REVOKE INSERT(namespace,sample),INSERT ON careeros_operations_pending FROM %[1]s,%[2]s;
 	  REVOKE USAGE ON SEQUENCE careeros_operations_pending_id_seq FROM %[1]s,%[2]s;
-	  GRANT SELECT,DELETE ON careeros_operations_pending TO %[2]s;
-	  REVOKE EXECUTE ON FUNCTION careeros_capture_operations(text,text) FROM %[2]s;
-	  GRANT EXECUTE ON FUNCTION careeros_capture_operations(text,text) TO %[1]s;
-	  GRANT EXECUTE ON FUNCTION careeros_capture_reconciliation_operations(text,text,boolean) TO %[2]s;
+	  REVOKE ALL ON careeros_operations_deferred FROM %[1]s,%[2]s;
+	  REVOKE DELETE ON careeros_operations_pending FROM %[1]s,%[2]s;
+	  GRANT SELECT ON careeros_operations_pending TO %[2]s;
+	  REVOKE EXECUTE ON FUNCTION careeros_capture_operations(text,text) FROM %[1]s,%[2]s;
+	  GRANT EXECUTE ON FUNCTION careeros_capture_runtime_operations(text) TO %[1]s;
+	  GRANT EXECUTE ON FUNCTION careeros_capture_reconciliation_operations(text,text,text,boolean),
+	    careeros_ack_operations_capture(text,text,bigint,bytea) TO %[2]s;
 	  GRANT EXECUTE ON FUNCTION careeros_operations_snapshot(text,text) TO %[2]s;
 	  GRANT EXECUTE ON FUNCTION careeros_operations_attach_matches(text),careeros_operations_observer_matches(text),
 	    careeros_operations_add_hold(text,text,bigint,boolean),careeros_operations_emergency(text,text) TO %[2]s`, runtimeRole, reviewerRole)); err != nil {

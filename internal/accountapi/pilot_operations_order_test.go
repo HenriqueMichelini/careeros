@@ -5,6 +5,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"syscall"
@@ -68,11 +70,16 @@ func TestPilotOperationsManualRollingRecoveryKeepsSeparateCrossings(t *testing.T
 
 func waitForOperationsControlLease(t *testing.T, db *sql.DB, mode string, granted bool) {
 	t.Helper()
+	waitForOperationsLease(t, db, 72481312, mode, granted)
+}
+
+func waitForOperationsLease(t *testing.T, db *sql.DB, key int, mode string, granted bool) {
+	t.Helper()
 	deadline := time.Now().Add(5 * time.Second)
 	for time.Now().Before(deadline) {
 		var found bool
 		if err := db.QueryRow(`SELECT EXISTS(SELECT 1 FROM pg_locks WHERE locktype='advisory'
-		 AND classid=0 AND objid=72481312 AND mode=$1 AND granted=$2)`, mode, granted).Scan(&found); err != nil {
+		 AND classid=0 AND objid=$1 AND mode=$2 AND granted=$3)`, key, mode, granted).Scan(&found); err != nil {
 			t.Fatal(err)
 		}
 		if found {
@@ -81,6 +88,55 @@ func waitForOperationsControlLease(t *testing.T, db *sql.DB, mode string, grante
 		time.Sleep(10 * time.Millisecond)
 	}
 	t.Fatalf("control lease was not observed: %s granted=%v", mode, granted)
+}
+
+func TestPilotOperationsCaptureGuardRechecksManagedSessionBeforeCommit(t *testing.T) {
+	for _, stage := range []string{"reserve", "intent"} {
+		t.Run(stage, func(t *testing.T) {
+			f, h, provider, router := qualificationFixture(t)
+			_, _, _, _ = pilotOperationsFixture(t, f, h, time.Now)
+			body := f.Body(t, "/api/qualification-gaps")
+			ctx := context.Background()
+			blocker, err := f.DB.BeginTx(ctx, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer blocker.Rollback()
+			h.SetFault("before_"+stage+"_commit", func() error {
+				_, err := blocker.Exec(`SELECT pg_advisory_xact_lock(72481324)`)
+				return err
+			})
+			var expiry time.Time
+			if err = f.DB.QueryRow(`UPDATE careeros_sessions SET expires_at=clock_timestamp()+interval '2 seconds'
+			 WHERE id=$1 RETURNING expires_at`, f.Principal.SessionID).Scan(&expiry); err != nil {
+				t.Fatal(err)
+			}
+			done := make(chan *httptest.ResponseRecorder, 1)
+			go func() {
+				done <- qualificationRequest(t, f, router, "/api/qualification-gaps", "fixture-session-expires-behind-capture", "", body)
+			}()
+			waitForOperationsLease(t, f.DB, 72481324, "ExclusiveLock", false)
+			time.Sleep(time.Until(expiry) + 50*time.Millisecond)
+			if err = blocker.Rollback(); err != nil {
+				t.Fatal(err)
+			}
+			response := <-done
+			if response.Code == http.StatusOK || len(provider.Calls) != 0 {
+				t.Fatalf("expired Session advanced to a fake send after %s: %d", stage, response.Code)
+			}
+			var total, intended int
+			if err = f.DB.QueryRow(`SELECT count(*),count(*) FILTER(WHERE intent_at IS NOT NULL) FROM ai_fixture_dispatch`).Scan(&total, &intended); err != nil {
+				t.Fatal(err)
+			}
+			want := 0
+			if stage == "intent" {
+				want = 1
+			}
+			if total != want || intended != 0 {
+				t.Fatalf("expired Session committed the %s transition: total=%d intent=%d", stage, total, intended)
+			}
+		})
+	}
 }
 
 func TestPilotOperationsInvitationAndActivationRecheckSessionAfterJournalWait(t *testing.T) {

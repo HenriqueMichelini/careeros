@@ -12,13 +12,14 @@ import (
 type OperationsFault string
 
 const (
-	OperationsDatabaseFault    OperationsFault = "database_fault"
-	OperationsAuthorityFault   OperationsFault = "authority_fault"
-	OperationsControlFault     OperationsFault = "control_fault"
-	OperationsAuthFault        OperationsFault = "auth_fault"
-	OperationsProviderFault    OperationsFault = "provider_fault"
-	OperationsBackupFault      OperationsFault = "backup_fault"
-	operationsPersistenceFault OperationsFault = "persistence_fault"
+	OperationsDatabaseFault     OperationsFault = "database_fault"
+	OperationsAuthorityFault    OperationsFault = "authority_fault"
+	OperationsControlFault      OperationsFault = "control_fault"
+	OperationsAuthFault         OperationsFault = "auth_fault"
+	OperationsProviderFault     OperationsFault = "provider_fault"
+	OperationsBackupFault       OperationsFault = "backup_fault"
+	operationsPersistenceFault  OperationsFault = "persistence_fault"
+	operationsUnclassifiedFault OperationsFault = "journal_cause_unconfirmed"
 )
 
 // ObserveFault is for the explicitly composed local runtime observer. Expected
@@ -66,6 +67,9 @@ func (j *OperationsJournal) recordFault(ctx context.Context, fault OperationsFau
 		created = j.upsertFault(state, fault, incident)
 		return nil
 	})
+	if err != nil {
+		err = errors.Join(err, j.retainFault(ctx, operationsFaultReceipt{Kind: fault, At: incident.EventAt}))
+	}
 	return created, err
 }
 
@@ -160,20 +164,26 @@ func (o *Operations) reviewIncident(ctx context.Context, p auth.Principal, id st
 		}
 		if resolve {
 			switch record.Incident.Kind {
-			case "backup_fault":
-				if o.cfg.VerifyBackupRecovery == nil || !validOperation(recovery) {
+			case "backup_fault", "provider_fault":
+				verify := o.cfg.VerifyBackupRecovery
+				if record.Incident.Kind == "provider_fault" {
+					verify = o.cfg.VerifyProviderRecovery
+				}
+				if verify == nil || !validOperation(recovery) {
 					return auth.ErrForbidden
 				}
 				incident := record.Incident
 				incident.Revision = record.Revision
-				proof, err := o.cfg.VerifyBackupRecovery(ctx, recovery, incident)
+				proof, err := verify(ctx, recovery, incident)
 				if err != nil || proof.Before(record.Incident.EventAt) || proof.After(o.journal.cfg.Clock().UTC()) {
 					return auth.ErrForbidden
 				}
 				proof = proof.UTC()
 				record.RecoveryAt = &proof
 				record.RecoveryBinding = o.journal.binding([]byte("recovery\x00" + id + "\x00" + recovery))
-				state.Backup = "verified_recovery"
+				if record.Incident.Kind == "backup_fault" {
+					state.Backup = "verified_recovery"
+				}
 			case "operator_absence":
 				if record.AbsenceUntil.IsZero() || o.journal.cfg.Clock().UTC().Before(record.AbsenceUntil) {
 					return auth.ErrForbidden

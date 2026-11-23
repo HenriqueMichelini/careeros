@@ -59,10 +59,11 @@ type OperationsConfig struct {
 	Build, Owner string
 	// The registered drill verifier checks the referenced backup recovery
 	// observation for this exact incident. A label alone grants no authority.
-	VerifyBackupRecovery  func(context.Context, string, OperationsIncident) (time.Time, error)
-	VerifyServiceRecovery func(context.Context, string, string) (time.Time, error)
-	VerifyPreparedCover   func(context.Context, OperationsAbsence) error
-	VerifyEmergencyReview func(context.Context, string, OperationsEmergency) (time.Time, error)
+	VerifyBackupRecovery   func(context.Context, string, OperationsIncident) (time.Time, error)
+	VerifyProviderRecovery func(context.Context, string, OperationsIncident) (time.Time, error)
+	VerifyServiceRecovery  func(context.Context, string, string) (time.Time, error)
+	VerifyPreparedCover    func(context.Context, OperationsAbsence) error
+	VerifyEmergencyReview  func(context.Context, string, OperationsEmergency) (OperationsEmergencyReview, error)
 }
 
 type OperationsIncident struct {

@@ -581,10 +581,15 @@ func (r *Reconciliation) Apply(ctx context.Context, p auth.Principal, c Reconcil
 	// The source records an actual capture failure within this transaction.
 	// Financial evidence and the shared emergency stop remain durable together.
 	var observation int
-	emitEvent := c.Kind == "unpriced" || breach && d.MaximumBreached
-	if err = tx.QueryRowContext(ctx, `SELECT careeros_capture_reconciliation_operations($1,$2,$3)`,
-		r.h.cfg.Namespace, c.ID, emitEvent).Scan(&observation); err != nil {
-		return result, ErrUnavailable
+	if observer := r.h.localOperations(); observer != nil {
+		emitEvent := c.Kind == "unpriced" || breach && d.MaximumBreached
+		observation, err = observer.CaptureReconciliation(ctx, tx, r.h.cfg.Namespace, c.ID, emitEvent)
+		if err != nil {
+			return result, err
+		}
+		if err = r.authorize(ctx, tx, p); err != nil {
+			return result, err
+		}
 	}
 	if err = tx.Commit(); err != nil {
 		return result, ErrUnavailable

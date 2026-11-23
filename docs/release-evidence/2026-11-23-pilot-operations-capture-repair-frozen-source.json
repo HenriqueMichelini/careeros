@@ -1,0 +1,98 @@
+{
+  "issue": 291,
+  "repair_parent": "d465006796cf83f355bb76480bc9d92a9d50f1d0",
+  "previous_ticket": "089a7ac792b506e20ddd9da506cf9edd22add729",
+  "scope": "18 source, test, and operator guide paths frozen before verification",
+  "files": {
+    "cmd/pilot-operations-local/main.go": {
+      "bytes": 10432,
+      "sha256": "a1d8c9b234a38a3ca57f540d0a46365cc166583cf915c772d3e60816811aed30",
+      "git_blob": "cf534aa7d508572be77da469c10d4737b30846ed"
+    },
+    "docs/managed-pilot-operations-local.md": {
+      "bytes": 13852,
+      "sha256": "db5abf25dbba2a7b891f414988b19a6b1a9c4a0be815de09cc083c55845af414",
+      "git_blob": "2a2056b583d18110afa247e209fdadad384894d6"
+    },
+    "internal/accountapi/pilot_operations_cli_test.go": {
+      "bytes": 29932,
+      "sha256": "a9696b9f56d5bdeb6bed2c6a49351ea76d76a52ed0d1ac11bf64d4bcb0fcef7c",
+      "git_blob": "35964bfad161d54fc729c7d626f6a963553098c2"
+    },
+    "internal/accountapi/pilot_operations_order_test.go": {
+      "bytes": 10854,
+      "sha256": "33085e44f7bb5c4bfe10637e3d47c034317a7468d5d674000789ff5ff2d8b4c7",
+      "git_blob": "22de4c9c6ebb62cd85e36d9121b586ff4f5637d3"
+    },
+    "internal/accountapi/pilot_operations_test.go": {
+      "bytes": 44812,
+      "sha256": "70218af0d4340c708dafbe86ca62ec26a1fe7f2de476d9bc972f069e2e56ce68",
+      "git_blob": "1d1ae372f267a9622cacadf77903711146504f55"
+    },
+    "internal/accountstore/control_command.go": {
+      "bytes": 8983,
+      "sha256": "0d0269242889b2438fe9c7eb7444ddbea27b5075e3c3169e9d4ab6064d1956e8",
+      "git_blob": "6c94242c4561ffaff25dd4df0c457660e2e3d7c4"
+    },
+    "internal/accountstore/operations.go": {
+      "bytes": 16475,
+      "sha256": "b42979cbf58caaa3ca3c7b3422a32be6c31aa3562038e27bf2058da4d6251fb3",
+      "git_blob": "9a88d6eff27ed6729902ab1ae2c3fbbea55a4b10"
+    },
+    "internal/accountstore/operations_containment.go": {
+      "bytes": 11176,
+      "sha256": "cf7482ae9d521b28b1b6de3b636fe5760d90cf808299a81b96592e836019ec4b",
+      "git_blob": "b60a77332222bd5d0dc7cada37e64a26d961ec63"
+    },
+    "internal/accountstore/operations_emergency.go": {
+      "bytes": 11739,
+      "sha256": "beb3ce7e9e526c25eb22ec1afbf253e2dc85cdb6564ba67b405cc1b130bfc7f6",
+      "git_blob": "92748d633a931fd14add426004a786a508e828c7"
+    },
+    "internal/accountstore/operations_fault_receipt.go": {
+      "bytes": 3259,
+      "sha256": "4dca3637d2315729f7bb2db3e8e07bcd03fb52be37d3edaa7c8fbfcbc7f17735",
+      "git_blob": "f46a30aba4ac3f6cb1b98068baa34b0eebd84370"
+    },
+    "internal/accountstore/operations_journal.go": {
+      "bytes": 18324,
+      "sha256": "bebdcf66622899ec978f17cb9aaab78015925febb08cd0b5df9d4b3e9dca0275",
+      "git_blob": "1b5d81ebbc7191bc2202cdb798bb8a5b6362d05b"
+    },
+    "internal/accountstore/schema.sql": {
+      "bytes": 27649,
+      "sha256": "5e8c165a6473d2d248e2d6c2db064d0e7b011a3f60fb6c621a9eeb7c051df5d0",
+      "git_blob": "66495b504c2dadee28a3eb5296fb51b882c66306"
+    },
+    "internal/aicontrol/dispatch.go": {
+      "bytes": 43394,
+      "sha256": "a0415e980703ca1b1c414402d2c4b8583015863b62524a66d36cfb0437578656",
+      "git_blob": "39b993aace3ecac2ff19f05c278caff982b193f8"
+    },
+    "internal/aicontrol/operations.go": {
+      "bytes": 13231,
+      "sha256": "3c75402bb8d6f7ef90eefa92c48bed2fd2d065bd5d6109ade0b07fac5c72abc7",
+      "git_blob": "9c173436ba352f51eabcc4732592a0c111f7c2bf"
+    },
+    "internal/aicontrol/operations_capture.sql": {
+      "bytes": 8583,
+      "sha256": "04e57c125342ce86ddcfa29561992a67ec7189e549c403f327e0fa6b4d144339",
+      "git_blob": "e7100f62558ce4bcff475cd9a64debc2313fec81"
+    },
+    "internal/aicontrol/reconciliation.go": {
+      "bytes": 30545,
+      "sha256": "0fbc555c10c2e76128d10260b4ec2eee4e043310629ca96e845f1bc66da2470e",
+      "git_blob": "dabbd4459c022e3844fe336fb193dec1b65701d3"
+    },
+    "internal/aicontrol/roles.go": {
+      "bytes": 20499,
+      "sha256": "87643305357c371a4f41548a71c7c4f93364c63feafd0a322ceb0de1ec27ef7f",
+      "git_blob": "279775c5535feb0d1c3a39bba3144becb2006e3b"
+    },
+    "internal/operationslocal/config.go": {
+      "bytes": 5280,
+      "sha256": "18381a0f7639ad309d2e67a663f4774cd57d2b3850597810b387474dbb952855",
+      "git_blob": "2914a7e94ef0f4e7e359cc130b0bdbc925bc7113"
+    }
+  }
+}

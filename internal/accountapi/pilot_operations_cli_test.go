@@ -66,14 +66,15 @@ func runPilotOperationsFixtureCLI(t *testing.T, program string, env []string, in
 }
 
 func TestPilotOperationsReconciliationCLIObservesItsOwnCommittedInvariant(t *testing.T) {
-	t.Run("capture", func(t *testing.T) { pilotOperationsReconciliationCLI(t, false) })
-	t.Run("capture_unavailable", func(t *testing.T) { pilotOperationsReconciliationCLI(t, true) })
+	for _, mode := range []string{"capture", "capture_unavailable", "reviewer_expires", "finance_only"} {
+		t.Run(mode, func(t *testing.T) { pilotOperationsReconciliationCLI(t, mode) })
+	}
 }
 
-func pilotOperationsReconciliationCLI(t *testing.T, captureUnavailable bool) {
+func pilotOperationsReconciliationCLI(t *testing.T, mode string) {
 	t.Helper()
 	f, h, _, router := qualificationFixture(t)
-	j, ops, _, directory := pilotOperationsFixture(t, f, h, time.Now)
+	j, ops, notices, directory := pilotOperationsFixture(t, f, h, time.Now)
 	ctx := context.Background()
 	if err := h.SetQualificationResponder(func(context.Context, string, *http.Request) (*http.Response, bool, error) {
 		w := httptest.NewRecorder()
@@ -112,6 +113,56 @@ func pilotOperationsReconciliationCLI(t *testing.T, captureUnavailable bool) {
 	}
 	evidence.Preview = preview.Token
 	raw, _ = json.Marshal(evidence)
+	if mode == "finance_only" {
+		env = append(env, "CAREEROS_OPERATIONS_JOURNAL_DIRECTORY=", "CAREEROS_OPERATIONS_JOURNAL_KEY=")
+		_, diagnostic, err = runPilotOperationsFixtureCLI(t, "reconciliation-local", env, raw, "--namespace", "qualification", "--mode", "apply")
+		if err != nil || strings.Contains(string(diagnostic), `"Kind":"invariant_breach"`) {
+			t.Fatalf("finance-only command crossed its independent boundary: %v %s", err, diagnostic)
+		}
+		var inheritedStop, operationsSideEffect bool
+		if err = f.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM ai_recon_stop WHERE stopped AND event_id=$1),
+		 EXISTS(SELECT 1 FROM careeros_operations_pending) OR EXISTS(SELECT 1 FROM careeros_operations_deferred)
+		 OR EXISTS(SELECT 1 FROM careeros_control_state WHERE operations_fault OR inference_stopped)`, evidence.ID).
+			Scan(&inheritedStop, &operationsSideEffect); err != nil || !inheritedStop || operationsSideEffect {
+			t.Fatalf("finance-only authority changed #291 state or lost #283: %v %v %v", inheritedStop, operationsSideEffect, err)
+		}
+		return
+	}
+	if mode == "reviewer_expires" {
+		blocker, err := f.DB.BeginTx(ctx, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer blocker.Rollback()
+		if _, err = blocker.Exec(`SELECT pg_advisory_xact_lock(72481324)`); err != nil {
+			t.Fatal(err)
+		}
+		var expiry time.Time
+		if err = f.DB.QueryRow(`UPDATE ai_recon_operator SET expires_at=clock_timestamp()+interval '2 seconds'
+		 WHERE namespace='qualification' AND actor=$1 RETURNING expires_at`, f.Principal.AccountID).Scan(&expiry); err != nil {
+			t.Fatal(err)
+		}
+		done := make(chan error, 1)
+		go func() {
+			_, _, err := runPilotOperationsFixtureCLI(t, "reconciliation-local", env, raw, "--namespace", "qualification", "--mode", "apply")
+			done <- err
+		}()
+		waitForOperationsLease(t, f.DB, 72481324, "ExclusiveLock", false)
+		time.Sleep(time.Until(expiry) + 50*time.Millisecond)
+		if err = blocker.Rollback(); err != nil {
+			t.Fatal(err)
+		}
+		if err = <-done; err == nil {
+			t.Fatal("expired reconciliation reviewer committed the command")
+		}
+		var committed bool
+		if err = f.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM ai_recon_command WHERE namespace='qualification' AND id=$1)
+		 OR EXISTS(SELECT 1 FROM careeros_operations_deferred WHERE namespace='qualification' AND event_id=$1)`, evidence.ID).Scan(&committed); err != nil || committed {
+			t.Fatalf("expired reviewer left a command or deferred receipt: %v %v", committed, err)
+		}
+		return
+	}
+	captureUnavailable := mode == "capture_unavailable"
 	if captureUnavailable {
 		_, err = f.DB.Exec(`CREATE FUNCTION fixture_operations_capture_unavailable() RETURNS trigger LANGUAGE plpgsql AS $$
 		 BEGIN RAISE EXCEPTION 'fixture capture unavailable'; END $$;
@@ -139,17 +190,19 @@ func pilotOperationsReconciliationCLI(t *testing.T, captureUnavailable bool) {
 		if status.Emergency == nil || !status.ContainmentUnavailable {
 			t.Fatalf("owner did not receive the durable capture failure: %+v", status)
 		}
-		var recorded bool
-		if err = f.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM ai_recon_event WHERE namespace='qualification' AND id=$1)`, evidence.ID).Scan(&recorded); err != nil || !recorded {
-			t.Fatalf("capture failure lost the irreversible financial evidence: %v %v", recorded, err)
+		var eventAt time.Time
+		var obligation, maximum int64
+		if err = f.DB.QueryRow(`SELECT created_at,obligation,reserved FROM ai_recon_event WHERE namespace='qualification' AND id=$1`,
+			evidence.ID).Scan(&eventAt, &obligation, &maximum); err != nil || obligation != maximum {
+			t.Fatalf("fixture lost the unpriced event at the unchanged maximum: %d %d %v", obligation, maximum, err)
 		}
 		emergency := status.Emergency.ID
 		ops, err = f.Store.LocalOperations(accountstore.OperationsConfig{Owner: "Henrique", Build: "fixture-recovery-writer",
-			VerifyEmergencyReview: func(_ context.Context, reference string, got accountstore.OperationsEmergency) (time.Time, error) {
+			VerifyEmergencyReview: func(_ context.Context, reference string, got accountstore.OperationsEmergency) (accountstore.OperationsEmergencyReview, error) {
 				if got.ID != emergency || reference != "fixture-reviewed-writer" {
-					return time.Time{}, auth.ErrForbidden
+					return accountstore.OperationsEmergencyReview{}, auth.ErrForbidden
 				}
-				return time.Now().UTC(), nil
+				return accountstore.OperationsEmergencyReview{ObservedAt: time.Now().UTC()}, nil
 			}}, h.LocalOperationsSource(), j)
 		if err != nil {
 			t.Fatal(err)
@@ -166,6 +219,33 @@ func pilotOperationsReconciliationCLI(t *testing.T, captureUnavailable bool) {
 		status, err = ops.OwnerStatus(ctx, f.Principal)
 		if err != nil || status.Emergency != nil {
 			t.Fatalf("recovered writer did not clear the reviewed emergency: %+v %v", status, err)
+		}
+		criticals := 0
+		for _, incident := range status.Incidents {
+			if incident.Kind == "invariant_breach" {
+				criticals++
+				if !incident.EventAt.Equal(eventAt) || incident.Exposure != obligation || incident.Cap != maximum {
+					t.Fatalf("replay changed the original typed event: %+v", incident)
+				}
+			}
+		}
+		if criticals != 1 || len(*notices) == 0 {
+			t.Fatalf("expected one replayed critical event: %+v %+v", status.Incidents, *notices)
+		}
+		var delivered int
+		for i := 0; i < 2; i++ {
+			if err = ops.Inspect(ctx); err != nil {
+				t.Fatal(err)
+			}
+		}
+		for _, n := range *notices {
+			if n.Kind == "invariant_breach" {
+				delivered++
+			}
+		}
+		var pending int
+		if err = f.DB.QueryRow(`SELECT count(*) FROM careeros_operations_pending WHERE critical_event`).Scan(&pending); err != nil || pending != 0 || delivered != 1 {
+			t.Fatalf("successful consumption must acknowledge once: pending=%d delivered=%d %v", pending, delivered, err)
 		}
 	} else if count != 1 {
 		t.Fatalf("expected one retained invariant incident: %+v", status.Incidents)
@@ -187,6 +267,14 @@ func pilotOperationsReconciliationCLI(t *testing.T, captureUnavailable bool) {
 	if err = f.DB.QueryRow(`SELECT has_function_privilege($1,'careeros_operations_record_emergency(text)','EXECUTE')`,
 		fmt.Sprintf("ai_fixture_review_%x", role[:8])).Scan(&direct); err != nil || direct {
 		t.Fatalf("financial reader can execute the private emergency mutation: %v", err)
+	}
+	for _, databaseRole := range []string{fmt.Sprintf("ai_fixture_review_%x", role[:8]), fmt.Sprintf("ai_fixture_rt_%x", role[:8])} {
+		if err = f.DB.QueryRow(`SELECT has_table_privilege($1,'careeros_operations_pending','DELETE')
+		 OR has_table_privilege($1,'careeros_operations_deferred','INSERT,UPDATE,DELETE')
+		 OR has_function_privilege($1,'careeros_capture_operations(text,text)','EXECUTE')
+		 OR has_function_privilege($1,'careeros_replay_operations_captures(text)','EXECUTE')`, databaseRole).Scan(&direct); err != nil || direct {
+			t.Fatalf("local database role retained unmediated capture authority: %v", err)
+		}
 	}
 }
 
@@ -329,6 +417,119 @@ func writeOperationsProof(t *testing.T, path string, key ed25519.PrivateKey, sta
 	}
 	if err = os.WriteFile(path, signed, 0600); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestPilotOperationsSupportCLIReviewAndCloseAcceptEmptyInput(t *testing.T) {
+	f, h, _, _ := qualificationFixture(t)
+	_, ops, _, directory := pilotOperationsFixture(t, f, h, time.Now)
+	ctx := context.Background()
+	created, err := ops.CreateCase(ctx, f.Principal, accountstore.OperationsCaseInput{Purpose: "product", Locale: "en",
+		Message: "Synthetic product question.", ReceivedAt: time.Now().Add(-time.Minute)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	env := pilotOperationsCLIEnv(t, f, directory, "qualification")
+	update := func(kind string, body []byte) error {
+		_, _, err := runPilotOperationsFixtureCLI(t, "pilot-operations-local", env, body,
+			"--action", "case-update", "--id", created.ID, "--kind", kind)
+		return err
+	}
+	if err = update("review", nil); err != nil {
+		t.Fatalf("empty review failed: %v", err)
+	}
+	if err = update("respond", nil); err == nil {
+		t.Fatal("empty response was accepted")
+	}
+	const response = "Synthetic substantive response."
+	if err = update("respond", []byte(`{"response":"`+response+`"}`)); err != nil {
+		t.Fatalf("minimized response failed: %v", err)
+	}
+	if err = update("close", nil); err != nil {
+		t.Fatalf("empty close failed: %v", err)
+	}
+	if err = ops.WithCase(ctx, f.Principal, created.ID, false, func(c accountstore.OperationsCase) error {
+		if !c.NecessityReviewAt.After(created.NecessityReviewAt) || c.RespondedAt == nil || c.ClosedAt == nil || c.Response != response {
+			t.Fatalf("case review, response, and closure did not persist: %+v", c)
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestPilotOperationsJournalOnlyCauseSurvivesAndRequiresSeparateProof(t *testing.T) {
+	for _, cause := range []struct {
+		kind            accountstore.OperationsFault
+		purpose, result string
+	}{
+		{accountstore.OperationsBackupFault, "backup", "synthetic_restore_check_passed"},
+		{accountstore.OperationsProviderFault, "provider", "synthetic_provider_health_check_passed"},
+	} {
+		t.Run(cause.purpose, func(t *testing.T) {
+			f, h, _, _ := qualificationFixture(t)
+			_, ops, _, directory := pilotOperationsFixture(t, f, h, time.Now)
+			ctx := context.Background()
+			at := time.Now().UTC().Add(-time.Minute)
+			limited, err := accountstore.OpenLocalOperationsJournal(accountstore.OperationsJournalConfig{Directory: directory,
+				BindingKey: sha256.Sum256([]byte("synthetic-operations-integration")), MaxBytes: 512, Clock: func() time.Time { return at }})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err = limited.SignalOfflineFault(ctx, cause.kind); !errors.Is(err, auth.ErrUnavailable) {
+				t.Fatalf("fixture did not fail its main journal write: %v", err)
+			}
+			status, err := ops.OwnerStatus(ctx, f.Principal)
+			if err != nil || status.Emergency != nil || !status.ContainmentUnavailable {
+				t.Fatalf("expected the journal to hold the sole emergency receipt: %+v %v", status, err)
+			}
+			env := pilotOperationsCLIEnv(t, f, directory, "qualification")
+			_, diagnostic, err := runPilotOperationsFixtureCLI(t, "pilot-operations-local", env, nil, "--action", "replay-containment")
+			if err != nil {
+				t.Fatalf("replay the independent cause: %v %s", err, diagnostic)
+			}
+			status, err = ops.OwnerStatus(ctx, f.Principal)
+			if err != nil || status.Emergency == nil {
+				t.Fatalf("missing owner emergency: %+v %v", status, err)
+			}
+			pub, priv, err := ed25519.GenerateKey(rand.Reader)
+			if err != nil {
+				t.Fatal(err)
+			}
+			path := filepath.Join(t.TempDir(), "journal-only-recovery.json")
+			env = append(env, "CAREEROS_OPERATIONS_RECOVERY_ARTIFACT="+path, "CAREEROS_OPERATIONS_RECOVERY_PUBLIC_KEY="+hex.EncodeToString(pub))
+			interval := operationslocal.RecoveryStatement{Purpose: "containment", Reference: "fixture-journal-only-reviewed",
+				Incident: status.Emergency.ID, Revision: 1, ObservedAt: time.Now().UTC(), Result: "synthetic_containment_interval_reconciled"}
+			writeOperationsProof(t, path, priv, interval)
+			_, diagnostic, err = runPilotOperationsFixtureCLI(t, "pilot-operations-local", env, nil, "--action", "replay-containment", "--reference", interval.Reference)
+			if err != nil {
+				t.Fatalf("reviewed interval failed: %v %s", err, diagnostic)
+			}
+			status, err = ops.OwnerStatus(ctx, f.Principal)
+			if err != nil || status.Emergency != nil {
+				t.Fatalf("journal emergency did not clear: %+v %v", status, err)
+			}
+			var original accountstore.OperationsIncident
+			for _, incident := range status.Incidents {
+				if incident.Kind == string(cause.kind) {
+					original = incident
+				}
+			}
+			if original.State != "unacknowledged" || !original.EventAt.Equal(at) {
+				t.Fatalf("original type or onset was lost: %+v", original)
+			}
+			if err = ops.ResolveIncident(ctx, f.Principal, original.ID, original.Revision, ""); !errors.Is(err, auth.ErrForbidden) {
+				t.Fatalf("interval proof bypassed separate %s verifications: %v", cause.purpose, err)
+			}
+			proof := operationslocal.RecoveryStatement{Purpose: cause.purpose, Reference: "fixture-typed-recovery", Incident: original.ID,
+				Revision: original.Revision, ObservedAt: time.Now().UTC(), Result: cause.result}
+			writeOperationsProof(t, path, priv, proof)
+			_, diagnostic, err = runPilotOperationsFixtureCLI(t, "pilot-operations-local", env, nil, "--action", "resolve",
+				"--id", original.ID, "--revision", fmt.Sprint(original.Revision), "--reference", proof.Reference)
+			if err != nil {
+				t.Fatalf("separate typed proof failed: %v %s", err, diagnostic)
+			}
+		})
 	}
 }
 
