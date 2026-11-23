@@ -1,0 +1,34 @@
+{
+  "files": {
+    "docs/local-older-pilot-restore.md": {
+      "bytes": 7990,
+      "git_blob": "45ac085fee182ceb18fb5ea967808d96d92faa4c",
+      "sha256": "07a86ff624719179a8fc4defbe3fa58904a8d82909521db9487002a3f2cfe5ea"
+    },
+    "internal/accountapi/local_restore_authority_test.go": {
+      "bytes": 7664,
+      "git_blob": "57d6ca880afddc656d040b25b355e1fcc0ed0887",
+      "sha256": "6a97f33c93605bb757c53cf25374efd5612366ddb9ba31d53c88fb78da3d5d2a"
+    },
+    "internal/accountapi/local_restore_postgres_test.go": {
+      "bytes": 5992,
+      "git_blob": "d9e29d83cfe5ac11ec1f07828a3ced2022127d34",
+      "sha256": "f2180709e63432e91543d6a9e8df657a11f7f0f40c07e482c03a4550c12e0500"
+    },
+    "internal/accountapi/local_restore_test.go": {
+      "bytes": 35780,
+      "git_blob": "40b926c6f92db2f54d31f80254b9749ea94fdb42",
+      "sha256": "9d1cf14acbd26723f14ca967f37b0fd10d89494df821a56d79a11b291d186eff"
+    },
+    "internal/testsupport/aiadmission/fixture.go": {
+      "bytes": 9414,
+      "git_blob": "d122066db33e1d9a4e0f4365961718aeee2cf295",
+      "sha256": "44c00797410e7f274b17e56c316b15fbc9d11784272532a5005209965e0d98ae"
+    }
+  },
+  "issue": 293,
+  "previous_ticket": "d6c901a45b75805560941a52f11593e9d83a99ff",
+  "scope": "owned disposable PostgreSQL and synthetic local recovery",
+  "source": "2546bc1fa846ddcefcee79269bd339d7fbe46160",
+  "source_tree": "e0ecf441c340915b3da51caaba12f2b6b348c422"
+}

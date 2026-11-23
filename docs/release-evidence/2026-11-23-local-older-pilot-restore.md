@@ -1,0 +1,17 @@
+# Older pilot backup recovery verification
+
+[#293](https://github.com/HenriqueMichelini/careeros/issues/293) was rehearsed from source `2546bc1fa846ddcefcee79269bd339d7fbe46160` and tree `e0ecf441c340915b3da51caaba12f2b6b348c422`. The [local recovery procedure and separately approvable hosted proposal](../local-older-pilot-restore.md) name the inputs the intended environment still needs.
+
+| Exercised local seam | Recorded outcome |
+| --- | --- |
+| Real older archive and independent decisions | PostgreSQL restored an older image with four Profiles, two complete Drafts, one reviewed delivery and one unknown dispatch. The later detail removal, account closure, grant revocation, Draft closure and additional unknown dispatch came from the independently pinned decision path. |
+| Failure closures | Actual `pg_restore` refused a malformed archive without installing its schema. A changed target catalog, missing dispatch authority class and still-running old cluster kept reads and mutations at HTTP 503 without generation advance. |
+| Quarantine, exclusion and reopening | The rehearsal closed both old routes and drained both fake gateways. Once PostgreSQL stopped and the old socket disappeared, the direct old read, write, opening and provider-capable paths returned HTTP 503. The old protected result lease was denied. The existing verified operator sequence advanced generation from 1 to 2, leaving invitation activation stopped. |
+| Retrieved and denied content | Both canonical and direct routes recovered the exact reviewed Draft. The closed Draft returned HTTP 410 and reopening returned 403. Stale detail access returned 403 before replay of the canonical cleanup and its original clock. The old session and old session-bound opening receipt returned 401 and 422. The closed account had no restored active Profile and the grant retained the original revocation and retrieval clocks. |
+| Accounting and replay | The five Draft rights remained one reserved, one consumed and three available. Both original unknown dispatch IDs and durable intent clocks survived. The qualification and Draft scopes retained 1,344 and 72,032 microUSD, each with one possible remote occupancy. A newer or replayed Action sent zero additional fake requests. |
+
+In the focused exact run, backup completion preceded quarantine by 150 ms. Verified retrieval and checked replay completed 1464 ms after quarantine. These observations describe one local synthetic run, with no selected hosted RPO/RTO, copied-record disposal guarantee, or hosted/provider exclusion evidence. The dispatcher uses only injected fake responses.
+
+The full frozen Go race process exited 1, recording 2,677 passing test and subtest events across 27 passing packages, including this rehearsal and all 37 admission IDs. It retained 25 known Evaluation Lab test or subtest failures and the Evaluation Lab package failure. The [machine summary](2026-11-23-local-older-pilot-restore-summary.json) records the exact comparison with the prior run. Scoped vet passed with the known composite diagnostics excluded, and full default vet remained byte-identical to the inherited diagnostics. The frontend source is unchanged from #292.
+
+The [frozen source](2026-11-23-local-older-pilot-restore-frozen-source.json) and [machine summary](2026-11-23-local-older-pilot-restore-summary.json) bind the committed source, the exact PostgreSQL and Go receipts, and the preserved tracer runs. The focused run stopped and removed both owned fixture clusters.
