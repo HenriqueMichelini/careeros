@@ -68,6 +68,7 @@ type operationsJournalState struct {
 	Public              *OperationsPublicStatus            `json:"public,omitempty"`
 	PublicEpisode       *operationsPublicEpisode           `json:"publicEpisode,omitempty"`
 	Rolling             map[string]time.Time               `json:"rolling,omitempty"`
+	RollingRecoveries   map[string]rollingRecovery         `json:"rollingRecoveries,omitempty"`
 	LastDurableSequence int64                              `json:"lastDurableSequence,omitempty"`
 	FenceInstalled      bool                               `json:"fenceInstalled,omitempty"`
 	OfflineOwner        []byte                             `json:"offlineOwner,omitempty"`
@@ -150,7 +151,7 @@ func (j *OperationsJournal) withState(ctx context.Context, persist, containment 
 	unlock, err := j.lock(ctx, persist)
 	if err != nil {
 		if containment {
-			return errors.Join(err, j.sealFence(), j.sealIndependent())
+			return errors.Join(err, j.queueEmergency(ctx))
 		}
 		return err
 	}
@@ -227,13 +228,29 @@ func (j *OperationsJournal) checkPendingFence() error {
 	if err := j.checkFence(); err != nil {
 		return err
 	}
-	for _, name := range []string{"journal.pending", "journal.uncertain"} {
+	for _, name := range []string{"journal.pending", "journal.uncertain", "journal.queued"} {
 		_, err := os.Lstat(filepath.Join(j.cfg.Directory, name))
 		if !errors.Is(err, os.ErrNotExist) {
 			return auth.ErrUnavailable
 		}
 	}
 	return nil
+}
+
+// Queue a stop against future lease decisions without modifying the latch or
+// authenticated state underneath an already ordered protected operation.
+func (j *OperationsJournal) queueEmergency(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), time.Second)
+	defer cancel()
+	unlock, err := j.lockAdmission(ctx, true)
+	if err != nil {
+		return err
+	}
+	defer unlock()
+	if _, err := os.Lstat(filepath.Join(j.cfg.Directory, "journal.queued")); err == nil {
+		return nil
+	}
+	return j.createFenceFile("journal.queued")
 }
 
 func (j *OperationsJournal) sealIndependent() error {
@@ -253,13 +270,13 @@ func (j *OperationsJournal) verifyWriteHealth() error {
 	name := ".journal-health-" + id
 	defer os.Remove(filepath.Join(j.cfg.Directory, name))
 	if err = j.createFenceFile(name); err != nil {
-		return errors.Join(err, j.sealIndependent())
+		return err
 	}
 	if err = os.Remove(filepath.Join(j.cfg.Directory, name)); err != nil {
 		return auth.ErrUnavailable
 	}
 	if err = j.syncDirectory(); err != nil {
-		return errors.Join(err, j.sealIndependent())
+		return err
 	}
 	return j.checkPendingFence()
 }
@@ -334,11 +351,19 @@ func (j *OperationsJournal) writeFence(offset int64, value byte) error {
 }
 
 func (j *OperationsJournal) lock(ctx context.Context, exclusive bool) (func(), error) {
+	return j.lockFile(ctx, j.name+".lock", exclusive)
+}
+
+func (j *OperationsJournal) lockAdmission(ctx context.Context, exclusive bool) (func(), error) {
+	return j.lockFile(ctx, "journal.admission.lock", exclusive)
+}
+
+func (j *OperationsJournal) lockFile(ctx context.Context, name string, exclusive bool) (func(), error) {
 	mode := syscall.LOCK_SH
 	if exclusive {
 		mode = syscall.LOCK_EX
 	}
-	path := filepath.Join(j.cfg.Directory, j.name+".lock")
+	path := filepath.Join(j.cfg.Directory, name)
 	flags := os.O_RDONLY | syscall.O_NOFOLLOW
 	if exclusive {
 		flags = os.O_CREATE | os.O_RDWR | syscall.O_NOFOLLOW

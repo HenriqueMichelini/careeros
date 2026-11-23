@@ -305,10 +305,12 @@ GRANT INSERT,UPDATE ON ai_recon_command,ai_recon_state,ai_recon_stop,ai_recon_ev
 	if _, err = tx.ExecContext(ctx, fmt.Sprintf(`REVOKE INSERT(namespace,sample),INSERT ON careeros_operations_pending FROM %[1]s,%[2]s;
 	  REVOKE USAGE ON SEQUENCE careeros_operations_pending_id_seq FROM %[1]s,%[2]s;
 	  GRANT SELECT,DELETE ON careeros_operations_pending TO %[2]s;
-	  GRANT EXECUTE ON FUNCTION careeros_capture_operations(text,text) TO %[1]s,%[2]s;
+	  REVOKE EXECUTE ON FUNCTION careeros_capture_operations(text,text) FROM %[2]s;
+	  GRANT EXECUTE ON FUNCTION careeros_capture_operations(text,text) TO %[1]s;
+	  GRANT EXECUTE ON FUNCTION careeros_capture_reconciliation_operations(text,text,boolean) TO %[2]s;
 	  GRANT EXECUTE ON FUNCTION careeros_operations_snapshot(text,text) TO %[2]s;
-	  GRANT EXECUTE ON FUNCTION careeros_operations_attach_matches(text),careeros_operations_add_hold(text,bigint,boolean) TO %[2]s;
-	  GRANT EXECUTE ON FUNCTION careeros_operations_fault_stop() TO %[2]s`, runtimeRole, reviewerRole)); err != nil {
+	  GRANT EXECUTE ON FUNCTION careeros_operations_attach_matches(text),careeros_operations_observer_matches(text),
+	    careeros_operations_add_hold(text,text,bigint,boolean),careeros_operations_emergency(text,text) TO %[2]s`, runtimeRole, reviewerRole)); err != nil {
 		return nil, nil, "", ErrUnavailable
 	}
 	if tx.Commit() != nil {

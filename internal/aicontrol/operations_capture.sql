@@ -55,7 +55,8 @@ BEGIN
   FROM %[1]s.ai_recon_event e
   JOIN %[1]s.ai_recon_command cmd ON cmd.namespace=e.namespace AND cmd.id=e.id
   JOIN %[1]s.ai_recon_contract c ON c.namespace=e.namespace AND c.dispatch=e.dispatch
-  WHERE e.namespace=ns AND e.id=event_ref;
+  WHERE e.namespace=ns AND e.id=event_ref AND cmd.dispatch=e.dispatch
+   AND (cmd.kind='unpriced' OR e.obligation>e.reserved);
   IF event IS NULL THEN RETURN NULL; END IF;
  END IF;
  RETURN jsonb_build_object('At',sampled_at,'Scopes',COALESCE(scopes,'[]'::jsonb),'Entries',
@@ -77,3 +78,29 @@ BEGIN
  RETURN true;
 END $capture$;
 REVOKE ALL ON FUNCTION %[1]s.careeros_operations_snapshot(text,text),%[1]s.careeros_capture_operations(text,text) FROM PUBLIC;
+
+-- Only a fresh authoritative command in this transaction can stage a
+-- reconciliation capture or record an actual capture failure. Neither the
+-- financial role nor the caller supplies the emergency event or its contents.
+CREATE OR REPLACE FUNCTION %[1]s.careeros_capture_reconciliation_operations(ns text, command_ref text, include_event boolean)
+RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $reconciliation$
+BEGIN
+ IF NOT %[1]s.careeros_operations_required() THEN RETURN 0; END IF;
+ IF NOT EXISTS(SELECT 1 FROM %[1]s.ai_recon_command c
+   WHERE c.namespace=ns AND c.id=command_ref AND c.xmin=pg_current_xact_id()::xid) THEN
+  RAISE EXCEPTION 'current reconciliation command required';
+ END IF;
+ IF include_event AND NOT EXISTS(SELECT 1 FROM %[1]s.ai_recon_event e
+   JOIN %[1]s.ai_recon_command c ON c.namespace=e.namespace AND c.id=e.id AND c.dispatch=e.dispatch
+   WHERE e.namespace=ns AND e.id=command_ref AND (c.kind='unpriced' OR e.obligation>e.reserved)) THEN
+  RAISE EXCEPTION 'current reconciliation event required';
+ END IF;
+ BEGIN
+  PERFORM %[1]s.careeros_capture_operations(ns,CASE WHEN include_event THEN command_ref ELSE NULL END);
+ EXCEPTION WHEN OTHERS THEN
+  IF NOT %[1]s.careeros_operations_record_emergency('persistence_fault') THEN RAISE; END IF;
+  RETURN 2;
+ END;
+ RETURN 1;
+END $reconciliation$;
+REVOKE ALL ON FUNCTION %[1]s.careeros_capture_reconciliation_operations(text,text,boolean) FROM PUBLIC;

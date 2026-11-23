@@ -66,8 +66,14 @@ func runPilotOperationsFixtureCLI(t *testing.T, program string, env []string, in
 }
 
 func TestPilotOperationsReconciliationCLIObservesItsOwnCommittedInvariant(t *testing.T) {
+	t.Run("capture", func(t *testing.T) { pilotOperationsReconciliationCLI(t, false) })
+	t.Run("capture_unavailable", func(t *testing.T) { pilotOperationsReconciliationCLI(t, true) })
+}
+
+func pilotOperationsReconciliationCLI(t *testing.T, captureUnavailable bool) {
+	t.Helper()
 	f, h, _, router := qualificationFixture(t)
-	_, ops, _, directory := pilotOperationsFixture(t, f, h, time.Now)
+	j, ops, _, directory := pilotOperationsFixture(t, f, h, time.Now)
 	ctx := context.Background()
 	if err := h.SetQualificationResponder(func(context.Context, string, *http.Request) (*http.Response, bool, error) {
 		w := httptest.NewRecorder()
@@ -106,8 +112,17 @@ func TestPilotOperationsReconciliationCLIObservesItsOwnCommittedInvariant(t *tes
 	}
 	evidence.Preview = preview.Token
 	raw, _ = json.Marshal(evidence)
+	if captureUnavailable {
+		_, err = f.DB.Exec(`CREATE FUNCTION fixture_operations_capture_unavailable() RETURNS trigger LANGUAGE plpgsql AS $$
+		 BEGIN RAISE EXCEPTION 'fixture capture unavailable'; END $$;
+		 CREATE TRIGGER fixture_operations_capture_unavailable BEFORE INSERT ON careeros_operations_pending
+		 FOR EACH ROW EXECUTE FUNCTION fixture_operations_capture_unavailable()`)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
 	_, diagnostic, err = runPilotOperationsFixtureCLI(t, "reconciliation-local", env, raw, "--namespace", "qualification", "--mode", "apply")
-	if err != nil || !strings.Contains(string(diagnostic), `"Kind":"invariant_breach"`) {
+	if err != nil || !captureUnavailable && !strings.Contains(string(diagnostic), `"Kind":"invariant_breach"`) {
 		t.Fatalf("real command did not deliver its own known invariant signal: %v %s", err, diagnostic)
 	}
 	status, err := ops.OwnerStatus(ctx, f.Principal)
@@ -120,7 +135,39 @@ func TestPilotOperationsReconciliationCLIObservesItsOwnCommittedInvariant(t *tes
 			count++
 		}
 	}
-	if count != 1 {
+	if captureUnavailable {
+		if status.Emergency == nil || !status.ContainmentUnavailable {
+			t.Fatalf("owner did not receive the durable capture failure: %+v", status)
+		}
+		var recorded bool
+		if err = f.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM ai_recon_event WHERE namespace='qualification' AND id=$1)`, evidence.ID).Scan(&recorded); err != nil || !recorded {
+			t.Fatalf("capture failure lost the irreversible financial evidence: %v %v", recorded, err)
+		}
+		emergency := status.Emergency.ID
+		ops, err = f.Store.LocalOperations(accountstore.OperationsConfig{Owner: "Henrique", Build: "fixture-recovery-writer",
+			VerifyEmergencyReview: func(_ context.Context, reference string, got accountstore.OperationsEmergency) (time.Time, error) {
+				if got.ID != emergency || reference != "fixture-reviewed-writer" {
+					return time.Time{}, auth.ErrForbidden
+				}
+				return time.Now().UTC(), nil
+			}}, h.LocalOperationsSource(), j)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err = ops.ReplayEmergency(ctx, f.Principal, "fixture-reviewed-writer"); !errors.Is(err, auth.ErrUnavailable) {
+			t.Fatalf("a readable ledger bypassed the unavailable capture writer: %v", err)
+		}
+		if _, err = f.DB.Exec(`DROP TRIGGER fixture_operations_capture_unavailable ON careeros_operations_pending`); err != nil {
+			t.Fatal(err)
+		}
+		if err = ops.ReplayEmergency(ctx, f.Principal, "fixture-reviewed-writer"); err != nil {
+			t.Fatalf("verified recovery could not commit through the restored writer: %v", err)
+		}
+		status, err = ops.OwnerStatus(ctx, f.Principal)
+		if err != nil || status.Emergency != nil {
+			t.Fatalf("recovered writer did not clear the reviewed emergency: %+v %v", status, err)
+		}
+	} else if count != 1 {
 		t.Fatalf("expected one retained invariant incident: %+v", status.Incidents)
 	}
 	var stopped bool
@@ -136,6 +183,134 @@ func TestPilotOperationsReconciliationCLIObservesItsOwnCommittedInvariant(t *tes
 	if err = f.DB.QueryRow(`SELECT has_column_privilege($1,'careeros_operations_pending','sample','INSERT')`,
 		fmt.Sprintf("ai_fixture_rt_%x", role[:8])).Scan(&direct); err != nil || direct {
 		t.Fatalf("runtime retains arbitrary serialized outbox write authority: %v", err)
+	}
+	if err = f.DB.QueryRow(`SELECT has_function_privilege($1,'careeros_operations_record_emergency(text)','EXECUTE')`,
+		fmt.Sprintf("ai_fixture_review_%x", role[:8])).Scan(&direct); err != nil || direct {
+		t.Fatalf("financial reader can execute the private emergency mutation: %v", err)
+	}
+}
+
+func TestPilotOperationsOfflineCLIFallsBackToSQLAndRequiresSignedIntervalReview(t *testing.T) {
+	f, h, provider, router := qualificationFixture(t)
+	_, ops, _, directory := pilotOperationsFixture(t, f, h, time.Now)
+	ctx := context.Background()
+	env := pilotOperationsCLIEnv(t, f, directory, "qualification")
+	wrong := accountstore.OperationsJournalConfig{Directory: directory, BindingKey: sha256.Sum256([]byte("unregistered-synthetic-observer"))}
+	if err := f.Store.SignalLocalOperationsFallback(ctx, wrong, accountstore.OperationsControlFault); !errors.Is(err, auth.ErrForbidden) {
+		t.Fatalf("SQL accepted an unrelated observer: %v", err)
+	}
+	latch := filepath.Join(directory, "journal.fence")
+	if err := os.Chmod(latch, 0400); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chmod(latch, 0600)
+	if err := os.Chmod(directory, 0500); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chmod(directory, 0700)
+	_, _, err := runPilotOperationsFixtureCLI(t, "pilot-operations-local", env, nil, "--action", "fault", "--kind", "control_fault")
+	if err == nil {
+		t.Fatal("the offline command reported a successful independent journal write")
+	}
+	old, err := os.ReadFile(latch)
+	if err != nil || !bytes.Equal(old, []byte{0, 0}) {
+		t.Fatalf("fixture did not preserve the old latch: %v %v", old, err)
+	}
+	if err = os.Chmod(directory, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err = os.Chmod(latch, 0600); err != nil {
+		t.Fatal(err)
+	}
+	status, err := ops.OwnerStatus(ctx, f.Principal)
+	if err != nil || status.Emergency == nil || !status.ContainmentUnavailable || len(status.Incidents) != 0 {
+		t.Fatalf("SQL fallback was missing or the original journal changed: %+v %v", status, err)
+	}
+	e := status.Emergency
+	if len(e.Causes) != 1 || e.Causes[0] != accountstore.OperationsControlFault || !e.StartedAt.Equal(e.RecordedAt) {
+		t.Fatalf("lost the original typed cause: %+v", e)
+	}
+	detached := directory + "-detached"
+	if err = os.Rename(directory, detached); err != nil {
+		t.Fatal(err)
+	}
+	out, diagnostic, statusErr := runPilotOperationsFixtureCLI(t, "pilot-operations-local", env, nil, "--action", "status")
+	if err = os.Rename(detached, directory); err != nil {
+		t.Fatal(err)
+	}
+	var fallback accountstore.OperationsStatus
+	if statusErr != nil || json.Unmarshal(out, &fallback) != nil || fallback.Emergency == nil || fallback.Emergency.ID != e.ID || len(fallback.Incidents) != 0 {
+		t.Fatalf("owner status lost its limited SQL receipt while the journal was absent: %+v %v %s", fallback, statusErr, diagnostic)
+	}
+	blocked := qualificationRequest(t, f, router, "/api/qualification-gaps", "emergency-survives-journal-restoration", "", f.Body(t, "/api/qualification-gaps"))
+	if blocked.Code == http.StatusOK || len(provider.Calls) != 0 {
+		t.Fatalf("restored readable files reopened inference: %d", blocked.Code)
+	}
+	if _, diagnostic, err := runPilotOperationsFixtureCLI(t, "pilot-operations-local", env, nil, "--action", "replay-containment"); err != nil {
+		t.Fatalf("replay the emergency into the restored journal: %v %s", err, diagnostic)
+	}
+	status, err = ops.OwnerStatus(ctx, f.Principal)
+	if err != nil || status.Emergency == nil || status.Emergency.ID != e.ID || len(status.Incidents) != 2 {
+		t.Fatalf("replay did not retain the emergency and original cause: %+v %v", status, err)
+	}
+	pub, priv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(t.TempDir(), "signed-emergency.json")
+	env = append(env, "CAREEROS_OPERATIONS_RECOVERY_ARTIFACT="+path,
+		"CAREEROS_OPERATIONS_RECOVERY_PUBLIC_KEY="+hex.EncodeToString(pub))
+	proof := operationslocal.RecoveryStatement{Purpose: "containment", Reference: "fixture-interval-review", Incident: e.ID,
+		Revision: 1, Result: "synthetic_containment_interval_reconciled", ObservedAt: e.RecordedAt}
+	writeOperationsProof(t, path, priv, proof)
+	args := []string{"--action", "replay-containment", "--reference", proof.Reference}
+	if _, _, err := runPilotOperationsFixtureCLI(t, "pilot-operations-local", env, nil, args...); err == nil {
+		t.Fatal("review as old as the emergency was accepted")
+	}
+	proof.ObservedAt = time.Now().UTC()
+	writeOperationsProof(t, path, priv, proof)
+	if _, diagnostic, err := runPilotOperationsFixtureCLI(t, "pilot-operations-local", env, nil, args...); err != nil {
+		t.Fatalf("verified replay command failed: %v %s", err, diagnostic)
+	}
+	status, err = ops.OwnerStatus(ctx, f.Principal)
+	if err != nil || status.Emergency != nil || status.ContainmentUnavailable || len(status.Incidents) != 2 {
+		t.Fatalf("verified interval was not retained and cleared independently: %+v %v", status, err)
+	}
+	var controlIncident accountstore.OperationsIncident
+	for _, incident := range status.Incidents {
+		if incident.Kind == "control_fault" {
+			controlIncident = incident
+		}
+	}
+	if controlIncident.State != "unacknowledged" {
+		t.Fatalf("interval verification resolved the original fault by itself: %+v", controlIncident)
+	}
+	if err = ops.ResolveIncident(ctx, f.Principal, controlIncident.ID, controlIncident.Revision, ""); err != nil {
+		t.Fatal(err)
+	}
+	operator := f.ControlOperator.Principal
+	controls := f.Store.LocalControls(nil)
+	current, err := controls.Status(ctx, operator, "")
+	if err != nil || !current.InvitationStopped || !current.InferenceStopped {
+		t.Fatalf("interval recovery reopened either control: %+v %v", current, err)
+	}
+	verifier, err := aicontrol.NewSyntheticControlRecovery(ctx, f.Store, h)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, control := range []string{"inference", "invitations"} {
+		command := accountstore.ControlCommand{Control: control, ExpectedVersion: current.Version}
+		command.RecoveryReference, err = verifier.Prepare(ctx, operator, command)
+		if err != nil {
+			t.Fatal(err)
+		}
+		current, err = f.Store.LocalControls(verifier).Apply(ctx, operator, "reopen-after-interval-"+control, command)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	if current.InferenceStopped || current.InvitationStopped {
+		t.Fatalf("verified #290 actions did not reopen both controls: %+v", current)
 	}
 }
 

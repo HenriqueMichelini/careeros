@@ -239,6 +239,11 @@ ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS inference_epoch bigi
 ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS system_generation bigint NOT NULL DEFAULT 1 CHECK(system_generation>0);
 ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS operations_binding text NOT NULL DEFAULT '';
 ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS operations_fault boolean NOT NULL DEFAULT false;
+ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS operations_observer text NOT NULL DEFAULT '';
+ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS operations_fault_id text NOT NULL DEFAULT '';
+ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS operations_fault_at timestamptz;
+ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS operations_fault_since timestamptz;
+ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS operations_fault_kinds text[] NOT NULL DEFAULT '{}';
 INSERT INTO careeros_control_state(singleton) VALUES(true) ON CONFLICT DO NOTHING;
 CREATE TABLE IF NOT EXISTS careeros_control_operators (
  account_id text PRIMARY KEY REFERENCES careeros_accounts(id),
@@ -286,13 +291,7 @@ BEGIN
  LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $required$
  SELECT COALESCE((SELECT operations_binding<>'' FROM %1$I.careeros_control_state WHERE singleton),true)
  $required$;
- CREATE OR REPLACE FUNCTION %1$I.careeros_operations_fault_stop() RETURNS void
- LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $fault_stop$
- UPDATE %1$I.careeros_control_state SET operations_fault=true,invitation_stopped=true,inference_stopped=true,
- version=version+1,inference_epoch=inference_epoch+1,changed_at=clock_timestamp()
- WHERE singleton AND operations_binding<>'' AND NOT operations_fault
- AND version<9223372036854775807 AND inference_epoch<9223372036854775807
- $fault_stop$;
+ DROP FUNCTION IF EXISTS %1$I.careeros_operations_fault_stop();
  CREATE OR REPLACE FUNCTION %1$I.careeros_control_account_denied(owner_id text) RETURNS boolean
  LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $denied$
  SELECT NOT EXISTS(SELECT 1 FROM %1$I.careeros_control_state WHERE singleton)
@@ -302,7 +301,6 @@ BEGIN
  REVOKE ALL ON FUNCTION %1$I.careeros_inference_allowed() FROM PUBLIC;
  REVOKE ALL ON FUNCTION %1$I.careeros_current_inference_epoch() FROM PUBLIC;
  REVOKE ALL ON FUNCTION %1$I.careeros_operations_required() FROM PUBLIC;
- REVOKE ALL ON FUNCTION %1$I.careeros_operations_fault_stop() FROM PUBLIC;
  REVOKE ALL ON FUNCTION %1$I.careeros_control_account_denied(text) FROM PUBLIC;
  $definition$,owning_schema);
  FOR denied IN
@@ -349,11 +347,44 @@ BEGIN
  SELECT COALESCE((SELECT operations_binding<>'' AND operations_binding=candidate
   FROM %1$I.careeros_control_state WHERE singleton),false)
  $match$;
- CREATE OR REPLACE FUNCTION %1$I.careeros_operations_add_hold(incident text,revision bigint,invitations boolean)
+ DROP FUNCTION IF EXISTS %1$I.careeros_operations_add_hold(text,bigint,boolean);
+ CREATE OR REPLACE FUNCTION %1$I.careeros_operations_observer_matches(candidate text) RETURNS boolean
+ LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $observer$
+ SELECT COALESCE((SELECT operations_binding<>'' AND operations_observer<>'' AND operations_observer=candidate
+  FROM %1$I.careeros_control_state WHERE singleton),false)
+ $observer$;
+ CREATE OR REPLACE FUNCTION %1$I.careeros_operations_record_emergency(reason text) RETURNS boolean
+ LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $record$
+ DECLARE observed timestamptz;
+ BEGIN
+  IF reason NOT IN ('database_fault','authority_fault','control_fault','auth_fault','provider_fault','backup_fault','persistence_fault') THEN
+   RAISE EXCEPTION 'invalid operations emergency';
+  END IF;
+  PERFORM pg_advisory_xact_lock(72481312);
+  observed := clock_timestamp();
+  UPDATE %1$I.careeros_control_state SET operations_fault=true,invitation_stopped=true,inference_stopped=true,
+   operations_fault_id=replace(gen_random_uuid()::text||gen_random_uuid()::text,'-',''),
+   operations_fault_at=observed,operations_fault_since=COALESCE(operations_fault_since,observed),
+   operations_fault_kinds=CASE WHEN reason=ANY(operations_fault_kinds) THEN operations_fault_kinds
+    ELSE array_append(operations_fault_kinds,reason) END,
+   version=LEAST(version::numeric+1,9223372036854775807)::bigint,
+   inference_epoch=LEAST(inference_epoch::numeric+1,9223372036854775807)::bigint,changed_at=observed
+  WHERE singleton AND operations_binding<>'';
+  RETURN FOUND;
+ END $record$;
+ CREATE OR REPLACE FUNCTION %1$I.careeros_operations_emergency(capability text,reason text) RETURNS boolean
+ LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $emergency$
+ BEGIN
+  PERFORM pg_advisory_xact_lock(72481312);
+  IF NOT %1$I.careeros_operations_observer_matches(capability) THEN RETURN false; END IF;
+  RETURN %1$I.careeros_operations_record_emergency(reason);
+ END $emergency$;
+ CREATE OR REPLACE FUNCTION %1$I.careeros_operations_add_hold(capability text,incident text,revision bigint,invitations boolean)
  RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $hold$
  BEGIN
   IF incident !~ '^[0-9a-f]{64}$' OR revision<1 THEN RAISE EXCEPTION 'invalid operation hold'; END IF;
   PERFORM pg_advisory_xact_lock(72481312);
+  IF NOT %1$I.careeros_operations_observer_matches(capability) THEN RAISE EXCEPTION 'operations observer unavailable'; END IF;
   INSERT INTO %1$I.careeros_operations_containment(incident_id,incident_revision,invitation_stopped)
   VALUES (incident,revision,invitations) ON CONFLICT DO NOTHING;
   IF FOUND THEN
@@ -364,7 +395,9 @@ BEGIN
    IF NOT FOUND THEN RAISE EXCEPTION 'operations control authority unavailable'; END IF;
   END IF;
  END $hold$;
- REVOKE ALL ON FUNCTION %1$I.careeros_operations_attach_matches(text),%1$I.careeros_operations_add_hold(text,bigint,boolean) FROM PUBLIC;
+ REVOKE ALL ON FUNCTION %1$I.careeros_operations_attach_matches(text),%1$I.careeros_operations_observer_matches(text),
+  %1$I.careeros_operations_record_emergency(text),%1$I.careeros_operations_emergency(text,text),
+  %1$I.careeros_operations_add_hold(text,text,bigint,boolean) FROM PUBLIC;
  $definitions$,owning_schema);
 END $operations_functions$;
 CREATE TABLE IF NOT EXISTS careeros_operations_cases (

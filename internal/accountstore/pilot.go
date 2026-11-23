@@ -236,6 +236,20 @@ func pilotReceipt(ctx context.Context, tx *sql.Tx, actor, operation string, hash
 	return unavailable(err)
 }
 
+func pilotOperator(ctx context.Context, tx *sql.Tx, p auth.Principal) error {
+	if err := authorized(ctx, tx, p); err != nil {
+		return err
+	}
+	var permitted bool
+	if err := tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM careeros_pilot_operators WHERE account_id=$1)", p.AccountID).Scan(&permitted); err != nil {
+		return unavailable(err)
+	}
+	if !permitted {
+		return auth.ErrForbidden
+	}
+	return nil
+}
+
 func (s *Store) PilotCommand(ctx context.Context, p auth.Principal, operation string, command PilotCommand) (PilotStatus, error) {
 	if !validOperation(operation) || command.Identity.Provider == "" || command.Identity.Issuer == "" || command.Identity.Subject == "" || len(command.Identity.Provider) > 128 || len(command.Identity.Issuer) > 2048 || len(command.Identity.Subject) > 2048 {
 		return PilotStatus{}, ErrValidation
@@ -259,12 +273,8 @@ func (s *Store) PilotCommand(ctx context.Context, p auth.Principal, operation st
 		return PilotStatus{}, err
 	}
 	defer tx.Rollback()
-	var permitted bool
-	if err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM careeros_pilot_operators WHERE account_id=$1)", p.AccountID).Scan(&permitted); err != nil {
-		return PilotStatus{}, unavailable(err)
-	}
-	if !permitted {
-		return PilotStatus{}, auth.ErrForbidden
+	if err = pilotOperator(ctx, tx, p); err != nil {
+		return PilotStatus{}, err
 	}
 	if command.Kind == "invite" {
 		controls, e := controlStatus(ctx, tx)
@@ -279,6 +289,9 @@ func (s *Store) PilotCommand(ctx context.Context, p auth.Principal, operation st
 			return PilotStatus{}, e
 		}
 		defer release()
+		if e = pilotOperator(ctx, tx, p); e != nil {
+			return PilotStatus{}, e
+		}
 		var compromised bool
 		if e = tx.QueryRowContext(ctx, `SELECT careeros_control_account_denied($1)`, target).Scan(&compromised); e != nil {
 			return PilotStatus{}, unavailable(e)
@@ -288,6 +301,7 @@ func (s *Store) PilotCommand(ctx context.Context, p auth.Principal, operation st
 		}
 	}
 	// The identity must still belong to the same locked account.
+	var permitted bool
 	if err = tx.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM careeros_identities WHERE provider=$1 AND issuer=$2 AND subject=$3 AND account_id=$4)", []byte(command.Identity.Provider), []byte(command.Identity.Issuer), []byte(command.Identity.Subject), target).Scan(&permitted); err != nil {
 		return PilotStatus{}, unavailable(err)
 	}
@@ -306,6 +320,11 @@ func (s *Store) PilotCommand(ctx context.Context, p auth.Principal, operation st
 		status.InvitationID = old
 		if e != nil {
 			return status, e
+		}
+		if command.Kind == "invite" {
+			if e = pilotOperator(ctx, tx, p); e != nil {
+				return PilotStatus{}, e
+			}
 		}
 		return status, unavailable(tx.Commit())
 	}
@@ -367,6 +386,11 @@ func (s *Store) PilotCommand(ctx context.Context, p auth.Principal, operation st
 	if err != nil {
 		return status, err
 	}
+	if command.Kind == "invite" {
+		if err = pilotOperator(ctx, tx, p); err != nil {
+			return PilotStatus{}, err
+		}
+	}
 	return status, unavailable(tx.Commit())
 }
 
@@ -393,6 +417,9 @@ func (s *Store) ActivatePilot(ctx context.Context, p auth.Principal, operation, 
 		return PilotStatus{}, err
 	}
 	defer release()
+	if err = authorized(ctx, tx, p); err != nil {
+		return PilotStatus{}, err
+	}
 	hash := sha256.Sum256([]byte("activate-v1:" + invitation))
 	_, replay, err := pilotReplay(ctx, tx, p.AccountID, operation, hash[:])
 	if err != nil {
@@ -402,6 +429,9 @@ func (s *Store) ActivatePilot(ctx context.Context, p auth.Principal, operation, 
 		status, e := statusInTransaction(ctx, tx, p.AccountID)
 		if e != nil {
 			return status, e
+		}
+		if e = authorized(ctx, tx, p); e != nil {
+			return PilotStatus{}, e
 		}
 		return status, unavailable(tx.Commit())
 	}
@@ -449,6 +479,9 @@ func (s *Store) ActivatePilot(ctx context.Context, p auth.Principal, operation, 
 	status, err := statusInTransaction(ctx, tx, p.AccountID)
 	if err != nil {
 		return status, err
+	}
+	if err = authorized(ctx, tx, p); err != nil {
+		return PilotStatus{}, err
 	}
 	return status, unavailable(tx.Commit())
 }

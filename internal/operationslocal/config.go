@@ -113,3 +113,12 @@ func (v RecoveryVerifier) VerifyService(_ context.Context, ref, episode string) 
 	}
 	return s.ObservedAt, nil
 }
+
+func (v RecoveryVerifier) VerifyEmergency(_ context.Context, ref string, emergency accountstore.OperationsEmergency) (time.Time, error) {
+	s := v.statement
+	if s.Purpose != "containment" || s.Reference != ref || s.Incident != emergency.ID || s.Revision != 1 ||
+		s.Episode != "" || s.Result != "synthetic_containment_interval_reconciled" {
+		return time.Time{}, auth.ErrForbidden
+	}
+	return s.ObservedAt, nil
+}

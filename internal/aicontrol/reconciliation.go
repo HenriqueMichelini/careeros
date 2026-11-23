@@ -578,31 +578,20 @@ func (r *Reconciliation) Apply(ctx context.Context, p auth.Principal, c Reconcil
 	if err = r.authorize(ctx, tx, p); err != nil {
 		return result, err
 	}
-	var extra *string
-	if c.Kind == "unpriced" || breach && d.MaximumBreached {
-		extra = &c.ID
-	}
-	// Observation failure must never roll back a recorded financial obligation.
-	if _, err = tx.ExecContext(ctx, "SAVEPOINT operations_observation"); err != nil {
+	// The source records an actual capture failure within this transaction.
+	// Financial evidence and the shared emergency stop remain durable together.
+	var observation int
+	emitEvent := c.Kind == "unpriced" || breach && d.MaximumBreached
+	if err = tx.QueryRowContext(ctx, `SELECT careeros_capture_reconciliation_operations($1,$2,$3)`,
+		r.h.cfg.Namespace, c.ID, emitEvent).Scan(&observation); err != nil {
 		return result, ErrUnavailable
-	}
-	staged, observeErr := r.h.stageOperations(ctx, tx, extra)
-	if observeErr != nil {
-		if _, err = tx.ExecContext(ctx, "ROLLBACK TO SAVEPOINT operations_observation"); err != nil {
-			return result, ErrUnavailable
-		}
-		if staged {
-			if _, err = tx.ExecContext(ctx, "SELECT careeros_operations_fault_stop()"); err != nil {
-				return result, ErrUnavailable
-			}
-		}
 	}
 	if err = tx.Commit(); err != nil {
 		return result, ErrUnavailable
 	}
-	if observeErr != nil {
-		_ = r.h.observeAuthorityFault(ctx, accountstore.OperationsAuthorityFault, observeErr)
-	} else if staged {
+	if observation == 2 {
+		_ = r.h.observeAuthorityFault(ctx, accountstore.OperationsAuthorityFault, ErrUnavailable)
+	} else if observation == 1 {
 		_ = r.h.deliverOperations(ctx)
 	}
 	if err = r.h.fault("after_reconciliation_commit"); err != nil {

@@ -12,12 +12,13 @@ import (
 type OperationsFault string
 
 const (
-	OperationsDatabaseFault  OperationsFault = "database_fault"
-	OperationsAuthorityFault OperationsFault = "authority_fault"
-	OperationsControlFault   OperationsFault = "control_fault"
-	OperationsAuthFault      OperationsFault = "auth_fault"
-	OperationsProviderFault  OperationsFault = "provider_fault"
-	OperationsBackupFault    OperationsFault = "backup_fault"
+	OperationsDatabaseFault    OperationsFault = "database_fault"
+	OperationsAuthorityFault   OperationsFault = "authority_fault"
+	OperationsControlFault     OperationsFault = "control_fault"
+	OperationsAuthFault        OperationsFault = "auth_fault"
+	OperationsProviderFault    OperationsFault = "provider_fault"
+	OperationsBackupFault      OperationsFault = "backup_fault"
+	operationsPersistenceFault OperationsFault = "persistence_fault"
 )
 
 // ObserveFault is for the explicitly composed local runtime observer. Expected
@@ -31,7 +32,7 @@ func (o *Operations) ObserveFault(ctx context.Context, fault OperationsFault) er
 		if errors.Is(err, ErrValidation) {
 			return err
 		}
-		return errors.Join(err, o.synchronizeEmergencyStop(replay))
+		return errors.Join(err, o.synchronizeEmergencyStop(replay, fault))
 	}
 	deliveryCtx, deliveryCancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
 	defer deliveryCancel()
@@ -56,6 +57,19 @@ func (j *OperationsJournal) SignalOfflineFault(ctx context.Context, fault Operat
 }
 
 func (j *OperationsJournal) recordFault(ctx context.Context, fault OperationsFault) (bool, error) {
+	incident, err := operationsFaultIncident(fault, j.cfg.Clock().UTC())
+	if err != nil {
+		return false, err
+	}
+	var created bool
+	err = j.containmentTransaction(ctx, func(state *operationsJournalState) error {
+		created = j.upsertFault(state, fault, incident)
+		return nil
+	})
+	return created, err
+}
+
+func operationsFaultIncident(fault OperationsFault, at time.Time) (OperationsIncident, error) {
 	var response string
 	switch fault {
 	case OperationsDatabaseFault, OperationsAuthorityFault, OperationsControlFault:
@@ -67,22 +81,21 @@ func (j *OperationsJournal) recordFault(ctx context.Context, fault OperationsFau
 	case OperationsBackupFault:
 		response = "pause_inference_and_review_declared_backup_failure"
 	default:
-		return false, ErrValidation
+		return OperationsIncident{}, ErrValidation
 	}
-	incident := OperationsIncident{Kind: string(fault), EventAt: j.cfg.Clock().UTC(),
-		Severity: "critical", Owner: "Henrique", Response: response, State: "unacknowledged"}
-	var created bool
-	err := j.containmentTransaction(ctx, func(state *operationsJournalState) error {
-		created = j.upsert(state, "fault/"+string(fault), incident, true)
-		switch fault {
-		case OperationsDatabaseFault, OperationsAuthorityFault:
-			state.Persistence = "unavailable_at_observation"
-		case OperationsBackupFault:
-			state.Backup = "declared_failure"
-		}
-		return nil
-	})
-	return created, err
+	return OperationsIncident{Kind: string(fault), EventAt: at,
+		Severity: "critical", Owner: "Henrique", Response: response, State: "unacknowledged"}, nil
+}
+
+func (j *OperationsJournal) upsertFault(state *operationsJournalState, fault OperationsFault, incident OperationsIncident) bool {
+	created := j.upsert(state, "fault/"+string(fault), incident, true)
+	switch fault {
+	case OperationsDatabaseFault, OperationsAuthorityFault:
+		state.Persistence = "unavailable_at_observation"
+	case OperationsBackupFault:
+		state.Backup = "declared_failure"
+	}
+	return created
 }
 
 type containment struct {
@@ -98,7 +111,7 @@ func operationsStop(record operationsJournalRecord, now time.Time) (stop, invita
 	switch record.Incident.Kind {
 	case "provider_fault", "backup_fault", "maximum_breach", "invariant_breach", "spend_breach":
 		return true, false
-	case "database_fault", "authority_fault", "control_fault", "auth_fault", "operator_absence":
+	case "database_fault", "authority_fault", "control_fault", "auth_fault", "operator_absence", "persistence_fault":
 		return true, true
 	default:
 		due := record.Incident.State == "unacknowledged" && record.Incident.Severity == "warning" && !now.Before(record.Incident.EventAt.Add(24*time.Hour))
@@ -139,6 +152,9 @@ func (o *Operations) reviewIncident(ctx context.Context, p auth.Principal, id st
 		if err := operationsActor(ctx, tx, p, "owner"); err != nil {
 			return err
 		}
+		if record.Incident.Kind == string(operationsPersistenceFault) {
+			return auth.ErrForbidden
+		}
 		if record.Incident.State == "resolved" {
 			return nil
 		}
@@ -169,7 +185,7 @@ func (o *Operations) reviewIncident(ctx context.Context, p auth.Principal, id st
 		}
 		stop, invitations := operationsStop(record, o.journal.cfg.Clock().UTC())
 		if stop {
-			if err := applyOperationsContainment(ctx, tx, containment{id, record.Revision, invitations}); err != nil {
+			if err := o.applyOperationsContainment(ctx, tx, containment{id, record.Revision, invitations}); err != nil {
 				return err
 			}
 			record.Contained = true
@@ -202,6 +218,12 @@ func (o *Operations) HoldProtected(ctx context.Context, control string) (func(),
 	if err != nil {
 		return nil, auth.ErrUnavailable
 	}
+	endDecision, err := o.journal.lockAdmission(ctx, false)
+	if err != nil {
+		unlock()
+		return nil, auth.ErrUnavailable
+	}
+	defer endDecision()
 	if err = o.journal.verifyWriteHealth(); err != nil {
 		unlock()
 		return nil, err
@@ -244,6 +266,9 @@ func (o *Operations) synchronizeContainment(ctx context.Context) error {
 			return err
 		}
 		for id, record := range state.Records {
+			if record.Incident.Kind == string(operationsPersistenceFault) {
+				continue
+			}
 			if stop, invitation := operationsStop(record, o.journal.cfg.Clock().UTC()); stop {
 				record.Contained = true
 				state.Records[id] = record
@@ -253,7 +278,7 @@ func (o *Operations) synchronizeContainment(ctx context.Context) error {
 		return nil
 	})
 	if err != nil {
-		return errors.Join(err, o.synchronizeEmergencyStop(ctx))
+		return errors.Join(err, o.synchronizeEmergencyStop(ctx, operationsPersistenceFault))
 	}
 	if len(pending) == 0 {
 		return err
@@ -267,32 +292,15 @@ func (o *Operations) synchronizeContainment(ctx context.Context) error {
 		return unavailable(err)
 	}
 	for _, event := range pending {
-		if err := applyOperationsContainment(ctx, tx, event); err != nil {
+		if err := o.applyOperationsContainment(ctx, tx, event); err != nil {
 			return err
 		}
 	}
 	return unavailable(tx.Commit())
 }
 
-func (o *Operations) synchronizeEmergencyStop(ctx context.Context) error {
-	replay, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
-	defer cancel()
-	tx, err := o.store.db.BeginTx(replay, nil)
-	if err != nil {
-		return unavailable(err)
-	}
-	defer tx.Rollback()
-	if _, err = tx.ExecContext(replay, "SELECT pg_advisory_xact_lock($1)", controlFence); err != nil {
-		return unavailable(err)
-	}
-	event := containment{o.journal.binding([]byte("operations_persistence_unavailable")), 1, true}
-	if err = applyOperationsContainment(replay, tx, event); err != nil {
-		return err
-	}
-	return unavailable(tx.Commit())
-}
-
-func applyOperationsContainment(ctx context.Context, tx *sql.Tx, event containment) error {
-	_, err := tx.ExecContext(ctx, `SELECT careeros_operations_add_hold($1,$2,$3)`, event.id, event.revision, event.invitations)
+func (o *Operations) applyOperationsContainment(ctx context.Context, tx *sql.Tx, event containment) error {
+	_, err := tx.ExecContext(ctx, `SELECT careeros_operations_add_hold($1,$2,$3,$4)`,
+		o.journal.observerCapability(), event.id, event.revision, event.invitations)
 	return unavailable(err)
 }

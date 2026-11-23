@@ -170,6 +170,11 @@ func (o *Operations) PublishVerifiedRecoveryWithServiceProof(ctx context.Context
 		return auth.ErrForbidden
 	}
 	return o.journal.transaction(ctx, false, func(state *operationsJournalState) error {
+		endDecision, err := o.journal.lockAdmission(ctx, false)
+		if err != nil {
+			return err
+		}
+		defer endDecision()
 		if err := o.journal.checkPendingFence(); err != nil {
 			return err
 		}
@@ -308,7 +313,7 @@ func (o *Operations) PlanAbsence(ctx context.Context, p auth.Principal, plan Ope
 	}); err != nil {
 		if errors.Is(err, auth.ErrUnavailable) {
 			_ = tx.Rollback()
-			return result, errors.Join(err, o.synchronizeEmergencyStop(ctx))
+			return result, errors.Join(err, o.synchronizeEmergencyStop(ctx, operationsPersistenceFault))
 		}
 		return result, err
 	}

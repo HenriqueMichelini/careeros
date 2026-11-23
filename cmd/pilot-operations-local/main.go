@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -102,11 +103,24 @@ func run(o options) error {
 		return json.NewEncoder(os.Stdout).Encode(map[string]string{"episode": id})
 	}
 	journal, err := accountstore.OpenLocalOperationsJournal(config)
-	if err != nil {
+	if o.action == "fault" {
+		kind := accountstore.OperationsFault(o.kind)
+		if err == nil {
+			err = journal.SignalOfflineFault(ctx, kind)
+		}
+		if err == nil || errors.Is(err, accountstore.ErrValidation) && journal != nil {
+			return err
+		}
+		if dsn := os.Getenv("CAREEROS_OPERATIONS_DATABASE_URL"); dsn != "" {
+			return errors.Join(err, signalFallback(ctx, dsn, config, kind))
+		}
 		return err
 	}
-	if o.action == "fault" {
-		return journal.SignalOfflineFault(ctx, accountstore.OperationsFault(o.kind))
+	if o.action == "status" && err != nil {
+		return runDatabase(ctx, o, nil)
+	}
+	if err != nil {
+		return err
 	}
 	if o.action == "offline-status" {
 		key, err := offlineOwnerKey()
@@ -116,6 +130,20 @@ func run(o options) error {
 		return journal.WithOfflineOwnerStatus(ctx, key, func(s accountstore.OperationsStatus) error { return json.NewEncoder(os.Stdout).Encode(s) })
 	}
 	return runDatabase(ctx, o, journal)
+}
+
+func signalFallback(ctx context.Context, dsn string, config accountstore.OperationsJournalConfig, kind accountstore.OperationsFault) error {
+	if !aicontrol.LocalReconciliationDSN(dsn) {
+		return auth.ErrForbidden
+	}
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
+	defer cancel()
+	store, err := accountstore.Open(ctx, dsn)
+	if err != nil {
+		return err
+	}
+	defer store.Close()
+	return store.SignalLocalOperationsFallback(ctx, config, kind)
 }
 
 func offlineOwnerKey() ([32]byte, error) {
@@ -159,6 +187,11 @@ func runDatabase(ctx context.Context, o options, journal *accountstore.Operation
 	if err != nil {
 		return err
 	}
+	if journal == nil {
+		return store.WithOperationsEmergencyStatus(ctx, p, func(status accountstore.OperationsStatus) error {
+			return json.NewEncoder(os.Stdout).Encode(status)
+		})
+	}
 	recon, err := aicontrol.OpenLocalReconciliation(ctx, os.Getenv("CAREEROS_OPERATIONS_READER_URL"), os.Getenv("CAREEROS_OPERATIONS_NAMESPACE"))
 	if err != nil {
 		return err
@@ -169,13 +202,14 @@ func runDatabase(ctx context.Context, o options, journal *accountstore.Operation
 		return err
 	}
 	cfgOps := accountstore.OperationsConfig{Build: "synthetic-local", Owner: "Henrique"}
-	if o.action == "resolve" || o.action == "publish-recovery" {
+	if o.action == "resolve" || o.action == "publish-recovery" || o.action == "replay-containment" && o.reference != "" {
 		verifier, err := operationslocal.Recovery()
 		if err != nil {
 			return err
 		}
 		cfgOps.VerifyBackupRecovery = verifier.VerifyBackup
 		cfgOps.VerifyServiceRecovery = verifier.VerifyService
+		cfgOps.VerifyEmergencyReview = verifier.VerifyEmergency
 	}
 	ops, err := store.LocalOperations(cfgOps, source, journal)
 	if err != nil {
@@ -183,6 +217,8 @@ func runDatabase(ctx context.Context, o options, journal *accountstore.Operation
 	}
 	out := json.NewEncoder(os.Stdout)
 	switch o.action {
+	case "replay-containment":
+		return ops.ReplayEmergency(ctx, p, o.reference)
 	case "offline-setup":
 		key, err := offlineOwnerKey()
 		if err != nil {

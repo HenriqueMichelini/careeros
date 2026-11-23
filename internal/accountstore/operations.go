@@ -62,6 +62,7 @@ type OperationsConfig struct {
 	VerifyBackupRecovery  func(context.Context, string, OperationsIncident) (time.Time, error)
 	VerifyServiceRecovery func(context.Context, string, string) (time.Time, error)
 	VerifyPreparedCover   func(context.Context, OperationsAbsence) error
+	VerifyEmergencyReview func(context.Context, string, OperationsEmergency) (time.Time, error)
 }
 
 type OperationsIncident struct {
@@ -87,6 +88,7 @@ type OperationsStatus struct {
 	Persistence            string               `json:"persistence"`
 	Backup                 string               `json:"backup"`
 	ContainmentUnavailable bool                 `json:"containmentUnavailable"`
+	Emergency              *OperationsEmergency `json:"emergency,omitempty"`
 }
 
 type Operations struct {
@@ -128,8 +130,9 @@ func (s *Store) LocalOperations(cfg OperationsConfig, source OperationsRiskSourc
 	}
 	handle := journal.binding([]byte("operation-authority\x00" + journal.id))
 	var persisted string
-	err = tx.QueryRowContext(ctx, `UPDATE careeros_control_state SET operations_binding=$1 WHERE singleton
-	  AND (operations_binding='' OR operations_binding=$1) RETURNING operations_binding`, handle).Scan(&persisted)
+	err = tx.QueryRowContext(ctx, `UPDATE careeros_control_state SET operations_binding=$1,operations_observer=$2 WHERE singleton
+	  AND (operations_binding='' OR operations_binding=$1) AND (operations_observer='' OR operations_observer=$2)
+	  RETURNING operations_binding`, handle, journal.observerCapability()).Scan(&persisted)
 	if err != nil || persisted != handle {
 		return nil, auth.ErrUnavailable
 	}
@@ -159,7 +162,8 @@ func (s *Store) AttachLocalOperationsObserver(ctx context.Context, cfg Operation
 	}
 	handle := journal.binding([]byte("operation-authority\x00" + journal.id))
 	var valid bool
-	if err = tx.QueryRowContext(ctx, `SELECT careeros_operations_attach_matches($1)`, handle).Scan(&valid); err != nil {
+	if err = tx.QueryRowContext(ctx, `SELECT careeros_operations_attach_matches($1) AND careeros_operations_observer_matches($2)`,
+		handle, journal.observerCapability()).Scan(&valid); err != nil {
 		return nil, unavailable(err)
 	}
 	if !valid {
@@ -211,7 +215,7 @@ func (o *Operations) ObserveCommittedRisk(ctx context.Context, sample Operations
 		return errors.Join(auth.ErrUnavailable, o.ObserveFault(ctx, OperationsAuthorityFault))
 	}
 	if err := o.recordSample(ctx, sample); err != nil {
-		return errors.Join(err, o.synchronizeEmergencyStop(ctx))
+		return errors.Join(err, o.synchronizeEmergencyStop(ctx, operationsPersistenceFault))
 	}
 	return errors.Join(o.synchronizeContainment(ctx), o.Deliver(ctx))
 }
@@ -243,11 +247,11 @@ func (o *Operations) recordSample(ctx context.Context, sample OperationsRiskSamp
 	}
 	return o.journal.containmentTransaction(ctx, func(state *operationsJournalState) error {
 		if sample.DurableSequence > state.LastDurableSequence {
-			o.recordCaps(state, sample)
+			o.recordCaps(state, sample, false)
 			state.LastDurableSequence = sample.DurableSequence
-		} else if sample.DurableSequence == 0 && state.LastDurableSequence == 0 &&
+		} else if sample.DurableSequence == 0 &&
 			(state.Figures == nil || !sample.At.Before(state.Figures.At)) {
-			o.recordCaps(state, sample)
+			o.recordCaps(state, sample, state.LastDurableSequence != 0)
 		}
 		if state.Figures == nil || !sample.At.Before(state.Figures.At) {
 			state.Figures = &sample.Figures
@@ -270,9 +274,20 @@ func (o *Operations) recordSample(ctx context.Context, sample OperationsRiskSamp
 	})
 }
 
-func (o *Operations) recordCaps(state *operationsJournalState, sample OperationsRiskSample) {
+// A manual low observation can arrive before a slower committed crossing. Keep
+// the first and latest low observations until the committed sequence reaches
+// them. They bound any intervening crossing without replacing its episode.
+type rollingRecovery struct {
+	First time.Time `json:"first"`
+	Last  time.Time `json:"last"`
+}
+
+func (o *Operations) recordCaps(state *operationsJournalState, sample OperationsRiskSample, recoveriesOnly bool) {
 	if state.Rolling == nil {
 		state.Rolling = map[string]time.Time{}
+	}
+	if state.RollingRecoveries == nil {
+		state.RollingRecoveries = map[string]rollingRecovery{}
 	}
 	for _, cap := range sample.Caps {
 		// L-floor(L/5) = ceil(4L/5), with no multiplication or float.
@@ -280,16 +295,33 @@ func (o *Operations) recordCaps(state *operationsJournalState, sample Operations
 		key := sample.Namespace + "/" + cap.Policy + "/" + cap.Scope + "/" + cap.Key
 		if strings.HasSuffix(cap.Scope, "rolling24h") {
 			index := o.journal.binding([]byte("rolling\x00" + key))
+			recovery := state.RollingRecoveries[index]
 			if cap.Counted < threshold {
-				delete(state.Rolling, index)
+				if sample.At.After(state.Rolling[index]) {
+					if recovery.First.IsZero() || sample.At.Before(recovery.First) {
+						recovery.First = sample.At
+					}
+					if sample.At.After(recovery.Last) {
+						recovery.Last = sample.At
+					}
+					state.RollingRecoveries[index] = recovery
+				}
 				continue
 			}
-			if state.Rolling[index].IsZero() {
+			if recoveriesOnly {
+				continue
+			}
+			if state.Rolling[index].IsZero() || recovery.First.After(state.Rolling[index]) && recovery.First.Before(sample.At) {
 				state.Rolling[index] = sample.At
+			}
+			if !recovery.Last.After(sample.At) {
+				delete(state.RollingRecoveries, index)
+			} else if !recovery.First.After(sample.At) {
+				state.RollingRecoveries[index] = rollingRecovery{First: recovery.Last, Last: recovery.Last}
 			}
 			key += "/" + state.Rolling[index].UTC().Format(time.RFC3339Nano)
 		}
-		if cap.Counted < threshold {
+		if recoveriesOnly || cap.Counted < threshold {
 			continue
 		}
 		incident := OperationsIncident{Kind: "spend_warning", Scope: cap.Scope, Policy: cap.Policy, Currency: cap.Currency,
@@ -367,14 +399,30 @@ func (o *Operations) WithOwnerStatus(ctx context.Context, p auth.Principal, writ
 	if err = operationsActor(ctx, tx, p, "owner"); err != nil {
 		return err
 	}
-	status, err := o.journal.status(ctx)
+	status := OperationsStatus{Incidents: []OperationsIncident{}, Persistence: "unobserved", Backup: "unobserved", ContainmentUnavailable: true}
+	var journalErr error
+	if o.journal != nil {
+		status, journalErr = o.journal.status(ctx)
+	}
+	emergency, legacy, err := readOperationsEmergency(ctx, tx)
 	if err != nil {
 		return err
 	}
+	if journalErr != nil && emergency == nil && !legacy {
+		return journalErr
+	}
+	status.Emergency = emergency
+	status.ContainmentUnavailable = status.ContainmentUnavailable || emergency != nil || legacy
 	if err = operationsActor(ctx, tx, p, "owner"); err != nil {
 		return err
 	}
 	return write(status)
+}
+
+// WithOperationsEmergencyStatus preserves the restricted SQL fallback view
+// when the owned journal cannot be opened.
+func (s *Store) WithOperationsEmergencyStatus(ctx context.Context, p auth.Principal, write func(OperationsStatus) error) error {
+	return (&Operations{store: s}).WithOwnerStatus(ctx, p, write)
 }
 func (o *Operations) OwnerStatus(ctx context.Context, p auth.Principal) (OperationsStatus, error) {
 	var status OperationsStatus
