@@ -1,5 +1,7 @@
 # Keep the v1 backend stateless and use user-provided AI keys
 
+This ADR records the v1 release track. The bounded Account and managed pilot preparation uses separate server-owned Account/Profile and managed-inference decisions. [Closed pilot runtime preparation](../closed-pilot-runtime-local.md#adr-scope)
+
 V1 keeps profiles and application drafts in the browser while the backend handles fixed AI workflows with user-provided keys. Profiles, proposals and keys remain under the existing browser-local ownership model; the backend does not persist them. This avoids accounts, a database and shared AI billing. The trade-offs are device-local data, browser-persisted keys, and a future migration step if server-side storage is added in v2.
 
 ## Approved provider amendment — 2026-10-07

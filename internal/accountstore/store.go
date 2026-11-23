@@ -33,10 +33,14 @@ func Open(ctx context.Context, dsn string) (*Store, error) {
 	if err != nil {
 		return nil, auth.ErrUnavailable
 	}
+	return openStore(ctx, db)
+}
+
+func openStore(ctx context.Context, db *sql.DB) (*Store, error) {
 	db.SetMaxOpenConns(8)
 	db.SetMaxIdleConns(2)
 	db.SetConnMaxLifetime(30 * time.Minute)
-	if err = db.PingContext(ctx); err != nil {
+	if err := db.PingContext(ctx); err != nil {
 		db.Close()
 		return nil, auth.ErrUnavailable
 	}

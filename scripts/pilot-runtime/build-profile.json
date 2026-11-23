@@ -1,0 +1,26 @@
+{
+  "id": "closed-pilot-local-v1",
+  "toolchain": {
+    "go": "go1.26.4",
+    "node": "v24.15.0",
+    "npm": "11.17.0"
+  },
+  "frontend": {
+    "VITE_CAREEROS_ACCOUNT_MODE": "1",
+    "VITE_CAREEROS_PILOT_MODE": "1",
+    "VITE_CAREEROS_DRAFT_RECOVERY_MODE": "1"
+  },
+  "configuration": {
+    "runtime_database_reference": "CAREEROS_PILOT_LOCAL_DATABASE_URL",
+    "migrator_database_reference": "CAREEROS_DATABASE_URL",
+    "origin": "derived-from-literal-loopback-listener",
+    "default_listen": "127.0.0.1:8787",
+    "account_database": "careeros_pilot_runtime_fixture",
+    "account_schema": "careeros_pilot_runtime",
+    "runtime_role": "careeros_pilot_runtime",
+    "migrator_role": "careeros_pilot_migrator",
+    "identity_provider": "disabled",
+    "invitation_activation": "closed",
+    "managed_provider_and_policy": "disabled"
+  }
+}
