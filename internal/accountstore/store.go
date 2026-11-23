@@ -50,6 +50,10 @@ func (s *Store) Close() error { return s.db.Close() }
 
 // Migrate is an explicit local/operator command, never run by request handlers.
 func (s *Store) Migrate(ctx context.Context) error {
+	return s.migrate(ctx, nil)
+}
+
+func (s *Store) migrate(ctx context.Context, authorize func(context.Context, *sql.Tx) error) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return unavailable(err)
@@ -57,6 +61,11 @@ func (s *Store) Migrate(ctx context.Context) error {
 	defer tx.Rollback()
 	if _, err = tx.ExecContext(ctx, "SELECT pg_advisory_xact_lock(72481301)"); err != nil {
 		return unavailable(err)
+	}
+	if authorize != nil {
+		if err := authorize(ctx, tx); err != nil {
+			return err
+		}
 	}
 	if _, err = tx.ExecContext(ctx, schema); err != nil {
 		return unavailable(err)

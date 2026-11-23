@@ -33,6 +33,8 @@ func TestClosedSiteSeparatesAPIFromSPA(t *testing.T) {
 		{"/api/auth/session", http.MethodGet, "auth_unavailable", 503},
 		{"/.netlify/functions/account/api/auth/session", http.MethodGet, "auth_unavailable", 503},
 		{"/.netlify/functions/profile-review", http.MethodPost, "auth_unavailable", 503},
+		{"/api/draft-allowance", http.MethodGet, "auth_unavailable", 503},
+		{"/.netlify/functions/account/api/draft-allowance", http.MethodGet, "auth_unavailable", 503},
 		{"/api/no-such-route", http.MethodGet, "not_found", 404},
 		{"/.netlify/functions/no-such-function", http.MethodGet, "not_found", 404},
 		{"/%61pi/auth/session", http.MethodGet, "invalid_path", 400},
@@ -56,6 +58,27 @@ func TestClosedSiteSeparatesAPIFromSPA(t *testing.T) {
 				t.Fatalf("error response headers: %v", got.Header())
 			}
 		})
+	}
+}
+
+func TestDraftAllowanceRoutesToInjectedAccountAdapter(t *testing.T) {
+	const origin = "http://127.0.0.1:8787"
+	account := http.NewServeMux()
+	account.HandleFunc("GET /api/draft-allowance", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"remaining":3}`))
+	})
+	site, err := newSite("127.0.0.1:8787", fstest.MapFS{"index.html": {Data: []byte("closed")}},
+		account, func(context.Context) error { return nil })
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range []string{"/api/draft-allowance", "/.netlify/functions/account/api/draft-allowance"} {
+		got := httptest.NewRecorder()
+		site.ServeHTTP(got, httptest.NewRequest(http.MethodGet, origin+p, nil))
+		if got.Code != 200 || got.Body.String() != `{"remaining":3}` {
+			t.Fatalf("%s: %d %s", p, got.Code, got.Body.String())
+		}
 	}
 }
 

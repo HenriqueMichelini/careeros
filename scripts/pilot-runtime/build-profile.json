@@ -5,14 +5,22 @@
     "node": "v24.15.0",
     "npm": "11.17.0"
   },
+  "go_target": {
+    "GOOS": "linux",
+    "GOARCH": "amd64",
+    "GOAMD64": "v1",
+    "GOEXPERIMENT": "",
+    "CGO_ENABLED": "0"
+  },
   "frontend": {
     "VITE_CAREEROS_ACCOUNT_MODE": "1",
     "VITE_CAREEROS_PILOT_MODE": "1",
-    "VITE_CAREEROS_DRAFT_RECOVERY_MODE": "1"
+    "VITE_CAREEROS_DRAFT_RECOVERY_MODE": "1",
+    "CAREEROS_CLOSED_LOCAL_ASSETS": "1"
   },
   "configuration": {
     "runtime_database_reference": "CAREEROS_PILOT_LOCAL_DATABASE_URL",
-    "migrator_database_reference": "CAREEROS_DATABASE_URL",
+    "migrator_database_reference": "CAREEROS_PILOT_LOCAL_MIGRATOR_DATABASE_URL",
     "origin": "derived-from-literal-loopback-listener",
     "default_listen": "127.0.0.1:8787",
     "account_database": "careeros_pilot_runtime_fixture",

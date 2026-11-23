@@ -22,6 +22,7 @@ function apiProxy() {
     '/api/pilot',
     '/api/ai',
     '/api/drafts',
+    '/api/draft-allowance',
   ].map(route => [route, { target: process.env.CAREEROS_API_TARGET || 'http://127.0.0.1:8787', changeOrigin: false }]))
 }
 
@@ -38,7 +39,8 @@ export default defineConfig(({ mode }) => {
       minify: !emitSourcemaps,
     },
     plugins: [
-react(),
+      process.env.CAREEROS_CLOSED_LOCAL_ASSETS === '1' && closedLocalStyles(),
+      react(),
       tailwindcss(),
       figmaSiteConfiguration(loadSiteConfiguration()),
       figmaErrorOverlayReplay(),
@@ -69,6 +71,19 @@ react(),
     },
   }
 })
+
+function closedLocalStyles(): Plugin {
+  return {
+    name: 'careeros-closed-local-styles',
+    enforce: 'pre',
+    transform(css, id) {
+      if (id !== path.resolve(__dirname, 'src/index.css')) return
+      // The closed package uses the existing local fallback font families.
+      // V1 and regular Vite builds keep the original stylesheet.
+      return css.replace(/^@import url\('https:\/\/fonts\.googleapis\.com\/[^']+'\);\r?\n/m, '')
+    },
+  }
+}
 
 type FigmaSiteConfiguration = {
   title?: string

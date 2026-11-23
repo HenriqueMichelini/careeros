@@ -149,7 +149,7 @@ func knownAPIPath(p string) bool {
 	case "/api/auth/session", "/api/auth/logout", "/api/auth/logout-all",
 		"/api/auth/google/start", "/api/auth/google/callback",
 		"/api/profile/current", "/api/profile/export", "/api/lifecycle/status",
-		"/api/pilot/status", "/api/pilot/activate",
+		"/api/pilot/status", "/api/pilot/activate", "/api/draft-allowance",
 		"/api/cv/generate", "/api/profile/ingest", "/api/profile/review",
 		"/api/qualification-gaps", "/api/application-draft":
 		return true

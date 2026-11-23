@@ -2,7 +2,7 @@
 // and in each caller; no production transport or live provider is used.
 import assert from "node:assert/strict"
 import { spawn } from "node:child_process"
-import { mkdtempSync, readFileSync } from "node:fs"
+import { mkdtempSync, readFileSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { createServer } from "node:net"
@@ -19,14 +19,18 @@ async function until(read, message, attempts = 150, interval = 25) {
 export async function withAccountBrowser(run, options = {}) {
   const root = new URL("..", import.meta.url).pathname
   const evidence = mkdtempSync(join(tmpdir(), "careeros-account-browser-"))
-  const port = await new Promise((resolve) => {
+  const packaged = options.origin !== undefined
+  if (packaged)
+    assert.match(options.origin, /^http:\/\/127\.0\.0\.1:[1-9][0-9]*$/)
+  const port = packaged ? Number(new URL(options.origin).port) : await new Promise((resolve) => {
     const s = createServer()
     s.listen(0, "127.0.0.1", () => {
       const p = s.address().port
       s.close(() => resolve(p))
     })
   })
-  const vite = spawn(
+  const origin = `http://127.0.0.1:${port}`
+  const vite = packaged ? null : spawn(
     join(root, "node_modules/.bin/vite"),
     ["--host", "127.0.0.1", "--port", String(port), "--strictPort", "--force"],
     {
@@ -48,6 +52,15 @@ export async function withAccountBrowser(run, options = {}) {
       "--disable-gpu",
       "--remote-allow-origins=*",
       "--remote-debugging-port=0",
+      ...(packaged ? [
+        "--disable-background-networking",
+        "--disable-component-update",
+        "--disable-sync",
+        "--no-first-run",
+        "--proxy-server=http://127.0.0.1:9",
+        "--proxy-bypass-list=127.0.0.1",
+        "--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1",
+      ] : []),
       `--user-data-dir=${join(evidence, "chrome")}`,
       "about:blank",
     ],
@@ -59,12 +72,12 @@ export async function withAccountBrowser(run, options = {}) {
     await until(
       async () => {
         try {
-          return (await fetch(`http://127.0.0.1:${port}/`)).ok
+          return (await fetch(`${origin}/`)).ok
         } catch {
           return false
         }
       },
-      "Vite start failed",
+      "Local browser target unavailable",
       101,
       50,
     )
@@ -97,6 +110,8 @@ export async function withAccountBrowser(run, options = {}) {
     })
     let serial = 0
     const pending = new Map()
+    const localRequests = []
+    const externalRequests = []
     socket.onmessage = (event) => {
       const m = JSON.parse(event.data)
       if (
@@ -104,6 +119,19 @@ export async function withAccountBrowser(run, options = {}) {
         m.method === "Log.entryAdded"
       )
         browserErrors.push(m)
+      if (packaged && m.method === "Fetch.requestPaused") {
+        const { request, requestId } = m.params
+        const parsed = new URL(request.url)
+        if (parsed.origin === origin) {
+          localRequests.push(parsed.pathname)
+          void call("Fetch.continueRequest", { requestId }).catch((error) => browserErrors.push(error))
+        } else {
+          externalRequests.push(parsed.hostname)
+          void call("Fetch.failRequest", { requestId, errorReason: "BlockedByClient" })
+            .catch((error) => browserErrors.push(error))
+        }
+        return
+      }
       if (m.id) {
         const p = pending.get(m.id)
         pending.delete(m.id)
@@ -139,6 +167,8 @@ export async function withAccountBrowser(run, options = {}) {
     await call("Page.enable")
     await call("Runtime.enable")
     await call("Log.enable")
+    if (packaged)
+      await call("Fetch.enable", { patterns: [{ urlPattern: "*" }] })
     await call("Page.addScriptToEvaluateOnNewDocument", {
       source: `localStorage.setItem('careeros_locale','en');localStorage.setItem('careeros_profile_v2','LEGACY_SENTINEL');localStorage.setItem('careeros_repo','LEGACY_SENTINEL');${
         options.path
@@ -152,10 +182,10 @@ export async function withAccountBrowser(run, options = {}) {
       })
     await options.beforeNavigate?.({ port, evidence })
     await call("Page.navigate", {
-      url: `http://127.0.0.1:${port}${options.path ?? "/tests/account-harness.html"}`,
+      url: `${origin}${options.path ?? "/tests/account-harness.html"}`,
     })
     if (options.path) {
-      await run({ evidence, call, evaluate, wait, port })
+      await run({ evidence, call, evaluate, wait, port, localRequests, externalRequests })
       return
     }
     await wait(
@@ -223,7 +253,12 @@ export async function withAccountBrowser(run, options = {}) {
     throw error
   } finally {
     socket?.close()
-    vite.kill("SIGTERM")
+    vite?.kill("SIGTERM")
     chrome.kill("SIGTERM")
+    if (packaged) {
+      if (chrome.exitCode === null && chrome.signalCode === null)
+        await new Promise((resolve) => chrome.once("exit", resolve))
+      rmSync(evidence, { recursive: true, force: true })
+    }
   }
 }

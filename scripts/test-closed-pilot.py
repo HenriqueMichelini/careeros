@@ -9,12 +9,12 @@ import json
 import os
 from pathlib import Path
 import runpy
+import shutil
 import signal
 import socket
 import subprocess
 import tempfile
 import time
-from urllib.parse import urlencode
 
 
 HERE = Path(__file__).resolve().parent
@@ -126,6 +126,13 @@ def run_checks(bundle, evidence, log, events, binary):
                  headers={"Host": "other.invalid", "X-Forwarded-Host": f"127.0.0.1:{local}"})
         web.http("cross_origin_alias", "/.netlify/functions/qualification-gaps", 403, "forbidden",
                  method="POST", headers={"Origin": origin + ".invalid"})
+        web.http("unconfigured_allowance", "/api/draft-allowance", 503, "auth_unavailable")
+        web.http("unconfigured_allowance_alias", "/.netlify/functions/account/api/draft-allowance", 503, "auth_unavailable")
+        rendered = json.loads(command(["node", str(HERE.parent / "tests/closed-pilot-package-browser.check.mjs"), origin],
+                                      log, env))
+        if rendered["rendered"] is not True or rendered["external_requests"] != 0:
+            raise RuntimeError("closed pilot browser did not render without external assets")
+        web.record("packaged_browser_no_external_asset_requests", rendered)
 
     # A short, owned Unix socket path is solely for administration. The
     # bundled server authenticates its own restricted role on literal loopback.
@@ -136,7 +143,7 @@ def run_checks(bundle, evidence, log, events, binary):
         command([binary("initdb"), "-D", str(data), "--no-locale", "--encoding=UTF8",
                  "--auth-local=trust", "--auth-host=reject"], log, env)
         access = data / "pg_hba.conf"
-        access.write_text(f"host {DATABASE} {RUNTIME} 127.0.0.1/32 trust\n" + access.read_text())
+        access.write_text(f"host {DATABASE} {RUNTIME},{MIGRATOR} 127.0.0.1/32 trust\n" + access.read_text())
         pgctl = [binary("pg_ctl"), "-D", str(data)]
         command(pgctl + ["-l", str(evidence / "postgres.log"), "-o",
                         f"-F -h 127.0.0.1 -k {folder} -p {pg_port} -c max_connections=20", "-w", "start"], log, env)
@@ -155,13 +162,33 @@ def run_checks(bundle, evidence, log, events, binary):
                            log, env) != "t":
                     raise RuntimeError("startup changed schema")
                 web.record("startup_never_migrates")
-            migrate_url = f"postgresql://{MIGRATOR}@/{DATABASE}?" + urlencode(
-                {"host": str(folder), "port": pg_port, "sslmode": "disable"})
-            migrate = {**env, "CAREEROS_DATABASE_URL": migrate_url}
-            migrate_command = [str(bundle / "bin/account-migrate")]
+            migration_key = "CAREEROS_PILOT_LOCAL_MIGRATOR_DATABASE_URL"
+            migrate_url = f"postgresql://{MIGRATOR}@127.0.0.1:{pg_port}/{DATABASE}"
+            migrate = {**env, migration_key: migrate_url}
+            migrate_command = [str(bundle / "bin/pilot-runtime-migrate")]
+            incorrect = {
+                "generic_credentials_not_used_by_packaged_migrator": {**env, "CAREEROS_DATABASE_URL": migrate_url},
+                "wrong_database_is_denied_before_ddl": {**env, migration_key: migrate_url + "_other"},
+                "wrong_role_is_denied_before_ddl": {**env, migration_key: fixture_env["CAREEROS_PILOT_LOCAL_DATABASE_URL"]},
+                "arbitrary_connection_options_denied": {**env, migration_key: migrate_url + "?sslmode=disable"},
+            }
+            for name, settings in incorrect.items():
+                denied_migration(migrate_command, settings, log)
+                web.record(name)
+            command(admin + ["-c", "ALTER SCHEMA careeros_pilot_runtime OWNER TO CURRENT_USER"], log, env)
+            denied_migration(migrate_command, migrate, log)
+            if command(admin + ["-Atc", "SELECT to_regclass('careeros_pilot_runtime.careeros_accounts') IS NULL"],
+                       log, env) != "t":
+                raise RuntimeError("denied migration changed schema")
+            web.record("actual_schema_owner_checked_before_ddl")
+            command(admin + ["-c", f"ALTER SCHEMA careeros_pilot_runtime OWNER TO {MIGRATOR}"], log, env)
             command(migrate_command, log, migrate)
             migration = psql + ["-d", DATABASE, "-U", MIGRATOR]
             component = command([str(bundle / "bin/pilot-runtime-local"), "-schema-id"], log, env)
+            manifest = json.loads((bundle / "manifest.json").read_text())
+            if component != manifest["account_schema_sha256"]:
+                raise RuntimeError("compiled package schema does not match the verified source manifest")
+            web.record("embedded_schema_identity_matches_verified_manifest")
             grants = migration + ["-f", str(bundle / "sql/closed-runtime-grants.sql")]
             command(grants + ["-v", "schema_id=" + "0" * 64], log, env)
             with local_server(bundle, local, log, fixture_env):
@@ -206,6 +233,10 @@ SELECT NOT has_schema_privilege('{RUNTIME}','careeros_pilot_runtime','CREATE')
                          method="POST", headers={**valid, "X-CSRF-Token": "invalid"}, body="{}")
                 web.http("activation_still_closed", "/api/pilot/activate", 503, "auth_unavailable",
                          method="POST", headers=valid, body="{}")
+                web.http("unmounted_allowance_stays_unavailable", "/api/draft-allowance",
+                         503, "auth_unavailable", headers=valid)
+                web.http("unmounted_allowance_alias_stays_unavailable", "/.netlify/functions/account/api/draft-allowance",
+                         503, "auth_unavailable", headers=valid)
                 for number, path in enumerate((
                     "/api/cv/generate", "/.netlify/functions/cv-generation",
                     "/api/profile/ingest", "/.netlify/functions/profile-ingestion",
@@ -237,6 +268,8 @@ SELECT NOT has_schema_privilege('{RUNTIME}','careeros_pilot_runtime','CREATE')
                 web.http("logged_out_cookie_no_longer_authorized", "/api/auth/session", 200,
                          '"authenticated":false', headers=valid)
                 command(migration + ["-c", "UPDATE careeros_control_state SET inference_stopped=false"], log, env)
+                denied_migration(migrate_command, migrate, log)
+                web.record("packaged_migrator_denies_open_control_state")
                 web.http("open_control_is_not_accepted_by_closed_package", "/readyz", 503, "unavailable")
                 web.http("open_control_cannot_enable_managed_alias", "/.netlify/functions/application-draft",
                          503, "auth_unavailable", method="POST", headers=valid, body="{}")
@@ -253,10 +286,19 @@ SELECT NOT has_schema_privilege('{RUNTIME}','careeros_pilot_runtime','CREATE')
     web.record("owned_postgres_stopped_and_data_removed")
 
 
+def denied_migration(args, env, log):
+    result = subprocess.run(["rtk", "proxy", *args], env=env, stdout=log, stderr=subprocess.PIPE,
+                            text=True, timeout=35)
+    if result.returncode != 1 or "requires its dedicated local database and migrator" not in result.stderr:
+        raise RuntimeError("expected the packaged migrator to refuse the fixture configuration")
+    log.write(result.stderr)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bundle", type=Path, required=True)
     parser.add_argument("--evidence", type=Path, required=True)
+    parser.add_argument("--expected-manifest-sha256", required=True)
     args = parser.parse_args()
     helpers = runpy.run_path(str(HERE / "test-ai-admission.py"))
     evidence = helpers["evidence_directory"](args.evidence)
@@ -265,14 +307,21 @@ def main():
     passed = False
     with (evidence / "checks.log").open("x") as log:
         try:
-            command(["python3", str(HERE / "package-closed-pilot.py"), "verify", "--bundle", str(bundle)],
-                    log, clean_environment())
-            run_checks(bundle, evidence, log, events, helpers["binary"])
-            passed = True
+            with tempfile.TemporaryDirectory(prefix="closed-pilot-package-run-") as temporary:
+                if bundle.is_symlink():
+                    raise RuntimeError("regular bundle directory required")
+                candidate = Path(temporary) / "bundle"
+                # Execute only an owned snapshot that matched the independently
+                # approved digest. The supplied directory can change later.
+                shutil.copytree(bundle, candidate, symlinks=True)
+                log.write(command(["python3", str(HERE / "package-closed-pilot.py"), "verify", "--bundle", str(candidate),
+                                   "--expected-manifest-sha256", args.expected_manifest_sha256],
+                                  log, clean_environment()) + "\n")
+                run_checks(candidate, evidence, log, events, helpers["binary"])
+                passed = True
         finally:
-            manifest = bundle / "manifest.json"
             receipt = {"synthetic_only": True, "pass": passed, "events": events,
-                       "package_manifest_sha256": hashlib.sha256(manifest.read_bytes()).hexdigest()}
+                       "package_manifest_sha256": args.expected_manifest_sha256}
             with (evidence / "summary.json").open("x") as summary:
                 json.dump(receipt, summary, indent=2)
                 summary.write("\n")

@@ -95,7 +95,8 @@ func closedAccount(ctx context.Context, origin, databaseURL string) (http.Handle
 		switch {
 		case p == "/api/auth/google/start" || p == "/api/auth/google/callback":
 			unavailable.ServeHTTP(w, r)
-		case p == "/api/pilot/activate", inNamespace(p, "/api/ai"), inNamespace(p, "/api/drafts"):
+		case p == "/api/pilot/activate", p == "/api/draft-allowance",
+			inNamespace(p, "/api/ai"), inNamespace(p, "/api/drafts"):
 			guarded.ServeHTTP(w, r)
 		case !safeMethod(r.Method) && p != "/api/auth/logout" && p != "/api/auth/logout-all":
 			// No profile, invitation, deletion or managed mutation is mounted

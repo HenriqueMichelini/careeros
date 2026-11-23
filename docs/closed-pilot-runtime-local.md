@@ -4,15 +4,17 @@
 
 ## Reproduce and inspect the package
 
-Use the pinned local build profile and pre-cached npm and Go dependencies in a development environment. The package command extracts the requested Git commit, performs an offline lockfile install and production build, and compiles the Go runtime and the existing account migrator. The worktree, dotenv files and ambient Vite flags cannot select a different build. The resulting manifest pins the commit, tree, toolchain/target, build profile, lockfiles, account schema, existing route adapter configuration, bootstrap/grants input and every delivered asset and binary.
+Use the packager from the selected commit and pre-cached npm and Go dependencies. It extracts that commit, performs an offline lockfile install and production build, and compiles the Go runtime and a guarded command for the existing account migration. The builder inherits only tool discovery, the cache home and optional Go cache locations. The build profile fixes the effective Go target, architecture level and experiments and disables direct module or VCS access. npm uses offline mode and the fixed system script shell. The manifest pins the commit, tree, build constraints, lockfiles, account schema, route adapter configuration, bootstrap/grants inputs and every delivered file.
 
 ```sh
 rtk proxy python3 scripts/package-closed-pilot.py build --revision <reviewed-commit> --output <new-local-directory>
-rtk proxy python3 scripts/package-closed-pilot.py verify --bundle <bundle>
-rtk proxy python3 scripts/test-closed-pilot.py --bundle <bundle> --evidence <new-local-evidence-directory>
+rtk proxy python3 scripts/package-closed-pilot.py verify --bundle <bundle> --expected-manifest-sha256 <trusted-digest>
+rtk proxy python3 scripts/test-closed-pilot.py --bundle <bundle> --expected-manifest-sha256 <trusted-digest> --evidence <new-local-evidence-directory>
 ```
 
-Compare the reported manifest SHA-256 to the independently reviewed value. Payload verification establishes equality with that manifest. The command uses the existing Test Account and pilot route contracts and five existing direct Function aliases. It normalizes recognized aliases to the corresponding canonical route before delegation. All API and Function names are reserved before static handling, including unknown routes. The explicit Netlify Function adapter remains in the prior release path and is checked by its existing event-level tests. This loopback package makes no hosted platform selection or claim about Netlify's ingress behavior.
+Use the independently reviewed manifest SHA-256 or the digest emitted by a just-completed build from the reviewed source in an owned directory. Do not calculate the expected digest from an untrusted bundle. The verification runner executes only its private snapshot after matching the expected digest and all payload bindings. For manual use, verify and keep the executable in an owned directory.
+
+The command uses the existing Account and pilot route contracts and five existing direct workflow aliases. It normalizes recognized aliases to the corresponding canonical route before delegation, including the Account alias for Draft allowance. All API and Function names are reserved before static handling, including unknown routes. The explicit Netlify Function adapter remains in the v1 release path and is checked at the event boundary. The closed frontend uses the existing local font fallbacks, and the packaged browser check intercepts and refuses any request outside its loopback origin. The regular V1 build retains its stylesheet.
 
 ## Startup and configuration
 
@@ -21,14 +23,14 @@ Run the packaged `bin/pilot-runtime-local -listen 127.0.0.1:8787 -static fronten
 | Local input | Purpose |
 | --- | --- |
 | `CAREEROS_PILOT_LOCAL_DATABASE_URL` | Dedicated runtime reference with role `careeros_pilot_runtime`, database `careeros_pilot_runtime_fixture` and literal loopback TCP authority. Use a credential-free URL with no query or fallback. |
-| `CAREEROS_DATABASE_URL` | Only the separate `bin/account-migrate` process receives the disposable migrator reference. It uses the isolated schema owned by `careeros_pilot_migrator`. |
+| `CAREEROS_PILOT_LOCAL_MIGRATOR_DATABASE_URL` | Only the separate `bin/pilot-runtime-migrate` process receives the disposable migrator reference. It requires a credential-free literal loopback URL for the exact fixture database and role `careeros_pilot_migrator`, with no query or fallback. The actual connection must use the isolated schema owned by that role. |
 | `bin/pilot-runtime-local -schema-id` | Prints the exact embedded Account migration digest required by `sql/closed-runtime-grants.sql`. |
 | `build-profile.json` | Enables the Account, pilot and Draft Recovery frontend views. Identity exchanges, invitation activation and managed routes stay closed at the API. |
 
 The runner creates a disposable PostgreSQL cluster, installs the fixed local role and schema prerequisites, checks startup before migration, then executes the real migrator and runtime-grants scripts. It verifies the runtime role, the configured authorization and revoked access, and stops the cluster. For manual rehearsal, use the same migration steps in an independently owned disposable cluster.
 
 1. Create the dedicated database, then run `sql/bootstrap.sql` as its disposable administrator.
-2. Run the matched Account migrator as `careeros_pilot_migrator`. Its explicit migration serializes on the existing advisory lock. Startup performs no migration.
+2. Run the matched `bin/pilot-runtime-migrate` as `careeros_pilot_migrator`. It checks the actual database, schema owner and login in the same transaction before DDL, takes the existing migration and control locks, and requires already installed controls to stay closed. Startup performs no migration. The generic Account migrator remains a separate application command.
 3. As the same migrator, run `sql/closed-runtime-grants.sql` with `-v schema_id=<printed-schema-id>`. Repeat the grant/identity step after migration because the Account schema reapplies purpose-specific revocations. Review the closed shared invitation and inference state.
 4. Start the packaged runtime using the restricted runtime role. `GET /healthz` checks the process. `GET /readyz` checks identity, role restrictions, closed controls and reachable PostgreSQL. `200` from readiness includes explicit closed invitation and inference fields. Missing environment, wrong schema identity, a stopped database or an open control causes unavailable readiness and typed unavailability for known API routes.
 

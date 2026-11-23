@@ -7,6 +7,7 @@ import io
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import stat
 import subprocess
@@ -19,8 +20,16 @@ SCHEMA = "internal/accountstore/schema.sql"
 MEASURED_INPUTS = (
     "go.mod", "go.sum", "package-lock.json", "netlify.toml", PROFILE, SCHEMA,
     "scripts/pilot-runtime/bootstrap.sql", "scripts/pilot-runtime/closed-runtime-grants.sql",
-    "scripts/package-closed-pilot.py", "scripts/test-closed-pilot.py",
+    "scripts/package-closed-pilot.py", "scripts/test-closed-pilot.py", "vite.config.ts", "src/index.css",
+    "tests/account-browser.fixture.mjs", "tests/closed-pilot-package-browser.check.mjs",
 )
+
+GO_OFFLINE = {
+    "GOENV": "off", "GOFLAGS": "", "GOPROXY": "off", "GOSUMDB": "off", "GOTOOLCHAIN": "local", "GOWORK": "off",
+    "GOPRIVATE": "", "GONOPROXY": "none", "GONOSUMDB": "", "GOINSECURE": "", "GOVCS": "*:off",
+}
+NPM_COMMAND_OPTIONS = ("--offline", "--script-shell=/bin/sh")
+COMMANDS = ("pilot-runtime-local", "pilot-runtime-migrate")
 
 
 def run(*args, cwd, env=None, capture=False):
@@ -34,20 +43,22 @@ def digest(file):
         return {"bytes": file.stat().st_size, "sha256": hashlib.file_digest(stream, "sha256").hexdigest()}
 
 
-def build_environment(frontend, source):
-    env = {
-        key: value for key, value in os.environ.items()
-        if not key.startswith(("VITE_", "CAREEROS_", "FIGMA_", "NPM_CONFIG_"))
-        and key not in ("NODE_OPTIONS", "NODE_PATH", "GOFLAGS", "GODEBUG")
-    }
+def build_environment(profile, source):
+    # Only tool discovery, the standard user cache home, and optional Go cache
+    # locations are inherited. This also excludes every case variant of npm
+    # configuration and ambient Go flags, experiments and module exceptions.
+    env = {key: os.environ[key] for key in ("PATH", "HOME", "GOCACHE", "GOMODCACHE") if key in os.environ}
     env.update({
-        "CI": "1", "CGO_ENABLED": "0", "GOENV": "off", "GOPROXY": "off",
-        "GOSUMDB": "off", "GOTOOLCHAIN": "local", "GOWORK": "off",
+        "CI": "1",
         "NPM_CONFIG_USERCONFIG": os.devnull,
         "NPM_CONFIG_GLOBALCONFIG": str(source / ".isolated-npm-global"),
+        "NPM_CONFIG_OFFLINE": "true",
+        "NPM_CONFIG_SCRIPT_SHELL": "/bin/sh",
         "NODE_ENV": "production",
     })
-    env.update(frontend)
+    env.update(GO_OFFLINE)
+    env.update(profile["go_target"])
+    env.update(profile["frontend"])
     return env
 
 
@@ -82,13 +93,19 @@ def build(repo, revision, output):
         archive = run("git", "archive", "--format=tar", commit, cwd=repo, capture=True)
         with tarfile.open(fileobj=io.BytesIO(archive)) as packed:
             packed.extractall(source, filter="data")
-        if any(source.glob(".env*")):
-            raise ValueError("archive must not supply dotenv inputs")
+        if any(source.glob(".env*")) or (source / ".npmrc").exists():
+            raise ValueError("archive must not supply dotenv or npm configuration inputs")
+        if Path(__file__).read_bytes() != (source / "scripts/package-closed-pilot.py").read_bytes():
+            raise ValueError("use the packager from the selected source revision")
         profile = json.loads((source / PROFILE).read_text())
         # Run the archived script's configured build, regardless of ambient
         # CareerOS/Vite flags or a different working tree's generated assets.
-        env = build_environment(profile["frontend"], source)
-        target = run("go", "env", "GOOS", "GOARCH", cwd=source, env=env, capture=True).decode().splitlines()
+        env = build_environment(profile, source)
+        expected_go = {**GO_OFFLINE, **profile["go_target"]}
+        effective_go = json.loads(run("go", "env", "-json", *expected_go, cwd=source, env=env, capture=True))
+        # An explicitly disabled GOENV is shown as an empty effective path.
+        if effective_go != {**expected_go, "GOENV": ""}:
+            raise ValueError("effective Go configuration does not match the closed build profile")
         toolchain = {
             "go": run("go", "env", "GOVERSION", cwd=source, env=env, capture=True).decode().strip(),
             "node": run("node", "--version", cwd=source, env=env, capture=True).decode().strip(),
@@ -96,41 +113,48 @@ def build(repo, revision, output):
         }
         if toolchain != profile["toolchain"]:
             raise ValueError("installed toolchain does not match the pinned local build profile")
-        run("npm", "ci", "--offline", "--include=dev", "--ignore-scripts", "--no-audit", "--no-fund",
+        run("npm", "ci", *NPM_COMMAND_OPTIONS, "--include=dev", "--ignore-scripts", "--no-audit", "--no-fund",
             cwd=source, env=env)
-        run("npm", "run", "build", "--", "--outDir", str(bundle / "frontend"), cwd=source, env=env)
-        for command in ("pilot-runtime-local", "account-migrate"):
+        run("npm", "run", *NPM_COMMAND_OPTIONS, "build", "--", "--outDir", str(bundle / "frontend"), cwd=source, env=env)
+        for command in COMMANDS:
             run("go", "build", "-trimpath", "-buildvcs=false", "-mod=readonly", "-o", str(bundle / "bin" / command),
                 "./cmd/" + command, cwd=source, env=env)
-        schema_id = run(str(bundle / "bin/pilot-runtime-local"), "-schema-id", cwd=source,
-                        env=env, capture=True).decode().strip()
-        if schema_id != digest(source / SCHEMA)["sha256"]:
-            raise ValueError("compiled account migration does not match the archived schema")
 
         for name in ("bootstrap.sql", "closed-runtime-grants.sql"):
             shutil.copyfile(source / "scripts/pilot-runtime" / name, bundle / "sql" / name)
         shutil.copyfile(source / PROFILE, bundle / "build-profile.json")
         manifest = {
             "bundle": profile["id"], "source_commit": commit, "source_tree": tree,
-            "target": "/".join(target), "toolchain": toolchain, "account_schema_sha256": schema_id,
+            "target": effective_go["GOOS"] + "/" + effective_go["GOARCH"], "toolchain": toolchain,
+            "effective_go": effective_go, "npm_options": list(NPM_COMMAND_OPTIONS),
+            "account_schema_sha256": digest(source / SCHEMA)["sha256"],
             "inputs": {name: digest(source / name) for name in MEASURED_INPUTS},
             "payload": payload(bundle),
         }
+        document = (json.dumps(manifest, indent=2, sort_keys=True) + "\n").encode()
+        trusted_digest = hashlib.sha256(document).hexdigest()
         output.mkdir(mode=0o700)
         shutil.copytree(bundle, output, dirs_exist_ok=True)
-        with (output / "manifest.json").open("x") as target_file:
-            target_file.write(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
-    verify(output)
+        with (output / "manifest.json").open("xb") as target_file:
+            target_file.write(document)
+    verify(output, trusted_digest)
 
 
-def verify(bundle):
+def verify(bundle, expected):
+    if not re.fullmatch(r"[0-9a-f]{64}", expected):
+        raise ValueError("independently expected manifest SHA-256 required")
     identity = bundle / "manifest.json"
     if bundle.is_symlink() or not stat.S_ISREG(identity.lstat().st_mode):
         raise ValueError("regular bundle directory and manifest required")
-    manifest = json.loads(identity.read_text())
+    document = identity.read_bytes()
+    actual = hashlib.sha256(document).hexdigest()
+    if actual != expected:
+        raise ValueError("bundle manifest does not match the independently expected SHA-256")
+    manifest = json.loads(document)
     if manifest.get("bundle") != "closed-pilot-local-v1" or payload(bundle) != manifest.get("payload"):
         raise ValueError("bundle payload does not match the manifest")
-    print(f"Verified {manifest['bundle']} {manifest['source_commit']} manifest={digest(identity)['sha256']}")
+    print(f"Verified {manifest['bundle']} {manifest['source_commit']} manifest={actual}")
+    return manifest
 
 
 def main():
@@ -141,12 +165,13 @@ def main():
     packaging.add_argument("--output", required=True, type=Path)
     checking = modes.add_parser("verify")
     checking.add_argument("--bundle", required=True, type=Path)
+    checking.add_argument("--expected-manifest-sha256", required=True)
     args = parser.parse_args()
     try:
         if args.mode == "build":
             build(Path(__file__).resolve().parents[1], args.revision, args.output.absolute())
         else:
-            verify(args.bundle.absolute())
+            verify(args.bundle.absolute(), args.expected_manifest_sha256)
     except (OSError, ValueError, KeyError, subprocess.CalledProcessError) as exc:
         parser.exit(1, f"closed pilot package failed: {exc}\n")
 
