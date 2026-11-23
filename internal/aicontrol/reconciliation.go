@@ -150,7 +150,7 @@ func (r *Reconciliation) digest(actor, purpose string, value any) string {
 	m.Write(raw)
 	return hex.EncodeToString(m.Sum(nil))
 }
-func (r *Reconciliation) begin(ctx context.Context, p auth.Principal, id string, apply bool) (*sql.Tx, Dispatch, int64, error) {
+func (r *Reconciliation) begin(ctx context.Context, p auth.Principal, id string, apply, attest bool) (*sql.Tx, Dispatch, int64, error) {
 	if r == nil || r.h == nil || r.h.reviewerDB == nil || !tokenLabel.MatchString(id) {
 		return nil, Dispatch{}, 0, ErrDenied
 	}
@@ -164,7 +164,7 @@ func (r *Reconciliation) begin(ctx context.Context, p auth.Principal, id string,
 		if tx.QueryRowContext(ctx, `SELECT careeros_operations_required()`).Scan(&enrolled) != nil {
 			return fail(ErrUnavailable)
 		}
-		if enrolled {
+		if enrolled || attest {
 			if err = accountstore.LockControlStopTransaction(ctx, tx); err != nil {
 				return fail(err)
 			}
@@ -422,7 +422,7 @@ func (r *Reconciliation) Preview(ctx context.Context, p auth.Principal, c Reconc
 	if err != nil {
 		return ReconciliationPreview{}, err
 	}
-	tx, d, v, err := r.begin(ctx, p, c.Dispatch, false)
+	tx, d, v, err := r.begin(ctx, p, c.Dispatch, false, false)
 	if err != nil {
 		return ReconciliationPreview{}, err
 	}
@@ -460,7 +460,7 @@ func (r *Reconciliation) apply(ctx context.Context, p auth.Principal, c Reconcil
 	if err != nil {
 		return ReconciliationPreview{}, err
 	}
-	tx, d, v, err := r.begin(ctx, p, c.Dispatch, true)
+	tx, d, v, err := r.begin(ctx, p, c.Dispatch, true, sessionToken != "")
 	if err != nil {
 		return ReconciliationPreview{}, err
 	}
@@ -528,6 +528,30 @@ func (r *Reconciliation) apply(ctx context.Context, p auth.Principal, c Reconcil
 	if _, err = tx.ExecContext(ctx, `UPDATE ai_recon_state SET version=$3,source=CASE WHEN $7 THEN $4 ELSE source END,source_revision=CASE WHEN $7 THEN $5 ELSE source_revision END,command_id=CASE WHEN $7 THEN $6 ELSE command_id END WHERE namespace=$1 AND dispatch=$2`, r.h.cfg.Namespace, d.ID, result.Version, e.Source, e.Revision, c.ID, financialEvidence(c.Kind)); err != nil {
 		return result, ErrUnavailable
 	}
+	if c.Kind == "unpriced" {
+		if _, err = tx.ExecContext(ctx, `UPDATE ai_recon_state SET unpriced=true,unpriced_command=$3,unpriced_source=$4,unpriced_revision=$5 WHERE namespace=$1 AND dispatch=$2`, r.h.cfg.Namespace, d.ID, c.ID, e.Source, e.Revision); err != nil {
+			return result, ErrUnavailable
+		}
+	}
+	breach := (result.After > d.Maximum && (!d.MaximumBreached || result.After > d.Counted)) || c.Kind == "unpriced"
+	observer := r.h.localOperations()
+	if breach {
+		contract := e.Provider + "/" + e.Model + "/" + e.Tier + "/" + e.Rate + "/" + e.Currency
+		if _, err = tx.ExecContext(ctx, `INSERT INTO ai_recon_event(namespace,id,dispatch,contract,obligation,reserved) VALUES($1,$2,$3,$4,$5,$6)`, r.h.cfg.Namespace, c.ID, d.ID, contract, result.After, d.Maximum); err != nil {
+			return result, ErrUnavailable
+		}
+		if _, err = tx.ExecContext(ctx, `INSERT INTO ai_recon_stop(namespace,stopped,version,event_id,contract,obligation,reserved) VALUES($1,true,1,$2,$3,$4,$5) ON CONFLICT(namespace) DO UPDATE SET stopped=true,version=ai_recon_stop.version+1,event_id=EXCLUDED.event_id,contract=EXCLUDED.contract,obligation=EXCLUDED.obligation,reserved=EXCLUDED.reserved`, r.h.cfg.Namespace, c.ID, contract, result.After, d.Maximum); err != nil {
+			return result, ErrUnavailable
+		}
+		if observer == nil && sessionToken != "" {
+			// Attest against the locked ledger before accounting changes the
+			// counted amount and the prior-breach latch. Both writes commit together.
+			if _, err = tx.ExecContext(ctx, `SELECT careeros_defer_finance_operations($1,$2,$3,$4,$5)`,
+				r.h.cfg.Namespace, c.ID, p.AccountID, p.SessionID, sessionToken); err != nil {
+				return result, ErrUnavailable
+			}
+		}
+	}
 	if financialEvidence(c.Kind) {
 		expense := result.Amount
 		if _, err = tx.ExecContext(ctx, `UPDATE ai_fixture_dispatch SET floor_amount=$3,counted=$3,expense=$4,category=$5,evidence_version=evidence_version+1,maximum_breached=maximum_breached OR $3>maximum WHERE namespace=$1 AND id=$2`, r.h.cfg.Namespace, d.ID, result.After, expense, result.Category); err != nil {
@@ -540,9 +564,6 @@ func (r *Reconciliation) apply(ctx context.Context, p auth.Principal, c Reconcil
 		}
 	}
 	if c.Kind == "unpriced" {
-		if _, err = tx.ExecContext(ctx, `UPDATE ai_recon_state SET unpriced=true,unpriced_command=$3,unpriced_source=$4,unpriced_revision=$5 WHERE namespace=$1 AND dispatch=$2`, r.h.cfg.Namespace, d.ID, c.ID, e.Source, e.Revision); err != nil {
-			return result, ErrUnavailable
-		}
 		if _, err = tx.ExecContext(ctx, `UPDATE ai_fixture_dispatch SET floor_amount=$3,counted=$3 WHERE namespace=$1 AND id=$2`, r.h.cfg.Namespace, d.ID, result.After); err != nil {
 			return result, ErrUnavailable
 		}
@@ -566,16 +587,6 @@ func (r *Reconciliation) apply(ctx context.Context, p auth.Principal, c Reconcil
 			return result, ErrUnavailable
 		}
 	}
-	breach := (result.After > d.Maximum && (!d.MaximumBreached || result.After > d.Counted)) || c.Kind == "unpriced"
-	if breach {
-		contract := e.Provider + "/" + e.Model + "/" + e.Tier + "/" + e.Rate + "/" + e.Currency
-		if _, err = tx.ExecContext(ctx, `INSERT INTO ai_recon_event(namespace,id,dispatch,contract,obligation,reserved) VALUES($1,$2,$3,$4,$5,$6)`, r.h.cfg.Namespace, c.ID, d.ID, contract, result.After, d.Maximum); err != nil {
-			return result, ErrUnavailable
-		}
-		if _, err = tx.ExecContext(ctx, `INSERT INTO ai_recon_stop(namespace,stopped,version,event_id,contract,obligation,reserved) VALUES($1,true,1,$2,$3,$4,$5) ON CONFLICT(namespace) DO UPDATE SET stopped=true,version=ai_recon_stop.version+1,event_id=EXCLUDED.event_id,contract=EXCLUDED.contract,obligation=EXCLUDED.obligation,reserved=EXCLUDED.reserved`, r.h.cfg.Namespace, c.ID, contract, result.After, d.Maximum); err != nil {
-			return result, ErrUnavailable
-		}
-	}
 	if err = r.h.fault("before_reconciliation_commit"); err != nil {
 		return result, err
 	}
@@ -585,20 +596,12 @@ func (r *Reconciliation) apply(ctx context.Context, p auth.Principal, c Reconcil
 	// The source records an actual capture failure within this transaction.
 	// Financial evidence and the shared emergency stop remain durable together.
 	var observation int
-	observer := r.h.localOperations()
 	if observer != nil {
 		emitEvent := c.Kind == "unpriced" || breach && d.MaximumBreached
 		observation, err = observer.CaptureReconciliation(ctx, tx, r.h.cfg.Namespace, c.ID, emitEvent)
 		if err != nil {
 			return result, err
 		}
-	} else if sessionToken != "" && c.Kind == "unpriced" {
-		if _, err = tx.ExecContext(ctx, `SELECT careeros_defer_finance_operations($1,$2,$3,$4,$5)`,
-			r.h.cfg.Namespace, c.ID, p.AccountID, p.SessionID, sessionToken); err != nil {
-			return result, ErrUnavailable
-		}
-	}
-	if observer != nil || sessionToken != "" && c.Kind == "unpriced" {
 		if err = r.authorize(ctx, tx, p); err != nil {
 			return result, err
 		}
@@ -617,7 +620,7 @@ func (r *Reconciliation) apply(ctx context.Context, p auth.Principal, c Reconcil
 	return result, nil
 }
 func (r *Reconciliation) Status(ctx context.Context, p auth.Principal, id string) (ReconciliationStatus, error) {
-	tx, d, v, err := r.begin(ctx, p, id, false)
+	tx, d, v, err := r.begin(ctx, p, id, false, false)
 	if err != nil {
 		return ReconciliationStatus{}, err
 	}

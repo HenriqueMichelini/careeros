@@ -64,7 +64,7 @@ func OpenLocalReconciliation(ctx context.Context, dsn, namespace string) (*Recon
 }
 func (r *Reconciliation) Close() error { return r.h.reviewerDB.Close() }
 
-// ApplyLocal uses the CLI's authenticated session to attest an unpriced
+// ApplyLocal uses the CLI's authenticated session to attest a critical
 // transition when the finance process has no enrolled operations observer.
 func (r *Reconciliation) ApplyLocal(ctx context.Context, p auth.Principal, command ReconciliationCommand, sessionToken string) (ReconciliationPreview, error) {
 	if len(sessionToken) < 1 || len(sessionToken) > 128 {

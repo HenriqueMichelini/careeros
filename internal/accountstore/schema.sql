@@ -343,6 +343,7 @@ CREATE TABLE IF NOT EXISTS careeros_operations_deferred (
  PRIMARY KEY(namespace,event_id)
 );
 ALTER TABLE careeros_operations_deferred ADD COLUMN IF NOT EXISTS awaiting_observer boolean NOT NULL DEFAULT false;
+ALTER TABLE careeros_operations_deferred ADD COLUMN IF NOT EXISTS source_dispatch text NOT NULL DEFAULT '';
 REVOKE ALL ON careeros_operations_deferred FROM PUBLIC;
 
 DO $operations_functions$

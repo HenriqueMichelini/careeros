@@ -68,6 +68,7 @@ func runPilotOperationsFixtureCLI(t *testing.T, program string, env []string, in
 
 func TestPilotOperationsReconciliationCLIObservesItsOwnCommittedInvariant(t *testing.T) {
 	for _, mode := range []string{"capture", "capture_unavailable", "reviewer_expires", "finance_only",
+		"finance_priced_live", "finance_priced_corrected", "finance_priced_atomicity", "finance_denied_account", "finance_denied_profile", "finance_denied_compromise",
 		"priced_live", "priced_replay", "priced_replay_after_correction", "reviewed_maximum_breakdown"} {
 		t.Run(mode, func(t *testing.T) { pilotOperationsReconciliationCLI(t, mode) })
 	}
@@ -108,7 +109,10 @@ func pilotOperationsReconciliationCLI(t *testing.T, mode string) {
 		Evidence: aicontrol.ReconciliationEvidence{Source: "fixture-gross-bill", Revision: 1, Reason: "fixture-unpriced",
 			Provider: "typesafe", Model: "jev-1.13.0", Tier: "standard", Rate: "unpriced-fixture-rate", Currency: "EUR",
 			BillingNamespace: "synthetic", RequestID: "fixture-reconciliation", Complete: true, Gross: &gross}}
-	priced := strings.HasPrefix(mode, "priced_")
+	if mode == "finance_only" {
+		evidence.ID = strings.Repeat("u", 128)
+	}
+	priced := strings.HasPrefix(mode, "priced_") || strings.HasPrefix(mode, "finance_priced_")
 	criticalKind := "invariant_breach"
 	if priced {
 		gross, criticalKind = 2000, "maximum_breach"
@@ -127,10 +131,26 @@ func pilotOperationsReconciliationCLI(t *testing.T, mode string) {
 	}
 	evidence.Preview = preview.Token
 	raw, _ = json.Marshal(evidence)
-	if mode == "finance_only" {
+	if strings.HasPrefix(mode, "finance_") {
 		financeEnv := append(slices.Clone(env), "CAREEROS_OPERATIONS_JOURNAL_DIRECTORY=", "CAREEROS_OPERATIONS_JOURNAL_KEY=")
+		if mode == "finance_priced_atomicity" {
+			// Simulate a write that returns successfully while the source amount
+			// stays unchanged. The private receipt must fail at the commit boundary.
+			if _, err := f.DB.Exec(`CREATE FUNCTION fixture_skip_finance_accounting() RETURNS trigger
+			 LANGUAGE plpgsql AS $fixture$ BEGIN RETURN OLD; END $fixture$;
+			 CREATE TRIGGER fixture_skip_finance_accounting BEFORE UPDATE OF counted ON ai_fixture_dispatch
+			 FOR EACH ROW EXECUTE FUNCTION fixture_skip_finance_accounting()`); err != nil {
+				t.Fatal(err)
+			}
+			verifyFinanceTransitionRolledBack(t, f, financeEnv, raw)
+			return
+		}
+		if strings.HasPrefix(mode, "finance_denied_") {
+			verifyFinanceReviewerFence(t, f, financeEnv, raw, strings.TrimPrefix(mode, "finance_denied_"))
+			return
+		}
 		_, diagnostic, err = runPilotOperationsFixtureCLI(t, "reconciliation-local", financeEnv, raw, "--namespace", "qualification", "--mode", "apply")
-		if err != nil || strings.Contains(string(diagnostic), `"Kind":"invariant_breach"`) {
+		if err != nil || strings.Contains(string(diagnostic), `"Kind":"`+criticalKind+`"`) {
 			t.Fatalf("finance-only command crossed its independent boundary: %v %s", err, diagnostic)
 		}
 		var inheritedStop, operationsSideEffect, deferred bool
@@ -141,11 +161,41 @@ func pilotOperationsReconciliationCLI(t *testing.T, mode string) {
 			Scan(&inheritedStop, &operationsSideEffect, &deferred); err != nil || !inheritedStop || operationsSideEffect || !deferred {
 			t.Fatalf("finance-only path must retain #283 and defer independently verified observation: %v %v %v %v", inheritedStop, operationsSideEffect, deferred, err)
 		}
-		var original time.Time
-		var amount, maximum int64
-		if err = f.DB.QueryRow(`SELECT created_at,obligation,reserved FROM ai_recon_event WHERE id=$1`, evidence.ID).
-			Scan(&original, &amount, &maximum); err != nil || amount != maximum || maximum != 1344 {
-			t.Fatalf("expected the committed unchanged-maximum invariant: %d %d %v", amount, maximum, err)
+		requestedAmounts := map[string]int64{evidence.ID: 1344}
+		if priced {
+			requestedAmounts[evidence.ID] = 2000
+			applyOperationsBillCorrection(t, financeEnv, evidence, 2400)
+			requestedAmounts["fixture-priced-correction"] = 2400
+		}
+		if mode == "finance_priced_corrected" {
+			correction := evidence
+			correction.ID, correction.Kind, correction.Preview = "fixture-final-price-correction", "corrected_bill", ""
+			correction.ExpectedVersion, correction.Evidence.Revision = 2, 3
+			reviewedGross := int64(900)
+			correction.Evidence.Supersedes, correction.Evidence.Gross = "fixture-priced-correction", &reviewedGross
+			applyOperationsReconciliationCLI(t, financeEnv, correction)
+			var current int64
+			if err := f.DB.QueryRow(`SELECT counted FROM ai_fixture_dispatch WHERE namespace='qualification' AND id=$1`, dispatch).Scan(&current); err != nil || current != reviewedGross {
+				t.Fatalf("fixture must correct exposure before owner inspection: %d %v", current, err)
+			}
+		}
+		origins := make(map[int64]time.Time, len(requestedAmounts))
+		for command, wantAmount := range requestedAmounts {
+			var original time.Time
+			var amount, maximum int64
+			var typedReceipt bool
+			firstDispatch := ""
+			if priced && command == evidence.ID {
+				firstDispatch = dispatch
+			}
+			if err = f.DB.QueryRow(`SELECT e.created_at,e.obligation,e.reserved,d.awaiting_observer AND d.evidence=jsonb_build_object(
+			 'ID',e.id,'Rate',$2::text,'Amount',e.obligation,'Maximum',e.reserved,'Kind',$3::text,'At',e.created_at,'IncidentDispatch',$4::text)
+			 FROM ai_recon_event e JOIN careeros_operations_deferred d ON d.namespace=e.namespace AND d.event_id=e.id
+			 WHERE e.namespace='qualification' AND e.id=$1`, command, aicontrol.QualificationRateID, criticalKind, firstDispatch).
+				Scan(&original, &amount, &maximum, &typedReceipt); err != nil || amount != wantAmount || maximum != 1344 || !typedReceipt {
+				t.Fatalf("expected the exact committed financial event: %d %d %v", amount, maximum, err)
+			}
+			origins[amount] = original
 		}
 		var rawReceiptAccess bool
 		if err = f.DB.QueryRow(`WITH reader AS (SELECT rolname FROM pg_roles
@@ -156,8 +206,8 @@ func pilotOperationsReconciliationCLI(t *testing.T, mode string) {
 		 OR has_function_privilege(rolname,'careeros_replay_operations_captures(text)','EXECUTE') FROM reader`).Scan(&rawReceiptAccess); err != nil || rawReceiptAccess {
 			t.Fatalf("finance role has raw receipt, delivery or replay access: %v %v", rawReceiptAccess, err)
 		}
-		previous := ""
-		for range 2 {
+		previous := make(map[int64]string, len(origins))
+		for attempt := range 2 {
 			out, diagnostic, err := runPilotOperationsFixtureCLI(t, "pilot-operations-local", env, nil, "--action", "inspect")
 			var status accountstore.OperationsStatus
 			if err != nil || json.Unmarshal(out, &status) != nil {
@@ -169,22 +219,29 @@ func pilotOperationsReconciliationCLI(t *testing.T, mode string) {
 					found = append(found, incident)
 				}
 			}
-			if len(found) != 1 || found[0].ID == "" || !found[0].EventAt.Equal(original) || found[0].Severity != "critical" || found[0].Exposure != amount {
-				t.Fatalf("owner inspection lost the exact source event: %+v", found)
+			if len(found) != len(origins) {
+				t.Fatalf("owner inspection lost or duplicated a source event: %+v", found)
+			}
+			ids := map[string]bool{}
+			for _, incident := range found {
+				if incident.ID == "" || ids[incident.ID] || !incident.EventAt.Equal(origins[incident.Exposure]) || incident.Severity != "critical" || incident.Cap != 1344 {
+					t.Fatalf("owner inspection changed the original identity, amount, or timing: %+v", incident)
+				}
+				if attempt > 0 && incident.ID != previous[incident.Exposure] {
+					t.Fatalf("repeat inspection changed event identity: %+v", incident)
+				}
+				previous[incident.Exposure], ids[incident.ID] = incident.ID, true
 			}
 			wantNotices := 0
-			if previous == "" {
-				wantNotices = 1
-			} else if found[0].ID != previous {
-				t.Fatalf("repeat owner inspection changed event identity: %s", found[0].ID)
+			if attempt == 0 {
+				wantNotices = len(origins)
 			}
-			if count := strings.Count(string(diagnostic), `"Kind":"invariant_breach"`); count != wantNotices {
-				t.Fatalf("want %d new invariant notice(s), got %d: %s", wantNotices, count, diagnostic)
+			if count := strings.Count(string(diagnostic), `"Kind":"`+criticalKind+`"`); count != wantNotices {
+				t.Fatalf("want %d new critical notice(s), got %d: %s", wantNotices, count, diagnostic)
 			}
-			previous = found[0].ID
 		}
-		if err = f.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM careeros_operations_deferred WHERE event_id=$1)
-		 OR EXISTS(SELECT 1 FROM careeros_operations_pending WHERE critical_event)`, evidence.ID).Scan(&deferred); err != nil || deferred {
+		if err = f.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM careeros_operations_deferred WHERE namespace='qualification')
+		 OR EXISTS(SELECT 1 FROM careeros_operations_pending WHERE critical_event)`).Scan(&deferred); err != nil || deferred {
 			t.Fatalf("successful owner delivery left its durable source queue pending: %v %v", deferred, err)
 		}
 		return
@@ -390,6 +447,63 @@ func applyOperationsBillCorrection(t *testing.T, env []string, prior aicontrol.R
 	correction.ExpectedVersion, correction.Evidence.Revision = 1, 2
 	correction.Evidence.Supersedes, correction.Evidence.Gross = prior.ID, &amount
 	applyOperationsReconciliationCLI(t, env, correction)
+}
+
+func verifyFinanceReviewerFence(t *testing.T, f *aiadmission.Fixture, env []string, command []byte, fence string) {
+	t.Helper()
+	var schema string
+	if err := f.DB.QueryRow(`SELECT current_schema()`).Scan(&schema); err != nil {
+		t.Fatal(err)
+	}
+	schema = fmt.Sprintf("%q", schema)
+	marker := `INSERT INTO %s.careeros_deletion_operations
+	 (account_id,operation_id,request_hash,kind,profile_id,profile_revision,state,fenced_at,account_generation)
+	 SELECT account.id,'fixture-independent-reviewer-denial',sha256('fixture'::bytea),%s,
+	        COALESCE(profile.profile_id,''::bytea),COALESCE(profile.revision,0),'fenced_pending',clock_timestamp(),account.generation
+	 FROM %s.careeros_accounts account LEFT JOIN %s.careeros_profiles profile ON profile.account_id=account.id WHERE account.id=actor;`
+	var applyMarker string
+	switch fence {
+	case "account":
+		applyMarker = fmt.Sprintf(marker, schema, "'account'", schema, schema)
+	case "profile":
+		applyMarker = fmt.Sprintf(marker, schema, "'profile'", schema, schema) + fmt.Sprintf(`
+		 INSERT INTO %[1]s.careeros_deleted_profiles(account_id,profile_id,operation_id,fenced_at)
+		 SELECT account_id,profile_id,'fixture-independent-reviewer-denial',clock_timestamp()
+		 FROM %[1]s.careeros_profiles WHERE account_id=actor;`, schema)
+	case "compromise":
+		applyMarker = fmt.Sprintf(`INSERT INTO %[1]s.careeros_control_accounts(account_id,minimum_generation)
+		 SELECT id,generation FROM %[1]s.careeros_accounts WHERE id=actor;`, schema)
+	default:
+		t.Fatalf("unexpected reviewer fence fixture: %s", fence)
+	}
+	// Install an independent denial after the command's first authorization.
+	// The source attestation must reject it and leave the whole transition undone.
+	if _, err := f.DB.Exec(fmt.Sprintf(`CREATE FUNCTION fixture_finance_reviewer_denial() RETURNS trigger
+	 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $fixture$
+	 DECLARE actor text; BEGIN
+	 SELECT c.actor INTO STRICT actor FROM %s.ai_recon_command c WHERE c.namespace=NEW.namespace AND c.id=NEW.id;
+	 %s
+	 IF NOT FOUND THEN RAISE EXCEPTION 'test fixture missing reviewer marker'; END IF;
+	 RETURN NEW; END $fixture$;
+	 CREATE TRIGGER fixture_finance_reviewer_denial AFTER INSERT ON ai_recon_event
+	 FOR EACH ROW EXECUTE FUNCTION fixture_finance_reviewer_denial()`, schema, applyMarker)); err != nil {
+		t.Fatal(err)
+	}
+	verifyFinanceTransitionRolledBack(t, f, env, command)
+}
+
+func verifyFinanceTransitionRolledBack(t *testing.T, f *aiadmission.Fixture, env []string, command []byte) {
+	t.Helper()
+	_, diagnostic, err := runPilotOperationsFixtureCLI(t, "reconciliation-local", env, command, "--namespace", "qualification", "--mode", "apply")
+	if err == nil || !strings.Contains(string(diagnostic), aicontrol.ErrUnavailable.Error()) {
+		t.Fatalf("attestation must reject the changed source conditions: %v %s", err, diagnostic)
+	}
+	var changed bool
+	if err = f.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM ai_recon_command) OR EXISTS(SELECT 1 FROM ai_recon_event)
+	 OR EXISTS(SELECT 1 FROM ai_recon_stop WHERE stopped) OR EXISTS(SELECT 1 FROM careeros_operations_deferred)`).
+		Scan(&changed); err != nil || changed {
+		t.Fatalf("denied attestation changed the financial event, stop, or private observations: %v %v", changed, err)
+	}
 }
 
 func applyOperationsReconciliationCLI(t *testing.T, env []string, command aicontrol.ReconciliationCommand) {

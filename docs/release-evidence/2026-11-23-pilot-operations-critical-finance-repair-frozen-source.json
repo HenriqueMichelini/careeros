@@ -1,0 +1,42 @@
+{
+  "issue": 291,
+  "repair_parent": "141725b4893f86d7f74682ed37c3c9fc27fc79a1",
+  "cumulative_base": "089a7ac792b506e20ddd9da506cf9edd22add729",
+  "files": {
+    "docs/managed-pilot-operations-local.md": {
+      "git_blob": "b92c4b35be0f1c968f1a8f81ebccddcdfad5bb35",
+      "sha256": "8dda219b228aebdf2b84822889b40f9124e1ce3a78a116b0371b19350a9a8466",
+      "bytes": 15542
+    },
+    "internal/accountapi/pilot_operations_cli_test.go": {
+      "git_blob": "0ed3b115b37437541e820f2fa6f0671931dad1a0",
+      "sha256": "9816f8e03dc8a8971fc0a7f80486dbe0f4b1ca288a1644d0175556354634436d",
+      "bytes": 71171
+    },
+    "internal/accountstore/schema.sql": {
+      "git_blob": "ddd335dd08876088b2c5724d832f7fe4b620bb88",
+      "sha256": "f6b9d143c6d12875045f98a1fb4f692d726953a49ad0d8b39086464c031047c4",
+      "bytes": 28400
+    },
+    "internal/aicontrol/operations_capture.sql": {
+      "git_blob": "5c3af87e69e0aac02908c245967f5428e37c7206",
+      "sha256": "6163900c5f84fd8a8c5d65b9cbac2ff815d30abc489c52c1692c59bfb9a4d0fb",
+      "bytes": 17309
+    },
+    "internal/aicontrol/reconciliation.go": {
+      "git_blob": "37131c5d7bfb261340b58daf65efd3f631eff215",
+      "sha256": "64c728a8161e9360c4baf6594259683acd6a89ee2eef93e36df1ef4bac27af07",
+      "bytes": 31223
+    },
+    "internal/aicontrol/reconciliation_local.go": {
+      "git_blob": "0443a20a7c6d35bce453bcb2312e253d9b8f39d5",
+      "sha256": "85c536e3642152012e87d32deab6fa6a66438209e1de8395d7079d8feb08854d",
+      "bytes": 2466
+    },
+    "internal/aicontrol/reconciliation_rates.go": {
+      "git_blob": "bf32dc0c567c4663862aa597a52e0d794cb88f39",
+      "sha256": "3d4a1da5743256c5ff718f57d3c4147c298e6e8639250b18e1b58ee1b7b81ca5",
+      "bytes": 3518
+    }
+  }
+}

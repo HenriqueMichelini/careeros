@@ -82,42 +82,98 @@ LANGUAGE sql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $read$
  SELECT %[1]s.careeros_operations_snapshot(ns,NULL)
 $read$;
 
--- A finance-only command can attest one exact unpriced transition with its
+-- A finance-only command can attest one exact critical transition with its
 -- current ordinary reviewer session. The finance database role alone cannot
 -- attest it. Only an enrolled observer can later promote the private receipt.
 CREATE OR REPLACE FUNCTION %[1]s.careeros_defer_finance_operations(ns text, command_ref text, actor_id text, session_id text, session_token text)
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $finance$
+DECLARE dispatch_ref text; action_ref text;
 BEGIN
  IF NOT %[1]s.careeros_operations_required() THEN RETURN; END IF;
- IF session_token IS NULL OR octet_length(session_token) NOT BETWEEN 1 AND 128 OR NOT EXISTS (
+ IF ns IS NULL OR ns !~ '^[A-Za-z0-9_-]{1,128}$' OR command_ref IS NULL OR command_ref !~ '^[A-Za-z0-9_-]{1,128}$'
+  OR actor_id IS NULL OR octet_length(actor_id) NOT BETWEEN 1 AND 128
+  OR session_id IS NULL OR octet_length(session_id) NOT BETWEEN 1 AND 128
+  OR session_token IS NULL OR octet_length(session_token) NOT BETWEEN 1 AND 128 THEN
+  RAISE EXCEPTION 'bounded reconciliation authority required';
+ END IF;
+ -- Match the command's control, account, session, namespace, reviewer,
+ -- action, dispatch and state order. Recheck current authority after waiting.
+ PERFORM pg_advisory_xact_lock(72481312);
+ PERFORM 1 FROM %[1]s.careeros_accounts WHERE id=actor_id FOR UPDATE;
+ PERFORM 1 FROM %[1]s.careeros_sessions WHERE id=session_id AND account_id=actor_id FOR UPDATE;
+ PERFORM 1 FROM %[1]s.ai_fixture_namespace WHERE id=ns FOR UPDATE;
+ PERFORM 1 FROM %[1]s.ai_recon_operator WHERE namespace=ns AND actor=actor_id FOR SHARE;
+ SELECT c.dispatch INTO dispatch_ref FROM %[1]s.ai_recon_command c
+  WHERE c.namespace=ns AND c.id=command_ref AND c.xmin=pg_current_xact_id()::xid;
+ IF dispatch_ref IS NULL OR dispatch_ref !~ '^[A-Za-z0-9_-]{1,128}$' THEN
+  RAISE EXCEPTION 'current reconciliation dispatch required';
+ END IF;
+ SELECT d.action INTO action_ref FROM %[1]s.ai_fixture_dispatch d WHERE d.namespace=ns AND d.id=dispatch_ref;
+ PERFORM 1 FROM %[1]s.ai_fixture_action WHERE namespace=ns AND id=action_ref FOR UPDATE;
+ PERFORM 1 FROM %[1]s.ai_fixture_dispatch WHERE namespace=ns AND id=dispatch_ref FOR UPDATE;
+ PERFORM 1 FROM %[1]s.ai_recon_state WHERE namespace=ns AND dispatch=dispatch_ref FOR UPDATE;
+ IF %[1]s.careeros_account_closed(actor_id) OR %[1]s.careeros_deleted_profile_restored(actor_id)
+  OR %[1]s.careeros_control_account_denied(actor_id) OR NOT EXISTS (
   SELECT 1 FROM %[1]s.careeros_sessions s JOIN %[1]s.careeros_accounts a ON a.id=s.account_id
     JOIN %[1]s.ai_recon_operator r ON r.namespace=ns AND r.actor=a.id
    WHERE s.id=session_id AND a.id=actor_id AND s.token_hash=sha256(convert_to(session_token,'UTF8'))
     AND s.expires_at>clock_timestamp() AND a.status='active' AND s.generation=a.generation
     AND NOT r.revoked AND r.expires_at>clock_timestamp()
  ) THEN RAISE EXCEPTION 'current reconciliation reviewer required'; END IF;
- INSERT INTO %[1]s.careeros_operations_deferred(namespace,event_id,evidence,awaiting_observer)
+ INSERT INTO %[1]s.careeros_operations_deferred(namespace,event_id,evidence,awaiting_observer,source_dispatch)
  SELECT ns,e.id,jsonb_build_object('ID',e.id,'Rate',contract.rate_id,'Amount',e.obligation,'Maximum',e.reserved,
-   'IncidentDispatch','','Kind','invariant_breach','At',e.created_at),true
+   'IncidentDispatch',CASE WHEN c.kind<>'unpriced' AND NOT d.maximum_breached THEN d.id ELSE '' END,
+   'Kind',CASE WHEN c.kind='unpriced' THEN 'invariant_breach' ELSE 'maximum_breach' END,'At',e.created_at),true,d.id
  FROM %[1]s.ai_recon_event e
  JOIN %[1]s.ai_recon_command c ON c.namespace=e.namespace AND c.id=e.id AND c.dispatch=e.dispatch
  JOIN %[1]s.ai_recon_state state ON state.namespace=e.namespace AND state.dispatch=e.dispatch
  JOIN %[1]s.ai_recon_contract contract ON contract.namespace=e.namespace AND contract.dispatch=e.dispatch
  JOIN %[1]s.ai_fixture_dispatch d ON d.namespace=e.namespace AND d.id=e.dispatch
  JOIN %[1]s.ai_recon_stop stop ON stop.namespace=e.namespace AND stop.event_id=e.id AND stop.stopped
- WHERE e.namespace=ns AND e.id=command_ref AND c.actor=actor_id AND c.kind='unpriced'
-  AND state.unpriced AND state.unpriced_command=c.id AND state.version=c.version
-  AND state.unpriced_source=c.source AND state.unpriced_revision=c.source_revision
-  AND d.intent_at IS NOT NULL AND d.state NOT IN ('reserved','aborted')
+ WHERE e.namespace=ns AND e.id=command_ref AND e.dispatch=dispatch_ref AND c.actor=actor_id AND state.version=c.version
+  AND d.action=action_ref AND d.intent_at IS NOT NULL AND d.state NOT IN ('reserved','aborted') AND d.provider=contract.provider
+  AND contract.rate_id ~ '^[A-Za-z0-9_-]{1,128}$' AND jsonb_typeof(c.detail)='object'
+  AND c.source ~ '^[A-Za-z0-9_-]{1,128}$' AND c.reason ~ '^[A-Za-z0-9_-]{1,128}$' AND c.source_revision>0
   AND c.detail->>'provider'=contract.provider AND c.detail->>'model'=contract.model AND c.detail->>'tier'=contract.tier
   AND c.detail->>'billingNamespace'=contract.billing_namespace AND c.detail->>'rate' ~ '^[A-Za-z0-9_-]{1,128}$'
   AND c.detail->>'currency' ~ '^[A-Z]{3}$' AND e.created_at BETWEEN transaction_timestamp() AND clock_timestamp()
-  AND e.obligation=c.after_amount AND e.obligation=d.counted AND e.reserved=d.maximum
-  AND e.obligation=greatest(c.before_amount,d.maximum)
+  AND d.counted=c.before_amount AND d.counted>=0 AND d.maximum>0 AND e.reserved=d.maximum AND e.obligation=c.after_amount
+  AND (
+   (c.kind='unpriced' AND state.unpriced AND state.unpriced_command=c.id AND state.unpriced_source=c.source
+    AND state.unpriced_revision=c.source_revision AND e.obligation=greatest(d.counted,d.maximum))
+   OR (e.obligation>d.maximum AND (NOT d.maximum_breached OR e.obligation>d.counted)
+    AND c.detail->>'rate'=contract.rate_id AND c.detail->>'currency'=contract.currency
+    AND (c.kind='observation' AND e.obligation>=d.counted
+     OR c.kind IN ('usage','bill','corrected_bill','maximum') AND state.command_id=c.id
+      AND state.source=c.source AND state.source_revision=c.source_revision))
+  )
   AND stop.obligation=e.obligation AND stop.reserved=e.reserved AND stop.contract=e.contract
-  AND c.xmin=pg_current_xact_id()::xid AND e.xmin=c.xmin AND state.xmin=c.xmin AND stop.xmin=c.xmin;
- IF NOT FOUND THEN RAISE EXCEPTION 'current unpriced transition required'; END IF;
+  AND c.xmin=pg_current_xact_id()::xid AND e.xmin=c.xmin AND state.xmin=c.xmin AND stop.xmin=c.xmin AND d.xmin<>c.xmin;
+ IF NOT FOUND THEN RAISE EXCEPTION 'current critical reconciliation transition required'; END IF;
 END $finance$;
+
+-- A receipt derived from the pre-transition ledger must also match the
+-- resulting accounting in the same transaction before it can become visible.
+CREATE OR REPLACE FUNCTION %[1]s.careeros_verify_finance_receipt() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $verify_finance$
+BEGIN
+ IF NOT EXISTS (SELECT 1 FROM %[1]s.ai_fixture_dispatch d
+  WHERE d.namespace=NEW.namespace AND d.id=NEW.source_dispatch
+    AND d.counted=(NEW.evidence->>'Amount')::bigint AND d.maximum=(NEW.evidence->>'Maximum')::bigint) THEN
+  RAISE EXCEPTION 'reconciliation receipt does not match committed accounting';
+ END IF;
+ RETURN NULL;
+END $verify_finance$;
+DO $install_finance_receipt$
+BEGIN
+ IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgrelid='%[1]s.careeros_operations_deferred'::regclass
+    AND tgname='careeros_verify_finance_receipt') THEN
+  CREATE CONSTRAINT TRIGGER careeros_verify_finance_receipt AFTER INSERT ON %[1]s.careeros_operations_deferred
+   DEFERRABLE INITIALLY DEFERRED FOR EACH ROW WHEN (NEW.awaiting_observer)
+   EXECUTE FUNCTION %[1]s.careeros_verify_finance_receipt();
+ END IF;
+END $install_finance_receipt$;
+REVOKE ALL ON FUNCTION %[1]s.careeros_verify_finance_receipt() FROM PUBLIC;
 
 CREATE OR REPLACE FUNCTION %[1]s.careeros_promote_finance_operations(capability text, ns text) RETURNS boolean
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $promote$
