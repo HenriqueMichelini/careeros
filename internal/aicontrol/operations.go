@@ -182,7 +182,7 @@ func (s *operationsSource) decodeOperations(raw []byte) (accountstore.Operations
 		if d.Expense != nil {
 			expense = sql.NullInt64{Int64: *d.Expense, Valid: true}
 		}
-		if !ok || !addOperationsFigures(&out.Figures, d.Amount, expense, d.Observed, d.Category) {
+		if !ok || !addOperationsFigures(&out.Figures, d.Amount, d.Maximum, expense, d.Observed, d.Category) {
 			return out, ErrUnavailable
 		}
 		event := accountstore.OperationsRiskEvent{Key: h.Reconciliation().digest("operations", "dispatch", d.Dispatch),
@@ -345,7 +345,7 @@ func (h *Harness) observeManagedControlFault(ctx context.Context, err error) {
 	}
 }
 
-func addOperationsFigures(figures *accountstore.OperationsFigures, amount int64, expense sql.NullInt64, observed int64, category string) bool {
+func addOperationsFigures(figures *accountstore.OperationsFigures, amount, maximum int64, expense sql.NullInt64, observed int64, category string) bool {
 	add := func(total *int64, delta int64) bool {
 		if delta < 0 || delta > math.MaxInt64-*total {
 			return false
@@ -355,6 +355,9 @@ func addOperationsFigures(figures *accountstore.OperationsFigures, amount int64,
 	}
 	if !add(&figures.Counted, amount) || !add(&figures.ObservedUsage, observed) {
 		return false
+	}
+	if category == "reviewed_conservative_maximum" {
+		return add(&figures.ConservativeMaximum, maximum) && add(&figures.UnknownDifference, amount)
 	}
 	if !expense.Valid {
 		return add(&figures.UnknownDifference, amount)
@@ -366,10 +369,6 @@ func addOperationsFigures(figures *accountstore.OperationsFigures, amount int64,
 		}
 	case "confirmed_bill":
 		if !add(&figures.AttributableBills, expense.Int64) {
-			return false
-		}
-	case "reviewed_conservative_maximum":
-		if !add(&figures.ConservativeMaximum, expense.Int64) {
 			return false
 		}
 	}

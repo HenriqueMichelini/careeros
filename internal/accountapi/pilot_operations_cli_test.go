@@ -68,7 +68,7 @@ func runPilotOperationsFixtureCLI(t *testing.T, program string, env []string, in
 
 func TestPilotOperationsReconciliationCLIObservesItsOwnCommittedInvariant(t *testing.T) {
 	for _, mode := range []string{"capture", "capture_unavailable", "reviewer_expires", "finance_only",
-		"priced_live", "priced_replay", "priced_replay_after_correction"} {
+		"priced_live", "priced_replay", "priced_replay_after_correction", "reviewed_maximum_breakdown"} {
 		t.Run(mode, func(t *testing.T) { pilotOperationsReconciliationCLI(t, mode) })
 	}
 }
@@ -99,6 +99,10 @@ func pilotOperationsReconciliationCLI(t *testing.T, mode string) {
 		t.Fatal(err)
 	}
 	env := pilotOperationsCLIEnv(t, f, directory, "qualification")
+	if mode == "reviewed_maximum_breakdown" {
+		verifyOperationsReviewedMaximumBreakdown(t, f, ops, env, dispatch)
+		return
+	}
 	gross := int64(900)
 	evidence := aicontrol.ReconciliationCommand{ID: "fixture-operations-unpriced", Kind: "unpriced", Dispatch: dispatch,
 		Evidence: aicontrol.ReconciliationEvidence{Source: "fixture-gross-bill", Revision: 1, Reason: "fixture-unpriced",
@@ -338,17 +342,67 @@ func applyOperationsBillCorrection(t *testing.T, env []string, prior aicontrol.R
 	correction.ID, correction.Kind, correction.Preview = "fixture-priced-correction", "corrected_bill", ""
 	correction.ExpectedVersion, correction.Evidence.Revision = 1, 2
 	correction.Evidence.Supersedes, correction.Evidence.Gross = prior.ID, &amount
-	raw, _ := json.Marshal(correction)
+	applyOperationsReconciliationCLI(t, env, correction)
+}
+
+func applyOperationsReconciliationCLI(t *testing.T, env []string, command aicontrol.ReconciliationCommand) {
+	t.Helper()
+	raw, _ := json.Marshal(command)
 	out, diagnostic, err := runPilotOperationsFixtureCLI(t, "reconciliation-local", env, raw, "--namespace", "qualification", "--mode", "preview")
 	var preview aicontrol.ReconciliationPreview
 	if err != nil || json.Unmarshal(out, &preview) != nil || preview.Token == "" {
-		t.Fatalf("preview the corrective bill: %v %s", err, diagnostic)
+		t.Fatalf("preview %s: %v %s", command.Kind, err, diagnostic)
 	}
-	correction.Preview = preview.Token
-	raw, _ = json.Marshal(correction)
+	command.Preview = preview.Token
+	raw, _ = json.Marshal(command)
 	if _, diagnostic, err = runPilotOperationsFixtureCLI(t, "reconciliation-local", env, raw, "--namespace", "qualification", "--mode", "apply"); err != nil {
-		t.Fatalf("apply the corrective bill: %v %s", err, diagnostic)
+		t.Fatalf("apply %s: %v %s", command.Kind, err, diagnostic)
 	}
+}
+
+func verifyOperationsReviewedMaximumBreakdown(t *testing.T, f *aiadmission.Fixture, ops *accountstore.Operations, env []string, dispatch string) {
+	t.Helper()
+	ctx := context.Background()
+	// Age the fixture's original intent so the real command can review it.
+	var maximum int64
+	if err := f.DB.QueryRow(`UPDATE ai_fixture_dispatch SET intent_at=clock_timestamp()-interval '169 hours'
+	 WHERE namespace='qualification' AND id=$1 RETURNING maximum`, dispatch).Scan(&maximum); err != nil || maximum != 1344 {
+		t.Fatalf("fixture original frozen maximum: %d %v", maximum, err)
+	}
+	check := func(category string, counted, reviewed, estimate, billed, unknown int64) {
+		t.Helper()
+		status, err := ops.OwnerStatus(ctx, f.Principal)
+		figures := status.Figures
+		if err != nil || figures == nil || figures.Counted != counted || figures.ConservativeMaximum != reviewed ||
+			figures.SupportedEstimate != estimate || figures.AttributableBills != billed || figures.UnknownDifference != unknown || figures.PossibleRemote != 1 {
+			t.Fatalf("%s reconciled figures: %+v %v", category, figures, err)
+		}
+	}
+	command := aicontrol.ReconciliationCommand{ID: "fixture-reviewed-maximum", Kind: "maximum", Dispatch: dispatch,
+		Evidence: aicontrol.ReconciliationEvidence{Source: "fixture-reviewed-maximum", Revision: 1, Reason: "fixture-reviewed-maximum",
+			Provider: "typesafe", Model: "jev-1.13.0", Tier: "standard", Rate: aicontrol.QualificationRateID, Currency: "USD",
+			BillingNamespace: "synthetic", RequestID: "fixture-reconciliation", Complete: true}}
+	applyOperationsReconciliationCLI(t, env, command)
+	var noExpense bool
+	if err := f.DB.QueryRow(`SELECT expense IS NULL FROM ai_fixture_dispatch WHERE namespace='qualification' AND id=$1`, dispatch).
+		Scan(&noExpense); err != nil || !noExpense {
+		t.Fatalf("reviewed maximum unexpectedly has actual expense: %v %v", noExpense, err)
+	}
+	check(command.Kind, maximum, maximum, 0, 0, maximum)
+
+	input, zero := int64(1000), int64(0)
+	command.ID, command.Kind, command.ExpectedVersion = "fixture-supported-estimate", "usage", 1
+	command.Evidence.Source, command.Evidence.Supersedes = "fixture-metered-usage", "fixture-reviewed-maximum"
+	command.Evidence.Usage, command.Evidence.Difference = &aicontrol.Usage{Input: &input, Output: &zero}, &zero
+	applyOperationsReconciliationCLI(t, env, command)
+	check(command.Kind, 42, 0, 42, 0, 0)
+
+	bill := int64(80)
+	command.ID, command.Kind, command.ExpectedVersion = "fixture-confirmed-bill", "bill", 2
+	command.Evidence.Source, command.Evidence.Supersedes = "fixture-confirmed-bill", "fixture-supported-estimate"
+	command.Evidence.Usage, command.Evidence.Gross = nil, &bill
+	applyOperationsReconciliationCLI(t, env, command)
+	check(command.Kind, bill, 0, 0, bill, 0)
 }
 
 func TestPilotOperationsOfflineCLIFallsBackToSQLAndRequiresSignedIntervalReview(t *testing.T) {
@@ -751,6 +805,93 @@ func TestPilotOperationsPartialFaultReceiptRequiresVerifiedClassification(t *tes
 			controls, err := f.Store.LocalControls(nil).Status(ctx, f.ControlOperator.Principal, "")
 			if err != nil || !controls.InferenceStopped || !controls.InvitationStopped {
 				t.Fatalf("verified classification auto-reopened controls: %+v %v", controls, err)
+			}
+		})
+	}
+}
+
+func TestPilotOperationsClassifiedRecurrenceRequiresProofAfterItsReview(t *testing.T) {
+	for _, cause := range []struct {
+		kind            accountstore.OperationsFault
+		purpose, result string
+	}{
+		{accountstore.OperationsBackupFault, "backup", "synthetic_restore_check_passed"},
+		{accountstore.OperationsProviderFault, "provider", "synthetic_provider_health_check_passed"},
+	} {
+		t.Run(cause.purpose, func(t *testing.T) {
+			f, h, _, _ := qualificationFixture(t)
+			j, ops, _, directory := pilotOperationsFixture(t, f, h, time.Now)
+			ctx := context.Background()
+			if err := j.SignalOfflineFault(ctx, cause.kind); err != nil {
+				t.Fatal(err)
+			}
+			cfg := accountstore.OperationsJournalConfig{Directory: directory,
+				BindingKey: sha256.Sum256([]byte("synthetic-operations-integration"))}
+			if err := f.Store.SignalLocalOperationsFallback(ctx, cfg, accountstore.OperationsControlFault); err != nil {
+				t.Fatal(err)
+			}
+			status, err := ops.OwnerStatus(ctx, f.Principal)
+			if err != nil || status.Emergency == nil || len(status.Incidents) != 1 {
+				t.Fatalf("fixture must have the original fault and an existing emergency: %+v %v", status, err)
+			}
+			original, emergency := status.Incidents[0], status.Emergency
+			earlierProof := time.Now().UTC()
+			partial := filepath.Join(directory, "journal.fault."+string(cause.kind))
+			if err := os.WriteFile(partial, []byte(`{"payload":`), 0600); err != nil {
+				t.Fatal(err)
+			}
+			env := pilotOperationsCLIEnv(t, f, directory, "qualification")
+			if _, diagnostic, err := runPilotOperationsFixtureCLI(t, "pilot-operations-local", env, nil, "--action", "replay-containment"); err != nil {
+				t.Fatalf("record the separately unclassified recurrence: %v %s", err, diagnostic)
+			}
+			status, err = ops.OwnerStatus(ctx, f.Principal)
+			if err != nil || status.Emergency == nil || status.Emergency.ID == emergency.ID || !status.Emergency.StartedAt.Equal(emergency.StartedAt) {
+				t.Fatalf("new receipt must advance the review without replacing the start: %+v %v", status, err)
+			}
+
+			pub, priv, err := ed25519.GenerateKey(rand.Reader)
+			if err != nil {
+				t.Fatal(err)
+			}
+			path := filepath.Join(t.TempDir(), "classification-and-recovery.json")
+			env = append(env, "CAREEROS_OPERATIONS_RECOVERY_ARTIFACT="+path, "CAREEROS_OPERATIONS_RECOVERY_PUBLIC_KEY="+hex.EncodeToString(pub))
+			classification := operationslocal.RecoveryStatement{Purpose: "containment", Reference: "fixture-recurrence-review",
+				Incident: status.Emergency.ID, Revision: 1, ObservedAt: time.Now().UTC(), Result: "synthetic_containment_interval_reconciled",
+				ClassifiedCause: cause.kind}
+			writeOperationsProof(t, path, priv, classification)
+			if _, diagnostic, err := runPilotOperationsFixtureCLI(t, "pilot-operations-local", env, nil, "--action", "replay-containment",
+				"--reference", classification.Reference); err != nil {
+				t.Fatalf("verify the classification: %v %s", err, diagnostic)
+			}
+			status, err = ops.OwnerStatus(ctx, f.Principal)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var classified accountstore.OperationsIncident
+			for _, incident := range status.Incidents {
+				if incident.Kind == string(cause.kind) {
+					classified = incident
+				}
+			}
+			if classified.ID != original.ID || classified.Revision != original.Revision || !classified.EventAt.Equal(original.EventAt) ||
+				classified.LatestObservedAt == nil || !classified.LatestObservedAt.Equal(classification.ObservedAt) || classified.State != "unacknowledged" {
+				t.Fatalf("classification replaced the original incident or lost its latest bound: %+v", classified)
+			}
+
+			recovery := operationslocal.RecoveryStatement{Purpose: cause.purpose, Reference: "fixture-cause-recovery",
+				Incident: original.ID, Revision: original.Revision, Result: cause.result}
+			args := []string{"--action", "resolve", "--id", original.ID, "--revision", fmt.Sprint(original.Revision), "--reference", recovery.Reference}
+			for _, tooEarly := range []time.Time{earlierProof, classification.ObservedAt} {
+				recovery.ObservedAt = tooEarly
+				writeOperationsProof(t, path, priv, recovery)
+				if _, _, err = runPilotOperationsFixtureCLI(t, "pilot-operations-local", env, nil, args...); err == nil {
+					t.Fatal("cause-specific proof without a later observation resolved the classified recurrence")
+				}
+			}
+			recovery.ObservedAt = time.Now().UTC()
+			writeOperationsProof(t, path, priv, recovery)
+			if _, diagnostic, err := runPilotOperationsFixtureCLI(t, "pilot-operations-local", env, nil, args...); err != nil {
+				t.Fatalf("current cause-specific proof did not resolve the incident: %v %s", err, diagnostic)
 			}
 		})
 	}

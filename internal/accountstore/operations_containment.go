@@ -198,7 +198,7 @@ func (o *Operations) reviewIncident(ctx context.Context, p auth.Principal, id st
 				incident := record.Incident
 				incident.Revision = record.Revision
 				proof, err := verify(ctx, recovery, incident)
-				if err != nil || proof.Before(latestFaultObservation(record.Incident)) || proof.After(o.journal.cfg.Clock().UTC()) {
+				if err != nil || !proof.After(latestFaultObservation(record.Incident)) || proof.After(o.journal.cfg.Clock().UTC()) {
 					return auth.ErrForbidden
 				}
 				proof = proof.UTC()

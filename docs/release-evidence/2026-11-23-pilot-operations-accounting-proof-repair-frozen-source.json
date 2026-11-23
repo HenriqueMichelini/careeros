@@ -1,0 +1,33 @@
+{
+  "issue": 291,
+  "repair_parent": "0d1fe8502787e6b16ef3a3dc7312fb306574e7e6",
+  "previous_ticket": "089a7ac792b506e20ddd9da506cf9edd22add729",
+  "scope": "five source, test, and operator guide paths frozen before verification",
+  "files": {
+    "docs/managed-pilot-operations-local.md": {
+      "bytes": 14675,
+      "sha256": "6b92e4adb26d91a60d3d520ffeda0022bd0516c9c0a836c971ee1aa91a602c98",
+      "git_blob": "13e5be7e1b2a1329947f2cf0292947787a798b8d"
+    },
+    "internal/accountapi/pilot_operations_cli_test.go": {
+      "bytes": 48719,
+      "sha256": "d76fdbfe19640a3e8bb27f3099a555a2d37efe10aa07cb6d778cd87e96a770b8",
+      "git_blob": "0c363cc58ed14197c353fb8b19c302181a6f95fa"
+    },
+    "internal/accountstore/operations_containment.go": {
+      "bytes": 11854,
+      "sha256": "28f4b178e19023a4e815f54a7d3f442ed09c3a30e16d06a9e3e03b878ee1bc0d",
+      "git_blob": "f5755f5daff4f390d9cc972ad382383e8cace7c5"
+    },
+    "internal/accountstore/operations_emergency.go": {
+      "bytes": 13145,
+      "sha256": "fd76b8a592744537c3ec5c46ff833ec5b7f332b48fe7527241c9181ff94e337e",
+      "git_blob": "5ec3fa140a69dba88e49400b9c9850a0592173d2"
+    },
+    "internal/aicontrol/operations.go": {
+      "bytes": 13681,
+      "sha256": "5d85cd569b28d8b4bac8a2dab59d616cf3e8fb21ae7af5601ba1e8b4abd705e4",
+      "git_blob": "4344790b9af7f3c89428c2d6a611c0c9a833d3d7"
+    }
+  }
+}

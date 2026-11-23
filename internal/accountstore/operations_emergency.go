@@ -324,6 +324,12 @@ func (j *OperationsJournal) classifyEmergency(state *operationsJournalState, e O
 	if err != nil {
 		return auth.ErrForbidden
 	}
+	if review.ClassifiedCause == OperationsBackupFault || review.ClassifiedCause == OperationsProviderFault {
+		// The signed review gives a conservative latest bound for this newly
+		// classified occurrence, whose precise onset was not recorded.
+		observed := review.ObservedAt.UTC()
+		incident.LatestObservedAt = &observed
+	}
 	j.upsertFault(state, review.ClassifiedCause, incident)
 	return nil
 }
