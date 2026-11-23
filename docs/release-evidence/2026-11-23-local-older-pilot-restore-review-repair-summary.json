@@ -1,0 +1,524 @@
+{
+  "affected_go_race": {
+    "argv": [
+      "go",
+      "test",
+      "-p=1",
+      "-race",
+      "-vet=off",
+      "-timeout=120s",
+      "-count=1",
+      "-json",
+      "-run",
+      "^(TestLocalOlderPilotRestoreRehearsal|TestDraftOpeningRestoredRowsCannotOverrideNonRestoredTerminalAuthority|TestManagedTerminalOpeningAndCancellationPreserveTheWinningEffect|TestDeletionSurvivingMarkersRejectRestoredProfileAndDeliveredHistory|TestLifecycleCleanupFailureKeepsFenceAndOriginalCopyDeadline|TestRestrictedReconciliationDefaultRuntimeBreachContains|TestOperatorControl.*(Recover|Reopen|Exclusion|Evidence|Denial)|TestReconciliation.*(Breach|Unpriced)|TestProfilePruning.*)$",
+      "./internal/accountapi",
+      "./internal/accountstore",
+      "./internal/aicontrol",
+      "./internal/draftrecovery"
+    ],
+    "owned_postgres_stopped_and_data_removed": true,
+    "package_pass_events": 3,
+    "passed_test_paths": [
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestLifecycleCleanupFailureKeepsFenceAndOriginalCopyDeadline"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestDeletionSurvivingMarkersRejectRestoredProfileAndDeliveredHistory"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestDraftOpeningRestoredRowsCannotOverrideNonRestoredTerminalAuthority"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedTerminalOpeningAndCancellationPreserveTheWinningEffect/cancel_first"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedTerminalOpeningAndCancellationPreserveTheWinningEffect/opening_first"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestManagedTerminalOpeningAndCancellationPreserveTheWinningEffect"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestLocalOlderPilotRestoreRehearsal/verified_retrieval"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestLocalOlderPilotRestoreRehearsal/retained_namespace_stop"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestLocalOlderPilotRestoreRehearsal"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestReconciliationCoverageFailureCannotSuppressObservedBreach/nil/active"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestReconciliationCoverageFailureCannotSuppressObservedBreach/nil/customer_closed"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestReconciliationCoverageFailureCannotSuppressObservedBreach/accepting/active"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestReconciliationCoverageFailureCannotSuppressObservedBreach/accepting/customer_closed"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestReconciliationCoverageFailureCannotSuppressObservedBreach/rejecting/active"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestReconciliationCoverageFailureCannotSuppressObservedBreach/rejecting/customer_closed"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestReconciliationCoverageFailureCannotSuppressObservedBreach/erroring/active"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestReconciliationCoverageFailureCannotSuppressObservedBreach/erroring/customer_closed"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestReconciliationCoverageFailureCannotSuppressObservedBreach/missing_proof/active"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestReconciliationCoverageFailureCannotSuppressObservedBreach/missing_proof/customer_closed"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestReconciliationCoverageFailureCannotSuppressObservedBreach"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestRestrictedReconciliationDefaultRuntimeBreachContains/active"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestRestrictedReconciliationDefaultRuntimeBreachContains/customer_closed"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestRestrictedReconciliationDefaultRuntimeBreachContains"
+      },
+      {
+        "package": "professional-information-repo/internal/aicontrol",
+        "test": "TestOperatorControlGenerationRowAloneDoesNotProveExclusion"
+      },
+      {
+        "package": "professional-information-repo/internal/aicontrol",
+        "test": "TestOperatorControlStopAndCompromiseDoNotSuppressIndependentEvidence"
+      }
+    ],
+    "process_exit": 0,
+    "restart_binary_provided": true,
+    "skipped_package_events": [
+      "professional-information-repo/internal/draftrecovery"
+    ],
+    "test_pass_events": 25
+  },
+  "focused_restore_race": {
+    "package_pass_events": 1,
+    "passed_test_paths": [
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestLocalOlderPilotRestoreRehearsal/verified_retrieval"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestLocalOlderPilotRestoreRehearsal/retained_namespace_stop"
+      },
+      {
+        "package": "professional-information-repo/internal/accountapi",
+        "test": "TestLocalOlderPilotRestoreRehearsal"
+      }
+    ],
+    "process_exit": 0,
+    "skipped_package_events": [],
+    "test_pass_events": 3
+  },
+  "focused_scenarios": {
+    "retained_namespace_stop": {
+      "backup_sha256": "4ed7ac2f85af792c8aeddbccf78074109a444228c8ae2dfd37b9aad027701527",
+      "backup_to_quarantine_ms": 139,
+      "decision_receipt_sha256": "3bbc7d84426a2109c8168b597832228e259c1079c96da377e1ff73458459260f",
+      "observation_lines": [
+        "restore-kept-draft ready before backup HTTP 201",
+        "complete opening receipt HTTP 200",
+        "one delivered right HTTP 200",
+        "original Draft review HTTP 200",
+        "restore-already-closed-draft ready before backup HTTP 201",
+        "archive Draft delivery closed before backup HTTP 200",
+        "restore-closed-draft ready before backup HTTP 201",
+        "acknowledged reviewed Draft before backup HTTP 200",
+        "later cancellation HTTP 200",
+        "source fresh request under reviewed qualification stop denied with HTTP 403",
+        "source repaired excerpt HTTP 200",
+        "old reads during quarantine HTTP 503",
+        "old publication during quarantine HTTP 503",
+        "old send during quarantine HTTP 503",
+        "invalid archive: actual pg_restore failed; no schema installed",
+        "older backup: Profiles=4, complete Drafts=2, reviewed=1, delivered=1, unknown=1; the separate later detail/deletion and revocation decisions are absent",
+        "older archive: revoked grant, cleaned Profile detail, deleted Profile and closed delivery retained with original clocks",
+        "restored backup has no public read HTTP 503",
+        "incompatible rollback retains closed reads HTTP 503",
+        "incompatible rollback retains closed mutation HTTP 503",
+        "incomplete reconciliation retains closed reads HTTP 503",
+        "incomplete reconciliation retains closed mutation HTTP 503",
+        "pruning fence blocks direct stale detail access HTTP 403",
+        "reconciled candidate: revoked grant, cleaned Profile detail, deleted Profile and closed delivery retained with original clocks",
+        "failed old-system fence retains closed reads HTTP 503",
+        "failed old-system fence retains closed mutation HTTP 503",
+        "direct old Profile read after physical fence denied with HTTP 503",
+        "direct old Profile write after physical fence denied with HTTP 503",
+        "direct old Draft opening after physical fence denied with HTTP 503",
+        "direct old provider-capable route after physical fence denied with HTTP 503",
+        "old owned server stopped; direct old read/write/publication/send denied",
+        "both original unknown dispatch identities and durable intent clocks retained",
+        "retained namespace stop refusal retains closed reads HTTP 503",
+        "retained namespace stop refusal retains closed mutation HTTP 503",
+        "fresh qualification request after refused generation advance denied with HTTP 403",
+        "later reviewed namespace stop: counted and reserved=1344 microUSD, occupancy=1, owner review and command retained; generation stays 1 under quarantine, zero additional fake sends",
+        "backup_to_quarantine_ms=139 quarantine_to_verified_refusal_ms=517; backup_sha256=4ed7ac2f85af792c8aeddbccf78074109a444228c8ae2dfd37b9aad027701527 decisions_sha256=3bbc7d84426a2109c8168b597832228e259c1079c96da377e1ff73458459260f; no selected hosted target"
+      ],
+      "quarantine_to_verified_refusal_ms": 517
+    },
+    "verified_retrieval": {
+      "backup_sha256": "214b366344e532aee1247d8354c2ad7ba496ad3bd78a3d5e6043b6df35fc1322",
+      "backup_to_quarantine_ms": 104,
+      "decision_receipt_sha256": "7ceaf7a649a80773f22c6ae03d17a12e8f83a5118e415c1d3b04e3ed662956e4",
+      "observation_lines": [
+        "restore-kept-draft ready before backup HTTP 201",
+        "complete opening receipt HTTP 200",
+        "one delivered right HTTP 200",
+        "original Draft review HTTP 200",
+        "restore-already-closed-draft ready before backup HTTP 201",
+        "archive Draft delivery closed before backup HTTP 200",
+        "restore-closed-draft ready before backup HTTP 201",
+        "acknowledged reviewed Draft before backup HTTP 200",
+        "later cancellation HTTP 200",
+        "source repaired excerpt HTTP 200",
+        "old reads during quarantine HTTP 503",
+        "old publication during quarantine HTTP 503",
+        "old send during quarantine HTTP 503",
+        "invalid archive: actual pg_restore failed; no schema installed",
+        "older backup: Profiles=4, complete Drafts=2, reviewed=1, delivered=1, unknown=1; the separate later detail/deletion and revocation decisions are absent",
+        "older archive: revoked grant, cleaned Profile detail, deleted Profile and closed delivery retained with original clocks",
+        "restored backup has no public read HTTP 503",
+        "incompatible rollback retains closed reads HTTP 503",
+        "incompatible rollback retains closed mutation HTTP 503",
+        "incomplete reconciliation retains closed reads HTTP 503",
+        "incomplete reconciliation retains closed mutation HTTP 503",
+        "pruning fence blocks direct stale detail access HTTP 403",
+        "reconciled candidate: revoked grant, cleaned Profile detail, deleted Profile and closed delivery retained with original clocks",
+        "failed old-system fence retains closed reads HTTP 503",
+        "failed old-system fence retains closed mutation HTTP 503",
+        "direct old Profile read after physical fence denied with HTTP 503",
+        "direct old Profile write after physical fence denied with HTTP 503",
+        "direct old Draft opening after physical fence denied with HTTP 503",
+        "direct old provider-capable route after physical fence denied with HTTP 503",
+        "old owned server stopped; direct old read/write/publication/send denied",
+        "both original unknown dispatch identities and durable intent clocks retained",
+        "verified local generation 1 -> 2; invitations remain stopped",
+        "old session on the recovered system denied with HTTP 401",
+        "cleaned detail stays removed HTTP 200",
+        "archived closed delivery remains closed HTTP 410",
+        "archived closed delivery refuses a fresh receipt HTTP 403",
+        "exact reviewed Draft survives restoration HTTP 200",
+        "exact reviewed Draft survives restoration HTTP 200",
+        "old session-bound delivery receipt cannot settle again HTTP 422",
+        "canceled Draft remains closed HTTP 410",
+        "canceled Draft cannot be opened HTTP 403",
+        "retained Profile is readable HTTP 200",
+        "fresh replacement session issued a valid receipt HTTP 200",
+        "fresh replacement session confirms recovered delivery HTTP 200",
+        "fresh receipt confirmation replays the same delivery HTTP 200",
+        "Profile deleted before backup remains absent for the fresh Session HTTP 404",
+        "reconciled: deleted content absent, copy anchor unchanged, reviewed Draft exact, grants preserved, allowance={Allowance:5 Reserved:1 Consumed:1 Remaining:3} spend_microUSD=(1344,107376) occupancy=(1,1) unknown=2, no resend",
+        "recovered application: revoked grant, cleaned Profile detail, deleted Profile and closed delivery retained with original clocks",
+        "backup_to_quarantine_ms=104 quarantine_to_verified_retrieval_ms=675; backup_sha256=214b366344e532aee1247d8354c2ad7ba496ad3bd78a3d5e6043b6df35fc1322 decisions_sha256=7ceaf7a649a80773f22c6ae03d17a12e8f83a5118e415c1d3b04e3ed662956e4; no selected hosted target"
+      ],
+      "quarantine_to_verified_retrieval_ms": 675
+    }
+  },
+  "hosted_targets": null,
+  "issue": 293,
+  "preceding_source_full_go_race": {
+    "additional_known_lab_failure_paths": [
+      [
+        "professional-information-repo/internal/evaluationlab",
+        "TestCVRetainedReplayUsesNoDispatchesAndKeepsSemanticFailures"
+      ]
+    ],
+    "admission_case_ids": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A06",
+      "A07",
+      "A08",
+      "A09",
+      "A10",
+      "A11",
+      "A12",
+      "A13",
+      "A14",
+      "A15",
+      "A16",
+      "A17",
+      "A18",
+      "A19",
+      "A20",
+      "A21",
+      "A22",
+      "A23",
+      "A24",
+      "A25",
+      "A26",
+      "A27",
+      "A28",
+      "A29",
+      "A30",
+      "A31",
+      "A32",
+      "A33",
+      "A34",
+      "A35",
+      "A36",
+      "A37"
+    ],
+    "argv": [
+      "go",
+      "test",
+      "-p=1",
+      "-race",
+      "-vet=off",
+      "-timeout=600s",
+      "-count=1",
+      "-json",
+      "./..."
+    ],
+    "failures": [
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": null
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestCVRetainedReplayUsesNoDispatchesAndKeepsSemanticFailures"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-application-reuse"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-canonical-edit"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-enrichment"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAdditionalBrowserInventoryRetainsOutcomes/browser-ingestion"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerAssertionRegressionCompletesWithFail"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerBoundsOutputAndStopsFollowingTests"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCDPPDFIsDistinctAndSurvivesExport"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCancellationStopsDetachedChildAndGrandchild"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCannotReadHostSentinelsOrReachHostLoopback"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerCrashRetainsDistinctOutcome"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerDeadlineRetainsPartialTreeAndUnreachedTest"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExecutesAllowlistedGoContractsWithoutInference"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExecutesExistingNodeCanonicalContracts"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-canonical"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-cv"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-ingestion"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/go-job-application"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-artifact-review"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-ingestion"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerExistingWorkflowSelectorsExecute/node-job-reuse"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerReusesSectionBrowserHarnessWithScreenshotEvidence"
+      },
+      {
+        "package": "professional-information-repo/internal/evaluationlab",
+        "test": "TestProcessRunnerUsesOfflineFieldHelpers"
+      }
+    ],
+    "owned_postgres_stopped_and_data_removed": true,
+    "package_pass_events": 27,
+    "prior_lab_failure_paths_not_present": [],
+    "process_exit": 1,
+    "restart_binary_provided": true,
+    "source": "2546bc1fa846ddcefcee79269bd339d7fbe46160",
+    "source_summary": {
+      "bytes": 14385,
+      "path": "docs/release-evidence/2026-11-23-local-older-pilot-restore-summary.json",
+      "sha256": "8ab1a5269a5beea597f67c15d9819cb504eba2491442c5e605a5550c7e18f97e"
+    },
+    "test_pass_events": 2677,
+    "test_skip_events": 11,
+    "unexpected_failure_paths": []
+  },
+  "previous": "6176618bd18848ecf7357df1e17d4cdb59b86d5f",
+  "raw": [
+    {
+      "bytes": 33703,
+      "path": "/home/henriquemichelini/workstation/careeros/.q93/repair-exact-focused.jsonl",
+      "sha256": "16ae85f139ad529a0ec361fbf63ba0cbe4cf675755476f423a876cc2fb66267d"
+    },
+    {
+      "bytes": 84631,
+      "path": "/home/henriquemichelini/workstation/careeros/.q93/repair-affected-tgthxbb2/go.jsonl",
+      "sha256": "837b6b889e60d7ec2a67ad6d7f610f21c20d47d15048becedddb9483cbbcf771"
+    },
+    {
+      "bytes": 865,
+      "path": "/home/henriquemichelini/workstation/careeros/.q93/repair-affected-tgthxbb2/summary.json",
+      "sha256": "cc1b78629ce311288577e568be9984db4e54f299941de677e1da68ec72ea6494"
+    },
+    {
+      "bytes": 1080,
+      "path": "/home/henriquemichelini/workstation/careeros/.q93/repair-affected-tgthxbb2/setup.log",
+      "sha256": "18976941119a23dd7bba111867030080b67f065fd80b2f7dc11e4784e3f3eb74"
+    },
+    {
+      "bytes": 189,
+      "path": "/home/henriquemichelini/workstation/careeros/.q93/repair-affected-tgthxbb2/postgres.log",
+      "sha256": "f482fb5ce19b6a1e1a82637a9a0d9e0cf2063095616ea19669a1eb5a68662507"
+    },
+    {
+      "bytes": 3893,
+      "path": "/home/henriquemichelini/workstation/careeros/.q93/repair-affected.py",
+      "sha256": "e5f11903708bc4afe19589f09abede69d6c45f2b5fb728d913b373f0c9f55dc2"
+    },
+    {
+      "bytes": 0,
+      "path": "/home/henriquemichelini/workstation/careeros/.q93/repair-exact-vet.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 32,
+      "path": "/home/henriquemichelini/workstation/careeros/.q93/go-version.txt",
+      "sha256": "7ae85ca579b70c29982baf7def7120e7be497122076f66e3b30a0db90ca7f93a"
+    },
+    {
+      "bytes": 29,
+      "path": "/home/henriquemichelini/workstation/careeros/.q93/pg-restore-version.txt",
+      "sha256": "85c272f17630da9340c45961dbde7cff8cd9127d1d8e84f439db60dccbe0f594"
+    },
+    {
+      "bytes": 350,
+      "path": "/home/henriquemichelini/workstation/careeros/.q93/repair-fixture-cleanup.txt",
+      "sha256": "dcb7221f878c56d211b401886424209df323de669b28b3debc3f0f8f13589307"
+    },
+    {
+      "bytes": 10892,
+      "path": "/home/henriquemichelini/workstation/careeros/.q93/repair-bind.py",
+      "sha256": "a02b4caf308b13dce15d629be990fa4dbad21c374e50605bdcff1c2e03f03c4c"
+    },
+    {
+      "bytes": 6665,
+      "path": "/home/henriquemichelini/workstation/careeros/.q93/repair-tracer-01.jsonl",
+      "sha256": "acb11331d1e2e7f23614d2216b5a4b8e3507b880f35a9b9e0b0fc8855d17e344"
+    },
+    {
+      "bytes": 11754,
+      "path": "/home/henriquemichelini/workstation/careeros/.q93/repair-tracer-02.jsonl",
+      "sha256": "90315f74dc87efb072322ddd14de64fa94a52c28789faa65d3af02be67f4081d"
+    },
+    {
+      "bytes": 31148,
+      "path": "/home/henriquemichelini/workstation/careeros/.q93/repair-tracer-03.jsonl",
+      "sha256": "50837b5f38428fbe9d81e87543d22d0e3ec81846e2f140276ec7e1b2d14b5910"
+    },
+    {
+      "bytes": 33168,
+      "path": "/home/henriquemichelini/workstation/careeros/.q93/repair-tracer-04.jsonl",
+      "sha256": "e86189a4f8a623df9106aa6b2ed90ec56f080b92153befd213b3b418bd00b7b5"
+    }
+  ],
+  "scoped_vet": {
+    "composites": false,
+    "process_exit": 0
+  },
+  "source": "f877c4fdfe66ccbe4992176f31d5d0eb674fa502",
+  "source_manifest": {
+    "bytes": 2029,
+    "path": "docs/release-evidence/2026-11-23-local-older-pilot-restore-review-repair-frozen-source.json",
+    "sha256": "c378088003d913b2b6322be1ca85cf544c4defb452e7ccdb92042997ad4f5549"
+  },
+  "source_tree": "f595ccfc4a76415261b50458228d90563ce90dc8",
+  "ticket_base": "d6c901a45b75805560941a52f11593e9d83a99ff"
+}

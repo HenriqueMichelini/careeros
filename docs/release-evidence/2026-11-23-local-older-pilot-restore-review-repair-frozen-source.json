@@ -1,0 +1,45 @@
+{
+  "files": {
+    "docs/local-older-pilot-restore.md": {
+      "bytes": 8862,
+      "git_blob": "66c79ae5b8784ad409e94350cc9a7852de88c1fd",
+      "path": "docs/local-older-pilot-restore.md",
+      "sha256": "3b869cdc12190288617f94611f2cc402b48d1dfcd0acc868c8ce941da9565aa3"
+    },
+    "internal/accountapi/local_restore_archive_test.go": {
+      "bytes": 6722,
+      "git_blob": "0bcc732906f8c30fbf6c01f217d6f19d8ebb07c0",
+      "path": "internal/accountapi/local_restore_archive_test.go",
+      "sha256": "6c20acd06b220c5d12f1e4f7c4482f85ab72106db38901ff34ef5dd03a1a7fdd"
+    },
+    "internal/accountapi/local_restore_authority_test.go": {
+      "bytes": 7722,
+      "git_blob": "663ad90b724ac0942457a93b50d553fd87e5f661",
+      "path": "internal/accountapi/local_restore_authority_test.go",
+      "sha256": "77c332f19168a699ec86d0e25410a23b44a33c4a532f93c6d0ba4c3ab2a00d96"
+    },
+    "internal/accountapi/local_restore_namespace_test.go": {
+      "bytes": 6761,
+      "git_blob": "509eb083cc4ed616665d58548898fa0518d1ecf9",
+      "path": "internal/accountapi/local_restore_namespace_test.go",
+      "sha256": "29225e49323b4eb00b5ff044be6c397d4b72677183fa92aeefbd35858b215287"
+    },
+    "internal/accountapi/local_restore_postgres_test.go": {
+      "bytes": 7498,
+      "git_blob": "362fbaa097b1f9aadf345890cd7388431e7c7758",
+      "path": "internal/accountapi/local_restore_postgres_test.go",
+      "sha256": "9a09da812e8c4fea7b010f5d7366916a7266d101df6d6a5f37eee50f4cbecfd1"
+    },
+    "internal/accountapi/local_restore_test.go": {
+      "bytes": 42235,
+      "git_blob": "2826daff6ced990f80d3a3f84db6cd9fa67b87b9",
+      "path": "internal/accountapi/local_restore_test.go",
+      "sha256": "b44a4976b6c150c439accd82fb99392de925c7aa1acaf78b13703cb4994afd72"
+    }
+  },
+  "issue": 293,
+  "previous": "6176618bd18848ecf7357df1e17d4cdb59b86d5f",
+  "source": "f877c4fdfe66ccbe4992176f31d5d0eb674fa502",
+  "source_tree": "f595ccfc4a76415261b50458228d90563ce90dc8",
+  "ticket_base": "d6c901a45b75805560941a52f11593e9d83a99ff"
+}
