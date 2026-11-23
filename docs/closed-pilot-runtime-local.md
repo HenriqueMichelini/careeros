@@ -4,7 +4,9 @@
 
 ## Reproduce and inspect the package
 
-Use the packager from the selected commit and pre-cached npm and Go dependencies. It extracts that commit, performs an offline lockfile install and production build, and compiles the Go runtime and a guarded command for the existing account migration. The builder inherits only tool discovery, the cache home and optional Go cache locations. The build profile fixes the effective Go target, architecture level and experiments and disables direct module or VCS access. npm uses offline mode and the fixed system script shell. The manifest pins the commit, tree, build constraints, lockfiles, account schema, route adapter configuration, bootstrap/grants inputs and every delivered file.
+Use the packager from the selected commit and pre-cached npm and Go dependencies. Git resolves the commit locally under a controlled environment with replacement objects, lazy retrieval and transports disabled. The packager reads the exact committed tree and verifies each object before writing its bytes and mode to a private build directory. Git archive and checkout attributes do not change those inputs. It permits regular files, executable files and links directly to committed regular files inside that tree. Missing objects, unsafe paths and unsupported entry types stop preparation before any build command.
+
+The packager performs an offline lockfile install and production build, then compiles the Go runtime and guarded Account migrator. The builder inherits only tool discovery, the cache home and optional Go cache locations. The build profile fixes the effective Go target, architecture level and experiments and disables direct module or VCS access. npm uses offline mode and the fixed system script shell. The manifest pins the commit, tree, tree listing digest, build constraints, lockfiles, account schema, route adapter configuration, bootstrap/grants inputs and every delivered file.
 
 ```sh
 rtk proxy python3 scripts/package-closed-pilot.py build --revision <reviewed-commit> --output <new-local-directory>
