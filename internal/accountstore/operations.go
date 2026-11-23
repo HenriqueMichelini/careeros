@@ -67,21 +67,22 @@ type OperationsConfig struct {
 }
 
 type OperationsIncident struct {
-	ID        string    `json:"id"`
-	Kind      string    `json:"kind"`
-	Scope     string    `json:"scope,omitempty"`
-	Policy    string    `json:"policy,omitempty"`
-	Currency  string    `json:"currency,omitempty"`
-	Exposure  int64     `json:"exposure,omitempty"`
-	Cap       int64     `json:"cap,omitempty"`
-	Threshold int64     `json:"threshold,omitempty"`
-	EventAt   time.Time `json:"eventAt"`
-	Owner     string    `json:"owner"`
-	Response  string    `json:"response"`
-	State     string    `json:"state"`
-	Severity  string    `json:"severity"`
-	Revision  int       `json:"revision"`
-	Delivery  string    `json:"delivery"`
+	ID               string     `json:"id"`
+	Kind             string     `json:"kind"`
+	Scope            string     `json:"scope,omitempty"`
+	Policy           string     `json:"policy,omitempty"`
+	Currency         string     `json:"currency,omitempty"`
+	Exposure         int64      `json:"exposure,omitempty"`
+	Cap              int64      `json:"cap,omitempty"`
+	Threshold        int64      `json:"threshold,omitempty"`
+	EventAt          time.Time  `json:"eventAt"`
+	LatestObservedAt *time.Time `json:"latestObservedAt,omitempty"`
+	Owner            string     `json:"owner"`
+	Response         string     `json:"response"`
+	State            string     `json:"state"`
+	Severity         string     `json:"severity"`
+	Revision         int        `json:"revision"`
+	Delivery         string     `json:"delivery"`
 }
 type OperationsStatus struct {
 	Incidents              []OperationsIncident `json:"incidents"`

@@ -99,11 +99,12 @@ type capturedOperations struct {
 		Attempt, Amount, Maximum, Observed                int64
 		Expense                                           *int64
 		At                                                time.Time
+		PendingPricedBreach                               bool
 	}
 	Event *struct {
-		ID, Rate, Kind  string
-		Amount, Maximum int64
-		At              time.Time
+		ID, Rate, Kind, IncidentDispatch string
+		Amount, Maximum                  int64
+		At                               time.Time
 	}
 }
 
@@ -191,7 +192,7 @@ func (s *operationsSource) decodeOperations(raw []byte) (accountstore.Operations
 			event.Kind = "unknown_dispatch"
 			out.Events = append(out.Events, event)
 		}
-		if d.Amount > d.Maximum {
+		if d.Amount > d.Maximum && !d.PendingPricedBreach {
 			event.Kind, event.Exposure = "maximum_breach", d.Amount
 			out.Events = append(out.Events, event)
 		}
@@ -229,8 +230,15 @@ func (s *operationsSource) decodeOperations(raw []byte) (accountstore.Operations
 			(event.Kind != "maximum_breach" && event.Kind != "invariant_breach") {
 			return out, ErrUnavailable
 		}
+		key := h.Reconciliation().digest("operations", "reconciliation", event.ID)
+		if event.IncidentDispatch != "" {
+			if event.Kind != "maximum_breach" || !tokenLabel.MatchString(event.IncidentDispatch) {
+				return out, ErrUnavailable
+			}
+			key = h.Reconciliation().digest("operations", "dispatch", event.IncidentDispatch)
+		}
 		out.Events = append(out.Events, accountstore.OperationsRiskEvent{
-			Key: h.Reconciliation().digest("operations", "reconciliation", event.ID), Kind: event.Kind,
+			Key: key, Kind: event.Kind,
 			At: event.At, Policy: event.Rate, Exposure: event.Amount, Maximum: event.Maximum,
 		})
 	}

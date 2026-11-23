@@ -22,10 +22,13 @@ BEGIN
  SELECT jsonb_agg(jsonb_build_object(
    'Action',x.action_id,'Owner',x.owner,'Policy',x.execution_version,'Dispatch',x.dispatch_id,
    'Attempt',x.attempt,'Amount',x.counted,'At',x.intent,'Remote',x.remote_state,'Expense',x.expense,
-   'Maximum',x.maximum,'Category',x.category,'Observed',x.estimate) ORDER BY x.action_id,x.attempt,x.dispatch_id)
+   'Maximum',x.maximum,'Category',x.category,'Observed',x.estimate,'PendingPricedBreach',x.pending_breach)
+   ORDER BY x.action_id,x.attempt,x.dispatch_id)
  INTO entries FROM (
   SELECT a.id AS action_id,a.owner,a.execution_version,d.id AS dispatch_id,d.attempt,d.counted,
    COALESCE(d.intent_at,a.created_at) AS intent,d.remote_state,d.expense,d.maximum,d.category,
+   d.counted>d.maximum AND EXISTS(SELECT 1 FROM %[1]s.careeros_operations_deferred deferred
+    WHERE deferred.namespace=d.namespace AND deferred.evidence->>'IncidentDispatch'=d.id) AS pending_breach,
    CASE WHEN jsonb_typeof(o.data->'estimate')='number' THEN
     CASE WHEN (o.data->>'estimate')::numeric BETWEEN 0 AND 9223372036854775807
       AND (o.data->>'estimate')::numeric=trunc((o.data->>'estimate')::numeric)
@@ -95,7 +98,10 @@ BEGIN
    WHERE c.namespace=ns AND c.id=command_ref AND c.xmin=pg_current_xact_id()::xid) THEN
   RAISE EXCEPTION 'current reconciliation command required';
  END IF;
+ -- A first priced breach uses the existing dispatch identity. Unpriced
+ -- evidence and subsequent material revisions have their own command IDs.
  SELECT jsonb_build_object('ID',e.id,'Rate',contract.rate_id,'Amount',e.obligation,'Maximum',e.reserved,
+   'IncidentDispatch',CASE WHEN c.kind<>'unpriced' AND NOT include_event THEN e.dispatch ELSE '' END,
    'Kind',CASE WHEN c.kind='unpriced' THEN 'invariant_breach' ELSE 'maximum_breach' END,'At',e.created_at)
  INTO original FROM %[1]s.ai_recon_event e
    JOIN %[1]s.ai_recon_command c ON c.namespace=e.namespace AND c.id=e.id AND c.dispatch=e.dispatch
@@ -112,7 +118,7 @@ BEGIN
   INSERT INTO %[1]s.careeros_operations_deferred(namespace,event_id,evidence) VALUES(ns,command_ref,original);
  END IF;
  BEGIN
-  PERFORM %[1]s.careeros_capture_operations(ns,CASE WHEN include_event THEN command_ref ELSE NULL END);
+  PERFORM %[1]s.careeros_capture_operations(ns,CASE WHEN original IS NOT NULL THEN command_ref ELSE NULL END);
  EXCEPTION WHEN OTHERS THEN
   IF NOT %[1]s.careeros_operations_record_emergency('persistence_fault') THEN RAISE; END IF;
   RETURN 2;
@@ -125,14 +131,13 @@ CREATE OR REPLACE FUNCTION %[1]s.careeros_replay_operations_captures(ns text) RE
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $replay$
 DECLARE original_ref text;
 BEGIN
- IF NOT %[1]s.careeros_capture_operations(ns,NULL) THEN RETURN false; END IF;
  FOR original_ref IN SELECT event_id FROM %[1]s.careeros_operations_deferred WHERE namespace=ns
   ORDER BY (evidence->>'At')::timestamptz,event_id
  LOOP
   PERFORM %[1]s.careeros_capture_operations(ns,original_ref);
   DELETE FROM %[1]s.careeros_operations_deferred WHERE namespace=ns AND event_id=original_ref;
  END LOOP;
- RETURN true;
+ RETURN %[1]s.careeros_capture_operations(ns,NULL);
 END $replay$;
 
 CREATE OR REPLACE FUNCTION %[1]s.careeros_ack_operations_capture(capability text, ns text, receipt bigint, fingerprint bytea)

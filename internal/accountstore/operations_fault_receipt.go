@@ -20,8 +20,10 @@ var recoverableOperationsFaults = []OperationsFault{
 }
 
 type operationsFaultReceipt struct {
-	Kind OperationsFault `json:"kind"`
-	At   time.Time       `json:"at"`
+	Kind         OperationsFault `json:"kind"`
+	At           time.Time       `json:"at"`
+	LatestAt     time.Time       `json:"latestAt"`
+	Unclassified bool            `json:"unclassified,omitempty"`
 }
 
 func (j *OperationsJournal) faultReceiptPath(kind OperationsFault) string {
@@ -42,28 +44,30 @@ func (j *OperationsJournal) retainFault(ctx context.Context, receipt operationsF
 		return err
 	}
 	defer unlock()
+	receipt.LatestAt = receipt.At
+	prior, err := j.readFaultReceipt(receipt.Kind)
+	switch {
+	case err == nil:
+		receipt.Unclassified = prior.Unclassified
+		if prior.At.Before(receipt.At) {
+			receipt.At = prior.At
+		}
+		if prior.LatestAt.After(receipt.LatestAt) {
+			receipt.LatestAt = prior.LatestAt
+		}
+	case !errors.Is(err, os.ErrNotExist):
+		// A newer complete receipt preserves uncertainty about older bytes.
+		receipt.Unclassified = true
+	}
 	payload, err := json.Marshal(receipt)
 	if err != nil {
 		return auth.ErrUnavailable
 	}
-	file := j.faultReceiptPath(receipt.Kind)
-	f, err := os.OpenFile(file, os.O_WRONLY|os.O_CREATE|os.O_EXCL|syscall.O_NOFOLLOW, 0600)
-	if errors.Is(err, os.ErrExist) {
-		_, err = j.readFaultReceipt(receipt.Kind)
-		return err
-	}
-	if err != nil {
+	raw, err := json.Marshal(operationsEnvelope{Payload: payload, Binding: j.faultReceiptBinding(payload)})
+	if err != nil || len(raw) > 512 {
 		return auth.ErrUnavailable
 	}
-	err = json.NewEncoder(f).Encode(operationsEnvelope{Payload: payload, Binding: j.faultReceiptBinding(payload)})
-	if err == nil {
-		err = f.Sync()
-	}
-	closeErr := f.Close()
-	if err != nil || closeErr != nil {
-		return auth.ErrUnavailable
-	}
-	return j.syncDirectory()
+	return j.writeAtomic(j.faultReceiptPath(receipt.Kind), raw)
 }
 
 func (j *OperationsJournal) readFaultReceipt(kind OperationsFault) (operationsFaultReceipt, error) {
@@ -84,25 +88,37 @@ func (j *OperationsJournal) readFaultReceipt(kind OperationsFault) (operationsFa
 		json.Unmarshal(envelope.Payload, &receipt) != nil || receipt.Kind != kind || receipt.At.IsZero() {
 		return operationsFaultReceipt{}, auth.ErrUnavailable
 	}
+	if receipt.LatestAt.IsZero() {
+		receipt.LatestAt = receipt.At // Complete receipts from the earlier format.
+	}
+	if receipt.LatestAt.Before(receipt.At) {
+		return operationsFaultReceipt{}, auth.ErrUnavailable
+	}
 	return receipt, nil
 }
 
-func (j *OperationsJournal) mirrorFaultReceipts(state *operationsJournalState) (bool, error) {
-	var known bool
+func (j *OperationsJournal) mirrorFaultReceipts(state *operationsJournalState) (known, unclassified bool, latest time.Time) {
 	for _, kind := range recoverableOperationsFaults {
 		receipt, err := j.readFaultReceipt(kind)
 		if errors.Is(err, os.ErrNotExist) {
 			continue
 		}
 		if err != nil {
-			return false, auth.ErrUnavailable
+			unclassified = true
+			continue
 		}
 		incident, err := operationsFaultIncident(kind, receipt.At)
 		if err != nil {
-			return false, err
+			unclassified = true
+			continue
 		}
+		incident.LatestObservedAt = &receipt.LatestAt
 		j.upsertFault(state, kind, incident)
 		known = true
+		unclassified = unclassified || receipt.Unclassified
+		if receipt.LatestAt.After(latest) {
+			latest = receipt.LatestAt
+		}
 	}
-	return known, nil
+	return known, unclassified, latest
 }

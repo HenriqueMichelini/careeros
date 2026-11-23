@@ -92,6 +92,9 @@ func operationsFaultIncident(fault OperationsFault, at time.Time) (OperationsInc
 }
 
 func (j *OperationsJournal) upsertFault(state *operationsJournalState, fault OperationsFault, incident OperationsIncident) bool {
+	if incident.LatestObservedAt == nil && (fault == OperationsBackupFault || fault == OperationsProviderFault) {
+		incident.LatestObservedAt = &incident.EventAt
+	}
 	created := j.upsert(state, "fault/"+string(fault), incident, true)
 	switch fault {
 	case OperationsDatabaseFault, OperationsAuthorityFault:
@@ -100,6 +103,13 @@ func (j *OperationsJournal) upsertFault(state *operationsJournalState, fault Ope
 		state.Backup = "declared_failure"
 	}
 	return created
+}
+
+func latestFaultObservation(incident OperationsIncident) time.Time {
+	if incident.LatestObservedAt != nil && incident.LatestObservedAt.After(incident.EventAt) {
+		return *incident.LatestObservedAt
+	}
+	return incident.EventAt
 }
 
 type containment struct {
@@ -148,6 +158,12 @@ func (o *Operations) reviewIncident(ctx context.Context, p auth.Principal, id st
 	if err = operationsActor(ctx, tx, p, "owner"); err != nil {
 		return err
 	}
+	var endDecision func()
+	defer func() {
+		if endDecision != nil {
+			endDecision()
+		}
+	}()
 	return o.journal.transaction(ctx, true, func(state *operationsJournalState) error {
 		record, ok := state.Records[id]
 		if !ok || record.Revision != revision && !(resolve && record.Incident.State == "resolved" && record.Revision == revision+1) {
@@ -165,6 +181,13 @@ func (o *Operations) reviewIncident(ctx context.Context, p auth.Principal, id st
 		if resolve {
 			switch record.Incident.Kind {
 			case "backup_fault", "provider_fault":
+				endDecision, err = o.journal.lockAdmission(ctx, true)
+				if err != nil {
+					return err
+				}
+				if err := o.journal.checkPendingFence(); err != nil {
+					return err
+				}
 				verify := o.cfg.VerifyBackupRecovery
 				if record.Incident.Kind == "provider_fault" {
 					verify = o.cfg.VerifyProviderRecovery
@@ -175,7 +198,7 @@ func (o *Operations) reviewIncident(ctx context.Context, p auth.Principal, id st
 				incident := record.Incident
 				incident.Revision = record.Revision
 				proof, err := verify(ctx, recovery, incident)
-				if err != nil || proof.Before(record.Incident.EventAt) || proof.After(o.journal.cfg.Clock().UTC()) {
+				if err != nil || proof.Before(latestFaultObservation(record.Incident)) || proof.After(o.journal.cfg.Clock().UTC()) {
 					return auth.ErrForbidden
 				}
 				proof = proof.UTC()

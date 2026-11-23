@@ -3,7 +3,6 @@ package accountstore
 import (
 	"context"
 	"crypto/hmac"
-	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/hex"
@@ -438,21 +437,21 @@ func (j *OperationsJournal) write(state operationsJournalState) error {
 	if err != nil || int64(len(raw)) > j.cfg.MaxBytes {
 		return auth.ErrUnavailable
 	}
-	var nonce [12]byte
-	if _, err = rand.Read(nonce[:]); err != nil {
-		return auth.ErrUnavailable
-	}
-	name := filepath.Join(j.cfg.Directory, ".journal-"+hex.EncodeToString(nonce[:]))
-	file, err := os.OpenFile(name, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+	return j.writeAtomic(filepath.Join(j.cfg.Directory, j.name+".json"), raw)
+}
+
+func (j *OperationsJournal) writeAtomic(target string, raw []byte) error {
+	file, err := os.CreateTemp(j.cfg.Directory, ".journal-*")
 	if err != nil {
 		return auth.ErrUnavailable
 	}
+	name := file.Name()
 	defer os.Remove(name)
 	if _, err = file.Write(raw); err == nil {
 		err = file.Sync()
 	}
 	closeErr := file.Close()
-	if err != nil || closeErr != nil || os.Rename(name, filepath.Join(j.cfg.Directory, j.name+".json")) != nil {
+	if err != nil || closeErr != nil || os.Rename(name, target) != nil {
 		return auth.ErrUnavailable
 	}
 	return j.syncDirectory()
@@ -462,7 +461,12 @@ func (j *OperationsJournal) upsert(state *operationsJournalState, key string, in
 	revision := 1
 	if prior, ok := state.Records[id]; ok {
 		if prior.Incident.State != "resolved" || !recurring {
-			prior.Incident.Exposure = incident.Exposure
+			if prior.Incident.Kind != "maximum_breach" && prior.Incident.Kind != "invariant_breach" {
+				prior.Incident.Exposure = incident.Exposure
+			}
+			if incident.LatestObservedAt != nil && incident.LatestObservedAt.After(latestFaultObservation(prior.Incident)) {
+				prior.Incident.LatestObservedAt = incident.LatestObservedAt
+			}
 			state.Records[id] = prior
 			return false
 		}

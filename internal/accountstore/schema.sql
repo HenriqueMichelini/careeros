@@ -244,6 +244,7 @@ ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS operations_fault_id 
 ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS operations_fault_at timestamptz;
 ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS operations_fault_since timestamptz;
 ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS operations_fault_kinds text[] NOT NULL DEFAULT '{}';
+ALTER TABLE careeros_control_state ADD COLUMN IF NOT EXISTS operations_fault_observations jsonb NOT NULL DEFAULT '{}';
 INSERT INTO careeros_control_state(singleton) VALUES(true) ON CONFLICT DO NOTHING;
 CREATE TABLE IF NOT EXISTS careeros_control_operators (
  account_id text PRIMARY KEY REFERENCES careeros_accounts(id),
@@ -373,6 +374,9 @@ BEGIN
    operations_fault_at=observed,operations_fault_since=COALESCE(operations_fault_since,observed),
    operations_fault_kinds=CASE WHEN reason=ANY(operations_fault_kinds) THEN operations_fault_kinds
     ELSE array_append(operations_fault_kinds,reason) END,
+   operations_fault_observations=jsonb_set(operations_fault_observations,ARRAY[reason],jsonb_build_object(
+    'at',COALESCE(operations_fault_observations->reason->'at',to_jsonb(observed)),
+    'latestAt',GREATEST((operations_fault_observations->reason->>'latestAt')::timestamptz,observed))),
    version=LEAST(version::numeric+1,9223372036854775807)::bigint,
    inference_epoch=LEAST(inference_epoch::numeric+1,9223372036854775807)::bigint,changed_at=observed
   WHERE singleton AND operations_binding<>'';

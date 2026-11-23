@@ -7,6 +7,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"time"
 
 	"professional-information-repo/internal/auth"
@@ -15,10 +16,14 @@ import (
 // OperationsEmergency identifies the current private interval requiring review.
 // StartedAt is the first durable fallback receipt, which can follow the onset.
 type OperationsEmergency struct {
-	ID         string            `json:"id"`
-	StartedAt  time.Time         `json:"startedAt"`
-	RecordedAt time.Time         `json:"recordedAt"`
-	Causes     []OperationsFault `json:"causes"`
+	ID           string            `json:"id"`
+	StartedAt    time.Time         `json:"startedAt"`
+	RecordedAt   time.Time         `json:"recordedAt"`
+	Causes       []OperationsFault `json:"causes"`
+	observations map[OperationsFault]struct {
+		At       time.Time `json:"at"`
+		LatestAt time.Time `json:"latestAt"`
+	}
 }
 
 type OperationsEmergencyReview struct {
@@ -103,9 +108,10 @@ func readOperationsEmergency(ctx context.Context, tx *sql.Tx) (*OperationsEmerge
 	var e OperationsEmergency
 	var started, recorded sql.NullTime
 	var raw []byte
+	var observations []byte
 	err := tx.QueryRowContext(ctx, `SELECT operations_fault,operations_fault_id,operations_fault_since,
-	  operations_fault_at,to_json(operations_fault_kinds) FROM careeros_control_state WHERE singleton`).
-		Scan(&fault, &e.ID, &started, &recorded, &raw)
+	  operations_fault_at,to_json(operations_fault_kinds),operations_fault_observations FROM careeros_control_state WHERE singleton`).
+		Scan(&fault, &e.ID, &started, &recorded, &raw, &observations)
 	if err != nil || !fault {
 		return nil, false, unavailable(err)
 	}
@@ -113,10 +119,16 @@ func readOperationsEmergency(ctx context.Context, tx *sql.Tx) (*OperationsEmerge
 		return nil, true, nil // A persisted latch from the earlier composition.
 	}
 	if len(e.ID) != 64 || !validOperation(e.ID) || !started.Valid || !recorded.Valid || started.Time.After(recorded.Time) ||
-		json.Unmarshal(raw, &e.Causes) != nil || len(e.Causes) < 1 || len(e.Causes) > 8 {
+		json.Unmarshal(raw, &e.Causes) != nil || len(e.Causes) < 1 || len(e.Causes) > 8 ||
+		json.Unmarshal(observations, &e.observations) != nil || len(e.observations) > 8 {
 		return nil, false, auth.ErrUnavailable
 	}
 	e.StartedAt, e.RecordedAt = started.Time.UTC(), recorded.Time.UTC()
+	for _, observed := range e.observations {
+		if observed.At.IsZero() || observed.LatestAt.Before(observed.At) || observed.LatestAt.After(e.RecordedAt) {
+			return nil, false, auth.ErrUnavailable
+		}
+	}
 	return &e, false, nil
 }
 
@@ -165,10 +177,7 @@ func (o *Operations) replayEmergency(ctx context.Context, p auth.Principal, refe
 	if err != nil || state.ID != o.journal.id {
 		return auth.ErrUnavailable
 	}
-	knownFault, err := o.journal.mirrorFaultReceipts(&state)
-	if err != nil {
-		return err
-	}
+	knownFault, unclassified, latest := o.journal.mirrorFaultReceipts(&state)
 	e, legacy, err := readOperationsEmergency(ctx, tx)
 	if err != nil {
 		return err
@@ -187,10 +196,21 @@ func (o *Operations) replayEmergency(ctx context.Context, p auth.Principal, refe
 			return ErrNotFound
 		}
 		reason := operationsPersistenceFault
-		if !knownFault {
+		if !knownFault || unclassified {
 			reason = operationsUnclassifiedFault
 		}
 		if err = markOperationsEmergency(ctx, tx, o.journal.observerCapability(), reason); err != nil {
+			return err
+		}
+		e, _, err = readOperationsEmergency(ctx, tx)
+		if err != nil || e == nil {
+			return auth.ErrUnavailable
+		}
+	} else if unclassified && !slices.Contains(e.Causes, operationsUnclassifiedFault) {
+		if reference != "" {
+			return auth.ErrForbidden
+		}
+		if err = markOperationsEmergency(ctx, tx, o.journal.observerCapability(), operationsUnclassifiedFault); err != nil {
 			return err
 		}
 		e, _, err = readOperationsEmergency(ctx, tx)
@@ -202,7 +222,7 @@ func (o *Operations) replayEmergency(ctx context.Context, p auth.Principal, refe
 		return err
 	}
 	if reference != "" {
-		if err = o.reviewEmergency(ctx, tx, p, reference, e, &state, oldHold); err != nil {
+		if err = o.reviewEmergency(ctx, tx, p, reference, e, &state, oldHold, latest); err != nil {
 			return err
 		}
 	} else if err = o.journal.write(state); err != nil {
@@ -214,10 +234,15 @@ func (o *Operations) replayEmergency(ctx context.Context, p auth.Principal, refe
 func (j *OperationsJournal) mirrorEmergency(state *operationsJournalState, e OperationsEmergency) error {
 	for _, kind := range e.Causes {
 		if kind != operationsPersistenceFault && kind != operationsUnclassifiedFault {
-			incident, err := operationsFaultIncident(kind, e.RecordedAt)
+			observed := e.observations[kind]
+			if observed.At.IsZero() {
+				observed.At, observed.LatestAt = e.RecordedAt, e.RecordedAt
+			}
+			incident, err := operationsFaultIncident(kind, observed.At)
 			if err != nil {
 				return auth.ErrUnavailable
 			}
+			incident.LatestObservedAt = &observed.LatestAt
 			j.upsertFault(state, kind, incident)
 		}
 	}
@@ -229,10 +254,10 @@ func (j *OperationsJournal) mirrorEmergency(state *operationsJournalState, e Ope
 	return nil
 }
 
-func (o *Operations) reviewEmergency(ctx context.Context, tx *sql.Tx, p auth.Principal, reference string, e *OperationsEmergency, state *operationsJournalState, oldHold string) error {
+func (o *Operations) reviewEmergency(ctx context.Context, tx *sql.Tx, p auth.Principal, reference string, e *OperationsEmergency, state *operationsJournalState, oldHold string, latest time.Time) error {
 	review, err := o.cfg.VerifyEmergencyReview(ctx, reference, *e)
 	at := review.ObservedAt
-	if err != nil || !at.After(e.RecordedAt) || at.After(time.Now().UTC()) {
+	if err != nil || !at.After(e.RecordedAt) || at.Before(latest) || at.After(time.Now().UTC()) {
 		return auth.ErrForbidden
 	}
 	if err = o.journal.classifyEmergency(state, *e, review); err != nil {
@@ -274,7 +299,7 @@ func (o *Operations) reviewEmergency(ctx context.Context, tx *sql.Tx, p auth.Pri
 		return unavailable(err)
 	}
 	result, err := tx.ExecContext(ctx, `UPDATE careeros_control_state SET operations_fault=false,
-	  operations_fault_id='',operations_fault_since=NULL,operations_fault_at=NULL,operations_fault_kinds='{}'
+	  operations_fault_id='',operations_fault_since=NULL,operations_fault_at=NULL,operations_fault_kinds='{}',operations_fault_observations='{}'
 	  WHERE singleton AND operations_fault AND operations_fault_id=$1`, e.ID)
 	if err != nil {
 		return unavailable(err)
@@ -286,11 +311,7 @@ func (o *Operations) reviewEmergency(ctx context.Context, tx *sql.Tx, p auth.Pri
 }
 
 func (j *OperationsJournal) classifyEmergency(state *operationsJournalState, e OperationsEmergency, review OperationsEmergencyReview) error {
-	unknown := false
-	for _, kind := range e.Causes {
-		unknown = unknown || kind == operationsUnclassifiedFault
-	}
-	if !unknown {
+	if !slices.Contains(e.Causes, operationsUnclassifiedFault) {
 		if review.ClassifiedCause != "" {
 			return auth.ErrForbidden
 		}
