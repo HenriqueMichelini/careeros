@@ -37,7 +37,8 @@ func (s *Service) AuthenticateDeletionStatus(ctx context.Context, token string) 
 	if err != nil {
 		return Principal{}, err
 	}
-	if !found || (account.Status != AccountDeleted && account.Status != AccountCompromised) || account.Generation != v.Generation {
+	if !found || (account.Status != AccountDeleted && account.Status != AccountCompromised) ||
+		account.Generation != v.Generation || !s.permitsAccount(account) {
 		return Principal{}, ErrAuthenticationRequired
 	}
 	return Principal{AccountID: account.ID, SessionID: v.ID, Generation: v.Generation, ExpiresAt: v.ExpiresAt, tokenHash: v.TokenHash, csrfHash: v.CSRFHash}, nil

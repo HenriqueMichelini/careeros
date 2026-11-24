@@ -1,6 +1,6 @@
 # Closed pilot hosted configuration proposal
 
-**Unapproved.** This is the approval packet for the closed candidate anticipated by [#292](https://github.com/HenriqueMichelini/careeros/issues/292) and [#261](https://github.com/HenriqueMichelini/careeros/issues/261). An approval must identify exact values for every open field below, the reviewed candidate manifest, the permitted operations and a separate verification window. The local package provides route, process, schema and failure evidence. Hosted fit, cost, restore and operational capability remain decisions and observations.
+**Exact configuration and execution pending approval.** The [owner decision](closed-pilot-hosted-candidate.md) selects Cloud Run and Neon Launch in São Paulo for local preparation. This is the approval checklist for the closed candidate anticipated by [#292](https://github.com/HenriqueMichelini/careeros/issues/292) and [#261](https://github.com/HenriqueMichelini/careeros/issues/261). A configuration approval must identify exact values for every open field below, the reviewed candidate manifest and the permitted operations. The hosted verification window and internal test grant each require separate approval. The local package provides route, process, schema and failure evidence. Hosted fit, cost, restore and operational capability remain decisions and observations.
 
 | Approval field | Required selection and evidence |
 | --- | --- |

@@ -209,6 +209,31 @@ def payload(root):
     return files
 
 
+def build_frontend(source, profile, output):
+    env = build_environment(profile, source)
+    expected_go = {**GO_OFFLINE, **profile["go_target"]}
+    effective_go = json.loads(run("go", "env", "-json", *expected_go, cwd=source, env=env, capture=True))
+    # An explicitly disabled GOENV is shown as an empty effective path.
+    if effective_go != {**expected_go, "GOENV": ""}:
+        raise ValueError("effective Go configuration does not match the closed build profile")
+    toolchain = {
+        "go": run("go", "env", "GOVERSION", cwd=source, env=env, capture=True).decode().strip(),
+        "node": run("node", "--version", cwd=source, env=env, capture=True).decode().strip(),
+        "npm": run("npm", "--version", cwd=source, env=env, capture=True).decode().strip(),
+    }
+    if toolchain != profile["toolchain"]:
+        raise ValueError("installed toolchain does not match the pinned build profile")
+    run("npm", "ci", *NPM_COMMAND_OPTIONS, "--include=dev", "--ignore-scripts", "--no-audit", "--no-fund",
+        cwd=source, env=env)
+    run("npm", "run", *NPM_COMMAND_OPTIONS, "build", "--", "--outDir", str(output), cwd=source, env=env)
+    return env, effective_go, toolchain
+
+
+def build_binary(source, env, command, output):
+    run("go", "build", "-trimpath", "-buildvcs=false", "-mod=readonly", "-o", str(output),
+        "./cmd/" + command, cwd=source, env=env)
+
+
 def build(repo, revision, output):
     if output.exists() or output.is_symlink():
         raise ValueError("output directory already exists")
@@ -227,25 +252,9 @@ def build(repo, revision, output):
         profile = json.loads((source / PROFILE).read_text())
         # Run the committed script's configured build, regardless of ambient
         # CareerOS/Vite flags or a different working tree's generated assets.
-        env = build_environment(profile, source)
-        expected_go = {**GO_OFFLINE, **profile["go_target"]}
-        effective_go = json.loads(run("go", "env", "-json", *expected_go, cwd=source, env=env, capture=True))
-        # An explicitly disabled GOENV is shown as an empty effective path.
-        if effective_go != {**expected_go, "GOENV": ""}:
-            raise ValueError("effective Go configuration does not match the closed build profile")
-        toolchain = {
-            "go": run("go", "env", "GOVERSION", cwd=source, env=env, capture=True).decode().strip(),
-            "node": run("node", "--version", cwd=source, env=env, capture=True).decode().strip(),
-            "npm": run("npm", "--version", cwd=source, env=env, capture=True).decode().strip(),
-        }
-        if toolchain != profile["toolchain"]:
-            raise ValueError("installed toolchain does not match the pinned local build profile")
-        run("npm", "ci", *NPM_COMMAND_OPTIONS, "--include=dev", "--ignore-scripts", "--no-audit", "--no-fund",
-            cwd=source, env=env)
-        run("npm", "run", *NPM_COMMAND_OPTIONS, "build", "--", "--outDir", str(bundle / "frontend"), cwd=source, env=env)
+        env, effective_go, toolchain = build_frontend(source, profile, bundle / "frontend")
         for command in COMMANDS:
-            run("go", "build", "-trimpath", "-buildvcs=false", "-mod=readonly", "-o", str(bundle / "bin" / command),
-                "./cmd/" + command, cwd=source, env=env)
+            build_binary(source, env, command, bundle / "bin" / command)
 
         for name in ("bootstrap.sql", "closed-runtime-grants.sql"):
             shutil.copyfile(source / "scripts/pilot-runtime" / name, bundle / "sql" / name)

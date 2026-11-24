@@ -88,6 +88,7 @@ type Service struct {
 	accounts        AccountStore
 	transactions    TransactionStore
 	now             func() time.Time
+	hostedSubjects  map[googleSubject]struct{}
 }
 
 func NewService(config Config, providers *Registry, stores Stores) (*Service, error) {
@@ -210,8 +211,14 @@ func (s *Service) CompleteLogin(ctx context.Context, providerID, state, code, bi
 	if identity.Provider != providerID || identity.Issuer == "" || identity.Subject == "" {
 		return LoginResult{}, ErrInvalidCallback
 	}
+	if !s.permitsSubject(identity.Provider, identity.Issuer, identity.Subject) {
+		return LoginResult{}, ErrForbidden
+	}
 	account, err := s.resolveAccount(ctx, transaction, identity, now)
 	if err != nil {
+		return LoginResult{}, err
+	}
+	if err := s.verifyHostedAccountBinding(ctx, account); err != nil {
 		return LoginResult{}, err
 	}
 	return s.issueSession(ctx, transaction, account, s.now().UTC())
@@ -257,7 +264,7 @@ func (s *Service) requireTransactionAccount(ctx context.Context, transaction Tra
 	if err != nil {
 		return err
 	}
-	if !ok || current.Status != AccountActive || current.Generation != transaction.Generation {
+	if !ok || current.Status != AccountActive || current.Generation != transaction.Generation || !s.permitsAccount(current) {
 		return ErrInvalidTransaction
 	}
 	return nil
@@ -362,7 +369,7 @@ func (s *Service) Authenticate(ctx context.Context, token string) (Principal, er
 	if err != nil {
 		return Principal{}, err
 	}
-	if !ok || account.Status != AccountActive || account.Generation != session.Generation {
+	if !ok || account.Status != AccountActive || account.Generation != session.Generation || !s.permitsAccount(account) {
 		return Principal{}, ErrAuthenticationRequired
 	}
 	return Principal{
@@ -397,7 +404,7 @@ func (s *Service) Revalidate(ctx context.Context, principal Principal) (Principa
 	if err != nil {
 		return Principal{}, err
 	}
-	if !ok || account.Status != AccountActive || account.Generation != ctxSession.Generation {
+	if !ok || account.Status != AccountActive || account.Generation != ctxSession.Generation || !s.permitsAccount(account) {
 		return Principal{}, ErrAuthenticationRequired
 	}
 	return Principal{

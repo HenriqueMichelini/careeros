@@ -50,10 +50,10 @@ func (s *Store) Close() error { return s.db.Close() }
 
 // Migrate is an explicit local/operator command, never run by request handlers.
 func (s *Store) Migrate(ctx context.Context) error {
-	return s.migrate(ctx, nil)
+	return s.migrate(ctx, nil, nil)
 }
 
-func (s *Store) migrate(ctx context.Context, authorize func(context.Context, *sql.Tx) error) error {
+func (s *Store) migrate(ctx context.Context, authorize, finalize func(context.Context, *sql.Tx) error) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return unavailable(err)
@@ -69,6 +69,11 @@ func (s *Store) migrate(ctx context.Context, authorize func(context.Context, *sq
 	}
 	if _, err = tx.ExecContext(ctx, schema); err != nil {
 		return unavailable(err)
+	}
+	if finalize != nil {
+		if err := finalize(ctx, tx); err != nil {
+			return err
+		}
 	}
 	return unavailable(tx.Commit())
 }

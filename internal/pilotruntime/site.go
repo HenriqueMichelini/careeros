@@ -1,4 +1,4 @@
-// Package pilotruntime assembles the explicitly closed local pilot package.
+// Package pilotruntime assembles closed pilot runtimes.
 package pilotruntime
 
 import (
@@ -34,6 +34,10 @@ var workflowAliases = map[string]string{
 // newSite reserves API and Function routes before the static fallback. The
 // caller supplies only the closed Account/pilot composition in the executable.
 func newSite(authority string, assets fs.FS, account http.Handler, ready func(context.Context) error) (http.Handler, error) {
+	return newSiteAtOrigin(authority, "http://"+authority, assets, account, ready)
+}
+
+func newSiteAtOrigin(authority, origin string, assets fs.FS, account http.Handler, ready func(context.Context) error) (http.Handler, error) {
 	info, err := fs.Stat(assets, "index.html")
 	if err != nil || !info.Mode().IsRegular() {
 		return nil, errors.New("pilot frontend entrypoint unavailable")
@@ -88,7 +92,7 @@ func newSite(authority string, assets fs.FS, account http.Handler, ready func(co
 			}
 			origins := r.Header.Values("Origin")
 			if len(origins) != 0 || !safeMethod(r.Method) {
-				if len(origins) != 1 || origins[0] != "http://"+authority {
+				if len(origins) != 1 || origins[0] != origin {
 					reply(w, http.StatusForbidden, "error", "forbidden")
 					return
 				}

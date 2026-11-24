@@ -42,7 +42,7 @@ func MigrateClosedPilotPackage(ctx context.Context, dsn string) error {
 		return err
 	}
 	defer store.Close()
-	return store.migrate(ctx, authorizeClosedPilotMigration)
+	return store.migrate(ctx, authorizeClosedPilotMigration, nil)
 }
 
 func openClosedPilotDatabase(ctx context.Context, dsn, role string) (*Store, error) {
