@@ -36,4 +36,6 @@ rtk proxy env GOCACHE=/path/to/writable/go-cache GOPROXY=off GOSUMDB=off GOTOOLC
   go test -race -count=1 ./internal/pilotruntime -run '^TestClosedHostedWithLocalTLSPostgres$'
 ```
 
+The [OCI manifest](release-evidence/2026-11-25-closed-hosted-candidate-oci-manifest.json) records the separate serving and migration images from source `a753a2a376a0511576a880d486e8eb7bae900287`. Use that revision with the [offline build procedure](closed-hosted-pilot-packaging.md) and the reviewed CA input to reproduce the recorded digests from a fresh checkout. The added handoff records are outside this image source revision.
+
 Before requesting external approval, pin the exact reviewed artifact and source, schema/grant identities, config, logging and egress, rollback, operator and backup settings, complete cost bounds, and status of the seven native dependencies. After configuration approval, request separate hosted verification and internal test-grant approvals for the specific candidate and window. [#294 acceptance and dependencies](https://github.com/HenriqueMichelini/careeros/issues/294) · [#295 recovery scope](https://github.com/HenriqueMichelini/careeros/issues/295)
