@@ -28,6 +28,7 @@ type Store struct {
 	managed  bool
 	opening  bool
 	terminal bool
+	hosted   bool
 }
 
 func Open(ctx context.Context, dsn string, cfg Config) (*Store, error) {
@@ -52,6 +53,9 @@ func open(ctx context.Context, dsn string, cfg Config) (*Store, error) {
 }
 func (s *Store) Close() error { return s.db.Close() }
 func (s *Store) Migrate(ctx context.Context) error {
+	if s.hosted {
+		return ErrDenied
+	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return ErrDenied
@@ -95,6 +99,12 @@ func (s *Store) begin(ctx context.Context, p auth.Principal) (*sql.Tx, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, ErrDenied
+	}
+	if s.hosted {
+		if err = accountstore.LockControlTransaction(ctx, tx); err != nil {
+			tx.Rollback()
+			return nil, err
+		}
 	}
 	if err = accountstore.AuthorizeTransaction(ctx, tx, p); err != nil {
 		tx.Rollback()

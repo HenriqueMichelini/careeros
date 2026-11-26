@@ -41,3 +41,25 @@ rtk proxy python3 scripts/render-closed-hosted-pilot.py \
 ```
 
 Record the two emitted file digests and confirm them against the approved candidate. The service manifest enables public invocation and routes traffic to the latest closed revision. Prepare and review the applicable default, custom, parent and exported logging sinks before applying it. Confirm the service URL, secret and IAM bindings, database configuration and other review inputs before external execution.
+
+## Stage the scoped fake Draft candidate
+
+Add `--scoped-fake-draft` to the committed-source build to package the independent attestor image along with the serving and migration images. The new bundle also pins the reviewed Draft scope, ledger, attestation and artifact SQL. Record and verify the three image digests. Keep the two-image closed revision from `268e0b4` as the local rollback reference. Its Account schema identity matches the scoped candidate. Verify the actual rollback service configuration after reasserting both durable stops.
+
+Render the three-image bundle twice with separate output paths. The first render uses the closed command above. After approval, use that migration job for the Account schema and deploy the closed service first. Apply `internal/accountstore/hosted_bootstrap.sql` before the Account migration. For the second phase, the approved administrator creates the restricted Draft logins and separately applies `internal/hosteddraft/bootstrap.sql` to the same isolated database. Then the scoped migration job installs additive Draft SQL while both stops are closed. Retain the contents and digests of both migration job manifests and do not run the scoped job as the initial Account migration.
+
+For the second render, add these required arguments to the closed rendering command. The key digests are SHA-256 of the decoded 32-byte keys. Secret Manager stores the keys as standard padded base64. The expires-at is the approved UTC RFC 3339 timestamp in the attended window.
+
+```sh
+  --scoped-fake-draft --attestor-origin "$ATTESTOR_ORIGIN" \
+  --draft-action-key-sha256 "$ACTION_KEY_SHA256" \
+  --draft-artifact-key-sha256 "$ARTIFACT_KEY_SHA256" \
+  --draft-expires-at "$DRAFT_EXPIRES_AT" \
+  --careeros-294-draft-ledger-dsn-version "$DRAFT_LEDGER_DSN_VERSION" \
+  --careeros-294-draft-action-key-version "$DRAFT_ACTION_KEY_VERSION" \
+  --careeros-294-draft-artifact-key-version "$DRAFT_ARTIFACT_KEY_VERSION" \
+  --careeros-294-draft-attestor-dsn-version "$ATTESTOR_DSN_VERSION" \
+  --careeros-294-draft-attestor-token-version "$ATTESTOR_TOKEN_VERSION"
+```
+
+Apply the attestor service and reviewed invoker policy only after approval. The serving service account is the sole invoker. Keep the attestor DSN with its own service account and the ledger DSN with serving. Both receive the separate request-signing key. The service uses its Cloud Run identity token for invocation and signs the bounded proof independently. An administrator pins one approved synthetic Account, grant version, Profile revision, inference epoch, creation key and Action ID across the scope rows after the same exact grant is separately approved. The migration and serving processes cannot grant their own scope. Use the closed service for the initial approved Google sign-in, then render the pinned scoped revision before the positive run. [Service-to-service authentication](https://docs.cloud.google.com/run/docs/authenticating/service-to-service)

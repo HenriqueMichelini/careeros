@@ -22,7 +22,7 @@ func NewSyntheticDraft(service *auth.Service, profiles *accountstore.Store, h *a
 	if service == nil || profiles == nil || !drafts.UsesManagedAuthority(h) {
 		return auth.UnavailableHandler()
 	}
-	return managedDraftRoutes(service, drafts, newSyntheticQualification(service, profiles, h, drafts.QualificationProof))
+	return managedDraftRoutes(service, drafts, newSyntheticQualification(service, profiles, h, drafts.QualificationProof), "")
 }
 
 // NewSyntheticDraftOnly mounts only the managed Draft routes and aliases using
@@ -31,10 +31,19 @@ func NewSyntheticDraftOnly(service *auth.Service, h *aicontrol.Harness, drafts *
 	if service == nil || !drafts.UsesManagedAuthority(h) {
 		return auth.UnavailableHandler()
 	}
-	return managedDraftRoutes(service, drafts, nil)
+	return managedDraftRoutes(service, drafts, nil, "")
 }
 
-func managedDraftRoutes(service *auth.Service, drafts *draftrecovery.Store, fallback http.Handler) http.Handler {
+// NewHostedDraftOnly permits only the Account pinned by the verified hosted
+// ledger. The canonical Action and Draft stores recheck scope in PostgreSQL.
+func NewHostedDraftOnly(service *auth.Service, h *aicontrol.Harness, drafts *draftrecovery.Store) http.Handler {
+	if service == nil || h == nil || h.HostedDraftOwner() == "" || !drafts.HostedDraftEnabled() || !drafts.UsesManagedAuthority(h) {
+		return auth.UnavailableHandler()
+	}
+	return managedDraftRoutes(service, drafts, nil, h.HostedDraftOwner())
+}
+
+func managedDraftRoutes(service *auth.Service, drafts *draftrecovery.Store, fallback http.Handler, owner string) http.Handler {
 	protected := http.NewServeMux()
 	create := func(w http.ResponseWriter, r *http.Request) {
 		deadline := time.Now().Add(25 * time.Second)
@@ -62,6 +71,13 @@ func managedDraftRoutes(service *auth.Service, drafts *draftrecovery.Store, fall
 		decoder.DisallowUnknownFields()
 		if decoder.Decode(&input) != nil {
 			draftRecoveryError(w, draftrecovery.ErrInvalid)
+			return
+		}
+		if owner != "" && (input.Profile != (draftrecovery.Source{ID: "p", Revision: 1}) ||
+			input.Job.Posting != "Java required." || input.Job.Analysis != nil || input.Job.Qualification != nil ||
+			input.Language != "en" || len(input.Answers)+len(input.Confirmations)+len(input.SelectedFactIDs) != 0 ||
+			len(input.JobContext) != 0 || input.QualificationProof != "") {
+			draftRecoveryError(w, draftrecovery.ErrDenied)
 			return
 		}
 		p, _ := auth.PrincipalFromRequest(r)
@@ -100,7 +116,22 @@ func managedDraftRoutes(service *auth.Service, drafts *draftrecovery.Store, fall
 	protected.HandleFunc("POST /api/application-draft", create)
 	protected.HandleFunc("POST /.netlify/functions/application-draft", create)
 	registerDraftReads(protected, drafts)
-	draftHandler := service.Protect(pilotAccount(protected))
+	var routes http.Handler = protected
+	if owner != "" {
+		routes = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			p, _ := auth.PrincipalFromRequest(r)
+			if p.AccountID != owner {
+				draftRecoveryError(w, draftrecovery.ErrDenied)
+				return
+			}
+			if r.Header.Get("X-CareerOS-Retry-Key") != "" {
+				draftRecoveryError(w, draftrecovery.ErrDenied)
+				return
+			}
+			protected.ServeHTTP(w, r)
+		})
+	}
+	draftHandler := service.Protect(pilotAccount(routes))
 	router := http.NewServeMux()
 	for _, path := range []string{"/api/drafts", "/api/drafts/", "/api/application-draft", "/.netlify/functions/application-draft"} {
 		router.Handle(path, draftHandler)

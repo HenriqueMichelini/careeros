@@ -21,14 +21,27 @@ COMMON = runpy.run_path(str(HERE / "package-closed-pilot.py"))
 PROFILE = COMMON["PROFILE"]
 ACCOUNT_SCHEMA = "internal/accountstore/schema.sql"
 HOSTED_GRANTS = "internal/accountstore/hosted_grants.sql"
+HOSTED_RENDERER = "scripts/render-closed-hosted-pilot.py"
 INPUTS = (
     "go.mod", "go.sum", "package-lock.json", PROFILE, "vite.config.ts",
     "scripts/package-closed-pilot.py", "scripts/package-hosted-pilot.py",
     ACCOUNT_SCHEMA, "internal/accountstore/hosted_bootstrap.sql", HOSTED_GRANTS,
 )
+DRAFT_INPUTS = (
+    HOSTED_RENDERER,
+    "internal/hosteddraft/bootstrap.sql", "internal/hosteddraft/migrate.sql", "internal/hosteddraft/attestor.sql",
+    "internal/aicontrol/schema.sql", "internal/aicontrol/operations_capture.sql", "internal/aicontrol/reconciliation.sql",
+    "internal/aicontrol/hosted_draft.sql", "internal/draftrecovery/schema.sql", "internal/draftrecovery/hosted.sql",
+)
 SERVE = "pilot-runtime-hosted"
 MIGRATE = "pilot-runtime-hosted-migrate"
+ATTEST = "pilot-runtime-hosted-attestor"
 FORMAT = "closed-pilot-hosted-oci-v1"
+DRAFT_FORMAT = "closed-pilot-hosted-oci-v2"
+IMAGE_NAMES = {
+    FORMAT: frozenset(("serving", "migration")),
+    DRAFT_FORMAT: frozenset(("serving", "migration", "attestor")),
+}
 CA_PATH = "etc/ssl/certs/ca-certificates.crt"
 OCI = "application/vnd.oci.image."
 SHA256 = re.compile(r"[a-f0-9]{64}")
@@ -193,7 +206,8 @@ def build(args):
         required_target = {"GOOS": "linux", "GOARCH": "amd64", "GOAMD64": "v1", "CGO_ENABLED": "0", "GOEXPERIMENT": ""}
         if profile["go_target"] != required_target:
             raise ValueError("build profile does not match the Cloud Run target")
-        inputs = {path: COMMON["digest"](source / path) for path in INPUTS}
+        input_paths = INPUTS + (DRAFT_INPUTS if args.scoped_fake_draft else ())
+        inputs = {path: COMMON["digest"](source / path) for path in input_paths}
         schema_id = sha256((source / ACCOUNT_SCHEMA).read_bytes() + b"\x00" + (source / HOSTED_GRANTS).read_bytes())
 
         service = temporary / "service"
@@ -209,15 +223,23 @@ def build(args):
 
         result = temporary / "bundle"
         result.mkdir()
-        serving_digest = image(result / "serving", service, ["/app/" + SERVE, "-assets", "/app/dist"], label)
-        migration_digest = image(result / "migration", migration, ["/app/" + MIGRATE], label)
+        images = {
+            "serving": image(result / "serving", service, ["/app/" + SERVE, "-assets", "/app/dist"], label),
+            "migration": image(result / "migration", migration, ["/app/" + MIGRATE], label),
+        }
+        if args.scoped_fake_draft:
+            attestor = temporary / "attestor"
+            root_with_ca(attestor, certificates)
+            COMMON["build_binary"](source, env, ATTEST, attestor / "app" / ATTEST)
+            images["attestor"] = image(result / "attestor", attestor, ["/app/" + ATTEST], label)
         document = encoded({
-            "bundle": FORMAT, "source": provenance, "inputs": inputs, "effective_go": effective_go,
+            "bundle": DRAFT_FORMAT if args.scoped_fake_draft else FORMAT,
+            "source": provenance, "inputs": inputs, "effective_go": effective_go,
             "toolchain": toolchain, "npm_options": list(COMMON["NPM_COMMAND_OPTIONS"]),
             "hosted_account_schema_sha256": schema_id,
             "ca_bundle_source_sha256": args.expected_ca_bundle_sha256,
             "ca_bundle_payload_sha256": sha256(certificates),
-            "images": {"serving": serving_digest, "migration": migration_digest},
+            "images": images,
             "payload": COMMON["payload"](result),
         })
         (result / "manifest.json").write_bytes(document)
@@ -234,10 +256,27 @@ def verify(bundle, expected):
     if not SHA256.fullmatch(expected) or sha256(document) != expected:
         raise ValueError("bundle manifest does not match the independently expected SHA-256")
     manifest = json.loads(document)
-    if manifest.get("bundle") != FORMAT or COMMON["payload"](bundle) != manifest.get("payload"):
+    names = IMAGE_NAMES.get(manifest.get("bundle"))
+    if names is None or COMMON["payload"](bundle) != manifest.get("payload"):
         raise ValueError("bundle payload does not match the hosted manifest")
+    images = manifest.get("images")
+    if not isinstance(images, dict) or set(images) != names:
+        raise ValueError("bundle image inventory does not match the hosted format")
+    for name, digest in images.items():
+        if not isinstance(digest, str) or not digest.startswith("sha256:") or not SHA256.fullmatch(digest[7:]):
+            raise ValueError("invalid hosted image digest")
+        layout = bundle / name
+        descriptors = json.loads((layout / "index.json").read_bytes())["manifests"]
+        if len(descriptors) != 1 or descriptors[0]["digest"] != digest:
+            raise ValueError("hosted image digest does not match its OCI index")
+        descriptor = descriptors[0]
+        if descriptor["platform"] != {"architecture": "amd64", "os": "linux"}:
+            raise ValueError("hosted image platform does not match the pinned target")
+        blob = COMMON["digest"](layout / "blobs" / "sha256" / digest[7:])
+        if blob != {"sha256": digest[7:], "bytes": descriptor["size"]}:
+            raise ValueError("hosted OCI image manifest does not match the index")
     print(f"Verified {manifest['bundle']} source={manifest['source']['method']} manifest={expected}")
-    for name, digest in manifest["images"].items():
+    for name, digest in images.items():
         print(f"{name}={digest}")
     return manifest
 
@@ -250,6 +289,7 @@ def main():
     source.add_argument("--revision")
     source.add_argument("--working-tree", action="store_true")
     package.add_argument("--include", action="append", default=[])
+    package.add_argument("--scoped-fake-draft", action="store_true", help="add the isolated fake Draft attestor image")
     package.add_argument("--output", type=lambda path: Path(path).absolute(), required=True)
     package.add_argument("--ca-bundle", type=Path, required=True)
     package.add_argument("--expected-ca-bundle-sha256", required=True)

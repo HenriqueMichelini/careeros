@@ -23,12 +23,19 @@ const (
 	draftFixtureWriterPassword   = "local-draft-writer-fixture"
 	draftFixtureAttestor         = "careeros_294_draft_attestor"
 	draftFixtureAttestorPassword = "local-draft-attestor-fixture"
+	draftFixtureLedger           = "careeros_294_draft_ledger"
+	draftFixtureLedgerPassword   = "local-draft-ledger-fixture"
 )
 
 func TestHostedDraftAuthorityWithLocalTLSPostgres(t *testing.T) {
-	const role = "CREATE ROLE %s LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS CONNECTION LIMIT 2 PASSWORD '%s';\n"
-	roles := fmt.Sprintf(role, draftFixtureWriter, draftFixtureWriterPassword) + fmt.Sprintf(role, draftFixtureAttestor, draftFixtureAttestorPassword)
-	runHostedTLSFixture(t, roles, "TestHostedDraftAuthorityTLSFixtureChild")
+	runHostedTLSFixture(t, hostedDraftFixtureRoles(), "TestHostedDraftAuthorityTLSFixtureChild")
+}
+
+func hostedDraftFixtureRoles() string {
+	const role = "CREATE ROLE %s LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS CONNECTION LIMIT %d PASSWORD '%s';\n"
+	return fmt.Sprintf(role, draftFixtureWriter, 2, draftFixtureWriterPassword) +
+		fmt.Sprintf(role, draftFixtureAttestor, 2, draftFixtureAttestorPassword) +
+		fmt.Sprintf(role, draftFixtureLedger, 4, draftFixtureLedgerPassword)
 }
 
 func TestHostedDraftAuthorityTLSFixtureChild(t *testing.T) {

@@ -1,5 +1,3 @@
-BEGIN;
-SET LOCAL search_path=pg_catalog,pg_temp;
 DO $draft_setup$
 BEGIN
  IF current_database() <> 'careeros_294' OR current_user <> 'careeros_294_migrator' OR session_user <> current_user THEN
@@ -14,7 +12,7 @@ END $draft_setup$;
 
 -- A separately approved authority must pin this row. The migration and both
 -- service logins have no way to insert one through the exposed API.
-CREATE TABLE careeros_294_draft.fake_scope (
+CREATE TABLE IF NOT EXISTS careeros_294_draft.fake_scope (
  singleton boolean PRIMARY KEY CHECK (singleton),
  action_id text NOT NULL UNIQUE CHECK (action_id ~ '^[A-Za-z0-9_-]{1,128}$'),
  account_id text NOT NULL REFERENCES careeros_294.careeros_accounts(id),
@@ -28,7 +26,7 @@ CREATE TABLE careeros_294_draft.fake_scope (
 
 -- Intent and attestation are insert-only metadata. Artifacts, prompts and
 -- financial/customer effects do not cross this privilege boundary.
-CREATE TABLE careeros_294_draft.fake_intents (
+CREATE TABLE IF NOT EXISTS careeros_294_draft.fake_intents (
  action_id text NOT NULL REFERENCES careeros_294_draft.fake_scope(action_id),
  stage smallint NOT NULL CHECK (stage BETWEEN 1 AND 4),
  session_id text NOT NULL,
@@ -38,7 +36,7 @@ CREATE TABLE careeros_294_draft.fake_intents (
  PRIMARY KEY (action_id,stage),
  UNIQUE (action_id,stage,request_digest)
 );
-CREATE TABLE careeros_294_draft.fake_attestations (
+CREATE TABLE IF NOT EXISTS careeros_294_draft.fake_attestations (
  action_id text NOT NULL,
  stage smallint NOT NULL,
  request_digest bytea NOT NULL,
@@ -49,7 +47,7 @@ CREATE TABLE careeros_294_draft.fake_attestations (
 );
 REVOKE ALL ON ALL TABLES IN SCHEMA careeros_294_draft FROM PUBLIC,careeros_294_runtime,careeros_294_draft_writer,careeros_294_draft_attestor;
 
-CREATE FUNCTION careeros_294_draft.record_fake_intent(
+CREATE OR REPLACE FUNCTION careeros_294_draft.record_fake_intent(
  draft_id text, owner_id text, active_session text, session_generation numeric,
  session_token_hash bytea, stage_name text, request_binding bytea
 ) RETURNS boolean
@@ -113,7 +111,7 @@ BEGIN
  RETURN FOUND;
 END $fake_intent$;
 
-CREATE FUNCTION careeros_294_draft.record_fake_attestation(
+CREATE OR REPLACE FUNCTION careeros_294_draft.record_fake_attestation(
  draft_id text, stage_number smallint, request_binding bytea, result_binding bytea
 ) RETURNS boolean
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $fake_attestation$
@@ -134,4 +132,3 @@ END $fake_attestation$;
 REVOKE ALL ON ALL FUNCTIONS IN SCHEMA careeros_294_draft FROM PUBLIC,careeros_294_runtime,careeros_294_draft_writer,careeros_294_draft_attestor;
 GRANT EXECUTE ON FUNCTION careeros_294_draft.record_fake_intent(text,text,text,numeric,bytea,text,bytea) TO careeros_294_draft_writer;
 GRANT EXECUTE ON FUNCTION careeros_294_draft.record_fake_attestation(text,smallint,bytea,bytea) TO careeros_294_draft_attestor;
-COMMIT;

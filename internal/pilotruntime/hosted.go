@@ -13,7 +13,9 @@ import (
 
 	"professional-information-repo/internal/accountapi"
 	"professional-information-repo/internal/accountstore"
+	"professional-information-repo/internal/aicontrol"
 	"professional-information-repo/internal/auth"
+	"professional-information-repo/internal/draftrecovery"
 )
 
 type HostedConfig struct {
@@ -22,10 +24,18 @@ type HostedConfig struct {
 	DatabaseURL    string
 	GoogleSubjects string
 	Auth           auth.Config
+	Draft          *HostedDraftConfig
 }
 
-// NewHostedServer is the closed HTTPS-origin candidate behind Cloud Run TLS.
-// Its process has no invitation, grant issuance, or AI dispatch capability.
+type HostedDraftConfig struct {
+	LedgerURL   string
+	ActionKey   [32]byte
+	ArtifactKey [32]byte
+	Respond     func(context.Context, aicontrol.HostedDraftCall) (*http.Response, error)
+}
+
+// NewHostedServer serves the closed HTTPS-origin candidate behind Cloud Run
+// TLS. An explicit configuration can enable only the enrolled fake Draft.
 func NewHostedServer(ctx context.Context, cfg HostedConfig) (*http.Server, func(), error) {
 	authority, listen, err := hostedAddress(cfg.Auth.PublicOrigin, cfg.Port)
 	if err != nil {
@@ -46,13 +56,33 @@ func NewHostedServer(ctx context.Context, cfg HostedConfig) (*http.Server, func(
 		closeStore()
 		return nil, nil, errors.New("hosted Google authentication configuration invalid")
 	}
-	if err := store.HostedPilotClosed(startup); err != nil {
-		closeStore()
-		return nil, nil, errors.New("hosted pilot closed authority unavailable")
-	}
 	pilot := accountapi.NewPilot(service, store, nil)
 	closed := service.Protect(auth.UnavailableHandler())
-	site, err := newSiteAtOrigin(authority, cfg.Auth.PublicOrigin, cfg.Assets, closedHostedRoutes(pilot, closed), store.HostedPilotClosed)
+	handler := closedHostedRoutes(pilot, closed)
+	ready := func(ctx context.Context) (string, error) {
+		return "closed", store.HostedPilotClosed(ctx)
+	}
+	if cfg.Draft != nil {
+		draft, check, closeDraft, err := openHostedDraft(startup, cfg.DatabaseURL, *cfg.Draft, service, store)
+		if err != nil {
+			ready = func(ctx context.Context) (string, error) {
+				_, _, err := store.HostedPilotInvitationClosed(ctx)
+				return scopedDraftUnavailable, err
+			}
+		} else {
+			closeStore = func() {
+				closeDraft()
+				_ = store.Close()
+			}
+			ready = check
+			handler = hostedDraftRoutes(handler, draft, closed)
+		}
+	}
+	if _, err := ready(startup); err != nil {
+		closeStore()
+		return nil, nil, errors.New("hosted pilot authority unavailable")
+	}
+	site, err := newSiteWithReadiness(authority, cfg.Auth.PublicOrigin, cfg.Assets, handler, ready)
 	if err != nil {
 		closeStore()
 		return nil, nil, err
@@ -69,6 +99,68 @@ func NewHostedServer(ctx context.Context, cfg HostedConfig) (*http.Server, func(
 		IdleTimeout:       idleLimit,
 		MaxHeaderBytes:    maxHeaderBytes,
 	}, closeStore, nil
+}
+
+func openHostedDraft(ctx context.Context, accountURL string, cfg HostedDraftConfig, service *auth.Service, account *accountstore.Store) (
+	http.Handler, func(context.Context) (string, error), func(), error,
+) {
+	if cfg.ArtifactKey == ([32]byte{}) || cfg.ArtifactKey == cfg.ActionKey {
+		return nil, nil, nil, auth.ErrUnavailable
+	}
+	actionDB, err := accountstore.OpenHostedDraftLedger(ctx, accountURL, cfg.LedgerURL)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	action, err := aicontrol.OpenHostedDraft(ctx, actionDB, aicontrol.HostedDraftConfig{BindingKey: cfg.ActionKey, Respond: cfg.Respond})
+	if err != nil {
+		_ = actionDB.Close()
+		return nil, nil, nil, err
+	}
+	artifactDB, err := accountstore.OpenHostedDraftLedger(ctx, accountURL, cfg.LedgerURL)
+	if err != nil {
+		_ = action.Close()
+		return nil, nil, nil, err
+	}
+	drafts, err := draftrecovery.OpenHostedDraft(ctx, artifactDB, action, cfg.ArtifactKey[:])
+	if err != nil {
+		_ = artifactDB.Close()
+		_ = action.Close()
+		return nil, nil, nil, err
+	}
+	ready := func(ctx context.Context) (string, error) {
+		stopped, available, err := account.HostedPilotInvitationClosed(ctx)
+		if err != nil {
+			return "", err
+		}
+		if stopped {
+			return "closed", nil
+		}
+		if !available || action.HostedDraftReady(ctx) != nil || drafts.HostedDraftReady(ctx) != nil {
+			return scopedDraftUnavailable, nil
+		}
+		return "scoped-fake", nil
+	}
+	closeDraft := func() {
+		_ = drafts.Close()
+		_ = action.Close()
+	}
+	return accountapi.NewHostedDraftOnly(service, action, drafts), ready, closeDraft, nil
+}
+
+func hostedDraftRoutes(account, draft, unavailable http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		if path == "/api/application-draft" || path == "/api/draft-allowance" || inNamespace(path, "/api/drafts") {
+			if r.Method == http.MethodPost && (path == "/api/application-draft" || path == "/api/drafts") &&
+				r.Context().Value(siteInferenceKey{}) != "scoped-fake" {
+				unavailable.ServeHTTP(w, r)
+				return
+			}
+			draft.ServeHTTP(w, r)
+			return
+		}
+		account.ServeHTTP(w, r)
+	})
 }
 
 func closedHostedRoutes(pilot, closed http.Handler) http.Handler {

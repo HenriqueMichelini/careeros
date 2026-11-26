@@ -82,6 +82,7 @@ func DefaultSyntheticConfig(namespace string, gate *SyntheticGate) SyntheticConf
 type Harness struct {
 	db            *sql.DB
 	reviewerDB    *sql.DB
+	hosted        *hostedDraftAuthority
 	supportRole   string
 	cfg           SyntheticConfig
 	mu            sync.Mutex
@@ -221,6 +222,9 @@ func (h *Harness) Close() error {
 // SetResponder installs an in-memory synthetic provider. Send never uses an HTTP
 // client or network transport. The callback receives a clone without credentials.
 func (h *Harness) SetResponder(fn func(context.Context, string, *http.Request) (*http.Response, error)) {
+	if h.hosted != nil {
+		return
+	}
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.responder = fn
@@ -228,6 +232,9 @@ func (h *Harness) SetResponder(fn func(context.Context, string, *http.Request) (
 
 // SetFault is an explicit local fault-injection seam; it cannot mint a permit.
 func (h *Harness) SetFault(phase string, fn func() error) {
+	if h.hosted != nil {
+		return
+	}
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.hooks[phase] = fn
@@ -294,6 +301,10 @@ func (h *Harness) begin(ctx context.Context, p auth.Principal) (*sql.Tx, error) 
 	if e = h.ready(ctx, tx); e != nil {
 		tx.Rollback()
 		return nil, h.observeAuthorityFault(ctx, accountstore.OperationsAuthorityFault, e)
+	}
+	if e = h.checkHostedDraftScope(ctx, tx); e != nil {
+		tx.Rollback()
+		return nil, e
 	}
 	return tx, nil
 }

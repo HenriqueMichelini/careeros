@@ -42,6 +42,9 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 	if !tokenLabel.MatchString(key) || !workflows[workflow] {
 		return nil, ErrDenied
 	}
+	if h.hosted != nil && (workflow != "application_draft" || p.AccountID != h.hosted.owner || key != h.hosted.creationKey) {
+		return nil, ErrDenied
+	}
 	if h.cfg.Qualification && workflow != "qualification_gaps" && !(h.cfg.Ingestion && workflow == "profile_ingestion") && !(h.cfg.ProfileReview && workflow == "profile_review") && !(h.cfg.StandaloneCV && workflow == "cv_generation") && !(h.cfg.ManagedDraft && workflow == "application_draft") {
 		return nil, ErrDenied
 	}
@@ -114,6 +117,9 @@ func (h *Harness) Open(ctx context.Context, p auth.Principal, key, workflow stri
 			}
 		}
 		id = opaque()
+		if h.hosted != nil {
+			id = h.hosted.action
+		}
 		if id == "" {
 			return nil, ErrUnavailable
 		}
@@ -646,7 +652,7 @@ func (s *Session) invoke(ctx context.Context, d Dispatch, req *http.Request, raw
 	source.mu.Lock()
 	respond := source.responder
 	source.mu.Unlock()
-	if respond == nil {
+	if respond == nil && h.hosted == nil {
 		return nil, ErrDenied
 	}
 	binding, err := s.legBinding(d.Provider, raw, aidispatch.StageInput(ctx))
@@ -852,16 +858,54 @@ func (s *Session) invoke(ctx context.Context, d Dispatch, req *http.Request, raw
 	if err = s.checkCurrent(ctx, final); err != nil {
 		return nil, err
 	}
+	var handoffNonce [32]byte
+	if h.hosted != nil {
+		handoffNonce, err = s.recordHostedDraftHandoff(ctx, final, d, binding)
+		if err != nil {
+			return nil, err
+		}
+	}
 	if err = final.Commit(); err != nil {
+		if h.hosted != nil {
+			dispatchLease.Discard()
+		}
 		return nil, ErrUnavailable
+	}
+	endHandoff := func() {}
+	if h.hosted != nil {
+		endHandoff = func() {
+			if !endHostedDraftHandoff(ctx, dispatchLease, d.ID, handoffNonce) {
+				dispatchLease.Discard()
+			}
+		}
+		defer func() { endHandoff() }()
 	}
 	cloned := req.Clone(ctx)
 	cloned.Header = http.Header{"Content-Type": []string{"application/json"}}
 	cloned.Body = io.NopCloser(bytes.NewReader(raw))
 	cloned.GetBody = func() (io.ReadCloser, error) { return io.NopCloser(bytes.NewReader(raw)), nil }
 	resp, callErr := s.gate.invoke(ctx, func(callCtx context.Context) (*http.Response, error) {
+		if h.hosted != nil {
+			return h.hosted.respond(callCtx, HostedDraftCall{
+				Namespace: h.cfg.Namespace, DispatchID: d.ID, ActionID: d.Action,
+				Stage: d.Stage, Provider: d.Provider, RequestDigest: [32]byte(binding), HandoffNonce: handoffNonce, Request: cloned.WithContext(callCtx),
+			})
+		}
 		return respond(callCtx, d.Provider, cloned.WithContext(callCtx))
 	}) // one fake gateway handoff; no network client
+	if h.hosted != nil {
+		if callErr == nil {
+			callErr = h.checkHostedDraftResponse(ctx, d, binding, handoffNonce, resp)
+		}
+		if callErr != nil {
+			if resp != nil && resp.Body != nil {
+				_ = resp.Body.Close()
+			}
+			resp = nil
+		}
+		endHandoff()
+		endHandoff = func() {}
+	}
 	releaseOperations()
 	releaseOperations = func() {}
 	dispatchLease.Close()
@@ -871,7 +915,9 @@ func (s *Session) invoke(ctx context.Context, d Dispatch, req *http.Request, raw
 		}
 		return nil, err
 	}
-	_, _ = h.db.ExecContext(context.WithoutCancel(ctx), `UPDATE ai_fixture_dispatch SET state='observed',local_finished=true WHERE namespace=$1 AND id=$2 AND state='intent'`, h.cfg.Namespace, d.ID)
+	if h.hosted == nil {
+		_, _ = h.db.ExecContext(context.WithoutCancel(ctx), `UPDATE ai_fixture_dispatch SET state='observed',local_finished=true WHERE namespace=$1 AND id=$2 AND state='intent'`, h.cfg.Namespace, d.ID)
+	}
 	return h.observeResponse(ctx, s.p, d, resp, callErr)
 }
 
@@ -939,6 +985,9 @@ func (s *Session) RetryQualification(ctx context.Context, key string) (*Session,
 }
 
 func (s *Session) retry(ctx context.Context, key string) (_ *Session, resultErr error) {
+	if s.h.hosted != nil {
+		return nil, ErrDenied
+	}
 	h := s.h
 	defer func() { h.observeManagedControlFault(ctx, resultErr) }()
 	command := *s
@@ -1075,6 +1124,9 @@ func (s *Session) checkCurrentWithSource(ctx context.Context, tx *sql.Tx, source
 		return err
 	}
 	if e := s.h.ready(ctx, tx); e != nil {
+		return e
+	}
+	if e := s.h.checkHostedDraftScope(ctx, tx); e != nil {
 		return e
 	}
 	if _, e := s.h.checkGrant(ctx, source, s.p, s.grantVersion); e != nil {

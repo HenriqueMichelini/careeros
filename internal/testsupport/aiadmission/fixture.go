@@ -120,7 +120,7 @@ func NewFixture(t *testing.T) *Fixture {
 	if _, err = f.Store.LocalControls(nil).InitializeSynthetic(context.Background(), f.ControlOperator.Principal, "fresh-control-fixture"); err != nil {
 		t.Fatal(err)
 	}
-	f.Document = profile(t)
+	f.Document = Profile(t)
 	if _, err = f.Store.SaveProfile(context.Background(), f.Principal, "synthetic-initial", 0, f.Document); err != nil {
 		t.Fatal(err)
 	}
@@ -145,7 +145,8 @@ func NewSyntheticService(t *testing.T, store *accountstore.Store) *auth.Service 
 	return service
 }
 
-func profile(t *testing.T) json.RawMessage {
+// Profile returns the approved synthetic Java Profile shared by Draft fixtures.
+func Profile(t *testing.T) json.RawMessage {
 	t.Helper()
 	_, file, _, _ := runtime.Caller(0)
 	raw, err := os.ReadFile(filepath.Join(filepath.Dir(file), "..", "..", "profiledocument", "fixtures.json"))

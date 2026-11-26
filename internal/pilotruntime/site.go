@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io"
 	"io/fs"
 	"net/http"
 	"path"
@@ -17,11 +16,14 @@ import (
 )
 
 const (
-	maxRequestBytes = 5 << 20
-	maxAPIRequests  = 8
-	readinessLimit  = 2 * time.Second
-	functionPrefix  = "/.netlify/functions/"
+	maxRequestBytes        = 5 << 20
+	maxAPIRequests         = 8
+	readinessLimit         = 2 * time.Second
+	functionPrefix         = "/.netlify/functions/"
+	scopedDraftUnavailable = "scoped-fake-unavailable"
 )
+
+type siteInferenceKey struct{}
 
 var workflowAliases = map[string]string{
 	"application-draft":  "/api/application-draft",
@@ -38,6 +40,15 @@ func newSite(authority string, assets fs.FS, account http.Handler, ready func(co
 }
 
 func newSiteAtOrigin(authority, origin string, assets fs.FS, account http.Handler, ready func(context.Context) error) (http.Handler, error) {
+	return newSiteWithReadiness(authority, origin, assets, account, func(ctx context.Context) (string, error) {
+		if ready == nil {
+			return "", auth.ErrUnavailable
+		}
+		return "closed", ready(ctx)
+	})
+}
+
+func newSiteWithReadiness(authority, origin string, assets fs.FS, account http.Handler, ready func(context.Context) (string, error)) (http.Handler, error) {
 	info, err := fs.Stat(assets, "index.html")
 	if err != nil || !info.Mode().IsRegular() {
 		return nil, errors.New("pilot frontend entrypoint unavailable")
@@ -47,13 +58,17 @@ func newSiteAtOrigin(authority, origin string, assets fs.FS, account http.Handle
 		return nil, errors.New("pilot frontend entrypoint unavailable")
 	}
 
-	available := func(ctx context.Context) bool {
+	available := func(ctx context.Context) string {
 		if account == nil || ready == nil {
-			return false
+			return ""
 		}
 		ctx, cancel := context.WithTimeout(ctx, readinessLimit)
 		defer cancel()
-		return ready(ctx) == nil
+		inference, err := ready(ctx)
+		if err != nil {
+			return ""
+		}
+		return inference
 	}
 	slots := make(chan struct{}, maxAPIRequests)
 	static := http.FileServerFS(assets)
@@ -101,11 +116,12 @@ func newSiteAtOrigin(authority, origin string, assets fs.FS, account http.Handle
 				reply(w, http.StatusRequestEntityTooLarge, "error", "request_too_large")
 				return
 			}
-			if !available(r.Context()) {
+			inference := available(r.Context())
+			if inference == "" {
 				auth.UnavailableHandler().ServeHTTP(w, r)
 				return
 			}
-			request := r.Clone(r.Context())
+			request := r.Clone(context.WithValue(r.Context(), siteInferenceKey{}, inference))
 			request.URL.Path, request.URL.RawPath = canonical, ""
 			request.Body = http.MaxBytesReader(w, r.Body, maxRequestBytes)
 			account.ServeHTTP(w, request)
@@ -170,18 +186,30 @@ func safeMethod(method string) bool {
 	return method == http.MethodGet || method == http.MethodHead
 }
 
-func serveHealth(w http.ResponseWriter, r *http.Request, readiness bool, available func(context.Context) bool) {
+func serveHealth(w http.ResponseWriter, r *http.Request, readiness bool, available func(context.Context) string) {
 	switch {
 	case !safeMethod(r.Method):
 		w.Header().Set("Allow", "GET, HEAD")
 		reply(w, http.StatusMethodNotAllowed, "error", "method_not_allowed")
 	case !readiness:
 		reply(w, http.StatusOK, "status", "live")
-	case !available(r.Context()):
-		reply(w, http.StatusServiceUnavailable, "status", "unavailable")
 	default:
+		inference := available(r.Context())
+		if inference == "" {
+			reply(w, http.StatusServiceUnavailable, "status", "unavailable")
+			return
+		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		_, _ = io.WriteString(w, "{\"status\":\"ready\",\"invitations\":\"closed\",\"inference\":\"closed\"}\n")
+		status := "ready"
+		if inference == scopedDraftUnavailable {
+			status = "unavailable"
+			w.WriteHeader(http.StatusServiceUnavailable)
+		}
+		_ = json.NewEncoder(w).Encode(struct {
+			Status      string `json:"status"`
+			Invitations string `json:"invitations"`
+			Inference   string `json:"inference"`
+		}{status, "closed", inference})
 	}
 }
 
