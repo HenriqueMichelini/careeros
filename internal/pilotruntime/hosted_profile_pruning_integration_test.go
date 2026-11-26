@@ -164,6 +164,14 @@ FROM careeros_294.careeros_profile_pruning WHERE account_id=$1`, owner, removed)
 	if _, err := runtime.Exec(ctx, `UPDATE careeros_294.careeros_profiles SET revision=3,document=$2 WHERE account_id=$1`, owner, resubmitted); !errors.As(err, &denied) || denied.Message != "hosted Profile contains a pruned evidence identifier" {
 		t.Fatalf("hosted runtime raw attempt to restore a pruned identifier = %v", err)
 	}
+	// Reconciliation may retain a pruning fence even when the Profile is absent.
+	if _, err := migrator.Exec(ctx, `DELETE FROM careeros_294.careeros_profiles WHERE account_id=$1`, owner); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := runtime.Exec(ctx, `INSERT INTO careeros_294.careeros_profiles (account_id,profile_id,revision,document)
+VALUES ($1,$2,3,$3)`, owner, []byte(document.ID), resubmitted); !errors.As(err, &denied) || denied.Message != "hosted Profile cannot be reinserted behind a pruning fence" {
+		t.Fatalf("hosted runtime raw attempt to reinsert a pruned Profile = %v", err)
+	}
 }
 
 func hostedProfilePruningDocument(t *testing.T) profiledocument.Document {

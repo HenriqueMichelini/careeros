@@ -89,6 +89,14 @@ func TestHostedDraftAuthorityTLSFixtureChild(t *testing.T) {
 	if err := accountstore.MigrateHostedPilot(t.Context(), dsn(fixtureMigrator)); err != nil {
 		t.Fatalf("repeat fixture Account migration with the Draft schema installed: %v", err)
 	}
+	closed, err := accountstore.OpenHostedPilot(t.Context(), dsn(fixtureRuntime))
+	if err != nil {
+		t.Fatalf("open closed Account runtime with the Draft schema installed: %v", err)
+	}
+	defer closed.Close()
+	if err := closed.HostedPilotClosed(t.Context()); err != nil {
+		t.Fatalf("closed Account readiness with the Draft schema installed: %v", err)
+	}
 	runtime := tlsRole(fixtureRuntime, fixturePassword)
 	writer := tlsRole(draftFixtureWriter, draftFixtureWriterPassword)
 	attestor := tlsRole(draftFixtureAttestor, draftFixtureAttestorPassword)

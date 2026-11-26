@@ -69,6 +69,15 @@ DECLARE
  removed_ids text[];
 BEGIN
  IF session_user <> 'careeros_294_runtime' THEN RETURN NEW; END IF;
+ IF TG_OP='INSERT' THEN
+  IF EXISTS (
+   SELECT 1 FROM careeros_294.careeros_profile_pruning f
+   WHERE f.account_id=NEW.account_id AND f.profile_id=NEW.profile_id
+  ) THEN
+   RAISE EXCEPTION 'hosted Profile cannot be reinserted behind a pruning fence';
+  END IF;
+  RETURN NEW;
+ END IF;
  IF NEW.account_id<>OLD.account_id OR NEW.profile_id<>OLD.profile_id OR NEW.revision<>OLD.revision+1
   OR NEW.revision>9007199254740991 THEN
   RAISE EXCEPTION 'invalid hosted Profile revision transition';
@@ -106,7 +115,7 @@ BEGIN
 END $profile_pruning$;
 REVOKE ALL ON FUNCTION careeros_294.careeros_hosted_profile_pruning() FROM PUBLIC;
 DROP TRIGGER IF EXISTS careeros_hosted_profile_pruning ON careeros_profiles;
-CREATE CONSTRAINT TRIGGER careeros_hosted_profile_pruning AFTER UPDATE ON careeros_profiles
+CREATE CONSTRAINT TRIGGER careeros_hosted_profile_pruning AFTER INSERT OR UPDATE ON careeros_profiles
  DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION careeros_294.careeros_hosted_profile_pruning();
 
 CREATE OR REPLACE FUNCTION careeros_hosted_account_lock_guard() RETURNS trigger

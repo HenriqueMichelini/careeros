@@ -220,7 +220,7 @@ AND EXISTS (
  SELECT 1 FROM pg_trigger trigger_spec JOIN pg_proc routine ON routine.oid=trigger_spec.tgfoid
  WHERE trigger_spec.tgrelid='careeros_294.careeros_profiles'::regclass
    AND trigger_spec.tgname='careeros_hosted_profile_pruning'
-   AND trigger_spec.tgenabled='O' AND trigger_spec.tgtype=17
+   AND trigger_spec.tgenabled='O' AND trigger_spec.tgtype=21
    AND trigger_spec.tgdeferrable AND trigger_spec.tginitdeferred AND trigger_spec.tgqual IS NULL
    AND trigger_spec.tgconstraint<>0 AND trigger_spec.tgnargs=0
    AND routine.oid='careeros_294.careeros_hosted_profile_pruning()'::regprocedure

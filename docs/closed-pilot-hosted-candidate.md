@@ -30,6 +30,8 @@ Hosted execution still needs to bind that evidence to the canonical managed Acti
 
 The hosted runtime was exercised in-process against a fresh loopback-only PostgreSQL 18 fixture using verified TLS and SCRAM, with a signed synthetic Google exchange and JWKS transport. The fixture checked distinct sessions, rejected and interrupted callbacks, workspace routing, cookie and CSRF guards, all five canonical and direct alias denials, closed Profile access, and session persistence across a runtime restart. Readiness denied access on loss of the database, loss of the session insert grant, and excess write privilege on the operator role table. It used synthetic subjects, fixture-only database credentials and a temporary TLS key. Actual Google, Cloud Run and Neon observations remain at the hosted gate.
 
+The scoped Profile fixture also verifies approved excerpt removal, rollback and receipt replay, a legacy receipt after migration, and denial of direct updates or reinsertion behind a pruning fence. A separate fixture verifies that the closed Account runtime opens and passes readiness after the staged Draft role schema is installed and the Account migration is repeated. The Chromium Draft recovery checks passed in English and Brazilian Portuguese, including a grant state reset that preserved the retrieval hold.
+
 To repeat the local fixture, supply a private writable Go cache and the installed PostgreSQL binary directory.
 
 ```sh

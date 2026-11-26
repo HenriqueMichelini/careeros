@@ -32,6 +32,12 @@ for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CA
    })()`)
    const job = value => write('[data-draft-job]', value)
    const click = selector => evaluate(`document.querySelector(${JSON.stringify(selector)}).click()`)
+   const checkHeldRecovery = async (path='/api/drafts/accepted', status=403) => {
+     const before=await evaluate('draftWire.responses.length')
+     await click('[data-draft-recover]')
+     await wait(`draftWire.responses.slice(${before}).some(r=>r.method==='GET' && r.path===${JSON.stringify(path)} && r.status===${status}) && !document.querySelector('[data-draft-recover]').disabled`)
+     assert.equal(await evaluate(`document.querySelectorAll('[data-draft-result], [data-draft-analysis], [data-draft-support], [data-draft-accepted], [data-draft-accepted-preview]').length`),0,'held recovery must keep every protected copy hidden')
+   }
    const keyboardClick = async selector => {
      await call('Page.bringToFront')
      await wait(`document.querySelector(${JSON.stringify(selector)})?.getClientRects().length>0 && !document.querySelector(${JSON.stringify(selector)}).disabled`)
@@ -69,11 +75,16 @@ for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CA
      await wait(`draftWire.responses.some(r=>r.path==='/api/drafts/accepted'&&r.status===403) && !document.querySelector('[data-draft-recover]').disabled`)
      assert.equal(await evaluate(`document.querySelectorAll('[data-draft-result], [data-draft-support], [data-draft-accepted], [data-draft-accepted-preview]').length`),0,'terminal metadata cannot establish prior historical-read rights')
      assert.equal(await evaluate(`document.querySelector('[data-draft-job]').value`),'Independent terminal authority note')
-     await control(scenario==='terminal-revoked-fixture'?'restore-injected-revocation':'restore-test-grant');await click('[data-draft-recover]')
-     await wait(`document.querySelector('[data-draft-accepted]')?.dataset.draftAccepted===${JSON.stringify(prior)} && !document.querySelector('[data-draft-recover]').disabled`)
+     if(scenario==='terminal-revoked-fixture'){
+       await control('restore-injected-revocation');await click('[data-draft-recover]')
+       await wait(`document.querySelector('[data-draft-accepted]')?.dataset.draftAccepted===${JSON.stringify(prior)} && !document.querySelector('[data-draft-recover]').disabled`)
+     }else{
+       await control('restore-test-grant')
+       await checkHeldRecovery()
+     }
      assert.deepEqual(await control('stats','GET'),{draft:8,qualification:0,allowanceEffects:1,reserved:0})
      assert.equal(await evaluate(`draftWire.requests.filter(r=>r.path.endsWith('/opening/confirm')).length`),1)
-     console.log(JSON.stringify({status:'passed',scenario,locale,evidence,checks:['accepted prior S plus unopened current B',scenario==='terminal-revoked-fixture'?'test-only invitation_revoked state injection (not an operator transition) yields opening403 and terminal metadata':'actual pilot suspension yields opening403 and terminal current metadata','all protected copies withheld during paused terminal GET','prior history requires independent fresh read and remains hidden after403','restore uses GET only; original accepted snapshot/one effect/eight provider calls unchanged']}))
+     console.log(JSON.stringify({status:'passed',scenario,locale,evidence,checks:['accepted prior S plus unopened current B',scenario==='terminal-revoked-fixture'?'test-only invitation_revoked state injection yields opening 403 and terminal metadata':'actual pilot suspension yields opening 403 and terminal metadata','all protected copies withheld during paused terminal GET',scenario==='terminal-revoked-fixture'?'restored fixture permits exact accepted GET':'grant state reset leaves the retrieval hold and GET denial in force','one total allowance effect and eight provider calls']}))
      return
    }
    if(terminal){
@@ -140,11 +151,16 @@ for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CA
        await wait(`draftWire.responses.some(r=>r.status===${code}) && !document.querySelector('[data-draft-accepted]')`)
        assert.equal(await evaluate(`document.querySelectorAll('[data-draft-result], [data-draft-support], [data-draft-accepted-preview]').length`),0)
        assert.equal(await evaluate(`document.querySelector('[data-draft-job]').value`),'Independent same-account terminal note')
-       await control(code===401?'reauth':'restore-test-grant');await click('[data-draft-recover]')
-       await wait(`document.querySelector('[data-draft-accepted]')?.dataset.draftAccepted===${JSON.stringify(prior)} && !document.querySelector('[data-draft-recover]').disabled`)
+       if(code===401){
+         await control('reauth');await click('[data-draft-recover]')
+         await wait(`document.querySelector('[data-draft-accepted]')?.dataset.draftAccepted===${JSON.stringify(prior)} && !document.querySelector('[data-draft-recover]').disabled`)
+       }else{
+         await control('restore-test-grant')
+         await checkHeldRecovery()
+       }
      }
      assert.deepEqual(await control('stats','GET'),{draft:14,qualification:0,allowanceEffects:1,reserved:0})
-     console.log(JSON.stringify({status:'passed',scenario,locale,evidence,checks:['actual managed four-stage generation plus finite pilot reservation','exact Action cancel and terminal GET zero consumption','known failure deliberate stable Retry; lost Retry reply GET only','original Action/admission/deadline preserved across attempt two','lost cancellation ACK blocks all current commands while prior accepted work remains','401/403 hide all protected copies; same-account input and opaque key retained','14 provider stages total/one opening effect/no automatic resend']}))
+     console.log(JSON.stringify({status:'passed',scenario,locale,evidence,checks:['actual managed four-stage generation plus finite pilot reservation','exact Action cancel and terminal GET zero consumption','known failure deliberate stable Retry; lost Retry reply GET only','original Action/admission/deadline preserved across attempt two','lost cancellation ACK blocks all current commands while prior accepted work remains','same-account reauthentication recovers prior work; a durable suspension hold keeps it hidden','14 provider stages total/one opening effect/no automatic resend']}))
      return
    }
    if(opening){
@@ -429,11 +445,9 @@ for(const locale of (process.env.CAREEROS_DRAFT_BROWSER_LOCALE ? [process.env.CA
      assert.equal(await evaluate(`document.querySelector('[data-draft-job]').value`),'Independent unsaved Job Posting')
      assert.equal(await evaluate(`document.querySelector(${JSON.stringify(question)}).value`),'Independent question')
      await control('restore-test-grant')
-     await click('[data-draft-recover]')
-     await wait(`document.querySelector('[data-draft-result]')&&!document.querySelector('[data-draft-recover]').disabled`)
-     assert.deepEqual(await evaluate(`draftWire.responses.filter(r=>r.method==='GET'&&r.status===200&&r.path===${JSON.stringify('/api/drafts/'+original.creationKey+'/versions/1')}).at(-1).body`),original)
+     await checkHeldRecovery('/api/drafts/'+original.creationKey+'/versions/1',410)
      assert.deepEqual(await control('stats','GET'),counters)
-     console.log(JSON.stringify({status:'passed',scenario,locale,evidence,checks:['actual qualification-status GET 401 and grant 403 hide current and previous protected copies','independent same-account editor and opaque Draft key retained','authorized exact-version GET recovers original with zero new inference']}))
+     console.log(JSON.stringify({status:'passed',scenario,locale,evidence,checks:['actual qualification-status GET 401 and grant 403 hide current and previous protected copies','independent same-account editor and opaque Draft key retained','reauth resumes the exact version; active grant state alone leaves the suspension hold and zero new inference']}))
      return
    }
    if (scenario==='managed-journey') {
