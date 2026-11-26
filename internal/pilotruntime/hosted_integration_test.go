@@ -50,6 +50,11 @@ const (
 // trusts its fixture certificate without changing the application's TLS code.
 // No externally supplied connection string or identity enters either process.
 func TestClosedHostedWithLocalTLSPostgres(t *testing.T) {
+	runHostedTLSFixture(t, "", "TestClosedHostedTLSFixtureChild")
+}
+
+func runHostedTLSFixture(t *testing.T, additionalRoles, childTest string) {
+	t.Helper()
 	bin := os.Getenv("CAREEROS_HOSTED_LOCAL_PG_BIN")
 	if bin == "" {
 		t.Skip("set CAREEROS_HOSTED_LOCAL_PG_BIN to the local PostgreSQL binary directory")
@@ -114,14 +119,14 @@ CREATE ROLE %[2]s LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICAT
 CREATE DATABASE careeros_294;
 `, fixtureRuntime, fixtureMigrator, fixturePassword)
 	psql := []string{"-X", "-v", "ON_ERROR_STOP=1", "-h", root, "-p", port, "-U", "fixture_admin", "-d"}
-	run(roleSQL, "psql", append(psql, "postgres")...)
+	run(roleSQL+additionalRoles, "psql", append(psql, "postgres")...)
 	run(accountstore.HostedPilotBootstrapSQL(), "psql", append(psql, "careeros_294")...)
 
 	executable, err := os.Executable()
 	if err != nil {
 		t.Fatal(err)
 	}
-	child := exec.CommandContext(ctx, executable, "-test.run=^TestClosedHostedTLSFixtureChild$", "-test.v")
+	child := exec.CommandContext(ctx, executable, "-test.run=^"+childTest+"$", "-test.v")
 	child.Env = []string{"CAREEROS_HOSTED_TLS_FIXTURE_PORT=" + port, "SSL_CERT_FILE=" + certificate}
 	output, err := child.CombinedOutput()
 	if err != nil {
@@ -165,10 +170,11 @@ func hostedFixtureCertificate(t *testing.T, directory string) string {
 	return certificate
 }
 
-func TestClosedHostedTLSFixtureChild(t *testing.T) {
+func hostedTLSFixtureDSN(t *testing.T) func(string) string {
+	t.Helper()
 	port := os.Getenv("CAREEROS_HOSTED_TLS_FIXTURE_PORT")
 	if port == "" {
-		t.Skip("requires the isolated TLS fixture started by TestClosedHostedWithLocalTLSPostgres")
+		t.Skip("requires the parent test's isolated TLS fixture")
 	}
 	// Only the private certificate and literal localhost are accepted by this
 	// test helper, even if the child test is invoked by itself.
@@ -180,10 +186,15 @@ func TestClosedHostedTLSFixtureChild(t *testing.T) {
 	if err != nil || number < 1024 || number > 65535 {
 		t.Fatal("fixture port invalid")
 	}
-	dsn := func(role string) string {
+	return func(role string) string {
 		return (&url.URL{Scheme: "postgresql", User: url.UserPassword(role, fixturePassword),
 			Host: net.JoinHostPort("localhost", port), Path: "/careeros_294", RawQuery: "sslmode=verify-full"}).String()
 	}
+}
+
+func TestClosedHostedTLSFixtureChild(t *testing.T) {
+	dsn := hostedTLSFixtureDSN(t)
+	var err error
 	if err = accountstore.MigrateHostedPilot(t.Context(), dsn(fixtureMigrator)); err != nil {
 		t.Fatalf("closed Account migration: %v", err)
 	}

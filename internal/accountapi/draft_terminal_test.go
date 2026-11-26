@@ -34,6 +34,67 @@ func configuredTerminalDraftFixture(t *testing.T, cfg draftrecovery.Config) (*ai
 	return f, h, provider, store, accountapi.NewSyntheticTerminalDraft(f.Service, f.Store, h, store), input
 }
 
+func TestManagedDraftOnlyRoutesUseTheSameOpeningAndDenyOtherWorkflows(t *testing.T) {
+	f, h, provider, store, _, input := terminalDraftFixture(t)
+	router := accountapi.NewSyntheticDraftOnly(f.Service, h, store)
+	body, err := json.Marshal(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const key = "isolated-managed-draft"
+	for _, path := range []string{
+		"/api/qualification-gaps", "/.netlify/functions/qualification-gaps",
+		"/api/profile/ingest", "/.netlify/functions/profile-ingestion",
+		"/api/profile/review", "/.netlify/functions/profile-review",
+		"/api/cv/generate", "/.netlify/functions/cv-generation",
+		"/api/pilot/activate", "/.netlify/functions/account/api/pilot/activate",
+	} {
+		if got := qualificationRequest(t, f, router, path, "unmounted", "", body); got.Code != http.StatusNotFound {
+			t.Errorf("unmounted route %s returned %d", path, got.Code)
+		}
+	}
+	guest := httptest.NewRecorder()
+	guestRequest := httptest.NewRequest(http.MethodPost, "/api/application-draft", nil)
+	guestRequest.Header.Set("Origin", aiadmission.Origin)
+	router.ServeHTTP(guest, guestRequest)
+	if guest.Code != http.StatusUnauthorized {
+		t.Fatalf("guest Draft: %d", guest.Code)
+	}
+	callerKey := f.Request(t, context.Background(), "/api/drafts", body)
+	callerKey.Header.Set("X-CareerOS-Action-Key", key)
+	callerKey.Header.Set("X-OpenAI-Api-Key", "inert-fixture-key")
+	denied := httptest.NewRecorder()
+	router.ServeHTTP(denied, callerKey)
+	if denied.Code != http.StatusBadRequest || len(provider.Calls) != 0 {
+		t.Fatalf("closed routes advanced the workflow: caller-key status %d, sends %v", denied.Code, provider.Calls)
+	}
+
+	created := qualificationRequest(t, f, router, "/.netlify/functions/application-draft", key, "", body)
+	var ready draftrecovery.Result
+	if created.Code != http.StatusCreated || json.Unmarshal(created.Body.Bytes(), &ready) != nil || ready.State != "ready" || ready.Bundle == nil || ready.Delivered {
+		t.Fatalf("create via direct alias: %d %s", created.Code, created.Body.String())
+	}
+	path := "/api/drafts/" + key + "/versions/1/opening"
+	issued := openingRequest(t, f, router, http.MethodPost, path, struct{}{})
+	var receipt draftrecovery.OpeningReceipt
+	if issued.Code != http.StatusOK || json.Unmarshal(issued.Body.Bytes(), &receipt) != nil {
+		t.Fatalf("issue opening receipt: %d %s", issued.Code, issued.Body.String())
+	}
+	confirmation := draftrecovery.OpeningConfirmation{Receipt: receipt.Receipt, BundleDigest: receipt.BundleDigest, Manifest: receipt.Manifest}
+	for _, endpoint := range []string{path + "/confirm", "/.netlify/functions/account" + path + "/confirm"} {
+		response := openingRequest(t, f, router, http.MethodPost, endpoint, confirmation)
+		var delivered draftrecovery.Result
+		if response.Code != http.StatusOK || json.Unmarshal(response.Body.Bytes(), &delivered) != nil || !delivered.Delivered || delivered.Action != ready.Action {
+			t.Fatalf("confirm or replay opening at %s: %d %s", endpoint, response.Code, response.Body.String())
+		}
+	}
+	allowanceReply := openingRequest(t, f, router, http.MethodGet, "/api/draft-allowance", nil)
+	var allowance openingAllowance
+	if allowanceReply.Code != http.StatusOK || json.Unmarshal(allowanceReply.Body.Bytes(), &allowance) != nil || allowance != (openingAllowance{5, 0, 1, 4}) || len(provider.Calls) != 4 {
+		t.Fatalf("isolated opening must settle once: %d %s sends %v", allowanceReply.Code, allowanceReply.Body.String(), provider.Calls)
+	}
+}
+
 func TestManagedTerminalRetryPreservesOriginalActionWindowAndOneDelivery(t *testing.T) {
 	f, h, provider, _, router, input := terminalDraftFixture(t)
 	sends := 0

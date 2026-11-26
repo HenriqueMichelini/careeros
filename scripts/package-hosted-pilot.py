@@ -239,6 +239,7 @@ def verify(bundle, expected):
     print(f"Verified {manifest['bundle']} source={manifest['source']['method']} manifest={expected}")
     for name, digest in manifest["images"].items():
         print(f"{name}={digest}")
+    return manifest
 
 
 def main():

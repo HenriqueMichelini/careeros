@@ -22,6 +22,19 @@ func NewSyntheticDraft(service *auth.Service, profiles *accountstore.Store, h *a
 	if service == nil || profiles == nil || !drafts.UsesManagedAuthority(h) {
 		return auth.UnavailableHandler()
 	}
+	return managedDraftRoutes(service, drafts, newSyntheticQualification(service, profiles, h, drafts.QualificationProof))
+}
+
+// NewSyntheticDraftOnly mounts only the managed Draft routes and aliases using
+// the existing local managed authority.
+func NewSyntheticDraftOnly(service *auth.Service, h *aicontrol.Harness, drafts *draftrecovery.Store) http.Handler {
+	if service == nil || !drafts.UsesManagedAuthority(h) {
+		return auth.UnavailableHandler()
+	}
+	return managedDraftRoutes(service, drafts, nil)
+}
+
+func managedDraftRoutes(service *auth.Service, drafts *draftrecovery.Store, fallback http.Handler) http.Handler {
 	protected := http.NewServeMux()
 	create := func(w http.ResponseWriter, r *http.Request) {
 		deadline := time.Now().Add(25 * time.Second)
@@ -88,7 +101,6 @@ func NewSyntheticDraft(service *auth.Service, profiles *accountstore.Store, h *a
 	protected.HandleFunc("POST /.netlify/functions/application-draft", create)
 	registerDraftReads(protected, drafts)
 	draftHandler := service.Protect(pilotAccount(protected))
-	base := newSyntheticQualification(service, profiles, h, drafts.QualificationProof)
 	router := http.NewServeMux()
 	for _, path := range []string{"/api/drafts", "/api/drafts/", "/api/application-draft", "/.netlify/functions/application-draft"} {
 		router.Handle(path, draftHandler)
@@ -97,6 +109,8 @@ func NewSyntheticDraft(service *auth.Service, profiles *accountstore.Store, h *a
 		router.Handle("/api/draft-allowance", draftHandler)
 	}
 	router.Handle("/.netlify/functions/account/", http.StripPrefix("/.netlify/functions/account", router))
-	router.Handle("/", base)
+	if fallback != nil {
+		router.Handle("/", fallback)
+	}
 	return router
 }
