@@ -489,7 +489,9 @@ func (s *Store) ActivatePilot(ctx context.Context, p auth.Principal, operation, 
 // PilotProfiles scopes existing Profile transactions to pilot authority without
 // changing the legacy account composition. Both share the same database pool.
 func (s *Store) PilotProfiles() *Store {
-	return &Store{db: s.db, pilot: true, operations: s.operations}
+	pilot := *s
+	pilot.pilot = true
+	return &pilot
 }
 
 type PilotRight string

@@ -180,7 +180,7 @@ func (h *Harness) qualificationMaximum(provider string, raw []byte) (int64, erro
 // an in-memory fake. An ordinary HTTP success/usage record never releases a slot.
 // This helper does not exist in production composition or read provider keys.
 func (h *Harness) SetQualificationResponder(fn func(context.Context, string, *http.Request) (*http.Response, bool, error)) error {
-	if !h.cfg.Qualification || fn == nil {
+	if h.hosted != nil || !h.cfg.Qualification || fn == nil {
 		return ErrDenied
 	}
 	h.SetResponder(func(ctx context.Context, p string, r *http.Request) (*http.Response, error) {

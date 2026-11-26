@@ -20,9 +20,10 @@ import (
 var schema string
 
 type Store struct {
-	db         *sql.DB
-	pilot      bool
-	operations *atomic.Pointer[Operations]
+	db                   *sql.DB
+	pilot                bool
+	hostedProfilePruning bool
+	operations           *atomic.Pointer[Operations]
 }
 
 func Open(ctx context.Context, dsn string) (*Store, error) {

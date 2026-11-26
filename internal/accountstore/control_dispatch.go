@@ -66,3 +66,16 @@ func (l *ControlDispatchLease) Close() {
 		_ = l.connection.Close()
 	})
 }
+
+// Discard ends an ambiguous leased operation without returning its backend to
+// the pool. Disconnecting also releases that backend's advisory locks.
+func (l *ControlDispatchLease) Discard() {
+	if l == nil || l.connection == nil {
+		return
+	}
+	l.once.Do(func() {
+		l.closed.Store(true)
+		_ = l.connection.Raw(func(any) error { return driver.ErrBadConn })
+		_ = l.connection.Close()
+	})
+}

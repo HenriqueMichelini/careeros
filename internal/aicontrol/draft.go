@@ -185,6 +185,14 @@ func (s *Session) AuthorizeDraftPublication(ctx context.Context, tx *sql.Tx) err
 	if err := s.AuthorizeDraftAttempt(ctx, tx); err != nil {
 		return err
 	}
+	if s.h.hosted != nil {
+		if err := s.h.admissionReady(ctx, tx); err != nil {
+			return err
+		}
+		if err := s.checkInferenceEpoch(ctx, tx); err != nil {
+			return err
+		}
+	}
 	var total, terminal int
 	if tx.QueryRowContext(ctx, `SELECT count(*),count(DISTINCT stage) FILTER(WHERE state='observed' AND remote_state='terminal_proven') FROM ai_fixture_dispatch WHERE namespace=$1 AND action=$2 AND attempt=$3`, s.h.cfg.Namespace, s.id, s.attempt).Scan(&total, &terminal) != nil {
 		return ErrUnavailable
@@ -257,7 +265,7 @@ type DraftQualificationBinding struct {
 // kept in the ledger or returned by this method.
 func (h *Harness) CompletedDraftQualification(ctx context.Context, tx *sql.Tx, p auth.Principal, id string) (DraftQualificationBinding, error) {
 	out := DraftQualificationBinding{Namespace: h.Namespace(), Owner: p.AccountID, Action: id}
-	if !h.ManagedDraftEnabled() || !tokenLabel.MatchString(id) {
+	if h.hosted != nil || !h.ManagedDraftEnabled() || !tokenLabel.MatchString(id) {
 		return out, ErrDenied
 	}
 	if err := h.ready(ctx, tx); err != nil {

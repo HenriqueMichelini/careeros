@@ -347,14 +347,19 @@ func (s *Store) SaveProfile(ctx context.Context, p auth.Principal, operation str
 	if !retainedEvidenceAllowed(profiledocument.Document{}, doc) {
 		return current, ErrValidation
 	}
-	if err = recordProfilePruning(ctx, tx, p.AccountID, current.Document, raw); err != nil {
-		return current, err
+	// The scoped hosted runtime uses a private PostgreSQL constraint trigger
+	// to write pruning fences when the Profile and receipt transaction commits.
+	if !s.hostedProfilePruning {
+		if err = recordProfilePruning(ctx, tx, p.AccountID, current.Document, raw); err != nil {
+			return current, err
+		}
 	}
 	_, err = tx.ExecContext(ctx, "INSERT INTO careeros_profiles(account_id,profile_id,revision,document) VALUES($1,$2,$3,$4) ON CONFLICT(account_id) DO UPDATE SET profile_id=EXCLUDED.profile_id,revision=EXCLUDED.revision,document=EXCLUDED.document", p.AccountID, []byte(doc.ID), doc.Revision, raw)
 	if err != nil {
 		return current, unavailable(err)
 	}
-	_, err = tx.ExecContext(ctx, "INSERT INTO careeros_profile_operations VALUES($1,$2,$3,$4,$5)", p.AccountID, operation, hash[:], []byte(doc.ID), doc.Revision)
+	_, err = tx.ExecContext(ctx, `INSERT INTO careeros_profile_operations
+(account_id,operation_id,request_hash,profile_id,committed_revision) VALUES($1,$2,$3,$4,$5)`, p.AccountID, operation, hash[:], []byte(doc.ID), doc.Revision)
 	if err != nil {
 		return current, unavailable(err)
 	}

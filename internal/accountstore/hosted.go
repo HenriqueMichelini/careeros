@@ -55,6 +55,7 @@ func OpenHostedPilot(ctx context.Context, dsn string) (*Store, error) {
 		store.Close()
 		return nil, err
 	}
+	store.hostedProfilePruning = true
 	return store, nil
 }
 
@@ -130,7 +131,8 @@ AND r.rolcanlogin AND r.rolconnlimit BETWEEN 1 AND $2
 AND NOT (r.rolsuper OR r.rolcreaterole OR r.rolcreatedb OR r.rolinherit OR r.rolreplication OR r.rolbypassrls)
 AND NOT EXISTS (SELECT 1 FROM pg_auth_members membership WHERE membership.member=r.oid)
 AND NOT has_database_privilege(current_user,current_database(),'CREATE,TEMP')
-AND NOT EXISTS (SELECT 1 FROM pg_namespace n WHERE ($1<>'careeros_294_migrator' OR n.nspname<>'careeros_294')
+AND NOT EXISTS (SELECT 1 FROM pg_namespace n WHERE ($1<>'careeros_294_migrator' OR
+                (n.nspname<>'careeros_294' AND NOT (n.nspname='careeros_294_draft' AND n.nspowner=r.oid)))
                 AND has_schema_privilege(current_user,n.oid,'CREATE'))`
 
 func authorizeHostedPilotMigration(ctx context.Context, tx *sql.Tx) error {
@@ -202,6 +204,34 @@ AND has_column_privilege(current_user,'careeros_294.careeros_accounts','generati
 AND has_column_privilege(current_user,'careeros_294.careeros_sessions','created_at','UPDATE')
 AND has_column_privilege(current_user,'careeros_294.careeros_deletion_status_sessions','created_at','UPDATE')
 AND has_function_privilege(current_user,'careeros_294.careeros_control_account_denied(text)','EXECUTE')
+AND NOT EXISTS (
+ SELECT 1 FROM unnest(ARRAY['account_id','operation_id','request_hash','profile_id','committed_revision']) required(column_name)
+ WHERE NOT has_column_privilege(current_user,'careeros_294.careeros_profile_operations',required.column_name,'SELECT')
+    OR NOT has_column_privilege(current_user,'careeros_294.careeros_profile_operations',required.column_name,'INSERT')
+)
+AND NOT has_column_privilege(current_user,'careeros_294.careeros_profile_operations','hosted_save_transaction','SELECT,INSERT')
+AND EXISTS (
+ SELECT 1 FROM pg_attribute attr JOIN pg_attrdef default_value ON default_value.adrelid=attr.attrelid
+   AND default_value.adnum=attr.attnum
+ WHERE attr.attrelid='careeros_294.careeros_profile_operations'::regclass AND attr.attname='hosted_save_transaction'
+   AND attr.atttypid='xid8'::regtype AND pg_get_expr(default_value.adbin,default_value.adrelid)='pg_current_xact_id()'
+)
+AND EXISTS (
+ SELECT 1 FROM pg_trigger trigger_spec JOIN pg_proc routine ON routine.oid=trigger_spec.tgfoid
+ WHERE trigger_spec.tgrelid='careeros_294.careeros_profiles'::regclass
+   AND trigger_spec.tgname='careeros_hosted_profile_pruning'
+   AND trigger_spec.tgenabled='O' AND trigger_spec.tgtype=21
+   AND trigger_spec.tgdeferrable AND trigger_spec.tginitdeferred AND trigger_spec.tgqual IS NULL
+   AND trigger_spec.tgconstraint<>0 AND trigger_spec.tgnargs=0
+   AND routine.oid='careeros_294.careeros_hosted_profile_pruning()'::regprocedure
+   AND routine.prosecdef AND pg_get_userbyid(routine.proowner)='careeros_294_migrator'
+   AND routine.proconfig=ARRAY['search_path=pg_catalog, pg_temp']
+   AND NOT has_function_privilege(current_user,routine.oid,'EXECUTE')
+   AND NOT EXISTS (
+     SELECT 1 FROM aclexplode(COALESCE(routine.proacl,acldefault('f',routine.proowner))) acl
+     WHERE acl.grantee=0 AND acl.privilege_type='EXECUTE'
+   )
+)
 AND NOT EXISTS (
  SELECT 1 FROM pg_class relation JOIN pg_namespace n ON n.oid=relation.relnamespace
  WHERE n.nspname='careeros_294' AND relation.relkind IN ('r','p','v','m','f') AND (

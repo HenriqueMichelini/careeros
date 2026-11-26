@@ -20,6 +20,9 @@ type Reviewer struct {
 }
 
 func (h *Harness) SyntheticReviewer() *Reviewer {
+	if h.reviewerDB == nil {
+		return &Reviewer{}
+	}
 	return &Reviewer{h: &Harness{db: h.reviewerDB, cfg: h.cfg, hooks: map[string]func() error{}}, authorized: true}
 }
 

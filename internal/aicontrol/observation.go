@@ -215,7 +215,7 @@ func (h *Harness) observeResponse(ctx context.Context, p auth.Principal, d Dispa
 				h.reportProviderFault(ctx)
 			}
 			_ = h.appendObservation(ctx, d, 1, o)
-			if h.cfg.Qualification {
+			if h.cfg.Qualification && h.hosted == nil {
 				proofCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
 				defer cancel()
 				reviewer := h.SyntheticReviewer()
